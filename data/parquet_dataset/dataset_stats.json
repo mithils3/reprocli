@@ -1,0 +1,11 @@
+{
+  "papers": 3414,
+  "files": 123952,
+  "text_files": 45808,
+  "logical_source_bytes": 27011690085,
+  "parquet_shards": 49,
+  "source_dir": "data/arxiv_sources",
+  "shard_size_mb": 512,
+  "batch_size_mb": 64,
+  "compression": "zstd"
+}
