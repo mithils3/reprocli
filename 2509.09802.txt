@@ -1,0 +1,1009 @@
+### nips_arxiv_wo_checklist.tex
+\documentclass{article}
+
+\usepackage[final]{neurips_2025}
+
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{cases}
+\usepackage{wrapfig}
+\usepackage{empheq}
+\newtheorem{assumption}{Assumption}
+\newtheorem{definition}{Definition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
+%
+\usepackage{graphicx}
+\usepackage{subfigure}
+
+
+\usepackage{etoc}
+
+
+
+\usepackage{ulem}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz,pgfplots,tkz-berge}
+
+%% New commands
+\newcommand{\hs}{\mathrm{HT}_s}
+\newcommand{\argmin}{\mathop{\mathrm{argmin}}}
+\newcommand{\tr}[1]{\operatorname{Tr}\left(#1\right)}
+\newcommand{\vct}[1]{\operatorname{vec}\left(#1\right)}
+\newcommand{\pj}{\mathrm{PM}_s}
+
+\title{Sparse Polyak: an adaptive step size rule for high-dimensional M-estimation}
+
+
+
+\author{%
+  Tianqi Qiao\\ %\thanks{Use footnote for providing further information
+    %about author (webpage, alternative address)---\emph{not} for acknowledging
+    %funding agencies.} \\
+  Texas A\&M University\\
+  College Station, TX, USA\\
+  \texttt{tianqi.qiao@tamu.edu} \\
+  % examples of more authors
+    \And
+    Marie Maros \\
+    Texas A\&M University \\
+    College Station, TX, USA\\
+    \texttt{mmaros@tamu.edu}
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+We propose and study Sparse Polyak, a variant of Polyak's adaptive step size, designed to  solve high-dimensional statistical estimation problems where the problem dimension is allowed to grow much faster than the sample size. In such settings, the standard Polyak step size performs poorly,  requiring an increasing number of iterations to achieve optimal statistical precision-even when, the problem remains well conditioned and/or the achievable precision itself does not degrade with problem size.  We trace this limitation to a mismatch in how smoothness is measured: in high dimensions, it is no longer effective to estimate the Lipschitz smoothness constant. Instead, it is more appropriate to estimate the smoothness restricted to specific directions relevant to the problem (restricted Lipschitz smoothness constant). Sparse Polyak overcomes this issue by modifying the step size to estimate the restricted Lipschitz smoothness constant. We support our approach with both theoretical analysis and numerical experiments, demonstrating its improved performance.
+
+\end{abstract}
+
+
+
+
+\section{Introduction \label{sec:intro}}
+Consider the high-dimensional statistical estimation problem
+\begin{equation}
+\label{eq:l0}
+\min_{\mathbb{R}^d \ni \theta : \|\theta\|_0 \leq s} f(\theta) = \frac{1}{n} \sum_{i=1}^n \ell(z_i, \theta),
+\end{equation}
+with data points \( z_i \in \mathbb{R}^d, i=1\dots n \). We focus on the regime in which the dimensionality grows much faster than the sample size, i.e. $\frac{d}{n} \to \infty.$ To obtain consistent estimates in this setting, it is necessary to assume that the true solution exhibits some low-dimensional structure-such as sparsity. In \eqref{eq:l0} sparsity is enforced through the $\ell_0$ constraint, which guarantees that $\theta$ will have at most $s$ non-zero elements. This constraint renders the problem in \eqref{eq:l0} non-convex and, in general, NP-hard, regardless of the objective function $f$ \cite{natarajan1995sparse}. Nevertheless, under certain assumptions on the data,  various algorithms have been developed to efficiently find approximate solutions to \eqref{eq:l0}. Notably, under suitable assumptions that hold for a variety of statistical models, the Iterative Hard Thresholding (IHT) algorithm has been shown to efficiently find sufficiently accurate solutions to \eqref{eq:l0}. The IHT algorithm results from applying projected gradient descent to \eqref{eq:l0} and reads
+\begin{align*}
+    \theta_{t+1} = \mathrm{HT}_s\left(\theta_t - \gamma \nabla f(\theta_t) \right),
+\end{align*}
+where $\mathrm{HT}_s$ denotes the hard thresholding operator. $\mathrm{HT}_s$ retains the $s$ largest-magnitude components of its input and sets the remaining to zero. Here, $\gamma > 0$ denotes the step-size which ought to be chosen as $\gamma = 2/(3\bar{L})$ \cite{jain}, where $\bar{L}$ denotes the
+\normalem
+\emph{restricted} Lipschitz smoothness (RSS) constant, and can be interpreted as the Lipschitz smoothness constant of $f$ when restricted to sparse directions. 
+
+ For a variety of statistical models, such as Generalized Linear Models (GLMs), $\bar{L}$ remains constant as long as $\frac{s \log (d)}{n}$ remains constant, even if $\frac{d}{n} \to \infty.$ This insight underpins the \normalem \emph{rate invariance} of IHT: under suitable conditions, the number of iterations required to achieve (near) optimal statistical precision remains constant even as both $d$ and $n$ grow. 
+
+ Analogous to the Lipschitz smoothness constant, the RSS constant must be estimated in practice. Thus, the natural question in this context, and the starting point to the work in this paper is: \textbf{(i)} Do already existing approaches to adaptively tune $\gamma$ via the estimation of the Lipschitz smoothness constant work in the high-dimensional setting? Our criteria to determine whether a step-size rule works in the high dimension, additional to convergence will be determined by the answers to the following questions: \textbf{(ii)} Can they achieve the same or better guarantees than by choosing the optimal fixed step-size? \textbf{(iii)} Can they guarantee rate invariance as $\frac{d}{n} \to \infty$?
+ 
+\begin{wrapfigure}[25]{r}{0.6\textwidth} 
+\vspace{-10pt}
+% \includegraphics[width=0.58\textwidth]{figures/alpha_classic_loss.png}
+\scalebox{0.9}{\input{comparison_classic.tikz}}
+\vspace{-15pt}
+ \caption{\label{fig:classic_compare} Performance of Polyak's step size (dashed) and Sparse Polyak (solid) on logistic regression problems with increasing $d$ and $n.$ The quantities $s,$ $s^{*},$ $\bar{\kappa}$ and $\frac{\log (d)}{n}$ remain constant. With Polyak's step-size the performance degrades as $d$ increases whereas Sparse Polyak exhibits rate invariance, i.e. the number of iterations to achieve (near) optimal statistical precision does not change.}
+ %\vspace{-40pt}
+\end{wrapfigure}
+
+%\vspace{-11pt}
+\subsection{Related works}
+
+
+Over the past three decades, numerous methods have been proposed to solve the problem in \eqref{eq:l0}, including Matching Pursuit \cite{mallat1993matching}, Orthogonal Matching Pursuit \cite{pati1993orthogonal}, and CoSaMP \cite{needell2009cosamp}.  Iterative Hard Thresholding (IHT) was first introduced in \cite{blumensath2009iterative} with many variants proposed since. While initial convergence guarantees for IHT required the Restricted Isometry Property (RIP)-a condition often too stringent in practice-\cite{jain} extended IHT's convergence guarantees to problems fulfilling the restricted strong convexity (RSC) and RSS; establishing linear convergence to near optimal statistical precision. Observe that in the M-estimation context, convergence to arbitrary precision is unnecessary and convergence to the best achievable statistical precision is preferred.
+ However, for the results in \cite{jain} to hold, if the optimal parameter to recover is $s^{*}-$sparse, $s \geq \mathcal{O}\left(\bar{\kappa}^2 s^{*} \right)$ is required, where $\bar{\kappa}$ is the restricted condition number. \cite{khanna2018} proposed an accelerated version of IHT which was extended to the stochastic setting in \cite{zhou2018}. \cite{zhou2018} establishes that with a sufficiently large mini-batch size, acceleration can be achieved and the faster rate requires only $s \geq \mathcal{O}(\bar{\kappa} s^*).$  \cite{axiotis2022} proposed a variant of IHT with an adaptively chosen weighted $\ell_2$ penalty for which only $s \geq \mathcal{O}(\bar{\kappa}s^{*})$ is required. They further establish that for IHT $s \geq \mathcal{O}(\bar{\kappa} s^{*})$ is in fact a necessary condition to achieve near optimal statistical precision. \cite{li2016} and  \cite{shen2018} introduced variants of IHT that incorporate variance reduction. \cite{shen2017} and \cite{yuan2018} propose Partial Hard Thresholding and Gradient Hard Thresholding pursuit respectively, with a focus on support recovery under high SNR assumptions. \cite{yuan} establishes generalization bounds for solutions found via IHT. Further, \cite{zhang2025} establishes that IHT, for a range of $\bar{\kappa}$, finds solutions that can be shown to achieve the oracle estimation rate under a high SNR condition. 
+ 
+ With no exception, the discussed works establishing convergence under the RSS require knowledge of the RSS constant $\bar{L}.$ Knowledge of $\bar{L}$ is crucial for the requirement $s \geq \mathcal{O}\left(\bar{\kappa}^2 s^{*} \right)$ being sufficient for convergence to optimal statistical precision. More generally, convergence can be established whenever $s \geq \mathcal{O}\left(\frac{s^{*}}{\bar{\mu}^2 \gamma^2} \right)$, with $\gamma \leq \frac{1}{\bar{L}}$. Consequently, overestimating $\bar{L}$ forces a smaller step size $\gamma$, which in turn slows down convergence and leads to denser solutions.
+
+Several recent works have proposed adaptive step-size schemes based on estimating the local Lipschitz constant \cite{malitsky2020adaptive, malitsky2024adaptive, latafat2024adaptive}. With the goal to jointly exploit the function's local regularity and the algorithm's trajectory, \cite{mishkin2024directional} derive new convergence results for gradient descent as a function of the objective function's local Lipschitz smoothness and strong convexity parameters. They additionally establish that Polyak's step-size obtains fast and path-dependent rates. However, their results do not naturally extend to constrained problems, particularly non-convex ones like \eqref{eq:l0}. 
+
+Polyak's original step-size rule, first proposed in \cite{polyak}, has gathered renewed attention in the machine learning community \cite{ren2022towards, hazan2019revisiting, loizou2021stochastic, wang2023generalized, zamani2024exact}, but it remains ill-suited for non-convex constrained settings such as \eqref{eq:l0} unless additional assumptions are imposed. Some efforts have been made to adapt Polyak's step size to constrained problems. For instance, \cite{cheng2012active} addresses box constraints, while \cite{devanathan2024polyak} consider convex constraints.
+
+
+To this day, except for \cite{comp}, and works that employ inexact line-search strategies \cite{xiao2013proximal, wang2014optimal}, there has been no study of adaptive step-size schemes in the high-dimensional context. The work in \cite{comp} handles \eqref{eq:l0} in the stochastic setting and proposes the use of Polyak's step-size with no modification. The results in \cite{comp} are limited even with no stochasticity, as they imply bounds on the restricted condition number, i.e. $\bar{\kappa} \leq \frac{\eta}{\eta-1}$ where $\eta = (\sqrt{5}+1)^2/4$. Further, it is worth mentioning that the notion of RSS assumed in \cite{comp} is more restrictive than that assumed in the present paper and \cite{jain}. Further, as shown in Fig.~\ref{fig:classic_compare} Polyak's step-size with no modification presents a performance that degrades as the size of the problem increases even if $\bar{\kappa}$ and the optimal statistical precision (of the order of $\mathcal{O}(\frac{s^*\log d}{n})$ for this particular statistical model) remain constant. This effect is highly undesirable in the high-dimensional setting and as shown in the present work, can be avoided with a suitable modification of Polyak's step-size.
+
+%\vspace{-10pt}
+\subsection{Major contributions}
+%\vspace{-2pt}
+Our main contribution is the first adaptive step-size rule that performs well in high-dimensions and preserves the rate invariance property. To develop this scheme, we address question \textbf{(i)} posed in the introduction. We observe that adaptive step-size rules that estimate the Lipschitz smoothness constant do not necessarily work well in high-dimensions. This is because, in many common statistical models, the Lipschitz smoothness constant scales as $\mathcal{O}(d)$ with high probability. Consequently, we answer questions \textbf{(i)} through \textbf{(iii)} in the negative, by demonstrating empirically (c.f. Fig.~\ref{fig:classic_compare}) that estimating the Lipschitz smoothness constant via Polyak's step-size (dashed line) does not yield rate invariance as $d$ grows even if $\frac{\log (d)}{n}$ is held constant.
+
+To overcome this limitation, we design an adaptive step-size rule that estimates the restricted Lipschitz smoothness constant instead. With this modification, we answer questions \textbf{(ii)} and \textbf{(iii)} in the affirmative. This is captured in Theorem~\ref{thm:1_f} and its Corollaries, which particularize the results of Theorem~\ref{thm:1_f} to relevant statistical models. In Sections~\ref{sec:main}, \ref{sec:numerical}, and in Appendix~\ref{sec:real_data} we provide theoretical and empirical evidence, both on synthetic and real data, that our proposed method outperforms Polyak's step-size for high-dimensional M-estimation tasks and achieves rate invariance. Moreover, we theoretically and empirically show that Sparse Polyak converges to optimal statistical precision at least as fast as IHT with the optimal fixed step-size $\gamma = \mathcal{O}(1/\bar{L}).$ We also establish sufficient conditions under which we can guarantee support recovery, and  particularize our results for specific statistical learning models in Section~\ref{sec:stat}. 
+
+Our guarantees are derived under standard assumptions, identical to those in \cite{jain, shen2017, yuan2018}. To guarantee convergence to optimal statistical precision we require the knowledge of $f(\theta^{*})$ where $\theta^*$ denotes the true parameter. While $f(\theta^*)$ is known to be of the order $\mathcal{O}\left(\frac{\log d}{n}\right),$ its exact value is typically unknown. Consequently, we provide in Appendix~\ref{sec:ada} a double loop method that estimates a surrogate to $f(\theta^*)$ and allows convergence to optimal statistical precision as long as lower bound to $f(\theta^{*})$ is known. Observe that in our context $f(\theta^{*}) \geq 0$ making 0 a valid lower bound.
+
+In addition, we prove linear convergence for statistical models that do not satisfy the regularity conditions in \cite{jain, axiotis2022, yuan} but instead fulfill the weaker condition in \cite{loh}. This extends the results in \cite{jain,yuan} to cover additional GLMs with an adaptive step-size rule. We provide these additional results in Appendix~\ref{sec:glm}.
+
+Our proof technique may be of independent interest as it provides a clear pathway to establishing convergence of the IHT algorithm. We believe this is key in extending theoretical guarantees to adaptive step-size schemes to solve \eqref{eq:l0}. We provide a sketch of the proof of our main results in Section~\ref{sec:sketch} and the formal proof in Appendix~\ref{sec:proofs}.
+
+Finally, although our analysis applies only to Polyak's step-size, we conjecture that other adaptive step-size rules such as \cite{barzilai1988two}, \cite{zhou2025adabb}, \cite{malitsky2020adaptive} may also suffer from similar performance degradation in high dimensions, and would therefore require analogous re-engineering to be effective.
+ 
+
+\paragraph{Notation.} Throughout this paper, we adopt the following notations. For vectors \( x,  \in \mathbb{R}^{d} \), we denote by $x_i$ the $i^{\text{th}}$ element.  We denote the \(\ell_{\infty}\)-norm of \( x \) as \( \| x \|_{\infty} \), the Euclidean norm as \( \| x \| \), the \(\ell_1\)-norm as \( \| x \|_{1} \), and the \(\ell_0\)-norm as \( \| x \|_{0} \). Recall $\|x\|_0 = |\{i : x_i \neq 0\}|.$  Also, we let \(\left| x \right|_{\min}\) denote the minimal entry of \(x\) in the sense of absolute value. The inner product between two vectors is denoted as \( \langle x, y \rangle \). Matrices such as  \( X \in \mathbb{R}^{d \times d} \), are capitalized. For any matrix \( \Sigma \), we denote its largest singular value by \( \sigma_{\max}(\Sigma) \) and its smallest singular value by \( \sigma_{\min}(\Sigma) \). Similarly, if $\Sigma \in \mathbb{R}^{d \times d}$ diagonalizes, we use \( \lambda_{\max}(\Sigma) \) and \( \lambda_{\min}(\Sigma) \) to denote the largest and smallest eigenvalues of \( \Sigma \) respectively.
+The Frobenius norm of \( X \) is given by \( \| X \|_{F} \), and the nuclear norm by $\|X\|_{*}.$
+
+\section{Setup and background}
+We make the following assumptions regarding the objective function $f $.
+\begin{assumption}[RSC \cite{fast}]\label{asp:rscvx}
+    The objective function $f$ is $(\mu,\tau)-$restricted strongly convex in $\mathbb{R}^d,$ i.e.
+    \begin{align}\label{eq:rsc}
+        \frac{\mu}{2}\|\theta_1-\theta_2\|^2 - \frac{\tau}{2}\|\theta_1-\theta_2\|^2_1 \leq f(\theta_1) - f(\theta_2) - \langle \nabla f(\theta_2), \theta_1- \theta_2 \rangle,\, \forall\, \theta_1,\,\theta_2 \, \in \mathbb{R}^d.
+    \end{align}
+\end{assumption}
+
+\begin{assumption}[RSS\cite{fast}]\label{asp:rsmooth}
+    The objective function $f$ is $(L,\tau)-$restricted smooth in $\mathbb{R}^d,$ i.e.
+    \begin{align*}
+        f(\theta_1) - f(\theta_2) - \langle \nabla f(\theta_2), \theta_1- \theta_2 \rangle \leq \frac{L}{2}\|\theta_1-\theta_2\|^2 + \frac{\tau}{2}\|\theta_1-\theta_2\|^2_1, \forall\, \theta_1,\,\theta_2 \, \in \mathbb{R}^d.
+    \end{align*}
+\end{assumption}
+
+
+Assumptions~\ref{asp:rscvx} and~\ref{asp:rsmooth} extend the classical notions of strong convexity and $L-$Lipschitz smoothness. These assumptions reduce to their classical counterparts when $\tau$ is sufficiently small and the direction $\theta_1-\theta_2$ is appropriately sparse. Observe that when $\theta_1 - \theta_2$ is dense and $f$ is convex, Assumption~\ref{asp:rscvx} becomes vacuous and the upper bound in Assumption~\ref{asp:rsmooth} scales linearly with the problem dimension $d.$ This highlights that the RSC and RSS depend not only on the magnitude of the direction $\theta_1 - \theta_2$ but also its structure.
+
+ In high-dimensional statistical learning settings where $\frac{d}{n} \to \infty,$ standard strong convexity and smoothness assumptions fail to hold. However
+, many important problems still satisfy variants of the RSC and RSS, with both $\mu$ and $L$ remaining dimension-independent and with $\tau$ exhibiting only moderate dependence on $d,$ e.g., \cite{jain,fast}. We leverage this in Section~\ref{sec:stat} to establish fast computational and near optimal statistical guarantees for a variety of high-dimensional statistical learning problems.
+
+
+We further highlight that our results can be generalized by adopting a weaker RSC condition, where we assume that \eqref{eq:rsc} holds only for pairs $\theta,\,\theta^{*}$ satisfying \(\| \theta - \theta^* \| \leq 1\), where $\theta$ denotes the ground truth, rather than requiring it to hold globally. This relaxation broadens the applicability of our approach, allowing it to accommodate a wider class of functions. Notably, for some generalized linear models (GLMs), the loss function does not necessarily satisfy \eqref{eq:rsc} without imposing additional constraints. We provide a detailed discussion of these results in Appendix~\ref{sec:glm}.
+
+\section{Main Result}
+\label{sec:main}
+In this section we present our main theoretical result, which establishes convergence guarantees for Sparse Polyak (c.f. Algorithm~\ref{algo:iht}). In this section, we focus on the deterministic setting of $f$, while the statistical case will be addressed in Section~\ref{sec:stat}. Note that IHT corresponds to projected gradient descent when applied to \eqref{eq:l0}. The projection onto the $\ell_0$ is given by the hard thresholding operator, already discussed in the introduction and formally defined as follows.
+\begin{definition}[Hard Thresholding Operator]
+    For any $s>0 $, and $z \in \mathbb{R}^{d} $, we define $\hs(z) $ as the projection of $z $ on $B_{0}(s) := \{\theta \in \mathbb{R}^{d} \mid \| \theta \|_{0} \leq s\}.$ i.e.,
+    \[
+     \hs(z) = \argmin_{\theta \in B_{0}(s)} \| \theta - z \|_{2},
+    \]
+where ties are broken lexicographically.
+\end{definition}
+
+
+\begin{algorithm}
+\caption{Iterative Hard Thresholding (IHT) with Polyak Step-Size}
+\label{algo:iht}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Function $f$, target function value $\widehat{f},$ sparsity parameter \( s \),  number of iterations $T$
+\State \textbf{Initialize:} \( \theta_0 \in \mathbb{R}^d, \) with  \(\|\theta_0\|_0 \leq s\)
+\For{t = 0 to \( T -1\)}
+    \State Compute step-size \(\gamma_t = \frac{\max\{f(\theta_t) - \widehat{f},0\}}{5 \| \hs(\nabla f(\theta_{t})) \|^2}\)
+    \State Update: \( \theta_{t+1} = \mathrm{HT}_{s}\left( \theta_t - \gamma_t \nabla f(\theta_t) \right) \)
+\EndFor
+\State \textbf{Output:} \( \theta_T \)
+\end{algorithmic}
+\end{algorithm}
+
+ The adaptive step-size rule in Algorithm~\ref{algo:iht} differs from the classical Polyak rule by replacing $\|\nabla f(\theta_t)\|^2$ with $\|\mathrm{HT}_s(\nabla f(\theta_t))\|^2$. This approach contrasts with the low-dimensional case and with the work in \cite{comp}. Observe that even if the current iterate $\theta_t$ is sparse, sparsity of $\nabla f(\theta_t)$ can not be guaranteed. In fact, the worst-case relationship $\|\nabla f(\theta_t)\| \leq \sqrt{\frac{d}{s}}\|\mathrm{HT}_s(\nabla f(\theta_t))\|,$ which holds with equality for a vector in which all coordinates are identical, may hold. As a result, using the full gradient norm can lead to using overly conservative step-sizes, slowing down convergence dramatically as $d$ increases. Unless strong additional conditions are imposed on the problem, convergence may be even be jeopardized (see discussion in Section~\ref{sec:sketch} for more details).
+
+
+Before providing our main result we introduce some notation. Consider fixed values \( s \geq s^{*} > 0 \), and let \( f^{*} \triangleq \min_{\theta:\|\theta\|_0 \leq s^{*}} f(\theta) \). Assume the chosen target function value satisfies \( \widehat{f} \geq f^{*} \). 
+Let $\bar{L} = L + 3 \tau s$, $\bar{\mu} = \mu - 3\tau s$, and $\bar{\kappa} = \bar{L}/\bar{\mu}$ denote the restricted condition number. 
+\begin{theorem}\label{thm:1_f}
+    Let \(\{\theta_t\}_{t \geq 1}\) denote the sequence of iterates generated by Algorithm~\ref{algo:iht}. Suppose the objective function \(f\) satisfies the RSC and RSS in Assumptions~\ref{asp:rscvx} and~\ref{asp:rsmooth}, respectively. Let \(\widehat{\theta}\) be any \(s^{*}\)-sparse vector such that \(f(\widehat{\theta}) = \widehat{f}\), and assume \(\bar{\mu} > 0\) and \(s \geq (240 \bar{\kappa})^2 s^{*}\).
+    Then, for any iterate \(\theta_t\) such that \(\|\theta_t - \widehat{\theta}\|^2 \geq \frac{36\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2}\)  we can guarantee
+    \[
+    \|\theta_{t+1} - \widehat{\theta}\|^2 \leq \left(1 - \frac{1}{80 \bar{\kappa}}\right) \|\theta_t - \widehat{\theta}\|^2.
+    \]
+    Moreover, let \(t_0 \geq 0\) be the first iteration for which \(\|\theta_{t_0} - \widehat{\theta}\|^2 < \frac{36\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2}\). Then, for all \(t \geq t_0\),  
+    \(
+    \|\theta_t - \widehat{\theta}\|^2 \leq \left(1 + \frac{1}{80 \bar{\kappa}}\right) \frac{36\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2}.
+    \) 
+\end{theorem}
+%\vspace{-12pt}
+
+Theorem~\ref{thm:1_f} implies linear convergence at a rate scaling with $\bar{\kappa}^{-1}$ up to  precision $\mathcal{O}\left(\frac{\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2} \right).$ This result is near equivalent to that in Theorem 3 in \cite{jain}, where the RSS constant is assumed to be known, up to a constant factor. Thus, we successfully answer in the affirmative question \textbf{(ii)} posed in Section~\ref{sec:intro}.  Further, observe that, if  $\bar{L},$ $\bar{\mu}$ and $\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2$ remain constant as the size of the problem grows, the rate remains unchanged and the achievable precision does so too. This implies that for a variety of statistical models the rate and final precision will remain invariant as the problem size increases, as long as the aforementioned quantities do not change. Thus, we also answer in the affirmative question \textbf{(iii)} posed in Section~\ref{sec:intro}. We particularize the result to specific statistical models and provide further discussion in Section~\ref{sec:stat} and Appendix~\ref{sec:stat_guarantees}.
+
+Here, $\widehat{f}$ is a user-defined target value that reflects the desired level of optimization, which can be set above or equal to the statistical accuracy of the problem. 
+Such a relaxation is natural in learning problems, as it is often counterproductive to optimize to full precision. The continuity and restricted strong convexity of $f$ imply that an $s^{*}$-sparse vector $\widehat{\theta}$ such that $f(\widehat{\theta}) = \widehat{f}$ always exists.  
+
+
+The additional factor $ \frac{1}{80\bar{\kappa}}$ in the final precision (c.f. Theorem~\ref{thm:1_f} when $t \geq t_0$) stems from the expansiveness of the hard thresholding operator. The removal of this factor and support recovery guarantees can be achieved under the signal to noise ratio (SNR) condition (c.f.\eqref{eq:snr}) and are provided in the following Corollary. Such a condition is widely used in hard thresholding and support recovery studies, as seen in \cite[Prop 2]{phd} \cite{snr1,snr2,snr3}. 
+
+
+\begin{corollary}\label{coro:snr}  
+    Under the assumptions stated in Theorem~\ref{thm:1_f}, if, further, the SNR condition: 
+    \begin{equation}\label{eq:snr}  
+    | \widehat{\theta} |_{\min} \geq  \frac{7\|\hs(\nabla f(\widehat{\theta}))\|}{\bar{\mu}}  
+    \end{equation}  
+    holds,  for any \( t \geq t_0 \), where $t_0$ is defined in Theorem~\ref{thm:1_f}, the support of \( \theta_t \) contains that of \( \widehat{\theta} \), and the sequence \( \| \theta_t - \widehat{\theta} \|^{2} \) is non-increasing and upper bounded by \( \frac{36\|\hs(\nabla f(\widehat{\theta}))\|^{2}}{\bar{\mu}^{2}} \).  
+\end{corollary}  
+
+
+Algorithm~\ref{algo:iht} offers an approach to obtain a target accuracy that we assume known in advance to \eqref{eq:l0}, without requiring precise knowledge of $L$, $\mu$, $\tau$. For scenarios in which we only have access to a lower bound on the problem, Algorithm~\ref{algo:iht_ada} serves as an alternative; in most learning problems, the bound can be simply set to $0$, making the method broadly applicable. This adaptive variant of Algorithm~\ref{algo:iht} builds on the framework of \cite{hazan2019revisiting}, which reviews gradient descent with Polyak’s step size and its double-loop counterpart. By updating the lower bound adaptively in an outer loop, the method ensures that either the accuracy $\mathcal{O}\!\left(\frac{\|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2}\right)$ is attained or the updated lower bound remains valid.
+
+\begin{algorithm}
+\caption{IHT with Adaptive Polyak}
+\label{algo:iht_ada}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Function $f$ , a lower bound $\tilde{f}_1,$ and  sparsity parameter \( s \).
+\State \textbf{Initialize:} \( \theta_0 = 0 \in \mathbb{R}^d \)
+\For{k=1 to \(K\)}
+\For{t = 0 to \( T-1 \)}
+    \State Compute step-size \(\gamma_t = \frac{f(\theta_t) - \widetilde{f}_{k}}{10\| \hs(\nabla f(\theta_{t})) \|^2}\)
+    \State Update: \( \theta_{t+1} = \mathrm{HT}_{s}\left( \theta_t - \gamma_t g_t \right) \)
+\EndFor
+    \State \(\bar{\theta}_{k} = \argmin_{t\leq T} f(\theta_{t})\)
+    \State \(\widetilde{f}_{k+1} = \frac{f(\bar{\theta}_{k}) + \widetilde{f}_{k}}{2}\)
+    \State \(\theta_{0} = \bar{\theta}_{k}\)
+\EndFor
+\State \textbf{Output:} \( \bar{\theta} = \argmin_{k\leq K} f(\bar{\theta}_{k}) \)
+\end{algorithmic}
+\end{algorithm}
+
+Let $s \geq s^{*} > 0$, and define $f^{*} := \min_{\|\theta\|_0 \leq s^{*}} f(\theta)$, attained by some $s^{*}$-sparse vector $\theta^{*}$.
+\begin{theorem}\label{thm:ada_f}
+    Consider the iterates $\{\bar{\theta}_{k}\} $ generated by Algorithm~\ref{algo:iht_ada}. Assume that the function $f $ fulfills Assumptions~\ref{asp:rscvx} and \ref{asp:rsmooth}.  Then for $\varepsilon = (1 + \frac{1}{160 \bar{\kappa}})\frac{36(\bar{L}+\bar{\mu}) \| \hs (\nabla f(\theta^*)) \|^{2}}{\bar{\mu}^2}  $, when $\bar{\mu}>0, s \geq (480 \bar{\kappa})^2 s^{*}$, Algorithm~\ref{algo:iht_ada} requires at most $\widetilde{T}:=\left( 1 + \log_{2} \frac{2(f(\theta_{0}) - f(\theta^{*}))}{\varepsilon} \right)\! T$ gradient evaluations to achieve $f(\bar{\theta}) - f(\theta^*) \leq \varepsilon $ and \(\|\bar{\theta} - \theta^*\|^2 \leq (1 + \frac{1}{160 \bar{\kappa}})\frac{36\|\mathrm{HT}_s(\nabla f(\theta^*))\|^2}{\bar{\mu}^2}\). Here $T = \left\lceil \frac{1}{\log\left( 1 / (1 - 1/160 \bar{\kappa}) \right) } \log \left( \frac{\bar{\mu}^2 \| \theta_{0} - \theta^{*} \|^{2}}{36(1 + 1/160 \bar{\kappa})\| \hs (\nabla f(\theta^*)) \|^{2} } \right)   \right\rceil$.
+\end{theorem}
+This theorem focuses on the distance of the iterates to $\theta^{*}$. The quantity $T$ can be interpreted as the number of iterations required to reach the desired accuracy when applying Algorithm~\ref{algo:iht} with $\widehat{f} = f^{*}$. The additional term $\mathcal{O}\left( \frac{f(\theta_{0}) - f(\theta^{*})}{\varepsilon} \right)$ in the definition of $\widetilde{T}$ corresponds to the number of outer iterations needed to obtain a sufficiently tight lower bound for the targeted accuracy. Similar order guarantees are established in Theorems~\ref{thm:1_f} and \ref{thm:ada_f}. The proof of Theorem~\ref{thm:ada_f} is provided in Appendix~\ref{sec:ada}.
+
+\section{Statistical Guarantees}
+\label{sec:stat}
+
+The results in Section~\ref{sec:main} are deterministic in nature and consequently, do not depend on a data generation model. In, contrast, in this section we use Theorem~\ref{thm:1_f} to provide guarantees for specific statistical models. Corollaries~\ref{coro:lg} and~\ref{coro:mat} establish the computational-statistical performance guarantees for sparse logistic regression and low-rank matrix regression respectively. We provide guarantees for additional statistical models, including sparse linear regression, in Appendix~\ref{sec:stat_guarantees}.
+
+\vspace{-5pt}
+\subsection{Logistic Regression}
+
+We consider a dataset consisting of observations \( z_i = (x_i, y_i) \) for \( i = 1, \dots, n \), where \( x_i \in \mathbb{R}^d \) denote the feature vectors, and \( y_i \in \left\{ 0, 1 \right\} \) denote the corresponding responses. The feature vectors are organized into the design matrix  
+\[
+X \triangleq \left( x_{1}, \dots, x_{n} \right)^{\top} \in \mathbb{R}^{n\times d} .
+\]
+We assume that the relationship between \( y_i \) and \( x_i \) follows the model  
+\begin{equation}\label{eq:lg}
+    \Pr(y_i = 1 \mid x_i) = \frac{1}{1 + \exp(-x_i^\top \theta^*)},
+\end{equation}  
+where \( \theta^* \) is an \( s^* \)-sparse vector representing the underlying ground truth parameter.
+The objective function is defined as 
+\[
+f(\theta) = \frac{1}{n} \sum_{i=1}^{n} \log \left( 1 + \exp( x_{i}^{T} \theta)\right) - y_{i} x_{i}^{T} \theta.
+\]
+
+
+We assume that each covariate vector \( x_i \) is drawn independently from a multivariate normal distribution \( \mathcal{N}(0, \Sigma) \), where \( \Sigma \) is a non-singular covariance matrix. By invoking Corollary 1 in \cite{yuan}, we can establish that the objective function \( f(\theta) \) satisfies the RSS and RSC conditions, as formalized in the following lemma.
+\begin{lemma}\label{lm:lg} Consider the sparse linear logistic regression problem described above.
+    Suppose the covariates \( x_i \) are uniformly bounded such that \( \|x_i\| \leq 1 \) for all \( i  \in [n]\). Then \( f(\theta) \) is \( \bar{L} \)-smooth with \( \bar{L} = 1 \).  Moreover, with probability at least \( 1 - e^{-c_0 n} \), the RSC condition holds with curvature parameter $\mu := \frac{1}{2} \exp(-4R) \, \sigma_{\min}(\Sigma)$ and tolerance $\tau := c_1 \exp(-4R) \, \zeta(\Sigma) \, \frac{\log d}{n},$ where \( R := \|\theta^{*}\| \), \(\zeta(\Sigma) = \max_{i=1, \dots, d} \Sigma_{ii}\), and \( c_0, c_1 > 0 \) are universal constants. 
+\end{lemma}
+
+\begin{corollary}\label{coro:lg}
+Consider the sparse linear logistic regression problem described above. Under the assumptions of Lemma~\ref{lm:lg}, further suppose that the sample size is sufficiently large so that \(\bar{\mu} > 0\). Further, assume the design matrix \(X \in \mathbb{R}^{n \times d}\) is normalized such that \(\| X_j / \sqrt{n} \| \leq C\) for all \(j = 1, \dots, d\). Let \(\{\theta_t\}_{t \geq 0}\) be the sequence of iterates produced by Algorithm~\ref{algo:iht} when applied to the sparse logistic regression problem. Assume the sparsity parameter satisfies \(s \geq \left(240\, \bar{\kappa}\right)^2 s^*\), and $\widehat{f} = f(\theta^*)$. Then, with probability at least \(1 - e^{-c_0 n} - \frac{2}{d}\), the following hold:
+
+\textbf{(i)}If \(\|\theta_t - \theta^*\|^2 \geq 72 C^2 \frac{s \log d}{n \bar{\mu}^2}\), the iterates exhibit contraction toward \(\theta^*\), i.e., $\|\theta_{t+1} - \theta^*\|^2 \leq \left(1 - \frac{1}{80 \bar{\kappa}}\right) \|\theta_t - \theta^*\|^2.$
+\textbf{(ii)} Let \(t_0\) denote the first iteration at which \(\|\theta_{t_0} - \theta^*\|^2 < 72 C^2 \frac{s \log d}{n \bar{\mu}^2}\). Then for all \(t \geq t_0\), the iterates remain confined in a neighborhood of \(\theta^*\): $\|\theta_t - \theta^*\|^2 \leq \left(1 + \frac{1}{80\bar{\kappa}}\right) 72 C^2 \frac{s \log d}{n \bar{\mu}^2}.$
+
+\textbf{(iii)} If \(\theta^*\) satisfies the SNR condition~\eqref{eq:snr}, then the iterates remain confined in a neighborhood of $\theta^*$ \(\|\theta_t - \theta^*\|^2 \leq 72 C^2 \frac{s \log d}{n \bar{\mu}^2}\) for all \(t \geq t_0\), and the support of \(\theta^*\) is exactly recovered and preserved for all subsequent iterations.
+\end{corollary} 
+
+The proof of Corollary~\ref{coro:lg} is provided in Appendix~\ref{appendix:coro:lg}.
+
+\begin{remark}\label{remark:glm}  The  assumption $\|x_i\|\leq 1,$ $\forall i \in [n]$ is required in \cite{yuan} to provide performance guarantees of HT with a fixed step-size on Logistic Regression. However, we note that this assumption is extremely restrictive in the high-dimensional setting. We provide additional results that do not require $\|x_i\|\leq 1,$ $ \forall i \in [n]$ in Appendix~\ref{sec:glm}. Our results in Appendix~\ref{sec:glm} further apply to additional GLMs that do not satisfy the RSC condition \eqref{eq:rsc} globally, and are aligned with the results in \cite{loh} both in terms of sample and asymptotic convergence rates.  In these cases, convergence at a rate of \( \left( 1 - c_0/\bar{\kappa} \right)\) can be guaranteed if the algorithm is suitably initialized. However,  a stricter requirement on the sparsity level, specifically \( s \geq \mathcal{O}(\bar{\kappa}^{4})s^{*} \), is necessary otherwise, and a rate of \( \left( 1 - 1/c_1\bar{\kappa}^{2} \right) \) can be guaranteed. Here $c_0,$ and $c_1$ are universal constants.
+\end{remark}
+
+The result above and the result in Appendix~\ref{sec:glm} match the observed behavior of Sparse Polyak in Fig~\ref{fig:classic_compare}. Namely, we observe that Sparse Polyak indeed achieves rate invariance, as $\frac{d}{n} \to \infty,$ the rate and final precision remain constant as long as $\frac{s\log d}{n}$ is left unchanged. 
+
+\vspace{-5pt}
+\subsection{Matrix Regression}
+Consider the data generation model
+\[
+    y_{i} = \langle X_{i}, \Theta^{*} \rangle + \varepsilon_{i},\quad \text{for }i=1,2\dots,n,
+\]
+where $\Theta^{*} \in \mathbb{R}^{d\times d}$ is a matrix of rank at most $s^*.$  We assume, $X_i \in \mathbb{R}^{d \times d},$ $\mathrm{vec}(X_i) \sim \mathcal{N}(0,\Sigma)$ are i.i.d, and  $\Sigma \succ 0.$ Further, $ \varepsilon_{i} \sim N(0, \sigma^{2})$ are i.i.d. and independent of $X_i$. Define $f(\Theta) = \frac{1}{2n} \sum_{i=1}^{n} \left( y_i - \langle X_i, \Theta \rangle \right)^2$. 
+
+By invoking \cite[Lemma 7]{fast}, we establish the RSS and RSC properties of $f(\Theta)$, as formalized in the following lemma.
+\begin{lemma}\label{lm:mr} 
+Consider the low-rank matrix regression problem described above. Then,  with probability at least \( 1 - e^{-c_0 n} \), \( f(\Theta) \) satisfies the RSS and RSC conditions with respect to the Frobenius norm and the nuclear norm.  The corresponding parameters are given by:  
+\vspace{-2pt}
+\begin{align*}
+L = 2\sigma_{\max}(\Sigma), \quad \mu = \frac{1}{2}\sigma_{\min}(\Sigma), \quad \text{and} \quad \tau = c_1 \zeta(\Sigma) \frac{d}{n},
+\vspace{-2pt}
+\end{align*} 
+where \( \zeta(\Sigma) := \sup_{\|u\| = 1, \|v\| = 1} \operatorname{Var}(u^\top X_1 v) \), and \( c_0, c_1 > 0 \) are universal constants.  
+\end{lemma}
+
+To enforce the suitable low-rank structure on the iterates we define
+\vspace{-4pt}
+\begin{align*}
+\pj (W) = \sum_{i=1}^{s} \sigma_{i} u_{i} v_{i}^{T},
+\vspace{-4pt}
+\end{align*}
+where $\sigma_{i}, i=1\dots,s $ are the $s $ largest singular values of $W $, and $u_{i}, v_{i} $ the corresponding singular vectors. We substitute all instances of the $\hs $ operator by $\pj $ in Algorithm~\ref{algo:iht} and~\ref{algo:iht_ada} (c.f. Appendix~\ref{sec:ada}). 
+
+\begin{corollary}\label{coro:mat}
+Consider the low rank matrix regression problem described above. Let \(\{\Theta_t\}_{t \geq 0}\) be the sequence of iterates generated by Algorithm~\ref{algo:iht} when applied to a low rank matrix regression problem. Suppose that $\widehat{f} = f(\Theta^*) $, $n$ is sufficiently large such that $\bar{\mu} > 0$, and  \(s \geq (240 \bar{\kappa})^2 s^*\).
+Then, with probability at least \(1 - e^{-c_0 n} - 2e^{-4d}\), the following holds: 
+\textbf{(i)} If \(\|\Theta_t - \Theta^*\|_F^2 \geq \frac{7200 \sigma^2 \zeta(\Sigma) s d}{n \bar{\mu}^2}\), then the iterates contract relative to \(\Theta^*\) as $\|\Theta_{t+1} - \Theta^*\|_F^2 \leq \left(1 - \frac{1}{80 \bar{\kappa}} \right) \|\Theta_t - \Theta^*\|_F^2.$  \textbf{(ii)} Let \(t_0\) be the first iteration for which \(\|\Theta_{t_0} - \Theta^*\|_F^2 < \frac{7200 \sigma^2 \zeta(\Sigma) s d}{n \bar{\mu}^2}\). Then, for all \(t \geq t_0\), the iterates remain in a stable neighborhood around \(\Theta^*\), with $\|\Theta_t - \Theta^*\|_F^2 \leq \left(1 + \frac{1}{80 \bar{\kappa}} \right) \frac{7200 \sigma^2 \zeta(\Sigma) s d}{n \bar{\mu}^2}.$ 
+\end{corollary}
+
+The proof of Corollary~\ref{coro:mat} can be found in Appendix~\ref{sec:coro:mat}.
+
+\begin{remark}  
+    The result in Corollary~\ref{coro:snr} also extends to Algorithm~\ref{algo:iht_ada}. If \( \theta^* \) satisfies the SNR condition \eqref{eq:snr}, the iterates of Algorithm~\ref{algo:iht_ada} recover the support after \( \widetilde{T} \) gradient descent steps. 
+\end{remark}
+
+\vspace{-5pt}
+\section{Sketch of the Proof for Theorem~\ref{thm:1_f} and Corollary~\ref{coro:snr}}
+\label{sec:sketch}
+\vspace{-5pt}
+We provide a sketch of the proof of the main results of the paper. We refer the reader to the appendix for the complete proof. The proof of Theorem~\ref{thm:1_f} follows the outline: \textbf{(i)} study the behavior of $\|\theta_{t+1}  - \widehat{\theta}\|^2$ given $\gamma_t$ and $\|\theta_t - \widehat{\theta}\|,$ \textbf{(ii)}  establish that under the assumption that $\gamma_t$ is sufficiently large the expansive effect of the Hard Thresholding operator can be offset by the contractive effect of the gradient update, \textbf{(iii)} show that $\gamma_t$ is sufficiently large until we reach optimal statistical precision. Both to finalize the proof of Theorem~\ref{thm:1_f} and to establish Corollary~\ref{coro:snr}: \textbf{(iv)} the iterates remain confined within a neighborhood of $\theta^*$, and, given that the SNR condition holds, the support can be identified, providing further benefits to the algorithm's performance. We elaborate on points \textbf{(i)} through \textbf{(iv)}.
+
+\textbf{(i)} To understand the dynamics of $\|\theta_t - \widehat{\theta}\|^2$ we analyze the combined effect of gradient descent under the RSC and RSS and the Hard Thresholding operator.
+
+For this we  suitably apply Lemma 1 from \cite{jain},
+exploit the RSC, and the properties of $\theta_{t+1}$ in relation to $\mathrm{HT}_s$ to yield:
+\begin{subequations}
+\label{eq:est_error}
+\begin{align}
+ \|\theta_{t+1} - \theta^{*}\|^2 \leq & \left(1 + \sqrt{\frac{s^{*}}{s}} \right)^2 \left(\left(1 - \bar{\mu}\gamma_t \right)\|\theta_t - \theta^{*}\|^2 \right. \label{eq:contract}\\
+ & \left.- 2 \gamma_t \left( f(\theta_t) - f(\theta^{*})  \right) + 10 \gamma_t^2 \left\|\text{HT}_{s}(\nabla f(\theta_t)) \right\|^2\right). \label{eq:selection} 
+\end{align}
+\end{subequations}
+
+
+Setting $\gamma_t = \frac{f(\theta_t) - f(\theta^{*})}{5\|\mathrm{HT}_{s}(\nabla f(\theta_t))\|^2}$ makes \eqref{eq:selection} nonpositive and yields a choice that is invariant with $d.$ The use of $\|\mathrm{HT}_{s}(\nabla f(\theta_t))\|^2$ in $\gamma_t$ and the RSS are critical to avoiding a step-size that scales with the Lipschitz smoothness constant (which scales as $\mathcal{O}(d)$ in the high-dimensional setting). Setting $\gamma_t = 1/(40\bar{L})$ in \eqref{eq:est_error}  recovers the result in \cite{jain}, which establishes that IHT requires at most $\mathcal{O}(\bar{\kappa}^{-1}\log(1/\varepsilon))$ to be within $\varepsilon-$accuracy of near optimal statistical precision.
+
+
+\textbf{(ii)} To achieve the optimal linear rate under our choice of step size, we require that
+\begin{align}\label{eq:rate}
+    \left(1 + \sqrt{\frac{s^{*}}{s}} \right)^2 \left(1 - \bar{\mu}\gamma_t \right) \leq 1 - c_0 \frac{\bar{\mu}}{\bar{L}}.
+\end{align}
+Sufficient conditions for \eqref{eq:rate} are $s \geq c_1 \bar{\kappa}^2 s^{*}$ and $\gamma_t \geq \frac{c_2}{L}$ for some universal constants $c_0,\,c_1$ and $c_2.$ However, if $\gamma_t$ were to scale with the Lipschitz smoothness constant, i.e.  with $d^{-1}$  we would require $s \geq d^2 s^{*}$ to establish linear convergence. Observe that this requirement can not be fulfilled as $s \leq d.$
+
+\textbf{(iii)} We exploit the RSS and RSC to show that  $\gamma_t \geq \frac{1}{40\bar{L}}$
+% when \( \| \theta_{t} - \theta^{*} \| \leq 1 \). \textcolor{blue}{?} 
+ when $\| \theta_{t} - \widehat{\theta}  \|^{2} \geq \frac{36 \|  \nabla f(\widehat{\theta}) \|_{s}^{2}}{\bar{\mu}^{2}} .$ If, further, \( s \geq (240 \bar{\kappa})^2 s^* \),  \eqref{eq:rate} holds with $c_0 = 1/160,$ yielding $\|\theta_{t+1} - \widehat{\theta}\|^2 \leq \left(1  - c_0 \bar{\kappa}^{-1} \right)\|\theta_t - \widehat{\theta}\|^2.$ 
+
+
+ 
+
+The condition \( \| \theta_{t} - \widehat{\theta} \|^{2} \geq \frac{36 \| \mathrm{HT}_s(\nabla f(\widehat{\theta})) \|^{2}}{\bar{\mu}^{2}} \) stems from \eqref{eq:l0} being a constrained problem. If the Polyak step-size had been left unaltered, additional regularity conditions are required to establish convergence in the constrained case. As established in Theorem 3 in \cite{polyak}, one such condition is \( \frac{f(\theta_t) - f(\widehat{\theta})}{\|\theta_t - \widehat{\theta}\|} \geq c \) for some \( c > 0 \) and any \( \theta_t \in \mathbb{R}^d \), which does not uniformly in high-dimensional M-estimation. For some GLMs, we can show the condition holds locally and exploit this fact to provide more general results in Appendix~\ref{sec:glm}.
+
+
+\textbf{(iv)} From \textbf{(i)}-\textbf{(iii)} it follows that there exists \( t_0 \) at which $\|\theta_{t_0}-\widehat{\theta}\|^2 \leq \frac{36\|\mathrm{HT}_{s}(\nabla f(\widehat{\theta}))\|^2}{\bar{\mu}^2}$. Since the potential expansion is at most \( \left( 1+ \frac{1}{80\bar{\kappa}} \right) \) Theorem~\ref{thm:1_f} follows. 
+If \( \widehat{\theta} \) satisfies \eqref{eq:snr}, we show that the inequality \( \| \theta_{t_0} - \widehat{\theta} \|^{2} \leq \frac{36 \|\mathrm{HT}_s(\nabla f(\widehat{\theta}))\|{2}}{\bar{\mu}^{2}} \) guarantees that  \(\widehat{\mathcal{S}} \subset \mathcal{S}_{t_0}\). From here, we establish that, this results in two possible scenarios: \textbf{(a)} \(\gamma_t < \frac{1}{40 \bar{L}}\), implying \(\widehat{\mathcal{S}} \subset \mathcal{S}_{t_0+1}\), ensuring that \( \| [\tilde{\theta}_{t_0+1} - \widehat{\theta} ]_{\widehat{\mathcal{S}}_{t+1}}\|^2 = \|\tilde{\theta}_{t_0+1} - \widehat{\theta}\|^2 \), and eliminating the expansion term in \eqref{eq:est_error}; or, \textbf{(b)} \(\gamma_t \geq \frac{1}{40 \bar{L}}\), and \eqref{eq:rate} holds. Based on \textbf{(a)} and \textbf{(b)}, Corollary~\ref{coro:snr} is established by induction.
+
+
+
+\section{Numerical experiments}
+\label{sec:numerical}
+\vspace{-5pt}
+\begin{figure}[t] 
+    \centering
+    \label{fig:collection}
+    %\subfigure[\label{fig:lr_compare}]{\includegraphics[width=0.32\textwidth]{figures/linear_compare_loss.png}} 
+    \subfigure{\scalebox{0.9}{\input{linear_fixed.tikz}}} 
+    %\subfigure[\label{fig:lg_compare}]{\includegraphics[width=0.32\textwidth]{figures/logic_compare_loss.png}}
+    \subfigure{\scalebox{0.9}{\input{logistic_fixed.tikz}}}
+    %\subfigure[\label{fig:fstar}]{\includegraphics[width=0.32\textwidth]{figures/logic_loss_fstar.png}}
+    \subfigure{\scalebox{0.9}{\input{fstar.tikz}}}
+    \vspace{-10pt}
+    \caption{\textbf{Left and center: } IHT with  \( \frac{2}{3 \bar{L}} \) (blue) vs. Algorithm~\ref{algo:iht} (red) on linear and logistic regression respectively. \textbf{Right:} Choice of $\widehat{f}$ on Algorithm~\ref{algo:iht}. In all scenarios $\alpha= 5,\, d = 5000$ and $ s = 700.$}
+    \vspace{-10pt}
+\end{figure}
+We first consider sparse linear regression and sparse logistic regression on synthetic data. This is done to illustrate the algorithm's performance as the size of the problem grows while the problem conditioning is kept the same. In all scenarios that rely on synthetic data, we set $d \in \{5000, 10000, 20000\}$, and $s^* = 300$. The design matrix $X \in \mathbb{R}^{d \times n}$ is generated to reflect a time-series structure with a correlation parameter $\omega = 0.5$. We set the sample size $n$ according to $n = \lceil \alpha s \log d \rceil$, where $\alpha > 0$ is a constant. In this section, we use $\alpha = 5$. For each column index $j \in \{1, \dots, n\}$, we generate a sequence of i.i.d. standard normal variables $\varepsilon_1, \dots, \varepsilon_{d-1}$, and construct $x_{1,j} = \varepsilon_1 / \sqrt{1 - \omega^2}$. The subsequent entries are generated recursively as $x_{t+1,j} = \omega x_{t,j} + \varepsilon_t$ for $t \in \{1, \dots, d-1\}$, where $\varepsilon_t \sim \mathcal{N}(0, 1)$. The true parameter $\theta^*$ is created by sampling each entry from $\mathcal{N}(0, 1)$, and assigning nonzero values to $s^*$ randomly chosen entries. 
+
+ In the case of linear regression, each sample \( i \) (where \( i \in \{1, \dots, n\} \)) is generated according to the model:  
+ \vspace{-5pt}
+\[
+    y_i = x_i^T \theta^* + w_i, \quad w_i \sim \mathcal{N}(0, 0.25).
+\]  
+\vspace{-3pt}
+For logistic regression, the relationship between \( y_i \) and \( x_i \) follows the model \eqref{eq:lg}. 
+
+
+\textbf{(i) Comparison to fixed step-size:} In Figure~\ref{fig:collection} we present a comparison between IHT with a fixed step size (blue) and the adaptive step size used in Algorithm~\ref{algo:iht} (red) when solving linear regression (left panel) and logistic regression (center panel) respectively. When working with a constant step-size, we set the step size to  \( \frac{2}{3\bar{L}} \) following \cite{jain} for both linear and logistic regression. $\bar{L}$ for linear regression can be upper bounded as  \( \lambda_{\max}(\Sigma)(3 + \frac{2(2s+s^*)}{s \alpha}) \) \cite[Appendix D.1]{loh}, whereas $\bar{L}$ for logistic regression is one fourth of that of linear regression. In both settings, $\lambda_{\max}(\Sigma) \leq  \frac{2}{(1 - \omega)^2 (1 + \omega)} $ \cite{fast}.
+Although both step size strategies share the same theoretical guarantees, we observe that the adaptive step size speeds-up convergence. This advantage arises because an adaptive step size can adapt to the local curvature and therefore be significantly more aggressive, allowing for faster progress towards the solution. As expected, this effect is more pronounced when solving logistic regression where the functions' curvature will depend on the point. 
+
+\vspace{-4pt}
+
+\textbf{(ii) Rate invariance:} In Figure~\ref{fig:classic_compare} (c.f. Section~\ref{sec:intro}), we compare the classical Polyak step size with the step size employed in Algorithm~\ref{algo:iht} across different problem dimensions \( d \), while maintaining $\alpha = 5.$  The solid line represents the performance of Algorithm~\ref{algo:iht}, whereas the dashed line corresponds to the classical Polyak step size. This demonstrates that when the condition number of $\Sigma$ remains unchanged, the complexity of the method remains almost identical under our chosen step size. In contrast, Polyak’s step size leads to an increased number of iterations, even if the achievable statistical precision and  $(\lambda_{\max}(\Sigma)/\lambda_{\min}(\Sigma))$ remain the same.
+
+\vspace{-2pt}
+\textbf{(iii) Choice of $\widehat{f}:$} Finally, Figure~\ref{fig:collection} (right) highlights the impact of the choice of \( \widehat{f} \). The results confirm that \( \widehat{f} \) determines the best achievable accuracy. Additionally, from the formulation of \( \gamma_t \), we observe that \( \widehat{f} \) directly influences the step size magnitude, thus is impacting the convergence rate.
+
+Experiments on real world data are provided in Appendix~\ref{sec:real_data}. All experiments were conducted on a laptop equipped with 16 GB of RAM and a 12th Gen Intel Core i5-12500H 3.10 GHz CPU.
+
+%%%% REFERENCE %%%%%%
+\clearpage
+
+% \bibliography{refs}
+% \bibliographystyle{plainnat}
+\input{nips_arxiv.bbl}
+
+\newpage
+\appendix
+\part*{Appendix} 
+
+\noindent
+\textbf{A\quad Main Theorems} \dotfill \pageref{sec:proofs} \\
+\hspace{1em}A.1\quad Proof of Theorem 1\dotfill \pageref{sec:proof:main_thm}\\
+\hspace{1em}A.2\quad Proof of Corollary 1\dotfill \pageref{sec:proof:snr}\\
+\hspace{1em}A.3\quad Proof of Corollary 2 \dotfill \pageref{appendix:coro:lg} \\
+\hspace{1em}A.4\quad Proof of Corollary 3 \dotfill \pageref{sec:coro:mat}\\
+\textbf{B\quad Adaptive Lower Bound} \dotfill \pageref{sec:ada} \\
+\hspace{1em}B.1\quad Proof of Theorem 2\dotfill  \pageref{sec:ada:proof}\\
+\textbf{C\quad Other Statistical Guarantees} \dotfill \pageref{sec:stat_guarantees} \\
+\hspace{1em}C.1\quad Sparse Linear Regression\dotfill  \pageref{sec:linear}\\
+\hspace{1em}C.2\quad Generalized Linear Models\dotfill  \pageref{sec:glm}\\
+\textbf{D\quad Experiments on real data} \dotfill \pageref{sec:real_data} \\
+\hspace{1em}D.1\quad Linear Regression\dotfill  \pageref{sec:real_data}\\
+\hspace{1em}D.2\quad Logistic Regression\dotfill  \pageref{sec:real_data}
+
+\section{Main Theorems}\label{sec:proofs}
+
+In this section we provide the formal proof to the statements included in the main body of the paper. To formally establish Theorem~\ref{thm:1_f} we build on \cite[Lemma 1]{jain} and Lemmas~\ref{lemma:base}-\ref{lemma:step_size}. \cite[Lemma 1]{jain} allows us to control the expansive properties of the Hard Thresholding operator, whereas Lemma~\ref{lemma:base} allows us to establish \eqref{eq:est_error} (c.f. Section~\ref{sec:sketch}). Further, in Lemma~\ref{lemma:smooth} we establish consequences of the RSS (Assumption~\ref{asp:rsmooth}) that are instrumental in establishing a lower bound on the step-size $\gamma_t.$ We lower bound $\gamma_t$ in Lemma~\ref{lemma:step_size} and establish conditions under which this lower bound holds. We combine these results in the proof of Theorem~\ref{thm:1_f} in Appendix~\ref{sec:proof:main_thm}, followed by a formal proof of the corollaries included in the main body of the paper in the remaining sections of Appendix~\ref{sec:proofs}.
+
+For simplicity, we let $\widehat{\mathcal{S}}_{t} = \mathcal{S}_{t} \cup \widehat{\mathcal{S}} .$  Also, we let $g_t = \nabla f(\theta_t), $ and $\widehat{g} = \nabla f(\widehat{\theta}). $ When discussing specific statistical models we denote by $\theta^*$ the ground truth,  $g^{*} = \nabla f(\theta^{*})$ and $\mathcal{S}^* = \text{supp}(\theta^*).$ For any index set $\mathcal{S}$ and vector $\theta \in \mathbb{R}^d$, we define $[\theta]_{\mathcal{S}}$ as the vector that retains the entries indexed by $\mathcal{S}$, while setting all other entries to zero.
+
+We include the following fundamental lemma, which plays a key role in our analysis. It corresponds to Lemma~1 in \cite{jain}, and is presented here for completeness.
+\begin{lemma}\label{lemma:jain}
+    For any index set $I $, any $z \in \mathbb{R}^{I} $, let $\theta = \hs(z) $. Then for any $\widehat{\theta} \in \mathbb{R}^{I} $ such that $\| \widehat{\theta} \|_{0} \leq s^{*} $, we have 
+    \[
+    \| \theta - z \|^{2} \leq \frac{\left| I \right| - s}{\left| I \right| - s^{*}} \| \widehat{\theta} - z \|^{2}.
+    \]
+\end{lemma}
+
+\begin{lemma}\label{lemma:base}
+    Let $\widehat{\theta}$ be any $s^{*} $-sparse vector, and $\theta_t $ be any $s $-sparse vector. Assume that the function $f$ fulfills Assumption~\ref{asp:rscvx} with $\bar{\mu} = \mu - 3\tau s > 0.$ Let $\theta_{t+1}:= \hs \left( \theta_{t} - \gamma_t g_t \right)  $, and $\widetilde{\theta}_{t+1}:= \theta_{t} - \gamma_t g_t $. For any $\gamma_t \leq \frac{f(\theta_t) - f(\widehat{\theta})}{5 \|  \hs(\widehat{g}) \|^{2}} $ we have
+    \begin{align*}
+        \| \theta_{t+1} - \widehat{\theta} \|^{2} &\leq \left( 1 + \sqrt{\frac{s^{*}}{s}} \right)^{2}  \left\| \left[ \widetilde{\theta}_{t+1} \right]_{\widehat{\mathcal{S}}_{t+1}} - \widehat{\theta} \right\|^{2}\\
+        &\leq \left( 1 + \sqrt{\frac{s^{*}}{s}} \right)^{2} \left( 1 - \bar{\mu} \gamma_t \right) \| \theta_{t} - \widehat{\theta} \|^{2}.
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    For the first inequality, 
+    \[
+        \| \theta_{t+1} - \widehat{\theta} \| \stackrel{(i)}{\leq} \| \theta_{t+1} - [\widetilde{\theta}_{t+1}]_{\widehat{\mathcal{S}}_{t+1}} \| + \| [\widetilde{\theta}_{t+1}]_{\widehat{\mathcal{S}}_{t+1}} - \widehat{\theta} \| \stackrel{(ii)}{\leq} \left( 1 + \sqrt{\frac{s^{*}}{s}} \right) \| [\widetilde{\theta}_{t+1}]_{\widehat{S}_{t+1}} - \widehat{\theta} \|,
+    \]
+    where in $(i)$ we use the triangle inequality and in $(ii)$ we used Lemma~\ref{lemma:jain}.  
+
+    For the second inequality, we consider the expansion
+\begin{align*}
+\|[\tilde{\theta}_{t+1} ]_{\widehat{\mathcal{S}}_{t+1} } - \widehat{\theta}\|^2 &= \|[\tilde{\theta}_{t+1} - \widehat{\theta}]_{\widehat{\mathcal{S}}_{t+1} }\|^2 \\
+&= \|[\theta_t - \widehat{\theta}]_{\widehat{\mathcal{S}}_{t+1} }\|^2 - 2 \gamma_t \langle \theta_t - \widehat{\theta}, [g_t]_{\widehat{\mathcal{S}}_{t+1} } \rangle + \gamma_t^2 \|[g_t]_{\widehat{\mathcal{S}}_{t+1} }\|^2,
+\end{align*}
+where
+\begin{align*}
+- 2 \gamma_t \langle \theta_t  - \widehat{\theta}, [g_t]_{\widehat{\mathcal{S}}_{t+1} } \rangle= - 2 \gamma_t \langle \theta_t - \widehat{\theta}, g_t \rangle + 2 \gamma_t \langle \theta_t - \widehat{\theta}, [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1} } \rangle,
+\end{align*}
+and consequently
+\begin{align*}
+    \left\|[\tilde{\theta}_{t+1} - \widehat{\theta}]_{\widehat{\mathcal{S}}_{t+1}}\right \|^2 \leq \|\theta_t-\widehat{\theta}\|^2 - 2 \gamma_t \langle \theta_t - \widehat{\theta}, g_t - [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \rangle  + \gamma_t^2 \left\|[g_t]_{\widehat{\mathcal{S}}_{t+1}}\right\|^2
+\end{align*}
+Using the RSC yields
+\begin{align}
+\| [\widetilde{\theta}_{t+1} - \widehat{\theta}]_{\widehat{\mathcal{S}}_{t+1}} \|^{2} \leq & (1 - \bar{\mu} \gamma_t) \| \theta_{t} - \widehat{\theta} \|^{2} - 2 \gamma_t (f(\theta_t) - f(\widehat{\theta})) + \gamma_t^{2} \|\mathrm{HT}_{s+s^{*}}(g_t)\|^2 \nonumber \\
+& + 2 \gamma_t \langle \theta_t - \widehat{\theta},  [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}\rangle. \label{eq:l3}
+\end{align} 
+To obtain \eqref{eq:est_error} we must upper bound the inner product in \eqref{eq:l3}, for which we have:
+\begin{align*}
+\langle [\theta_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} ,  \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}\rangle & = \langle [\theta_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}, \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \rangle \\
+&= \langle [\theta_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} - \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} + \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} ,  \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}\rangle \\
+&\leq \| [\theta_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} - \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \| \| \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \| + \| \gamma_t [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \|^{2}.
+\end{align*}
+Then, 
+\[
+\| [ \theta_t - \gamma_t g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \| \stackrel{(i)}{\leq} \| [ \theta_t - \gamma_t g_t]_{\mathcal{S}_t \setminus \mathcal{S}_{t+1}} \| \stackrel{(ii)}{\leq} \| [ \theta_t - \gamma_t g_t]_{\mathcal{S}_{t+1} \setminus \mathcal{S}_{t}} \| = \| [\gamma_t g_t]_{\mathcal{S}_{t+1} \setminus \mathcal{S}_t} \|,
+\]
+where in $(i)$ we use that $\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1} \subseteq \mathcal{S}_t \setminus \mathcal{S}_{t+1},$ and in $(ii)$ we exploit  that $|\mathcal{S}_t \setminus \mathcal{S}_{t+1}| = |\mathcal{S}_{t+1} \setminus \mathcal{S}_t|$ and  that $\mathcal{S}_{t+1}$ contains the indexes of the $s$ largest elements of $\theta_t - \gamma_t g_t.$ Thus, we obtain the overall upper bound
+\begin{align*}
+   2\gamma_t  \langle \theta_t - \widehat{\theta}, [g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}} \rangle \leq 2\gamma_t^2 \|[g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}\|  \|[g_t]_{\mathcal{S}_{t+1} \setminus \mathcal{S}_t}\| + 2\gamma_t^2 \|[g_t]_{\mathcal{S}_t \setminus \widehat{\mathcal{S}}_{t+1}}\|^2,
+\end{align*}
+which together with \eqref{eq:l3} yields
+\begin{equation}\label{eq:l3_1}
+    \| [\widetilde{\theta}_{t+1} - \widehat{\theta}]_{\widehat{\mathcal{S}}_t} \|^{2} \leq (1 - \bar{\mu} \gamma_t) \| \theta_{t} - \widehat{\theta} \|^{2} - 2 \gamma_t (f(\theta_t) - f(\widehat{\theta})) + 5\gamma_t^{2}  \|\mathrm{HT}_{2s}(g_t)\|^2. 
+\end{equation}
+Given the upperbound on $\gamma_t ,$ the two right most terms together are negative, and we thus the proof is complete.
+\end{proof}
+
+Observe that in the proof of Lemma~\ref{lemma:base} we use the iterate $\tilde{\theta}_{t+1}$ to treat the effect of the hard thresholding operator and gradient descent separately. We then restrict to the support $\widehat{\mathcal{S}}_{t+1}$ to avoid the scaling of any bound with the ambient dimension $d.$
+
+\begin{lemma}{(RSS-gradient bound)\label{lemma:smooth}}  Assume that $f$ fulfills Assumptions~\ref{asp:rscvx} where $\bar{\mu} = \mu - 3\tau s > 0,$ and Assumption~\ref{asp:rsmooth}. Then, for any pair $x,y$ of $s-$sparse vectors there holds
+\begin{align*}
+    \frac{1}{2 (L + 3 \tau s)}\| \hs \left( \nabla f(x) - \nabla f(y) \right)  \|^{2}  \leq f(y) - f(x) - \langle \nabla f(x), y-x \rangle.
+\end{align*}
+\end{lemma}
+\begin{proof}
+We define 
+\[
+   \phi(t) = f(t) - \langle \nabla f(x), t - x \rangle. 
+\]
+From its formulation, we know $\phi(t) $ inherits the RSS and RSC property of $f $.
+
+As a result, for any $2s $-sparse vector $z $, we have
+\begin{align*}
+    \phi(x) &\leq \phi(z) - \langle 0, z-x \rangle - \frac{\bar{\alpha}}{2}\| x - z \|^{2}\\
+            &= \phi(z) - \frac{\bar{\alpha}}{2} \| x - z \|^{2}\\
+    &\leq \phi(z) \\
+    &\leq \phi(y) + \langle \nabla\phi(y), z - y \rangle + \frac{ L + 3 \tau s}{2} \| z - y \|^{2}.
+\end{align*}
+
+Set $z = y - \frac{1}{ L + 3 \tau s}\hs \left( \nabla \phi(y) \right)$, the inequality above indicates
+\[
+\phi(x) \leq \phi(y) - \frac{1}{2 (L + 3 \tau s)} \| \hs \left( \nabla \phi(y) \right)  \|^{2},
+\]
+which is equivalent to
+\[
+f(x) + \langle \nabla f(x), y -x \rangle + \frac{1}{2 (L + 3 \tau s)} \| \hs (\nabla f(y) - \nabla f(x)) \|^{2} \leq f(y).
+\]
+
+\end{proof}
+
+\begin{lemma}\label{lemma:step_size}
+Consider the iterates $\{\theta_t\}_{t \geq 1}$ generated by Algorithm~\ref{algo:iht} to solve \eqref{eq:l0}. Assume that $f$ fulfills Assumptions~\ref{asp:rscvx} where $\bar{\mu} = \mu - 3\tau s > 0,$ and \ref{asp:rsmooth}. Further, denote by $\widehat{\theta}$ an arbitrary $s^{*}-$sparse vector for which $f(\widehat{\theta})$ is known and desirable. Then, the step-size
+\begin{align*}
+    \gamma_t = \frac{f(\theta_t) - f(\widehat{\theta})}{5\| \hs(g_t) \|^{2}} \geq \frac{1}{40 \bar{L}}
+\end{align*}
+for each $t \geq 0$ for which
+\begin{align*}
+    &\|\theta_{t} - \widehat{\theta}\|^2 \geq \frac{18\| \mathrm{HT}_{s+s^*}(\widehat{g}) \|^{2}}{\bar{\mu}^{2}} \\
+    & f(\theta_t ) > f(\widehat{\theta}).
+\end{align*}
+\end{lemma}
+
+\begin{proof}
+Assume that $f(\theta_t) - f(\widehat{\theta}) > 0,$ then
+\begin{align*}
+\gamma_t \geq \frac{f(\theta_t) - f(\widehat{\theta})}{10 \| \hs(g_t - \widehat{g}) \|^{2} + 10 \| \hs(\widehat{g}) \|^2}.
+\end{align*}
+Given that $f$ fulfills Assumption~\ref{asp:rsmooth} we may invoke Lemma~\ref{lemma:smooth} yielding the bound
+\begin{align*}
+    \gamma_t \geq \frac{f(\theta_t) - f(\widehat{\theta})}{20 \bar{L}(f(\theta_t) - f(\widehat{\theta}) - \langle \widehat{g}, \theta_t - \widehat{\theta} \rangle) + 10 \| \hs(\widehat{g}) \|^2}.
+\end{align*}
+If 
+\begin{align}\label{eq:case1}
+    10 \left( 2 \bar{L}\langle \widehat{g}, \widehat{\theta} - \theta_t \rangle + \| \hs(\widehat{g}) \|^2 \right) \leq 20 \bar{L}(f(\theta_t) - f(\widehat{\theta}))
+\end{align}
+we can guarantee that
+\begin{align*}
+    \gamma_t \geq \frac{1}{40 \bar{L}}.
+\end{align*}
+Rearranging \eqref{eq:case1} we have that the condition can be equivalently written as
+\begin{align*}
+    \| \hs(\widehat{g}) \|^2 \leq 2 \bar{L} \left( f(\theta_t) - f(\widehat{\theta}) + \langle \widehat{g}, \theta_t - \widehat{\theta} \rangle \right).
+\end{align*}
+Invoking the RSC, a sufficient condition for the above is
+\[
+ \|  \hs(\widehat{g}) \|^{2} \leq 2 \bar{L} (\frac{\bar{\mu}}{2} \| \theta_t - \widehat{\theta} \|^{2} + 2 \langle \widehat{g}, \theta_t - \widehat{\theta} \rangle),
+\]
+which can be guaranteed as long as
+\begin{align*}
+ \|  \hs(\widehat{g}) \|^{2} &\leq 2 \bar{L} (\frac{\bar{\mu}}{2} \| \theta_t - \widehat{\theta} \|^{2} - 2  \|\mathrm{HT}_{s+s^{*}}(\widehat{g})\| \| \theta_t - \widehat{\theta} \| )\\
+ &= 2 \bar{L} \left( \frac{\bar{\mu}}{2} \| \theta_t - \widehat{\theta} \| - 2  \|\mathrm{HT}_{s+s^{*}}(\widehat{g})\| \right) \| \theta_t - \widehat{\theta} \|. 
+\end{align*}
+To guarantee that the above holds it is sufficient to request that $\|\theta_t - \widehat{\theta}\| \geq \frac{106}{25\bar{\mu}}\|\mathrm{HT}_{s+s^*}(\widehat{g})\|,$ and thus the result follows.
+
+\end{proof}
+
+\subsection{Proof of Theorem 1}\label{sec:proof:main_thm}
+
+As a consequence of Lemma~\ref{lemma:step_size} we distinguish three cases for any $t:$ \textbf{(i)} $\|\theta_t - \widehat{\theta}\|^2 \geq \frac{36 \|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}$ and $f(\theta_t) - \widehat{f} > 0,$ \textbf{(ii)} $\|\theta_t - \widehat{\theta}\|^2 < \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu^2}}$ and $f(\theta_t) - \widehat{f} > 0$, or \textbf{{(iii)}} $f(\theta_t) - \widehat{f} \leq 0.$
+
+
+In case \textbf{(iii)} no progress is made, i.e. $\theta_{t+1} = \theta_t$ and by the RSC there holds
+\begin{align*}
+    \frac{\bar{\mu}}{2}\|\theta_t - \widehat{\theta}\|^2 \leq \|\theta_t - \widehat{\theta}\|\|\mathrm{HT}_{s+s^{*}} (\widehat{g})\|
+\end{align*}
+and thus
+\begin{align*}
+    \|\theta_{t+1} - \widehat{\theta}\|^2 = \|\theta_t - \widehat{\theta}\|^2 < \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}.
+\end{align*}
+Further, from the above it follows that if $\|\theta_t - \widehat{\theta}\|^2 \geq \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}$ we can guarantee that $\gamma_t > 0.$
+
+
+For case \textbf{(i)} we begin by invoking Lemma~\ref{lemma:base}, which guarantees that 
+\[
+\| \theta_{t+1} - \widehat{\theta} \|^{2} \leq \left( 1 + 3\sqrt{\frac{s^{*}}{s}} \right)^{2} \left( 1 - \bar{\mu} \gamma_t \right) \| \theta_{t} - \widehat{\theta} \|^{2}.
+\]
+Using Lemma~\ref{lemma:step_size} we can guarantee a lower bound on the step-size $\gamma_t \geq \frac{1}{40\bar{L}}.$ Further, under our assumption on $s,$ namely, $s \geq (240\bar{\kappa})^2 s^*,$ we can bound the contraction factor:
+\[
+\left( 1 + \sqrt{\frac{s^{*}}{s}} \right)^{2} \left( 1 - \bar{\mu} \gamma_t \right) \leq \left( 1 + \sqrt{\frac{s^{*}}{s}} \right)\left( 1 - \bar{\mu} \gamma_t \right) \leq \left(1 + \frac{1}{80 \bar{\kappa}}\right)\left(1 - \frac{1}{40 \bar{\kappa}}\right) \leq 1 - \frac{1}{80 \bar{\kappa}},
+\]
+and therefore,
+\begin{align*}
+    \|\theta_{t+1} - \widehat{\theta}\|^2 \leq \left(1 - \frac{1}{80\bar{\kappa}} \right) \|\theta_t - \widehat{\theta}\|^2.
+\end{align*}
+
+Thus, the first part of the theorem's statement follows, i.e. when $\|\theta_t - \widehat{\theta}\|$ is sufficiently large, we can guarantee that $\theta_{t+1}$ will approach $\widehat{\theta}.$ We are now left with establishing the veracity of the second statement. For this, let $t_0$ be the time defined in the theorem's statement. Then, we are
+under case \textbf{(ii)} or case \textbf{(iii)}. If we are under case \textbf{(iii)} there is nothing left to proof. If we are in case \textbf{(ii)}, there are two further cases: \textbf{(a)} the iterates remain confined within a ball of radius $6\|\mathrm{HT}_s(\widehat{g})\|^2/\bar{\mu}^2,$ i.e.
+\begin{align*}
+    \forall t \geq t_0, \, \|\theta_t - \widehat{\theta}\|^2 < \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2},
+\end{align*}
+and the theorem's second statement is therefore true, 
+or \textbf{(b)} there exists a time $t_1 > t_0$ at which for the first time
+\begin{align*}
+   \frac{36 \|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2} \leq  \|\theta_{t_1} - \widehat{\theta}\|^2.
+\end{align*}
+By Lemma~\ref{lemma:base} and by definition of $t_1$ we have
+\begin{align*}
+    \|\theta_{t_1} - \widehat{\theta}\|^2 \leq \left(1 + \frac{1}{80\bar{\kappa}} \right)\left(1 - \bar{\mu}\gamma_t \right)\frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2} < \left(1 + \frac{1}{80\bar{\kappa}} \right)\frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}.
+\end{align*}
+This implies, we find ourselves again in case \textbf{(i)}. Observe that going forward, no iterate can escape the above ball and therefore the second statement of the theorem holds. 
+
+\subsection{Proof of Corollary~\ref{coro:snr}}\label{sec:proof:snr}
+If \eqref{eq:snr} holds for $\widehat{\theta}$, for any $\theta_t$ fulfilling  $\|\theta_t - \widehat{\theta}\|^2  \leq \frac{36 \|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}$ there holds
+\begin{align}\label{eq:snr2}
+\min_{i \in \widehat{\mathcal{S}}} \quad |[\theta_t]_i| \geq \frac{7\|\hs(\widehat{g})\|}{\bar{\mu}} - \frac{6\|\hs(\widehat{g})\|}{\bar{\mu}}>0.
+\end{align}
+This can be established by contradiction, i.e. if the condition above is violated, either $\|\theta_t - \widehat{\theta}\|^2 > \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}^2}$ or \eqref{eq:snr} can not hold. Consequently, $\widehat{\mathcal{S}} \subset \mathcal{S}^{t}.$ 
+Now we consider the iterate $\theta_{t+1}$. Note that $\widehat{\mathcal{S}} \subset \mathcal{S}^{t+1}$, if
+\begin{equation}\label{eq:snr1}
+\gamma_t \|g_t\|_{\infty} < \frac{\|\mathrm{HT}_s(\widehat{g})\|}{2\bar{\mu}}.	
+\end{equation}
+To see this note that for any $i \notin \mathcal{S}_t$ we have
+\begin{align*}
+    |[\theta_t]_i - \gamma_t [g_t]_i | = \gamma_t |[g_t]_i| < \frac{\|\mathrm{HT}_s(\widehat{g})\|}{2\bar{\mu}},
+\end{align*}
+and  for any $i \in \widehat{\mathcal{S}}$, given that $\| \theta_{t} - \widehat{\theta} \| \leq \frac{6 \| \hs(\widehat{g}) \|}{\bar{\mu}} $, we have
+\begin{align*}
+    & |[\theta_t]_i - \gamma_t [g_t]_i| >  \frac{7\|\mathrm{HT}_s(\widehat{g})\|}{\bar{\mu}} - \frac{6\|\mathrm{HT}_s(\widehat{g})\|}{2\bar{\mu}} - \frac{\|\mathrm{HT}_s(\widehat{g})\|}{2\bar{\mu}} = \frac{\|\mathrm{HT}_s(\widehat{g})\|}{2\bar{\mu}}.
+\end{align*}
+Because the Hard Thresholding operator selects the $s$ largest components of $\theta_{t+1}$, in the selection of the elements that should go into $\mathcal{S}^{t+1}$ the operator will not deselect elements from $\widehat{\mathcal{S}}$ in benefit of any outside of $\mathcal{S}^t.$ Thus, $\widehat{\mathcal{S}} \subset \mathcal{S}^{t+1}.$ 
+
+We now find conditions on $\gamma_t$ under which \eqref{eq:snr1} can be guaranteed. Observe that
+\begin{align*}
+\gamma_t \|g_t\|_{\infty} & \leq \gamma_t \left( \|\widehat{g}\|_{\infty} + \|g_t - \widehat{g}\|_{\infty} \right)\\
+&\stackrel{(i)}{\leq} \gamma_t \left(\|\widehat{g}\|_{\infty} + \bar{L}\|\theta_t - \widehat{\theta}\|\right) \stackrel{(ii)}{\leq} \gamma_t \left(\|\widehat{g}\|_{\infty} + \frac{6\bar{L}}{\bar{\mu}}\|\hs(\widehat{g})\| \right),
+\end{align*}
+where $(i)$ follows from Lemma~\ref{lemma:smooth}, and $(ii)$ follows from the assumption that $\|\theta_t - \widehat{\theta}\|^2 \leq \frac{36\|\mathrm{HT}_s(\widehat{g})\|^2}{\bar{\mu}}.$ A sufficient condition for 
+\eqref{eq:snr1} to hold is thus given by 
+\begin{align*}
+\gamma_t < \frac{1}{2\bar{\mu} + 12\bar{L}}.
+\end{align*}
+
+As a result, when $\gamma_t < \frac{1}{2\bar{\mu} + 12\bar{L}}$, we have $\widehat{\mathcal{S}} \subset \mathcal{S}^{t+1}$, and thus $\|\theta_{t+1} - \widehat{\theta}\|^2 \leq \|\theta_{t} - \widehat{\theta}\|^2$ by \ $\|\theta_{t+1} - \widehat{\theta}\|^2 = \|[\theta_{t+1} - \widehat{\theta}]_{\widehat{\mathcal{S}}_{t+1}}\|^2 \leq (1-\bar{\mu} \gamma_t)\|\theta_{t} - \widehat{\theta}\|^2$. Otherwise, $\gamma_t \geq \frac{1}{2\bar{\mu} + 12\bar{L}} > \frac{1}{40 \bar{L}}$, we still have $\|\theta_{t+1} - \widehat{\theta}\|^2 \leq \|\theta_{t} - \widehat{\theta}\|^2$ by Lemma~\ref{lemma:base}. Thus, the proof is completed by induction.
+
+\subsection{Proof of Corollary~\ref{coro:lg}}\label{appendix:coro:lg}
+By invoking Lemma~\ref{lm:lg}, we can guarantee that \(f\) fulfills the RSC and RSM with probability at least $1-e^{-c_0n}$. The function $f$ is convex by construction, and assuming that Algorithm~\ref{algo:iht} is provided suitable parameters $\widehat{f}$ and $s$ as stipulated by the Corollary, we may invoke  Theorem~\ref{thm:1_f}. Thus, with probability at least \(1 - e^{-c_0 n}\), the iterates satisfy a contractive relation for \(\| \theta_t - \theta^* \|^2\) until the point where \(\| \theta_t - \theta^* \|^2 < \frac{36 \| \hs(g^{*}) \|^{2}}{\bar{\mu}^2}\).
+
+To complete the proof, it remains to establish that, with probability at least \(1 -  \frac{2}{d}\), it  holds that
+\begin{equation}\label{eq:claim1}
+\frac{36 \| \hs(g^{*}) \|^{2}}{\bar{\mu}^2} \leq 72 C^2 \frac{s \log d}{n \bar{\mu}^2}.
+\end{equation}
+The proof of this claim essentially follows the arguments in \cite[Example 7.14]{hd}; for completeness, we include the full details here.
+
+Define \(\sigma(x) = \frac{1}{1 + \exp(-x)}\). The gradient of \(f\) evaluated at \(\theta^*\) can be expressed as
+\[
+g^* = \frac{1}{n} \sum_{i=1}^n \left( \sigma(x_i^\top \theta^*) - y_i \right) x_i.
+\]
+Recall the relation between \(x_i\) and \(y_i\) is governed by the model
+\[
+\Pr(y_i = 1 \mid x_i) = \frac{1}{1 + \exp(-x_i^\top \theta^*)}.
+\]
+Under this model, it follows that each term \(\sigma(x_i^\top \theta^*) - y_i\) is a zero-mean sub-Gaussian random variable with sub-Gaussian parameter \(\sigma^2 = \frac{1}{4}\).
+
+Thus, \(\|g^*\|_\infty\) is the maximum of \(d\) independent zero-mean sub-Gaussian random variables, each with variance proxy at most \(\sigma^2 = \frac{C^2}{4n}\). By standard sub-Gaussian maximal inequalities, we have
+\[
+\Pr\left( \|g^*\|_\infty \geq C \sqrt{\frac{\log d}{2n}} + \frac{C\delta}{2} \right) \leq 2 e^{-\frac{n\delta^2}{2}}
+\]
+for any \(\delta > 0\). Setting \(\delta = \sqrt{\frac{2 \log d}{n}}\) completes the proof of the bound in \eqref{eq:claim1}.
+
+Applying the union bound allows us to claim that the guarantees provided by Theorem~\ref{thm:1_f} hold with probability at least $1 - c_0e^{-n} - \frac{2}{d}.$ Guarantees on support recovery follow then by direct application of Corollary~\ref{coro:snr}.
+
+\subsection{Proof to Corollary~\ref{coro:mat}} \label{sec:coro:mat}
+By \cite[Lemma 2]{jain}, we can verify the result of Theorem~\ref{thm:1_f} translates to the matrix case, where the vector \( \ell_2 \)-norm is replaced by the Frobenius norm, the \( \ell_1 \)-norm is replaced by the nuclear norm, and the $\hs $ operator is substituted by $\pj $. 
+
+By applying Theorem~\ref{thm:1_f} and Lemma~\ref{lm:mr}, we conclude that, with probability at least \(1 - e^{-c_0 n}\), the iterates satisfy a contractive relation for \(\| \Theta_t - \Theta^* \|^2_{F}\) until the point where \(\| \Theta_t - \Theta^* \|^2_{F} < \frac{36  \| \pj (g^*) \|^2_{F}}{\bar{\mu}^2}\).
+
+To complete the proof, it remains to establish that, with probability at least \(1 - \frac{2}{d}\),
+\begin{equation}\label{eq:claim2}
+\frac{36 \| \pj (g^*) \|^2_{F}}{\bar{\mu}^2} \leq\frac{7200 \sigma^2 \zeta(\Sigma) s d}{n \bar{\mu}^2}.
+\end{equation}
+
+Note that $g^* = \frac{1}{n} \varepsilon_{i} X_{i}$, by \cite[Corollary~10.10]{hd}, we have
+\[
+\Pr \left( \| g^* \|_{2} \geq \frac{\lambda_{n}}{2} \right)  \leq 2 e^{-2n \delta^{2}},
+\]
+where $\lambda_{n} = 10 \sigma \sqrt{\zeta \left( \Sigma \right)} \left( \sqrt{\frac{2d}{n}} + \delta \right). $
+
+By setting $\delta = \sqrt{\frac{2d}{n}} $, we have 
+\[
+\| g^* \|_{2} \leq 10 \sigma \sqrt{\zeta \left( \Sigma \right)}  \sqrt{\frac{2d}{n}}, 
+\]
+with probability at least $1 - 2 e^{-4d} $. We thus apply the union bound to complete the proof of claim \eqref{eq:claim2}.
+
+
+\section{Adaptive Lower Bound}\label{sec:ada} 
+
+\subsection{Proof of Theorem~\ref{thm:ada_f}}\label{sec:ada:proof}
+Let  \( a_t := \frac{f(\theta_t) - f(\theta^*)}{5 \| \hs(g_t) \|} \). Suppose the step size \( \gamma_t \) used in Algorithm~\ref{algo:iht_ada} satisfies \( \gamma_t = b a_t \) for some scalar \( b \in \left[\frac{1}{2}, 1\right] \). By invoking Lemmas~\ref{lemma:base} and~\ref{lemma:step_size}, as long as \( \| \theta_t - \theta^* \|^2 \geq \frac{36 \| \hs (g^{*}) \|^{2}}{\bar{\mu}^2} \), we have:
+\[
+\| \theta_{t+1} - \theta^* \|^2 \leq \left(1 + \frac{1}{160 \bar{\kappa}}\right)\left(1 - \frac{b}{40 \bar{\kappa}}\right)\| \theta_t - \theta^* \|^2 \leq \left(1 - \frac{1}{160 \bar{\kappa}}\right)\| \theta_t - \theta^* \|^2.
+\]
+This establishes that the iterates exhibit  contractive behavior until they enter a small neighborhood of the optimum.
+
+We now consider two possible cases depending on whether the lower bound surrogate \( \widetilde{f}_k \) is valid and how the step size compares to \( a_t \) during epoch \( k \).
+
+Case \textbf{(i):} Suppose \( \widetilde{f}_k \) is a valid lower bound for \( f(\theta^*) \), and that \( \gamma_t \leq a_t \) holds for all iterations \( t = 0, \ldots, T(\alpha) \) within epoch \( k \). Then, the contractive relation applies repeatedly, and we obtain
+\[
+\| \theta_{T(\alpha)} - \theta^* \|^2 \leq \left(1 - \frac{\bar{\mu}}{160 \bar{L}}\right)^{T(\alpha)} \| \theta_0 - \theta^* \|^2 \leq (1 + \alpha)\left(1 + \frac{1}{160\bar{\kappa}} \right) \frac{36 \| \hs (g^{*}) \|^{2}}{\bar{\mu}^2}.
+\]
+By the restricted smoothness and strong convexity assumptions, this implies that the function suboptimality satisfies \( f(\theta_{T(\alpha)}) - f^* \leq \varepsilon(\alpha) \), thus completing the proof for this case. 
+
+Case \textbf{(ii):} Alternatively, suppose that \( \widetilde{f}_k \) is a valid lower bound, but \( \gamma_t > a_t \) for some \( t \) in epoch \( k \). This condition implies that
+\[
+f(\theta_t) - \widetilde{f}_k > 2(f(\theta_t) - f(\theta^*)),
+\]
+which in turn yields
+\[
+\widetilde{f}_{k+1} = \frac{f(\bar{\theta}_k) + \widetilde{f}_k}{2} \leq \frac{f(\theta_t) + \widetilde{f}_k}{2} < f(\theta^*).
+\]
+Hence, \( \widetilde{f}_{k+1} \) is also a valid lower bound. By induction, we conclude that if Case I never occurs, then all \( \widetilde{f}_k \), for \( k = 1, \dots, K \), remain valid lower bounds.
+
+Moreover, under this scenario, the sequence \( f^* - \widetilde{f}_k \) decreases geometrically. In particular,
+\[
+f^* - \widetilde{f}_{k+1} \leq f^* - \frac{f^* + \widetilde{f}_k}{2} = \frac{f^* - \widetilde{f}_k}{2}.
+\]
+
+
+The geometric decrease of \( f^* - \widetilde{f}_k \) in case \textbf{(ii)} ensures that if case \textbf{(i)} never occurs, then there exists some \( k_0 \) such that \( f(\theta^*) - \widetilde{f}_{k_0} < \varepsilon(\alpha) \). In that case, \( \bar{\theta}_{k_0} \) is either an output corresponding to case \textbf{(i)} (which completes the proof) or an output under case \textbf{(ii)}, i.e., it satisfies  
+\[
+f(\bar{\theta}_{k_0}) - f(\theta^*) < f(\theta^*) - \widetilde{f}_{k_0} < \varepsilon(\alpha).
+\]
+
+\section{Other Statistical Guarantees}\label{sec:stat_guarantees}
+In this section we provide guarantees for additional statistical models not provided in the body of the paper. The results in Appendix~\ref{sec:linear} hold for sparse linear regression. The results in Appendix~\ref{sec:glm} apply to some GLMs and require the analysis of the behavior of Sparse Polyak under different regularity conditions. These are not entirely captured in Theorem~\ref{thm:1_f}.
+
+\subsection{Sparse Linear Regression}\label{sec:linear}
+In this section, we assume the dataset consists of data points $z_i = (x_i, y_i)$ for $i = 1, \dots, n$, where $x_i \in \mathbb{R}^d$ denote the feature vectors, and $y_i \in \mathbb{R}$ denote the responses. The feature vectors are aggregated into the design matrix
+\begin{align*}
+    \mathbb{R}^{n \times d} \ni X \triangleq \begin{pmatrix}
+    x_1^{\top} \\
+    \vdots \\
+    x_n^{\top}
+    \end{pmatrix}
+\end{align*}
+and the responses are aggregated in $\mathbb{R}^n \ni y \triangleq (y_1,\hdots,y_n)^{\top}.$ Let \( \theta^{*} \) denote  the ground truth of the statistical model, with $\|\theta^*\|_0 \leq s^*,$ and \( f^{*} \) denote the corresponding objective value. Specifically, we assume that the responses \( y_{i} \) and feature vectors \( x_{i} \) are related by \( y_{i} = x_{i}^{T} \theta^{*} + \varepsilon_{i} \), where \( x_{i} \) are drawn from a \( N(0, \Sigma) \) distribution, $\Sigma$ is non singular, \( \varepsilon_{i} \sim N(0, \sigma^{2}) \), and $x_i$ and $\varepsilon_i$ are i.i.d and independent of one another. Additionally, the objective function \( f(\theta) = \frac{1}{2n}\| X \theta - y \|^{2} \). 
+
+
+From \cite{fast}[Lemma 6], it follows that the RSS and RSC conditions hold  with probability at least \( 1 - e^{-c_{0}n} \) with coefficients  \( L = 2 \sigma_{\max}(\Sigma) \), \( \mu = \frac{1}{2} \sigma_{\min}(\Sigma) \), and \( \tau = c_{1} \zeta(\Sigma) \frac{\log d}{n} \), where \( \zeta(\Sigma) = \max_{i=1, \dots, d} \Sigma_{ii} \). Here \( c_{0} \) and \( c_{1} \) are universal constants.
+
+\begin{corollary}\label{coro:lr}
+    Consider the sparse linear regression problem described above. Let $\{\theta_t\}_{t \geq 0}$ be the sequence of iterates generated by Algorithm~\ref{algo:iht} or Algorithm~\ref{algo:iht_ada} when employed to solve a sparse linear regression problem. Suppose that $\widehat{f} =f^*$ for Algorithm~\ref{algo:iht}. Assume we have sufficient samples for $\bar{\mu} > 0,$ with \( s \geq (240 \bar{\kappa})^{2} s^{*} \) for Algorithm~\ref{algo:iht}, and \( s \geq (480 \bar{\kappa})^{2} s^{*} \) for Algorithm~\ref{algo:iht_ada}. Further, assume that  each column of $X $ is $C $-normalized, i.e., $\| \frac{X_{j}}{\sqrt{n}} \| \leq C $ for $j=1,\dots,d $. Here $X_{j} $ denotes the $j $-th column of $X $. Then, with probability at least \( 1 - e^{-c_{0}n} - \frac{2}{d}\), for any $\alpha \geq \frac{1}{80}$ after $T(\alpha)$ iterations,  \( \min_{t\leq T(\alpha)}\|\theta_{t} - \theta^{*}\|^{2}\) is upper bounded by
+    \[ 
+    \varepsilon(\alpha) = (1+\alpha) \frac{288 C^2 \sigma^2 s \log d}{n \bar{\mu}^2}.
+    \]
+
+    The required number of iterations $T(\alpha)$ fulfills:
+    \begin{align*}           
+    & T(\alpha ) \leq \left\lceil \frac{1}{\log \left( 1 / (1 - 1 / 80 \bar{\kappa}) \right)} \log \left( \frac{\| \theta_{0} - \theta^* \|^{2}}{\varepsilon(\alpha)} \right)\right\rceil, \text{and }\\
+    &T(\alpha) \leq \left( 1 + \log_{2} \frac{4(f(\theta_{0}) - f(\theta^{*}))}{\bar{\mu} \varepsilon(\alpha)} \right)\left\lceil \frac{1}{\log \left( 1 / (1 - 1 / 160 \bar{\kappa}) \right)} \log \left( \frac{\|\theta_{0} - \theta^{*}\|^2}{\varepsilon(\alpha)} \right)\right\rceil,
+    \end{align*}
+    for Algorithm~\ref{algo:iht} and Algorithm~\ref{algo:iht_ada} respectively.
+    
+    Moreover, if $\theta^*$  satisfies the SNR condition \eqref{eq:snr}, we can ensure that after $T(0)$ iterations, the error is upper bounded by $\varepsilon(0),$ and  the support of $\theta^{*}$ has been identified, i.e. $\mathcal{S}^* \subset \mathcal{S}^t$ $\forall t \geq T(0).$
+\end{corollary} 
+
+Corollary~\ref{coro:lr} establishes the convergence properties of Algorithm~\ref{algo:iht} and Algorithm~\ref{algo:iht_ada}. The error term is of order \(\mathcal{O}\left(\frac{\bar{\kappa}^{2}s^* \log d}{n \bar{\mu}^{2}}\right)\), which is of the same order as that  in \cite[Theorem 3]{jain}, where a fixed step size is considered under the assumption that $\bar{L}$ is known.
+
+\begin{proof}
+For Algorithm~\ref{algo:iht}, the proof follows the same steps as the proof of Corollary~\ref{coro:lg}. The only difference is the upper bound for \(\frac{36 \| \hs(g^{*}) \|^{2}}{\bar{\mu}^2}\), which we provide next.
+
+When the columns of $X $ are $C $-normalized, by \cite[Example 7.14]{hd}, with probability $1 - \frac{2}{d} $,
+\[
+\| g^{*} \|_{\infty}^2 = \| X^{T}\varepsilon \|_{\infty}^2 \leq 8 C^{2} \sigma^{2} \frac{\log d}{n}.
+\]
+Using the union bound together with \cite[Lemma 6]{fast}, and the assumptions stated in the Corollary, yield the required assumptions for Theorem~\ref{thm:1_f} to hold. Thus, this completes the proof for Algorithm~\ref{algo:iht}.
+
+As we can see from the proof of Theorem~\ref{thm:1_f} and Theorem~\ref{thm:ada_f}, the accuracy level \( \varepsilon(0) \) is determined by the point at which a lower bound on the step size can be established. According to the formulation of \( \gamma_t \) in Algorithm~\ref{algo:iht_ada}, it is guaranteed to be at least half the step size used in Algorithm~\ref{algo:iht}. This observation implies that the accuracy level \( \varepsilon(0) \) can also be achieved by Algorithm~\ref{algo:iht_ada} when the conditions of Case \textbf{(i)} in the proof of Theorem~\ref{thm:ada_f} are satisfied.
+
+To complete the proof for Algorithm~\ref{algo:iht_ada}, we only need to show that $f(\theta_t) - f^{*} \leq \frac{18 \| \hs(g^{*}) \|^{2}}{\bar{\mu}} $ implies $\| \theta_t - \theta^{*} \|^{2} \leq \varepsilon(0)$.
+
+By RSC, 
+\[
+f(\theta_t) - f^{*} \geq \bar{\mu} \| \theta_t - \theta^{*} \|^{2} - \| \hs(g^{*}) \| \| \theta_t - \theta^{*} \|.
+\]
+When $f(\theta_t) - f^{*} \leq \frac{18 \| \hs(g^{*}) \|^{2}}{\bar{\mu}} $, it implies
+\[
+\frac{\| \hs(g^{*}) \|_{s}}{\bar{\mu}} \left( \frac{3 \| \hs(g^{*}) \|}{\bar{\mu}} + \| \theta_t - \theta^{*} \| \right) \geq \| \theta_t - \theta^{*} \|^{2}. 
+\]
+
+A necessary condition for the inequality above is
+\[
+\| \theta_t - \theta^{*} \|^{2} \leq \frac{36 \| \hs(g^{*}) \|_{s}^2}{\bar{\mu}^{2}} = \varepsilon(0).
+\]
+\end{proof}
+\subsection{Generalized Linear Models}\label{sec:glm}
+In this section, we consider a dataset consisting of observations \( z_i = (x_i, y_i) \) for \( i = 1, \dots, n \), where \( x_i \in \mathbb{R}^d \) denote the feature vectors, and \( y_i \in \mathbb{R} \) denotes the corresponding responses. The feature vectors are organized into the design matrix  
+\[
+X \triangleq \begin{pmatrix}
+    x_1^{\top} \\  
+    \vdots \\  
+    x_n^{\top}
+\end{pmatrix} \in \mathbb{R}^{n \times d},
+\]  
+and the responses are collected in the vector \( y \triangleq (y_1, \dots, y_n)^{\top} \in \mathbb{R}^n \).  
+
+For notational convenience, we let \( \theta^* \) denote the true underlying parameter of the statistical model and \( f^* \) the corresponding objective function value. We assume the relationship between \( x_i \) and \( y_i \) is characterized by the conditional distribution  
+\[
+\Pr(y_i \mid x_i, \theta^*, \sigma) = \exp \left\{ \frac{y_i x_i^{T} \theta^* - \psi (x_i^{T} \theta^*) }{c(\sigma)} \right\},
+\]  
+where \( \sigma > 0 \) is a scale parameter, and \( \psi \) is the cumulant function. Given this data generation model, we define the objective function
+
+\[
+f(\theta) = \frac{1}{n} \sum_{i=1}^{n} \left( \psi(x_i^{T} \theta) - y_i x_i^{T} \theta \right).
+\]  
+
+We assume that \( \psi \) is infinitely differentiable with \( \psi''(t) > 0 \) and uniformly bounded for all \( t \in \mathbb{R} \). These assumptions are satisfied in a variety of settings, including logistic regression and multinomial regression \cite{loh}.   We assume   the feature vectors \( x_i \) are i.i.d. and drawn from a multivariate normal distribution \( N(0, \Sigma) \), where \( \Sigma \) is non-singular. Under the setting described above, the RSC condition does not hold everywhere.  However, in the described setting it can be shown that the following milder RSC condition holds \cite{loh}
+\begin{subequations}
+    \label{eq:test}
+    \begin{empheq}[left={ f(y) - f(x) - \langle \nabla f(x), y-x \rangle \geq \empheqlbrace}]{align}
+    &\frac{\mu}{2}\|y-x\|^2_2 - \frac{\tau}{2} \|y-x\|^2_1, && \ \ \text{if } \|y-x\|_2 \leq 1, \label{eq:rsc_1} \\
+    &\|y-x\|_2\left( \frac{\mu}{2} - \frac{\tau}{2} \frac{\|y-x\|_1^2}{\|y-x\|_2^2} \right), && \ \ \text{if } \|y-x\|_2 > 1. \label{eq:rsc_glm}
+    \end{empheq}
+\end{subequations}
+
+We now present a lemma grouping the results that we need to proceed:  the RSS condition, the condition~\eqref{eq:test}, and the order of achievable statistical accuracy for GLMs in our setting. This lemma aggregates results from \cite[Proof of Corollary 2, Appendix D.1]{loh} and \cite[Proposition 2]{nega}. Notably, while \cite[Proposition 2]{nega} is originally stated centered only around the ground truth $x = \theta^{*}$ (c.f. \eqref{eq:test}) its proof extends to any given \( x \). This implies that while our results are currently stated for $x = \theta^{*},$ to achieve optimal statistical precision, we can instead state equivalent results to those in Theorem~\ref{thm:1_f} where $\widehat{\theta}$ is such that $f(\widehat{\theta}) = \widehat{f}.$
+
+\begin{lemma}\label{lm:glm_merge}
+For the statistical models described above, with probability at least $1-c_1 d^{-1} - c_2 e^{-n}$ Assumption~\ref{asp:rsmooth} and \eqref{eq:test} hold, and
+    \[
+    \| \nabla f(\theta^{*}) \|_{\infty} \leq c_{0}\sqrt{\frac{\log d}{n}},
+    \]
+    where $c_0, c_1, c_2 > 0$ are universal constants. The constants $\mu,$ and $L$ in \eqref{eq:test} and Assumption~\ref{asp:rsmooth}, respectively, depend on $\psi,$ and $\Sigma.$ Further $\tau = c_3 \frac{\log d }{n}$ where $c_3 > 0$ is a universal constant.
+\end{lemma}
+
+In the following, we keep the definition $\bar{L} = L + 3 \tau s$, and $\bar{\mu} = \mu - 3\tau s,$ where $\mu$ is that of \eqref{eq:test}. Observe that Corollary~\ref{coro:glm} is stated for Algorithm~\ref{thm:1_f} for simplicity but an analogous statement for Algorithm~\ref{thm:ada_f} follows.
+
+\begin{corollary}\label{coro:glm}
+Let \( \{ \theta_t \}_{t \geq 0} \) denote the iterates generated by Algorithm~\ref{algo:iht} when applied to the generalized linear models described above. Set the step size rule according to
+\[
+\gamma_t = \frac{\max\{f(\theta_t) - \widehat{f},0\}}{5 \| \mathrm{HT}_{2s}(g_t) \|^2}. 
+\]
+Define \( R:= \| \theta^* \|^2 \), and \( R_0:= 4R+1 \). Assume we set $\widehat{f} = f^*,$ $\theta_0 = 0,$ and suppose \(s \geq (480 R_0 \bar{\kappa}^2)^2 s^*\). Further, assume the sample size is large enough to ensure $\bar{\mu} > 5 c_{0} \sqrt{\frac{ 2 s \log d}{n}} $.
+
+Then, with probability at least \( 1 -  \frac{c_{1}}{d} - c_{2} e^{-n} \), we guarantee that for all $t \geq T$ where 
+
+\begin{align*}
+   T \leq   \mathcal{O}\left(\bar{\kappa}\log\left(\frac{n}{ s\log(d)}\right) \right) + \mathcal{O}\left( \bar{\kappa}^2 \log(R) \right)
+\end{align*}
+there holds
+\begin{align*}
+\|\theta_t - \theta^*\|^2 \leq \left(1 + \frac{1}{160 R_0 \bar{\kappa}^2} \right)\frac{36c_0 s \log d}{n \bar{\mu}^2}.
+\end{align*}
+    Moreover, if \( \theta^* \) satisfies the SNR condition \eqref{eq:snr}, we can guarantee that for all $t \geq T,$ $\|\theta_t - \theta^{*}\|^2 \leq \frac{36c_0 s \log d}{n}$ and that the support of $\theta^*$ has been recovered, i.e. $\mathcal{S}^{*} \subset \mathcal{S}_t.$
+\end{corollary}
+
+\begin{proof}
+To establish this result we leverage that the condition \eqref{eq:test} combined with Sparse Polyak allow us to establish convergence despite the lack of RSC. More specifically, we will establish that Algorithm~\ref{algo:iht} exhibits, under the conditions described in the Corollary, at most three modes of convergence:
+\begin{align}\label{eq:modes}
+    \|\theta_{t+1} - \theta^*\|^2 \leq \begin{cases}
+     \left(1 - \frac{1}{160 R_0 \bar{\kappa}^2} \right)\|\theta_t - \theta^*\|^2, & \text{if } \|\theta_t - \theta^{*}\| \geq 1, \\
+     \left(1 - \frac{1}{160 \bar{\kappa}} \right)\|\theta_t - \theta^*\|^2, &\text{if } \|\theta_t - \theta^*\| < 1, \text{and } \|\theta_t - \theta^{*}\|^2 \geq \frac{36c_0^2s \log d}{n\bar{\mu}^2}, \\
+      \left(1 + \frac{1}{160 R_0 \bar{\kappa}^2} \right)\frac{36c_0^2 s \log d}{n\bar{\mu}^2}, & \text{otherwise}.
+    \end{cases}
+\end{align}
+Observe that under our current assumptions $\frac{36c_0^2 s \log d}{n\bar{\mu}^2} < \frac{18}{25}$ and therefore, the list above is exhaustive and the conditions on the second case are compatible. 
+
+We begin assuming that $R \geq 1.$ We will establish that if the modes of convergence provided above hold for $R \geq 1,$ when $R < 1$ we only observe the two last cases.
+
+\textbf{(i)} We start off by exploiting \eqref{eq:test}. Assuming that $\|\theta_t - \theta^{*}\| \geq 1$ we may follow the strategy in Lemma~\ref{lemma:base} and exploit that $f$ is convex (but not RSC) to obtain
+\begin{align}\label{eq:convex}
+\|\theta_{t+1} - \theta^{*}\|^2 \leq \left(1 + \sqrt{\frac{s^*}{s}} \right)^2 \left( \|\theta_t - \theta^{*}\|^2 - 2\gamma_t (f(\theta_t) - f(\theta^{*})) + 5\gamma_t^2  \|\mathrm{HT}_{2s}(g_t)\|^2 \right).
+\end{align}
+With the choice of step size
+\[
+\gamma_t = \frac{\max\{f(\theta_t) - f(\theta^{*}),0\}}{5 \|\mathrm{HT}_{2s}(g_t)\|^2},
+\]
+\eqref{eq:convex} simplifies to:
+\begin{align}\label{eq:glm_recurrence}
+\|\theta_{t+1} - \theta^{*}\|^2 \leq \left(1 + \sqrt{\frac{s^*}{s}} \right)^2 \left( \|\theta_t - \theta^{*}\|^2 - \frac{(f(\theta_t) - f(\theta^{*}))^2}{5  \|\mathrm{HT}_{2s}(g_t)\|^2} \right).
+\end{align}
+From Lemma ~\ref{lm:glm_merge} and under the assumption that $\bar{\mu} > 5 c_0 \sqrt{\frac{2s\log d}{n}},$ it follows that with probability at least $1-c_1d^{-1} - c_2 e^{-n}$ there holds
+\begin{align*}
+    f(\theta_t) - f(\theta^*) \geq \frac{\bar{\mu}}{2}\|\theta_t - \theta^{*}\| - \|\mathrm{HT}_{2s}(g^*)\|\|\theta_t - \theta^{*}\| \geq \frac{\bar{\mu}}{4}\|\theta_t - \theta^{*}\|,
+\end{align*}
+thus by applying the above bound onto \eqref{eq:glm_recurrence} we have
+\begin{align}\label{eq:recurrence_a}
+    \|\theta_{t+1} - \theta^{*}\|^2 \leq \left(1  +\sqrt{\frac{s^*}{s}} \right)^2 \left( \|\theta_t -\theta^{*}\|^2 - \frac{\bar{\mu}^2}{80\|\mathrm{HT}_{2s}(g_t)\|^2}\|\theta_t - \theta^*\|^2 \right).
+\end{align}
+Further, we may upper bound the norm of the gradient as
+\begin{align}\label{eq:recurrence_b}
+\|\mathrm{HT}_{2s}(g_t)\|^2 
+&\leq 2 \left( \|\mathrm{HT}_{2s}(g^*)\|_{2s}^2 + \|\mathrm{HT}_{2s}(g_t - g^*)\|^2 \right) \\
+&\stackrel{(i)}{\leq} 2 \left( \|\mathrm{HT}_{2s}(g^*)\|_{2s}^2 + 2\bar{L}^2 \|\theta_t - \theta^{*}\|^2 \right) \nonumber
+\end{align}
+where in $(i)$ we invoke Lemma~\ref{lemma:smooth}. Combining \eqref{eq:recurrence_a} with \eqref{eq:recurrence_b} yields
+\begin{align}\label{eq:recurrence_2}
+    \|\theta_{t+1} - \theta^{*}\|^2 \leq \left(1 + \sqrt{\frac{s^*}{s}} \right)^2\left(1 - \frac{\bar{\mu}^2}{160 \left( \|\mathrm{HT}_{2s}(g^*)\|^2 + 2 \bar{L}^2 \|\theta_t - \theta^{*}\|^2 \right)} \right)\|\theta_t - \theta^{*}\|^2.
+\end{align}
+To guarantee that the above implies our first regime of convergence we need to establish that $\|\theta_t - \theta^{*}\|^2 \leq R$ for all $t \geq 0.$  We return to this point after exploring the second and third regime which will be useful in establishing the first.
+
+\textbf{(ii)} On the other hand, assume instead that $\|\theta_t - \theta^{*}\|^2 \leq 1$ and $\|\theta_t - \theta^*\|^2 \geq \frac{36c_0^2 s \log d}{n\bar{\mu}^2}$ then, from \eqref{eq:test} the RSC holds and therefore we can invoke the result of Theorem~\ref{thm:1_f} in which
+\begin{align}\label{eq:c2}
+    \|\theta_{t+1} - \theta^*\|^2 \leq \left(1 -\frac{1}{160\bar{\kappa}} \right)\|\theta_t - \theta^{*}\|^2.
+\end{align}
+\textbf{(iii)} If, instead $\|\theta_t - \theta^*\|^2 < \frac{36c_0^2 s \log d}{n \bar{\mu}^2} $ we have from Theorem~\ref{thm:1_f} that
+\begin{align}\label{eq:c3}
+    \|\theta_{t+1} - \theta^*\|^2 \leq \left(1 + \frac{1}{160\bar{\kappa}} \right)\frac{36c_0^2 s \log d}{n\bar{\mu}^2} < 1.
+\end{align}
+Observe that from the three cases we consider (\eqref{eq:recurrence_2}- \eqref{eq:c3}), \eqref{eq:c2} and \eqref{eq:c3} already correspond to one of our stated modes of convergence, and thus we are to establish the first. 
+
+Clearly, when $R < 1,$ $\theta_0$ is in a region in which the RSC holds, and therefore, we will only observe the behavior in \eqref{eq:c2} and \eqref{eq:c3}. Thus, we are only to prove the first regime of convergence for $R \geq 1.$  To establish that the behavior in the first regime holds, we need to establish that $\|\theta_t - \theta^{*}\|^2 \leq R$ holds for all $t \geq 0.$ We proceed to establish this and consequently the behavior in the first regime by induction.  Note that by our initial condition $\|\theta_0 - \theta^*\|^2 = \|\theta^*\|^2 = R$ and thus the condition holds for $ t = 0$. Suppose $\|\theta_t - \theta^{*}\|^2 \leq R$ for some $t.$ If $\|\theta_t - \theta^{*}\|^2 < 1$ then either \eqref{eq:c2} and \eqref{eq:c3} hold and the proof by induction is complete. If instead, $\|\theta_t -\theta^{*}\|^2 \geq 1,$ \eqref{eq:recurrence_2} holds. Then, by induction hypothesis and under the Corollary's assumption on the sample size there holds
+\begin{align*}
+    \|\mathrm{HT}_{2s}(g^*)\|^2 + 2 \bar{L}^2\|\theta_t - \theta^*\|^2 \leq \left(\frac{1}{16} + 2R \right)\bar{L}^2 \leq \frac{R_0\bar{L}^2}{2},
+\end{align*}
+thus, combining with \eqref{eq:recurrence_2} and using that by assumption $s \geq (480 R_{0} \bar{\kappa}^{2})^{2} $ we obtain
+\[
+\|\theta_{t+1} - \theta^{*}\|^2 \leq \left(1 - \frac{1}{160 R_0 \bar{\kappa}^2} \right) \|\theta_t - \theta^{*}\|^2 < R.
+\]
+
+
+We have thus established the veracity of \eqref{eq:modes}. Observe that \eqref{eq:modes} together with $\theta_0 = 0$ and $\|\theta^*\|^2 = R$ imply that there exists $t_0 \geq 0$ fulfilling
+\begin{align*}
+    t_0 \leq \lceil -\log(R)/\log(1-1/160 R_{0}\bar{\kappa}^2) \rceil
+\end{align*}
+such that for all $t \geq t_0$
+\begin{align*}
+    \|\theta_{t} - \theta^{*}\|^2 < 1.
+\end{align*}
+Further, this implies that in at most 
+\begin{align*}
+    \left\lceil \log\left(\frac{36c_0^2s(1+1/(160\bar{\kappa}))\log(d)}{n\bar{\mu}^2} \right)/\log(1-1/160\bar{\kappa}) \right \rceil
+\end{align*}
+additional iterations optimal statistical precision is reached.
+Finally, if the SNR condition holds, the term $(1+ \frac{1}{160\bar{\kappa}})$ in the third regime is replaced by 1 as a consequence of Corollary~\ref{coro:snr}.
+\end{proof}
+
+Corollary~\ref{coro:glm} recovers the result in \cite[Theorem 3]{loh} with the following similarities and differences. To achieve optimal statistical precision, as $\alpha = s\frac{\log d}{n} \to 0$ both Sparse Polyak and \cite[Theorem 3]{loh} require $\mathcal{O}(\bar{\kappa}\log(\alpha^{-1}))$ iterations. However, we require additional iterations $\mathcal{O}(\bar{\kappa}^2 \log(R))$ when $R \geq 1.$ We observe however, that our result holds under more general conditions, as we do not make the assumption that $\|\theta^*\| \leq 1$ which is necessary in \cite[Theorem 3]{loh}, where this condition can be relaxed at the expense of requiring the RSC to hold within a larger radius.
+
+We conclude this Appendix by highlighting the fact that for both sparse linear regression and sparse GLMs be verify the rate invariance of Sparse Polyak theoretically. When the problem size increases much faster than the sample size $\frac{d}{n} \to \infty$ but $\frac{s^*\log d}{n}$ and $\Sigma$ remain constant, IHT with Sparse Polyak will reach a $\varepsilon$ neighborhood of the optimal statistical precision within at most $\mathcal{O}(\bar{\kappa}^{-1}\log(1/\varepsilon))$ for linear regression and at most $\mathcal{O}(\bar{\kappa}^{-1}\log(1/\varepsilon)) + \mathcal{O}(\bar{\kappa}^{-1}\log(R))$ when $R > 1$ in the case of GLMs. In both cases, this number does not change with increasing $d$ and $n.$ Observe that these results allow us to answer in the affirmative questions \textbf{(ii)} and \textbf{(iii)} posed in Section~\ref{sec:intro}. 
+
+
+\section{Experiments on real data}\label{sec:real_data}
+
+\paragraph{Linear Regression} We consider a linear regression task using the Large-scale Wave Energy Farm dataset from the UCI Machine Learning Repository~\cite{wave}, which is publicly available under the CC BY 4.0 license. The terms of use are described at \url{https://archive.ics.uci.edu/#terms}. The goal is to predict the total power output of the wave farm based on a sparse linear model. We randomly select 120 samples from the dataset, each containing 149 features. In our experiment, we set the sparsity level to $s = 20$. For the IHT method with a fixed step size, we choose the step size as $8 \times 10^{-12}$. This value is determined via a grid search over the range $[10^{-13}, 9 \times 10^{-12}]$, as step sizes outside this interval result in poor convergence or divergence. The results are presented in Figure~\ref{fig:real}~\textbf{(left)}.
+
+\paragraph{Logistic Regression} We evaluate sparse logistic regression using the Molecule Musk dataset~\cite{musk_(version_2)_75} from the UCI Machine Learning Repository, which is publicly available under the CC BY 4.0 license. The terms of use are described at \url{https://archive.ics.uci.edu/#terms}. The task is to classify molecules as musks or non-musks. We randomly select 120 samples from the dataset, each with 166 features. In our experiment, we set the sparsity level to $s = 20$. For the IHT method with a fixed step size, we select a step size of $1.9 \times 10^{-5}$, chosen via a grid search over the interval $[3 \times 10^{-6}, 4 \times 10^{-5}]$. Step sizes outside this range lead to poor convergence or divergence. The results are shown in Figure~\ref{fig:real}~\textbf{(right)}.
+
+
+\begin{figure}[t] 
+    \centering
+    %\subfigure[\label{fig:lr_compare}]{\includegraphics[width=0.32\textwidth]{figures/linear_compare_loss.png}} 
+    \subfigure{\scalebox{0.9}{\input{real_linear.tikz}}} 
+       \subfigure{\scalebox{0.9}{\input{real_logistic.tikz}}} 
+   % \subfigure{\scalebox{0.9}{\input{real_linear.tikz}}}
+    %\subfigure{\scalebox{0.9}{\input{real_logistic.tikz}}
+    \caption{\label{fig:real}Performance comparison of IHT with optimal constant step size, Sparse Polyak and classical Polyak when performing: \textbf{(left)} linear regression on the Wave Energy Farm data set, and \textbf{(right)} logistic regression on the Molecule Musk data set.}
+\end{figure}
+
+
+We observe that in Fig~\ref{fig:real}~\textbf{(right)} Sparse Polyak performs better than both classic Polyak and IHT with the fixed step-size, even if the step-size is optimized by grid search. This is expected, an adaptive step-size can adapt to the curvature at any point in the algorithm's trajectory, whereas a fixed step-size cannot. We observe that Sparse Polyak performs better than Classic Polyak. On the other hand, in Fig~\ref{fig:real}~\textbf{(left)} we observe that the best fixed step-size performs better than an adaptive step-size. We conjecture that this is due to the factor $1/5$ in Sparse Polyak which we presume is an artifact of our analysis and is not in fact necessary. Despite this fact, sparse Polyak consistently outperforms the classical Polyak rule in the high-dimensional setting.
+
+\end{document}

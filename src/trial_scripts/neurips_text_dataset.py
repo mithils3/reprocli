@@ -4,7 +4,7 @@ from itertools import groupby
 
 tokenizer = AutoTokenizer.from_pretrained("MiniMaxAI/MiniMax-M2.7", trust_remote_code=True)
 
-paper_id = "2503.18142"
+paper_id = "2509.09802"
 
 ds = load_dataset(
     "parquet",
