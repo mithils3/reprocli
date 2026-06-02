@@ -1,0 +1,15 @@
+Haochen Ding  [3:22 PM]
+I went through the papers and the project doc. Some initial thoughts:
+
+A multi-agent architecture feels natural for reproducing tasks. Non of the two papers adapted multi-agent frameworks, and the main challenges raised by these papers (long work horizon, early stop, agent strategy, etc) can be managed well by separating works into different agents and structure them in a AlphaEvolve-like way. For example, an agent extracting rubrics and goals from the paper -> env setup / coding / debugging agents -> comparing agent for results, in a impl -> verify -> repair loop. 
+         Several advantages of multi-agent :
+
+
+easy to debug & improve since we'll be able to see results from all stages
+easy to adapt to tasks with different difficulties (we can add / remove agents depending on the level of open-source of the paper) 
+manually derived reproducing strateg & termination standard, resolves the early-stopping and bad strategy issue. 
+(Not exactly sure whether other people have done this. Better do some more lit review. If not, I think this can be a major innovation in architecture. )
+
+2. As for benchmark, one initial thought on possible innovations is to divide the papers into subfields: LLM / Vision / MLSys / ... (not very reliable for now though)
+
+3.   vLLM hosted models might be bad at tool calling, which seems to be quite heavily relied on considering our task. For the initial experiments and verifications, directly using openai hosted models might be a better idea. (edited)
