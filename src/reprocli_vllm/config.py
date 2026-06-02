@@ -24,6 +24,12 @@ WEB_SYSTEM_MESSAGE = (
     "instructed by the user prompt. After using tools, return only the requested "
     "JSON object."
 )
+FINAL_NO_TOOLS_MESSAGE = (
+    "Tool use is complete and no tools are available in this request. Use only "
+    "the paper text and prior tool results already in the conversation. Return "
+    "only the requested JSON object; do not write search plans, tool calls, or "
+    "prose outside the JSON."
+)
 WEB_TOOLS = [
     {
         "type": "function",

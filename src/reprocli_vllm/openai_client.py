@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -41,17 +42,7 @@ def run_openai_server_requests(
     )
     with output_path.open("w", encoding="utf-8") as handle:
         for row, response in zip(rows, responses, strict=True):
-            json.dump(
-                {
-                    "custom_id": row["custom_id"],
-                    "response": {
-                        "status_code": 200,
-                        "body": response,
-                    },
-                },
-                handle,
-                ensure_ascii=False,
-            )
+            json.dump(response_row(row["custom_id"], response), handle, ensure_ascii=False)
             handle.write("\n")
 
 
@@ -64,13 +55,15 @@ def post_chat_completions(
 ) -> list[Any]:
     if stream_first and rows:
         return post_chat_completions_with_stream(base_url, rows, timeout, workers)
+    responses: list[Any] = [None] * len(rows)
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        return list(
-            executor.map(
-                lambda row: post_chat_completion(base_url, row["body"], timeout),
-                rows,
-            )
-        )
+        futures = {
+            executor.submit(post_chat_completion_row, base_url, row, timeout): index
+            for index, row in enumerate(rows)
+        }
+        for future in as_completed(futures):
+            responses[futures[future]] = future.result()
+    return responses
 
 
 def post_chat_completions_with_stream(
@@ -81,14 +74,43 @@ def post_chat_completions_with_stream(
 ) -> list[Any]:
     responses: list[Any] = [None] * len(rows)
     with ThreadPoolExecutor(max_workers=max(1, workers - 1)) as executor:
-        futures = [
-            executor.submit(post_chat_completion, base_url, row["body"], timeout)
-            for row in rows[1:]
-        ]
+        futures = {
+            executor.submit(post_chat_completion_row, base_url, row, timeout): index
+            for index, row in enumerate(rows[1:], start=1)
+        }
         responses[0] = stream_chat_completion(base_url, rows[0], timeout)
-        for index, future in enumerate(futures, start=1):
-            responses[index] = future.result()
+        for future in as_completed(futures):
+            responses[futures[future]] = future.result()
     return responses
+
+
+def post_chat_completion_row(
+    base_url: str,
+    row: dict[str, Any],
+    timeout: float,
+    *,
+    stream: bool = False,
+) -> Any:
+    custom_id = row.get("custom_id", "<unknown>")
+    started = time.monotonic()
+    print(f"request start {custom_id}", file=sys.stderr, flush=True)
+    try:
+        if stream:
+            return stream_chat_completion(base_url, row, timeout)
+        return post_chat_completion(base_url, row["body"], timeout)
+    finally:
+        elapsed = time.monotonic() - started
+        print(f"request end {custom_id} ({elapsed:.1f}s)", file=sys.stderr, flush=True)
+
+
+def response_row(custom_id: str, body: Any) -> dict[str, Any]:
+    return {
+        "custom_id": custom_id,
+        "response": {
+            "status_code": 200,
+            "body": body,
+        },
+    }
 
 
 def post_chat_completion(base_url: str, body: dict[str, Any], timeout: float) -> Any:

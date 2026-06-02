@@ -6,7 +6,8 @@ Utilities for running the NeurIPS arXiv artifact-availability prompt through vLL
 
 The runner uses vLLM tool calling plus a local Python tool loop. Search uses DuckDuckGo HTML, so no Brave/Tavily key is required. GitHub and Hugging Face checks use their public APIs.
 By default it starts one local vLLM OpenAI server, reuses it for every tool round,
-then shuts it down when the run finishes.
+lets each paper advance through tool rounds as soon as its own response and tool
+calls finish, then shuts the server down when the run finishes.
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
@@ -64,7 +65,7 @@ python src/run_arxiv_prompt_vllm.py \
 - `--batch-backend server`: default; start or reuse one persistent vLLM server.
 - `--batch-backend run-batch`: old behavior; starts a new vLLM batch process per round.
 - `--vllm-server-url`: use an already-running OpenAI-compatible vLLM server.
-- `--request-workers 10`: number of concurrent requests sent to the vLLM server.
+- `--request-workers 10`: number of concurrent request/tool pipelines for server mode.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
 - `--first-tool-choice required`: forces the first model pass to call a verification tool.
 - `--tool-timeout 20`: timeout for each HTTP request made by a tool.

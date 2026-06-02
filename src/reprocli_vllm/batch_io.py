@@ -29,25 +29,52 @@ def write_batch_requests(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as handle:
         for custom_id in custom_ids:
-            body: dict[str, Any] = {
-                "model": model,
-                "messages": conversations[custom_id],
-                "temperature": args.temperature,
-                "top_p": args.top_p,
-                "max_tokens": args.max_tokens,
-                "truncate_prompt_tokens": args.max_input_tokens,
-            }
-            if include_tools:
-                body["tools"] = WEB_TOOLS
-                body["tool_choice"] = tool_choice
-            request = {
-                "custom_id": custom_id,
-                "method": "POST",
-                "url": "/v1/chat/completions",
-                "body": body,
-            }
+            request = build_batch_request(
+                model,
+                custom_id,
+                conversations[custom_id],
+                args,
+                include_tools=include_tools,
+                tool_choice=tool_choice,
+            )
             json.dump(request, handle, ensure_ascii=False)
             handle.write("\n")
+
+
+def build_batch_request(
+    model: str,
+    custom_id: str,
+    messages: list[dict[str, Any]],
+    args: argparse.Namespace,
+    *,
+    include_tools: bool,
+    tool_choice: str = "auto",
+) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "max_tokens": args.max_tokens,
+        "truncate_prompt_tokens": args.max_input_tokens,
+    }
+    if include_tools:
+        body["tools"] = WEB_TOOLS
+        body["tool_choice"] = tool_choice
+    return {
+        "custom_id": custom_id,
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "body": body,
+    }
+
+
+def append_jsonl_row(path: Path, row: dict[str, Any], *, truncate: bool) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = "w" if truncate else "a"
+    with path.open(mode, encoding="utf-8") as handle:
+        json.dump(row, handle, ensure_ascii=False)
+        handle.write("\n")
 
 
 def round_request_path(path: Path, round_index: int) -> Path:
@@ -101,7 +128,8 @@ def normalize_tool_calls(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any
     normalized = []
     for index, call in enumerate(tool_calls):
         item = dict(call)
-        item.setdefault("id", f"call_{index}")
+        if not item.get("id"):
+            item["id"] = f"call_{index}"
         item.setdefault("function", {})
         normalized.append(item)
     return normalized
