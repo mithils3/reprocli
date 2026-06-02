@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSONL Conversation Viewer</title>
+  <link rel="stylesheet" href="/tools/jsonl_viewer/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>JSONL Conversation Viewer</h1>
+        <p id="sourceLabel">No file loaded</p>
+      </div>
+      <div class="filebar">
+        <select id="serverFileSelect" aria-label="Server JSONL file">
+          <option>No server files found</option>
+        </select>
+        <button id="openServerFile" class="primary">Open</button>
+        <label class="upload">Upload<input id="fileInput" type="file" accept=".jsonl,application/json" multiple></label>
+      </div>
+      <div class="row">
+        <button id="prevRecord">Prev</button>
+        <button id="nextRecord">Next</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="sidebar">
+        <div id="dropzone" class="dropzone">
+          <strong>Drop JSONL files</strong>
+          <span>Drop response and request files together to pair by custom_id.</span>
+        </div>
+        <div class="stats">
+          <div><strong id="statRecords">0</strong><span>Records</span></div>
+          <div><strong id="statTokens">0</strong><span>Tokens</span></div>
+          <div><strong id="statSuccess">0</strong><span>Success</span></div>
+          <div><strong id="statErrors">0</strong><span>Errors</span></div>
+        </div>
+        <div class="filters">
+          <input id="searchInput" type="search" placeholder="Search id, prompt, answer, JSON">
+          <select id="statusFilter">
+            <option value="all">All status</option>
+            <option value="success">Success</option>
+            <option value="request">Requests</option>
+            <option value="error">Errors</option>
+            <option value="parse_error">Parse errors</option>
+          </select>
+          <select id="tierFilter"><option value="all">All tiers</option></select>
+        </div>
+        <div id="recordList" class="records"></div>
+      </aside>
+
+      <section class="detail">
+        <div class="detailHead">
+          <h2 id="detailTitle">Load a JSONL file</h2>
+          <div id="detailMeta" class="meta"></div>
+          <div class="row">
+            <button id="copyInput">Copy Input</button>
+            <button id="copyAnswer">Copy Answer</button>
+            <button id="copyJson">Copy JSON</button>
+            <button id="downloadFiltered">Download Filtered</button>
+            <button id="clearRecords">Clear</button>
+          </div>
+        </div>
+        <nav class="tabs">
+          <button class="active" data-tab="input">Model Input</button>
+          <button data-tab="answer">Answer</button>
+          <button data-tab="reasoning">Reasoning</button>
+          <button data-tab="json">Extracted JSON</button>
+          <button data-tab="raw">Raw</button>
+        </nav>
+        <div id="content" class="content"></div>
+      </section>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="/tools/jsonl_viewer/app.js"></script>
+</body>
+</html>
