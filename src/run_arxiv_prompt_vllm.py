@@ -70,7 +70,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tensor-parallel-size", type=int, default=4)
     parser.add_argument("--max-model-len", type=int, default=196608)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.9)
-    parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument("--max-tokens", type=int, default=32768)
+    parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--tool-rounds", type=int, default=4)
@@ -94,6 +95,10 @@ def parse_args() -> argparse.Namespace:
         parser.error("--vllm-server-url cannot be combined with --vllm-server-port")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
+    if args.max_input_tokens < 1:
+        parser.error("--max-input-tokens must be >= 1")
+    if args.max_input_tokens + args.max_tokens > args.max_model_len:
+        parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
     return args
 
 

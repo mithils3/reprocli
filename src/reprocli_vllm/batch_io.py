@@ -35,6 +35,7 @@ def write_batch_requests(
                 "temperature": args.temperature,
                 "top_p": args.top_p,
                 "max_tokens": args.max_tokens,
+                "truncate_prompt_tokens": args.max_input_tokens,
             }
             if include_tools:
                 body["tools"] = WEB_TOOLS

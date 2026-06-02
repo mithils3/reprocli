@@ -3,11 +3,11 @@ module load python/3.11.9
 source /u/msalunkhe/reprocli/.venv/bin/activate
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 10 \
+  --num-prompts 32 \
   --tool-rounds 4 \
-  --no-compile \
-  --enforce-eager \
-  --request-workers 10 \
+  --max-input-tokens 128000 \
+  --max-tokens 32768 \
+  --request-workers 16 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
   --model /projects/bgnp/msalunkhe/MiniMax-M2.7

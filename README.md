@@ -12,6 +12,8 @@ then shuts it down when the run finishes.
 python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 1 \
   --tool-rounds 4 \
+  --max-input-tokens 128000 \
+  --max-tokens 32768 \
   --no-compile \
   --enforce-eager \
   --request-workers 10 \
@@ -57,6 +59,8 @@ python src/run_arxiv_prompt_vllm.py \
 ## Useful Flags
 
 - `--tool-rounds 4`: maximum browse/execute/continue rounds before the final answer.
+- `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
+- `--max-tokens 32768`: maximum generated tokens per model response.
 - `--batch-backend server`: default; start or reuse one persistent vLLM server.
 - `--batch-backend run-batch`: old behavior; starts a new vLLM batch process per round.
 - `--vllm-server-url`: use an already-running OpenAI-compatible vLLM server.
