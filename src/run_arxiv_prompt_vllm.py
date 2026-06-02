@@ -81,6 +81,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vllm-server-port", type=int)
     parser.add_argument("--server-startup-timeout", type=float, default=1800.0)
     parser.add_argument("--request-timeout", type=float, default=1800.0)
+    parser.add_argument("--request-workers", type=int, default=8)
+    parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--first-tool-choice", choices=("required", "auto"), default="required")
     parser.add_argument("--disable-web-tools", action="store_true")
     parser.add_argument("--no-compile", action="store_true")
@@ -90,6 +92,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--tool-rounds must be >= 0")
     if args.batch_backend == "server" and args.vllm_server_url and args.vllm_server_port:
         parser.error("--vllm-server-url cannot be combined with --vllm-server-port")
+    if args.request_workers < 1:
+        parser.error("--request-workers must be >= 1")
     return args
 
 

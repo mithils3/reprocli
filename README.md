@@ -14,6 +14,8 @@ python3 src/run_arxiv_prompt_vllm.py \
   --tool-rounds 4 \
   --no-compile \
   --enforce-eager \
+  --request-workers 10 \
+  --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
   --model /projects/bgnp/msalunkhe/MiniMax-M2.7
 ```
@@ -58,6 +60,8 @@ python src/run_arxiv_prompt_vllm.py \
 - `--batch-backend server`: default; start or reuse one persistent vLLM server.
 - `--batch-backend run-batch`: old behavior; starts a new vLLM batch process per round.
 - `--vllm-server-url`: use an already-running OpenAI-compatible vLLM server.
+- `--request-workers 10`: number of concurrent requests sent to the vLLM server.
+- `--stream-first-response`: print one live response stream while preserving JSONL output.
 - `--first-tool-choice required`: forces the first model pass to call a verification tool.
 - `--tool-timeout 20`: timeout for each HTTP request made by a tool.
 - `--tool-max-chars 8000`: cap each tool result before feeding it back to the model.
