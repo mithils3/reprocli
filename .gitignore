@@ -3,3 +3,4 @@ data/
 .agents/
 __pycache__/
 *.pyc
+outputs/
