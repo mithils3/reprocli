@@ -15,8 +15,8 @@ from .batch_io import (
     write_batch_requests,
     write_final_rows,
 )
+from .openai_client import run_requests
 from .papers import Paper
-from .vllm_batch import run_vllm_batch
 from .web_tools import execute_tool_call
 
 
@@ -51,7 +51,7 @@ def run_tool_loop(
             include_tools=include_tools,
             tool_choice=args.first_tool_choice if round_index == 0 else "auto",
         )
-        run_vllm_batch(args, request_path, output_path)
+        run_requests(args, request_path, output_path)
 
         next_active: list[str] = []
         for row in read_batch_output(output_path):

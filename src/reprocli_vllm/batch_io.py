@@ -68,6 +68,15 @@ def read_batch_output(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def iter_batch_requests(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
 def write_final_rows(
     path: Path,
     custom_ids: list[str],

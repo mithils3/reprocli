@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run prompt.txt over NeurIPS arXiv LaTeX papers with vLLM run-batch."""
+"""Run prompt.txt over NeurIPS arXiv LaTeX papers with vLLM."""
 
 from __future__ import annotations
 
@@ -14,9 +14,10 @@ from reprocli_vllm.config import (
     DEFAULT_REQUESTS_OUTPUT,
     PLACEHOLDER,
 )
+from reprocli_vllm.openai_client import run_requests
+from reprocli_vllm.openai_server import VllmServer
 from reprocli_vllm.papers import load_papers
 from reprocli_vllm.tool_loop import run_tool_loop
-from reprocli_vllm.vllm_batch import run_vllm_batch
 
 
 def main() -> int:
@@ -38,13 +39,22 @@ def main() -> int:
         f"({'full dataset' if args.num_prompts is None else f'first {args.num_prompts}'})",
         file=sys.stderr,
     )
+    if args.batch_backend == "server" and not args.vllm_server_url:
+        with VllmServer(args) as server_url:
+            args.vllm_server_url = server_url
+            run(args, papers_to_run, prompts)
+    else:
+        run(args, papers_to_run, prompts)
+
+    print(f"Wrote {len(prompts)} batch responses to {args.output}", file=sys.stderr)
+    return 0
+
+
+def run(args: argparse.Namespace, papers_to_run, prompts: list[str]) -> None:
     if args.disable_web_tools or args.tool_rounds == 0:
         run_single_batch(args, papers_to_run, prompts)
     else:
         run_tool_loop(args, papers_to_run, prompts)
-
-    print(f"Wrote {len(prompts)} batch responses to {args.output}", file=sys.stderr)
-    return 0
 
 
 def parse_args() -> argparse.Namespace:
@@ -66,6 +76,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tool-rounds", type=int, default=4)
     parser.add_argument("--tool-timeout", type=float, default=20.0)
     parser.add_argument("--tool-max-chars", type=int, default=8000)
+    parser.add_argument("--batch-backend", choices=("server", "run-batch"), default="server")
+    parser.add_argument("--vllm-server-url")
+    parser.add_argument("--vllm-server-port", type=int)
+    parser.add_argument("--server-startup-timeout", type=float, default=1800.0)
+    parser.add_argument("--request-timeout", type=float, default=1800.0)
     parser.add_argument("--first-tool-choice", choices=("required", "auto"), default="required")
     parser.add_argument("--disable-web-tools", action="store_true")
     parser.add_argument("--no-compile", action="store_true")
@@ -73,6 +88,8 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.tool_rounds < 0:
         parser.error("--tool-rounds must be >= 0")
+    if args.batch_backend == "server" and args.vllm_server_url and args.vllm_server_port:
+        parser.error("--vllm-server-url cannot be combined with --vllm-server-port")
     return args
 
 
@@ -95,7 +112,7 @@ def run_single_batch(args: argparse.Namespace, papers, prompts: list[str]) -> No
         args,
         include_tools=False,
     )
-    run_vllm_batch(args, args.requests_output, args.output)
+    run_requests(args, args.requests_output, args.output)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,12 @@ srun -A betw-dtai-gh --time=02:00:00 --nodes=1 --ntasks-per-node=32 --partition=
 module load python/3.11.9 
 source /u/msalunkhe/reprocli/.venv/bin/activate
 
-python src/run_arxiv_prompt_vllm.py \
-    --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
-    --num-prompts 10 \
-    --dataset /projects/bgnp/msalunkhe/datasets
+
+
+python3 src/run_arxiv_prompt_vllm.py \
+  --num-prompts 1 \
+  --tool-rounds 4 \
+  --no-compile \
+  --enforce-eager \
+  --dataset /projects/bgnp/msalunkhe/datasets \
+  --model /projects/bgnp/msalunkhe/MiniMax-M2.7
