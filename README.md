@@ -4,7 +4,7 @@ Utilities for running the NeurIPS arXiv artifact-availability prompt through vLL
 
 ## Run With Web Verification
 
-The runner uses vLLM tool calling plus a local Python tool loop. Search uses DuckDuckGo HTML, so no Brave/Tavily key is required. GitHub and Hugging Face checks use their public APIs.
+The runner uses vLLM tool calling plus a local Python tool loop. Search is a lightweight direct-URL and GitHub-candidate extractor, so no Brave/Tavily key is required; GitHub and Hugging Face verification tools use their public APIs.
 By default it starts one local vLLM OpenAI server, reuses it for every tool round,
 lets each paper advance through tool rounds as soon as its own response and tool
 calls finish, then shuts the server down when the run finishes.
@@ -12,7 +12,7 @@ calls finish, then shuts the server down when the run finishes.
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 8 \
-  --tool-rounds 8 \
+  --tool-rounds 32 \
   --max-input-tokens 128000 \
   --max-tokens 32768 \
   --request-workers 8 \
@@ -27,7 +27,7 @@ python3 src/run_arxiv_prompt_vllm.py \
 For a larger run, omit `--num-prompts`.
 
 ```bash
-python src/run_arxiv_prompt_vllm.py --tool-rounds 4
+python src/run_arxiv_prompt_vllm.py
 ```
 
 Optional rate-limit helpers:
@@ -39,7 +39,7 @@ export HF_TOKEN=...
 
 ## Useful Flags
 
-- `--tool-rounds 4`: maximum browse/execute/continue rounds before the final answer.
+- `--tool-rounds 32`: maximum browse/execute/continue rounds before the final answer.
 - `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
 - `--max-tokens 32768`: maximum generated tokens per model response.
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.

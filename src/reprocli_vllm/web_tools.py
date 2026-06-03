@@ -4,13 +4,11 @@ import json
 import os
 import re
 import urllib.parse
-from html import unescape
 from typing import Any
 
+from .artifact_search import search_artifacts
 from .config import TOOL_MAX_CHARS, TOOL_TIMEOUT
 from .http_utils import (
-    build_url,
-    clean_text,
     html_to_text,
     http_json,
     http_text,
@@ -70,31 +68,7 @@ def web_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     max_results = max(1, min(max_results, 10))
     if not query:
         return {"ok": False, "error": "Missing query"}
-    url = build_url("https://html.duckduckgo.com/html/", {"q": query})
-    status, final_url, content_type, text = http_text(url, TOOL_TIMEOUT, max_chars=120000)
-    matches = re.findall(
-        r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
-        text,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    results = [
-        {
-            "title": clean_text(title_html),
-            "url": normalize_duckduckgo_url(unescape(href)),
-            "snippet": "",
-        }
-        for href, title_html in matches[:max_results]
-    ]
-    return {
-        "ok": bool(results),
-        "provider": "duckduckgo_html",
-        "query": query,
-        "status": status,
-        "final_url": final_url,
-        "content_type": content_type,
-        "results": results,
-        "warning": "DuckDuckGo HTML is simple/no-key, but can be blocked or incomplete.",
-    }
+    return search_artifacts(query, max_results)
 
 
 def fetch_url_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -188,14 +162,6 @@ def huggingface_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "dataset_files": [name for name in files if is_dataset_file(name)][:40],
         }
     return {"ok": False, "provider": "huggingface", "repo": repo_id, "errors": errors}
-
-
-def normalize_duckduckgo_url(href: str) -> str:
-    parsed = urllib.parse.urlparse(href)
-    query = urllib.parse.parse_qs(parsed.query)
-    if "uddg" in query and query["uddg"]:
-        return query["uddg"][0]
-    return href
 
 
 def parse_github_repo(value: str) -> tuple[str, str] | None:

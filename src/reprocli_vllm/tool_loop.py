@@ -35,8 +35,10 @@ def run_tool_loop(
     }
     original_ids = [paper.arxiv_id for paper in papers]
     final_rows: dict[str, dict] = {}
+    hit_tool_round_limit: set[str] = set()
     request_paths_seen: set[int] = set()
     output_paths_seen: set[int] = set()
+    tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
     base_url = server_url.rstrip("/")
     print(
@@ -98,6 +100,8 @@ def run_tool_loop(
                         tools,
                         conversations,
                         final_rows,
+                        tool_rounds_used,
+                        hit_tool_round_limit,
                         output_paths_seen,
                         args,
                     )
@@ -124,6 +128,8 @@ def handle_request_done(
     tools: ThreadPoolExecutor,
     conversations: dict[str, list[dict]],
     final_rows: dict[str, dict],
+    tool_rounds_used: dict[str, int],
+    hit_tool_round_limit: set[str],
     output_paths_seen: set[int],
     args: argparse.Namespace,
 ) -> None:
@@ -140,6 +146,9 @@ def handle_request_done(
     message = response_message(row)
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
+        tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)
+        if round_index + 1 >= args.tool_rounds:
+            hit_tool_round_limit.add(custom_id)
         tool_future = tools.submit(
             append_tool_results,
             conversations[custom_id],
@@ -148,6 +157,11 @@ def handle_request_done(
         )
         tool_futures[tool_future] = state
         return
+    row["tool_loop"] = {
+        "tool_rounds_used": tool_rounds_used[custom_id],
+        "max_tool_rounds": args.tool_rounds,
+        "hit_tool_round_limit": custom_id in hit_tool_round_limit,
+    }
     final_rows[custom_id] = row
 
 

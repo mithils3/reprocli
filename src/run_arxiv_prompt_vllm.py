@@ -59,7 +59,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--max-tokens", type=int, default=32768)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
-    parser.add_argument("--tool-rounds", type=int, default=4)
+    parser.add_argument("--tool-rounds", type=int, default=32)
     parser.add_argument("--request-workers", type=int, default=8)
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--trust-remote-code", action="store_true")

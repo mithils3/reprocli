@@ -29,23 +29,29 @@ WEB_SYSTEM_MESSAGE = (
     "data, weights, GitHub repositories, Hugging Face repositories, or project "
     "pages are verified unless a tool result supports that claim. If tools fail "
     "or cannot verify a link, mark the artifact unavailable or unverified as "
-    "instructed by the user prompt. After using tools, return only the requested "
-    "JSON object."
+    "instructed by the user prompt. Prefer direct github_repo, huggingface_repo, "
+    "or fetch_url checks when the paper or prior results contain a candidate URL "
+    "or repo id. Use web_search only when no direct candidate exists. After using "
+    "tools, return only the requested JSON object."
 )
 FINAL_NO_TOOLS_MESSAGE = (
     "Tool use is complete and no tools are available in this request. Use only "
-    "the paper text and prior tool results already in the conversation. Return "
-    "only the requested JSON object; do not write search plans, tool calls, or "
-    "prose outside the JSON."
+    "the paper text and prior tool results already in the conversation. Think "
+    "through the private consistency checklist before answering: clean URLs only "
+    "in verified_links, web_verification is available/partial/unavailable, score "
+    "matches the formula, tier matches score, and h100_hours_estimate matches its "
+    "basis. Return only the requested JSON object; do not write search plans, "
+    "tool calls, or prose outside the JSON."
 )
 WEB_TOOLS = [
     {
         "type": "function",
-        "function": {
+            "function": {
             "name": "web_search",
             "description": (
-                "Search DuckDuckGo HTML for public pages about a paper, repository, "
-                "dataset, checkpoint, or project."
+                "Extract direct artifact URLs, arXiv IDs, and obvious GitHub owner/repo "
+                "candidates from a query. This is a lightweight discovery helper; "
+                "verify candidates with github_repo, huggingface_repo, or fetch_url."
             ),
             "parameters": {
                 "type": "object",
