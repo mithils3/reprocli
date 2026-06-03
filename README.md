@@ -34,6 +34,29 @@ For a larger run, omit `--num-prompts`.
 python src/run_arxiv_prompt_vllm.py
 ```
 
+## Run With OpenAI Batch
+
+The OpenAI runner submits `/v1/responses` requests through the OpenAI Batch API,
+then downloads completed results back into the same raw and extracted JSONL
+formats used by the rest of the repo.
+
+```bash
+OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
+  --num-prompts 10 \
+  --submit-only
+```
+
+To resume and download a completed batch:
+
+```bash
+OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
+  --download
+```
+
+The submit command records pending batch ids in `outputs/*_batch_ids.jsonl`.
+`--download` removes each completed or terminal batch id after saving its files;
+still-running batches remain queued for the next run.
+
 Optional rate-limit helpers:
 
 ```bash
