@@ -9,6 +9,8 @@ from .output_schema import FINAL_RESPONSE_FORMAT
 from .papers import Paper
 
 DEFAULT_MODEL = "gpt-5.5"
+DEFAULT_PROMPT_CACHE_KEY = "reprocli-openai-arxiv-v1"
+DEFAULT_PROMPT_CACHE_RETENTION = "24h"
 OPENAI_SYSTEM_MESSAGE = (
     "You have access to OpenAI hosted web_search. Use it when it helps verify "
     "artifact links relevant to the MRE, and rely on the paper text when search "
@@ -35,6 +37,10 @@ def batch_request(args: argparse.Namespace, paper: Paper, prompt_template: str) 
         "reasoning": {"effort": args.reasoning_effort},
         "store": args.store,
     }
+    if args.prompt_cache_key:
+        body["prompt_cache_key"] = args.prompt_cache_key
+    if args.prompt_cache_retention != "none":
+        body["prompt_cache_retention"] = args.prompt_cache_retention
     return {
         "custom_id": paper.arxiv_id,
         "method": "POST",

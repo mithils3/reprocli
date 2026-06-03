@@ -56,6 +56,8 @@ OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
 The submit command records pending batch ids in `outputs/*_batch_ids.jsonl`.
 `--download` removes each completed or terminal batch id after saving its files;
 still-running batches remain queued for the next run.
+Batch requests also set a stable `prompt_cache_key` and `prompt_cache_retention`
+of `24h` by default so repeated prompt prefixes can use OpenAI prompt caching.
 
 Optional rate-limit helpers:
 

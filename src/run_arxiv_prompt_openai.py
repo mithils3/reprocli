@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import Any
 
 from reprocli_vllm.config import DEFAULT_DATASET, PLACEHOLDER
-from reprocli_vllm.openai_arxiv import DEFAULT_MODEL, batch_request, extracted_row, final_rows
+from reprocli_vllm.openai_arxiv import (
+    DEFAULT_MODEL,
+    DEFAULT_PROMPT_CACHE_KEY,
+    DEFAULT_PROMPT_CACHE_RETENTION,
+    batch_request,
+    extracted_row,
+    final_rows,
+)
 from reprocli_vllm.openai_batch import (
     RESPONSES_ENDPOINT,
     append_batch_registry,
@@ -97,6 +104,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-output-tokens", type=int, default=8192)
     parser.add_argument("--max-paper-chars", type=int, default=220_000)
     parser.add_argument("--reasoning-effort", choices=("minimal", "low", "medium", "high"), default="medium")
+    parser.add_argument("--prompt-cache-key", default=DEFAULT_PROMPT_CACHE_KEY)
+    parser.add_argument(
+        "--prompt-cache-retention",
+        choices=("in_memory", "24h", "none"),
+        default=DEFAULT_PROMPT_CACHE_RETENTION,
+    )
     parser.add_argument("--disable-openai-web-search", action="store_true")
     parser.add_argument("--store", action="store_true")
     parser.add_argument(
