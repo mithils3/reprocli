@@ -19,11 +19,22 @@ WEB_SYSTEM_MESSAGE = (
     "You have web verification tools. Before producing the final JSON, use the "
     "tools to verify artifact links relevant to the MRE. Do not claim that code, "
     "data, weights, GitHub repositories, Hugging Face repositories, or project "
-    "pages are verified unless a tool result supports that claim. If tools fail "
+    "pages are verified unless a tool result supports that claim. The first tool "
+    "call is forced to github_search; use it to search for the paper title, "
+    "arXiv ID, project name, and code repository terms. If tools fail "
     "or cannot verify a link, mark the artifact unavailable or unverified as "
     "instructed by the user prompt. Prefer direct github_repo, huggingface_repo, "
     "or fetch_url checks when the paper or prior results contain a candidate URL "
-    "or repo id. Use web_search only when no direct candidate exists. Do not call "
+    "or repo id. If github_repo cannot parse, fetch, or verify a GitHub repo "
+    "through the GitHub API, use github_search with the most useful paper, "
+    "project, acronym, author, arXiv ID, or artifact terms before marking code "
+    "unavailable. The github_repo tool includes "
+    "root README text when available; "
+    "use that README evidence to decide whether the repo contains MRE-relevant "
+    "training, evaluation, config, or checkpoint-loading instructions. If a "
+    "checked repository is missing MRE code, is a stub, or only promises a future "
+    "release, use github_search to look for another official code source before "
+    "marking code unavailable. Do not call "
     "the same tool with the same arguments twice. If a likely artifact cannot be "
     "verified after direct checks, stop searching and mark it unavailable or "
     "unverified. After using tools, return only the requested JSON object."
@@ -41,23 +52,27 @@ FINAL_NO_TOOLS_MESSAGE = (
 WEB_TOOLS = [
     {
         "type": "function",
-            "function": {
-            "name": "web_search",
+        "function": {
+            "name": "github_search",
             "description": (
-                "Extract direct artifact URLs, arXiv IDs, and obvious GitHub owner/repo "
-                "candidates from a query. This is a lightweight discovery helper; "
-                "verify candidates with github_repo, huggingface_repo, or fetch_url."
+                "Search GitHub repositories or public code for candidate official "
+                "artifact repos. Verify any candidate with github_repo before using it."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query with exact project/repo/dataset names.",
+                        "description": "GitHub search query for likely paper/project code repos.",
+                    },
+                    "search_type": {
+                        "type": "string",
+                        "enum": ["repositories", "code"],
+                        "default": "repositories",
                     },
                     "max_results": {
                         "type": "integer",
-                        "description": "Maximum search results to return.",
+                        "description": "Maximum results to return.",
                         "default": 5,
                     },
                 },

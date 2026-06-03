@@ -20,7 +20,9 @@ INPUT:
 MANDATORY WEB / TOOL VERIFICATION
 ══════════════════════════════════════════════════════════════════
 
-You must use web search, browser tools, or available retrieval tools to verify artifact availability.
+You must use GitHub, Hugging Face, URL fetch, or available retrieval tools to verify artifact availability.
+
+Your first tool call must be GitHub search for likely code repositories. Use whatever query seems most useful from the paper title, acronym, project name, authors, arXiv ID, and artifact terms.
 
 Do not rely only on claims inside the paper such as “code is available,” “we release checkpoints,” or “data can be found at...”.
 
@@ -39,9 +41,16 @@ For every GitHub, Hugging Face, project page, dataset page, or checkpoint link m
 2. Verify that the page actually exists.
 3. Verify whether the repository is public and non-empty.
 4. Check whether the repository contains files relevant to the MRE, especially training scripts, evaluation scripts, configs, README instructions, or checkpoint-loading code.
+   The GitHub repository tool includes root README text when available; use it as direct evidence about install, training, evaluation, checkpoint, and release status.
 5. Check whether dataset links are downloadable or only request-only/gated/private.
 6. Check whether model weights/checkpoints are actually downloadable.
 7. Quote evidence from the verified page whenever possible.
+
+If the first repository you inspect is missing MRE-relevant code, is only a benchmark/evaluation helper, is a stub, or says code will be released later, search for another official code source before marking code unavailable.
+
+If the GitHub API cannot parse, fetch, or verify a candidate repository, use GitHub search again with a better query before marking code unavailable.
+
+Always verify promising GitHub search results with the GitHub repository tool before counting code as available.
 
 If a link is dead, private, empty, missing, or cannot be verified, treat the corresponding artifact as unavailable unless there is another verified working source.
 

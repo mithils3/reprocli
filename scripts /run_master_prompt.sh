@@ -9,7 +9,7 @@ srun -A betw-dtai-gh \
   --ntasks-per-node=32 \
   --partition=ghx4-interactive \
   --gpus=4 \
-  --mem=0 \
+  --mem=256G \
   --pty /bin/bash
 
 export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
@@ -25,7 +25,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --tool-rounds 10 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
-  --request-workers 8 \
+  --request-workers 128 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
   --model deepseek-ai/DeepSeek-V4-Flash \

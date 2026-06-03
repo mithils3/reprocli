@@ -6,8 +6,8 @@ import re
 import urllib.parse
 from typing import Any
 
-from .artifact_search import search_artifacts
 from .config import TOOL_MAX_CHARS, TOOL_TIMEOUT
+from .github_search import github_search_tool
 from .http_utils import (
     html_to_text,
     http_json,
@@ -23,8 +23,8 @@ def execute_tool_call(call: dict[str, Any]) -> dict[str, Any]:
     name = function.get("name", "")
     try:
         arguments = parse_tool_arguments(function.get("arguments", {}))
-        if name == "web_search":
-            result = web_search_tool(arguments)
+        if name == "github_search":
+            result = github_search_tool(arguments)
         elif name == "fetch_url":
             result = fetch_url_tool(arguments)
         elif name == "github_repo":
@@ -60,15 +60,6 @@ def limit_tool_result(result: dict[str, Any], max_chars: int) -> dict[str, Any]:
         "max_chars": max_chars,
         "result_excerpt": encoded[:max_chars],
     }
-
-
-def web_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    query = str(arguments.get("query", "")).strip()
-    max_results = int(arguments.get("max_results") or 5)
-    max_results = max(1, min(max_results, 10))
-    if not query:
-        return {"ok": False, "error": "Missing query"}
-    return search_artifacts(query, max_results)
 
 
 def fetch_url_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -107,6 +98,7 @@ def github_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     )
     releases = safe_http_json(f"{repo_url}/releases?per_page=10", TOOL_TIMEOUT, headers=headers)
     files, directories = github_root_names(contents)
+    readme = github_readme_excerpt(contents)
     return {
         "ok": True,
         "provider": "github",
@@ -123,6 +115,9 @@ def github_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "root_files": files[:80],
         "root_dirs": directories[:80],
         "releases": github_release_names(releases),
+        "readme_path": readme.get("path"),
+        "readme_excerpt": readme.get("text"),
+        "readme_truncated": readme.get("truncated", False),
         "code_markers": find_markers(files + directories, ("train", "eval", "config", "src", "readme")),
         "checkpoint_markers": find_markers(files + directories, ("checkpoint", "ckpt", "weight", "pth")),
     }
@@ -194,6 +189,33 @@ def github_release_names(releases: object) -> list[str]:
     if not isinstance(releases, list):
         return []
     return [(item.get("name") or item.get("tag_name")) for item in releases[:20]]
+
+
+def github_readme_excerpt(contents: object, max_chars: int = 4000) -> dict[str, Any]:
+    if not isinstance(contents, list):
+        return {}
+    readme = next(
+        (
+            item
+            for item in contents
+            if str(item.get("name", "")).lower().startswith("readme")
+            and item.get("type") == "file"
+        ),
+        None,
+    )
+    if not readme:
+        return {}
+    url = str(readme.get("download_url") or "")
+    if not is_http_url(url):
+        return {"path": readme.get("path") or readme.get("name")}
+    status, _, content_type, text = http_text(url, TOOL_TIMEOUT, max_chars=max_chars)
+    if status >= 400 or not is_probably_text(content_type):
+        return {"path": readme.get("path") or readme.get("name")}
+    return {
+        "path": readme.get("path") or readme.get("name"),
+        "text": text[:max_chars],
+        "truncated": len(text) >= max_chars,
+    }
 
 
 def parse_huggingface_repo(value: str, repo_type: str) -> tuple[str, str] | None:

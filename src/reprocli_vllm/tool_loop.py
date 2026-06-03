@@ -65,7 +65,11 @@ def run_tool_loop(
                 messages,
                 args,
                 include_tools=include_tools,
-                tool_choice="required" if round_index == 0 else "auto",
+                tool_choice=(
+                    {"type": "function", "function": {"name": "github_search"}}
+                    if round_index == 0
+                    else "auto"
+                ),
             )
             if args.save_round_jsonl:
                 write_round_row(
