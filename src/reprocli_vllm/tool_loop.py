@@ -11,16 +11,14 @@ from .batch_io import (
     build_batch_request,
     initial_messages,
     normalize_tool_calls,
-    read_batch_output,
     response_message,
     round_output_path,
     round_request_path,
     tool_result_message,
-    write_batch_requests,
     write_final_rows,
 )
-from .config import FINAL_NO_TOOLS_MESSAGE
-from .openai_client import post_chat_completion_row, response_row, run_requests
+from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from .openai_client import post_chat_completion_row, response_row
 from .papers import Paper
 from .web_tools import execute_tool_call
 
@@ -29,81 +27,10 @@ def run_tool_loop(
     args: argparse.Namespace,
     papers: list[Paper],
     prompts: list[str],
-) -> None:
-    if args.batch_backend == "server":
-        run_server_tool_loop(args, papers, prompts)
-        return
-    run_round_tool_loop(args, papers, prompts)
-
-
-def run_round_tool_loop(
-    args: argparse.Namespace,
-    papers: list[Paper],
-    prompts: list[str],
+    server_url: str,
 ) -> None:
     conversations = {
-        paper.arxiv_id: initial_messages(prompt, include_web_system=True)
-        for paper, prompt in zip(papers, prompts, strict=True)
-    }
-    original_ids = [paper.arxiv_id for paper in papers]
-    active_ids = original_ids[:]
-    final_rows: dict[str, dict] = {}
-
-    for round_index in range(args.tool_rounds + 1):
-        include_tools = round_index < args.tool_rounds
-        request_path = round_request_path(args.requests_output, round_index)
-        output_path = round_output_path(args.output, round_index)
-        print(
-            f"Round {round_index + 1}: running {len(active_ids)} request(s) "
-            f"({'tools enabled' if include_tools else 'final no-tools pass'})",
-            file=sys.stderr,
-        )
-        round_conversations = conversations
-        if not include_tools:
-            round_conversations = final_pass_conversations(conversations, active_ids)
-        write_batch_requests(
-            request_path,
-            args.model,
-            active_ids,
-            round_conversations,
-            args,
-            include_tools=include_tools,
-            tool_choice=args.first_tool_choice if round_index == 0 else "auto",
-        )
-        run_requests(args, request_path, output_path)
-
-        next_active: list[str] = []
-        for row in read_batch_output(output_path):
-            custom_id = str(row.get("custom_id", ""))
-            message = response_message(row)
-            tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
-            if include_tools and tool_calls:
-                append_tool_results(conversations[custom_id], message, tool_calls, args)
-                next_active.append(custom_id)
-                continue
-            final_rows[custom_id] = row
-
-        if not next_active:
-            break
-        active_ids = next_active
-    else:
-        raise SystemExit(
-            f"Tool loop did not finish after {args.tool_rounds} tool round(s)."
-        )
-
-    missing = [custom_id for custom_id in original_ids if custom_id not in final_rows]
-    if missing:
-        raise SystemExit(f"Missing final responses for: {', '.join(missing)}")
-    write_final_rows(args.output, original_ids, final_rows)
-
-
-def run_server_tool_loop(
-    args: argparse.Namespace,
-    papers: list[Paper],
-    prompts: list[str],
-) -> None:
-    conversations = {
-        paper.arxiv_id: initial_messages(prompt, include_web_system=True)
+        paper.arxiv_id: initial_messages(prompt)
         for paper, prompt in zip(papers, prompts, strict=True)
     }
     original_ids = [paper.arxiv_id for paper in papers]
@@ -111,7 +38,7 @@ def run_server_tool_loop(
     request_paths_seen: set[int] = set()
     output_paths_seen: set[int] = set()
     workers = max(1, min(args.request_workers, len(original_ids)))
-    base_url = args.vllm_server_url.rstrip("/")
+    base_url = server_url.rstrip("/")
     print(
         f"Running async tool loop for {len(original_ids)} request(s) "
         f"with {workers} worker(s)",
@@ -126,14 +53,13 @@ def run_server_tool_loop(
 
         def submit_request(custom_id: str, round_index: int, include_tools: bool) -> None:
             messages = conversation_for_round(conversations[custom_id], include_tools)
-            tool_choice = args.first_tool_choice if round_index == 0 else "auto"
             request = build_batch_request(
                 args.model,
                 custom_id,
                 messages,
                 args,
                 include_tools=include_tools,
-                tool_choice=tool_choice,
+                tool_choice="required" if round_index == 0 else "auto",
             )
             write_round_row(
                 round_request_path(args.requests_output, round_index),
@@ -146,7 +72,7 @@ def run_server_tool_loop(
                 post_chat_completion_row,
                 base_url,
                 request,
-                args.request_timeout,
+                REQUEST_TIMEOUT,
                 stream=stream,
             )
             request_futures[future] = {
@@ -219,7 +145,6 @@ def handle_request_done(
             conversations[custom_id],
             message,
             tool_calls,
-            args,
         )
         tool_futures[tool_future] = state
         return
@@ -247,11 +172,10 @@ def append_tool_results(
     messages: list[dict],
     message: dict,
     tool_calls: list[dict],
-    args: argparse.Namespace,
 ) -> None:
     append_assistant_tool_call(messages, message, tool_calls)
     for call in tool_calls:
-        result = execute_tool_call(call, args)
+        result = execute_tool_call(call)
         messages.append(tool_result_message(call, result))
 
 

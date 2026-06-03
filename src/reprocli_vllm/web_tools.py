@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import re
@@ -8,6 +7,7 @@ import urllib.parse
 from html import unescape
 from typing import Any
 
+from .config import TOOL_MAX_CHARS, TOOL_TIMEOUT
 from .http_utils import (
     build_url,
     clean_text,
@@ -20,24 +20,24 @@ from .http_utils import (
 )
 
 
-def execute_tool_call(call: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+def execute_tool_call(call: dict[str, Any]) -> dict[str, Any]:
     function = call.get("function") or {}
     name = function.get("name", "")
     try:
         arguments = parse_tool_arguments(function.get("arguments", {}))
         if name == "web_search":
-            result = web_search_tool(arguments, args)
+            result = web_search_tool(arguments)
         elif name == "fetch_url":
-            result = fetch_url_tool(arguments, args)
+            result = fetch_url_tool(arguments)
         elif name == "github_repo":
-            result = github_repo_tool(arguments, args)
+            result = github_repo_tool(arguments)
         elif name == "huggingface_repo":
-            result = huggingface_repo_tool(arguments, args)
+            result = huggingface_repo_tool(arguments)
         else:
             result = {"ok": False, "error": f"Unknown tool: {name}"}
     except Exception as exc:
         result = {"ok": False, "tool": name, "error": f"{type(exc).__name__}: {exc}"}
-    return limit_tool_result(result, args.tool_max_chars)
+    return limit_tool_result(result, TOOL_MAX_CHARS)
 
 
 def parse_tool_arguments(value: Any) -> dict[str, Any]:
@@ -64,14 +64,14 @@ def limit_tool_result(result: dict[str, Any], max_chars: int) -> dict[str, Any]:
     }
 
 
-def web_search_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+def web_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     query = str(arguments.get("query", "")).strip()
     max_results = int(arguments.get("max_results") or 5)
     max_results = max(1, min(max_results, 10))
     if not query:
         return {"ok": False, "error": "Missing query"}
     url = build_url("https://html.duckduckgo.com/html/", {"q": query})
-    status, final_url, content_type, text = http_text(url, args.tool_timeout, max_chars=120000)
+    status, final_url, content_type, text = http_text(url, TOOL_TIMEOUT, max_chars=120000)
     matches = re.findall(
         r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
         text,
@@ -97,12 +97,12 @@ def web_search_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict
     }
 
 
-def fetch_url_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+def fetch_url_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     url = str(arguments.get("url", "")).strip()
-    max_chars = int(arguments.get("max_chars") or args.tool_max_chars)
+    max_chars = int(arguments.get("max_chars") or TOOL_MAX_CHARS)
     if not is_http_url(url):
         return {"ok": False, "error": f"Only http(s) URLs are supported: {url}"}
-    status, final_url, content_type, text = http_text(url, args.tool_timeout, max_chars=max_chars)
+    status, final_url, content_type, text = http_text(url, TOOL_TIMEOUT, max_chars=max_chars)
     body = text if is_probably_text(content_type) else ""
     if "html" in content_type.lower():
         body = html_to_text(body)
@@ -116,22 +116,22 @@ def fetch_url_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict[
     }
 
 
-def github_repo_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+def github_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     repo = parse_github_repo(str(arguments.get("repo", "")))
     if not repo:
         return {"ok": False, "error": "Could not parse GitHub repo"}
     owner, name = repo
     headers = github_headers()
     repo_url = f"https://api.github.com/repos/{owner}/{name}"
-    repo_data = http_json(repo_url, args.tool_timeout, headers=headers)
+    repo_data = http_json(repo_url, TOOL_TIMEOUT, headers=headers)
     default_branch = repo_data.get("default_branch") or "main"
     encoded_branch = urllib.parse.quote(default_branch, safe="")
     contents = safe_http_json(
         f"{repo_url}/contents?ref={encoded_branch}",
-        args.tool_timeout,
+        TOOL_TIMEOUT,
         headers=headers,
     )
-    releases = safe_http_json(f"{repo_url}/releases?per_page=10", args.tool_timeout, headers=headers)
+    releases = safe_http_json(f"{repo_url}/releases?per_page=10", TOOL_TIMEOUT, headers=headers)
     files, directories = github_root_names(contents)
     return {
         "ok": True,
@@ -154,7 +154,7 @@ def github_repo_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dic
     }
 
 
-def huggingface_repo_tool(arguments: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+def huggingface_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     parsed = parse_huggingface_repo(
         str(arguments.get("repo", "")),
         str(arguments.get("repo_type") or "auto"),
@@ -166,7 +166,7 @@ def huggingface_repo_tool(arguments: dict[str, Any], args: argparse.Namespace) -
     errors = []
     for candidate in candidates:
         try:
-            data = http_json(huggingface_api_url(repo_id, candidate), args.tool_timeout)
+            data = http_json(huggingface_api_url(repo_id, candidate), TOOL_TIMEOUT)
         except Exception as exc:
             errors.append({"repo_type": candidate, "error": str(exc)})
             continue

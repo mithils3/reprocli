@@ -5,40 +5,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
+from .config import TEMPERATURE, TOP_P, WEB_SYSTEM_MESSAGE, WEB_TOOLS
 
 
-def initial_messages(prompt: str, *, include_web_system: bool) -> list[dict[str, Any]]:
-    messages: list[dict[str, Any]] = []
-    if include_web_system:
-        messages.append({"role": "system", "content": WEB_SYSTEM_MESSAGE})
-    messages.append({"role": "user", "content": prompt})
-    return messages
-
-
-def write_batch_requests(
-    output_path: Path,
-    model: str,
-    custom_ids: list[str],
-    conversations: dict[str, list[dict[str, Any]]],
-    args: argparse.Namespace,
-    *,
-    include_tools: bool,
-    tool_choice: str = "auto",
-) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
-        for custom_id in custom_ids:
-            request = build_batch_request(
-                model,
-                custom_id,
-                conversations[custom_id],
-                args,
-                include_tools=include_tools,
-                tool_choice=tool_choice,
-            )
-            json.dump(request, handle, ensure_ascii=False)
-            handle.write("\n")
+def initial_messages(prompt: str) -> list[dict[str, Any]]:
+    return [
+        {"role": "system", "content": WEB_SYSTEM_MESSAGE},
+        {"role": "user", "content": prompt},
+    ]
 
 
 def build_batch_request(
@@ -53,8 +27,8 @@ def build_batch_request(
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "temperature": args.temperature,
-        "top_p": args.top_p,
+        "temperature": TEMPERATURE,
+        "top_p": TOP_P,
         "max_tokens": args.max_tokens,
         "truncate_prompt_tokens": args.max_input_tokens,
     }
@@ -85,24 +59,6 @@ def round_request_path(path: Path, round_index: int) -> Path:
 
 def round_output_path(path: Path, round_index: int) -> Path:
     return path.with_name(f"{path.stem}_round{round_index}{path.suffix}")
-
-
-def read_batch_output(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
-
-
-def iter_batch_requests(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
 
 
 def write_final_rows(

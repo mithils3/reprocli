@@ -10,11 +10,19 @@ DEFAULT_REQUESTS_OUTPUT = Path("outputs/neurips_2025_minimax_m27_requests.jsonl"
 PLACEHOLDER = "{PAPER_TEXT}"
 TEX_EXTENSION = ".tex"
 MINIMAX_PARSER = "minimax_m2"
+TENSOR_PARALLEL_SIZE = 4
+MAX_MODEL_LEN = 196608
+GPU_MEMORY_UTILIZATION = 0.9
+TEMPERATURE = 0.0
+TOP_P = 1.0
+TOOL_TIMEOUT = 20.0
+TOOL_MAX_CHARS = 8000
+REQUEST_TIMEOUT = 1800.0
+SERVER_STARTUP_TIMEOUT = 1800.0
 COMPILATION_CONFIG = {
     "mode": 3,
     "pass_config": {"fuse_minimax_qk_norm": True},
 }
-NO_COMPILE_CONFIG = {"mode": 0}
 WEB_SYSTEM_MESSAGE = (
     "You have web verification tools. Before producing the final JSON, use the "
     "tools to verify artifact links relevant to the MRE. Do not claim that code, "

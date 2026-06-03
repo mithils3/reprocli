@@ -1,87 +1,10 @@
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 import time
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any
-
-from .batch_io import iter_batch_requests
-from .vllm_batch import run_vllm_batch
-
-
-def run_requests(args: argparse.Namespace, input_path: Path, output_path: Path) -> None:
-    if args.batch_backend == "run-batch":
-        run_vllm_batch(args, input_path, output_path)
-        return
-    run_openai_server_requests(args, input_path, output_path)
-
-
-def run_openai_server_requests(
-    args: argparse.Namespace,
-    input_path: Path,
-    output_path: Path,
-) -> None:
-    base_url = args.vllm_server_url.rstrip("/")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    rows = iter_batch_requests(input_path)
-    workers = max(1, min(args.request_workers, len(rows)))
-    print(
-        f"Posting {len(rows)} request(s) to {base_url} with {workers} worker(s)",
-        file=sys.stderr,
-    )
-    responses = post_chat_completions(
-        base_url,
-        rows,
-        args.request_timeout,
-        workers,
-        args.stream_first_response,
-    )
-    with output_path.open("w", encoding="utf-8") as handle:
-        for row, response in zip(rows, responses, strict=True):
-            json.dump(response_row(row["custom_id"], response), handle, ensure_ascii=False)
-            handle.write("\n")
-
-
-def post_chat_completions(
-    base_url: str,
-    rows: list[dict[str, Any]],
-    timeout: float,
-    workers: int,
-    stream_first: bool,
-) -> list[Any]:
-    if stream_first and rows:
-        return post_chat_completions_with_stream(base_url, rows, timeout, workers)
-    responses: list[Any] = [None] * len(rows)
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(post_chat_completion_row, base_url, row, timeout): index
-            for index, row in enumerate(rows)
-        }
-        for future in as_completed(futures):
-            responses[futures[future]] = future.result()
-    return responses
-
-
-def post_chat_completions_with_stream(
-    base_url: str,
-    rows: list[dict[str, Any]],
-    timeout: float,
-    workers: int,
-) -> list[Any]:
-    responses: list[Any] = [None] * len(rows)
-    with ThreadPoolExecutor(max_workers=max(1, workers - 1)) as executor:
-        futures = {
-            executor.submit(post_chat_completion_row, base_url, row, timeout): index
-            for index, row in enumerate(rows[1:], start=1)
-        }
-        responses[0] = stream_chat_completion(base_url, rows[0], timeout)
-        for future in as_completed(futures):
-            responses[futures[future]] = future.result()
-    return responses
 
 
 def post_chat_completion_row(

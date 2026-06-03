@@ -11,17 +11,17 @@ calls finish, then shuts the server down when the run finishes.
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 1 \
-  --tool-rounds 4 \
+  --num-prompts 8 \
+  --tool-rounds 8 \
   --max-input-tokens 128000 \
   --max-tokens 32768 \
-  --no-compile \
-  --enforce-eager \
-  --request-workers 10 \
+  --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
   --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache
+  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --trust-remote-code \
+  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'
 ```
 
 For a larger run, omit `--num-prompts`.
@@ -37,45 +37,16 @@ export GITHUB_TOKEN=...
 export HF_TOKEN=...
 ```
 
-If you already started vLLM on the node, reuse it instead of starting a second
-server:
-
-```bash
-python3 src/run_arxiv_prompt_vllm.py \
-  --vllm-server-url http://127.0.0.1:8000 \
-  --tool-rounds 4
-```
-
-## Quick One-Shot Test
-
-Use this when you only want to test prompt formatting or vLLM startup, without web tools.
-
-```bash
-python src/run_arxiv_prompt_vllm.py \
-  --num-prompts 1 \
-  --tool-rounds 0 \
-  --no-compile \
-  --enforce-eager
-```
-
 ## Useful Flags
 
 - `--tool-rounds 4`: maximum browse/execute/continue rounds before the final answer.
 - `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
 - `--max-tokens 32768`: maximum generated tokens per model response.
-- `--batch-backend server`: default; start or reuse one persistent vLLM server.
-- `--batch-backend run-batch`: old behavior; starts a new vLLM batch process per round.
-- `--vllm-server-url`: use an already-running OpenAI-compatible vLLM server.
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
-- `--request-workers 10`: number of concurrent request/tool pipelines for server mode.
+- `--request-workers 8`: number of concurrent request/tool pipelines.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
-- `--first-tool-choice required`: forces the first model pass to call a verification tool.
-- `--tool-timeout 20`: timeout for each HTTP request made by a tool.
-- `--tool-max-chars 8000`: cap each tool result before feeding it back to the model.
-- Default compilation uses `{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}`.
-- `--no-compile`: passes vLLM compilation mode 0 for faster debug startup.
-- `--enforce-eager`: disables CUDAGraphs as well; useful for smoke tests.
-- `--disable-web-tools`: old one-shot behavior with no tools attached.
+- `--trust-remote-code`: pass through to vLLM for MiniMax.
+- `--compilation-config`: pass the vLLM compilation JSON directly.
 
 ## View JSONL Outputs
 

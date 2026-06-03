@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass, field
-from typing import Any
-
 from .config import TEX_EXTENSION
 
 
@@ -27,13 +25,10 @@ class Paper:
         return "\n".join(header) + "\n\n" + "\n\n".join(sections)
 
 
-def load_papers(dataset_name: str, split: str, cache_dir: str | None) -> list[Paper]:
+def load_papers(dataset_name: str) -> list[Paper]:
     from datasets import load_dataset
 
-    dataset_kwargs: dict[str, Any] = {"split": split}
-    if cache_dir:
-        dataset_kwargs["cache_dir"] = cache_dir
-    dataset = load_dataset(dataset_name, **dataset_kwargs)
+    dataset = load_dataset(dataset_name, split="train")
 
     papers: dict[str, Paper] = {}
     for row in dataset:

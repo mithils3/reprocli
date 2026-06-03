@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import socket
 import subprocess
 import sys
@@ -9,7 +8,13 @@ import time
 import urllib.error
 import urllib.request
 
-from .config import COMPILATION_CONFIG, MINIMAX_PARSER, NO_COMPILE_CONFIG
+from .config import (
+    GPU_MEMORY_UTILIZATION,
+    MAX_MODEL_LEN,
+    MINIMAX_PARSER,
+    SERVER_STARTUP_TIMEOUT,
+    TENSOR_PARALLEL_SIZE,
+)
 from .vllm_cache import subprocess_env
 
 
@@ -22,12 +27,11 @@ def local_open_port() -> int:
 class VllmServer:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
-        self.port = args.vllm_server_port or local_open_port()
+        self.port = local_open_port()
         self.base_url = f"http://127.0.0.1:{self.port}"
         self.process: subprocess.Popen | None = None
 
     def __enter__(self) -> str:
-        compilation_config = NO_COMPILE_CONFIG if self.args.no_compile else COMPILATION_CONFIG
         command = [
             sys.executable,
             "-m",
@@ -38,23 +42,22 @@ class VllmServer:
             str(self.port),
             "--model",
             self.args.model,
-            "--trust-remote-code",
             "--tensor-parallel-size",
-            str(self.args.tensor_parallel_size),
+            str(TENSOR_PARALLEL_SIZE),
             "--compilation-config",
-            json.dumps(compilation_config, separators=(",", ":")),
+            self.args.compilation_config,
             "--reasoning-parser",
             MINIMAX_PARSER,
             "--tool-call-parser",
             MINIMAX_PARSER,
             "--enable-auto-tool-choice",
             "--max-model-len",
-            str(self.args.max_model_len),
+            str(MAX_MODEL_LEN),
             "--gpu-memory-utilization",
-            str(self.args.gpu_memory_utilization),
+            str(GPU_MEMORY_UTILIZATION),
         ]
-        if self.args.enforce_eager:
-            command.append("--enforce-eager")
+        if self.args.trust_remote_code:
+            command.append("--trust-remote-code")
         env = subprocess_env(self.args.vllm_cache_dir)
         if env:
             print(f"Using VLLM_CACHE_ROOT={self.args.vllm_cache_dir}", file=sys.stderr)
@@ -74,7 +77,7 @@ class VllmServer:
             self.process.wait()
 
     def wait_until_ready(self) -> None:
-        deadline = time.monotonic() + self.args.server_startup_timeout
+        deadline = time.monotonic() + SERVER_STARTUP_TIMEOUT
         health_url = f"{self.base_url}/health"
         while time.monotonic() < deadline:
             if self.process is not None and self.process.poll() is not None:
@@ -88,5 +91,5 @@ class VllmServer:
                 time.sleep(5)
         raise TimeoutError(
             f"vLLM server did not become ready within "
-            f"{self.args.server_startup_timeout:.0f}s at {self.base_url}"
+            f"{SERVER_STARTUP_TIMEOUT:.0f}s at {self.base_url}"
         )
