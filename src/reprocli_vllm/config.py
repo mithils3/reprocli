@@ -4,25 +4,17 @@ from pathlib import Path
 
 
 DEFAULT_DATASET = "Mithilss/neurips-2025-arxiv-latex-sources"
-DEFAULT_MODEL = "MiniMaxAI/MiniMax-M2.7"
-DEFAULT_OUTPUT = Path("outputs/neurips_2025_minimax_m27.jsonl")
-DEFAULT_REQUESTS_OUTPUT = Path("outputs/neurips_2025_minimax_m27_requests.jsonl")
+DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
+DEFAULT_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash.jsonl")
+DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash_extracted.jsonl")
+DEFAULT_REQUESTS_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash_requests.jsonl")
 PLACEHOLDER = "{PAPER_TEXT}"
 TEX_EXTENSION = ".tex"
-MINIMAX_PARSER = "minimax_m2"
-TENSOR_PARALLEL_SIZE = 4
 MAX_MODEL_LEN = 196608
-GPU_MEMORY_UTILIZATION = 0.9
-TEMPERATURE = 0.0
-TOP_P = 1.0
 TOOL_TIMEOUT = 20.0
 TOOL_MAX_CHARS = 8000
 REQUEST_TIMEOUT = 1800.0
 SERVER_STARTUP_TIMEOUT = 1800.0
-COMPILATION_CONFIG = {
-    "mode": 3,
-    "pass_config": {"fuse_minimax_qk_norm": True},
-}
 WEB_SYSTEM_MESSAGE = (
     "You have web verification tools. Before producing the final JSON, use the "
     "tools to verify artifact links relevant to the MRE. Do not claim that code, "
@@ -31,8 +23,10 @@ WEB_SYSTEM_MESSAGE = (
     "or cannot verify a link, mark the artifact unavailable or unverified as "
     "instructed by the user prompt. Prefer direct github_repo, huggingface_repo, "
     "or fetch_url checks when the paper or prior results contain a candidate URL "
-    "or repo id. Use web_search only when no direct candidate exists. After using "
-    "tools, return only the requested JSON object."
+    "or repo id. Use web_search only when no direct candidate exists. Do not call "
+    "the same tool with the same arguments twice. If a likely artifact cannot be "
+    "verified after direct checks, stop searching and mark it unavailable or "
+    "unverified. After using tools, return only the requested JSON object."
 )
 FINAL_NO_TOOLS_MESSAGE = (
     "Tool use is complete and no tools are available in this request. Use only "
@@ -40,8 +34,9 @@ FINAL_NO_TOOLS_MESSAGE = (
     "through the private consistency checklist before answering: clean URLs only "
     "in verified_links, web_verification is available/partial/unavailable, score "
     "matches the formula, tier matches score, and h100_hours_estimate matches its "
-    "basis. Return only the requested JSON object; do not write search plans, "
-    "tool calls, or prose outside the JSON."
+    "basis. Return only the requested JSON object. The first output character "
+    "must be { and the last output character must be }. Do not write search "
+    "plans, tool calls, markdown fences, or prose outside the JSON."
 )
 WEB_TOOLS = [
     {

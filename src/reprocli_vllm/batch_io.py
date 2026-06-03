@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import re
 from pathlib import Path
 from typing import Any
 
-from .config import TEMPERATURE, TOP_P, WEB_SYSTEM_MESSAGE, WEB_TOOLS
+from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
+from .output_schema import FINAL_RESPONSE_FORMAT
 
 
 def initial_messages(prompt: str) -> list[dict[str, Any]]:
@@ -27,14 +30,18 @@ def build_batch_request(
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "temperature": TEMPERATURE,
-        "top_p": TOP_P,
+        "temperature": args.temperature,
+        "top_p": args.top_p,
         "max_tokens": args.max_tokens,
         "truncate_prompt_tokens": args.max_input_tokens,
     }
+    if args.chat_template_kwargs:
+        body["chat_template_kwargs"] = args.chat_template_kwargs
     if include_tools:
         body["tools"] = WEB_TOOLS
         body["tool_choice"] = tool_choice
+    elif not args.disable_structured_final_output:
+        body["response_format"] = FINAL_RESPONSE_FORMAT
     return {
         "custom_id": custom_id,
         "method": "POST",
@@ -71,6 +78,75 @@ def write_final_rows(
         for custom_id in custom_ids:
             json.dump(rows[custom_id], handle, ensure_ascii=False)
             handle.write("\n")
+
+
+def write_extracted_rows(
+    path: Path,
+    custom_ids: list[str],
+    rows: dict[str, dict[str, Any]],
+    output_format: str,
+) -> None:
+    extracted = [extracted_response(custom_id, rows[custom_id]) for custom_id in custom_ids]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if output_format == "csv":
+        write_extracted_csv(path, extracted)
+        return
+    with path.open("w", encoding="utf-8") as handle:
+        for row in extracted:
+            json.dump(row, handle, ensure_ascii=False)
+            handle.write("\n")
+
+
+def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
+    message = response_message(row)
+    content = message.get("content") or ""
+    result: dict[str, Any] = {"custom_id": custom_id}
+    parsed = parse_json_content(content)
+    if parsed is None:
+        result["extracted_json"] = None
+        result["raw_content"] = content
+        return result
+    if isinstance(parsed, dict):
+        result.update(parsed)
+        return result
+    result["extracted_json"] = parsed
+    return result
+
+
+def parse_json_content(content: str) -> Any | None:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        pass
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+    if fenced:
+        try:
+            return json.loads(fenced.group(1))
+        except json.JSONDecodeError:
+            pass
+    start = content.find("{")
+    end = content.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        return json.loads(content[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+
+
+def write_extracted_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    fieldnames = sorted({key for row in rows for key in row})
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: csv_value(row.get(key)) for key in fieldnames})
+
+
+def csv_value(value: Any) -> Any:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False)
+    return value
 
 
 def response_message(row: dict[str, Any]) -> dict[str, Any]:

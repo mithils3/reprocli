@@ -2,7 +2,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 from itertools import groupby
 
-tokenizer = AutoTokenizer.from_pretrained("MiniMaxAI/MiniMax-M2.7", trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-V4-Flash", trust_remote_code=True)
 
 paper_id = "2509.09802"
 

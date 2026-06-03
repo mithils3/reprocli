@@ -9,11 +9,7 @@ import urllib.error
 import urllib.request
 
 from .config import (
-    GPU_MEMORY_UTILIZATION,
-    MAX_MODEL_LEN,
-    MINIMAX_PARSER,
     SERVER_STARTUP_TIMEOUT,
-    TENSOR_PARALLEL_SIZE,
 )
 from .vllm_cache import subprocess_env
 
@@ -43,19 +39,29 @@ class VllmServer:
             "--model",
             self.args.model,
             "--tensor-parallel-size",
-            str(TENSOR_PARALLEL_SIZE),
-            "--compilation-config",
-            self.args.compilation_config,
+            str(self.args.tensor_parallel_size),
             "--reasoning-parser",
-            MINIMAX_PARSER,
+            self.args.reasoning_parser,
             "--tool-call-parser",
-            MINIMAX_PARSER,
+            self.args.tool_call_parser,
             "--enable-auto-tool-choice",
             "--max-model-len",
-            str(MAX_MODEL_LEN),
+            str(self.args.max_model_len),
             "--gpu-memory-utilization",
-            str(GPU_MEMORY_UTILIZATION),
+            str(self.args.gpu_memory_utilization),
         ]
+        if self.args.compilation_config:
+            command.extend(["--compilation-config", self.args.compilation_config])
+        if self.args.tokenizer_mode:
+            command.extend(["--tokenizer-mode", self.args.tokenizer_mode])
+        if self.args.kv_cache_dtype:
+            command.extend(["--kv-cache-dtype", self.args.kv_cache_dtype])
+        if self.args.block_size:
+            command.extend(["--block-size", str(self.args.block_size)])
+        if self.args.enable_expert_parallel:
+            command.append("--enable-expert-parallel")
+        if self.args.disable_flashinfer_autotune:
+            command.append("--no-enable-flashinfer-autotune")
         if self.args.trust_remote_code:
             command.append("--trust-remote-code")
         env = subprocess_env(self.args.vllm_cache_dir)

@@ -12,16 +12,16 @@ calls finish, then shuts the server down when the run finishes.
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 8 \
-  --tool-rounds 32 \
+  --tool-rounds 10 \
   --max-input-tokens 128000 \
-  --max-tokens 32768 \
+  --max-tokens 8192 \
   --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
-  --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
-  --trust-remote-code \
-  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'
+  --model deepseek-ai/DeepSeek-V4-Flash \
+  --model-profile deepseek_v4_flash \
+  --reasoning-effort high \
+  --vllm-cache-dir /projects/bgnp/msalunkhe/DeepSeek-V4-Flash/vllm_cache
 ```
 
 For a larger run, omit `--num-prompts`.
@@ -39,14 +39,14 @@ export HF_TOKEN=...
 
 ## Useful Flags
 
-- `--tool-rounds 32`: maximum browse/execute/continue rounds before the final answer.
+- `--tool-rounds 10`: maximum browse/execute/continue rounds before the final answer.
 - `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
-- `--max-tokens 32768`: maximum generated tokens per model response.
+- `--max-tokens 8192`: maximum generated tokens per model response.
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
 - `--request-workers 8`: number of concurrent request/tool pipelines.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
-- `--trust-remote-code`: pass through to vLLM for MiniMax.
-- `--compilation-config`: pass the vLLM compilation JSON directly.
+- `--reasoning-effort high`: enables DeepSeek V4 Think High through chat-template kwargs.
+- `--model-profile deepseek_v4_flash`: uses the DeepSeek V4 tokenizer, tool parser, reasoning parser, FP8 KV cache, TP=4, and FlashInfer autotune disabled.
 
 ## View JSONL Outputs
 

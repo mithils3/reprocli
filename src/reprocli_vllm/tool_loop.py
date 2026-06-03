@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
@@ -15,6 +17,7 @@ from .batch_io import (
     round_output_path,
     round_request_path,
     tool_result_message,
+    write_extracted_rows,
     write_final_rows,
 )
 from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
@@ -38,6 +41,7 @@ def run_tool_loop(
     hit_tool_round_limit: set[str] = set()
     request_paths_seen: set[int] = set()
     output_paths_seen: set[int] = set()
+    tool_call_counts = {custom_id: Counter() for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
     base_url = server_url.rstrip("/")
@@ -63,12 +67,13 @@ def run_tool_loop(
                 include_tools=include_tools,
                 tool_choice="required" if round_index == 0 else "auto",
             )
-            write_round_row(
-                round_request_path(args.requests_output, round_index),
-                request,
-                round_index,
-                request_paths_seen,
-            )
+            if args.save_round_jsonl:
+                write_round_row(
+                    round_request_path(args.requests_output, round_index),
+                    request,
+                    round_index,
+                    request_paths_seen,
+                )
             stream = args.stream_first_response and round_index == 0 and custom_id == original_ids[0]
             future = requests.submit(
                 post_chat_completion_row,
@@ -103,22 +108,30 @@ def run_tool_loop(
                         tool_rounds_used,
                         hit_tool_round_limit,
                         output_paths_seen,
+                        tool_call_counts,
                         args,
                     )
                     continue
                 state = tool_futures.pop(future)
                 future.result()
                 next_round = int(state["round_index"]) + 1
+                force_final = bool(state.get("force_final"))
                 submit_request(
                     str(state["custom_id"]),
                     next_round,
-                    include_tools=next_round < args.tool_rounds,
+                    include_tools=not force_final and next_round < args.tool_rounds,
                 )
 
     missing = [custom_id for custom_id in original_ids if custom_id not in final_rows]
     if missing:
         raise SystemExit(f"Missing final responses for: {', '.join(missing)}")
     write_final_rows(args.output, original_ids, final_rows)
+    write_extracted_rows(
+        args.extracted_output,
+        original_ids,
+        final_rows,
+        args.extracted_format,
+    )
 
 
 def handle_request_done(
@@ -131,22 +144,39 @@ def handle_request_done(
     tool_rounds_used: dict[str, int],
     hit_tool_round_limit: set[str],
     output_paths_seen: set[int],
+    tool_call_counts: dict[str, Counter],
     args: argparse.Namespace,
 ) -> None:
     state = request_futures.pop(future)
     custom_id = str(state["custom_id"])
     round_index = int(state["round_index"])
     row = response_row(custom_id, future.result())
-    write_round_row(
-        round_output_path(args.output, round_index),
-        row,
-        round_index,
-        output_paths_seen,
-    )
+    if args.save_round_jsonl:
+        write_round_row(
+            round_output_path(args.output, round_index),
+            row,
+            round_index,
+            output_paths_seen,
+        )
     message = response_message(row)
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
         tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)
+        repeated = repeated_tool_call(
+            custom_id,
+            tool_calls,
+            tool_call_counts,
+            args.max_repeated_tool_calls,
+        )
+        if repeated:
+            print(
+                f"Stopping tool loop for {custom_id}: repeated tool call {repeated}",
+                file=sys.stderr,
+            )
+            tool_future = tools.submit(noop)
+            tool_futures[tool_future] = {**state, "force_final": True}
+            return
+        record_tool_calls(custom_id, tool_calls, tool_call_counts)
         if round_index + 1 >= args.tool_rounds:
             hit_tool_round_limit.add(custom_id)
         tool_future = tools.submit(
@@ -163,6 +193,46 @@ def handle_request_done(
         "hit_tool_round_limit": custom_id in hit_tool_round_limit,
     }
     final_rows[custom_id] = row
+
+
+def repeated_tool_call(
+    custom_id: str,
+    tool_calls: list[dict],
+    tool_call_counts: dict[str, Counter],
+    max_repeats: int,
+) -> str | None:
+    counts = tool_call_counts[custom_id]
+    seen_in_response: Counter = Counter()
+    for call in tool_calls:
+        signature = tool_call_signature(call)
+        if counts[signature] + seen_in_response[signature] >= max_repeats:
+            return f"{signature[0]}({signature[1]})"
+        seen_in_response[signature] += 1
+    return None
+
+
+def record_tool_calls(
+    custom_id: str,
+    tool_calls: list[dict],
+    tool_call_counts: dict[str, Counter],
+) -> None:
+    for call in tool_calls:
+        tool_call_counts[custom_id][tool_call_signature(call)] += 1
+
+
+def tool_call_signature(call: dict) -> tuple[str, str]:
+    function = call.get("function") or {}
+    name = str(function.get("name") or "unknown_tool")
+    arguments = function.get("arguments") or ""
+    try:
+        parsed = json.loads(arguments)
+    except (TypeError, json.JSONDecodeError):
+        return name, str(arguments)
+    return name, json.dumps(parsed, ensure_ascii=False, sort_keys=True)
+
+
+def noop() -> None:
+    return None
 
 
 def conversation_for_round(messages: list[dict], include_tools: bool) -> list[dict]:
