@@ -18,6 +18,7 @@ from reprocli_vllm.openai_client import run_requests
 from reprocli_vllm.openai_server import VllmServer
 from reprocli_vllm.papers import load_papers
 from reprocli_vllm.tool_loop import run_tool_loop
+from reprocli_vllm.vllm_cache import default_cache_dir
 
 
 def main() -> int:
@@ -67,6 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
     parser.add_argument("--requests-output", type=argparse_path, default=DEFAULT_REQUESTS_OUTPUT)
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--tensor-parallel-size", type=int, default=4)
     parser.add_argument("--max-model-len", type=int, default=196608)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.9)
@@ -99,6 +101,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--max-input-tokens must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
+    if args.vllm_cache_dir is None:
+        args.vllm_cache_dir = default_cache_dir(args.model)
     return args
 
 

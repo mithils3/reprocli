@@ -20,7 +20,8 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 10 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
-  --model /projects/bgnp/msalunkhe/MiniMax-M2.7
+  --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
+  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache
 ```
 
 For a larger run, omit `--num-prompts`.
@@ -65,11 +66,13 @@ python src/run_arxiv_prompt_vllm.py \
 - `--batch-backend server`: default; start or reuse one persistent vLLM server.
 - `--batch-backend run-batch`: old behavior; starts a new vLLM batch process per round.
 - `--vllm-server-url`: use an already-running OpenAI-compatible vLLM server.
+- `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
 - `--request-workers 10`: number of concurrent request/tool pipelines for server mode.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
 - `--first-tool-choice required`: forces the first model pass to call a verification tool.
 - `--tool-timeout 20`: timeout for each HTTP request made by a tool.
 - `--tool-max-chars 8000`: cap each tool result before feeding it back to the model.
+- Default compilation uses `{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}`.
 - `--no-compile`: passes vLLM compilation mode 0 for faster debug startup.
 - `--enforce-eager`: disables CUDAGraphs as well; useful for smoke tests.
 - `--disable-web-tools`: old one-shot behavior with no tools attached.

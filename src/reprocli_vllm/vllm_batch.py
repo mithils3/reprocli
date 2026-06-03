@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .config import COMPILATION_CONFIG, MINIMAX_PARSER, NO_COMPILE_CONFIG
+from .vllm_cache import subprocess_env
 
 
 def run_vllm_batch(args: argparse.Namespace, input_path: Path, output_path: Path) -> None:
@@ -39,5 +40,8 @@ def run_vllm_batch(args: argparse.Namespace, input_path: Path, output_path: Path
     ]
     if args.enforce_eager:
         command.append("--enforce-eager")
+    env = subprocess_env(args.vllm_cache_dir)
+    if env:
+        print(f"Using VLLM_CACHE_ROOT={args.vllm_cache_dir}", file=sys.stderr)
     print("Running: " + " ".join(command), file=sys.stderr)
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, env=env)

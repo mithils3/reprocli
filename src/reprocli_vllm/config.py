@@ -11,7 +11,7 @@ PLACEHOLDER = "{PAPER_TEXT}"
 TEX_EXTENSION = ".tex"
 MINIMAX_PARSER = "minimax_m2"
 COMPILATION_CONFIG = {
-    "mode": 1,
+    "mode": 3,
     "pass_config": {"fuse_minimax_qk_norm": True},
 }
 NO_COMPILE_CONFIG = {"mode": 0}

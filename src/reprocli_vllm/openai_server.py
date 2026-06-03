@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 
 from .config import COMPILATION_CONFIG, MINIMAX_PARSER, NO_COMPILE_CONFIG
+from .vllm_cache import subprocess_env
 
 
 def local_open_port() -> int:
@@ -54,8 +55,11 @@ class VllmServer:
         ]
         if self.args.enforce_eager:
             command.append("--enforce-eager")
+        env = subprocess_env(self.args.vllm_cache_dir)
+        if env:
+            print(f"Using VLLM_CACHE_ROOT={self.args.vllm_cache_dir}", file=sys.stderr)
         print("Starting persistent vLLM server: " + " ".join(command), file=sys.stderr)
-        self.process = subprocess.Popen(command)
+        self.process = subprocess.Popen(command, env=env)
         self.wait_until_ready()
         return self.base_url
 

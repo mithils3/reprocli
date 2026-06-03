@@ -10,4 +10,5 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
-  --model /projects/bgnp/msalunkhe/MiniMax-M2.7
+  --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
+  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache
