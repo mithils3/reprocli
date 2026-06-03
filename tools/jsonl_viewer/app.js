@@ -114,9 +114,10 @@ function normalize(raw, source, line) {
   const body = raw?.response?.body || raw?.body || raw;
   const choice = (body?.choices || raw?.choices || [])[0] || {};
   const message = choice.message || {};
-  const requestMessages = raw?.body && !raw?.response ? normalizeMessages(raw.body.messages || []) : [];
-  const outputMessages = normalizeMessages(message.role || message.content ? [message] : []);
-  const content = message.content || body?.output_text || raw?.output_text || "";
+  const requestMessages = raw?.body && !raw?.response ? normalizeMessages(raw.body.messages || raw.body.input || []) : [];
+  const responseMessages = responsesMessages(body);
+  const outputMessages = responseMessages.length ? responseMessages : normalizeMessages(message.role || message.content ? [message] : []);
+  const content = message.content || body?.output_text || raw?.output_text || textOf(responseMessages);
   const extracted = extractJson(content);
   const id = String(raw.custom_id || raw.id || body.id || `${source}:${line}`);
   const status = raw.error || raw?.response?.error ? "error" : requestMessages.length && !content ? "request" : "success";
@@ -124,13 +125,32 @@ function normalize(raw, source, line) {
     raw, source, line, id, customId: String(raw.custom_id || ""), status,
     statusCode: raw?.response?.status_code || "", model: body.model || "",
     finish: choice.finish_reason || "", content, extracted,
-    reasoning: message.reasoning || choice.reasoning || raw.reasoning || "",
+    reasoning: reasoningText(body) || message.reasoning || choice.reasoning || raw.reasoning || "",
     inputMessages: requestMessages, outputMessages, requestRaw: requestMessages.length ? raw : null,
     responseRaw: requestMessages.length ? null : raw, rawParts: [{ raw }],
     totalTokens: Number(body?.usage?.total_tokens || 0),
     tier: String(extracted?.tier || ""), score: String(extracted?.score ?? ""),
     claim: String(extracted?.central_claim || extracted?.claim || "")
   });
+}
+
+function responsesMessages(body) {
+  return (body?.output || []).filter((item) => item.type === "message").flatMap((item) => {
+    const content = flattenResponsesContent(item.content);
+    return content ? [{ role: item.role || "assistant", content }] : [];
+  });
+}
+
+function flattenResponsesContent(content) {
+  return Array.isArray(content) ? content.map((item) => item?.text || item?.content || "").filter(Boolean).join("\n") : "";
+}
+
+function reasoningText(body) {
+  return (body?.output || []).filter((item) => item.type === "reasoning").flatMap((item) => {
+    const summary = Array.isArray(item.summary) ? item.summary.map((part) => part.text || "").filter(Boolean) : [];
+    const content = Array.isArray(item.content) ? item.content.map((part) => part.text || "").filter(Boolean) : [];
+    return [...summary, ...content];
+  }).join("\n\n");
 }
 
 function baseRecord(record) {

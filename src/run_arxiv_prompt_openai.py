@@ -33,13 +33,22 @@ from reprocli_vllm.openai_batch import (
     write_jsonl,
 )
 from reprocli_vllm.papers import Paper, load_papers
+from reprocli_vllm.openai_progress import (
+    merge_rows_by_id,
+    pending_ids,
+    print_id_progress,
+    select_next_papers,
+    valid_processed_ids,
+)
 
 DEFAULT_OUTPUT = Path("outputs/neurips_2025_openai_gpt55.jsonl")
 DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_openai_gpt55_extracted.jsonl")
 
-
 def main() -> int:
     args = parse_args()
+    if args.status:
+        selected_papers(args)
+        return 0
     if not os.environ.get("OPENAI_API_KEY"):
         raise SystemExit("OPENAI_API_KEY is not set.")
 
@@ -57,7 +66,7 @@ def main() -> int:
     print_batch_saved(args, batch)
 
     if args.submit_only:
-        save_batch_record(args, batch)
+        save_batch_record(args, batch, papers)
         return 0
 
     if batch_status(batch) not in {"completed", "failed", "expired", "cancelled"}:
@@ -98,29 +107,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-registry", type=Path)
     parser.add_argument("--batch-id", help="Resume an existing OpenAI batch.")
     parser.add_argument("--download", action="store_true", help="Download pending saved batches.")
+    parser.add_argument("--status", action="store_true", help="Show processed/pending/next arXiv IDs.")
+    parser.add_argument("--rerun-processed", action="store_true")
     parser.add_argument("--submit-only", action="store_true")
     parser.add_argument("--poll-interval-seconds", type=float, default=60.0)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--max-output-tokens", type=int, default=8192)
     parser.add_argument("--max-paper-chars", type=int, default=220_000)
-    parser.add_argument("--reasoning-effort", choices=("minimal", "low", "medium", "high"), default="medium")
+    parser.add_argument("--reasoning-effort", choices=("minimal", "low", "medium", "high"), default="low")
     parser.add_argument("--prompt-cache-key", default=DEFAULT_PROMPT_CACHE_KEY)
-    parser.add_argument(
-        "--prompt-cache-retention",
-        choices=("in_memory", "24h", "none"),
-        default=DEFAULT_PROMPT_CACHE_RETENTION,
-    )
+    parser.add_argument("--prompt-cache-retention", choices=("in_memory", "24h", "none"), default=DEFAULT_PROMPT_CACHE_RETENTION)
     parser.add_argument("--disable-openai-web-search", action="store_true")
     parser.add_argument("--store", action="store_true")
-    parser.add_argument(
-        "--request-workers",
-        "--batch-size",
-        dest="request_workers",
-        type=int,
-        default=10,
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument("--disable-random-stream", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.poll_interval_seconds <= 0:
         parser.error("--poll-interval-seconds must be > 0")
@@ -139,14 +137,38 @@ def apply_batch_path_defaults(args: argparse.Namespace) -> None:
 
 
 def selected_papers(args: argparse.Namespace) -> list[Paper]:
-    papers = [paper for paper in load_papers(args.dataset) if paper.tex_files]
-    return papers[: args.num_prompts] if args.num_prompts else papers
+    all_papers = load_tex_papers(args)
+    processed = valid_processed_ids([args.output, args.extracted_output])
+    pending = pending_ids(args.batch_registry)
+    skip_ids = set() if args.rerun_processed else processed | pending
+    papers = select_next_papers(all_papers, limit=args.num_prompts, skip_ids=skip_ids)
+    print_id_progress(
+        processed=processed,
+        pending=pending,
+        submitting=papers,
+        total=len(all_papers),
+    )
+    return papers
+
+
+def load_tex_papers(args: argparse.Namespace) -> list[Paper]:
+    return [paper for paper in load_papers(args.dataset) if paper.tex_files]
+
+
+def record_papers(args: argparse.Namespace) -> list[Paper]:
+    custom_ids = getattr(args, "custom_ids", []) or []
+    if not custom_ids:
+        return selected_papers(args)
+    papers_by_id = {paper.arxiv_id: paper for paper in load_tex_papers(args)}
+    return [papers_by_id[custom_id] for custom_id in custom_ids if custom_id in papers_by_id]
 
 
 def submit_batch(client: Any, args: argparse.Namespace, papers: list[Paper]) -> Any:
     prompt_template = args.prompt_file.read_text(encoding="utf-8")
     if PLACEHOLDER not in prompt_template:
         raise SystemExit(f"{args.prompt_file} must contain {PLACEHOLDER}.")
+    if not papers:
+        raise SystemExit("No prompts to submit; all selected paper ids are already processed or pending.")
 
     requests = [
         batch_request(args, paper, prompt_template)
@@ -171,20 +193,20 @@ def submit_batch(client: Any, args: argparse.Namespace, papers: list[Paper]) -> 
 
 def print_batch_saved(args: argparse.Namespace, batch: Any) -> None:
     print(f"Batch {batch.id} status={batch_status(batch)}", file=sys.stderr)
-    print(f"Batch input path: {args.batch_input}", file=sys.stderr)
-    print(f"Batch metadata path: {args.batch_info_output}", file=sys.stderr)
+    print(f"Batch input path: {args.batch_input}; metadata path: {args.batch_info_output}", file=sys.stderr)
 
 
-def save_batch_record(args: argparse.Namespace, batch: Any) -> None:
-    append_batch_registry(args.batch_registry, batch_record(args, batch.id))
+def save_batch_record(args: argparse.Namespace, batch: Any, papers: list[Paper]) -> None:
+    append_batch_registry(args.batch_registry, batch_record(args, batch.id, papers))
     print(f"Saved batch id to {args.batch_registry}", file=sys.stderr)
 
 
-def batch_record(args: argparse.Namespace, batch_id: str) -> dict[str, Any]:
+def batch_record(args: argparse.Namespace, batch_id: str, papers: list[Paper]) -> dict[str, Any]:
     return {
         "batch_id": batch_id,
         "dataset": str(args.dataset),
         "num_prompts": args.num_prompts,
+        "custom_ids": [paper.arxiv_id for paper in papers],
         "output": str(args.output),
         "extracted_output": str(args.extracted_output),
         "batch_info_output": str(batch_specific_path(args.batch_info_output, batch_id)),
@@ -231,7 +253,7 @@ def download_terminal_batch(client: Any, args: argparse.Namespace, batch: Any) -
     if batch_status(batch) != "completed":
         print(f"Saved terminal batch metadata/errors for {batch.id}", file=sys.stderr)
         return
-    papers = selected_papers(args)
+    papers = record_papers(args)
     write_processed_outputs(args, papers, args.batch_results_output)
 
 
@@ -239,6 +261,7 @@ def record_args(default_args: argparse.Namespace, record: dict[str, Any]) -> arg
     args = argparse.Namespace(**vars(default_args))
     args.dataset = record.get("dataset", args.dataset)
     args.num_prompts = record.get("num_prompts", args.num_prompts)
+    args.custom_ids = record.get("custom_ids") or []
     for key in (
         "output",
         "extracted_output",
@@ -256,8 +279,10 @@ def write_processed_outputs(
     batch_results_output: Path,
 ) -> None:
     rows = final_rows(papers, load_jsonl(batch_results_output))
+    rows = merge_rows_by_id(load_jsonl(args.output), rows)
+    extracted = [extracted_row(row) for row in rows]
     write_jsonl(args.output, rows)
-    write_jsonl(args.extracted_output, [extracted_row(row) for row in rows])
+    write_jsonl(args.extracted_output, extracted)
     print(f"Wrote {len(rows)} raw rows to {args.output}", file=sys.stderr)
     print(f"Wrote {len(rows)} extracted rows to {args.extracted_output}", file=sys.stderr)
 

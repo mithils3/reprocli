@@ -4,6 +4,7 @@ import argparse
 from typing import Any
 
 from .batch_io import parse_json_content
+from .config import PLACEHOLDER
 from .openai_batch import RESPONSES_ENDPOINT, batch_response_body, responses_output_text
 from .output_schema import FINAL_RESPONSE_FORMAT
 from .papers import Paper
@@ -23,7 +24,9 @@ OPENAI_SYSTEM_MESSAGE = (
 
 
 def batch_request(args: argparse.Namespace, paper: Paper, prompt_template: str) -> dict[str, Any]:
-    prompt = prompt_template.replace("{{PAPER_TEXT}}", paper_text(paper, args.max_paper_chars))
+    prompt = prompt_template.replace(PLACEHOLDER, paper_text(paper, args.max_paper_chars))
+    if PLACEHOLDER in prompt:
+        raise ValueError(f"Prompt for {paper.arxiv_id} still contains {PLACEHOLDER}")
     body: dict[str, Any] = {
         "model": args.model,
         "input": [
