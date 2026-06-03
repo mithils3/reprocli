@@ -6,7 +6,7 @@ module load python/3.11.9
 source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli/
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 8 \
+  --num-prompts 32 \
   --tool-rounds 32 \
   --max-input-tokens 128000 \
   --max-tokens 32768 \
