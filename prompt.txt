@@ -35,6 +35,7 @@ Use the tools as follows:
 - Hugging Face MCP tools are the authority for Hugging Face models, datasets, Spaces, papers, and Hub evidence.
 - URL fetch tools can verify project pages, paper pages, documentation pages, dataset pages, and direct links.
 - Supplemental Papers With Code leads are useful hints, not proof.
+- Bundled OpenReview supplement evidence is first-party paper evidence included in the input, not an external web lead.
 
 Do not count an artifact as available only because the paper says "code is available", "data will be released", "we provide checkpoints", or because a supplemental lead exists. Verify it.
 
@@ -69,6 +70,55 @@ Rules:
 - Verify Hugging Face leads with Hugging Face repo/search tools.
 - Verify project pages with URL fetch.
 - If a lead fails or is irrelevant, search again using the search playbook below.
+
+======================================================================
+BUNDLED OPENREVIEW SUPPLEMENT EVIDENCE
+======================================================================
+
+The input may include a block named `OPENREVIEW_SUPPLEMENT`.
+
+This block comes from supplementary material submitted with the paper on
+OpenReview. Treat it as first-party released artifact evidence for this paper,
+similar to files the authors attached next to the paper.
+
+It can include:
+
+- supplement download/status metadata
+- a manifest of supplement files
+- selected text excerpts from code, configs, scripts, notebooks, READMEs, docs,
+  datasets, split files, prompts, or other text artifacts
+
+How to use it:
+
+- Use supplement files only when they are relevant to the chosen MRE.
+- If the supplement contains runnable training, inference, evaluation, data
+  processing, or metric code for the MRE, it can satisfy `code_available`.
+- If the supplement contains the MRE's custom dataset, labels, splits, prompts,
+  generated samples, simulator files, benchmark definitions, or documented
+  public download instructions, it can satisfy `dataset_available`.
+- If the supplement contains MRE-relevant checkpoints, weights, adapters, or
+  model files, it can satisfy `weights_available`.
+- README, config, notebook, shell script, and source-code excerpts are useful
+  evidence for what the supplement can reproduce.
+- A supplement with only paper PDFs, figures, logs, slides, or unrelated helper
+  files does not by itself satisfy code, data, or weights.
+- If supplement code supports only a smaller/larger/different experiment, count
+  it only if that experiment is the chosen MRE or can still test the central
+  claim.
+
+How to cite it in the final JSON:
+
+- Put supplement file paths and short rationale in the relevant `evidence`
+  strings, for example `OpenReview supplement: code/train.py and configs/mre.yaml`.
+- Put the supplement source URL in `verified_links` only if a clean URL is
+  present in the input.
+- Do not put local-style paths such as `supplement/code/train.py` into
+  `verified_links`.
+- Still use tools for external GitHub, Hugging Face, project-page, or dataset
+  URLs. The supplement can prove what is bundled, but it does not verify outside
+  links.
+- If both a supplement and an external repo exist, prefer the artifact that most
+  directly reproduces the MRE and mention the other as supporting evidence.
 
 ======================================================================
 SEARCH PLAYBOOK
@@ -219,11 +269,16 @@ Then choose the cheapest MRE configuration that still demonstrates that claim.
 
 If multiple experiments demonstrate the claim, choose the smallest one with a clear metric and dataset.
 
+Use supplement READMEs, configs, scripts, and notebooks to understand which
+experiment the released files are meant to reproduce. Do not choose an unrelated
+toy demo only because it is easy, but if the supplement clearly packages a small
+experiment that tests the central claim, it is a strong MRE candidate.
+
 ======================================================================
 STEP 2: VERIFY ARTIFACTS
 ======================================================================
 
-For every candidate artifact link or claim:
+For every candidate artifact link, claim, or bundled supplement artifact:
 
 1. Verify the page exists.
 2. Verify public access.
@@ -233,7 +288,11 @@ For every candidate artifact link or claim:
 
 GitHub code availability:
 
-Set `code_available.value` to true only if a public, non-empty repository contains enough code to run or reproduce the MRE.
+Set `code_available.value` to true only if either:
+
+- a public, non-empty repository contains enough code to run or reproduce the MRE, or
+- the bundled OpenReview supplement contains enough MRE-relevant runnable code,
+  scripts, notebooks, configs, or documented commands to run or reproduce the MRE.
 
 Set it to false if:
 
@@ -243,6 +302,8 @@ Set it to false if:
 - the repo only contains demos, wrappers, website files, or unrelated code
 - the repo only supports a different configuration and cannot reproduce the MRE
 - the MRE requires training/fine-tuning and the repo is eval-only
+- the supplement only contains unrelated files, paper assets, logs, or fragments
+  that are insufficient to run the MRE
 
 Eval-only code can count only if the MRE can be reproduced by inference/evaluation alone.
 
@@ -252,7 +313,9 @@ Set `dataset_available.value` to true if the MRE dataset is:
 
 - a named standard public benchmark, or
 - released and downloadable, or
-- directly usable through a public dataset repository, benchmark package, or documented download path.
+- directly usable through a public dataset repository, benchmark package, or documented download path, or
+- included in the bundled OpenReview supplement with the MRE-specific files,
+  splits, labels, prompts, benchmark definitions, or clear construction scripts.
 
 Set it to false if:
 
@@ -263,6 +326,9 @@ Set it to false if:
 Weights/checkpoint availability:
 
 Set `weights_available.value` to true only if downloadable MRE-relevant weights/checkpoints exist.
+
+Bundled OpenReview supplement checkpoint, adapter, or model files can count as
+weights/checkpoints if they are relevant to the MRE.
 
 Set it to false if:
 
@@ -381,15 +447,15 @@ Return exactly one JSON object with these fields:
   "signals": {
     "code_available": {
       "value": false,
-      "evidence": "Tool-verified evidence, including relevant search attempts if no code was found."
+      "evidence": "Tool-verified or bundled supplement evidence, including relevant search attempts if no code was found."
     },
     "dataset_available": {
       "value": true,
-      "evidence": "Tool-verified dataset evidence or standard benchmark rationale."
+      "evidence": "Tool-verified dataset evidence, bundled supplement evidence, or standard benchmark rationale."
     },
     "weights_available": {
       "value": false,
-      "evidence": "Tool-verified checkpoint evidence, or absence after search."
+      "evidence": "Tool-verified or bundled supplement checkpoint evidence, or absence after search."
     },
     "dataset_is_standard": {
       "value": true,
