@@ -44,7 +44,7 @@ PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
   --tool-rounds 10 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
-  --pwc-artifacts data/paperswithcode/arxiv_artifacts.jsonl \
+  --pwc-artifacts Mithilss/neurips-2025-paperswithcode-artifacts \
   --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \

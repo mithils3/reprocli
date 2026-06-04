@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config import DEFAULT_DATASET, PLACEHOLDER
+from reprocli_vllm.config import DEFAULT_DATASET, DEFAULT_PWC_ARTIFACTS, PLACEHOLDER
 from reprocli_vllm.openai_arxiv import (
     DEFAULT_MODEL,
     DEFAULT_PROMPT_CACHE_KEY,
@@ -33,16 +33,10 @@ from reprocli_vllm.openai_batch import (
     write_jsonl,
 )
 from reprocli_vllm.papers import Paper, load_papers
-from reprocli_vllm.openai_progress import (
-    merge_rows_by_id,
-    pending_ids,
-    print_id_progress,
-    select_next_papers,
-    valid_processed_ids,
-)
+from reprocli_vllm.openai_progress import merge_rows_by_id, pending_ids, print_id_progress, print_token_usage, select_next_papers, valid_processed_ids
 
-DEFAULT_OUTPUT = Path("outputs/neurips_2025_openai_gpt55.jsonl")
-DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_openai_gpt55_extracted.jsonl")
+DEFAULT_OUTPUT = Path("outputs/neurips_2025_openai_gpt54.jsonl")
+DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_openai_gpt54_extracted.jsonl")
 
 def main() -> int:
     args = parse_args()
@@ -97,6 +91,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-prompts", type=int, default=10)
     parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--pwc-artifacts", type=Path, default=DEFAULT_PWC_ARTIFACTS)
     parser.add_argument("--prompt-file", type=Path, default=Path("prompt.txt"))
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--extracted-output", type=Path, default=DEFAULT_EXTRACTED_OUTPUT)
@@ -148,11 +143,12 @@ def selected_papers(args: argparse.Namespace) -> list[Paper]:
         submitting=papers,
         total=len(all_papers),
     )
+    print_token_usage(load_jsonl(args.output))
     return papers
 
 
 def load_tex_papers(args: argparse.Namespace) -> list[Paper]:
-    return [paper for paper in load_papers(args.dataset) if paper.tex_files]
+    return [paper for paper in load_papers(args.dataset, args.pwc_artifacts) if paper.tex_files]
 
 
 def record_papers(args: argparse.Namespace) -> list[Paper]:
@@ -285,6 +281,7 @@ def write_processed_outputs(
     write_jsonl(args.extracted_output, extracted)
     print(f"Wrote {len(rows)} raw rows to {args.output}", file=sys.stderr)
     print(f"Wrote {len(rows)} extracted rows to {args.extracted_output}", file=sys.stderr)
+    print_token_usage(rows)
 
 
 def remove_batch_record(path: Path, batch_id: str) -> None:

@@ -8,8 +8,9 @@ from .config import PLACEHOLDER
 from .openai_batch import RESPONSES_ENDPOINT, batch_response_body, responses_output_text
 from .output_schema import FINAL_RESPONSE_FORMAT
 from .papers import Paper
+from .openai_progress import token_usage_fields
 
-DEFAULT_MODEL = "gpt-5.5"
+DEFAULT_MODEL = "gpt-5.4"
 DEFAULT_PROMPT_CACHE_KEY = "reprocli-openai-arxiv-v1"
 DEFAULT_PROMPT_CACHE_RETENTION = "24h"
 OPENAI_SYSTEM_MESSAGE = (
@@ -80,6 +81,7 @@ def extracted_row(row: dict[str, Any]) -> dict[str, Any]:
     else:
         result["extracted_json"] = parsed
         result["raw_content"] = row.get("output_text") or ""
+    result.update(token_usage_fields(row))
     return result
 
 

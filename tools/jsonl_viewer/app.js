@@ -118,7 +118,7 @@ function normalize(raw, source, line) {
   const responseMessages = responsesMessages(body);
   const outputMessages = responseMessages.length ? responseMessages : normalizeMessages(message.role || message.content ? [message] : []);
   const content = message.content || body?.output_text || raw?.output_text || textOf(responseMessages);
-  const extracted = extractJson(content);
+  const extracted = raw?.signals || raw?.central_claim ? raw : extractJson(content);
   const id = String(raw.custom_id || raw.id || body.id || `${source}:${line}`);
   const status = raw.error || raw?.response?.error ? "error" : requestMessages.length && !content ? "request" : "success";
   return baseRecord({
@@ -244,7 +244,7 @@ function renderInput(record) {
 }
 function renderAnswer(record) { return record.outputMessages.length ? messages(record.outputMessages) : messages([{ role: "assistant", content: record.content }]); }
 function renderReasoning(record) { return record.reasoning ? messages([{ role: "reasoning", content: record.reasoning }]) : empty("No reasoning field."); }
-function renderJson(record) { return record.extracted ? code(JSON.stringify(record.extracted, null, 2)) : empty("No JSON object found in answer."); }
+function renderJson(record) { return renderExtractedJson(record); }
 function renderRaw(record) { return code(JSON.stringify({ request: record.requestRaw, response: record.responseRaw || record.raw, parts: record.rawParts }, null, 2)); }
 
 function messages(items) {

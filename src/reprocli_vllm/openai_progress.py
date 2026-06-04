@@ -52,6 +52,49 @@ def print_id_progress(
     )
 
 
+def token_usage_fields(row: dict[str, Any]) -> dict[str, int]:
+    body = row.get("response") or row.get("batch_response", {}).get("body") or {}
+    usage = body.get("usage") or {}
+    input_details = usage.get("input_tokens_details") or {}
+    output_details = usage.get("output_tokens_details") or {}
+    return {
+        "input_tokens": int(usage.get("input_tokens") or 0),
+        "cached_input_tokens": int(input_details.get("cached_tokens") or 0),
+        "output_tokens": int(usage.get("output_tokens") or 0),
+        "reasoning_output_tokens": int(output_details.get("reasoning_tokens") or 0),
+        "total_tokens": int(usage.get("total_tokens") or 0),
+    }
+
+
+def print_token_usage(rows: list[dict[str, Any]]) -> None:
+    totals = token_usage_totals(rows)
+    if not totals["total_tokens"]:
+        return
+    print(
+        "Token usage: "
+        f"input={totals['input_tokens']} "
+        f"cached_input={totals['cached_input_tokens']} "
+        f"output={totals['output_tokens']} "
+        f"reasoning_output={totals['reasoning_output_tokens']} "
+        f"total={totals['total_tokens']}",
+        file=sys.stderr,
+    )
+
+
+def token_usage_totals(rows: list[dict[str, Any]]) -> dict[str, int]:
+    totals = {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0,
+    }
+    for row in rows:
+        for key, value in token_usage_fields(row).items():
+            totals[key] += value
+    return totals
+
+
 def merge_rows_by_id(existing_rows: list[dict[str, Any]], new_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
     order = []

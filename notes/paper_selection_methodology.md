@@ -35,9 +35,9 @@ Use four evaluated tiers plus one logged-only exclusion bucket.
 | Selection tier | Prompt tier | Practical meaning |
 | --- | --- | --- |
 | Tier 1 | Easy | Code, data, and MRE weights are available; usually eval-only or light rerun. |
-| Tier 2 | Medium | Code path exists, but weights or some reconstruction/retraining is needed. |
-| Tier 3 | Hard | Substantial missing artifact, often missing code or weights. |
-| Tier 4 | Hardest | Paper-only or near-paper-only reproduction from the MRE description. |
+| Tier 2 | Medium | Weights or minor reconstruction/retraining is needed, with code and data available. |
+| Tier 3 | Hard | Code and/or weights are missing, but the automatic system can still obtain the MRE data. |
+| Tier 4 | Artifact-Blocked | Nonstandard MRE data is unavailable, or the automatic system faces multiple missing artifacts. |
 | Tier 5 | Out of scope | Proprietary data, impossible access, or compute beyond the benchmark cap. |
 
 Tier 5 papers should be kept in the corpus metadata for transparency, but not
@@ -52,7 +52,7 @@ Use a balanced 100-paper benchmark:
 | Tier 1 / Easy | 25 |
 | Tier 2 / Medium | 25 |
 | Tier 3 / Hard | 25 |
-| Tier 4 / Hardest | 25 |
+| Tier 4 / Artifact-Blocked | 25 |
 
 This is the right default because the central result is a compute-versus-score
 curve by difficulty tier. Equal tier sizes make those curves easier to compare
@@ -166,6 +166,7 @@ Flag common failure modes:
 
 - Confusing a released benchmark repo with released method code.
 - Counting "code will be released" as available.
+- Treating missing MRE data as a minor artifact gap.
 - Counting non-MRE weights as MRE weights.
 - Treating a custom released dataset as a standard benchmark.
 - Converting GPU-days into H100-hours incorrectly.
