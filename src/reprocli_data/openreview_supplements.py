@@ -12,12 +12,14 @@ import time
 import urllib.parse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
+from itertools import islice
 from pathlib import Path
 from typing import Any, Iterable
 
 from .arxiv_source_inputs import DownloadResult
 from .archive_extract import unpack_archive
 from .arxiv_source_download import count_files, safe_dirname
+from .rate_limit import RequestThrottle
 
 
 OPENREVIEW_API = "https://api2.openreview.net"
@@ -188,10 +190,11 @@ def download_jobs(
 ) -> list[DownloadResult]:
     results: list[DownloadResult] = []
     pending_jobs = iter(jobs)
+    throttle = RequestThrottle(delay)
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         futures = {
-            pool.submit(download_one, api_base, job, output_dir, retries, overwrite)
-            for job in take_jobs(pending_jobs, max(1, workers))
+            pool.submit(download_one, api_base, job, output_dir, retries, overwrite, throttle)
+            for job in islice(pending_jobs, max(1, workers))
         }
         while futures:
             done_futures, futures = wait(futures, return_when=FIRST_COMPLETED)
@@ -199,18 +202,11 @@ def download_jobs(
                 result = future.result()
                 results.append(result)
                 print(progress_line(len(results), len(jobs), result), file=sys.stderr)
-                for job in take_jobs(pending_jobs, 1):
-                    if delay > 0:
-                        time.sleep(delay)
-                    futures.add(pool.submit(download_one, api_base, job, output_dir, retries, overwrite))
+                for job in islice(pending_jobs, 1):
+                    futures.add(
+                        pool.submit(download_one, api_base, job, output_dir, retries, overwrite, throttle)
+                    )
     return sorted(results, key=lambda item: item.index)
-
-
-def take_jobs(jobs: Iterable[SupplementJob], count: int) -> list[SupplementJob]:
-    taken = []
-    for _, job in zip(range(count), jobs):
-        taken.append(job)
-    return taken
 
 
 def progress_line(done: int, total: int, result: DownloadResult) -> str:
@@ -226,6 +222,7 @@ def download_one(
     output_dir: Path,
     retries: int,
     overwrite: bool,
+    throttle: RequestThrottle,
 ) -> DownloadResult:
     target = output_dir / safe_dirname(job.arxiv_id)
     if target.is_dir() and any(target.iterdir()) and not overwrite:
@@ -233,7 +230,7 @@ def download_one(
     tmp_dir = Path(tempfile.mkdtemp(dir=output_dir))
     try:
         client = thread_client(api_base)
-        data = get_attachment_bytes(client, job, retries)
+        data = get_attachment_bytes(client, job, retries, throttle)
         files_written = unpack_archive(data, tmp_dir)
         if target.exists():
             shutil.rmtree(target)
@@ -265,10 +262,16 @@ def result(
     )
 
 
-def get_attachment_bytes(client: Any, job: SupplementJob, retries: int) -> bytes:
+def get_attachment_bytes(
+    client: Any,
+    job: SupplementJob,
+    retries: int,
+    throttle: RequestThrottle,
+) -> bytes:
     last_error: Exception | None = None
     for attempt in range(retries + 1):
         try:
+            throttle.wait()
             data = client.get_attachment(field_name=job.attachment_name, id=job.note_id)
             if isinstance(data, bytes):
                 return data
