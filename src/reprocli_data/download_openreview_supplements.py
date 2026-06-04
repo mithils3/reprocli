@@ -57,6 +57,7 @@ def main() -> int:
         api_base=args.api_base,
         overwrite=args.overwrite,
         delay=max(0.0, args.delay),
+        workers=max(1, args.workers),
     )
     manifest_path = output_dir / args.manifest
     write_manifest(manifest_path, results)
@@ -83,6 +84,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--timeout", type=float, default=60.0)
     parser.add_argument("--delay", type=float, default=0.25)
+    parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--allow-failures", action="store_true")
     parser.add_argument("--dry-run", action="store_true")

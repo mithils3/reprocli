@@ -7,8 +7,10 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 import time
 import urllib.parse
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -21,6 +23,7 @@ from .arxiv_source_download import count_files, safe_dirname
 OPENREVIEW_API = "https://api2.openreview.net"
 OPENREVIEW_SITE = "https://openreview.net"
 DEFAULT_VENUE_ID = "NeurIPS.cc/2025/Conference"
+THREAD_LOCAL = threading.local()
 
 
 @dataclass(frozen=True)
@@ -84,6 +87,14 @@ def build_client(api_base: str) -> Any:
         username=username,
         password=password,
     )
+
+
+def thread_client(api_base: str) -> Any:
+    client = getattr(THREAD_LOCAL, "openreview_client", None)
+    if client is None:
+        client = build_client(api_base)
+        THREAD_LOCAL.openreview_client = client
+    return client
 
 
 def fetch_openreview_notes(client: Any, venue_id: str) -> list[Any]:
@@ -173,16 +184,33 @@ def download_jobs(
     api_base: str,
     overwrite: bool,
     delay: float,
+    workers: int,
 ) -> list[DownloadResult]:
-    client = build_client(api_base)
     results: list[DownloadResult] = []
-    for done, job in enumerate(jobs, start=1):
-        if delay > 0 and done > 1:
-            time.sleep(delay)
-        result = download_one(client, job, output_dir, retries, overwrite)
-        results.append(result)
-        print(progress_line(done, len(jobs), result), file=sys.stderr)
-    return results
+    pending_jobs = iter(jobs)
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+        futures = {
+            pool.submit(download_one, api_base, job, output_dir, retries, overwrite)
+            for job in take_jobs(pending_jobs, max(1, workers))
+        }
+        while futures:
+            done_futures, futures = wait(futures, return_when=FIRST_COMPLETED)
+            for future in done_futures:
+                result = future.result()
+                results.append(result)
+                print(progress_line(len(results), len(jobs), result), file=sys.stderr)
+                for job in take_jobs(pending_jobs, 1):
+                    if delay > 0:
+                        time.sleep(delay)
+                    futures.add(pool.submit(download_one, api_base, job, output_dir, retries, overwrite))
+    return sorted(results, key=lambda item: item.index)
+
+
+def take_jobs(jobs: Iterable[SupplementJob], count: int) -> list[SupplementJob]:
+    taken = []
+    for _, job in zip(range(count), jobs):
+        taken.append(job)
+    return taken
 
 
 def progress_line(done: int, total: int, result: DownloadResult) -> str:
@@ -193,7 +221,7 @@ def progress_line(done: int, total: int, result: DownloadResult) -> str:
 
 
 def download_one(
-    client: Any,
+    api_base: str,
     job: SupplementJob,
     output_dir: Path,
     retries: int,
@@ -204,6 +232,7 @@ def download_one(
         return result(job, "skipped_existing", target, count_files(target), 0)
     tmp_dir = Path(tempfile.mkdtemp(dir=output_dir))
     try:
+        client = thread_client(api_base)
         data = get_attachment_bytes(client, job, retries)
         files_written = unpack_archive(data, tmp_dir)
         if target.exists():
