@@ -103,7 +103,7 @@ arXiv source dataset:
 ```bash
 PYTHONPATH=src python3 -m reprocli_data.download_openreview_supplements \
   --dataset Mithilss/neurips-2025-arxiv-latex-sources \
-  --output-dir data/openreview_supplements \
+  --output-dir /projects/bgnp/msalunkhe/openreview_supplements \
   --allow-failures
 ```
 

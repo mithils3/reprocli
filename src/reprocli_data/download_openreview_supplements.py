@@ -33,13 +33,14 @@ def main() -> int:
         args.venue_id,
         args.timeout,
     )
-    jobs, misses = match_jobs(papers, notes)
+    jobs, misses, no_supplement = match_jobs(papers, notes)
     if args.limit_downloads:
         jobs = jobs[: args.limit_downloads]
 
     print(
         f"Matched {len(jobs)} OpenReview supplements from {len(papers)} papers "
-        f"and {len(notes)} notes ({misses} title misses).",
+        f"and {len(notes)} notes ({misses} title misses, "
+        f"{no_supplement} matched notes without supplements).",
         file=sys.stderr,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -53,8 +54,9 @@ def main() -> int:
         jobs=jobs,
         output_dir=output_dir,
         retries=max(0, args.retries),
-        timeout=max(1.0, args.timeout),
+        api_base=args.api_base,
         overwrite=args.overwrite,
+        delay=max(0.0, args.delay),
     )
     manifest_path = output_dir / args.manifest
     write_manifest(manifest_path, results)
@@ -80,6 +82,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-downloads", type=int)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--timeout", type=float, default=60.0)
+    parser.add_argument("--delay", type=float, default=0.25)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--allow-failures", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
