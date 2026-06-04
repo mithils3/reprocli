@@ -162,8 +162,15 @@ def download_jobs(
     for done, job in enumerate(jobs, start=1):
         result = download_one(job, output_dir, retries, timeout, overwrite)
         results.append(result)
-        print(f"[{done}/{len(jobs)}] {result.arxiv_id}: {result.status}", file=sys.stderr)
+        print(progress_line(done, len(jobs), result), file=sys.stderr)
     return results
+
+
+def progress_line(done: int, total: int, result: DownloadResult) -> str:
+    line = f"[{done}/{total}] {result.arxiv_id}: {result.status}"
+    if result.error:
+        return f"{line}: {result.error}"
+    return line
 
 
 def download_one(
@@ -284,7 +291,8 @@ def http_get_bytes(url: str, retries: int, timeout: float) -> bytes:
             sleep_seconds = min(2**attempt, 30)
         if attempt < retries:
             time.sleep(sleep_seconds)
-    raise RuntimeError(f"GET failed after {retries + 1} tries") from last_error
+    detail = f": {last_error}" if last_error else ""
+    raise RuntimeError(f"GET failed after {retries + 1} tries{detail}") from last_error
 
 
 def write_job_csv(path: Path, jobs: list[SupplementJob]) -> None:
