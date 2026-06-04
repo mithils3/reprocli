@@ -116,7 +116,7 @@ by default:
 
 ```bash
 PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
-  --output-dir data/paper_bundle_dataset \
+  --output-dir /projects/bgnp/msalunkhe/paper_bundle_dataset \
   --overwrite
 ```
 
