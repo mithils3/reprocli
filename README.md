@@ -1,27 +1,6 @@
 # reprocli
 
-Utilities for running the NeurIPS arXiv artifact-availability prompt through
-DeepSeek on vLLM and reviewing JSONL outputs.
-
-## Setup
-
-Install the Python environment used by your cluster or local vLLM setup, then run
-commands from the repository root. The package-style data scripts expect
-`PYTHONPATH=src` unless the project is installed as a package.
-
-```bash
-export PYTHONPATH=src
-export GITHUB_TOKEN=...
-export HF_TOKEN=...
-```
-
-The GitHub tools use the remote GitHub MCP server by default. To use another
-server, set `GITHUB_MCP_URL` for streamable HTTP or `GITHUB_MCP_COMMAND` for a
-local stdio server such as `github-mcp-server stdio`. Set
-`GITHUB_MCP_TOOLSETS` if you want a different GitHub MCP toolset list.
-
-The Hugging Face tools use `https://huggingface.co/mcp` by default. To override
-that, set `HF_MCP_URL` or `HF_MCP_COMMAND`.
+Utilities for running the NeurIPS arXiv artifact-availability prompt through vLLM and reviewing JSONL outputs.
 
 ## Run With Web Verification
 
@@ -39,12 +18,12 @@ lets each paper advance through tool rounds as soon as its own response and tool
 calls finish, then shuts the server down when the run finishes.
 
 ```bash
-PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
+python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 8 \
   --tool-rounds 10 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
-  --pwc-artifacts Mithilss/neurips-2025-paperswithcode-artifacts \
+  --pwc-artifacts /projects/bgnp/msalunkhe/paperswithcode_arxiv_artifacts.jsonl \
   --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
@@ -57,25 +36,46 @@ PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
 For a larger run, omit `--num-prompts`.
 
 ```bash
-PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py
+python src/run_arxiv_prompt_vllm.py
 ```
 
-## Tool Behavior
+## Run With OpenAI Batch
 
-Tool choice is automatic. The model is not forced to call a particular tool
-first, but it must verify artifact claims before final JSON.
+The OpenAI runner submits `/v1/responses` requests through the OpenAI Batch API,
+then downloads completed results back into the same raw and extracted JSONL
+formats used by the rest of the repo.
 
-GitHub repository, code, issue, pull request, commit, tree, and file inspection
-go through the GitHub MCP server. GitHub code search supports quoted phrases,
-`OR`, `NOT`, and search qualifiers, with a 256-character query limit. The prompt
-therefore allows compact GitHub code-search batching when it fits, and otherwise
-asks for separate alias searches. Promising repos should be checked with
-`github_repo`, then README/docs/config/script files should be read with
-`github_file_contents`.
+```bash
+OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
+  --num-prompts 100 \
+  --submit-only
+```
 
-Hugging Face models, datasets, Spaces, papers, Hub search, and repo details go
-through the Hugging Face MCP server. HF search is treated as semantic or
-natural-language search, so the prompt does not assume boolean `OR` semantics.
+To resume and download a completed batch:
+
+```bash
+OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
+  --download
+```
+
+The submit command records pending batch ids in `outputs/*_batch_ids.jsonl`.
+`--download` removes each completed or terminal batch id after saving its files;
+still-running batches remain queued for the next run.
+Batch requests also set a stable `prompt_cache_key` and `prompt_cache_retention`
+of `24h` by default so repeated prompt prefixes can use OpenAI prompt caching.
+
+Optional rate-limit helpers:
+
+```bash
+export GITHUB_TOKEN=...
+export HF_TOKEN=...
+```
+
+The GitHub tools use the remote GitHub MCP server by default. To use another
+server, set `GITHUB_MCP_URL` for streamable HTTP or `GITHUB_MCP_COMMAND` for a
+local stdio server such as `github-mcp-server stdio`.
+The Hugging Face tools use `https://huggingface.co/mcp` by default. To override
+that, set `HF_MCP_URL` or `HF_MCP_COMMAND`.
 
 ## Papers With Code Artifacts
 
@@ -83,24 +83,16 @@ Scrape Papers With Code by arXiv ID and keep the joined artifact leads under
 `data/`:
 
 ```bash
-PYTHONPATH=src python3 -m reprocli_data.scrape_paperswithcode_arxiv \
+python3 src/scrape_paperswithcode_arxiv.py \
   --output data/paperswithcode/arxiv_artifacts.jsonl
 ```
 
 Upload the scraped JSONL to Hugging Face:
 
 ```bash
-PYTHONPATH=src python3 -m reprocli_data.upload_paperswithcode_dataset \
+python3 src/upload_paperswithcode_dataset.py \
   --input data/paperswithcode/arxiv_artifacts.jsonl \
   --repo-id Mithilss/neurips-2025-paperswithcode-artifacts
-```
-
-Other data utilities live under `src/reprocli_data/`:
-
-```bash
-PYTHONPATH=src python3 -m reprocli_data.fetch_neurips_2025_arxiv
-PYTHONPATH=src python3 -m reprocli_data.download_arxiv_sources
-PYTHONPATH=src python3 -m reprocli_data.build_arxiv_sources_parquet
 ```
 
 ## Useful Flags
@@ -121,7 +113,7 @@ PYTHONPATH=src python3 -m reprocli_data.build_arxiv_sources_parquet
 Start the local viewer:
 
 ```bash
-PYTHONPATH=src python3 src/view_jsonl_conversations.py --port 8765
+python src/view_jsonl_conversations.py --port 8765
 ```
 
 Open:
