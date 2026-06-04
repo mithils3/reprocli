@@ -71,7 +71,7 @@ FINAL_RESPONSE_FORMAT = {
                 "score": {"type": "integer"},
                 "tier": {
                     "type": "string",
-                    "enum": ["Easy", "Medium", "Hard", "Hardest"],
+                    "enum": ["Easy", "Medium", "Hard", "Artifact-Blocked"],
                 },
                 "agent_task": {"type": "string"},
                 "h100_hours_estimate": {"type": "number"},

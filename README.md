@@ -1,24 +1,50 @@
 # reprocli
 
-Utilities for running the NeurIPS arXiv artifact-availability prompt through vLLM and reviewing JSONL outputs.
+Utilities for running the NeurIPS arXiv artifact-availability prompt through
+DeepSeek on vLLM and reviewing JSONL outputs.
+
+## Setup
+
+Install the Python environment used by your cluster or local vLLM setup, then run
+commands from the repository root. The package-style data scripts expect
+`PYTHONPATH=src` unless the project is installed as a package.
+
+```bash
+export PYTHONPATH=src
+export GITHUB_TOKEN=...
+export HF_TOKEN=...
+```
+
+The GitHub tools use the remote GitHub MCP server by default. To use another
+server, set `GITHUB_MCP_URL` for streamable HTTP or `GITHUB_MCP_COMMAND` for a
+local stdio server such as `github-mcp-server stdio`. Set
+`GITHUB_MCP_TOOLSETS` if you want a different GitHub MCP toolset list.
+
+The Hugging Face tools use `https://huggingface.co/mcp` by default. To override
+that, set `HF_MCP_URL` or `HF_MCP_COMMAND`.
 
 ## Run With Web Verification
 
-The runner uses vLLM tool calling plus a local Python tool loop. The first tool
-round searches GitHub for candidate code repositories. Promising candidates are
-then verified with the GitHub repository tool, which uses the public GitHub API
-and includes root README text when available. Hugging Face verification uses
-the public Hugging Face API.
+The runner uses vLLM tool calling plus a local Python tool loop. Tool choices
+are model-chosen. GitHub discovery and repository inspection use the GitHub MCP
+server. Hugging Face discovery and repository details use the Hugging Face MCP
+server. Direct URLs from papers or tool results can still be checked with
+`fetch_url`.
+The paper input is also augmented with artifact candidates from
+`data/paperswithcode/arxiv_artifacts.jsonl` when present. These candidates come
+from a Papers With Code arXiv-ID scrape and are treated as leads that still need
+tool verification.
 By default it starts one local vLLM OpenAI server, reuses it for every tool round,
 lets each paper advance through tool rounds as soon as its own response and tool
 calls finish, then shuts the server down when the run finishes.
 
 ```bash
-python3 src/run_arxiv_prompt_vllm.py \
+PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 8 \
   --tool-rounds 10 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
+  --pwc-artifacts data/paperswithcode/arxiv_artifacts.jsonl \
   --request-workers 8 \
   --stream-first-response \
   --dataset /projects/bgnp/msalunkhe/datasets \
@@ -31,39 +57,50 @@ python3 src/run_arxiv_prompt_vllm.py \
 For a larger run, omit `--num-prompts`.
 
 ```bash
-python src/run_arxiv_prompt_vllm.py
+PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py
 ```
 
-## Run With OpenAI Batch
+## Tool Behavior
 
-The OpenAI runner submits `/v1/responses` requests through the OpenAI Batch API,
-then downloads completed results back into the same raw and extracted JSONL
-formats used by the rest of the repo.
+Tool choice is automatic. The model is not forced to call a particular tool
+first, but it must verify artifact claims before final JSON.
+
+GitHub repository, code, issue, pull request, commit, tree, and file inspection
+go through the GitHub MCP server. GitHub code search supports quoted phrases,
+`OR`, `NOT`, and search qualifiers, with a 256-character query limit. The prompt
+therefore allows compact GitHub code-search batching when it fits, and otherwise
+asks for separate alias searches. Promising repos should be checked with
+`github_repo`, then README/docs/config/script files should be read with
+`github_file_contents`.
+
+Hugging Face models, datasets, Spaces, papers, Hub search, and repo details go
+through the Hugging Face MCP server. HF search is treated as semantic or
+natural-language search, so the prompt does not assume boolean `OR` semantics.
+
+## Papers With Code Artifacts
+
+Scrape Papers With Code by arXiv ID and keep the joined artifact leads under
+`data/`:
 
 ```bash
-OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
-  --num-prompts 10 \
-  --submit-only
+PYTHONPATH=src python3 -m reprocli_data.scrape_paperswithcode_arxiv \
+  --output data/paperswithcode/arxiv_artifacts.jsonl
 ```
 
-To resume and download a completed batch:
+Upload the scraped JSONL to Hugging Face:
 
 ```bash
-OPENAI_API_KEY=... python3 src/run_arxiv_prompt_openai.py \
-  --download
+PYTHONPATH=src python3 -m reprocli_data.upload_paperswithcode_dataset \
+  --input data/paperswithcode/arxiv_artifacts.jsonl \
+  --repo-id Mithilss/neurips-2025-paperswithcode-artifacts
 ```
 
-The submit command records pending batch ids in `outputs/*_batch_ids.jsonl`.
-`--download` removes each completed or terminal batch id after saving its files;
-still-running batches remain queued for the next run.
-Batch requests also set a stable `prompt_cache_key` and `prompt_cache_retention`
-of `24h` by default so repeated prompt prefixes can use OpenAI prompt caching.
-
-Optional rate-limit helpers:
+Other data utilities live under `src/reprocli_data/`:
 
 ```bash
-export GITHUB_TOKEN=...
-export HF_TOKEN=...
+PYTHONPATH=src python3 -m reprocli_data.fetch_neurips_2025_arxiv
+PYTHONPATH=src python3 -m reprocli_data.download_arxiv_sources
+PYTHONPATH=src python3 -m reprocli_data.build_arxiv_sources_parquet
 ```
 
 ## Useful Flags
@@ -71,6 +108,8 @@ export HF_TOKEN=...
 - `--tool-rounds 10`: maximum browse/execute/continue rounds before the final answer.
 - `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
 - `--max-tokens 8192`: maximum generated tokens per model response.
+- `--pwc-artifacts data/paperswithcode/arxiv_artifacts.jsonl`: adds
+  Papers With Code GitHub, project-page, and Hugging Face candidate links.
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
 - `--request-workers 8`: number of concurrent request/tool pipelines.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
@@ -82,7 +121,7 @@ export HF_TOKEN=...
 Start the local viewer:
 
 ```bash
-python src/view_jsonl_conversations.py --port 8765
+PYTHONPATH=src python3 src/view_jsonl_conversations.py --port 8765
 ```
 
 Open:

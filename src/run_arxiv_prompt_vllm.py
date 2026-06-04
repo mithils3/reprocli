@@ -12,6 +12,7 @@ from reprocli_vllm.config import (
     DEFAULT_EXTRACTED_OUTPUT,
     DEFAULT_MODEL,
     DEFAULT_OUTPUT,
+    DEFAULT_PWC_ARTIFACTS,
     DEFAULT_REQUESTS_OUTPUT,
     PLACEHOLDER,
 )
@@ -28,7 +29,7 @@ def main() -> int:
     if PLACEHOLDER not in prompt_template:
         raise SystemExit(f"{args.prompt_file} must contain {PLACEHOLDER}.")
 
-    papers = load_papers(args.dataset)
+    papers = load_papers(args.dataset, args.pwc_artifacts)
     papers = [paper for paper in papers if paper.tex_files]
     papers_to_run = papers[: args.num_prompts] if args.num_prompts else papers
     prompts = [
@@ -53,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-prompts", type=int)
     parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--pwc-artifacts", type=argparse_path, default=DEFAULT_PWC_ARTIFACTS)
     parser.add_argument("--prompt-file", type=argparse_path, default=argparse_path("prompt.txt"))
     parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
     parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
