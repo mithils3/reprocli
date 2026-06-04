@@ -20,6 +20,7 @@ from reprocli_vllm.model_profiles import PROFILES, infer_profile_name
 from reprocli_vllm.openai_server import VllmServer
 from reprocli_vllm.papers import load_papers
 from reprocli_vllm.tool_loop import run_tool_loop
+from reprocli_vllm.trace_io import trace_output_path
 from reprocli_vllm.vllm_cache import default_cache_dir
 
 
@@ -60,6 +61,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
     parser.add_argument("--extracted-format", choices=("jsonl", "csv"), default="jsonl")
     parser.add_argument("--requests-output", type=argparse_path, default=DEFAULT_REQUESTS_OUTPUT)
+    parser.add_argument("--trace-output", type=argparse_path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--model-profile", choices=["auto", *PROFILES], default="auto")
     parser.add_argument("--vllm-cache-dir", type=argparse_path)
@@ -103,6 +105,8 @@ def parse_args() -> argparse.Namespace:
         args.vllm_cache_dir = default_cache_dir(args.model)
     if args.extracted_format == "csv" and args.extracted_output == DEFAULT_EXTRACTED_OUTPUT:
         args.extracted_output = args.extracted_output.with_suffix(".csv")
+    if args.trace_output is None:
+        args.trace_output = trace_output_path(args.output)
     return args
 
 

@@ -105,6 +105,7 @@ python3 src/upload_paperswithcode_dataset.py \
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
 - `--request-workers 8`: number of concurrent request/tool pipelines.
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
+- `--save-round-jsonl`: write one `*_trace.jsonl` file with the full message/tool history per paper.
 - `--reasoning-effort high`: enables DeepSeek V4 Think High through chat-template kwargs.
 - `--model-profile deepseek_v4_flash`: uses the DeepSeek V4 tokenizer, tool parser, reasoning parser, FP8 KV cache, TP=4, and FlashInfer autotune disabled.
 

@@ -9,13 +9,10 @@ from typing import Any
 
 from .batch_io import (
     append_assistant_tool_call,
-    append_jsonl_row,
     build_batch_request,
     initial_messages,
     normalize_tool_calls,
     response_message,
-    round_output_path,
-    round_request_path,
     tool_result_message,
     write_extracted_rows,
     write_final_rows,
@@ -24,6 +21,7 @@ from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
 from .openai_client import post_chat_completion_row, response_row
 from .papers import Paper
 from .tools.web_tools import execute_tool_call
+from .trace_io import assistant_message, write_trace_rows
 
 
 def run_tool_loop(
@@ -39,8 +37,6 @@ def run_tool_loop(
     original_ids = [paper.arxiv_id for paper in papers]
     final_rows: dict[str, dict] = {}
     hit_tool_round_limit: set[str] = set()
-    request_paths_seen: set[int] = set()
-    output_paths_seen: set[int] = set()
     tool_call_counts = {custom_id: Counter() for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
@@ -67,13 +63,6 @@ def run_tool_loop(
                 include_tools=include_tools,
                 tool_choice="auto",
             )
-            if args.save_round_jsonl:
-                write_round_row(
-                    round_request_path(args.requests_output, round_index),
-                    request,
-                    round_index,
-                    request_paths_seen,
-                )
             stream = args.stream_first_response and round_index == 0 and custom_id == original_ids[0]
             future = requests.submit(
                 post_chat_completion_row,
@@ -107,7 +96,6 @@ def run_tool_loop(
                         final_rows,
                         tool_rounds_used,
                         hit_tool_round_limit,
-                        output_paths_seen,
                         tool_call_counts,
                         args,
                     )
@@ -132,6 +120,8 @@ def run_tool_loop(
         final_rows,
         args.extracted_format,
     )
+    if args.save_round_jsonl:
+        write_trace_rows(args.trace_output, original_ids, conversations, final_rows)
 
 
 def handle_request_done(
@@ -143,7 +133,6 @@ def handle_request_done(
     final_rows: dict[str, dict],
     tool_rounds_used: dict[str, int],
     hit_tool_round_limit: set[str],
-    output_paths_seen: set[int],
     tool_call_counts: dict[str, Counter],
     args: argparse.Namespace,
 ) -> None:
@@ -151,13 +140,6 @@ def handle_request_done(
     custom_id = str(state["custom_id"])
     round_index = int(state["round_index"])
     row = response_row(custom_id, future.result())
-    if args.save_round_jsonl:
-        write_round_row(
-            round_output_path(args.output, round_index),
-            row,
-            round_index,
-            output_paths_seen,
-        )
     message = response_message(row)
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
@@ -192,6 +174,7 @@ def handle_request_done(
         "max_tool_rounds": args.tool_rounds,
         "hit_tool_round_limit": custom_id in hit_tool_round_limit,
     }
+    append_final_message(conversations[custom_id], message, tool_calls, bool(state["include_tools"]))
     final_rows[custom_id] = row
 
 
@@ -241,17 +224,6 @@ def conversation_for_round(messages: list[dict], include_tools: bool) -> list[di
     return [*messages, {"role": "user", "content": FINAL_NO_TOOLS_MESSAGE}]
 
 
-def write_round_row(
-    path,
-    row: dict[str, Any],
-    round_index: int,
-    seen_rounds: set[int],
-) -> None:
-    truncate = round_index not in seen_rounds
-    append_jsonl_row(path, row, truncate=truncate)
-    seen_rounds.add(round_index)
-
-
 def append_tool_results(
     messages: list[dict],
     message: dict,
@@ -261,6 +233,17 @@ def append_tool_results(
     for call in tool_calls:
         result = execute_tool_call(call)
         messages.append(tool_result_message(call, result))
+
+
+def append_final_message(
+    messages: list[dict[str, Any]],
+    message: dict[str, Any],
+    tool_calls: list[dict[str, Any]],
+    include_tools: bool,
+) -> None:
+    if not include_tools:
+        messages.append({"role": "user", "content": FINAL_NO_TOOLS_MESSAGE})
+    messages.append(assistant_message(message, tool_calls))
 
 
 def final_pass_conversations(

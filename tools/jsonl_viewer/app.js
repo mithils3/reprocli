@@ -111,6 +111,9 @@ function parseError(rawLine, source, lineNumber, error) {
 }
 
 function normalize(raw, source, line) {
+  if (Array.isArray(raw?.messages) && raw?.final_response) {
+    return normalizeTraceRecord(raw, source, line);
+  }
   const body = raw?.response?.body || raw?.body || raw;
   const choice = (body?.choices || raw?.choices || [])[0] || {};
   const message = choice.message || {};
@@ -160,7 +163,7 @@ function baseRecord(record) {
 function normalizeMessages(messages) {
   return Array.isArray(messages) ? messages.map((msg, index) => ({
     role: String(msg?.role || `message_${index + 1}`),
-    content: flatten(msg?.content ?? msg?.text ?? "")
+    content: messageContent(msg)
   })).filter((msg) => msg.content || msg.role) : [];
 }
 
