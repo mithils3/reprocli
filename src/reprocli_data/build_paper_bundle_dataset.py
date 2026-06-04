@@ -13,6 +13,8 @@ from reprocli_vllm.config import DEFAULT_DATASET
 
 
 DEFAULT_SUPPLEMENT_DIR = Path("/projects/bgnp/msalunkhe/openreview_supplements")
+DEFAULT_BATCH_SIZE_MB = 64
+DEFAULT_BATCH_ROWS = 64
 
 
 def main() -> int:
@@ -22,6 +24,8 @@ def main() -> int:
         supplement_dir=Path(args.supplement_dir),
         output_dir=Path(args.output_dir),
         shard_size_mb=args.shard_size_mb,
+        batch_size_mb=max(1, args.batch_size_mb),
+        batch_rows=max(1, args.batch_rows),
         compression=args.compression,
         overwrite=args.overwrite,
     )
@@ -46,6 +50,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--supplement-dir", default=str(DEFAULT_SUPPLEMENT_DIR))
     parser.add_argument("--output-dir", default="data/paper_bundle_dataset")
     parser.add_argument("--shard-size-mb", type=int, default=512)
+    parser.add_argument("--batch-size-mb", type=int, default=DEFAULT_BATCH_SIZE_MB)
+    parser.add_argument("--batch-rows", type=int, default=DEFAULT_BATCH_ROWS)
     parser.add_argument("--compression", default="zstd")
     parser.add_argument("--repo-id", default=DEFAULT_REPO_ID)
     parser.add_argument("--private", action="store_true")

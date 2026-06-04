@@ -121,7 +121,9 @@ PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
 ```
 
 The bundle columns include `paper_tex_files`, `paper_tex_text`, and
-`supplement_files`. Pass `--no-upload` for a local-only build.
+`supplement_files`. The builder batches paper rows before writing Parquet;
+lower `--batch-size-mb` or `--batch-rows` if a shared filesystem run is memory
+constrained. Pass `--no-upload` for a local-only build.
 
 ## Useful Flags
 

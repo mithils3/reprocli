@@ -4,14 +4,15 @@ import hashlib
 import json
 import shutil
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 import pyarrow as pa
-import pyarrow.parquet as pq
 
 from .arxiv_source_download import safe_dirname
 from .parquet_artifacts import TEXT_EXTENSIONS, decode_text
+from .paper_bundle_writer import ShardedBundleWriter
 
 
 FILE_STRUCT = pa.struct(
@@ -62,42 +63,13 @@ class Stats:
     shards: int = 0
 
 
-class ShardedWriter:
-    def __init__(self, output_data_dir: Path, shard_bytes: int, compression: str) -> None:
-        self.output_data_dir = output_data_dir
-        self.shard_bytes = shard_bytes
-        self.compression = compression
-        self.shard_index = -1
-        self.shard_logical_bytes = 0
-        self.writer: pq.ParquetWriter | None = None
-
-    def write(self, row: dict[str, Any], logical_bytes: int) -> None:
-        if self.writer is None or self.shard_logical_bytes >= self.shard_bytes:
-            self._open_next_shard()
-        assert self.writer is not None
-        self.writer.write_table(pa.Table.from_pylist([row], schema=SCHEMA))
-        self.shard_logical_bytes += logical_bytes
-
-    def close(self) -> int:
-        if self.writer is not None:
-            self.writer.close()
-            self.writer = None
-        return self.shard_index + 1
-
-    def _open_next_shard(self) -> None:
-        if self.writer is not None:
-            self.writer.close()
-        self.shard_index += 1
-        self.shard_logical_bytes = 0
-        path = self.output_data_dir / f"train-{self.shard_index:05d}.parquet"
-        self.writer = pq.ParquetWriter(path, SCHEMA, compression=self.compression)
-
-
 def build_dataset(
     dataset_name: str,
     supplement_dir: Path,
     output_dir: Path,
     shard_size_mb: int,
+    batch_size_mb: int,
+    batch_rows: int,
     compression: str,
     overwrite: bool,
 ) -> Stats:
@@ -109,17 +81,39 @@ def build_dataset(
     output_data_dir.mkdir(parents=True, exist_ok=True)
 
     papers = load_arxiv_dataset(dataset_name)
-    writer = ShardedWriter(output_data_dir, shard_size_mb * 1024 * 1024, compression)
+    writer = ShardedBundleWriter(
+        output_data_dir=output_data_dir,
+        target_shard_bytes=shard_size_mb * 1024 * 1024,
+        batch_bytes=batch_size_mb * 1024 * 1024,
+        batch_rows=batch_rows,
+        compression=compression,
+        schema=SCHEMA,
+    )
     stats = Stats()
+    start = time.monotonic()
     for arxiv_id in sorted(papers):
         row, logical_bytes = make_row(papers[arxiv_id], supplement_dir)
         writer.write(row, logical_bytes)
         update_stats(stats, row, logical_bytes)
         if stats.papers % 100 == 0:
-            print(f"[{stats.papers}/{len(papers)}] bundled papers", file=sys.stderr)
+            elapsed = max(time.monotonic() - start, 0.001)
+            print(
+                f"[{stats.papers}/{len(papers)}] bundled papers "
+                f"({stats.papers / elapsed:.1f} papers/s)",
+                file=sys.stderr,
+            )
     stats.shards = writer.close()
     write_readme(output_dir, stats)
-    write_stats(output_dir, stats, dataset_name, supplement_dir)
+    write_stats(
+        output_dir,
+        stats,
+        dataset_name,
+        supplement_dir,
+        shard_size_mb,
+        batch_size_mb,
+        batch_rows,
+        compression,
+    )
     return stats
 
 
@@ -277,9 +271,22 @@ OpenReview page, and included files before redistribution or reuse.
     )
 
 
-def write_stats(output_dir: Path, stats: Stats, dataset_name: str, supplement_dir: Path) -> None:
+def write_stats(
+    output_dir: Path,
+    stats: Stats,
+    dataset_name: str,
+    supplement_dir: Path,
+    shard_size_mb: int,
+    batch_size_mb: int,
+    batch_rows: int,
+    compression: str,
+) -> None:
     payload = stats.__dict__ | {
         "dataset": dataset_name,
         "supplement_dir": str(supplement_dir),
+        "shard_size_mb": shard_size_mb,
+        "batch_size_mb": batch_size_mb,
+        "batch_rows": batch_rows,
+        "compression": compression,
     }
     (output_dir / "dataset_stats.json").write_text(json.dumps(payload, indent=2) + "\n")
