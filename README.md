@@ -110,7 +110,9 @@ PYTHONPATH=src python3 -m reprocli_data.download_openreview_supplements \
 ```
 
 Build a new Hugging Face-ready dataset with one row per `arxiv_id`, grouping
-the paper `.tex` files and matched OpenReview supplementary files together:
+the paper `.tex` files and matched OpenReview supplementary files together.
+After a successful build, this uploads to `Mithilss/neurips-2025-paper-bundles`
+by default:
 
 ```bash
 PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
@@ -119,8 +121,7 @@ PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
 ```
 
 The bundle columns include `paper_tex_files`, `paper_tex_text`, and
-`supplement_files`. Upload `data/paper_bundle_dataset` as a new Hugging Face
-dataset repo or config.
+`supplement_files`. Pass `--no-upload` for a local-only build.
 
 ## Useful Flags
 

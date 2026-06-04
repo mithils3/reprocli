@@ -1,6 +1,7 @@
 --extra-index-url https://wheels.vllm.ai/nightly
 
 datasets
+huggingface_hub
 openai
 openreview-py
 vllm

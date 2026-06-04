@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .paper_bundle_dataset import build_dataset
+from .upload_dataset_folder import DEFAULT_REPO_ID, upload_dataset_folder
 from reprocli_vllm.config import DEFAULT_DATASET
 
 
@@ -29,6 +30,13 @@ def main() -> int:
         f"files to {stats.shards} shards in {args.output_dir}",
         file=sys.stderr,
     )
+    if not args.no_upload:
+        upload_dataset_folder(
+            input_dir=Path(args.output_dir),
+            repo_id=args.repo_id,
+            private=args.private,
+            commit_message=args.commit_message,
+        )
     return 0
 
 
@@ -39,6 +47,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default="data/paper_bundle_dataset")
     parser.add_argument("--shard-size-mb", type=int, default=512)
     parser.add_argument("--compression", default="zstd")
+    parser.add_argument("--repo-id", default=DEFAULT_REPO_ID)
+    parser.add_argument("--private", action="store_true")
+    parser.add_argument("--no-upload", action="store_true")
+    parser.add_argument(
+        "--commit-message",
+        default="Upload NeurIPS 2025 paper bundle dataset",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
