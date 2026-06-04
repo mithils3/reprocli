@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 import shutil
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from .arxiv_source_download import safe_dirname
 from .parquet_artifacts import TEXT_EXTENSIONS, decode_text
 
 
@@ -53,17 +52,6 @@ SCHEMA = pa.schema(
 )
 
 
-@dataclass(frozen=True)
-class ManifestRow:
-    arxiv_id: str
-    title: str
-    source_url: str
-    status: str
-    output_path: str
-    error: str
-
-
-@dataclass
 class Stats:
     papers: int = 0
     papers_with_tex: int = 0
@@ -105,27 +93,9 @@ class ShardedWriter:
         self.writer = pq.ParquetWriter(path, SCHEMA, compression=self.compression)
 
 
-def load_manifest(path: Path) -> dict[str, ManifestRow]:
-    rows: dict[str, ManifestRow] = {}
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        for row in csv.DictReader(handle):
-            arxiv_id = row.get("arxiv_id") or ""
-            if not arxiv_id:
-                continue
-            rows[arxiv_id] = ManifestRow(
-                arxiv_id=arxiv_id,
-                title=row.get("title") or "",
-                source_url=row.get("source_url") or "",
-                status=row.get("status") or "",
-                output_path=row.get("output_path") or "",
-                error=row.get("error") or "",
-            )
-    return rows
-
-
 def build_dataset(
-    arxiv_manifest: Path,
-    supplement_manifest: Path,
+    dataset_name: str,
+    supplement_dir: Path,
     output_dir: Path,
     shard_size_mb: int,
     compression: str,
@@ -138,55 +108,79 @@ def build_dataset(
     output_data_dir = output_dir / "data"
     output_data_dir.mkdir(parents=True, exist_ok=True)
 
-    arxiv_rows = load_manifest(arxiv_manifest)
-    supplement_rows = load_manifest(supplement_manifest)
+    papers = load_arxiv_dataset(dataset_name)
     writer = ShardedWriter(output_data_dir, shard_size_mb * 1024 * 1024, compression)
     stats = Stats()
-    for arxiv_id in sorted(arxiv_rows):
-        row, logical_bytes = make_row(arxiv_rows[arxiv_id], supplement_rows.get(arxiv_id))
+    for arxiv_id in sorted(papers):
+        row, logical_bytes = make_row(papers[arxiv_id], supplement_dir)
         writer.write(row, logical_bytes)
         update_stats(stats, row, logical_bytes)
         if stats.papers % 100 == 0:
-            print(f"[{stats.papers}/{len(arxiv_rows)}] bundled papers", file=sys.stderr)
+            print(f"[{stats.papers}/{len(papers)}] bundled papers", file=sys.stderr)
     stats.shards = writer.close()
     write_readme(output_dir, stats)
-    write_stats(output_dir, stats, arxiv_manifest, supplement_manifest)
+    write_stats(output_dir, stats, dataset_name, supplement_dir)
     return stats
 
 
-def make_row(arxiv: ManifestRow, supplement: ManifestRow | None) -> tuple[dict[str, Any], int]:
-    paper_tex = tex_files(Path(arxiv.output_path))
-    supplement_files = artifact_files(Path(supplement.output_path)) if supplement else []
+def load_arxiv_dataset(dataset_name: str) -> dict[str, dict[str, Any]]:
+    from datasets import load_dataset
+
+    papers: dict[str, dict[str, Any]] = {}
+    for source_row in load_dataset(dataset_name, split="train"):
+        arxiv_id = str(source_row.get("arxiv_id") or "")
+        if not arxiv_id:
+            continue
+        paper = papers.setdefault(arxiv_id, new_paper(source_row, arxiv_id))
+        if is_tex_row(source_row):
+            paper["paper_tex_files"].append(tex_row(source_row))
+    return papers
+
+
+def new_paper(source_row: dict[str, Any], arxiv_id: str) -> dict[str, Any]:
+    return {
+        "arxiv_id": arxiv_id,
+        "title": str(source_row.get("title") or ""),
+        "source_url": str(source_row.get("source_url") or ""),
+        "paper_status": str(source_row.get("paper_status") or ""),
+        "paper_tex_files": [],
+    }
+
+
+def is_tex_row(row: dict[str, Any]) -> bool:
+    extension = str(row.get("extension") or "").casefold()
+    filename = str(row.get("filename") or "").casefold()
+    return extension == ".tex" or filename.endswith(".tex")
+
+
+def tex_row(row: dict[str, Any]) -> dict[str, Any]:
+    text = row.get("text") or decode_text(row_bytes(row)) or ""
+    return {
+        "relative_path": str(row.get("relative_path") or ""),
+        "filename": str(row.get("filename") or ""),
+        "file_size": int(row.get("file_size") or len(text.encode("utf-8"))),
+        "sha256": str(row.get("sha256") or hashlib.sha256(text.encode("utf-8")).hexdigest()),
+        "text": text,
+    }
+
+
+def make_row(arxiv: dict[str, Any], supplement_dir: Path) -> tuple[dict[str, Any], int]:
+    paper_tex = arxiv["paper_tex_files"]
+    supplement_root = supplement_dir / safe_dirname(arxiv["arxiv_id"])
+    supplement_files = artifact_files(supplement_root)
     row = {
-        "arxiv_id": arxiv.arxiv_id,
-        "title": arxiv.title,
-        "paper_source_url": arxiv.source_url,
-        "paper_status": arxiv.status,
+        "arxiv_id": arxiv["arxiv_id"],
+        "title": arxiv["title"],
+        "paper_source_url": arxiv["source_url"],
+        "paper_status": arxiv["paper_status"],
         "paper_tex_files": paper_tex,
         "paper_tex_text": join_tex(paper_tex),
-        "supplement_source_url": supplement.source_url if supplement else "",
-        "supplement_status": supplement.status if supplement else "missing",
+        "supplement_source_url": "",
+        "supplement_status": "downloaded" if supplement_files else "missing",
         "supplement_files": supplement_files,
     }
     logical_bytes = sum(item["file_size"] for item in paper_tex + supplement_files)
     return row, logical_bytes
-
-
-def tex_files(root: Path) -> list[dict[str, Any]]:
-    files: list[dict[str, Any]] = []
-    for path in sorted(root.rglob("*.tex")) if root.is_dir() else []:
-        content = path.read_bytes()
-        text = decode_text(content) or ""
-        files.append(
-            {
-                "relative_path": path.relative_to(root).as_posix(),
-                "filename": path.name,
-                "file_size": len(content),
-                "sha256": hashlib.sha256(content).hexdigest(),
-                "text": text,
-            }
-        )
-    return files
 
 
 def artifact_files(root: Path) -> list[dict[str, Any]]:
@@ -217,6 +211,15 @@ def join_tex(files: list[dict[str, Any]]) -> str:
     for item in files:
         chunks.append(f"% FILE: {item['relative_path']}\n{item['text']}")
     return "\n\n".join(chunks)
+
+
+def row_bytes(row: dict[str, Any]) -> bytes:
+    content = row.get("content") or b""
+    if isinstance(content, bytes):
+        return content
+    if isinstance(content, bytearray):
+        return bytes(content)
+    return str(content).encode("utf-8")
 
 
 def update_stats(stats: Stats, row: dict[str, Any], logical_bytes: int) -> None:
@@ -274,9 +277,9 @@ OpenReview page, and included files before redistribution or reuse.
     )
 
 
-def write_stats(output_dir: Path, stats: Stats, arxiv_manifest: Path, supplement_manifest: Path) -> None:
+def write_stats(output_dir: Path, stats: Stats, dataset_name: str, supplement_dir: Path) -> None:
     payload = stats.__dict__ | {
-        "arxiv_manifest": str(arxiv_manifest),
-        "supplement_manifest": str(supplement_manifest),
+        "dataset": dataset_name,
+        "supplement_dir": str(supplement_dir),
     }
     (output_dir / "dataset_stats.json").write_text(json.dumps(payload, indent=2) + "\n")

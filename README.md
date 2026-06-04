@@ -104,6 +104,8 @@ arXiv source dataset:
 PYTHONPATH=src python3 -m reprocli_data.download_openreview_supplements \
   --dataset Mithilss/neurips-2025-arxiv-latex-sources \
   --output-dir /projects/bgnp/msalunkhe/openreview_supplements \
+  --workers 16 \
+  --delay 0.75 \
   --allow-failures
 ```
 
@@ -112,8 +114,6 @@ the paper `.tex` files and matched OpenReview supplementary files together:
 
 ```bash
 PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
-  --arxiv-manifest data/arxiv_sources/manifest.csv \
-  --supplement-manifest data/openreview_supplements/manifest.csv \
   --output-dir data/paper_bundle_dataset \
   --overwrite
 ```
