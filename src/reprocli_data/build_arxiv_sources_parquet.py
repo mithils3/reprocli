@@ -101,7 +101,13 @@ def main() -> int:
     )
     stats = build_dataset(papers, writer, args.progress_every)
     stats.shards = writer.close()
-    write_dataset_card(output_dir, stats)
+    write_dataset_card(
+        output_dir,
+        stats,
+        pretty_name=args.pretty_name,
+        source_description=args.source_description,
+        source_note=args.source_note,
+    )
     write_stats(output_dir, stats, args)
 
     print(
@@ -121,6 +127,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--compression", default="zstd")
     parser.add_argument("--limit-papers", type=int)
     parser.add_argument("--progress-every", type=int, default=100)
+    parser.add_argument("--pretty-name", default="NeurIPS 2025 arXiv LaTeX Source Files")
+    parser.add_argument("--source-description")
+    parser.add_argument("--source-note")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 

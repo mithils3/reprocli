@@ -95,6 +95,33 @@ python3 src/upload_paperswithcode_dataset.py \
   --repo-id Mithilss/neurips-2025-paperswithcode-artifacts
 ```
 
+## Paper Bundles With OpenReview Supplements
+
+Download and extract OpenReview supplementary material for papers present in the
+arXiv source dataset:
+
+```bash
+PYTHONPATH=src python3 -m reprocli_data.download_openreview_supplements \
+  --dataset Mithilss/neurips-2025-arxiv-latex-sources \
+  --output-dir data/openreview_supplements \
+  --allow-failures
+```
+
+Build a new Hugging Face-ready dataset with one row per `arxiv_id`, grouping
+the paper `.tex` files and matched OpenReview supplementary files together:
+
+```bash
+PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
+  --arxiv-manifest data/arxiv_sources/manifest.csv \
+  --supplement-manifest data/openreview_supplements/manifest.csv \
+  --output-dir data/paper_bundle_dataset \
+  --overwrite
+```
+
+The bundle columns include `paper_tex_files`, `paper_tex_text`, and
+`supplement_files`. Upload `data/paper_bundle_dataset` as a new Hugging Face
+dataset repo or config.
+
 ## Useful Flags
 
 - `--tool-rounds 10`: maximum browse/execute/continue rounds before the final answer.

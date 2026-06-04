@@ -5,14 +5,29 @@ from pathlib import Path
 from .parquet_artifacts import Stats
 
 
-def write_dataset_card(output_dir: Path, stats: Stats) -> None:
+def write_dataset_card(
+    output_dir: Path,
+    stats: Stats,
+    pretty_name: str = "NeurIPS 2025 arXiv LaTeX Source Files",
+    source_description: str | None = None,
+    source_note: str | None = None,
+) -> None:
+    description = source_description or (
+        "This dataset contains file-level Parquet rows built from extracted raw arXiv\n"
+        "source packages for papers mapped from the NeurIPS 2025 proceedings to arXiv\n"
+        "records."
+    )
+    note = source_note or (
+        "Licensing for arXiv source submissions varies by paper. Check the corresponding\n"
+        "arXiv record and files for each paper before redistribution or reuse."
+    )
     readme = output_dir / "README.md"
     readme.write_text(
         f"""---
 license: other
 language:
 - en
-pretty_name: NeurIPS 2025 arXiv LaTeX Source Files
+pretty_name: {pretty_name}
 tags:
 - arxiv
 - latex
@@ -29,14 +44,12 @@ configs:
     path: data/train-*.parquet
 ---
 
-# NeurIPS 2025 arXiv LaTeX Source Files
+# {pretty_name}
 
-This dataset contains file-level Parquet rows built from extracted raw arXiv
-source packages for papers mapped from the NeurIPS 2025 proceedings to arXiv
-records.
+{description}
 
-Each row is one file from one arXiv source package. Use `arxiv_id` to group files
-back into papers.
+Each row is one file from one paper artifact package. Use `arxiv_id` to group
+files back into papers.
 
 ## Columns
 
@@ -69,8 +82,7 @@ ds = load_dataset("parquet", data_files="data/train-*.parquet", split="train")
 
 ## Notes
 
-Licensing for arXiv source submissions varies by paper. Check the corresponding
-arXiv record and files for each paper before redistribution or reuse.
+{note}
 """,
         encoding="utf-8",
     )
