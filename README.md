@@ -1,6 +1,6 @@
 # reprocli
 
-Utilities for running the NeurIPS arXiv artifact-availability prompt through vLLM and reviewing JSONL outputs.
+Utilities for running the NeurIPS paper-bundle artifact-availability prompt through vLLM and reviewing JSONL outputs.
 
 ## Run With Web Verification
 
@@ -13,6 +13,10 @@ The paper input is also augmented with artifact candidates from
 `data/paperswithcode/arxiv_artifacts.jsonl` when present. These candidates come
 from a Papers With Code arXiv-ID scrape and are treated as leads that still need
 tool verification.
+By default, the vLLM runner reads one-row-per-paper bundles from
+`Mithilss/neurips-2025-paper-bundles`
+(`https://huggingface.co/datasets/Mithilss/neurips-2025-paper-bundles`), which
+include paper LaTeX plus OpenReview supplement manifests and excerpts.
 By default it starts one local vLLM OpenAI server, reuses it for every tool round,
 lets each paper advance through tool rounds as soon as its own response and tool
 calls finish, then shuts the server down when the run finishes.
@@ -26,14 +30,14 @@ python3 src/run_arxiv_prompt_vllm.py \
   --pwc-artifacts /projects/bgnp/msalunkhe/paperswithcode_arxiv_artifacts.jsonl \
   --request-workers 8 \
   --stream-first-response \
-  --dataset /projects/bgnp/msalunkhe/datasets \
+  --dataset Mithilss/neurips-2025-paper-bundles \
   --model deepseek-ai/DeepSeek-V4-Flash \
   --model-profile deepseek_v4_flash \
   --reasoning-effort high \
   --vllm-cache-dir /projects/bgnp/msalunkhe/DeepSeek-V4-Flash/vllm_cache
 ```
 
-For a larger run, omit `--num-prompts`.
+`--num-prompts` samples that many papers at random. For a full run, omit it.
 
 ```bash
 python src/run_arxiv_prompt_vllm.py
@@ -120,10 +124,10 @@ PYTHONPATH=src python3 -m reprocli_data.build_paper_bundle_dataset \
   --overwrite
 ```
 
-The bundle columns include `paper_tex_files`, `paper_tex_text`, and
-`supplement_files`. The builder batches paper rows before writing Parquet;
-lower `--batch-size-mb` or `--batch-rows` if a shared filesystem run is memory
-constrained. Pass `--no-upload` for a local-only build.
+The bundle columns include `paper_tex_files`, `paper_tex_text`,
+`supplement_status`, and `supplement_files`. The builder batches paper rows
+before writing Parquet; lower `--batch-size-mb` or `--batch-rows` if a shared
+filesystem run is memory constrained. Pass `--no-upload` for a local-only build.
 
 ## Useful Flags
 

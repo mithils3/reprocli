@@ -17,7 +17,7 @@ from .openreview_supplements import (
     match_jobs,
     write_job_csv,
 )
-from reprocli_vllm.config import DEFAULT_DATASET
+from reprocli_vllm.config import ARXIV_SOURCE_DATASET
 
 
 DEFAULT_OUTPUT_DIR = Path("data/openreview_supplements")
@@ -73,7 +73,7 @@ def main() -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--dataset", default=ARXIV_SOURCE_DATASET)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--manifest", default="manifest.csv")
     parser.add_argument("--venue-id", default=DEFAULT_VENUE_ID)

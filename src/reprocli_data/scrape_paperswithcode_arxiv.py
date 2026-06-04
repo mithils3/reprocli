@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config import DEFAULT_DATASET, DEFAULT_PWC_ARTIFACTS
+from reprocli_vllm.config import ARXIV_SOURCE_DATASET, DEFAULT_PWC_ARTIFACTS
 
 
 PWC_API = "https://paperswithcode.co/api/v1/papers/arxiv"
@@ -38,7 +38,7 @@ def main() -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--dataset", default=ARXIV_SOURCE_DATASET)
     parser.add_argument("--output", type=Path, default=DEFAULT_PWC_ARTIFACTS)
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--sleep-seconds", type=float, default=0.25)

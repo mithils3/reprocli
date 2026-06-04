@@ -5,20 +5,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 
 from reprocli_vllm.config import (
-    DEFAULT_DATASET,
     DEFAULT_EXTRACTED_OUTPUT,
     DEFAULT_MODEL,
     DEFAULT_OUTPUT,
     DEFAULT_PWC_ARTIFACTS,
     DEFAULT_REQUESTS_OUTPUT,
+    DEFAULT_VLLM_DATASET,
+    PAPER_BUNDLE_DATASET_URL,
     PLACEHOLDER,
 )
 from reprocli_vllm.model_profiles import PROFILES, infer_profile_name
 from reprocli_vllm.openai_server import VllmServer
-from reprocli_vllm.papers import load_papers
+from reprocli_vllm.paper_bundles import load_bundle_papers
 from reprocli_vllm.tool_loop import run_tool_loop
 from reprocli_vllm.trace_io import trace_output_path
 from reprocli_vllm.vllm_cache import default_cache_dir
@@ -30,9 +32,9 @@ def main() -> int:
     if PLACEHOLDER not in prompt_template:
         raise SystemExit(f"{args.prompt_file} must contain {PLACEHOLDER}.")
 
-    papers = load_papers(args.dataset, args.pwc_artifacts)
+    papers = load_bundle_papers(args.dataset, args.pwc_artifacts)
     papers = [paper for paper in papers if paper.tex_files]
-    papers_to_run = papers[: args.num_prompts] if args.num_prompts else papers
+    papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
         prompt_template.replace(PLACEHOLDER, paper.text())
         for paper in papers_to_run
@@ -40,7 +42,7 @@ def main() -> int:
 
     print(
         f"Running {len(prompts)} prompts "
-        f"({'full dataset' if args.num_prompts is None else f'first {args.num_prompts}'})",
+        f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
         file=sys.stderr,
     )
     with VllmServer(args) as server_url:
@@ -54,7 +56,14 @@ def main() -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-prompts", type=int)
-    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument(
+        "--dataset",
+        default=DEFAULT_VLLM_DATASET,
+        help=(
+            "Paper-bundle dataset with LaTeX and OpenReview supplements. "
+            f"Default: {PAPER_BUNDLE_DATASET_URL}"
+        ),
+    )
     parser.add_argument("--pwc-artifacts", type=argparse_path, default=DEFAULT_PWC_ARTIFACTS)
     parser.add_argument("--prompt-file", type=argparse_path, default=argparse_path("prompt.txt"))
     parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
@@ -91,6 +100,8 @@ def parse_args() -> argparse.Namespace:
     apply_model_profile(args)
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
+    if args.num_prompts is not None and args.num_prompts < 1:
+        parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
     if args.max_repeated_tool_calls < 1:
@@ -108,6 +119,12 @@ def parse_args() -> argparse.Namespace:
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)
     return args
+
+
+def select_papers(papers: list, num_prompts: int | None) -> list:
+    if num_prompts is None:
+        return papers
+    return random.sample(papers, min(num_prompts, len(papers)))
 
 
 def apply_model_profile(args: argparse.Namespace) -> None:

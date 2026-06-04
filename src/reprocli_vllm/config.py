@@ -3,7 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 
-DEFAULT_DATASET = "Mithilss/neurips-2025-arxiv-latex-sources"
+ARXIV_SOURCE_DATASET = "Mithilss/neurips-2025-arxiv-latex-sources"
+PAPER_BUNDLE_DATASET = "Mithilss/neurips-2025-paper-bundles"
+PAPER_BUNDLE_DATASET_URL = "https://huggingface.co/datasets/Mithilss/neurips-2025-paper-bundles"
+DEFAULT_DATASET = ARXIV_SOURCE_DATASET
+DEFAULT_VLLM_DATASET = PAPER_BUNDLE_DATASET
 DEFAULT_PWC_ARTIFACTS = Path("data/paperswithcode/arxiv_artifacts.jsonl")
 DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
 DEFAULT_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash.jsonl")
@@ -21,7 +25,9 @@ WEB_SYSTEM_MESSAGE = (
     "them to verify MRE-relevant code, data, checkpoint, project-page, GitHub, "
     "and Hugging Face evidence before producing the final JSON. Tool choice is "
     "automatic: choose whichever available tool is most useful from the paper "
-    "text and any supplemental Papers With Code leads. Do not claim an artifact is verified "
+    "text, bundled OpenReview supplement evidence, and any supplemental Papers With Code leads. "
+    "Treat MRE-relevant code, configs, scripts, notebooks, and READMEs included in the bundled "
+    "OpenReview supplement as first-party code evidence for the paper. Do not claim an external artifact is verified "
     "unless a tool result supports that claim. Treat GitHub search as a "
     "GitHub-scoped web search and Hugging Face search as an HF-scoped web "
     "search. GitHub code search supports quoted phrases and OR/NOT syntax, but "

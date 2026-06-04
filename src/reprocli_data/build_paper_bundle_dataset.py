@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .paper_bundle_dataset import build_dataset
 from .upload_dataset_folder import DEFAULT_REPO_ID, upload_dataset_folder
-from reprocli_vllm.config import DEFAULT_DATASET
+from reprocli_vllm.config import ARXIV_SOURCE_DATASET
 
 
 DEFAULT_SUPPLEMENT_DIR = Path("/projects/bgnp/msalunkhe/openreview_supplements")
@@ -46,7 +46,7 @@ def main() -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--dataset", default=ARXIV_SOURCE_DATASET)
     parser.add_argument("--supplement-dir", default=str(DEFAULT_SUPPLEMENT_DIR))
     parser.add_argument("--output-dir", default="data/paper_bundle_dataset")
     parser.add_argument("--shard-size-mb", type=int, default=512)
