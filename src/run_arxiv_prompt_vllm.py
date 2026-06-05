@@ -101,6 +101,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument(
+        "--structured-outputs-backend",
+        default=None,
+        help=(
+            "Structured outputs backend for the embedded vLLM server, passed as "
+            "--structured-outputs-config.backend (e.g. xgrammar). Defaults to "
+            "the server's auto selection."
+        ),
+    )
+    parser.add_argument(
         "--compilation-config",
         default=None,
         help="Optional vLLM compilation JSON override.",

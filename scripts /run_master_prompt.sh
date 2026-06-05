@@ -36,4 +36,4 @@ python3 src/run_arxiv_prompt_vllm.py \
   --requests-output outputs/neurips_2025_minimax_m2_trial_requests.jsonl \
   --save-round-jsonl \
   --max-model-len 196608 \
-  --structured-outputs-config.backend xgrammar
+  --structured-outputs-backend xgrammar

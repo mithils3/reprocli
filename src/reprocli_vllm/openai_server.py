@@ -64,6 +64,10 @@ class VllmServer:
             command.append("--no-enable-flashinfer-autotune")
         if self.args.trust_remote_code:
             command.append("--trust-remote-code")
+        if getattr(self.args, "structured_outputs_backend", None):
+            command.extend(
+                ["--structured-outputs-config.backend", self.args.structured_outputs_backend]
+            )
         env = subprocess_env(self.args.vllm_cache_dir)
         if env:
             print(f"Using VLLM_CACHE_ROOT={self.args.vllm_cache_dir}", file=sys.stderr)
