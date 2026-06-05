@@ -20,6 +20,9 @@ include paper LaTeX plus OpenReview supplement manifests and excerpts.
 By default it starts one local vLLM OpenAI server, reuses it for every tool round,
 lets each paper advance through tool rounds as soon as its own response and tool
 calls finish, then shuts the server down when the run finishes.
+Raw responses, extracted rows, and optional trace rows are written as JSONL as
+each paper fully completes, so output row order follows completion order rather
+than dataset order.
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \

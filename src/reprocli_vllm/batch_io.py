@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import re
 from pathlib import Path
@@ -65,6 +64,11 @@ def append_jsonl_row(path: Path, row: dict[str, Any], *, truncate: bool) -> None
         handle.write("\n")
 
 
+def truncate_output_file(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("", encoding="utf-8")
+
+
 def round_request_path(path: Path, round_index: int) -> Path:
     if round_index == 0:
         return path
@@ -73,35 +77,6 @@ def round_request_path(path: Path, round_index: int) -> Path:
 
 def round_output_path(path: Path, round_index: int) -> Path:
     return path.with_name(f"{path.stem}_round{round_index}{path.suffix}")
-
-
-def write_final_rows(
-    path: Path,
-    custom_ids: list[str],
-    rows: dict[str, dict[str, Any]],
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for custom_id in custom_ids:
-            json.dump(rows[custom_id], handle, ensure_ascii=False)
-            handle.write("\n")
-
-
-def write_extracted_rows(
-    path: Path,
-    custom_ids: list[str],
-    rows: dict[str, dict[str, Any]],
-    output_format: str,
-) -> None:
-    extracted = [extracted_response(custom_id, rows[custom_id]) for custom_id in custom_ids]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if output_format == "csv":
-        write_extracted_csv(path, extracted)
-        return
-    with path.open("w", encoding="utf-8") as handle:
-        for row in extracted:
-            json.dump(row, handle, ensure_ascii=False)
-            handle.write("\n")
 
 
 def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
@@ -139,21 +114,6 @@ def parse_json_content(content: str) -> Any | None:
         return json.loads(content[start : end + 1])
     except json.JSONDecodeError:
         return None
-
-
-def write_extracted_csv(path: Path, rows: list[dict[str, Any]]) -> None:
-    fieldnames = sorted({key for row in rows for key in row})
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: csv_value(row.get(key)) for key in fieldnames})
-
-
-def csv_value(value: Any) -> Any:
-    if isinstance(value, (dict, list)):
-        return json.dumps(value, ensure_ascii=False)
-    return value
 
 
 def response_message(row: dict[str, Any]) -> dict[str, Any]:

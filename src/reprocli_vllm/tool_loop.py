@@ -9,19 +9,20 @@ from typing import Any
 
 from .batch_io import (
     append_assistant_tool_call,
+    append_jsonl_row,
     build_batch_request,
+    extracted_response,
     initial_messages,
     normalize_tool_calls,
     response_message,
+    truncate_output_file,
     tool_result_message,
-    write_extracted_rows,
-    write_final_rows,
 )
 from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
 from .openai_client import post_chat_completion_row, response_row
 from .papers import Paper
 from .tools.web_tools import execute_tool_call
-from .trace_io import assistant_message, write_trace_rows
+from .trace_io import append_trace_row, assistant_message
 
 
 def run_tool_loop(
@@ -47,6 +48,7 @@ def run_tool_loop(
         f"with {workers} worker(s)",
         file=sys.stderr,
     )
+    prepare_incremental_outputs(args)
 
     with ThreadPoolExecutor(max_workers=workers) as requests, ThreadPoolExecutor(
         max_workers=workers
@@ -115,15 +117,6 @@ def run_tool_loop(
     missing = [custom_id for custom_id in original_ids if custom_id not in final_rows]
     if missing:
         raise SystemExit(f"Missing final responses for: {', '.join(missing)}")
-    write_final_rows(args.output, original_ids, final_rows)
-    write_extracted_rows(
-        args.extracted_output,
-        original_ids,
-        final_rows,
-        args.extracted_format,
-    )
-    if args.save_round_jsonl:
-        write_trace_rows(args.trace_output, original_ids, conversations, final_rows)
 
 
 def handle_request_done(
@@ -190,6 +183,26 @@ def handle_request_done(
     }
     append_final_message(conversations[custom_id], message, tool_calls, bool(state["include_tools"]))
     final_rows[custom_id] = row
+    append_completed_outputs(custom_id, row, conversations[custom_id], args)
+
+
+def prepare_incremental_outputs(args: argparse.Namespace) -> None:
+    truncate_output_file(args.output)
+    truncate_output_file(args.extracted_output)
+    if args.save_round_jsonl:
+        truncate_output_file(args.trace_output)
+
+
+def append_completed_outputs(
+    custom_id: str,
+    row: dict[str, Any],
+    messages: list[dict[str, Any]],
+    args: argparse.Namespace,
+) -> None:
+    append_jsonl_row(args.output, row, truncate=False)
+    append_jsonl_row(args.extracted_output, extracted_response(custom_id, row), truncate=False)
+    if args.save_round_jsonl:
+        append_trace_row(args.trace_output, custom_id, messages, row)
 
 
 def repeated_tool_call(
@@ -259,16 +272,3 @@ def append_final_message(
     if not include_tools:
         messages.append({"role": "user", "content": FINAL_NO_TOOLS_MESSAGE})
     messages.append(assistant_message(message, tool_calls))
-
-
-def final_pass_conversations(
-    conversations: dict[str, list[dict]],
-    active_ids: list[str],
-) -> dict[str, list[dict]]:
-    return {
-        custom_id: [
-            *conversations[custom_id],
-            {"role": "user", "content": FINAL_NO_TOOLS_MESSAGE},
-        ]
-        for custom_id in active_ids
-    }

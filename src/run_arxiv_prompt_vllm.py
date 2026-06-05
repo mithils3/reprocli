@@ -48,8 +48,8 @@ def main() -> int:
     with VllmServer(args) as server_url:
         run_tool_loop(args, papers_to_run, prompts, server_url)
 
-    print(f"Wrote {len(prompts)} batch responses to {args.output}", file=sys.stderr)
-    print(f"Wrote extracted {args.extracted_format} to {args.extracted_output}", file=sys.stderr)
+    print(f"Finished writing {len(prompts)} responses to {args.output}", file=sys.stderr)
+    print(f"Finished writing extracted JSONL to {args.extracted_output}", file=sys.stderr)
     return 0
 
 
@@ -68,7 +68,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt-file", type=argparse_path, default=argparse_path("prompt.txt"))
     parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
     parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
-    parser.add_argument("--extracted-format", choices=("jsonl", "csv"), default="jsonl")
     parser.add_argument("--requests-output", type=argparse_path, default=DEFAULT_REQUESTS_OUTPUT)
     parser.add_argument("--trace-output", type=argparse_path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
@@ -134,8 +133,6 @@ def parse_args() -> argparse.Namespace:
         parser.error("--reasoning-effort max needs --max-model-len >= 393216")
     if args.vllm_cache_dir is None:
         args.vllm_cache_dir = default_cache_dir(args.model)
-    if args.extracted_format == "csv" and args.extracted_output == DEFAULT_EXTRACTED_OUTPUT:
-        args.extracted_output = args.extracted_output.with_suffix(".csv")
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)
     return args
