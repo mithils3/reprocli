@@ -14,7 +14,6 @@ from .github_mcp import (
     github_search_issues_tool,
     github_search_pull_requests_tool,
     github_search_repositories_tool,
-    github_search_tool,
 )
 from .huggingface_mcp import huggingface_repo_tool, huggingface_search_tool
 from .huggingface_tree import huggingface_repository_tree_tool
@@ -27,9 +26,7 @@ def execute_tool_call(call: dict[str, Any], paper: Paper | None = None) -> dict[
     name = function.get("name", "")
     try:
         arguments = parse_tool_arguments(function.get("arguments", {}))
-        if name == "github_search":
-            result = github_search_tool(arguments)
-        elif name == "github_search_repositories":
+        if name == "github_search_repositories":
             result = github_search_repositories_tool(arguments)
         elif name == "github_search_code":
             result = github_search_code_tool(arguments)

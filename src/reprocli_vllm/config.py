@@ -8,11 +8,10 @@ PAPER_BUNDLE_DATASET = "Mithilss/neurips-2025-paper-bundles"
 PAPER_BUNDLE_DATASET_URL = "https://huggingface.co/datasets/Mithilss/neurips-2025-paper-bundles"
 DEFAULT_DATASET = ARXIV_SOURCE_DATASET
 DEFAULT_VLLM_DATASET = PAPER_BUNDLE_DATASET
-DEFAULT_PWC_ARTIFACTS = Path("data/paperswithcode/arxiv_artifacts.jsonl")
-DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
-DEFAULT_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash.jsonl")
-DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash_extracted.jsonl")
-DEFAULT_REQUESTS_OUTPUT = Path("outputs/neurips_2025_deepseek_v4_flash_requests.jsonl")
+MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
+DEFAULT_MODEL = MINIMAX_M2_MODEL
+DEFAULT_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial.jsonl")
+DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial_extracted.jsonl")
 PLACEHOLDER = "{PAPER_TEXT}"
 TEX_EXTENSION = ".tex"
 MAX_MODEL_LEN = 196608
@@ -28,7 +27,7 @@ WEB_SYSTEM_MESSAGE = (
     "them to verify MRE-relevant code, data, checkpoint, project-page, GitHub, "
     "and Hugging Face evidence before producing the final JSON. Tool choice is "
     "automatic: choose whichever available tool is most useful from the paper "
-    "text, bundled OpenReview supplement evidence, and any supplemental Papers With Code leads. "
+    "text and bundled OpenReview supplement evidence. "
     "Treat MRE-relevant code, configs, scripts, notebooks, and READMEs included in the bundled "
     "OpenReview supplement as first-party code evidence for the paper. Use paper_bundle_file_contents "
     "for bundled supplement README/config/script/notebook/dataset-manifest text when the manifest "

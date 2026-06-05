@@ -37,10 +37,9 @@ Use the tools as follows:
 - Hugging Face MCP tools are the authority for Hugging Face models, datasets, Spaces, papers, and Hub evidence.
 - URL fetch tools can verify project pages, paper pages, documentation pages, dataset pages, and direct links.
 - `paper_bundle_file_contents` can read text files listed in the current paper's bundled OpenReview supplement manifest.
-- Supplemental Papers With Code leads are useful hints, not proof.
 - Bundled OpenReview supplement evidence is first-party paper evidence included in the input, not an external web lead.
 
-Do not count an artifact as available only because the paper says "code is available", "data will be released", "we provide checkpoints", or because a supplemental lead exists. Verify it.
+Do not count an artifact as available only because the paper says "code is available", "data will be released", or "we provide checkpoints". Verify it.
 
 Set `web_verification` to:
 
@@ -49,30 +48,6 @@ Set `web_verification` to:
 - `"unavailable"` only if tools were unavailable.
 
 If tools are available and an artifact category is unresolved, call another useful tool instead of guessing.
-
-======================================================================
-SUPPLEMENTAL PAPERS WITH CODE LEADS
-======================================================================
-
-The input may include a block named `SUPPLEMENTAL_NEURIPS2025_ARTIFACTS`.
-
-Treat that block as candidate leads scraped from Papers With Code by arXiv ID. It can include:
-
-- GitHub links
-- project pages
-- Hugging Face models
-- Hugging Face datasets
-- Hugging Face Spaces
-
-Rules:
-
-- Prefer verifying these leads early if they look relevant.
-- Do not trust them blindly.
-- A lead can be stale, unofficial, unrelated, empty, or for a different paper.
-- Verify GitHub leads with GitHub repo/file/tree tools.
-- Verify Hugging Face leads with Hugging Face repo/search/tree tools.
-- Verify project pages with URL fetch.
-- If a lead fails or is irrelevant, search again using the search playbook below.
 
 ======================================================================
 BUNDLED OPENREVIEW SUPPLEMENT EVIDENCE
@@ -137,7 +112,7 @@ SEARCH PLAYBOOK
 Think of GitHub search as a web search engine scoped to GitHub.
 Think of Hugging Face search as a web search engine scoped to Hugging Face.
 
-Search is not complete after one exact-title query. If no direct GitHub repository is present in the paper or supplemental leads, or if a candidate repository fails verification, actively search GitHub and Hugging Face using different query shapes.
+Search is not complete after one exact-title query. If no direct GitHub repository is present in the paper or bundled supplement, or if a candidate repository fails verification, actively search GitHub and Hugging Face using different query shapes.
 
 Build search queries from:
 

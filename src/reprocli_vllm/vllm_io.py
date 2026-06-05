@@ -17,7 +17,7 @@ def initial_messages(prompt: str) -> list[dict[str, Any]]:
     ]
 
 
-def build_batch_request(
+def build_chat_completion_request(
     model: str,
     custom_id: str,
     messages: list[dict[str, Any]],
@@ -36,17 +36,10 @@ def build_batch_request(
     }
     if args.top_k is not None:
         body["top_k"] = args.top_k
-    if args.chat_template_kwargs:
-        body["chat_template_kwargs"] = args.chat_template_kwargs
     if include_tools:
         body["tools"] = WEB_TOOLS
         body["tool_choice"] = tool_choice
-    elif not args.disable_structured_final_output:
-        # vLLM >= 0.12.0 removed the request-level `guided_json` /
-        # `guided_decoding_backend` fields. The OpenAI-standard
-        # `response_format` json_schema is the supported, version-stable way to
-        # constrain the final answer; pick the decoding backend at server
-        # startup via `--structured-outputs-config.backend`.
+    else:
         body["response_format"] = FINAL_RESPONSE_FORMAT
     return {
         "custom_id": custom_id,
@@ -67,16 +60,6 @@ def append_jsonl_row(path: Path, row: dict[str, Any], *, truncate: bool) -> None
 def truncate_output_file(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("", encoding="utf-8")
-
-
-def round_request_path(path: Path, round_index: int) -> Path:
-    if round_index == 0:
-        return path
-    return path.with_name(f"{path.stem}_round{round_index}{path.suffix}")
-
-
-def round_output_path(path: Path, round_index: int) -> Path:
-    return path.with_name(f"{path.stem}_round{round_index}{path.suffix}")
 
 
 def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-from .config import DEFAULT_PWC_ARTIFACTS
-from .papers import Paper, attach_artifacts, load_pwc_artifact_index
+from .papers import Paper
 
 BUNDLE_REQUIRED_COLUMNS = frozenset(
     {
@@ -17,15 +15,11 @@ BUNDLE_REQUIRED_COLUMNS = frozenset(
 )
 
 
-def load_bundle_papers(
-    dataset_name: str,
-    pwc_artifacts_path: Path | None = DEFAULT_PWC_ARTIFACTS,
-) -> list[Paper]:
+def load_bundle_papers(dataset_name: str) -> list[Paper]:
     from datasets import load_dataset
 
     dataset = load_dataset(dataset_name, split="train")
     validate_bundle_columns(dataset_name, dataset)
-    artifacts = load_pwc_artifact_index(pwc_artifacts_path)
 
     papers = []
     seen: set[str] = set()
@@ -47,10 +41,7 @@ def load_bundle_papers(
             )
         )
 
-    attached = attach_artifacts(papers, artifacts)
     print(f"Loaded {len(papers)} bundled papers from {dataset_name}", file=sys.stderr)
-    if pwc_artifacts_path:
-        print(f"Attached Papers With Code candidates to {attached} paper(s)", file=sys.stderr)
     return papers
 
 

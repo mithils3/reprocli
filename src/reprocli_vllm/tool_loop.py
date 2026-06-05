@@ -7,10 +7,10 @@ from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
-from .batch_io import (
+from .vllm_io import (
     append_assistant_tool_call,
     append_jsonl_row,
-    build_batch_request,
+    build_chat_completion_request,
     extracted_response,
     initial_messages,
     normalize_tool_calls,
@@ -19,10 +19,10 @@ from .batch_io import (
     tool_result_message,
 )
 from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
-from .openai_client import post_chat_completion_row, response_row
 from .papers import Paper
 from .tools.web_tools import execute_tool_call
 from .trace_io import append_trace_row, assistant_message
+from .vllm_client import post_chat_completion_row, response_row
 
 
 def run_tool_loop(
@@ -58,7 +58,7 @@ def run_tool_loop(
 
         def submit_request(custom_id: str, round_index: int, include_tools: bool) -> None:
             messages = conversation_for_round(conversations[custom_id], include_tools)
-            request = build_batch_request(
+            request = build_chat_completion_request(
                 args.model,
                 custom_id,
                 messages,
@@ -166,12 +166,9 @@ def handle_request_done(
         )
         tool_futures[tool_future] = state
         return
-    if state["include_tools"] and not args.disable_structured_final_output:
+    if state["include_tools"]:
         # The model stopped without a tool call while tools were still enabled,
-        # so this answer was produced without the response_format constraint.
-        # Keep its attempt as context and re-issue one tools-off pass to get
-        # schema-constrained final JSON instead of accepting unconstrained
-        # free-form output.
+        # so re-issue one tools-off pass to get schema-constrained final JSON.
         conversations[custom_id].append(assistant_message(message, tool_calls))
         tool_future = tools.submit(noop)
         tool_futures[tool_future] = {**state, "force_final": True}

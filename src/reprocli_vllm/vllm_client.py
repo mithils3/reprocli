@@ -15,7 +15,7 @@ def post_chat_completion_row(
 ) -> Any:
     if stream:
         return stream_chat_completion(base_url, row, timeout)
-    return post_chat_completion(base_url, row["body"], timeout)
+    return post_vllm_chat_completion(base_url, row["body"], timeout)
 
 
 def response_row(custom_id: str, body: Any) -> dict[str, Any]:
@@ -28,7 +28,7 @@ def response_row(custom_id: str, body: Any) -> dict[str, Any]:
     }
 
 
-def post_chat_completion(base_url: str, body: dict[str, Any], timeout: float) -> Any:
+def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: float) -> Any:
     data = json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
         f"{base_url}/v1/chat/completions",

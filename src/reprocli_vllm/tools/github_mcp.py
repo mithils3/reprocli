@@ -15,22 +15,6 @@ DEFAULT_GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
 README_CANDIDATES = ("README.md", "readme.md", "README.rst", "README.txt")
 
 
-def github_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    query = str(arguments.get("query", "")).strip()
-    search_type = str(arguments.get("search_type") or "repositories")
-    if not query:
-        return {"ok": False, "error": "Missing query"}
-    if search_type == "code":
-        return github_search_code_tool(arguments)
-    if search_type == "commits":
-        return github_search_commits_tool(arguments)
-    if search_type == "issues":
-        return github_search_issues_tool(arguments)
-    if search_type == "pull_requests":
-        return github_search_pull_requests_tool(arguments)
-    return github_search_repositories_tool(arguments)
-
-
 def github_search_repositories_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return github_query_tool(
         "search_repositories",

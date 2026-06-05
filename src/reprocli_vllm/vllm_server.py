@@ -58,10 +58,6 @@ class VllmServer:
             command.extend(["--kv-cache-dtype", self.args.kv_cache_dtype])
         if self.args.block_size:
             command.extend(["--block-size", str(self.args.block_size)])
-        if self.args.enable_expert_parallel:
-            command.append("--enable-expert-parallel")
-        if self.args.disable_flashinfer_autotune:
-            command.append("--no-enable-flashinfer-autotune")
         if self.args.trust_remote_code:
             command.append("--trust-remote-code")
         if getattr(self.args, "structured_outputs_backend", None):

@@ -99,7 +99,7 @@ class HuggingFaceMCPTests(unittest.TestCase):
         )
         self.assertEqual(params, {"message": "graph diffusion checkpoint", "results_limit": 7})
 
-    def test_deepseek_repo_calls_reach_mcp_with_repo_ids(self) -> None:
+    def test_repo_calls_reach_mcp_with_repo_ids(self) -> None:
         client = FakeHFClient()
         calls = [
             {"repo": "narunraman/steer_me"},
