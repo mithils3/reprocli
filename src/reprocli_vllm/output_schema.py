@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 
 def signal_schema() -> dict:
     return {
@@ -82,3 +84,74 @@ FINAL_RESPONSE_FORMAT = {
 }
 
 FINAL_JSON_SCHEMA = FINAL_RESPONSE_FORMAT["json_schema"]["schema"]
+
+
+def deterministic_score_and_tier(row: dict[str, Any]) -> tuple[int, str] | None:
+    signals = row.get("signals")
+    if not isinstance(signals, dict):
+        return None
+
+    values = {
+        name: signal_value(signals.get(name))
+        for name in (
+            "code_available",
+            "dataset_available",
+            "weights_available",
+            "dataset_is_standard",
+        )
+    }
+    if any(value is None for value in values.values()):
+        return None
+
+    code_available = values["code_available"]
+    dataset_available = values["dataset_available"]
+    weights_available = values["weights_available"]
+    dataset_is_standard = values["dataset_is_standard"]
+
+    score = 0
+    if not code_available:
+        score += 2
+    if not dataset_is_standard and not dataset_available:
+        score += 3
+    if not weights_available:
+        score += 1
+    return score, tier_for_score(score, dataset_available, dataset_is_standard)
+
+
+def normalize_score_and_tier(row: dict[str, Any]) -> dict[str, Any]:
+    computed = deterministic_score_and_tier(row)
+    if computed is None:
+        return row
+
+    score, tier = computed
+    normalized = dict(row)
+    if normalized.get("score") != score and "reported_score" not in normalized:
+        normalized["reported_score"] = normalized.get("score")
+    if normalized.get("tier") != tier and "reported_tier" not in normalized:
+        normalized["reported_tier"] = normalized.get("tier")
+    normalized["score"] = score
+    normalized["tier"] = tier
+    return normalized
+
+
+def signal_value(signal: Any) -> bool | None:
+    if not isinstance(signal, dict):
+        return None
+    value = signal.get("value")
+    return value if isinstance(value, bool) else None
+
+
+def tier_for_score(
+    score: int,
+    dataset_available: bool,
+    dataset_is_standard: bool,
+) -> str:
+    if score == 0:
+        return "Easy"
+    if score == 1:
+        return "Medium"
+    if score == 2:
+        return "Hard"
+    if score == 3 and (dataset_available or dataset_is_standard):
+        return "Hard"
+    return "Artifact-Blocked"

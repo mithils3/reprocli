@@ -6,7 +6,7 @@ from typing import Any
 from .batch_io import parse_json_content
 from .config import PLACEHOLDER
 from .openai_batch import RESPONSES_ENDPOINT, batch_response_body, responses_output_text
-from .output_schema import FINAL_RESPONSE_FORMAT
+from .output_schema import FINAL_RESPONSE_FORMAT, normalize_score_and_tier
 from .papers import Paper
 from .openai_progress import token_usage_fields
 
@@ -77,7 +77,7 @@ def extracted_row(row: dict[str, Any]) -> dict[str, Any]:
     result = {"custom_id": row["custom_id"], "title": row.get("title", "")}
     parsed = parse_json_content(row.get("output_text") or "")
     if isinstance(parsed, dict):
-        result.update(parsed)
+        result.update(normalize_score_and_tier(parsed))
     else:
         result["extracted_json"] = parsed
         result["raw_content"] = row.get("output_text") or ""

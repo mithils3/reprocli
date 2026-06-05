@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
-from .output_schema import FINAL_RESPONSE_FORMAT
+from .output_schema import FINAL_RESPONSE_FORMAT, normalize_score_and_tier
 
 
 def initial_messages(prompt: str) -> list[dict[str, Any]]:
@@ -114,7 +114,7 @@ def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
         result["raw_content"] = content
         return result
     if isinstance(parsed, dict):
-        result.update(parsed)
+        result.update(normalize_score_and_tier(parsed))
         return result
     result["extracted_json"] = parsed
     return result
