@@ -29,8 +29,6 @@ FINAL_RESPONSE_FORMAT = {
                 "web_verification",
                 "verified_links",
                 "signals",
-                "score",
-                "tier",
                 "agent_task",
                 "h100_hours_estimate",
                 "h100_estimate_basis",
@@ -69,11 +67,6 @@ FINAL_RESPONSE_FORMAT = {
                         "weights_available": signal_schema(),
                         "dataset_is_standard": signal_schema(),
                     },
-                },
-                "score": {"type": "integer"},
-                "tier": {
-                    "type": "string",
-                    "enum": ["Easy", "Medium", "Hard", "Artifact-Blocked"],
                 },
                 "agent_task": {"type": "string"},
                 "h100_hours_estimate": {"type": "number"},
@@ -125,9 +118,17 @@ def normalize_score_and_tier(row: dict[str, Any]) -> dict[str, Any]:
 
     score, tier = computed
     normalized = dict(row)
-    if normalized.get("score") != score and "reported_score" not in normalized:
+    if (
+        "score" in normalized
+        and normalized.get("score") != score
+        and "reported_score" not in normalized
+    ):
         normalized["reported_score"] = normalized.get("score")
-    if normalized.get("tier") != tier and "reported_tier" not in normalized:
+    if (
+        "tier" in normalized
+        and normalized.get("tier") != tier
+        and "reported_tier" not in normalized
+    ):
         normalized["reported_tier"] = normalized.get("tier")
     normalized["score"] = score
     normalized["tier"] = tier

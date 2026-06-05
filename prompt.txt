@@ -18,10 +18,12 @@ You must determine:
 
 1. The paper's central empirical claim.
 2. The cheapest valid MRE that tests that claim.
-3. Whether code, data, and weights/checkpoints for that MRE are actually available.
-4. The reproduction tier and H100-hour estimate.
+3. The artifact-availability score inputs: whether code, data, and
+   weights/checkpoints for that MRE are actually available, and whether the MRE
+   dataset is standard.
+4. The H100-hour estimate.
 
-Use private reasoning to track candidates, searches, evidence, and score arithmetic. Do not include that private scratch work in the final answer.
+Use private reasoning to track candidates, searches, and evidence. Do not include that private scratch work in the final answer.
 
 ======================================================================
 TOOL USE IS REQUIRED
@@ -360,13 +362,16 @@ Set it to false if the MRE depends on custom labels, author-created data, derive
 STEP 3: SCORE AND TIER
 ======================================================================
 
-Compute:
+Do not output `score` or `tier`. Report only the score inputs under `signals`.
+
+The extraction code computes these fields deterministically after your final
+JSON is parsed, using only the boolean values in `signals`.
+
+The deterministic formula is:
 
 score = (NOT code_available) * 2
       + (NOT dataset_available) * 3   [skip this term if dataset_is_standard = TRUE]
       + (NOT weights_available) * 1
-
-Use the boolean values from `signals`.
 
 Tier mapping:
 
@@ -383,7 +388,8 @@ Important:
 - Very expensive training can still be Easy if code, data, and weights are released.
 - Very cheap training can be Artifact-Blocked if required custom data is unavailable.
 
-Before final JSON, recompute the arithmetic and ensure `score` and `tier` match the rules exactly.
+Make the `signals` booleans precise. They are the only inputs to the
+deterministically computed score and tier.
 
 ======================================================================
 STEP 4: H100-HOUR ESTIMATE
@@ -409,7 +415,8 @@ If no compute is reported:
 
 H100-hours count compute only, not human engineering time.
 
-If tier is Hard or Artifact-Blocked, mention that engineering/debugging time is additional and not included.
+If missing artifacts are likely to make reproduction hard or blocked, mention
+that engineering/debugging time is additional and not included.
 
 GPU normalization:
 
@@ -475,8 +482,6 @@ Return exactly one JSON object with these fields:
       "evidence": "Why this is or is not a widely recognized public benchmark."
     }
   },
-  "score": 3,
-  "tier": "Hard",
   "agent_task": "Concrete instruction for an automatic agent to reproduce the MRE.",
   "h100_hours_estimate": 18,
   "h100_estimate_basis": "compute-unspecified or exact conversion. Include MRE-specific reasoning and engineering/debugging caveat when applicable."
@@ -488,7 +493,6 @@ Final validation checklist:
 - `verified_links` arrays contain clean URLs only.
 - Put search explanations in evidence strings, not in URL arrays.
 - `web_verification` is exactly `available`, `partial`, or `unavailable`.
-- `score` matches the deterministic formula.
-- `tier` matches the score and dataset rules.
+- Do not include `score` or `tier`; the extractor computes them.
 - `h100_hours_estimate` is numeric and agrees with `h100_estimate_basis`.
 - All artifact booleans are scoped to the MRE, not to unrelated artifacts.

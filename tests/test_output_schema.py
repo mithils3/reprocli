@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from reprocli_vllm.output_schema import (
+    FINAL_JSON_SCHEMA,
     deterministic_score_and_tier,
     normalize_score_and_tier,
 )
@@ -22,6 +23,12 @@ def classification_row(**signals: bool) -> dict:
 
 
 class OutputSchemaTests(unittest.TestCase):
+    def test_model_schema_does_not_request_score_or_tier(self) -> None:
+        self.assertNotIn("score", FINAL_JSON_SCHEMA["required"])
+        self.assertNotIn("tier", FINAL_JSON_SCHEMA["required"])
+        self.assertNotIn("score", FINAL_JSON_SCHEMA["properties"])
+        self.assertNotIn("tier", FINAL_JSON_SCHEMA["properties"])
+
     def test_score_skips_missing_standard_dataset(self) -> None:
         row = classification_row(
             code_available=True,
@@ -60,6 +67,21 @@ class OutputSchemaTests(unittest.TestCase):
         self.assertEqual(normalized["tier"], "Easy")
         self.assertEqual(normalized["reported_score"], 516)
         self.assertEqual(normalized["reported_tier"], "Medium")
+
+    def test_normalize_adds_score_without_reported_fields(self) -> None:
+        row = classification_row(
+            code_available=True,
+            dataset_available=True,
+            weights_available=False,
+            dataset_is_standard=True,
+        )
+
+        normalized = normalize_score_and_tier(row)
+
+        self.assertEqual(normalized["score"], 1)
+        self.assertEqual(normalized["tier"], "Medium")
+        self.assertNotIn("reported_score", normalized)
+        self.assertNotIn("reported_tier", normalized)
 
 
 if __name__ == "__main__":
