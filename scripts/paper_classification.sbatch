@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --gpus-per-node=4
 #SBATCH --mem=256G
-#SBATCH --time=8:00:00
+#SBATCH --time=12:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
 #SBATCH --mail-user=mithils3@illinois.edu
@@ -24,7 +24,7 @@ source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli/
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 16 \
+  --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
