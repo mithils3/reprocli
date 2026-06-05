@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 import urllib.request
 from typing import Any
 
@@ -14,16 +13,9 @@ def post_chat_completion_row(
     *,
     stream: bool = False,
 ) -> Any:
-    custom_id = row.get("custom_id", "<unknown>")
-    started = time.monotonic()
-    print(f"request start {custom_id}", file=sys.stderr, flush=True)
-    try:
-        if stream:
-            return stream_chat_completion(base_url, row, timeout)
-        return post_chat_completion(base_url, row["body"], timeout)
-    finally:
-        elapsed = time.monotonic() - started
-        print(f"request end {custom_id} ({elapsed:.1f}s)", file=sys.stderr, flush=True)
+    if stream:
+        return stream_chat_completion(base_url, row, timeout)
+    return post_chat_completion(base_url, row["body"], timeout)
 
 
 def response_row(custom_id: str, body: Any) -> dict[str, Any]:

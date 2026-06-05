@@ -49,7 +49,6 @@ class VllmServer:
             str(self.args.max_model_len),
             "--gpu-memory-utilization",
             str(self.args.gpu_memory_utilization),
-            "--disable-log-stats",
         ]
         if self.args.compilation_config:
             command.extend(["--compilation-config", self.args.compilation_config])
