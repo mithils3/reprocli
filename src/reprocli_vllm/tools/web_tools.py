@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from ..config import TOOL_MAX_CHARS, TOOL_TIMEOUT
+from ..papers import Paper
 from .github_mcp import (
     github_file_contents_tool,
     github_repo_tool,
@@ -16,10 +17,12 @@ from .github_mcp import (
     github_search_tool,
 )
 from .huggingface_mcp import huggingface_repo_tool, huggingface_search_tool
+from .huggingface_tree import huggingface_repository_tree_tool
 from .http_utils import html_to_text, http_text, is_http_url, is_probably_text
+from .paper_bundle import paper_bundle_file_contents_tool
 
 
-def execute_tool_call(call: dict[str, Any]) -> dict[str, Any]:
+def execute_tool_call(call: dict[str, Any], paper: Paper | None = None) -> dict[str, Any]:
     function = call.get("function") or {}
     name = function.get("name", "")
     try:
@@ -46,8 +49,19 @@ def execute_tool_call(call: dict[str, Any]) -> dict[str, Any]:
             result = huggingface_search_tool(arguments)
         elif name == "huggingface_repo":
             result = huggingface_repo_tool(arguments)
+        elif name == "huggingface_repository_tree":
+            result = huggingface_repository_tree_tool(arguments)
         elif name == "fetch_url":
             result = fetch_url_tool(arguments)
+        elif name == "paper_bundle_file_contents":
+            if paper is None:
+                result = {
+                    "ok": False,
+                    "tool": name,
+                    "error": "paper_bundle_file_contents requires current Paper context",
+                }
+            else:
+                result = paper_bundle_file_contents_tool(arguments, paper)
         else:
             result = {"ok": False, "error": f"Unknown tool: {name}"}
     except Exception as exc:

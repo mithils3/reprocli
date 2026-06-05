@@ -18,16 +18,22 @@ TEX_EXTENSION = ".tex"
 MAX_MODEL_LEN = 196608
 TOOL_TIMEOUT = 20.0
 TOOL_MAX_CHARS = 2_000_000
+BUNDLE_FILE_DEFAULT_CHARS = 60_000
+BUNDLE_FILE_MAX_CHARS = 200_000
 REQUEST_TIMEOUT = 1800.0
 SERVER_STARTUP_TIMEOUT = 1800.0
 WEB_SYSTEM_MESSAGE = (
-    "You have GitHub MCP, Hugging Face MCP, and direct URL fetch tools. Use "
+    "You have GitHub MCP, Hugging Face MCP, direct URL fetch, and current-paper "
+    "bundle file tools. Use "
     "them to verify MRE-relevant code, data, checkpoint, project-page, GitHub, "
     "and Hugging Face evidence before producing the final JSON. Tool choice is "
     "automatic: choose whichever available tool is most useful from the paper "
     "text, bundled OpenReview supplement evidence, and any supplemental Papers With Code leads. "
     "Treat MRE-relevant code, configs, scripts, notebooks, and READMEs included in the bundled "
-    "OpenReview supplement as first-party code evidence for the paper. Do not claim an external artifact is verified "
+    "OpenReview supplement as first-party code evidence for the paper. Use paper_bundle_file_contents "
+    "for bundled supplement README/config/script/notebook/dataset-manifest text when the manifest "
+    "lists a relevant file. Do not invent local filesystem tools such as read, file_read, bash, or shell. "
+    "Do not claim an external artifact is verified "
     "unless a tool result supports that claim. Treat GitHub search as a "
     "GitHub-scoped web search and Hugging Face search as an HF-scoped web "
     "search. GitHub code search supports quoted phrases and OR/NOT syntax, but "
@@ -44,10 +50,13 @@ WEB_SYSTEM_MESSAGE = (
     "implementation. When a search tool supports rich syntax, combine useful "
     "alternatives in one query, for example an exact phrase plus acronym plus "
     "artifact terms; otherwise make separate calls. Prefer direct github_repo, "
-    "github_file_contents, github_repository_tree, huggingface_repo, or "
-    "fetch_url checks when a candidate URL or repo id exists. For promising "
-    "GitHub repos, read README files and key docs, configs, examples, or "
-    "scripts with github_file_contents before counting code as available. Do not call the "
+    "github_file_contents, github_repository_tree, huggingface_repo, "
+    "huggingface_repository_tree, or fetch_url checks when a candidate URL or "
+    "repo id exists. Use huggingface_repo for HF details, README/card evidence, "
+    "and a root tree; use huggingface_repository_tree for deeper HF file "
+    "structure; use fetch_url for specific HF files once a path is known. For "
+    "promising GitHub repos, read README files and key docs, configs, examples, "
+    "or scripts with github_file_contents before counting code as available. Do not call the "
     "same tool with identical arguments twice. After reasonable variant "
     "searches and direct checks are exhausted, mark missing artifacts "
     "unavailable or unverified. Return only the requested JSON object."
@@ -108,6 +117,23 @@ def query_tool(name: str, description: str, *, repo_scope: bool = False) -> dict
 
 
 WEB_TOOLS = [
+    function_tool(
+        "paper_bundle_file_contents",
+        "Read a text file from the current paper's bundled OpenReview supplement by manifest path. Use only paths listed in OPENREVIEW_SUPPLEMENT files; pass either path/to/file or supplement/path/to/file.",
+        {
+            "path": {
+                "type": "string",
+                "description": "Supplement manifest path, for example README.md or supplement/code/train.py.",
+            },
+            "max_chars": {
+                "type": "integer",
+                "default": BUNDLE_FILE_DEFAULT_CHARS,
+                "minimum": 1,
+                "maximum": BUNDLE_FILE_MAX_CHARS,
+            },
+        },
+        ["path"],
+    ),
     query_tool(
         "github_search_repositories",
         "Search GitHub repositories through MCP like a GitHub-scoped web search.",
@@ -179,7 +205,7 @@ WEB_TOOLS = [
     ),
     function_tool(
         "huggingface_repo",
-        "Get Hugging Face repository details through MCP.",
+        "Get Hugging Face repository details, README/card evidence, and a compact root tree through MCP and Hub APIs.",
         {
             "repo": {"type": "string", "description": "HF URL or namespace/repo id."},
             "repo_type": {
@@ -187,6 +213,23 @@ WEB_TOOLS = [
                 "enum": ["model", "dataset", "space", "auto"],
                 "default": "auto",
             },
+        },
+        ["repo"],
+    ),
+    function_tool(
+        "huggingface_repository_tree",
+        "List Hugging Face repository files or folders through the Hub API. Use this for deeper HF file structure after huggingface_repo finds a candidate.",
+        {
+            "repo": {"type": "string", "description": "HF URL or namespace/repo id."},
+            "repo_type": {
+                "type": "string",
+                "enum": ["model", "dataset", "space", "auto"],
+                "default": "auto",
+            },
+            "path": {"type": "string", "description": "Optional path inside the repository."},
+            "revision": {"type": "string", "description": "Optional branch, tag, or commit."},
+            "recursive": {"type": "boolean", "default": False},
+            "max_entries": {"type": "integer", "default": 80},
         },
         ["repo"],
     ),

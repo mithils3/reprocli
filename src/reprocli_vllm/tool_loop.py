@@ -34,6 +34,7 @@ def run_tool_loop(
         paper.arxiv_id: initial_messages(prompt)
         for paper, prompt in zip(papers, prompts, strict=True)
     }
+    papers_by_id = {paper.arxiv_id: paper for paper in papers}
     original_ids = [paper.arxiv_id for paper in papers]
     final_rows: dict[str, dict] = {}
     hit_tool_round_limit: set[str] = set()
@@ -97,6 +98,7 @@ def run_tool_loop(
                         tool_rounds_used,
                         hit_tool_round_limit,
                         tool_call_counts,
+                        papers_by_id,
                         args,
                     )
                     continue
@@ -134,6 +136,7 @@ def handle_request_done(
     tool_rounds_used: dict[str, int],
     hit_tool_round_limit: set[str],
     tool_call_counts: dict[str, Counter],
+    papers_by_id: dict[str, Paper],
     args: argparse.Namespace,
 ) -> None:
     state = request_futures.pop(future)
@@ -166,6 +169,7 @@ def handle_request_done(
             conversations[custom_id],
             message,
             tool_calls,
+            papers_by_id[custom_id],
         )
         tool_futures[tool_future] = state
         return
@@ -228,10 +232,11 @@ def append_tool_results(
     messages: list[dict],
     message: dict,
     tool_calls: list[dict],
+    paper: Paper,
 ) -> None:
     append_assistant_tool_call(messages, message, tool_calls)
     for call in tool_calls:
-        result = execute_tool_call(call)
+        result = execute_tool_call(call, paper=paper)
         messages.append(tool_result_message(call, result))
 
 

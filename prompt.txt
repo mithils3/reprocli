@@ -34,6 +34,7 @@ Use the tools as follows:
 - GitHub MCP tools are the authority for GitHub repository, code, issue, pull request, and commit evidence.
 - Hugging Face MCP tools are the authority for Hugging Face models, datasets, Spaces, papers, and Hub evidence.
 - URL fetch tools can verify project pages, paper pages, documentation pages, dataset pages, and direct links.
+- `paper_bundle_file_contents` can read text files listed in the current paper's bundled OpenReview supplement manifest.
 - Supplemental Papers With Code leads are useful hints, not proof.
 - Bundled OpenReview supplement evidence is first-party paper evidence included in the input, not an external web lead.
 
@@ -67,7 +68,7 @@ Rules:
 - Do not trust them blindly.
 - A lead can be stale, unofficial, unrelated, empty, or for a different paper.
 - Verify GitHub leads with GitHub repo/file/tree tools.
-- Verify Hugging Face leads with Hugging Face repo/search tools.
+- Verify Hugging Face leads with Hugging Face repo/search/tree tools.
 - Verify project pages with URL fetch.
 - If a lead fails or is irrelevant, search again using the search playbook below.
 
@@ -91,6 +92,13 @@ It can include:
 How to use it:
 
 - Use supplement files only when they are relevant to the chosen MRE.
+- Use `paper_bundle_file_contents` for relevant bundled supplement README,
+  config, script, notebook, dataset-manifest, split, prompt, or documentation
+  text that appears in the manifest but is not fully visible in the excerpt.
+- Call `paper_bundle_file_contents` with a manifest path such as `README.md`,
+  `code/train.py`, or `supplement/code/train.py`.
+- Do not invent generic local filesystem tools such as `read`, `file_read`,
+  `bash`, `shell`, `cat`, or `python`.
 - If the supplement contains runnable training, inference, evaluation, data
   processing, or metric code for the MRE, it can satisfy `code_available`.
 - If the supplement contains the MRE's custom dataset, labels, splits, prompts,
@@ -181,7 +189,12 @@ Search rounds:
    - Inspect file lists or key files with `github_repository_tree` and `github_file_contents`.
    - Actually read `README.md`, `readme.md`, `README.rst`, docs, configs, examples, scripts, or training/eval files when they may determine whether the repo can reproduce the MRE.
    - Do not rely only on a repository name, description, star count, or root listing.
-   - Inspect Hugging Face candidates with `huggingface_repo`.
+   - Inspect Hugging Face candidates with `huggingface_repo` for details,
+     README/card evidence, and a compact root tree.
+   - Use `huggingface_repository_tree` for deeper Hugging Face file structure.
+   - Use `fetch_url` for specific Hugging Face files once a path is known.
+   - Read relevant bundled supplement manifest files with
+     `paper_bundle_file_contents`.
    - Fetch project pages when they may contain official artifact links.
 
 Examples:
