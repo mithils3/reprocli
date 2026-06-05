@@ -85,6 +85,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpu-memory-utilization", type=float)
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
+    parser.add_argument("--top-k", type=int)
     parser.add_argument("--enable-expert-parallel", action="store_true")
     parser.add_argument("--enable-flashinfer-autotune", action="store_true")
     parser.add_argument("--stream-first-response", action="store_true")
@@ -108,6 +109,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--max-repeated-tool-calls must be >= 1")
     if args.max_input_tokens < 1:
         parser.error("--max-input-tokens must be >= 1")
+    if args.top_k is not None and args.top_k < 1:
+        parser.error("--top-k must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within model context")
     if args.reasoning_effort == "max" and args.max_model_len < 393216:
@@ -147,6 +150,7 @@ def apply_model_profile(args: argparse.Namespace) -> None:
     args.trust_remote_code = args.trust_remote_code or profile.trust_remote_code
     args.temperature = profile.temperature if args.temperature is None else args.temperature
     args.top_p = profile.top_p if args.top_p is None else args.top_p
+    args.top_k = profile.top_k if args.top_k is None else args.top_k
     if args.compilation_config is None and profile.compilation_config is not None:
         args.compilation_config = json.dumps(profile.compilation_config, separators=(",", ":"))
     if args.reasoning_effort == "auto":

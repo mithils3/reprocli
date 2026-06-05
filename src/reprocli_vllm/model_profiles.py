@@ -28,6 +28,7 @@ class ModelProfile:
     default_reasoning_effort: str = "none"
     temperature: float = 0.0
     top_p: float = 1.0
+    top_k: int | None = None
 
 
 PROFILES = {
@@ -53,7 +54,7 @@ PROFILES = {
         model=MINIMAX_M2_MODEL,
         tensor_parallel_size=4,
         max_model_len=MAX_MODEL_LEN,
-        gpu_memory_utilization=0.92,
+        gpu_memory_utilization=0.95,
         tool_call_parser="minimax_m2",
         reasoning_parser="minimax_m2",
         compilation_config={
@@ -61,9 +62,9 @@ PROFILES = {
             "pass_config": {"fuse_minimax_qk_norm": True},
         },
         trust_remote_code=True,
-        default_reasoning_effort="none",
-        temperature=0.0,
-        top_p=1.0,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=40,
     ),
 }
 

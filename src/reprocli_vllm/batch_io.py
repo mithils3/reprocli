@@ -35,6 +35,8 @@ def build_batch_request(
         "max_tokens": args.max_tokens,
         "truncate_prompt_tokens": args.max_input_tokens,
     }
+    if args.top_k is not None:
+        body["top_k"] = args.top_k
     if args.chat_template_kwargs:
         body["chat_template_kwargs"] = args.chat_template_kwargs
     if include_tools:
