@@ -10,7 +10,7 @@ from reprocli_vllm.supplements import supplement_manifest_lines
 
 
 class SupplementPromptManifestTests(unittest.TestCase):
-    def test_manifest_omits_size_and_sha_noise(self) -> None:
+    def test_manifest_omits_redundant_metadata(self) -> None:
         lines = supplement_manifest_lines(
             [
                 {
@@ -22,7 +22,8 @@ class SupplementPromptManifestTests(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(lines, ["- code/train.py | .py"])
+        self.assertEqual(lines, ["- code/train.py"])
+        self.assertNotIn("| .py", lines[0])
         self.assertNotIn("bytes", lines[0])
         self.assertNotIn("sha256", lines[0])
 

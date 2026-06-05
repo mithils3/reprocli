@@ -91,6 +91,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
     parser.add_argument("--disable-structured-final-output", action="store_true")
+    parser.add_argument(
+        "--guided-decoding-backend",
+        help="Optional vLLM guided decoding backend for final JSON, e.g. xgrammar:no-fallback.",
+    )
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument(
         "--compilation-config",

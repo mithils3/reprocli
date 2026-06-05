@@ -80,3 +80,5 @@ FINAL_RESPONSE_FORMAT = {
         },
     },
 }
+
+FINAL_JSON_SCHEMA = FINAL_RESPONSE_FORMAT["json_schema"]["schema"]

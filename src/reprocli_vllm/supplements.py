@@ -59,11 +59,7 @@ def supplement_text(status: str, source_url: str, files: list[dict]) -> str:
 def supplement_manifest_lines(files: list[dict]) -> list[str]:
     lines = []
     for item in sorted(files, key=file_path):
-        metadata = [
-            file_path(item),
-            str(item.get("extension") or "no_ext"),
-        ]
-        lines.append("- " + " | ".join(metadata))
+        lines.append(f"- {file_path(item)}")
     return lines
 
 
