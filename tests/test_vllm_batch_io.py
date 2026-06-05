@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from reprocli_vllm.batch_io import build_batch_request
-from reprocli_vllm.output_schema import FINAL_JSON_SCHEMA
+from reprocli_vllm.output_schema import FINAL_RESPONSE_FORMAT
 
 
 def args(**overrides):
@@ -27,7 +27,7 @@ def args(**overrides):
 
 
 class VllmBatchRequestTests(unittest.TestCase):
-    def test_final_request_uses_vllm_guided_json(self) -> None:
+    def test_final_request_uses_response_format(self) -> None:
         request = build_batch_request(
             "model",
             "2501.00001",
@@ -37,9 +37,11 @@ class VllmBatchRequestTests(unittest.TestCase):
         )
 
         body = request["body"]
-        self.assertEqual(body["guided_json"], FINAL_JSON_SCHEMA)
-        self.assertEqual(body["guided_decoding_backend"], "xgrammar:no-fallback")
-        self.assertNotIn("response_format", body)
+        self.assertEqual(body["response_format"], FINAL_RESPONSE_FORMAT)
+        # The request-level guided fields were removed in vLLM 0.12.0; the
+        # backend is now selected at server startup, never in the request body.
+        self.assertNotIn("guided_json", body)
+        self.assertNotIn("guided_decoding_backend", body)
         self.assertNotIn("tools", body)
 
     def test_structured_final_output_can_be_disabled(self) -> None:
@@ -51,9 +53,9 @@ class VllmBatchRequestTests(unittest.TestCase):
             include_tools=False,
         )
 
-        self.assertNotIn("guided_json", request["body"])
+        self.assertNotIn("response_format", request["body"])
 
-    def test_tool_request_does_not_use_guided_json(self) -> None:
+    def test_tool_request_does_not_use_response_format(self) -> None:
         request = build_batch_request(
             "model",
             "2501.00001",
@@ -63,7 +65,7 @@ class VllmBatchRequestTests(unittest.TestCase):
         )
 
         self.assertIn("tools", request["body"])
-        self.assertNotIn("guided_json", request["body"])
+        self.assertNotIn("response_format", request["body"])
 
 
 if __name__ == "__main__":

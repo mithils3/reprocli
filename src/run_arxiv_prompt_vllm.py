@@ -93,7 +93,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--disable-structured-final-output", action="store_true")
     parser.add_argument(
         "--guided-decoding-backend",
-        help="Optional vLLM guided decoding backend for final JSON, e.g. xgrammar:no-fallback.",
+        help=(
+            "Deprecated/no-op: vLLM >= 0.12.0 removed the request-level guided "
+            "decoding backend. Select it at server startup with "
+            "--structured-outputs-config.backend (e.g. xgrammar)."
+        ),
     )
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument(

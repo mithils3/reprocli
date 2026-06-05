@@ -173,6 +173,16 @@ def handle_request_done(
         )
         tool_futures[tool_future] = state
         return
+    if state["include_tools"] and not args.disable_structured_final_output:
+        # The model stopped without a tool call while tools were still enabled,
+        # so this answer was produced without the response_format constraint.
+        # Keep its attempt as context and re-issue one tools-off pass to get
+        # schema-constrained final JSON instead of accepting unconstrained
+        # free-form output.
+        conversations[custom_id].append(assistant_message(message, tool_calls))
+        tool_future = tools.submit(noop)
+        tool_futures[tool_future] = {**state, "force_final": True}
+        return
     row["tool_loop"] = {
         "tool_rounds_used": tool_rounds_used[custom_id],
         "max_tool_rounds": args.tool_rounds,

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
-from .output_schema import FINAL_JSON_SCHEMA
+from .output_schema import FINAL_RESPONSE_FORMAT
 
 
 def initial_messages(prompt: str) -> list[dict[str, Any]]:
@@ -43,9 +43,12 @@ def build_batch_request(
         body["tools"] = WEB_TOOLS
         body["tool_choice"] = tool_choice
     elif not args.disable_structured_final_output:
-        body["guided_json"] = FINAL_JSON_SCHEMA
-        if args.guided_decoding_backend:
-            body["guided_decoding_backend"] = args.guided_decoding_backend
+        # vLLM >= 0.12.0 removed the request-level `guided_json` /
+        # `guided_decoding_backend` fields. The OpenAI-standard
+        # `response_format` json_schema is the supported, version-stable way to
+        # constrain the final answer; pick the decoding backend at server
+        # startup via `--structured-outputs-config.backend`.
+        body["response_format"] = FINAL_RESPONSE_FORMAT
     return {
         "custom_id": custom_id,
         "method": "POST",
