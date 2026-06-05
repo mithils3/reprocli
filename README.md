@@ -157,4 +157,4 @@ Open:
 http://127.0.0.1:8765
 ```
 
-The viewer scans `data/` and `outputs/` for `.jsonl` files. If a response file and matching `*_requests.jsonl` are both present, it pairs them by `custom_id`.
+The viewer scans `data/` and `outputs/` for `.jsonl` files. It pairs final outputs, `*_trace.jsonl`, `*_extracted.jsonl`, request JSONL, and OpenAI batch input/result files by `custom_id`, then renders a ChatGPT-style transcript with reasoning blocks, tool calls, tool results, extracted JSON, and raw payloads.

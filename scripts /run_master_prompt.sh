@@ -22,14 +22,14 @@ source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli/
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 8 \
+  --num-prompts 16 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
   --pwc-artifacts /projects/bgnp/msalunkhe/paperswithcode_arxiv_artifacts.jsonl \
-  --request-workers 8 \
+  --request-workers 16 \
   --stream-first-response \
-  --dataset /projects/bgnp/msalunkhe/datasets \
+  --dataset Mithilss/neurips-2025-paper-bundles \
   --model deepseek-ai/DeepSeek-V4-Flash \
   --model-profile deepseek_v4_flash \
   --reasoning-effort max \

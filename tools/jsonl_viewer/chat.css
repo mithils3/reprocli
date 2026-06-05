@@ -1,0 +1,237 @@
+.thread {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+.bubble {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.bubbleRole {
+  position: sticky;
+  top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+  text-align: right;
+}
+.markdown, .reasoningBlock, .toolStack {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.bubble > .markdown, .bubble > .toolStack, .bubble > .reasoningBlock { grid-column: 2; }
+.bubble.assistant .markdown { background: var(--panel); }
+.bubble.user .markdown { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 22%, var(--line)); }
+.bubble.system .markdown { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 22%, var(--line)); }
+.bubble.reasoning .markdown, .reasoningBlock {
+  background: var(--reason-soft);
+  border-color: color-mix(in srgb, var(--reason) 25%, var(--line));
+}
+.bubble.tool_result .bubbleRole, .bubble.tool_call .bubbleRole { color: var(--accent); }
+
+.markdown {
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.58;
+}
+.markdown p + p, .markdown ul + p, .markdown pre + p { margin-top: 10px; }
+.markdown p { color: var(--text); font-size: 14px; }
+.markdown h1, .markdown h2, .markdown h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.markdown ul { margin: 0; padding-left: 20px; }
+.markdown li + li { margin-top: 4px; }
+code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .92em;
+}
+pre {
+  max-height: 520px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reasoningBlock {
+  grid-column: 2;
+  overflow: hidden;
+}
+.reasoningBlock summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  color: var(--reason);
+  font-size: 12px;
+  font-weight: 760;
+}
+.reasoningBlock .markdown {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.toolStack {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: var(--panel);
+}
+.toolCard {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+.toolCard summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+.toolCard[open] summary { border-bottom-color: var(--line); }
+.toolCard summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 740;
+}
+.toolCard summary em {
+  flex: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 740;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.toolCard pre { border-radius: 0; max-height: 340px; }
+
+.inspectorStack { display: grid; gap: 12px; }
+.panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.panel h3 {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.panelBody { display: grid; gap: 10px; padding: 10px; }
+.metricGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.metric {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.textGroup {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.textGroup:last-child { border-bottom: 0; padding-bottom: 0; }
+.textGroup h4 {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.textGroup p, .sourceList, .linkGroup a, .linkGroup span {
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.signal, .linkGroup {
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+.signal.yes { border-left-color: var(--good); }
+.signal.no { border-left-color: var(--bad); }
+.signal strong, .linkGroup strong { font-size: 12px; }
+.signal span {
+  width: fit-content;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 780;
+  text-transform: uppercase;
+}
+.signal.yes span { color: var(--good); background: var(--good-soft); }
+.signal.no span { color: var(--bad); background: var(--bad-soft); }
+.linkGroup a { color: var(--accent); }
+.sourceList { margin: 0; padding-left: 18px; }
+.panel details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+.panel details pre { margin-top: 8px; max-height: 460px; }
+
+@media (max-width: 760px) {
+  .bubble { grid-template-columns: 1fr; }
+  .bubbleRole {
+    position: static;
+    text-align: left;
+  }
+  .reasoningBlock { grid-column: auto; }
+  .bubble > .markdown, .bubble > .toolStack, .bubble > .reasoningBlock { grid-column: auto; }
+}

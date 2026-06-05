@@ -62,10 +62,7 @@ def supplement_manifest_lines(files: list[dict]) -> list[str]:
         metadata = [
             file_path(item),
             str(item.get("extension") or "no_ext"),
-            f"{int(item.get('file_size') or 0)} bytes",
         ]
-        if item.get("sha256"):
-            metadata.append(f"sha256={item['sha256']}")
         lines.append("- " + " | ".join(metadata))
     return lines
 

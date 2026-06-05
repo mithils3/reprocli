@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JSONL Conversation Viewer</title>
+  <title>ReproCLI Output Viewer</title>
   <link rel="stylesheet" href="/tools/jsonl_viewer/styles.css">
-  <link rel="stylesheet" href="/tools/jsonl_viewer/json_panel.css">
+  <link rel="stylesheet" href="/tools/jsonl_viewer/chat.css">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
-      <div>
-        <h1>JSONL Conversation Viewer</h1>
+      <div class="brand">
+        <h1>ReproCLI Output Viewer</h1>
         <p id="sourceLabel">No file loaded</p>
       </div>
       <div class="filebar">
@@ -21,9 +21,9 @@
         <button id="openServerFile" class="primary">Open</button>
         <label class="upload">Upload<input id="fileInput" type="file" accept=".jsonl,application/json" multiple></label>
       </div>
-      <div class="row">
-        <button id="prevRecord">Prev</button>
-        <button id="nextRecord">Next</button>
+      <div class="navbuttons">
+        <button id="prevRecord" aria-label="Previous record">Prev</button>
+        <button id="nextRecord" aria-label="Next record">Next</button>
       </div>
     </header>
 
@@ -31,16 +31,16 @@
       <aside class="sidebar">
         <div id="dropzone" class="dropzone">
           <strong>Drop JSONL files</strong>
-          <span>Open outputs, traces, or paired request/response files.</span>
+          <span>Load output, trace, extracted, request, or batch-result files together.</span>
         </div>
         <div class="stats">
           <div><strong id="statRecords">0</strong><span>Records</span></div>
+          <div><strong id="statTools">0</strong><span>Tool Calls</span></div>
+          <div><strong id="statReasoning">0</strong><span>Reasoning</span></div>
           <div><strong id="statTokens">0</strong><span>Tokens</span></div>
-          <div><strong id="statSuccess">0</strong><span>Success</span></div>
-          <div><strong id="statErrors">0</strong><span>Errors</span></div>
         </div>
         <div class="filters">
-          <input id="searchInput" type="search" placeholder="Search id, prompt, answer, JSON">
+          <input id="searchInput" type="search" placeholder="Search id, title, tools, answer, JSON">
           <select id="statusFilter">
             <option value="all">All status</option>
             <option value="success">Success</option>
@@ -53,32 +53,29 @@
         <div id="recordList" class="records"></div>
       </aside>
 
-      <section class="detail">
-        <div class="detailHead">
-          <h2 id="detailTitle">Load a JSONL file</h2>
-          <div id="detailMeta" class="meta"></div>
-          <div class="row">
-            <button id="copyInput">Copy Input</button>
-            <button id="copyAnswer">Copy Answer</button>
+      <section class="chatShell">
+        <div class="chatHead">
+          <div>
+            <h2 id="detailTitle">Load a JSONL file</h2>
+            <div id="detailMeta" class="meta"></div>
+          </div>
+          <div class="actions">
+            <button id="copyTranscript">Copy Transcript</button>
             <button id="copyJson">Copy JSON</button>
             <button id="downloadFiltered">Download Filtered</button>
             <button id="clearRecords">Clear</button>
           </div>
         </div>
-        <nav class="tabs">
-          <button class="active" data-tab="input">Model Input</button>
-          <button data-tab="answer">Answer</button>
-          <button data-tab="reasoning">Reasoning</button>
-          <button data-tab="json">Extracted JSON</button>
-          <button data-tab="raw">Raw</button>
-        </nav>
-        <div id="content" class="content"></div>
+        <div class="mainPane">
+          <section id="conversation" class="conversation"></section>
+          <aside id="inspector" class="inspector"></aside>
+        </div>
       </section>
     </section>
   </main>
   <div id="toast" class="toast"></div>
-  <script src="/tools/jsonl_viewer/json_panel.js"></script>
-  <script src="/tools/jsonl_viewer/trace_records.js"></script>
+  <script src="/tools/jsonl_viewer/record_model.js"></script>
+  <script src="/tools/jsonl_viewer/chat_render.js"></script>
   <script src="/tools/jsonl_viewer/app.js"></script>
 </body>
 </html>
