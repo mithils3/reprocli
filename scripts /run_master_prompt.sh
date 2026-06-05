@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# DeepSeek V4 Flash needs vLLM 0.20+ and DeepGEMM available in the environment.
-# This launch uses 4 GPUs with tensor parallelism only.
+# MiniMax M2 trial launch using 4 GPUs with tensor parallelism only.
 srun -A betw-dtai-gh \
   --time=02:00:00 \
   --nodes=1 \
@@ -30,9 +29,11 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --model deepseek-ai/DeepSeek-V4-Flash \
-  --model-profile deepseek_v4_flash \
-  --reasoning-effort max \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/DeepSeek-V4-Flash/vllm_cache \
+  --model MiniMaxAI/MiniMax-M2.7 \
+  --model-profile minimax_m2 \
+  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --output outputs/neurips_2025_minimax_m2_trial.jsonl \
+  --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
+  --requests-output outputs/neurips_2025_minimax_m2_trial_requests.jsonl \
   --save-round-jsonl \
-  --max-model-len  393216
+  --max-model-len 196608

@@ -6,6 +6,7 @@ from typing import Any
 from .config import DEFAULT_MODEL, MAX_MODEL_LEN
 
 DEEPSEEK_FLASH_MODEL = DEFAULT_MODEL
+MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 
 
 @dataclass(frozen=True)
@@ -47,10 +48,29 @@ PROFILES = {
         temperature=1.0,
         top_p=1.0,
     ),
+    "minimax_m2": ModelProfile(
+        name="minimax_m2",
+        model=MINIMAX_M2_MODEL,
+        tensor_parallel_size=4,
+        max_model_len=MAX_MODEL_LEN,
+        gpu_memory_utilization=0.92,
+        tool_call_parser="minimax_m2",
+        reasoning_parser="minimax_m2",
+        compilation_config={
+            "mode": 3,
+            "pass_config": {"fuse_minimax_qk_norm": True},
+        },
+        trust_remote_code=True,
+        default_reasoning_effort="none",
+        temperature=0.0,
+        top_p=1.0,
+    ),
 }
 
 
 def infer_profile_name(model: str, requested: str) -> str:
     if requested != "auto":
         return requested
+    if "minimax-m2" in model.lower():
+        return "minimax_m2"
     return "deepseek_v4_flash"
