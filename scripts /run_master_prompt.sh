@@ -25,7 +25,6 @@ python3 src/run_arxiv_prompt_vllm.py \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
-  --pwc-artifacts /projects/bgnp/msalunkhe/paperswithcode_arxiv_artifacts.jsonl \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
