@@ -15,7 +15,7 @@ COMPILATION_CONFIG = {
 def apply_minimax_defaults(args: argparse.Namespace) -> None:
     args.tensor_parallel_size = args.tensor_parallel_size or 4
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.98
+    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.95
     args.tool_call_parser = "minimax_m2"
     args.reasoning_parser = "minimax_m2"
     args.tokenizer_mode = None
