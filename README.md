@@ -6,8 +6,9 @@ through MiniMax M2 on vLLM.
 ## Run Classification
 
 The active production path is `scripts/paper_classification.sbatch`. The runner
-starts one local vLLM server, drives a Python tool loop, and writes raw,
-extracted, and optional trace JSONL rows as papers complete.
+launches through `srun` inside the batch allocation, starts one local vLLM
+server, drives a Python tool loop, and writes raw, extracted, and optional trace
+JSONL rows as papers complete.
 
 The tool surface is:
 
@@ -31,10 +32,12 @@ python3 src/run_arxiv_prompt_vllm.py \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
   --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
   --save-round-jsonl \
-  --max-model-len 196608
+  --max-model-len 196608 \
+  --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
 ```
 
 `--num-prompts` samples that many papers at random. Omit it to process the full
@@ -101,3 +104,5 @@ PYTHONPATH=src python3 -m reprocli_data.build_arxiv_sources_parquet
 - `--stream-first-response`: print one live response stream while preserving JSONL output.
 - `--save-round-jsonl`: write one `*_trace.jsonl` file with the full message/tool history per paper.
 - `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
+- `--distributed-executor-backend mp`: pins the embedded server to local multiprocessing.
+- `--compilation-config '{"cudagraph_mode":"PIECEWISE"}'`: avoids the fragile full CUDA graph startup path for MiniMax.

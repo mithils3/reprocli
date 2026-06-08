@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -26,6 +27,7 @@ class RuntimeCleanupTests(unittest.TestCase):
         self.assertEqual(args.temperature, 1.0)
         self.assertEqual(args.top_p, 0.95)
         self.assertEqual(args.top_k, 40)
+        self.assertEqual(json.loads(args.compilation_config), {"cudagraph_mode": "PIECEWISE"})
 
     def test_removed_cli_flags_are_absent_from_active_docs(self) -> None:
         texts = "\n".join(

@@ -73,6 +73,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-repeated-tool-calls", type=int, default=1)
     parser.add_argument("--request-workers", type=int, default=8)
     parser.add_argument("--tensor-parallel-size", type=int)
+    parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
     parser.add_argument("--max-model-len", type=int)
     parser.add_argument("--gpu-memory-utilization", type=float)
     parser.add_argument("--temperature", type=float)

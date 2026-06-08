@@ -50,6 +50,10 @@ class VllmServer:
             "--gpu-memory-utilization",
             str(self.args.gpu_memory_utilization),
         ]
+        if getattr(self.args, "distributed_executor_backend", None):
+            command.extend(
+                ["--distributed-executor-backend", self.args.distributed_executor_backend]
+            )
         if self.args.compilation_config:
             command.extend(["--compilation-config", self.args.compilation_config])
         if self.args.tokenizer_mode:

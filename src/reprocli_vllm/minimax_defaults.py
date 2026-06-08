@@ -6,10 +6,7 @@ import json
 from .config import MAX_MODEL_LEN
 
 
-COMPILATION_CONFIG = {
-    "mode": 3,
-    "pass_config": {"fuse_minimax_qk_norm": True},
-}
+COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
 
 
 def apply_minimax_defaults(args: argparse.Namespace) -> None:
