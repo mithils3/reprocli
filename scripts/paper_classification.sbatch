@@ -75,4 +75,4 @@ python3 src/run_arxiv_prompt_vllm.py \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
   --save-round-jsonl \
   --max-model-len 196608 \
-  --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
+  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'

@@ -237,6 +237,39 @@ summary {
 
 a { color: var(--accent); }
 
+.markdown {
+  color: var(--text);
+}
+
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 12px 0 6px;
+}
+
+.markdown p,
+.markdown ul {
+  margin: 0 0 10px;
+}
+
+.markdown li {
+  margin: 4px 0;
+}
+
+.markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #eef2f7;
+  color: #243447;
+}
+
+.markdown pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
 @media (max-width: 900px) {
   body { grid-template-columns: 1fr; height: auto; }
   .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
