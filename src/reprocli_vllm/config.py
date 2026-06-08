@@ -9,6 +9,7 @@ PAPER_BUNDLE_DATASET_URL = "https://huggingface.co/datasets/Mithilss/neurips-202
 DEFAULT_DATASET = ARXIV_SOURCE_DATASET
 DEFAULT_VLLM_DATASET = PAPER_BUNDLE_DATASET
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
+KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 DEFAULT_MODEL = MINIMAX_M2_MODEL
 DEFAULT_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial.jsonl")
 DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial_extracted.jsonl")

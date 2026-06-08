@@ -1,7 +1,7 @@
 # reprocli
 
 Utilities for running the NeurIPS paper-bundle artifact-availability prompt
-through MiniMax M2 on vLLM.
+through MiniMax M2 or Kimi K2.6 on vLLM.
 
 ## Run Classification
 
@@ -9,6 +9,10 @@ The active production path is `scripts/paper_classification.sbatch`. The runner
 launches through `srun` inside the batch allocation, starts one local vLLM
 server, drives a Python tool loop, and writes raw, extracted, and optional trace
 JSONL rows as papers complete.
+
+Use `scripts/paper_classification_kimi_k2_6.sbatch` to try
+`moonshotai/Kimi-K2.6` with `kimi_k2` tool/reasoning parsers, 8-way tensor
+parallelism, trust-remote-code, and `--mm-encoder-tp-mode data`.
 
 The tool surface is:
 
@@ -38,6 +42,30 @@ python3 src/run_arxiv_prompt_vllm.py \
   --save-round-jsonl \
   --max-model-len 196608 \
   --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
+```
+
+Kimi K2.6 trial command:
+
+```bash
+python3 src/run_arxiv_prompt_vllm.py \
+  --model moonshotai/Kimi-K2.6 \
+  --num-prompts 500 \
+  --tool-rounds 12 \
+  --max-input-tokens 128000 \
+  --max-tokens 8192 \
+  --request-workers 16 \
+  --stream-first-response \
+  --dataset Mithilss/neurips-2025-paper-bundles \
+  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --distributed-executor-backend mp \
+  --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
+  --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \
+  --save-round-jsonl \
+  --max-model-len 196608 \
+  --tensor-parallel-size 8 \
+  --tool-call-parser kimi_k2 \
+  --reasoning-parser kimi_k2 \
+  --mm-encoder-tp-mode data
 ```
 
 `--num-prompts` samples that many papers at random. Omit it to process the full

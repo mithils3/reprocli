@@ -15,7 +15,7 @@ from reprocli_vllm.config import (
     PAPER_BUNDLE_DATASET_URL,
     PLACEHOLDER,
 )
-from reprocli_vllm.minimax_defaults import apply_minimax_defaults
+from reprocli_vllm.minimax_defaults import apply_model_defaults
 from reprocli_vllm.paper_bundles import load_bundle_papers
 from reprocli_vllm.tool_loop import run_tool_loop
 from reprocli_vllm.trace_io import trace_output_path
@@ -79,6 +79,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
     parser.add_argument("--top-k", type=int)
+    parser.add_argument("--tool-call-parser")
+    parser.add_argument("--reasoning-parser")
+    parser.add_argument("--tokenizer-mode")
+    parser.add_argument("--kv-cache-dtype")
+    parser.add_argument("--block-size", type=int)
+    parser.add_argument("--mm-encoder-tp-mode")
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
     parser.add_argument(
@@ -96,7 +102,7 @@ def parse_args() -> argparse.Namespace:
         help="Optional vLLM compilation JSON override.",
     )
     args = parser.parse_args()
-    apply_minimax_defaults(args)
+    apply_model_defaults(args)
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
     if args.num_prompts is not None and args.num_prompts < 1:
