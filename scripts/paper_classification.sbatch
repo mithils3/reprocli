@@ -61,7 +61,7 @@ echo "SLURM_STEP_GPUS=${SLURM_STEP_GPUS:-unset}"
 env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS)_' || true
 nvidia-smi topo -m || true
 
-srun --export=ALL --gpu-bind=none python3 src/run_arxiv_prompt_vllm.py \
+python3 src/run_arxiv_prompt_vllm.py \
   --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \

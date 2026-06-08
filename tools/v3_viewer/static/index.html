@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>reprocli v3 output viewer</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="run-title">
+        <span>reprocli v3</span>
+        <strong>Output Viewer</strong>
+      </div>
+      <input id="search" type="search" placeholder="Search arXiv ID or claim">
+      <div class="filters">
+        <button class="active" data-filter="all">All</button>
+        <button data-filter="issues">Issues</button>
+        <button data-filter="round">Round limit</button>
+        <button data-filter="drift">Score drift</button>
+        <button data-filter="trace">Trace problems</button>
+      </div>
+      <div id="recordList" class="record-list"></div>
+    </aside>
+    <main class="main">
+      <section class="topbar">
+        <div>
+          <h1>v3 run inspection</h1>
+          <p id="basePath"></p>
+        </div>
+        <button id="refresh">Refresh</button>
+      </section>
+      <section id="stats" class="stats"></section>
+      <section id="detail" class="detail empty">Select a record to inspect it.</section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
