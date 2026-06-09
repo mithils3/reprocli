@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifact Verification</title>
+  <meta name="theme-color" content="#FAF9F5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Sign-in gate -->
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <h1>Artifact Verification</h1>
+      <p>Enter your name to start reviewing. Your name is attached to everything you save.</p>
+      <input id="gate-name" type="text" placeholder="e.g. mithil" autocomplete="name" />
+      <button id="gate-go">Start reviewing</button>
+      <p class="gate-hint" id="gate-hint"></p>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">Artifact Verification</div>
+      <nav class="tabs">
+        <button class="tab active" data-view="verify">Review</button>
+        <button class="tab admin-only hidden" data-view="dashboard">Dashboard</button>
+      </nav>
+      <div class="who">
+        <span id="who-name"></span>
+        <span id="who-progress" class="pill"></span>
+        <button id="signout" class="link">switch user</button>
+      </div>
+    </header>
+
+    <!-- REVIEW VIEW -->
+    <main id="view-verify" class="view layout">
+      <aside class="sidebar">
+        <input id="search" type="search" placeholder="Search id or title…" />
+        <div class="filters" id="filters"></div>
+        <div id="paper-list" class="paper-list"></div>
+      </aside>
+      <section id="detail" class="detail">
+        <div class="empty">Select a paper from the list to begin.</div>
+      </section>
+    </main>
+
+    <!-- DASHBOARD VIEW -->
+    <main id="view-dashboard" class="view hidden">
+      <div id="dashboard" class="dashboard"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

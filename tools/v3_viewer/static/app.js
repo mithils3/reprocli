@@ -129,6 +129,7 @@ function renderDetail(record) {
     <section class="signal-grid">${signalCards(extracted.signals || {})}</section>
     <section class="panel">${sectionTitle("Quality Checks")}${qualityList(record)}</section>
     <section class="panel">${sectionTitle("Verified Links")}${linkGroups(extracted.verified_links || {})}</section>
+    <section class="panel">${sectionTitle("Extracted JSON")}${renderExtractedJson(extracted)}</section>
     <section class="panel">${sectionTitle("Final Answer")}${renderSmartText(finalContent(record.final))}</section>
     <section class="panel">${sectionTitle("Assistant Reasoning")}${renderSmartText(finalReasoning(record.final) || "No reasoning block saved.")}</section>
     <section class="panel">${sectionTitle("Transcript")}${transcript(record.trace)}</section>

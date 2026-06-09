@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlparse
 
 from v3_loader import list_records, load_run, view_record
 
-DEFAULT_BASE = Path("outputs/v3/neurips_2025_minimax_m2_trial")
+DEFAULT_BASE = Path("outputs/v4/neurips_2025_minimax_m2_trial")
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
@@ -73,7 +73,7 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inspect reprocli v3 JSONL outputs.")
+    parser = argparse.ArgumentParser(description="Inspect reprocli MiniMax JSONL outputs.")
     parser.add_argument("--run", type=Path, default=DEFAULT_BASE)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
@@ -85,7 +85,7 @@ def main() -> None:
     ViewerHandler.run_data = load_run(args.run)
     server = ThreadingHTTPServer((args.host, args.port), ViewerHandler)
     url = f"http://{args.host}:{args.port}"
-    print(f"v3 viewer serving {ViewerHandler.run_data['base_path']} at {url}")
+    print(f"MiniMax viewer serving {ViewerHandler.run_data['base_path']} at {url}")
     server.serve_forever()
 
 

@@ -1,0 +1,211 @@
+# Kimi K2.6 Multi-Node Interactive vLLM Serve on DeltaAI
+
+This runbook starts `moonshotai/Kimi-K2.6` as a raw interactive vLLM server
+across 2 DeltaAI nodes with 4 GPUs per node:
+
+- Tensor parallel size: `4`
+- Pipeline parallel size: `2`
+- Total GPUs: `8`
+- Head rank: `0`
+- Worker rank: `1`
+
+The current `src/run_arxiv_prompt_vllm.py` runner starts its own local
+`127.0.0.1` vLLM server. Use this runbook when you want to test multi-node
+`vllm serve` directly; wiring the repo tool loop to an already-running
+multi-node server would need a separate attach-to-server option.
+
+## 1. Start an Interactive Allocation
+
+Run this on a DeltaAI login node. Replace the account, partition, time, CPU, and
+memory settings if your allocation policy needs different values.
+
+```bash
+salloc \
+  --account=betw-dtai-gh \
+  --partition=ghx4-interactive \
+  --nodes=2 \
+  --ntasks-per-node=1 \
+  --gpus-per-node=4 \
+  --cpus-per-task=32 \
+  --mem=512G \
+  --time=04:00:00
+```
+
+If your project requires the interactive partition, use
+`--partition=ghx4-interactive` instead.
+
+## 2. Prepare the Shell Inside the Allocation
+
+Run these commands after `salloc` returns an allocation shell.
+
+```bash
+set -euo pipefail
+
+module load python/3.11.9
+source /u/msalunkhe/reprocli/.venv/bin/activate
+cd /u/msalunkhe/reprocli
+
+export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export SAFETENSORS_FAST_GPU=1
+export CUDA_MODULE_LOADING=LAZY
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+export PYTHONFAULTHANDLER=1
+export NCCL_CUMEM_ENABLE=0
+export NCCL_CUMEM_HOST_ENABLE=0
+export NCCL_DEBUG="${NCCL_DEBUG:-INFO}"
+export NCCL_DEBUG_SUBSYS="${NCCL_DEBUG_SUBSYS:-INIT,ENV,NET}"
+export NCCL_NET_PLUGIN="${NCCL_NET_PLUGIN_OVERRIDE:-none}"
+export OMP_NUM_THREADS=1
+export TORCH_NCCL_ASYNC_ERROR_HANDLING="${TORCH_NCCL_ASYNC_ERROR_HANDLING:-1}"
+export TORCH_NCCL_ENABLE_MONITORING="${TORCH_NCCL_ENABLE_MONITORING:-1}"
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC="${TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC:-1200}"
+export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
+
+ulimit -l unlimited || true
+ulimit -s unlimited || true
+```
+
+## 3. Select the Inter-Node Network Interface
+
+Use the high-speed fabric interface if it is available. On DeltaAI this is often
+`hsn0`, but verify it on an allocated compute node before launching.
+
+```bash
+export IFACE_NAME="${IFACE_NAME:-hsn0}"
+srun --nodes=1 --ntasks=1 bash -lc "ip -o -4 addr show ${IFACE_NAME}"
+
+export GLOO_SOCKET_IFNAME="${IFACE_NAME}"
+export NCCL_SOCKET_IFNAME="${IFACE_NAME}"
+```
+
+If `hsn0` is not present, inspect the compute-node interfaces and set
+`IFACE_NAME` to the correct non-loopback fabric interface.
+
+```bash
+srun --nodes=1 --ntasks=1 bash -lc "ip -o -4 addr show"
+export IFACE_NAME=<interface_name>
+export GLOO_SOCKET_IFNAME="${IFACE_NAME}"
+export NCCL_SOCKET_IFNAME="${IFACE_NAME}"
+```
+
+## 4. Discover Node Names and the Head IP
+
+```bash
+mapfile -t NODES < <(scontrol show hostnames "${SLURM_JOB_NODELIST}")
+export HEAD_NODE="${NODES[0]}"
+export WORKER_NODE="${NODES[1]}"
+
+export HEAD_IP
+HEAD_IP=$(
+  srun --nodes=1 --ntasks=1 --nodelist="${HEAD_NODE}" bash -lc \
+    "ip -o -4 addr show ${IFACE_NAME} | awk '{split(\$4,a,\"/\"); print a[1]; exit}'"
+)
+
+echo "HEAD_NODE=${HEAD_NODE}"
+echo "WORKER_NODE=${WORKER_NODE}"
+echo "HEAD_IP=${HEAD_IP}"
+```
+
+## 5. Launch the Two-Node vLLM Server
+
+This starts one process per node. Rank `0` is the API-serving head process; rank
+`1` is headless.
+
+```bash
+mkdir -p logs
+
+srun \
+  --nodes=2 \
+  --ntasks=2 \
+  --ntasks-per-node=1 \
+  --gpus-per-task=4 \
+  --cpus-per-task=32 \
+  bash -lc '
+    set -euo pipefail
+
+    module load python/3.11.9
+    source /u/msalunkhe/reprocli/.venv/bin/activate
+    cd /u/msalunkhe/reprocli
+
+    NODE_RANK="${SLURM_PROCID}"
+    EXTRA_ARGS=()
+    if [[ "${NODE_RANK}" != "0" ]]; then
+      EXTRA_ARGS+=(--headless)
+    fi
+
+    echo "host=$(hostname) node_rank=${NODE_RANK}"
+    echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"
+    env | sort | grep -E "^(CUDA|NCCL|GLOO|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS)_" || true
+    nvidia-smi topo -m || true
+
+    vllm serve moonshotai/Kimi-K2.6 \
+      --host 0.0.0.0 \
+      --port 8000 \
+      --trust-remote-code \
+      --tensor-parallel-size 4 \
+      --pipeline-parallel-size 2 \
+      --nnodes 2 \
+      --node-rank "${NODE_RANK}" \
+      --master-addr "'"${HEAD_IP}"'" \
+      --tool-call-parser kimi_k2 \
+      --enable-auto-tool-choice \
+      --reasoning-parser kimi_k2 \
+      --mm-encoder-tp-mode data \
+      "${EXTRA_ARGS[@]}"
+  ' >"logs/kimi-k2-6-multinode-${SLURM_JOB_ID}.log" 2>&1 &
+
+export VLLM_SERVER_PID=$!
+```
+
+The command stays in the foreground through the backgrounded `srun` job step.
+Use the log to follow startup:
+
+```bash
+tail -f "logs/kimi-k2-6-multinode-${SLURM_JOB_ID}.log"
+```
+
+## 6. Health Check and Smoke Test
+
+Wait for startup, then check the head node API from inside the allocation.
+
+```bash
+curl -f "http://${HEAD_IP}:8000/health"
+```
+
+Run a small chat request:
+
+```bash
+curl "http://${HEAD_IP}:8000/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "moonshotai/Kimi-K2.6",
+    "messages": [
+      {"role": "user", "content": "Reply with one short sentence."}
+    ],
+    "max_tokens": 64
+  }'
+```
+
+## 7. Stop the Server
+
+```bash
+kill "${VLLM_SERVER_PID}"
+wait "${VLLM_SERVER_PID}" || true
+```
+
+If the allocation should end too:
+
+```bash
+exit
+```
+
+## Scaling Notes
+
+For `N` nodes with 4 GPUs per node, keep `--tensor-parallel-size 4`, set
+`--pipeline-parallel-size N`, set `--nnodes N`, and let `NODE_RANK` run from
+`0` through `N - 1`. Only rank `0` should omit `--headless`.
+
+If you use 8 GPUs per node instead, set `--tensor-parallel-size 8`. In that
+case, a 2-node run has `TP=8`, `PP=2`, and `16` total GPUs.
