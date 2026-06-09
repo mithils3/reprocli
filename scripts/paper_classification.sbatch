@@ -1,18 +1,19 @@
 #!/bin/bash
 #SBATCH -J reprocli_paper_classification
-#SBATCH -A betw-dtai-gh
-#SBATCH -p ghx4
+#SBATCH -A bfvr-delta-gpu
+#SBATCH -p gpuA100x4
+
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
-#SBATCH --mem=256G
+#SBATCH --mem=128G
 #SBATCH --time=12:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
 #SBATCH --export=ALL
-#SBATCH --mail-user=mithils3@illinois.edu
+#SBATCH --mail-user=hd9@illinois.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 set -euo pipefail
