@@ -13,6 +13,9 @@ JSONL rows as papers complete.
 Use `scripts/paper_classification_kimi_k2_6.sbatch` to try
 `moonshotai/Kimi-K2.6` with `kimi_k2` tool/reasoning parsers, 8-way tensor
 parallelism, trust-remote-code, and `--mm-encoder-tp-mode data`.
+Use `--vllm-server-url` when a vLLM OpenAI-compatible server is already running
+and the classifier should attach to it instead of launching its own local
+server.
 
 The tool surface is:
 
@@ -67,6 +70,29 @@ python3 src/run_arxiv_prompt_vllm.py \
   --reasoning-parser kimi_k2 \
   --mm-encoder-tp-mode data
 ```
+
+Attach to an already-running multi-node Kimi server:
+
+```bash
+python3 src/run_arxiv_prompt_vllm.py \
+  --vllm-server-url "http://${HEAD_IP}:8000" \
+  --model moonshotai/Kimi-K2.6 \
+  --num-prompts 2 \
+  --tool-rounds 12 \
+  --max-input-tokens 128000 \
+  --max-tokens 8192 \
+  --request-workers 2 \
+  --stream-first-response \
+  --dataset Mithilss/neurips-2025-paper-bundles \
+  --output outputs/neurips_2025_kimi_k2_6_multinode_smoke.jsonl \
+  --extracted-output outputs/neurips_2025_kimi_k2_6_multinode_smoke_extracted.jsonl \
+  --save-round-jsonl \
+  --max-model-len 196608
+```
+
+If the server was launched without a served model alias, set `--model` to the
+exact model name printed by vLLM at startup, such as
+`/work/hdd/bfvr/msalunkhe/models/`.
 
 `--num-prompts` samples that many papers at random. Omit it to process the full
 dataset.

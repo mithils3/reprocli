@@ -9,10 +9,8 @@ across 2 DeltaAI nodes with 4 GPUs per node:
 - Head rank: `0`
 - Worker rank: `1`
 
-The current `src/run_arxiv_prompt_vllm.py` runner starts its own local
-`127.0.0.1` vLLM server. Use this runbook when you want to test multi-node
-`vllm serve` directly; wiring the repo tool loop to an already-running
-multi-node server would need a separate attach-to-server option.
+Use this runbook when you want to test multi-node `vllm serve` directly or run
+the repo classifier against an already-running multi-node server.
 
 ## 1. Start an Interactive Allocation
 
@@ -27,12 +25,16 @@ salloc \
   --ntasks-per-node=1 \
   --gpus-per-node=4 \
   --cpus-per-task=32 \
-  --mem=512G \
-  --time=04:00:00
+  --mem=256G \
+  --time=02:00:00
 ```
 
 If your project requires the interactive partition, use
 `--partition=ghx4-interactive` instead.
+
+If you SSH to one of the allocated compute nodes after `salloc`, Slurm may not
+carry every allocation environment variable into the new shell. The commands
+below recover the node list from `SLURM_JOB_ID` when needed.
 
 ## 2. Prepare the Shell Inside the Allocation
 
@@ -93,13 +95,35 @@ export NCCL_SOCKET_IFNAME="${IFACE_NAME}"
 ## 4. Discover Node Names and the Head IP
 
 ```bash
-mapfile -t NODES < <(scontrol show hostnames "${SLURM_JOB_NODELIST}")
+SLURM_NODELIST_VALUE="${SLURM_JOB_NODELIST:-${SLURM_NODELIST:-}}"
+if [[ -z "${SLURM_NODELIST_VALUE}" && -n "${SLURM_JOB_ID:-}" ]]; then
+  SLURM_NODELIST_VALUE="$(
+    scontrol show job "${SLURM_JOB_ID}" -o \
+      | awk '{for (i = 1; i <= NF; i++) if ($i ~ /^NodeList=/) {sub(/^NodeList=/, "", $i); print $i; exit}}'
+  )"
+fi
+if [[ -z "${SLURM_NODELIST_VALUE}" ]]; then
+  echo "Could not find a Slurm node list; start a 2-node allocation with salloc first."
+  return 1 2>/dev/null || exit 1
+fi
+
+SRUN_JOB_ARG=()
+if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+  SRUN_JOB_ARG=(--jobid="${SLURM_JOB_ID}")
+fi
+
+mapfile -t NODES < <(scontrol show hostnames "${SLURM_NODELIST_VALUE}")
+if [[ "${#NODES[@]}" -lt 2 ]]; then
+  echo "Expected at least 2 allocated nodes, got ${#NODES[@]} from ${SLURM_NODELIST_VALUE}."
+  return 1 2>/dev/null || exit 1
+fi
+
 export HEAD_NODE="${NODES[0]}"
 export WORKER_NODE="${NODES[1]}"
 
 export HEAD_IP
 HEAD_IP=$(
-  srun --nodes=1 --ntasks=1 --nodelist="${HEAD_NODE}" bash -lc \
+  srun "${SRUN_JOB_ARG[@]}" --nodes=1 --ntasks=1 --nodelist="${HEAD_NODE}" bash -lc \
     "ip -o -4 addr show ${IFACE_NAME} | awk '{split(\$4,a,\"/\"); print a[1]; exit}'"
 )
 
@@ -117,6 +141,7 @@ This starts one process per node. Rank `0` is the API-serving head process; rank
 mkdir -p logs
 
 srun \
+  "${SRUN_JOB_ARG[@]}" \
   --nodes=2 \
   --ntasks=2 \
   --ntasks-per-node=1 \
@@ -140,9 +165,10 @@ srun \
     env | sort | grep -E "^(CUDA|NCCL|GLOO|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS)_" || true
     nvidia-smi topo -m || true
 
-    vllm serve moonshotai/Kimi-K2.6 \
+    vllm serve /work/hdd/bfvr/msalunkhe/models/ \
       --host 0.0.0.0 \
       --port 8000 \
+      --served-model-name moonshotai/Kimi-K2.6 \
       --trust-remote-code \
       --tensor-parallel-size 4 \
       --pipeline-parallel-size 2 \
@@ -188,7 +214,38 @@ curl "http://${HEAD_IP}:8000/v1/chat/completions" \
   }'
 ```
 
-## 7. Stop the Server
+## 7. Run Paper Classification Through This Server
+
+This uses the same classifier/tool loop as `scripts/paper_classification*.sbatch`,
+but attaches it to the multi-node server instead of starting another local
+server.
+
+```bash
+python3 src/run_arxiv_prompt_vllm.py \
+  --vllm-server-url "http://${HEAD_IP}:8000" \
+  --model moonshotai/Kimi-K2.6 \
+  --num-prompts 2 \
+  --tool-rounds 12 \
+  --max-input-tokens 128000 \
+  --max-tokens 8192 \
+  --request-workers 2 \
+  --stream-first-response \
+  --dataset Mithilss/neurips-2025-paper-bundles \
+  --output outputs/neurips_2025_kimi_k2_6_multinode_smoke.jsonl \
+  --extracted-output outputs/neurips_2025_kimi_k2_6_multinode_smoke_extracted.jsonl \
+  --save-round-jsonl \
+  --max-model-len 196608
+```
+
+If the server was launched without `--served-model-name`, use the exact model
+name from the vLLM startup log instead, for example
+`--model /work/hdd/bfvr/msalunkhe/models/`.
+
+Scale `--num-prompts` and `--request-workers` after the smoke run succeeds. The
+server is already running, so do not pass tensor-parallel or vLLM launch flags
+to this attached classifier command.
+
+## 8. Stop the Server
 
 ```bash
 kill "${VLLM_SERVER_PID}"

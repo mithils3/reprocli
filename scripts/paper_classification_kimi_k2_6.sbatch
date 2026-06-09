@@ -62,7 +62,7 @@ env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS
 nvidia-smi topo -m || true
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --model moonshotai/Kimi-K2.6 \
+  --model /work/hdd/bfvr/msalunkhe/models/ \
   --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \

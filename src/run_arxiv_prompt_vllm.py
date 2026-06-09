@@ -42,8 +42,13 @@ def main() -> int:
         f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
         file=sys.stderr,
     )
-    with VllmServer(args) as server_url:
+    if args.vllm_server_url:
+        server_url = normalized_server_url(args.vllm_server_url)
+        print(f"Using existing vLLM server at {server_url}", file=sys.stderr)
         run_tool_loop(args, papers_to_run, prompts, server_url)
+    else:
+        with VllmServer(args) as server_url:
+            run_tool_loop(args, papers_to_run, prompts, server_url)
 
     print(f"Finished writing {len(prompts)} responses to {args.output}", file=sys.stderr)
     print(f"Finished writing extracted JSONL to {args.extracted_output}", file=sys.stderr)
@@ -66,6 +71,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
     parser.add_argument("--trace-output", type=argparse_path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--vllm-server-url",
+        help=(
+            "Existing OpenAI-compatible vLLM server base URL. When set, the "
+            "runner skips launching its embedded local server."
+        ),
+    )
     parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
@@ -128,6 +140,13 @@ def select_papers(papers: list, num_prompts: int | None) -> list:
     if num_prompts is None:
         return papers
     return random.sample(papers, min(num_prompts, len(papers)))
+
+
+def normalized_server_url(value: str) -> str:
+    url = value.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    return url
 
 
 def argparse_path(value: str):
