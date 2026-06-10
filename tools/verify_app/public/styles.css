@@ -195,9 +195,9 @@ body:not(.is-admin) .dfooter { left: 0; }
 .vbtn.sel.unsure { background: var(--unk-tint); border-color: var(--unk); color: var(--unk-deep);
   box-shadow: 0 0 0 1px var(--unk); }
 .effective { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 6px; }
-.found, .note { width: 100%; margin-top: 8px; padding: 9px 12px; border-radius: 10px;
+.found, .note, .band-pick { width: 100%; margin-top: 8px; padding: 9px 12px; border-radius: 10px;
   border: 1px solid var(--line-strong); background: var(--bg); color: var(--txt); font: inherit; }
-.found:focus, .note:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
+.found:focus, .note:focus, .band-pick:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
 .note { min-height: 52px; resize: vertical; }
 .guide code { background: var(--panel2); padding: 1px 6px; border-radius: 5px;
   font-family: var(--mono); font-size: 12px; }

@@ -36,7 +36,9 @@ def huggingface_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 def huggingface_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     repo_ids, repo_type = parse_hf_repo_arguments(arguments)
     if not repo_ids:
-        return {"ok": False, "error": "Could not parse Hugging Face repo"}
+        given = arguments.get("repo") or arguments.get("repo_ids")
+        hint = "pass namespace/repo or a huggingface.co URL"
+        return {"ok": False, "error": f"Could not parse Hugging Face repo from {given!r}; {hint}"}
     tool = choose_hf_tool("repo_details")
     params = params_for_schema(
         tool,

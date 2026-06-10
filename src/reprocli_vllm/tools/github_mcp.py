@@ -82,9 +82,16 @@ def github_repository_tree_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def github_repo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    repo = parse_github_repo(str(arguments.get("repo", "")))
+    repo_value = str(arguments.get("repo", ""))
+    repo = parse_github_repo(repo_value)
     if not repo:
-        return {"ok": False, "error": "Could not parse GitHub repo"}
+        return {
+            "ok": False,
+            "error": (
+                f"Could not parse GitHub repo from {repo_value!r}; "
+                "pass owner/name or a github.com URL"
+            ),
+        }
     owner, name = repo
     root = safe_call_github_mcp("get_file_contents", {"owner": owner, "repo": name, "path": ""})
     readme = first_readme(owner, name)
@@ -190,7 +197,10 @@ def github_owner_repo(arguments: dict[str, Any]) -> tuple[str, str]:
         return repo
     if owner and name:
         return owner, name
-    raise ValueError("Provide repo as owner/name or provide owner and name")
+    raise ValueError(
+        f"Provide repo as owner/name or a github.com URL (got repo={repo_value!r}, "
+        f"owner={owner!r}, name={name!r})"
+    )
 
 
 def optional_repo_scope(arguments: dict[str, Any]) -> dict[str, Any]:

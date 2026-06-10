@@ -16,12 +16,13 @@ Classify whether an automatic reproduction agent could reproduce the paper's sma
 
 You must determine:
 
-1. The paper's central empirical claim.
-2. The cheapest valid MRE that tests that claim.
-3. The artifact-availability score inputs: whether code, data, and
-   weights/checkpoints for that MRE are actually available, and whether the MRE
-   dataset is standard.
-4. The H100-hour estimate.
+1. The paper's kind: empirical, theoretical, position, or survey.
+2. The paper's central empirical claim.
+3. The cheapest valid MRE that tests that claim.
+4. The artifact-availability score inputs: whether code, data, and
+   weights/checkpoints for that MRE are actually available, whether the MRE
+   dataset is standard, and how each of those values was verified.
+5. The H100-hour estimate with its arithmetic inputs.
 
 Use private reasoning to track candidates, searches, and evidence. Do not include that private scratch work in the final answer.
 
@@ -41,13 +42,19 @@ Use the tools as follows:
 
 Do not count an artifact as available only because the paper says "code is available", "data will be released", or "we provide checkpoints". Verify it.
 
-Set `web_verification` to:
+Every signal has a `verification` field saying how you established its
+`value`. Pick the first state that fits:
 
-- `"available"` if tools worked and all important artifact categories were checked, or if the dataset is clearly standard.
-- `"partial"` if tools worked but one or more important categories could not be fully checked.
-- `"unavailable"` only if tools were unavailable.
+- A tool result directly supports the value -> `"tool_verified"`
+- You searched properly and found nothing, so the value is false ->
+  `"tool_searched_not_found"`
+- The tool calls this category needed kept erroring -> `"tool_failed"`
+- You only used the paper text -> `"paper_text_only"` (avoid this: call a
+  tool instead)
+- The category does not exist for this paper -> `"not_applicable"`
 
-If tools are available and an artifact category is unresolved, call another useful tool instead of guessing.
+Finding nothing after a real search is not a tool problem. That is
+`"tool_searched_not_found"` with `value` false.
 
 ======================================================================
 BUNDLED OPENREVIEW SUPPLEMENT EVIDENCE
@@ -72,8 +79,9 @@ How to use it:
 - Use `paper_bundle_file_contents` for relevant bundled supplement README,
   config, script, notebook, dataset-manifest, split, prompt, or documentation
   text that appears in the manifest but is not fully visible in the excerpt.
-- Call `paper_bundle_file_contents` with a manifest path such as `README.md`,
-  `code/train.py`, or `supplement/code/train.py`.
+- Call `paper_bundle_file_contents` only with a path copied exactly from the
+  `OPENREVIEW_SUPPLEMENT` files manifest. Do not guess paths that are not
+  listed there.
 - Do not invent generic local filesystem tools such as `read`, `file_read`,
   `bash`, `shell`, `cat`, or `python`.
 - If the supplement contains runnable training, inference, evaluation, data
@@ -220,7 +228,7 @@ When evidence is missing:
 - Try the acronym/project name.
 - Try the acronym without hyphen.
 - Try Hugging Face search for the same aliases.
-- If all reasonable searches fail, mark the artifact unavailable or unverified and mention the failed search pattern in the relevant evidence string.
+- If all reasonable searches fail, set the signal value to false with verification `tool_searched_not_found` and mention the failed search pattern in the relevant evidence string.
 
 ======================================================================
 MINIMAL REPRODUCTION EXAMPLE
@@ -245,10 +253,23 @@ A valid MRE must identify:
 All artifact checks are scoped to this MRE, not to every experiment in the paper.
 
 ======================================================================
-STEP 1: IDENTIFY THE CENTRAL CLAIM AND MRE
+STEP 1: IDENTIFY THE PAPER KIND, CENTRAL CLAIM, AND MRE
 ======================================================================
 
-Identify the central empirical claim in one sentence.
+First set `paper_kind`:
+
+- `"empirical"`: experiments support the central claim. Most papers, including
+  theory papers with real supporting experiments.
+- `"theoretical"`: proofs only; no experiment tests the central claim.
+- `"position"`: argues a stance; no central empirical result.
+- `"survey"`: reviews existing work; no central empirical result.
+
+If the paper is not empirical, there is usually nothing to verify: say so
+briefly in `mre_config`, set every signal to `value` false with `verification`
+`"not_applicable"`, and fill the rest of the schema normally. A paper that
+never had artifacts is not a verification failure.
+
+Then identify the central empirical claim in one sentence.
 
 The claim evidence should cite:
 
@@ -370,28 +391,33 @@ deterministically computed score and tier.
 STEP 4: H100-HOUR ESTIMATE
 ======================================================================
 
-Estimate H100-hours required to reproduce the MRE.
+Estimate H100-hours required to reproduce the MRE and report the estimate as
+the structured `h100_estimate` object so the arithmetic can be checked in code.
 
 Use the MRE configuration, not the largest experiment.
 
-If exact compute is reported:
+Set `basis_kind` to the first one that fits:
 
-- Convert reported GPU-hours to H100-hours.
-- Explain the conversion in `h100_estimate_basis`.
+- `"paper_reported"`: the paper gives GPU type, count, and wall-clock time (or
+  GPU-hours) for the MRE. Fill `gpu_count`, `gpu_type`, `wallclock_hours`, and
+  `h100_equivalent_multiplier` from the table below.
+- `"derived_from_config"`: you derived the numbers from model size, dataset
+  size, steps, tokens, or hardware details. Fill the arithmetic fields you
+  can; show the derivation in `basis`.
+- `"comparable_experiment"`: you estimated from a similar published
+  experiment. Name it in `basis`.
+- `"compute_unspecified"`: no real basis. Give an order-of-magnitude `hours`
+  and say in `basis` what was missing.
 
-If partial compute is reported:
-
-- Use GPU count, GPU type, wall-clock time, model size, dataset size, steps, tokens, images, or task type.
-
-If no compute is reported:
-
-- Include `compute-unspecified` in `h100_estimate_basis`.
-- Give a best-effort order-of-magnitude estimate from comparable experiments.
+Leave unknown arithmetic fields null, never 0 or invented. `hours` must equal
+gpu_count * wallclock_hours * h100_equivalent_multiplier whenever those are
+filled; the extraction code recomputes that product and flags disagreements
+for human review.
 
 H100-hours count compute only, not human engineering time.
 
 If missing artifacts are likely to make reproduction hard or blocked, mention
-that engineering/debugging time is additional and not included.
+in `basis` that engineering/debugging time is additional and not included.
 
 GPU normalization:
 
@@ -431,8 +457,8 @@ Return exactly one JSON object with these fields:
 {
   "central_claim": "...",
   "claim_evidence": "Abstract sentence/line plus Table/Figure/Section evidence.",
+  "paper_kind": "empirical",
   "mre_config": "...",
-  "web_verification": "available",
   "verified_links": {
     "paper_or_project": ["..."],
     "code": ["..."],
@@ -442,24 +468,35 @@ Return exactly one JSON object with these fields:
   "signals": {
     "code_available": {
       "value": false,
+      "verification": "tool_searched_not_found",
       "evidence": "Tool-verified or bundled supplement evidence, including relevant search attempts if no code was found."
     },
     "dataset_available": {
       "value": true,
+      "verification": "tool_verified",
       "evidence": "Tool-verified dataset evidence, bundled supplement evidence, or standard benchmark rationale."
     },
     "weights_available": {
       "value": false,
+      "verification": "tool_searched_not_found",
       "evidence": "Tool-verified or bundled supplement checkpoint evidence, or absence after search."
     },
     "dataset_is_standard": {
       "value": true,
+      "verification": "tool_verified",
       "evidence": "Why this is or is not a widely recognized public benchmark."
     }
   },
   "agent_task": "Concrete instruction for an automatic agent to reproduce the MRE.",
-  "h100_hours_estimate": 18,
-  "h100_estimate_basis": "compute-unspecified or exact conversion. Include MRE-specific reasoning and engineering/debugging caveat when applicable."
+  "h100_estimate": {
+    "hours": 18,
+    "basis_kind": "paper_reported",
+    "gpu_count": 8,
+    "gpu_type": "A100 80GB",
+    "wallclock_hours": 7,
+    "h100_equivalent_multiplier": 0.32,
+    "basis": "MRE-specific reasoning, conversion arithmetic, and the engineering/debugging caveat when applicable."
+  }
 }
 
 Final validation checklist:
@@ -467,7 +504,12 @@ Final validation checklist:
 - JSON only, no prose outside the object.
 - `verified_links` arrays contain clean URLs only.
 - Put search explanations in evidence strings, not in URL arrays.
-- `web_verification` is exactly `available`, `partial`, or `unavailable`.
+- Every signal `verification` is exactly one of `tool_verified`,
+  `tool_searched_not_found`, `tool_failed`, `paper_text_only`,
+  `not_applicable`, and it describes the tool phase that already happened.
+- `paper_kind` is exactly one of `empirical`, `theoretical`, `position`,
+  `survey`; non-empirical papers use `not_applicable` signals.
 - Do not include `score` or `tier`; the extractor computes them.
-- `h100_hours_estimate` is numeric and agrees with `h100_estimate_basis`.
+- `h100_estimate.hours` is numeric and agrees with the filled arithmetic
+  fields; unknown arithmetic fields are null, never 0 or invented.
 - All artifact booleans are scoped to the MRE, not to unrelated artifacts.

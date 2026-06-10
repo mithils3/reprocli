@@ -66,8 +66,18 @@ const STEPS = [
       ["Google", gSearch(`${shortTitle(p)} benchmark dataset`)],
     ],
   },
+  {
+    key: "h100_band", signal: null, linkKey: null, foundKey: null, kind: "h100",
+    noun: "compute band is right",
+    q: "Is the H100 compute band right?",
+    guide: "Confirm the BAND (0-8 / 8-32 / 32-96 / 96-192 / >192 H100-hours), not the exact number. Check the model's arithmetic (gpu_count × wallclock × H100-multiplier) against the paper. If the basis has no auditable arithmetic, don't take the number on faith.",
+    searches: (p) => [
+      ["Google", gSearch(`${shortTitle(p)} GPU hours training compute`)],
+    ],
+  },
 ];
 const VERDICTS = ["agree", "disagree", "unsure"];
+const H100_BANDS = ["0-8", "8-32", "32-96", "96-192", ">192"];
 
 // ---- url helpers ----------------------------------------------------------
 const enc = encodeURIComponent;
@@ -292,8 +302,9 @@ function trackPresence() {
 // ===========================================================================
 // status / progress
 // ===========================================================================
-// completion = the four artifact signals (the score is computed from them)
-const VERDICT_FIELDS = ["code_verdict", "dataset_verdict", "weights_verdict", "dataset_standard_verdict"];
+// completion = the four artifact signals + the H100 band check
+// (the score is computed from the artifact verdicts)
+const VERDICT_FIELDS = ["code_verdict", "dataset_verdict", "weights_verdict", "dataset_standard_verdict", "h100_band_verdict"];
 
 // deterministic scoring formula (mirrors tools/v3_viewer/quality.py)
 function scoreFromSignals(code, data, weights, standard) {
@@ -318,6 +329,7 @@ function reviewerSignals(p) {
   const sig = p.signals || {};
   const out = {};
   for (const step of STEPS) {
+    if (!step.signal) continue;   // h100 band is not a boolean signal
     const mv = (sig[step.signal] || {}).value;
     const v = d[`${step.key}_verdict`];
     out[step.key] = typeof mv === "boolean"
@@ -386,7 +398,7 @@ function buildFilters() {
 }
 
 function visiblePapers() {
-  return state.papers.filter((p) => {
+  const items = state.papers.filter((p) => {
     const id = p.custom_id;
     const st = paperStatus(id);
     // default queue: anything not yet completed by anyone (just keep labelling)
@@ -401,6 +413,11 @@ function visiblePapers() {
     }
     return true;
   });
+  // queue priority: papers whose H100 estimate needs human review come first
+  if (state.filter === "queue") {
+    items.sort((a, b) => (b.h100_needs_human_review ? 1 : 0) - (a.h100_needs_human_review ? 1 : 0));
+  }
+  return items;
 }
 
 function renderList() {
@@ -495,8 +512,8 @@ function renderDetail() {
         <span class="pid big">${esc(p.custom_id)}</span>
         <span class="badge tier ${tierClass(p.tier)}">${esc(p.tier ?? "no tier")}</span>
         <span class="badge score">model score: ${esc(p.score ?? "—")}</span>
-        <span class="badge web">web: ${esc(p.web_verification ?? "—")}</span>
-        ${p.h100_hours_estimate != null ? `<span class="badge web" title="${esc(p.h100_estimate_basis || "")}">~${esc(p.h100_hours_estimate)} H100·h</span>` : ""}
+        <span class="badge web">run: ${esc(p.verification_status ?? p.web_verification ?? "—")}</span>
+        ${p.h100_hours_estimate != null ? `<span class="badge ${p.h100_needs_human_review ? "no" : "web"}" title="${esc(p.h100_estimate_basis || "")}">~${esc(p.h100_hours_estimate)} H100·h · ${esc(p.h100_band ?? "?")}${p.h100_needs_human_review ? " ⚠" : ""}</span>` : ""}
         <span class="counter">${queueCount()} left in queue</span>
       </div>
       <h2>${esc(p.title || "")}</h2>
@@ -533,6 +550,15 @@ function renderDetail() {
   if (!Object.keys(p.signals || {}).length) {
     root.appendChild(el(`<div class="cbanner prog">⚠ The model produced <b>no extraction</b> for this paper.
       Answer from your own search and explain in the notes — agree/disagree has no model value to compare against.</div>`));
+  }
+  if (p.verification_status === "incomplete" || p.verification_status === "degraded") {
+    root.appendChild(el(`<div class="cbanner prog">⚠ Run health: <b>${esc(p.verification_status)}</b>
+      (${esc(p.exit_reason || "unknown exit")}) — some signals may be guesses rather than tool-verified.
+      Lean on your own search.</div>`));
+  }
+  if (p.h100_needs_human_review) {
+    root.appendChild(el(`<div class="cbanner prog">⚠ The H100 estimate has <b>no auditable arithmetic</b>
+      (or it disagrees with the recomputation) — the band step below needs your judgement, not a rubber stamp.</div>`));
   }
 
   // artifact steps (unlocked one at a time — see refreshStepLocks)
@@ -582,10 +608,37 @@ function effectiveText(step, p, d) {
   const v = d[`${step.key}_verdict`];
   if (!v) return "";
   if (v === "unsure") return "Your answer: unsure";
+  if (step.kind === "h100") {
+    if (v === "agree") return `Your answer: band ${p.h100_band || "—"} is right`;
+    return `Your answer: band is wrong${d.h100_band_suggested ? ` — should be ${d.h100_band_suggested}` : " (pick the band below)"}`;
+  }
   const mv = ((p.signals || {})[step.signal] || {}).value;
   if (typeof mv !== "boolean") return "Your answer recorded (model gave no value)";
   const eff = v === "agree" ? mv : !mv;
   return `Your answer: ${step.noun} — ${eff ? "YES" : "NO"}`;
+}
+
+function h100Badge(p) {
+  const band = p.h100_band || "—";
+  const flag = p.h100_needs_human_review ? " ⚠" : "";
+  return `<span class="badge ${p.h100_needs_human_review ? "no" : "unk"}">model: ${esc(band)} H100·h${flag}</span>`;
+}
+
+// the model's estimate, shown so the reviewer can audit the arithmetic
+function h100Evidence(p) {
+  const e = p.h100_estimate || {};
+  const lines = [];
+  lines.push(`Estimate: ${p.h100_hours_estimate ?? "—"} H100-hours → band ${p.h100_band || "—"}`);
+  if (e.gpu_count != null || e.wallclock_hours != null) {
+    lines.push(`Arithmetic: ${e.gpu_count ?? "?"} × ${e.wallclock_hours ?? "?"} h × ${e.h100_equivalent_multiplier ?? "?"} (${e.gpu_type || "GPU type ?"})`);
+  } else {
+    lines.push("Arithmetic: none given — nothing to recompute.");
+  }
+  if (p.h100_recomputed_hours != null) {
+    lines.push(`Recomputed: ${Math.round(p.h100_recomputed_hours * 100) / 100} H100-hours${p.h100_arithmetic_mismatch ? " — DISAGREES with the estimate" : " — matches"}`);
+  }
+  lines.push(`Basis: ${p.h100_estimate_basis || "(none)"}`);
+  return lines.join("\n");
 }
 
 function renderStep(p, step, n, links) {
@@ -595,14 +648,17 @@ function renderStep(p, step, n, links) {
   const verdictField = `${step.key}_verdict`;
   const noteField = `${step.key}_note`;
 
+  const isH100 = step.kind === "h100";
+  const evidenceText = isH100 ? h100Evidence(p) : (sig.evidence || "(none)");
   const card = el(`
     <div class="step ${d[verdictField] ? "answered" : ""}">
-      <div class="step-h"><span class="stepn">${n}</span><h3>${esc(step.q)}</h3>${signalBadge(sig.value)}</div>
+      <div class="step-h"><span class="stepn">${n}</span><h3>${esc(step.q)}</h3>${isH100 ? h100Badge(p) : signalBadge(sig.value)}</div>
       <p class="guide">${esc(step.guide)}</p>
-      <details class="ev"><summary>Model's evidence</summary><p>${esc(sig.evidence || "(none)")}</p></details>
+      <details class="ev" ${isH100 ? "open" : ""}><summary>Model's ${isH100 ? "estimate & arithmetic" : "evidence"}</summary><p>${esc(evidenceText)}</p></details>
       ${modelLinks.length ? `<div class="mlinks"><b>Model links:</b> ${modelLinks.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join(" ")}</div>` : ""}
       <div class="searchrow">${step.searches(p).map(([lab, url]) => `<a class="searchbtn" data-lab="${esc(lab)}" href="${esc(url)}" target="_blank" rel="noopener">Search: ${esc(lab)} ↗</a>`).join("")}</div>
       <div class="verdicts">${VERDICTS.map((v) => `<button class="vbtn ${d[verdictField] === v ? "sel " + v : ""}" data-v="${v}">${v === "agree" ? "✓ Agree" : v === "disagree" ? "✗ Disagree" : "? Unsure"}</button>`).join("")}<span class="effective">${esc(effectiveText(step, p, d))}</span></div>
+      ${isH100 ? `<select class="band-pick"><option value="">Band you'd assign (if you disagree)…</option>${H100_BANDS.map((b) => `<option value="${b}" ${d.h100_band_suggested === b ? "selected" : ""}>${b} H100-hours</option>`).join("")}</select>` : ""}
       ${step.foundKey ? `<input class="found" type="url" placeholder="Link you found (optional)" value="${esc(d[step.foundKey] || "")}" />` : ""}
       <textarea class="note" placeholder="Note (what you found / why you disagree)">${esc(d[noteField] || "")}</textarea>
     </div>`);
@@ -627,6 +683,11 @@ function renderStep(p, step, n, links) {
   if (step.foundKey) $(".found", card).addEventListener("input", (e) => {
     d[step.foundKey] = e.target.value; markDirty();
     trackOnce("found_url", step.key, { step: step.key });
+  });
+  if (isH100) $(".band-pick", card).addEventListener("change", (e) => {
+    d.h100_band_suggested = e.target.value || null; markDirty();
+    track("band_suggested", state.current, { band: d.h100_band_suggested });
+    renderStep_refresh(card, step, d);
   });
   stepCards[step.key] = card;
   return card;
@@ -680,7 +741,7 @@ function nudgeFirstOpenStep() {
     card.addEventListener("animationend", () => card.classList.remove("nudge"), { once: true });
   }
   const s = $("#save-state");
-  if (s) s.textContent = "answer all 4 steps before moving on (or skip)";
+  if (s) s.textContent = `answer all ${VERDICT_FIELDS.length} steps before moving on (or skip)`;
   track("blocked_next", state.current, { steps_answered: answeredCount(state.current) });
 }
 
@@ -717,8 +778,8 @@ function renderScoreStep(p, n) {
   const card = el(`
     <div class="step score-step">
       <div class="step-h"><span class="stepn">${n}</span><h3>Score &amp; difficulty tier (computed from your verdicts)</h3></div>
-      <p class="guide">You don't score this directly — it's derived from steps 1–4 with the project's formula
-        <code>(no code +2) + (no dataset &amp; non-standard +3) + (no weights +1)</code>. Answer the four steps above and it fills in.</p>
+      <p class="guide">You don't score this directly — it's derived from the four artifact steps with the project's formula
+        <code>(no code +2) + (no dataset &amp; non-standard +3) + (no weights +1)</code>. Answer those steps and it fills in.</p>
       <div id="score-result"></div>
       <textarea class="note" placeholder="Optional note on the score / difficulty">${esc(d.score_note || "")}</textarea>
     </div>`);
@@ -735,7 +796,7 @@ function refreshScorePanel() {
   const p = state.byId[state.current];
   const rs = reviewerScore(p);
   if (!rs) {
-    node.innerHTML = `<div class="score-row pending">Answer steps 1–4 (agree/disagree — not unsure) to compute your score.</div>`;
+    node.innerHTML = `<div class="score-row pending">Answer the four artifact steps (agree/disagree — not unsure) to compute your score.</div>`;
     return;
   }
   const match = rs.score === p.score;
@@ -829,6 +890,8 @@ async function saveCurrent(advance) {
     dataset_verdict: d.dataset_verdict || null, dataset_note: d.dataset_note || null, found_dataset_url: d.found_dataset_url || null,
     weights_verdict: d.weights_verdict || null, weights_note: d.weights_note || null, found_weights_url: d.found_weights_url || null,
     dataset_standard_verdict: d.dataset_standard_verdict || null, dataset_standard_note: d.dataset_standard_note || null,
+    h100_band_verdict: d.h100_band_verdict || null, h100_band_note: d.h100_band_note || null,
+    h100_band_suggested: d.h100_band_suggested || null,
     score_verdict: rs ? (rs.score === p.score ? "agree" : "disagree") : null,
     score_suggested: rs ? rs.score : null,
     score_note: d.score_note || null,

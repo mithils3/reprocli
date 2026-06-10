@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -18,8 +17,10 @@ from .vllm_io import (
     truncate_output_file,
     tool_result_message,
 )
-from .config import FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from .config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from .loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
 from .papers import Paper
+from .run_health import loop_telemetry
 from .tools.web_tools import execute_tool_call
 from .trace_io import append_trace_row, assistant_message
 from .vllm_client import post_chat_completion_row, response_row
@@ -38,7 +39,7 @@ def run_tool_loop(
     papers_by_id = {paper.arxiv_id: paper for paper in papers}
     original_ids = [paper.arxiv_id for paper in papers]
     final_rows: dict[str, dict] = {}
-    hit_tool_round_limit: set[str] = set()
+    exit_reasons: dict[str, str] = {}
     tool_call_counts = {custom_id: Counter() for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
@@ -57,7 +58,11 @@ def run_tool_loop(
         tool_futures: dict[Future, dict[str, Any]] = {}
 
         def submit_request(custom_id: str, round_index: int, include_tools: bool) -> None:
-            messages = conversation_for_round(conversations[custom_id], include_tools)
+            messages = conversation_for_round(
+                conversations[custom_id],
+                include_tools,
+                budget_note=exit_reasons.get(custom_id) == "context_budget",
+            )
             request = build_chat_completion_request(
                 args.model,
                 custom_id,
@@ -98,7 +103,7 @@ def run_tool_loop(
                         conversations,
                         final_rows,
                         tool_rounds_used,
-                        hit_tool_round_limit,
+                        exit_reasons,
                         tool_call_counts,
                         papers_by_id,
                         args,
@@ -106,13 +111,15 @@ def run_tool_loop(
                     continue
                 state = tool_futures.pop(future)
                 future.result()
+                custom_id = str(state["custom_id"])
                 next_round = int(state["round_index"]) + 1
-                force_final = bool(state.get("force_final"))
-                submit_request(
-                    str(state["custom_id"]),
-                    next_round,
-                    include_tools=not force_final and next_round < args.tool_rounds,
-                )
+                include_tools = not state.get("force_final") and next_round < args.tool_rounds
+                if include_tools and context_budget_exceeded(
+                    conversations[custom_id], args.max_input_tokens
+                ):
+                    exit_reasons[custom_id] = "context_budget"
+                    include_tools = False
+                submit_request(custom_id, next_round, include_tools)
 
     missing = [custom_id for custom_id in original_ids if custom_id not in final_rows]
     if missing:
@@ -127,7 +134,7 @@ def handle_request_done(
     conversations: dict[str, list[dict]],
     final_rows: dict[str, dict],
     tool_rounds_used: dict[str, int],
-    hit_tool_round_limit: set[str],
+    exit_reasons: dict[str, str],
     tool_call_counts: dict[str, Counter],
     papers_by_id: dict[str, Paper],
     args: argparse.Namespace,
@@ -151,18 +158,19 @@ def handle_request_done(
                 f"Stopping tool loop for {custom_id}: repeated tool call {repeated}",
                 file=sys.stderr,
             )
+            exit_reasons[custom_id] = "repeated_call_cutoff"
             tool_future = tools.submit(noop)
             tool_futures[tool_future] = {**state, "force_final": True}
             return
-        record_tool_calls(custom_id, tool_calls, tool_call_counts)
         if round_index + 1 >= args.tool_rounds:
-            hit_tool_round_limit.add(custom_id)
+            exit_reasons[custom_id] = "round_limit"
         tool_future = tools.submit(
             append_tool_results,
             conversations[custom_id],
             message,
             tool_calls,
             papers_by_id[custom_id],
+            tool_call_counts[custom_id],
         )
         tool_futures[tool_future] = state
         return
@@ -173,12 +181,21 @@ def handle_request_done(
         tool_future = tools.submit(noop)
         tool_futures[tool_future] = {**state, "force_final": True}
         return
+    exit_reason = exit_reasons.get(custom_id, "natural")
     row["tool_loop"] = {
         "tool_rounds_used": tool_rounds_used[custom_id],
         "max_tool_rounds": args.tool_rounds,
-        "hit_tool_round_limit": custom_id in hit_tool_round_limit,
+        "hit_tool_round_limit": exit_reason == "round_limit",
+        "exit_reason": exit_reason,
+        "telemetry": loop_telemetry(conversations[custom_id], args.max_input_tokens),
     }
-    append_final_message(conversations[custom_id], message, tool_calls, bool(state["include_tools"]))
+    append_final_message(
+        conversations[custom_id],
+        message,
+        tool_calls,
+        bool(state["include_tools"]),
+        budget_note=exit_reason == "context_budget",
+    )
     final_rows[custom_id] = row
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
 
@@ -202,50 +219,22 @@ def append_completed_outputs(
         append_trace_row(args.trace_output, custom_id, messages, row)
 
 
-def repeated_tool_call(
-    custom_id: str,
-    tool_calls: list[dict],
-    tool_call_counts: dict[str, Counter],
-    max_repeats: int,
-) -> str | None:
-    counts = tool_call_counts[custom_id]
-    seen_in_response: Counter = Counter()
-    for call in tool_calls:
-        signature = tool_call_signature(call)
-        if counts[signature] + seen_in_response[signature] >= max_repeats:
-            return f"{signature[0]}({signature[1]})"
-        seen_in_response[signature] += 1
-    return None
-
-
-def record_tool_calls(
-    custom_id: str,
-    tool_calls: list[dict],
-    tool_call_counts: dict[str, Counter],
-) -> None:
-    for call in tool_calls:
-        tool_call_counts[custom_id][tool_call_signature(call)] += 1
-
-
-def tool_call_signature(call: dict) -> tuple[str, str]:
-    function = call.get("function") or {}
-    name = str(function.get("name") or "unknown_tool")
-    arguments = function.get("arguments") or ""
-    try:
-        parsed = json.loads(arguments)
-    except (TypeError, json.JSONDecodeError):
-        return name, str(arguments)
-    return name, json.dumps(parsed, ensure_ascii=False, sort_keys=True)
-
-
 def noop() -> None:
     return None
 
 
-def conversation_for_round(messages: list[dict], include_tools: bool) -> list[dict]:
+def conversation_for_round(
+    messages: list[dict],
+    include_tools: bool,
+    *,
+    budget_note: bool = False,
+) -> list[dict]:
     if include_tools:
         return messages
-    return [*messages, {"role": "user", "content": FINAL_NO_TOOLS_MESSAGE}]
+    final_message = FINAL_NO_TOOLS_MESSAGE
+    if budget_note:
+        final_message = CONTEXT_BUDGET_NOTE + final_message
+    return [*messages, {"role": "user", "content": final_message}]
 
 
 def append_tool_results(
@@ -253,10 +242,12 @@ def append_tool_results(
     message: dict,
     tool_calls: list[dict],
     paper: Paper,
+    counts: Counter,
 ) -> None:
     append_assistant_tool_call(messages, message, tool_calls)
     for call in tool_calls:
         result = execute_tool_call(call, paper=paper)
+        record_tool_call(counts, call, result)
         messages.append(tool_result_message(call, result))
 
 
@@ -265,7 +256,12 @@ def append_final_message(
     message: dict[str, Any],
     tool_calls: list[dict[str, Any]],
     include_tools: bool,
+    *,
+    budget_note: bool = False,
 ) -> None:
     if not include_tools:
-        messages.append({"role": "user", "content": FINAL_NO_TOOLS_MESSAGE})
+        final_message = FINAL_NO_TOOLS_MESSAGE
+        if budget_note:
+            final_message = CONTEXT_BUDGET_NOTE + final_message
+        messages.append({"role": "user", "content": final_message})
     messages.append(assistant_message(message, tool_calls))

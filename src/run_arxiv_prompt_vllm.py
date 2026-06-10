@@ -31,6 +31,8 @@ def main() -> int:
 
     papers = load_bundle_papers(args.dataset)
     papers = [paper for paper in papers if paper.tex_files]
+    if args.paper_ids_file:
+        papers = filter_papers_by_ids(papers, args.paper_ids_file)
     papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
         prompt_template.replace(PLACEHOLDER, paper.text())
@@ -74,15 +76,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--vllm-server-url",
         help=(
-            "Existing OpenAI-compatible vLLM server base URL. When set, the "
+            "Existing vLLM chat-completions server base URL. When set, the "
             "runner skips launching its embedded local server."
+        ),
+    )
+    parser.add_argument(
+        "--paper-ids-file",
+        type=argparse_path,
+        help=(
+            "Run only the arXiv ids listed in this file (one per line), e.g. "
+            "the output of `python -m reprocli_vllm.rerun select`."
         ),
     )
     parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--tool-rounds", type=int, default=10)
-    parser.add_argument("--max-repeated-tool-calls", type=int, default=1)
+    parser.add_argument("--max-repeated-tool-calls", type=int, default=2)
     parser.add_argument("--request-workers", type=int, default=8)
     parser.add_argument("--tensor-parallel-size", type=int)
     parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
@@ -140,6 +150,23 @@ def select_papers(papers: list, num_prompts: int | None) -> list:
     if num_prompts is None:
         return papers
     return random.sample(papers, min(num_prompts, len(papers)))
+
+
+def filter_papers_by_ids(papers: list, ids_file) -> list:
+    wanted = {
+        line.strip()
+        for line in ids_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
+    selected = [paper for paper in papers if paper.arxiv_id in wanted]
+    missing = wanted - {paper.arxiv_id for paper in selected}
+    if missing:
+        print(
+            f"Warning: {len(missing)} requested id(s) not in dataset: "
+            f"{', '.join(sorted(missing)[:10])}",
+            file=sys.stderr,
+        )
+    return selected
 
 
 def normalized_server_url(value: str) -> str:

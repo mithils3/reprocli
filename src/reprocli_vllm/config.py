@@ -17,7 +17,8 @@ PLACEHOLDER = "{PAPER_TEXT}"
 TEX_EXTENSION = ".tex"
 MAX_MODEL_LEN = 196608
 TOOL_TIMEOUT = 20.0
-TOOL_MAX_CHARS = 2_000_000
+TOOL_MAX_CHARS = 24_000
+TOOL_RESULT_MAX_CHARS = 40_000
 BUNDLE_FILE_DEFAULT_CHARS = 60_000
 BUNDLE_FILE_MAX_CHARS = 200_000
 REQUEST_TIMEOUT = 1800.0
@@ -58,21 +59,25 @@ WEB_SYSTEM_MESSAGE = (
     "promising GitHub repos, read README files and key docs, configs, examples, "
     "or scripts with github_file_contents before counting code as available. Do not call the "
     "same tool with identical arguments twice. After reasonable variant "
-    "searches and direct checks are exhausted, mark missing artifacts "
-    "unavailable or unverified. Return only the requested JSON object."
+    "searches and direct checks are exhausted, set the signal value to false "
+    "with verification tool_searched_not_found; finding nothing after a real "
+    "search is successful verification of absence, not a tool failure. Return "
+    "only the requested JSON object."
 )
 FINAL_NO_TOOLS_MESSAGE = (
-    "Tool use is complete and no tools are available in this request. Use only "
-    "the paper text and prior tool results already in the conversation. Think "
-    "through the private consistency checklist before answering: clean URLs only "
-    "in verified_links, web_verification is available/partial/unavailable, signals "
-    "booleans are scoped to the MRE, and h100_hours_estimate matches its basis. "
-    "Do not include score or tier; the extractor computes them deterministically. "
-    "If searches failed, summarize the meaningful query families tried "
-    "inside the relevant evidence string; do not put search text in "
-    "verified_links. Return only the requested JSON object. The first output "
-    "character must be { and the last output character must be }. Do not write "
-    "search plans, tool calls, markdown fences, or prose outside the JSON."
+    "The tool phase is finished. Write the final JSON now from the paper text "
+    "and the tool results above. Fill each signal's verification field with "
+    "what actually happened during the tool phase; this message is not a tool "
+    "failure. Checklist: clean URLs only in verified_links; search summaries go "
+    "in evidence strings, not URL arrays; signals are scoped to the MRE; "
+    "h100_estimate.hours matches its arithmetic fields; no score or tier. "
+    "Return only the JSON object: the first output character must be { and the "
+    "last must be }. No prose, no markdown fences, no tool calls."
+)
+CONTEXT_BUDGET_NOTE = (
+    "The conversation hit its context budget, so the tool phase ended early. "
+    "Mark any category you could not finish checking as tool_failed or "
+    "paper_text_only instead of guessing. "
 )
 
 
@@ -165,7 +170,7 @@ WEB_TOOLS = [
     ),
     function_tool(
         "github_file_contents",
-        "Read a GitHub file or directory through MCP. Use for README.md, docs, configs, examples, scripts, and training/eval files; MCP text is returned without local truncation.",
+        "Read a GitHub file or directory through MCP. Use for README.md, docs, configs, examples, scripts, and training/eval files; long results are truncated, so request specific paths.",
         {
             "repo": {"type": "string", "description": "GitHub URL or owner/repo."},
             "path": {"type": "string", "description": "File or directory path."},
@@ -175,7 +180,7 @@ WEB_TOOLS = [
     ),
     function_tool(
         "github_repository_tree",
-        "Read a GitHub repository tree through MCP.",
+        "Read a GitHub repository tree through MCP. Prefer path_filter over recursive listings; large trees are truncated.",
         {
             "repo": {"type": "string", "description": "GitHub URL or owner/repo."},
             "path_filter": {"type": "string", "description": "Optional path prefix."},

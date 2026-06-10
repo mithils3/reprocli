@@ -125,8 +125,16 @@ def build(base: Path, out_dir: Path, traces_dir: Path) -> dict[str, dict[str, An
             "signals": signals,
             "score": row.get("score"),
             "tier": row.get("tier"),
+            "verification_status": row.get("verification_status"),
+            "exit_reason": row.get("exit_reason"),
+            "paper_kind": row.get("paper_kind"),
             "h100_hours_estimate": row.get("h100_hours_estimate"),
             "h100_estimate_basis": row.get("h100_estimate_basis"),
+            "h100_estimate": row.get("h100_estimate"),
+            "h100_band": row.get("h100_band"),
+            "h100_recomputed_hours": row.get("h100_recomputed_hours"),
+            "h100_arithmetic_mismatch": row.get("h100_arithmetic_mismatch"),
+            "h100_needs_human_review": row.get("h100_needs_human_review"),
             "has_trace": False,
         }
 

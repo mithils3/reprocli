@@ -15,9 +15,14 @@ def paper_bundle_file_contents_tool(
     if not path_result["ok"]:
         return path_result
     path = str(path_result["path"])
-    item = supplement_files_by_path(paper).get(path)
+    files_by_path = supplement_files_by_path(paper)
+    item = files_by_path.get(path)
     if item is None:
-        return {"ok": False, "error": f"Unknown supplement file path: {path}"}
+        return {
+            "ok": False,
+            "error": f"Unknown supplement file path: {path}",
+            "available_paths": manifest_path_listing(files_by_path),
+        }
     max_chars = bounded_max_chars(arguments.get("max_chars"))
     payload = file_metadata(item, path)
     if not item.get("is_text"):
@@ -50,6 +55,13 @@ def normalize_manifest_path(value: Any) -> dict[str, Any]:
     if normalized in {"", "."}:
         return {"ok": False, "error": "Missing supplement file path"}
     return {"ok": True, "path": normalized}
+
+
+def manifest_path_listing(files_by_path: dict[str, dict], limit: int = 40) -> list[str]:
+    paths = sorted(files_by_path)
+    if len(paths) > limit:
+        return [*paths[:limit], f"... and {len(paths) - limit} more"]
+    return paths
 
 
 def supplement_files_by_path(paper: Paper) -> dict[str, dict]:

@@ -32,6 +32,11 @@ create table if not exists public.verifications (
   dataset_standard_verdict text,
   dataset_standard_note    text,
 
+  -- H100 compute-band review (step 5): confirm the band, not the number
+  h100_band_verdict   text,               -- 'agree' | 'disagree' | 'unsure'
+  h100_band_suggested text,               -- reviewer's band ('0-8' … '>192'), if disagree
+  h100_band_note      text,
+
   -- score review
   score_verdict   text,                   -- 'agree' | 'disagree' | 'unsure'
   score_suggested int,                    -- reviewer's own score, if disagree
@@ -48,6 +53,11 @@ create table if not exists public.verifications (
 
   unique (paper_id, reviewer)
 );
+
+-- Existing deployments: bring the table up to date (safe to run twice).
+alter table public.verifications add column if not exists h100_band_verdict   text;
+alter table public.verifications add column if not exists h100_band_suggested text;
+alter table public.verifications add column if not exists h100_band_note      text;
 
 create index if not exists verifications_reviewer_idx on public.verifications (reviewer);
 create index if not exists verifications_paper_idx    on public.verifications (paper_id);

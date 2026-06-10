@@ -16,7 +16,7 @@ from reprocli_vllm.output_schema import (
 def classification_row(**signals: bool) -> dict:
     return {
         "signals": {
-            name: {"value": value, "evidence": "test"}
+            name: {"value": value, "verification": "tool_verified", "evidence": "test"}
             for name, value in signals.items()
         }
     }
@@ -28,6 +28,15 @@ class OutputSchemaTests(unittest.TestCase):
         self.assertNotIn("tier", FINAL_JSON_SCHEMA["required"])
         self.assertNotIn("score", FINAL_JSON_SCHEMA["properties"])
         self.assertNotIn("tier", FINAL_JSON_SCHEMA["properties"])
+
+    def test_model_schema_does_not_request_web_verification(self) -> None:
+        self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["required"])
+        self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["properties"])
+
+    def test_signals_require_verification_state(self) -> None:
+        signal = FINAL_JSON_SCHEMA["properties"]["signals"]["properties"]["code_available"]
+        self.assertIn("verification", signal["required"])
+        self.assertIn("tool_searched_not_found", signal["properties"]["verification"]["enum"])
 
     def test_score_skips_missing_standard_dataset(self) -> None:
         row = classification_row(

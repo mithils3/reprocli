@@ -3,14 +3,63 @@ from __future__ import annotations
 from typing import Any
 
 
+SIGNAL_NAMES = (
+    "code_available",
+    "dataset_available",
+    "weights_available",
+    "dataset_is_standard",
+)
+VERIFICATION_STATES = (
+    "tool_verified",
+    "tool_searched_not_found",
+    "tool_failed",
+    "paper_text_only",
+    "not_applicable",
+)
+PAPER_KINDS = ("empirical", "theoretical", "position", "survey")
+NON_EMPIRICAL_TIER = "Out-of-Scope-Non-Empirical"
+H100_BASIS_KINDS = (
+    "paper_reported",
+    "derived_from_config",
+    "comparable_experiment",
+    "compute_unspecified",
+)
+
+
 def signal_schema() -> dict:
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": ["value", "evidence"],
+        "required": ["value", "verification", "evidence"],
         "properties": {
             "value": {"type": "boolean"},
+            "verification": {"type": "string", "enum": list(VERIFICATION_STATES)},
             "evidence": {"type": "string"},
+        },
+    }
+
+
+def h100_estimate_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "hours",
+            "basis_kind",
+            "gpu_count",
+            "gpu_type",
+            "wallclock_hours",
+            "h100_equivalent_multiplier",
+            "basis",
+        ],
+        "properties": {
+            "hours": {"type": "number"},
+            "basis_kind": {"type": "string", "enum": list(H100_BASIS_KINDS)},
+            "gpu_count": {"type": ["number", "null"]},
+            "gpu_type": {"type": ["string", "null"]},
+            "wallclock_hours": {"type": ["number", "null"]},
+            "h100_equivalent_multiplier": {"type": ["number", "null"]},
+            "basis": {"type": "string"},
         },
     }
 
@@ -25,22 +74,18 @@ FINAL_RESPONSE_FORMAT = {
             "required": [
                 "central_claim",
                 "claim_evidence",
+                "paper_kind",
                 "mre_config",
-                "web_verification",
                 "verified_links",
                 "signals",
                 "agent_task",
-                "h100_hours_estimate",
-                "h100_estimate_basis",
+                "h100_estimate",
             ],
             "properties": {
                 "central_claim": {"type": "string"},
                 "claim_evidence": {"type": "string"},
+                "paper_kind": {"type": "string", "enum": list(PAPER_KINDS)},
                 "mre_config": {"type": "string"},
-                "web_verification": {
-                    "type": "string",
-                    "enum": ["available", "partial", "unavailable"],
-                },
                 "verified_links": {
                     "type": "object",
                     "additionalProperties": False,
@@ -69,8 +114,7 @@ FINAL_RESPONSE_FORMAT = {
                     },
                 },
                 "agent_task": {"type": "string"},
-                "h100_hours_estimate": {"type": "number"},
-                "h100_estimate_basis": {"type": "string"},
+                "h100_estimate": h100_estimate_schema(),
             },
         },
     },
@@ -84,15 +128,7 @@ def deterministic_score_and_tier(row: dict[str, Any]) -> tuple[int, str] | None:
     if not isinstance(signals, dict):
         return None
 
-    values = {
-        name: signal_value(signals.get(name))
-        for name in (
-            "code_available",
-            "dataset_available",
-            "weights_available",
-            "dataset_is_standard",
-        )
-    }
+    values = {name: signal_value(signals.get(name)) for name in SIGNAL_NAMES}
     if any(value is None for value in values.values()):
         return None
 

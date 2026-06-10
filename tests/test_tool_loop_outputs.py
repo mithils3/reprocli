@@ -26,12 +26,13 @@ class ToolLoopOutputTests(unittest.TestCase):
             row = final_row(
                 json.dumps(
                     {
+                        "paper_kind": "empirical",
                         "signals": {
-                            "code_available": {"value": True, "evidence": "repo"},
-                            "dataset_available": {"value": True, "evidence": "data"},
-                            "weights_available": {"value": False, "evidence": "none"},
-                            "dataset_is_standard": {"value": True, "evidence": "bench"},
-                        }
+                            "code_available": signal(True, "repo"),
+                            "dataset_available": signal(True, "data"),
+                            "weights_available": signal(False, "none"),
+                            "dataset_is_standard": signal(True, "bench"),
+                        },
                     }
                 )
             )
@@ -42,8 +43,15 @@ class ToolLoopOutputTests(unittest.TestCase):
             extracted = read_jsonl(args.extracted_output)
             self.assertEqual(extracted[0]["score"], 1)
             self.assertEqual(extracted[0]["tier"], "Medium")
+            self.assertEqual(extracted[0]["verification_status"], "verified")
+            self.assertEqual(extracted[0]["web_verification"], "available")
             trace = read_jsonl(args.trace_output)
             self.assertEqual(trace[0]["custom_id"], "2501.00001")
+
+
+def signal(value: bool, evidence: str) -> dict:
+    state = "tool_verified" if value else "tool_searched_not_found"
+    return {"value": value, "verification": state, "evidence": evidence}
 
 
 def final_row(content: str) -> dict:
