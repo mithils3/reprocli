@@ -20,7 +20,7 @@ def apply_model_defaults(args: argparse.Namespace) -> None:
 def apply_minimax_profile(args: argparse.Namespace) -> None:
     args.tensor_parallel_size = args.tensor_parallel_size or 4
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.95
+    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.98
     args.tool_call_parser = args.tool_call_parser or "minimax_m2"
     args.reasoning_parser = args.reasoning_parser or "minimax_m2"
     args.tokenizer_mode = args.tokenizer_mode or None

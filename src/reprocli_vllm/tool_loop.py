@@ -17,6 +17,7 @@ from .vllm_io import (
     tool_result_message,
 )
 from .config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from .hf_upload import OUTPUT_WRITE_LOCK
 from .loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
 from .papers import Paper
 from .run_health import loop_telemetry
@@ -212,10 +213,11 @@ def append_completed_outputs(
     messages: list[dict[str, Any]],
     args: argparse.Namespace,
 ) -> None:
-    append_jsonl_row(args.output, row, truncate=False)
-    append_jsonl_row(args.extracted_output, extracted_response(custom_id, row), truncate=False)
-    if args.save_round_jsonl:
-        append_trace_row(args.trace_output, custom_id, messages, row)
+    with OUTPUT_WRITE_LOCK:
+        append_jsonl_row(args.output, row, truncate=False)
+        append_jsonl_row(args.extracted_output, extracted_response(custom_id, row), truncate=False)
+        if args.save_round_jsonl:
+            append_trace_row(args.trace_output, custom_id, messages, row)
 
 
 def noop() -> None:

@@ -313,4 +313,4 @@ PYTHONPATH=src python3 -m reprocli_data.build_dataset \
     --data-dir /work/nvme/bfvr/msalunkhe/dataset \
     --workers 32 \
     --allow-failures \
-    --stages upload
+    --stages upload \
