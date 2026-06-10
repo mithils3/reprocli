@@ -34,29 +34,61 @@ tools/verify_app/
 > script pulls the authoritative title, authors, year, and abstract from the arXiv
 > API, keyed by arXiv id, and `build_data.py` re-merges the cache on every rebuild.
 
-## How reviewers use it
+## How reviewers use it (guided flow — no choices)
 
-1. Open the URL, type your name — you're **dropped straight into the first unlabelled paper**.
+Reviewers **don't pick papers**: the queue feeds them one at a time. There is no
+paper list / no filters for non-admins — just the current paper and one button.
+
+1. Open the URL, type your name — you're **dropped straight into the next unlabelled paper**.
    The header shows the real arXiv title, authors, year, and the **abstract** so you know what to search for.
-2. **Four artifact steps** — code / dataset / weights / standard-dataset. Each shows the model's verdict + evidence; **do your own search** with the shortcut buttons, then click **Agree / Disagree / Unsure**, optionally paste the link you found and a note. After you answer, the step spells out what your verdict means (e.g. "Your answer: code is available — NO").
-   **Keyboard shortcuts:** `a` / `d` / `u` answer the first open step, `n` = save & next, `p` = previous (active when you're not typing in a field).
+2. **Four artifact steps, unlocked one at a time** — code / dataset / weights / standard-dataset.
+   Only the current step is active (later ones show 🔒 until the one above is answered;
+   answered steps stay editable). Each shows the model's verdict + evidence; **do your own
+   search** with the shortcut buttons, then click **Agree / Disagree / Unsure**, optionally
+   paste the link you found and a note. Answering auto-scrolls you to the next step.
+   **Keyboard shortcuts:** `a` / `d` / `u` answer the current step, `n` = save & next, `p` = previous.
 3. **Step 5 is the score — it is computed automatically** from your four verdicts using the project formula `(no code +2) + (no dataset & non-standard +3) + (no weights +1)`, and shown next to the model's score (✓ matches / ✗ differs). Reviewers never type a score.
-4. **Save & next** moves you to the next paper in the queue. A paper turns green once all four steps are answered. Switching papers **auto-saves** your draft, and closing the tab with unsaved work warns you first.
+4. The footer has **one primary button: "Save & next paper →"**. It stays disabled
+   ("Answer all 4 steps to continue (2/4)") until every step is answered, then turns green
+   and pulses. Trying to advance early shakes the unanswered step. Small de-emphasized
+   links cover the edge cases: **← previous** and **skip for now →** (logs the skip,
+   keeps your draft). Switching papers **auto-saves** your draft, and closing the tab
+   with unsaved work warns you first.
 
 ### The queue (no double-work)
 
-The default **To label** list is a shared work queue: **the moment any reviewer completes a paper it disappears from everyone's queue**, so people just keep grabbing the next unprocessed one. Everything updates **live**:
+The queue is shared: **the moment any reviewer completes a paper it disappears from everyone's queue**, so people just keep getting the next unprocessed one. Everything updates **live**:
 
-- A red **● live** marker + banner show when someone else is viewing a paper *right now* (Supabase Realtime presence).
-- Green **✓N** / amber **⋯N** markers show how many *other* reviewers have completed / started a paper (names on hover).
-- Other filters: **My in-progress** (resume your half-done ones), **Completed**, **Disagreements**, and **All** (see everything, including finished papers). Your work always reloads by name.
+- A red **● live** banner shows when someone else is viewing the same paper *right now* (Supabase Realtime presence).
+- **Admins** additionally get the browsable sidebar with filters (**To label / My in-progress / Completed / Disagreements / All**), search, and per-paper ✓N / ⋯N reviewer markers. Your work always reloads by name.
+
+## Telemetry
+
+Every behavioural event is appended to the `activity` table; the `detail` column is a
+**JSON string** so you can slice it in SQL or the CSV. Events:
+
+| event | detail |
+|---|---|
+| `login` / `logout` / `session_end` | admin flag, user-agent / active seconds at exit |
+| `paper_opened` / `paper_left` | queue size / **active seconds** (visibility-aware stopwatch) + steps answered |
+| `verdict_set` | step, verdict, previous value, `via` click-or-keyboard, **seconds into the paper** |
+| `search_click` / `link_click` | which search shortcut / header quick-link they used |
+| `evidence_opened` / `context_opened` / `trace_opened` | did they look at the model's evidence before answering |
+| `note_edited` / `found_url` | once per step per paper open |
+| `saved` / `completed` | active seconds, steps answered, which signals they disagreed on, score match |
+| `skipped` / `blocked_next` | bailed on a paper / tried Save & next before finishing |
+| `tab_hidden` / `tab_visible` | when they leave to go search (time off-tab is *excluded* from active seconds) |
+
+The "active seconds" stopwatch pauses while the tab is hidden, so time-per-paper
+reflects actual attention, not an open background tab.
 
 ## Dashboard (admins only)
 
 A **Dashboard** tab appears for names in `ADMIN_NAMES`:
 
 - KPI cards: total papers, papers reviewed ≥1×, fully completed, # reviewers, # disagreements.
-- Per-reviewer progress + last-active time.
-- Live activity feed (realtime).
+- Per-reviewer table: progress, **median active time per paper, search clicks, skips,
+  blocked-next attempts**, last-active time.
+- Live activity feed (realtime) with the telemetry detail inline.
 - Table of every disagreement with the model (which signal, their score, notes).
 - **Export CSV** of all verifications.

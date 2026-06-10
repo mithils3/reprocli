@@ -121,16 +121,36 @@ fi
 export HEAD_NODE="${NODES[0]}"
 export WORKER_NODE="${NODES[1]}"
 
+if [[ -z "${IFACE_NAME:-}" ]]; then
+  echo "IFACE_NAME is not set; run section 3 first. With an empty interface name,"
+  echo "'ip addr show' lists every interface and the first match is loopback,"
+  echo "which silently makes HEAD_IP=127.0.0.1 and breaks the multi-node rendezvous."
+  return 1 2>/dev/null || exit 1
+fi
+
 export HEAD_IP
 HEAD_IP=$(
   srun "${SRUN_JOB_ARG[@]}" --nodes=1 --ntasks=1 --nodelist="${HEAD_NODE}" bash -lc \
     "ip -o -4 addr show ${IFACE_NAME} | awk '{split(\$4,a,\"/\"); print a[1]; exit}'"
 )
 
+if [[ -z "${HEAD_IP}" || "${HEAD_IP}" == 127.* ]]; then
+  echo "Bad HEAD_IP='${HEAD_IP}' from interface '${IFACE_NAME}' on ${HEAD_NODE}."
+  echo "Inspect interfaces and pick the fabric one, then re-run this section:"
+  echo "  srun --jobid=\${SLURM_JOB_ID} --nodes=1 --ntasks=1 --nodelist=${HEAD_NODE} bash -lc 'ip -o -4 addr show'"
+  return 1 2>/dev/null || exit 1
+fi
+
 echo "HEAD_NODE=${HEAD_NODE}"
 echo "WORKER_NODE=${WORKER_NODE}"
 echo "HEAD_IP=${HEAD_IP}"
 ```
+
+If the launch ever logs `master_addr=127.0.0.1` (visible in the vLLM
+`DP group leader:` line), the worker node can never join the TCPStore at
+port `29501` and startup fails after ~10 minutes with
+`Timed out after 601 seconds waiting for clients. 4/8 clients joined`.
+That always means HEAD_IP was wrong at launch time — fix it here first.
 
 ## 5. Launch the Two-Node vLLM Server
 
@@ -266,3 +286,24 @@ For `N` nodes with 4 GPUs per node, keep `--tensor-parallel-size 4`, set
 
 If you use 8 GPUs per node instead, set `--tensor-parallel-size 8`. In that
 case, a 2-node run has `TP=8`, `PP=2`, and `16` total GPUs.
+
+
+
+
+
+## Summary
+
+**Root cause:** `HEAD_IP` was `127.0.0.1` when you launched, so vLLM started with `master_addr=127.0.0.1`. The 4 workers on the second node (gh120) tried to reach the rendezvous TCPStore at their *own* loopback on port 29501, never joined, and the head node timed out with `4/8 clients joined`. This almost certainly happened because `IFACE_NAME` was empty when step 4 of the runbook ran — `ip -o -4 addr show` with no interface argument lists everything and the awk grabs the first address, which is `lo` → `127.0.0.1`. Your failed `curl` against `127.0.0.1:8000` is the same bad variable.
+
+**To recover in your current allocation** (still has time on job 2448159):
+
+1. `srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 bash -lc "ip -o -4 addr show"` to confirm the fabric interface (likely `hsn0`; the head node's real IP is `141.142.249.0` per the log).
+2. `export IFACE_NAME=hsn0; export GLOO_SOCKET_IFNAME=$IFACE_NAME; export NCCL_SOCKET_IFNAME=$IFACE_NAME`
+3. Re-run the step-4 HEAD_IP discovery, verify `echo $HEAD_IP` prints a real address (not empty, not `127.x`).
+4. Re-run the step-5 `srun ... vllm serve` block. The old job step already exited, so nothing needs killing.
+
+**Runbook hardened:** I updated `scripts/kimi_k2_6_multinode_interactive.md` so step 4 now fails fast if `IFACE_NAME` is unset or if the derived `HEAD_IP` is empty/loopback, with a note explaining that `master_addr=127.0.0.1` in the vLLM log always means this exact failure. The change is unstaged on your `kimi-k2-6-model` branch — commit it when you're happy with it.
+HEAD_IP=$(srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 --nodelist=gh049 \
+  ip -o -4 addr show hsn0 | awk '{split($4,a,"/"); print a[1]; exit}')
+export HEAD_IP
+echo "$HEAD_IP"
