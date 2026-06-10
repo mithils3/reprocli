@@ -163,12 +163,3 @@ directories under `<data-dir>/arxiv_sources/`.
 
 ## Useful Flags
 
-- `--tool-rounds 12`: maximum tool-use rounds before the final answer.
-- `--max-input-tokens 128000`: cap prompt tokens so output has room in context.
-- `--max-tokens 8192`: maximum generated tokens per model response.
-- `--request-workers 16`: number of concurrent request/tool pipelines.
-- `--stream-first-response`: print one live response stream while preserving JSONL output.
-- `--save-round-jsonl`: write one `*_trace.jsonl` file with the full message/tool history per paper.
-- `--vllm-cache-dir`: sets `VLLM_CACHE_ROOT`; local model paths default to `<model>/vllm_cache`.
-- `--distributed-executor-backend mp`: pins the embedded server to local multiprocessing.
-- `--compilation-config '{"cudagraph_mode":"PIECEWISE"}'`: avoids the fragile full CUDA graph startup path for MiniMax.
