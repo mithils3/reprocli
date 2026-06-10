@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import os
 import shlex
-import urllib.parse
 import json
 from functools import cache
 from typing import Any
 
 from ..config import TOOL_TIMEOUT
-from .huggingface_tree import safe_repository_tree_summary
+from .huggingface_tree import (
+    normalize_repo_type,
+    parse_repo_arg as parse_hf_repo,
+    safe_repository_tree_summary,
+)
 from .mcp_client import MCPError, StdioMCPClient, StreamableHTTPMCPClient
 from .mcp_results import mcp_tool_result
 
@@ -255,44 +258,3 @@ def single_repo_type(repo_types: list[str]) -> str | None:
     return None
 
 
-def normalize_repo_type(repo_type: str) -> str:
-    aliases = {
-        "models": "model",
-        "datasets": "dataset",
-        "spaces": "space",
-        "repo": "auto",
-        "repository": "auto",
-        "": "auto",
-    }
-    return aliases.get(repo_type.strip().lower(), repo_type.strip().lower())
-
-
-def parse_hf_repo(value: str, repo_type: str) -> tuple[str, str] | None:
-    value = value.strip()
-    if not value:
-        return None
-    parsed = urllib.parse.urlparse(value)
-    if parsed.netloc.endswith("huggingface.co"):
-        repo_type, repo_id = parse_hf_url_parts(parsed.path, repo_type)
-    else:
-        repo_id = value
-    return (repo_id, repo_type) if "/" in repo_id else None
-
-
-def parse_hf_url_parts(path: str, repo_type: str) -> tuple[str, str]:
-    parts = [part for part in path.split("/") if part]
-    if parts and parts[0] == "models":
-        repo_type, parts = "model", parts[1:]
-    elif parts and parts[0] == "datasets":
-        repo_type, parts = "dataset", parts[1:]
-    elif parts and parts[0] == "spaces":
-        repo_type, parts = "space", parts[1:]
-    stop_words = {"tree", "blob", "resolve", "files", "discussions"}
-    repo_parts = []
-    for part in parts:
-        if part in stop_words:
-            break
-        repo_parts.append(part)
-        if len(repo_parts) == 2:
-            break
-    return repo_type, "/".join(repo_parts)

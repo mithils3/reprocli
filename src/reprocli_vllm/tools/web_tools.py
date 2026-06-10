@@ -10,9 +10,6 @@ from .github_mcp import (
     github_repo_tool,
     github_repository_tree_tool,
     github_search_code_tool,
-    github_search_commits_tool,
-    github_search_issues_tool,
-    github_search_pull_requests_tool,
     github_search_repositories_tool,
 )
 from .huggingface_mcp import huggingface_repo_tool, huggingface_search_tool
@@ -44,9 +41,6 @@ def fetch_url_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 TOOL_HANDLERS = {
     "github_search_repositories": github_search_repositories_tool,
     "github_search_code": github_search_code_tool,
-    "github_search_commits": github_search_commits_tool,
-    "github_search_issues": github_search_issues_tool,
-    "github_search_pull_requests": github_search_pull_requests_tool,
     "github_repo": github_repo_tool,
     "github_file_contents": github_file_contents_tool,
     "github_repository_tree": github_repository_tree_tool,

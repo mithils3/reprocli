@@ -10,10 +10,6 @@ from .config import KIMI_K2_6_MODEL, MAX_MODEL_LEN
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
 
 
-def apply_minimax_defaults(args: argparse.Namespace) -> None:
-    apply_model_defaults(args)
-
-
 def apply_model_defaults(args: argparse.Namespace) -> None:
     if is_kimi_k2_6(args.model):
         apply_kimi_defaults(args)

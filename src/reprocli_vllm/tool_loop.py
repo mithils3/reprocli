@@ -7,7 +7,6 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
 from .vllm_io import (
-    append_assistant_tool_call,
     append_jsonl_row,
     build_chat_completion_request,
     extracted_response,
@@ -223,6 +222,13 @@ def noop() -> None:
     return None
 
 
+def final_user_message(budget_note: bool) -> dict[str, Any]:
+    content = FINAL_NO_TOOLS_MESSAGE
+    if budget_note:
+        content = CONTEXT_BUDGET_NOTE + content
+    return {"role": "user", "content": content}
+
+
 def conversation_for_round(
     messages: list[dict],
     include_tools: bool,
@@ -231,10 +237,7 @@ def conversation_for_round(
 ) -> list[dict]:
     if include_tools:
         return messages
-    final_message = FINAL_NO_TOOLS_MESSAGE
-    if budget_note:
-        final_message = CONTEXT_BUDGET_NOTE + final_message
-    return [*messages, {"role": "user", "content": final_message}]
+    return [*messages, final_user_message(budget_note)]
 
 
 def append_tool_results(
@@ -244,7 +247,7 @@ def append_tool_results(
     paper: Paper,
     counts: Counter,
 ) -> None:
-    append_assistant_tool_call(messages, message, tool_calls)
+    messages.append(assistant_message(message, tool_calls))
     for call in tool_calls:
         result = execute_tool_call(call, paper=paper)
         record_tool_call(counts, call, result)
@@ -260,8 +263,5 @@ def append_final_message(
     budget_note: bool = False,
 ) -> None:
     if not include_tools:
-        final_message = FINAL_NO_TOOLS_MESSAGE
-        if budget_note:
-            final_message = CONTEXT_BUDGET_NOTE + final_message
-        messages.append({"role": "user", "content": final_message})
+        messages.append(final_user_message(budget_note))
     messages.append(assistant_message(message, tool_calls))

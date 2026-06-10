@@ -33,33 +33,6 @@ def github_search_code_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def github_search_commits_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    return github_query_tool(
-        "search_commits",
-        arguments,
-        {},
-        "Use this to find artifact-release commits in known repos.",
-    )
-
-
-def github_search_issues_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    return github_query_tool(
-        "search_issues",
-        arguments,
-        optional_repo_scope(arguments),
-        "Use this for release-status, artifact, or reproduction issue evidence.",
-    )
-
-
-def github_search_pull_requests_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    return github_query_tool(
-        "search_pull_requests",
-        arguments,
-        optional_repo_scope(arguments),
-        "Use this for merged artifact-release or implementation PR evidence.",
-    )
-
-
 def github_file_contents_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     owner, repo = github_owner_repo(arguments)
     path = str(arguments.get("path") or "")
@@ -201,13 +174,6 @@ def github_owner_repo(arguments: dict[str, Any]) -> tuple[str, str]:
         f"Provide repo as owner/name or a github.com URL (got repo={repo_value!r}, "
         f"owner={owner!r}, name={name!r})"
     )
-
-
-def optional_repo_scope(arguments: dict[str, Any]) -> dict[str, Any]:
-    result = {}
-    optional_param(result, arguments, "owner")
-    optional_param(result, arguments, "repo")
-    return result
 
 
 def optional_param(target: dict[str, Any], source: dict[str, Any], key: str) -> None:

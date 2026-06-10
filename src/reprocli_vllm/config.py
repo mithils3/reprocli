@@ -3,10 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ARXIV_SOURCE_DATASET = "Mithilss/neurips-2025-arxiv-latex-sources"
 PAPER_BUNDLE_DATASET = "Mithilss/neurips-2025-paper-bundles"
 PAPER_BUNDLE_DATASET_URL = "https://huggingface.co/datasets/Mithilss/neurips-2025-paper-bundles"
-DEFAULT_DATASET = ARXIV_SOURCE_DATASET
 DEFAULT_VLLM_DATASET = PAPER_BUNDLE_DATASET
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
@@ -14,7 +12,6 @@ DEFAULT_MODEL = MINIMAX_M2_MODEL
 DEFAULT_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial.jsonl")
 DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial_extracted.jsonl")
 PLACEHOLDER = "{PAPER_TEXT}"
-TEX_EXTENSION = ".tex"
 MAX_MODEL_LEN = 196608
 TOOL_TIMEOUT = 20.0
 TOOL_MAX_CHARS = 24_000
@@ -101,7 +98,7 @@ def function_tool(
     }
 
 
-def query_tool(name: str, description: str, *, repo_scope: bool = False) -> dict:
+def query_tool(name: str, description: str) -> dict:
     properties = {
         "query": {
             "type": "string",
@@ -116,9 +113,6 @@ def query_tool(name: str, description: str, *, repo_scope: bool = False) -> dict
         "sort": {"type": "string", "description": "Optional GitHub sort field."},
         "order": {"type": "string", "enum": ["asc", "desc"]},
     }
-    if repo_scope:
-        properties["owner"] = {"type": "string", "description": "Optional repository owner."}
-        properties["repo"] = {"type": "string", "description": "Optional repository name."}
     return function_tool(name, description, properties, ["query"])
 
 
@@ -147,20 +141,6 @@ WEB_TOOLS = [
     query_tool(
         "github_search_code",
         "Search GitHub code through MCP. Supports GitHub code-search syntax such as quoted phrases, OR, NOT, and qualifiers; keep query under 256 characters.",
-    ),
-    query_tool(
-        "github_search_commits",
-        "Search GitHub commits through MCP for artifact-release or implementation clues.",
-    ),
-    query_tool(
-        "github_search_issues",
-        "Search GitHub issues through MCP for release-status or reproduction evidence.",
-        repo_scope=True,
-    ),
-    query_tool(
-        "github_search_pull_requests",
-        "Search GitHub pull requests through MCP for merged artifact or implementation evidence.",
-        repo_scope=True,
     ),
     function_tool(
         "github_repo",

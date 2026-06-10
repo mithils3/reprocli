@@ -114,22 +114,6 @@ def normalize_tool_calls(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any
     return normalized
 
 
-def append_assistant_tool_call(
-    messages: list[dict[str, Any]],
-    message: dict[str, Any],
-    tool_calls: list[dict[str, Any]],
-) -> None:
-    assistant_message: dict[str, Any] = {
-        "role": "assistant",
-        "tool_calls": tool_calls,
-    }
-    if message.get("content"):
-        assistant_message["content"] = message["content"]
-    if message.get("reasoning"):
-        assistant_message["reasoning"] = message["reasoning"]
-    messages.append(assistant_message)
-
-
 def tool_result_message(call: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     function = call.get("function") or {}
     return {

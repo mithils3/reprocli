@@ -141,7 +141,14 @@ def bounded_max_entries(value: Any) -> int:
 
 
 def normalize_repo_type(repo_type: str) -> str:
-    aliases = {"datasets": "dataset", "spaces": "space", "models": "model", "": "auto"}
+    aliases = {
+        "datasets": "dataset",
+        "spaces": "space",
+        "models": "model",
+        "repo": "auto",
+        "repository": "auto",
+        "": "auto",
+    }
     normalized = repo_type.strip().lower()
     return aliases.get(normalized, normalized)
 
