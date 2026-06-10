@@ -1,25 +1,34 @@
+"""OpenReview client, note/job types, and supplement attachment downloads."""
+
 from __future__ import annotations
 
 import csv
-import json
+import io
 import os
-import re
 import shutil
 import sys
+import tarfile
 import tempfile
 import threading
 import time
 import urllib.parse
+import zipfile
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
-from .arxiv_source_inputs import DownloadResult
-from .archive_extract import unpack_archive
-from .arxiv_source_download import count_files, safe_dirname
-from .rate_limit import RequestThrottle
+from .common import (
+    DownloadResult,
+    RequestThrottle,
+    count_files,
+    extract_tar_members,
+    make_result,
+    safe_archive_target,
+    safe_dirname,
+    write_single_source_file,
+)
 
 
 OPENREVIEW_API = "https://api2.openreview.net"
@@ -29,16 +38,9 @@ THREAD_LOCAL = threading.local()
 
 
 @dataclass(frozen=True)
-class Paper:
-    index: int
-    arxiv_id: str
-    title: str
-
-
-@dataclass(frozen=True)
 class Note:
     note_id: str
-    title: str
+    forum: str
     content: dict[str, Any]
 
 
@@ -50,33 +52,6 @@ class SupplementJob:
     note_id: str
     attachment_name: str
     source_url: str
-
-
-def load_dataset_papers(dataset_name: str, limit: int | None) -> list[Paper]:
-    from datasets import load_dataset
-
-    dataset = load_dataset(dataset_name, split="train")
-    papers: list[Paper] = []
-    seen: set[str] = set()
-    for row in dataset:
-        arxiv_id = str(row.get("arxiv_id") or "")
-        title = str(row.get("title") or "")
-        if not arxiv_id or arxiv_id in seen:
-            continue
-        seen.add(arxiv_id)
-        papers.append(Paper(len(papers) + 1, arxiv_id, title))
-        if limit and len(papers) >= limit:
-            break
-    return papers
-
-
-def load_notes(path: Path | None, api_base: str, venue_id: str, timeout: float) -> list[Note]:
-    if path:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        raw_notes = payload.get("notes", payload) if isinstance(payload, dict) else payload
-    else:
-        raw_notes = fetch_openreview_notes(build_client(api_base), venue_id)
-    return [parse_note(note) for note in raw_notes]
 
 
 def build_client(api_base: str) -> Any:
@@ -103,59 +78,6 @@ def fetch_openreview_notes(client: Any, venue_id: str) -> list[Any]:
     return client.get_all_notes(content={"venueid": venue_id})
 
 
-def parse_note(raw: Any) -> Note:
-    if isinstance(raw, dict):
-        content = raw.get("content") or {}
-        note_id = str(raw.get("id") or raw.get("forum") or "")
-    else:
-        content = getattr(raw, "content", {}) or {}
-        note_id = str(getattr(raw, "id", "") or getattr(raw, "forum", "") or "")
-    return Note(
-        note_id=note_id,
-        title=str(content_value(content.get("title")) or ""),
-        content=content,
-    )
-
-
-def match_jobs(papers: Iterable[Paper], notes: Iterable[Note]) -> tuple[list[SupplementJob], int, int]:
-    notes_by_title = {normalize_title(note.title): note for note in notes if note.note_id}
-    jobs: list[SupplementJob] = []
-    misses = 0
-    no_supplement = 0
-    for paper in papers:
-        note = notes_by_title.get(normalize_title(paper.title))
-        if not note:
-            misses += 1
-            continue
-        attachment = supplement_attachment(note)
-        if not attachment:
-            no_supplement += 1
-            continue
-        field_name, source_url = attachment
-        jobs.append(
-            SupplementJob(
-                paper.index,
-                paper.arxiv_id,
-                paper.title,
-                note.note_id,
-                field_name,
-                source_url,
-            )
-        )
-    return jobs, misses, no_supplement
-
-
-def supplement_attachment(note: Note) -> tuple[str, str] | None:
-    for key, raw_value in note.content.items():
-        if "supplement" not in key.casefold():
-            continue
-        value = content_value(raw_value)
-        if isinstance(value, str) and value:
-            return key, absolute_openreview_url(value)
-        return key, attachment_url(note.note_id, key)
-    return None
-
-
 def attachment_url(note_id: str, field_name: str) -> str:
     query = urllib.parse.urlencode({"id": note_id, "name": field_name})
     return f"{OPENREVIEW_SITE}/attachment?{query}"
@@ -169,17 +91,7 @@ def absolute_openreview_url(value: str) -> str:
     return value
 
 
-def content_value(value: Any) -> Any:
-    if isinstance(value, dict) and "value" in value:
-        return value["value"]
-    return value
-
-
-def normalize_title(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", title.casefold()).strip()
-
-
-def download_jobs(
+def download_supplements(
     jobs: list[SupplementJob],
     output_dir: Path,
     retries: int,
@@ -193,7 +105,7 @@ def download_jobs(
     throttle = RequestThrottle(delay)
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         futures = {
-            pool.submit(download_one, api_base, job, output_dir, retries, overwrite, throttle)
+            pool.submit(download_supplement_one, api_base, job, output_dir, retries, overwrite, throttle)
             for job in islice(pending_jobs, max(1, workers))
         }
         while futures:
@@ -204,7 +116,9 @@ def download_jobs(
                 print(progress_line(len(results), len(jobs), result), file=sys.stderr)
                 for job in islice(pending_jobs, 1):
                     futures.add(
-                        pool.submit(download_one, api_base, job, output_dir, retries, overwrite, throttle)
+                        pool.submit(
+                            download_supplement_one, api_base, job, output_dir, retries, overwrite, throttle
+                        )
                     )
     return sorted(results, key=lambda item: item.index)
 
@@ -216,7 +130,7 @@ def progress_line(done: int, total: int, result: DownloadResult) -> str:
     return line
 
 
-def download_one(
+def download_supplement_one(
     api_base: str,
     job: SupplementJob,
     output_dir: Path,
@@ -226,7 +140,9 @@ def download_one(
 ) -> DownloadResult:
     target = output_dir / safe_dirname(job.arxiv_id)
     if target.is_dir() and any(target.iterdir()) and not overwrite:
-        return result(job, "skipped_existing", target, count_files(target), 0)
+        return make_result(
+            job.index, job.arxiv_id, job.title, job.source_url, "skipped_existing", target, count_files(target), 0
+        )
     tmp_dir = Path(tempfile.mkdtemp(dir=output_dir))
     try:
         client = thread_client(api_base)
@@ -235,31 +151,14 @@ def download_one(
         if target.exists():
             shutil.rmtree(target)
         tmp_dir.rename(target)
-        return result(job, "downloaded", target, files_written, len(data))
+        return make_result(
+            job.index, job.arxiv_id, job.title, job.source_url, "downloaded", target, files_written, len(data)
+        )
     except Exception as error:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-        return result(job, "failed", target, 0, 0, str(error))
-
-
-def result(
-    job: SupplementJob,
-    status: str,
-    target: Path,
-    files_written: int,
-    bytes_downloaded: int,
-    error: str = "",
-) -> DownloadResult:
-    return DownloadResult(
-        index=job.index,
-        arxiv_id=job.arxiv_id,
-        title=job.title,
-        source_url=job.source_url,
-        status=status,
-        output_path=str(target),
-        files_written=files_written,
-        bytes_downloaded=bytes_downloaded,
-        error=error,
-    )
+        return make_result(
+            job.index, job.arxiv_id, job.title, job.source_url, "failed", target, 0, 0, str(error)
+        )
 
 
 def get_attachment_bytes(
@@ -288,6 +187,32 @@ def get_attachment_bytes(
             if attempt < retries:
                 time.sleep(min(2**attempt, 60))
     raise RuntimeError(f"OpenReview attachment fetch failed: {last_error}") from last_error
+
+
+def unpack_archive(data: bytes, output_dir: Path) -> int:
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            return extract_zip_members(archive, output_dir)
+    except zipfile.BadZipFile:
+        pass
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
+            return extract_tar_members(archive, output_dir)
+    except tarfile.TarError:
+        return write_single_source_file(data, output_dir, "supplementary_material.bin")
+
+
+def extract_zip_members(archive: zipfile.ZipFile, output_dir: Path) -> int:
+    files_written = 0
+    for info in archive.infolist():
+        target = safe_archive_target(output_dir, info.filename)
+        if target is None or info.is_dir():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with archive.open(info) as source, target.open("wb") as handle:
+            shutil.copyfileobj(source, handle)
+        files_written += 1
+    return files_written
 
 
 def write_job_csv(path: Path, jobs: list[SupplementJob]) -> None:
