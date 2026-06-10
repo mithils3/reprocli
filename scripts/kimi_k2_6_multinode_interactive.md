@@ -307,3 +307,10 @@ HEAD_IP=$(srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 --nodelist=gh049 \
   ip -o -4 addr show hsn0 | awk '{split($4,a,"/"); print a[1]; exit}')
 export HEAD_IP
 echo "$HEAD_IP"
+
+
+PYTHONPATH=src python3 -m reprocli_data.build_dataset \
+    --data-dir /work/nvme/bfvr/msalunkhe/dataset \
+    --workers 32 \
+    --allow-failures \
+    --stages upload

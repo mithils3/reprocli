@@ -39,7 +39,7 @@ The extractions are internally consistent (each record correctly describes its a
 ID), but the corpus claim "NeurIPS 2025" is silently ~22% wrong, and this
 contamination is baked into the HF bundle dataset itself, not just the run. Until
 this is fixed and the missing papers re-matched and re-run, freezing any selection
-would lock in the error.
+would lock in the error. - Fixed 
 
 ### 2. The v4 data says the Hard tier is nearly empty — the 25/25/25/25 design is at risk
 
@@ -113,8 +113,6 @@ lockfile.
    `arxiv_source_inputs.load_jobs`, emit the list of ~108 dropped NeurIPS titles,
    re-match them (arXiv API title search with author cross-check), rebuild the bundle
    dataset for the affected IDs, and rerun classification on just those papers.
-2. Fix the failing test; commit and merge the branch state so the team has a clean
-   baseline.
 
 ### Next (data completion)
 

@@ -1,4 +1,4 @@
-Yes — the bug is upstream of the verify app: **the wrong titles were inside the prompts the model was actually run with**, and for most affected papers the pipeline downloaded and analyzed a different paper than intended. Here's the full picture:
+## Fixed bugs 
 
 ## Where it enters the pipeline
 

@@ -140,6 +140,13 @@ PYTHONPATH=src python3 -m reprocli_data.build_dataset --stages bundle --force
 PYTHONPATH=src python3 -m reprocli_data.build_dataset --stages upload
 ```
 
+Once sources and supplements are downloaded, rebuild the Parquet bundle and
+push it to the Hub in one step (replaces any existing bundle output):
+
+```bash
+PYTHONPATH=src python3 -m reprocli_data.publish_bundle --data-dir data
+```
+
 Supplements are matched to OpenReview notes by the forum id from `paper_url`
 (never by title). Optional env vars: `OPENREVIEW_USERNAME`/`OPENREVIEW_PASSWORD`
 for OpenReview, `HF_TOKEN` for upload.
