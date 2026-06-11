@@ -26,6 +26,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from reprocli_openai import recheck  # noqa: E402
+from reprocli_vllm.output_schema import normalize_score_and_tier  # noqa: E402
 from build_data import build, upload_traces  # noqa: E402
 
 BASE = REPO / "outputs/v5/audit_pool"
@@ -38,8 +39,6 @@ SELECTION_FIELDS = (
     "h100_hours_adjudicated",
     "selection_band",
 )
-
-
 def iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
     with path.open("r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -104,7 +103,7 @@ def merge_extracted(base: Path, updates_path: Path, out_base: Path) -> set[str]:
             if not new:
                 yield old
                 continue
-            merged = dict(new)
+            merged = merged_recheck_row(old, new)
             for field in SELECTION_FIELDS:
                 if field in old and old[field] is not None:
                     merged[field] = old[field]
@@ -117,6 +116,26 @@ def merge_extracted(base: Path, updates_path: Path, out_base: Path) -> set[str]:
         raise SystemExit(f"{len(missing)} recheck rows were not in the v5 pool: {sorted(missing)}")
     print(f"wrote {count} merged extracted rows; replaced {len(replaced)}", flush=True)
     return replaced
+
+
+def signal_value(row: dict[str, Any], name: str) -> bool | None:
+    value = ((row.get("signals") or {}).get(name) or {}).get("value")
+    return value if isinstance(value, bool) else None
+
+
+def merged_recheck_row(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(new)
+    if (new.get("tier") == "Artifact-Blocked"
+            and signal_value(old, "dataset_available") is True
+            and signal_value(new, "dataset_available") is False):
+        signals = dict(merged.get("signals") or {})
+        old_signals = old.get("signals") or {}
+        for field in ("dataset_available", "dataset_is_standard"):
+            if field in old_signals:
+                signals[field] = old_signals[field]
+        merged["signals"] = signals
+        merged = normalize_score_and_tier(merged)
+    return merged
 
 
 def output_text(body: dict[str, Any]) -> str:
@@ -229,21 +248,21 @@ def shell_file_value(name: str) -> str | None:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             match = pattern.match(line)
             if match and not line.lstrip().startswith("#"):
-                return match.group(2)
+                return re.sub(r"\s+", "", match.group(2))
     return None
 
 
 def upload_supabase_traces() -> None:
-    if not os.environ.get("SUPABASE_URL"):
-        url = config_value("SUPABASE_URL")
-        if url:
-            os.environ["SUPABASE_URL"] = url
-    if not os.environ.get("SUPABASE_SERVICE_KEY"):
+    url = os.environ.get("SUPABASE_URL") or config_value("SUPABASE_URL")
+    if url:
+        os.environ["SUPABASE_URL"] = url
+    if os.environ.get("SUPABASE_SERVICE_KEY"):
+        os.environ["SUPABASE_SERVICE_KEY"] = re.sub(r"\s+", "", os.environ["SUPABASE_SERVICE_KEY"])
+    else:
         key = shell_file_value("SUPABASE_SERVICE_KEY")
         if key:
             os.environ["SUPABASE_SERVICE_KEY"] = key
-    if not os.environ.get("SUPABASE_TRACE_BUCKET"):
-        os.environ["SUPABASE_TRACE_BUCKET"] = "traces"
+    if not os.environ.get("SUPABASE_TRACE_BUCKET"): os.environ["SUPABASE_TRACE_BUCKET"] = "traces"
     upload_traces(HERE / "traces_out")
     set_trace_base(supabase_trace_base())
 
