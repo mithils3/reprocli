@@ -19,6 +19,8 @@ const state = {
   presence: {},      // paper_id -> [names] viewing RIGHT NOW (everyone else)
   current: null,     // paper_id
   filter: "queue",
+  tierFilter: "all",
+  scoreFilter: "all",
   search: "",
   dirty: false,
   noted: new Set(),  // once-per-paper telemetry keys (note edits, evidence opens…)
@@ -379,12 +381,42 @@ function buildFilters() {
     ["queue", "To label"], ["mine", "My in-progress"],
     ["done", "Completed"], ["disagree", "Disagreements"], ["all", "All"],
   ];
-  $("#filters").innerHTML = "";
+  const root = $("#filters");
+  root.innerHTML = "";
   for (const [key, label] of filters) {
     const b = el(`<button class="filt ${key === state.filter ? "active" : ""}" data-f="${key}">${label} <span class="fcount">${counts[key]}</span></button>`);
     b.addEventListener("click", () => { state.filter = key; renderList(); });
-    $("#filters").appendChild(b);
+    root.appendChild(b);
   }
+  root.appendChild(facetSelects());
+}
+
+function optionList(values, current, allLabel) {
+  return [`<option value="all">${esc(allLabel)}</option>`]
+    .concat(values.map((v) =>
+      `<option value="${esc(v)}" ${v === current ? "selected" : ""}>${esc(v)}</option>`))
+    .join("");
+}
+
+function facetSelects() {
+  const tierOrder = ["Easy", "Medium", "Hard", "Artifact-Blocked"];
+  const tiers = tierOrder.filter((t) => state.papers.some((p) => p.tier === t));
+  const scores = [...new Set(state.papers.map((p) => String(p.score ?? "—")))]
+    .sort((a, b) => Number(a) - Number(b));
+  const box = el(`
+    <div class="facet-filters">
+      <select id="tier-filter" aria-label="Tier filter">${optionList(tiers, state.tierFilter, "All tiers")}</select>
+      <select id="score-filter" aria-label="Score filter">${optionList(scores, state.scoreFilter, "All scores")}</select>
+    </div>`);
+  $("#tier-filter", box).addEventListener("change", (e) => {
+    state.tierFilter = e.target.value;
+    renderList();
+  });
+  $("#score-filter", box).addEventListener("change", (e) => {
+    state.scoreFilter = e.target.value;
+    renderList();
+  });
+  return box;
 }
 
 function visiblePapers() {
@@ -396,6 +428,8 @@ function visiblePapers() {
     if (state.filter === "mine" && st !== "progress") return false;
     if (state.filter === "done" && !completedByAnyone(id)) return false;
     if (state.filter === "disagree" && !hasDisagreement(id)) return false;
+    if (state.tierFilter !== "all" && String(p.tier ?? "") !== state.tierFilter) return false;
+    if (state.scoreFilter !== "all" && String(p.score ?? "—") !== state.scoreFilter) return false;
     // "all" applies no status filter
     if (state.search) {
       const hay = (id + " " + (p.title || "")).toLowerCase();
@@ -436,7 +470,7 @@ function renderList() {
       <button class="plitem ${p.custom_id === state.current ? "active" : ""} ${live.length ? "is-live" : ""}" data-id="${p.custom_id}">
         <span class="dot ${st}"></span>
         <span class="pmeta">
-          <span class="pid">${esc(p.custom_id)} <span class="tchip ${tierClass(p.tier)}">${esc(p.tier ?? "?")}</span> ${dis ? '<span class="flag">⚠</span>' : ""}</span>
+          <span class="pid">${esc(p.custom_id)} <span class="tchip ${tierClass(p.tier)}">${esc(p.tier ?? "?")}</span> <span class="schip">score ${esc(p.score ?? "—")}</span> ${dis ? '<span class="flag">⚠</span>' : ""}</span>
           <span class="ptitle">${esc(p.title || "")}</span>
         </span>
         ${others.length ? `<span class="others">${others.join("")}</span>` : ""}

@@ -96,6 +96,10 @@ body:not(.is-admin) .dfooter { left: 0; }
 .filt:hover { border-color: var(--txt); color: var(--txt); }
 .filt.active { background: var(--txt); color: var(--bg); border-color: var(--txt); }
 .fcount { opacity: .65; font-size: 11px; }
+.facet-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; margin-top: 3px; }
+.facet-filters select { min-width: 0; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--panel); color: var(--txt); padding: 6px 8px; font-size: 12px; }
+.facet-filters select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
 
 /* difficulty-tier colors (shared by list chips + header badge) */
 .t-easy    { color: var(--yes-deep) !important; border-color: var(--yes) !important; background: var(--yes-tint) !important; }
@@ -105,6 +109,8 @@ body:not(.is-admin) .dfooter { left: 0; }
 .t-none    { color: var(--muted) !important; }
 .tchip { font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--line);
   text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.schip { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+  padding: 1px 6px; background: var(--panel2); font-weight: 600; }
 
 .paper-list { overflow-y: auto; flex: 1; }
 .plitem { display: flex; gap: 9px; width: 100%; text-align: left; background: none; border: 0;
