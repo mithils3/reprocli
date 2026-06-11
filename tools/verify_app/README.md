@@ -1,7 +1,8 @@
 # Artifact Verification app
 
-A lightweight, **static** web app for your team to manually verify the v4
-extraction outputs paper-by-paper: each reviewer reads the model's verdict for
+A lightweight, **static** web app for your team to manually verify the
+classifier outputs paper-by-paper (currently the **v5 200-paper audit pool**
+from `python -m reprocli_vllm.select_pool` — see `notes/Methodology/Dataset Construction.md`): each reviewer reads the model's verdict for
 an artifact (code / dataset / weights / standard-dataset) and the score, does
 their **own** Google / GitHub / Hugging Face search, and records agree /
 disagree / unsure + a note. You get an admin **dashboard** of who did what,
@@ -41,19 +42,17 @@ paper list / no filters for non-admins — just the current paper and one button
 
 1. Open the URL, type your name — you're **dropped straight into the next unlabelled paper**.
    The header shows the real arXiv title, authors, year, and the **abstract** so you know what to search for.
-2. **Five steps, unlocked one at a time** — code / dataset / weights / standard-dataset /
-   **H100 compute band**. Only the current step is active (later ones show 🔒 until the one
+2. **Four steps, unlocked one at a time** — code / dataset / weights / standard-dataset.
+   Only the current step is active (later ones show 🔒 until the one
    above is answered; answered steps stay editable). Each shows the model's verdict + evidence;
    **do your own search** with the shortcut buttons, then click **Agree / Disagree / Unsure**,
    optionally paste the link you found and a note. Answering auto-scrolls you to the next step.
    **Keyboard shortcuts:** `a` / `d` / `u` answer the current step, `n` = save & next, `p` = previous.
-   The H100 step shows the model's arithmetic (`gpu_count × wallclock × multiplier`), the
-   code-recomputed hours, and asks you to confirm the **band** (0-8 / 8-32 / 32-96 / 96-192 / >192),
-   not the exact number — pick the band you'd assign if you disagree. Papers whose estimate has
-   no auditable arithmetic are flagged ⚠ and served first in the queue.
+   (H100 compute bands are audited in code — `gpu_count × wallclock × multiplier` is recomputed
+   and adjudicated at selection time — so reviewers don't confirm them by hand.)
 3. **The score step is computed automatically** from your four artifact verdicts using the project formula `(no code +2) + (no dataset & non-standard +3) + (no weights +1)`, and shown next to the model's score (✓ matches / ✗ differs). Reviewers never type a score.
 4. The footer has **one primary button: "Save & next paper →"**. It stays disabled
-   ("Answer all 5 steps to continue (2/5)") until every step is answered, then turns green
+   ("Answer all 4 steps to continue (2/4)") until every step is answered, then turns green
    and pulses. Trying to advance early shakes the unanswered step. Small de-emphasized
    links cover the edge cases: **← previous** and **skip for now →** (logs the skip,
    keeps your draft). Switching papers **auto-saves** your draft, and closing the tab

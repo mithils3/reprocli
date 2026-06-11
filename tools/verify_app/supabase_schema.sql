@@ -32,7 +32,8 @@ create table if not exists public.verifications (
   dataset_standard_verdict text,
   dataset_standard_note    text,
 
-  -- H100 compute-band review (step 5): confirm the band, not the number
+  -- H100 compute-band review (legacy — the band step was removed from the app;
+  -- bands are now audited in code at selection time, columns kept for old rows)
   h100_band_verdict   text,               -- 'agree' | 'disagree' | 'unsure'
   h100_band_suggested text,               -- reviewer's band ('0-8' … '>192'), if disagree
   h100_band_note      text,

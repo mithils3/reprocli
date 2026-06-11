@@ -10,9 +10,10 @@ python3 tools/verify_app/build_data.py
 python3 tools/verify_app/fetch_arxiv_meta.py   # only needed for NEW paper ids
 ```
 
-Produces `public/papers.json` (the 500 records reviewers verify) and
-`traces_out/<arxiv_id>.json` (per-paper traces). Point at another run with
-`--run outputs/v4/<basename>`.
+Produces `public/papers.json` (one record per pool paper) and
+`traces_out/<arxiv_id>.json` (per-paper traces). Defaults to the v5 audit pool
+(`outputs/v5/audit_pool`, from `python -m reprocli_vllm.select_pool`); point at
+another run with `--run <basename>`.
 
 `build_data.py` automatically merges `arxiv_meta.json` (real titles, authors,
 year, abstract from the arXiv API — the trace-derived titles are wrong for ~25%

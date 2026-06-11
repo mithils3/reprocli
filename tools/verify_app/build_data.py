@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build static data for the verification app.
 
-Reads the v4 output family and produces:
+Reads an extracted/trace output pair (default: the v5 audit pool emitted by
+``python -m reprocli_vllm.select_pool``) and produces:
 
   public/papers.json             -- one compact record per paper (shipped with the site)
   traces_out/<custom_id>.json    -- per-paper conversation trace (uploaded on demand)
@@ -14,7 +15,7 @@ paper without loading the trace; the trace is fetched lazily from cloud storage.
 Usage::
 
     python3 tools/verify_app/build_data.py
-    python3 tools/verify_app/build_data.py --run outputs/v4/neurips_2025_minimax_m2_trial
+    python3 tools/verify_app/build_data.py --run outputs/v5/audit_pool
     python3 tools/verify_app/build_data.py --upload      # also push traces to Supabase Storage
 """
 from __future__ import annotations
@@ -29,7 +30,7 @@ from typing import Any, Iterator
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
-DEFAULT_BASE = REPO / "outputs/v4/neurips_2025_minimax_m2_trial"
+DEFAULT_BASE = REPO / "outputs/v5/audit_pool"
 
 TITLE_RE = re.compile(r"^title:\s*(.+)$", re.MULTILINE)
 SOURCE_RE = re.compile(r"^source_url:\s*(.+)$", re.MULTILINE)
@@ -135,6 +136,10 @@ def build(base: Path, out_dir: Path, traces_dir: Path) -> dict[str, dict[str, An
             "h100_recomputed_hours": row.get("h100_recomputed_hours"),
             "h100_arithmetic_mismatch": row.get("h100_arithmetic_mismatch"),
             "h100_needs_human_review": row.get("h100_needs_human_review"),
+            # selection-time adjudication from reprocli_vllm.select_pool
+            "audited_h100_hours": row.get("audited_h100_hours"),
+            "h100_hours_adjudicated": row.get("h100_hours_adjudicated"),
+            "selection_band": row.get("selection_band"),
             "has_trace": False,
         }
 
