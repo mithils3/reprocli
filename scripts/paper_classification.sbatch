@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --gpus-per-node=4
+#SBATCH --gres=gpu:nvidia_a100:4
 #SBATCH --gpu-bind=none
 #SBATCH --mem=128G
 #SBATCH --time=12:00:00
@@ -17,9 +17,9 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 set -euo pipefail
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/projects/bfvr/hding4/.cache/torchinductor
+export TRITON_CACHE_DIR=/projects/bfvr/hding4/.cache/triton
+export VLLM_CACHE_ROOT=/projects/bfvr/hding4/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
@@ -35,14 +35,14 @@ export OMP_NUM_THREADS=1
 export TORCH_NCCL_ASYNC_ERROR_HANDLING="${TORCH_NCCL_ASYNC_ERROR_HANDLING:-1}"
 export TORCH_NCCL_ENABLE_MONITORING="${TORCH_NCCL_ENABLE_MONITORING:-1}"
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC="${TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC:-1200}"
-export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
+export PYTHONPATH=/u/hding4/reprocli/src:${PYTHONPATH:-}
 
 ulimit -l unlimited || true
 ulimit -s unlimited || true
 
-module load python/3.11.9
-source /u/msalunkhe/reprocli/.venv/bin/activate
-cd /u/msalunkhe/reprocli/
+# module load python/3.11.9
+source /u/hding4/reprocli/.venv/bin/activate
+cd /u/hding4/reprocli/
 
 if [[ -z "${CXX:-}" || "${CXX}" == "CC" ]]; then
   if command -v g++ >/dev/null 2>&1; then
@@ -62,7 +62,7 @@ echo "SLURM_STEP_GPUS=${SLURM_STEP_GPUS:-unset}"
 env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS)_' || true
 nvidia-smi topo -m || true
 
-python3 src/run_arxiv_prompt_vllm.py \
+python src/run_arxiv_prompt_vllm.py \
   --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
@@ -70,7 +70,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --vllm-cache-dir /projects/bfvr/hding4/MiniMax-M2.7/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
