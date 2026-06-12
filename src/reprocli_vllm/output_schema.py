@@ -29,6 +29,7 @@ FINAL_RESPONSE_FORMAT = {
                 "web_verification",
                 "verified_links",
                 "signals",
+                "verification_targets",
                 "agent_task",
                 "h100_hours_estimate",
                 "h100_estimate_basis",
@@ -66,6 +67,20 @@ FINAL_RESPONSE_FORMAT = {
                         "dataset_available": signal_schema(),
                         "weights_available": signal_schema(),
                         "dataset_is_standard": signal_schema(),
+                    },
+                },
+                "verification_targets": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["metric", "expected_value", "source", "conditions"],
+                        "properties": {
+                            "metric":         {"type": "string"},
+                            "expected_value": {"type": "number"},
+                            "source":         {"type": "string"},
+                            "conditions":     {"type": "string"},
+                        },
                     },
                 },
                 "agent_task": {"type": "string"},

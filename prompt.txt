@@ -240,7 +240,6 @@ A valid MRE must identify:
 2. The dataset or benchmark used for that experiment.
 3. The minimum training, fine-tuning, inference, or evaluation protocol needed.
 4. The anchor metric used to verify the claim.
-5. A reasonable tolerance for matching the paper's result.
 
 All artifact checks are scoped to this MRE, not to every experiment in the paper.
 
@@ -423,6 +422,27 @@ Use these approximate FP16/BF16 H100-equivalents:
 - A16 board: 0.07
 
 ======================================================================
+STEP 5: VERIFICATION TARGETS
+======================================================================
+
+Extract the specific numerical results from the MRE that a reproduction agent must match.
+
+Use only results from the table, figure, or section identified in `claim_evidence`,
+scoped to the MRE configuration identified in STEP 1.
+
+For each metric reported for the MRE, provide:
+
+- `metric`: exact metric name and evaluation condition
+  (e.g. "top-1 accuracy on CIFAR-10 test set")
+- `expected_value`: the numerical value as reported in the paper
+- `source`: the table/figure/section and specific row/column where the value appears
+- `conditions`: the exact experimental configuration this value was measured under
+
+Include all metrics reported for the MRE row or configuration.
+Do not include metrics from different configurations, ablations, or larger experiments.
+If only one metric is reported for the MRE, include that one.
+
+======================================================================
 OUTPUT JSON SCHEMA
 ======================================================================
 
@@ -457,7 +477,15 @@ Return exactly one JSON object with these fields:
       "evidence": "Why this is or is not a widely recognized public benchmark."
     }
   },
-  "agent_task": "Concrete instruction for an automatic agent to reproduce the MRE.",
+  "verification_targets": [
+    {
+      "metric": "exact metric name and evaluation condition",
+      "expected_value": 95.3,
+      "source": "Table/Figure/Section and row/column",
+      "conditions": "exact experimental configuration"
+    }
+  ],
+  "agent_task": "Step 1 — Setup: [environment, dependencies, data download]. Step 2 — Run: [exact command]. Step 3 — Capture and verify: extract the metric values listed in verification_targets and print them as a JSON block on the last line of stdout with keys matching verification_targets[].metric exactly. Then assess whether the reproduced results, taken together, support the central claim: consider the overall pattern of results (relative ordering, magnitude, direction of improvement) rather than each number in isolation.",
   "h100_hours_estimate": 18,
   "h100_estimate_basis": "compute-unspecified or exact conversion. Include MRE-specific reasoning and engineering/debugging caveat when applicable."
 }
@@ -471,3 +499,5 @@ Final validation checklist:
 - Do not include `score` or `tier`; the extractor computes them.
 - `h100_hours_estimate` is numeric and agrees with `h100_estimate_basis`.
 - All artifact booleans are scoped to the MRE, not to unrelated artifacts.
+- `verification_targets` contains only results from the MRE row/configuration in `claim_evidence`.
+- `agent_task` step 3 names metric keys that match `verification_targets[].metric` exactly.

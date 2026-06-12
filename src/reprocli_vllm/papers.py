@@ -54,7 +54,11 @@ def load_papers(dataset_name: str) -> list[Paper]:
                 source_url=row.get("source_url") or "",
             ),
         )
-        if row.get("is_text") and row.get("extension") == TEX_EXTENSION and row.get("text"):
+        if (
+            row.get("is_text")
+            and row.get("extension") == TEX_EXTENSION
+            and row.get("text")
+        ):
             paper.tex_files[row["relative_path"]] = row["text"]
 
     print(f"Loaded {len(papers)} papers from {dataset_name}", file=sys.stderr)
