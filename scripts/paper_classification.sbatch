@@ -8,7 +8,7 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 #SBATCH --mem=256G
-#SBATCH --time=20:00:00
+#SBATCH --time=48:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
 #SBATCH --export=ALL
@@ -62,7 +62,6 @@ env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS
 nvidia-smi topo -m || true
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 1000 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
