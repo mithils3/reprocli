@@ -6,7 +6,7 @@ import sys
 import threading
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from collections.abc import Iterator
 
 # Shared with CommitScheduler so Hub snapshots never catch a half-written line.
 OUTPUT_WRITE_LOCK = threading.Lock()

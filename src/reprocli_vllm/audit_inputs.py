@@ -16,9 +16,6 @@ from pathlib import Path
 
 from .config import BUNDLE_PLACEHOLDER, CLAIM_PLACEHOLDER, RUBRIC_PLACEHOLDER
 
-# Audit-pool fields that describe what to reproduce and the reported numbers.
-CLAIM_FIELDS = ("central_claim", "claim_evidence", "mre_config")
-
 RUN_BUNDLE_PENDING_TEXT = (
     "(NO AGENT RUN BUNDLE WIRED YET. The agent reproduction-run format is not "
     "decided; see TODO(agent-runs) in audit_inputs.load_run_bundle. With no run "

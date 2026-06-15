@@ -23,11 +23,6 @@ def apply_minimax_profile(args: argparse.Namespace) -> None:
     args.gpu_memory_utilization = args.gpu_memory_utilization or 0.95
     args.tool_call_parser = args.tool_call_parser or "minimax_m2"
     args.reasoning_parser = args.reasoning_parser or "minimax_m2"
-    args.tokenizer_mode = args.tokenizer_mode or None
-    args.kv_cache_dtype = args.kv_cache_dtype or None
-    args.block_size = args.block_size or None
-    args.mm_encoder_tp_mode = args.mm_encoder_tp_mode or None
-    args.enable_expert_parallel = False
     args.trust_remote_code = True
     args.temperature = 1.0 if args.temperature is None else args.temperature
     args.top_p = 0.95 if args.top_p is None else args.top_p

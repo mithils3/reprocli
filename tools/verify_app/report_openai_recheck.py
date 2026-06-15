@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "src"
@@ -20,13 +20,6 @@ from reprocli_openai import recheck  # noqa: E402
 BASE_EXTRACTED = REPO / "outputs/v5/audit_pool_extracted.jsonl"
 RECHECK_DIR = REPO / "outputs/v5/openai_hard_recheck_gpt55_low"
 REPORT = RECHECK_DIR / "comparison_report.md"
-
-
-def iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if line.strip():
-                yield json.loads(line)
 
 
 def wait_for_recheck(poll_seconds: int) -> None:
@@ -60,7 +53,7 @@ def collect_results(allow_partial: bool) -> Path:
         print(f"recheck is incomplete; reporting partial results: {done}/{total}", flush=True)
     recheck.collect(RECHECK_DIR)
     extracted = RECHECK_DIR / "recheck_extracted.jsonl"
-    errors = [row for row in iter_jsonl(extracted) if "error" in row]
+    errors = [row for row in recheck.iter_jsonl(extracted) if "error" in row]
     if errors:
         raise SystemExit(f"{len(errors)} recheck rows have extraction errors")
     return extracted
@@ -87,8 +80,8 @@ def transition_label(old: bool | None, new: bool | None) -> str:
 
 
 def report(extracted_path: Path) -> str:
-    old_rows = {str(row["custom_id"]): row for row in iter_jsonl(BASE_EXTRACTED)}
-    new_rows = {str(row["custom_id"]): row for row in iter_jsonl(extracted_path)}
+    old_rows = {str(row["custom_id"]): row for row in recheck.iter_jsonl(BASE_EXTRACTED)}
+    new_rows = {str(row["custom_id"]): row for row in recheck.iter_jsonl(extracted_path)}
     wanted = set(recheck.hard_no_code_ids(recheck.POOL))
     missing = sorted(wanted - set(new_rows))
     ids = sorted(set(old_rows) & set(new_rows))

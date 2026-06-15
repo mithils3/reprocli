@@ -17,7 +17,8 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -39,11 +40,6 @@ SELECTION_FIELDS = (
     "h100_hours_adjudicated",
     "selection_band",
 )
-def iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if line.strip():
-                yield json.loads(line)
 
 
 def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> int:
@@ -84,7 +80,7 @@ def collect_recheck(directory: Path, allow_partial: bool) -> Path:
         print(f"recheck is incomplete; publishing partial replacements: {done}/{total}", flush=True)
     recheck.collect(directory)
     extracted = directory / "recheck_extracted.jsonl"
-    rows = list(iter_jsonl(extracted))
+    rows = list(recheck.iter_jsonl(extracted))
     errors = [row for row in rows if "error" in row]
     if errors:
         raise SystemExit(f"{len(errors)} recheck rows have errors; refusing to publish")
@@ -93,11 +89,11 @@ def collect_recheck(directory: Path, allow_partial: bool) -> Path:
 
 def merge_extracted(base: Path, updates_path: Path, out_base: Path) -> set[str]:
     base_path = Path(f"{base}_extracted.jsonl")
-    updates = {str(row["custom_id"]): row for row in iter_jsonl(updates_path)}
+    updates = {str(row["custom_id"]): row for row in recheck.iter_jsonl(updates_path)}
     replaced: set[str] = set()
 
     def rows() -> Iterable[dict[str, Any]]:
-        for old in iter_jsonl(base_path):
+        for old in recheck.iter_jsonl(base_path):
             cid = str(old.get("custom_id"))
             new = updates.get(cid)
             if not new:
@@ -138,16 +134,6 @@ def merged_recheck_row(old: dict[str, Any], new: dict[str, Any]) -> dict[str, An
     return merged
 
 
-def output_text(body: dict[str, Any]) -> str:
-    return "".join(
-        content.get("text") or ""
-        for item in body.get("output") or []
-        if item.get("type") == "message"
-        for content in item.get("content") or []
-        if content.get("type") == "output_text"
-    )
-
-
 def search_summary(item: dict[str, Any]) -> str:
     action = item.get("action") or {}
     if action.get("type") == "open_page":
@@ -171,7 +157,7 @@ def openai_trace_row(custom_id: str, body: dict[str, Any]) -> dict[str, Any]:
         if kind == "web_search_call":
             messages.append({"role": "tool", "name": "web_search", "content": search_summary(item)})
         elif kind == "message":
-            text = output_text({"output": [item]})
+            text = recheck.output_text({"output": [item]})
             messages.append({"role": "assistant", "content": text})
     return {
         "custom_id": custom_id,
@@ -199,7 +185,7 @@ def merge_traces(base: Path, directory: Path, replaced: set[str], out_base: Path
     seen: set[str] = set()
 
     def rows() -> Iterable[dict[str, Any]]:
-        for old in iter_jsonl(base_path):
+        for old in recheck.iter_jsonl(base_path):
             cid = str(old.get("custom_id"))
             if cid in replacements:
                 seen.add(cid)

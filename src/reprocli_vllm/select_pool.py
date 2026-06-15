@@ -29,7 +29,8 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
+from collections.abc import Iterator
 
 from .h100_audit import as_number, h100_band
 

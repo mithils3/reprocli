@@ -9,7 +9,8 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from .attachments import (
     Note,

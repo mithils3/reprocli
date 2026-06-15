@@ -115,6 +115,10 @@ class RuntimeCleanupTests(unittest.TestCase):
     def test_source_keeps_only_vllm_serving_api_openai_literal(self) -> None:
         hits = []
         for path in (ROOT / "src").rglob("*.py"):
+            # reprocli_openai is the dedicated OpenAI re-check package; its
+            # openai usage is intentional and outside the vLLM runtime surface.
+            if "reprocli_openai" in path.parts:
+                continue
             text = path.read_text(encoding="utf-8")
             stripped = text.replace("vllm.entrypoints.openai.api_server", "")
             if "openai" in stripped.lower():

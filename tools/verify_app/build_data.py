@@ -26,7 +26,8 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
+from collections.abc import Iterator
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -34,7 +35,6 @@ DEFAULT_BASE = REPO / "outputs/v5/audit_pool"
 
 TITLE_RE = re.compile(r"^title:\s*(.+)$", re.MULTILINE)
 SOURCE_RE = re.compile(r"^source_url:\s*(.+)$", re.MULTILINE)
-ARXIV_RE = re.compile(r"^arxiv_id:\s*(.+)$", re.MULTILINE)
 
 # Trim huge tool payloads so per-trace files stay small and load fast.
 CONTENT_CLIP = 16000

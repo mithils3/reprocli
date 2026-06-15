@@ -21,6 +21,7 @@ class ToolLoopOutputTests(unittest.TestCase):
                 extracted_output=root / "extracted.jsonl",
                 save_round_jsonl=True,
                 trace_output=root / "trace.jsonl",
+                mode="classification",
             )
             prepare_incremental_outputs(args)
             row = final_row(

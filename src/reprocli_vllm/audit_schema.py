@@ -12,8 +12,6 @@ from __future__ import annotations
 
 # Granular reproduction score the auditor assigns (anchors in rubric_audit.md).
 SCORE_MIN, SCORE_MAX = 0, 5
-# Coarse label DERIVED from the score in audit.py (never emitted by the model).
-VERDICTS = ("reproduced", "partial", "not_reproduced", "unverifiable")
 FLAG_KINDS = (
     "hardcoded_constant",
     "echoed_prose_number",

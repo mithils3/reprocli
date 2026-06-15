@@ -18,6 +18,7 @@ import random
 import sys
 import threading
 import time
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -124,6 +125,13 @@ def call_with_retry(api, prompt: str):
             delay = min(120, 10 * 2**attempt)
         time.sleep(delay + random.uniform(0, 3))
     raise RuntimeError(f"gave up after {MAX_RETRIES} attempts")
+
+
+def iter_jsonl(path: Path) -> Iterable[dict]:
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            if line.strip():
+                yield json.loads(line)
 
 
 def raw_rows(raw_path: Path) -> dict[str, dict]:
