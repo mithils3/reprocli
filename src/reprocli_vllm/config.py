@@ -98,8 +98,9 @@ AUDIT_SYSTEM_MESSAGE = (
     "trust a number because the agent printed it: trace how every value was "
     "produced, and flag hardcoded constants, echoed prose numbers, self-scored "
     "or fabricated predictions, wrong split/scale/dataset, and cherry-picked "
-    "metrics. Default to not_reproduced/unverifiable; absence of evidence is a "
-    "fail. Return only the JSON verdict object matching the schema."
+    "metrics. Default to a low score; absence of evidence is a low score, not a "
+    "pass. Grade the attempt with an integer 0-5 score per the rubric's score "
+    "scale. Return only the JSON object matching the schema."
 )
 AUDIT_FINAL_NO_TOOLS_MESSAGE = (
     "Write the final audit verdict JSON now from the run bundle above. Apply "
@@ -107,10 +108,10 @@ AUDIT_FINAL_NO_TOOLS_MESSAGE = (
     "target (metric, reference value, op, tolerance); give execution evidence; "
     "report the measured value with an exact file/line or log citation; list "
     "every anti-cheat flag with its evidence and severity; give the op/tolerance "
-    "comparison and methodology notes; end with a verdict in {reproduced, "
-    "partial, not_reproduced, unverifiable}, a 0-1 confidence, and a one-"
-    "paragraph rationale. Return only the JSON object: the first output "
-    "character must be { and the last must be }. No prose, no markdown."
+    "comparison and methodology notes; end with an integer 0-5 score per the "
+    "rubric's score scale, a 0-1 confidence, and a one-paragraph rationale. "
+    "Return only the JSON object: the first output character must be { and the "
+    "last must be }. No prose, no markdown."
 )
 
 

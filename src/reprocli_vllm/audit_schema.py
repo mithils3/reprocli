@@ -10,6 +10,9 @@ citations alone (see audit.py for the deterministic post-processing).
 from __future__ import annotations
 
 
+# Granular reproduction score the auditor assigns (anchors in rubric_audit.md).
+SCORE_MIN, SCORE_MAX = 0, 5
+# Coarse label DERIVED from the score in audit.py (never emitted by the model).
 VERDICTS = ("reproduced", "partial", "not_reproduced", "unverifiable")
 FLAG_KINDS = (
     "hardcoded_constant",
@@ -66,8 +69,8 @@ AUDIT_JSON_SCHEMA = _obj(
         # C5/C6: the comparison and experiment fidelity.
         "value_comparison": _STR,
         "methodology_notes": _STR,
-        # verdict.
-        "verdict": {"type": "string", "enum": list(VERDICTS)},
+        # granular 0-5 reproduction score; verdict is derived from it downstream.
+        "score": {"type": "integer", "minimum": SCORE_MIN, "maximum": SCORE_MAX},
         "confidence": {"type": "number"},
         "rationale": _STR,
     },
@@ -85,7 +88,7 @@ AUDIT_JSON_SCHEMA = _obj(
         "cheat_flags",
         "value_comparison",
         "methodology_notes",
-        "verdict",
+        "score",
         "confidence",
         "rationale",
     ],

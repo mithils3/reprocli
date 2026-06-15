@@ -300,9 +300,75 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
 .fid { font-family: var(--mono); color: var(--accent-strong); }
 .fdetail { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
+/* json viewer — renders the extracted JSON in the app's own card/field
+   language (same components as the Review tab); raw JSON tree is a fallback */
+.json-view { max-width: 960px; margin: 0 auto; padding: 22px 26px 80px; }
+/* sticky bar mirrors the app's .topbar treatment (solid ivory + hairline) */
+.json-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  position: sticky; top: 58px; z-index: 3; padding: 12px 0 14px;
+  background: var(--bg); border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.json-toolbar #json-search { flex: 0 1 220px; min-width: 0; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--panel); color: var(--txt); font: inherit; }
+.json-toolbar #json-picker { flex: 0 1 320px; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--panel); color: var(--txt); font-size: 13px; }
+.json-toolbar #json-search:focus, .json-toolbar #json-picker:focus {
+  border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
+/* buttons echo the detail view's quicklink pills */
+.json-toolbar .secondary { background: var(--panel); color: var(--txt); border: 1px solid var(--line-strong);
+  padding: 7px 14px; border-radius: 999px; font-weight: 500; font-size: 12px;
+  transition: border-color .15s, color .15s; }
+.json-toolbar .secondary:hover { border-color: var(--accent); color: var(--accent-strong); }
+.json-head { margin: 4px 0 18px; }            /* holds the same .dhead block as the Review tab */
+.json-tree { display: grid; gap: 18px; }       /* a stack of section cards, like the detail view */
+
+/* field sections */
+.rgroup { display: grid; gap: 10px; }
+.rgroup-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); font-weight: 600; }
+.rcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 15px 18px; box-shadow: var(--shadow); }
+.rcard-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rcard-h h4 { margin: 0; font-family: var(--serif); font-size: 15px; font-weight: 600; flex: 1; }
+.rprose { margin: 9px 0 0; font-family: var(--serif); font-size: 14px; line-height: 1.6;
+  color: var(--txt); white-space: pre-wrap; }
+.rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.rcell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rlabel { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+.rval { font-size: 14px; word-break: break-word; }
+.rlinks-row { display: grid; gap: 6px; padding: 9px 0; border-top: 1px dashed var(--line); }
+.rlinks-row:first-child { border-top: none; padding-top: 0; }
+.rlinks-row:last-child { padding-bottom: 0; }
+.qlink { background: var(--panel); border: 1px solid var(--line-strong); color: var(--txt);
+  padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 500; word-break: break-all;
+  transition: border-color .15s, color .15s; }
+.qlink:hover { border-color: var(--accent); color: var(--accent-strong); text-decoration: none; }
+
+/* raw json tree (inside the collapsed fallback) */
+.jraw { font-family: var(--mono); font-size: 12px; line-height: 1.7; padding: 2px; overflow-x: auto; }
+.jchildren { padding-left: 1.25em; border-left: 1px solid var(--line); margin-left: .4em; }
+.jline { white-space: pre-wrap; word-break: break-word; }
+.jhead { cursor: pointer; border-radius: 6px; transition: background .12s; }
+.jhead:hover { background: var(--panel2); }
+.jtoggle { display: inline-block; width: 1.1em; color: var(--muted); user-select: none; text-align: center; }
+.branch > .jhead > .jtoggle::before { content: "▾"; }
+.jnode.collapsed > .jhead > .jtoggle::before { content: "▸"; }
+.jnode.collapsed > .jchildren, .jnode.collapsed > .jclose { display: none; }
+.jpreview { display: none; color: var(--muted); }
+.jnode.collapsed > .jhead .jpreview { display: inline; }
+.jcount { color: var(--muted); font-size: 11px; font-style: italic; font-family: var(--serif); }
+.jkey { color: var(--accent-strong); font-weight: 500; }
+.jpunc, .jbrace { color: var(--muted); }
+.jstr, .jnum { color: var(--txt); }
+.jnum { font-variant-numeric: tabular-nums; }
+.jbool { color: var(--unk-deep); font-weight: 600; }
+.jnull { color: var(--muted); font-style: italic; }
+.jlink { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 2px; }
+.jlink:hover { color: var(--accent); }
+
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; height: auto; }
   .sidebar { height: 40vh; }
   .dfooter { left: 0; }
   .cards, .dash-grid { grid-template-columns: 1fr 1fr; }
+  .json-toolbar { top: 0; }
 }

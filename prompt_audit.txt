@@ -31,7 +31,7 @@ OUTPUT
 Return exactly one JSON object matching the audit schema: the restated target,
 execution evidence, the measured value with an exact file/line or log citation,
 every anti-cheat flag with its evidence and severity, the op/tolerance comparison,
-methodology notes, and a verdict in
-{reproduced, partial, not_reproduced, unverifiable} with a 0-1 confidence and a
-one-paragraph rationale. Every field must be reconstructable from cited evidence
-in the bundle. No prose outside the JSON object.
+methodology notes, an integer `score` from 0 to 5 per the rubric's score scale, a
+0-1 confidence, and a one-paragraph rationale. (The coarse verdict is derived from
+your score downstream — do not emit it.) Every field must be reconstructable from
+cited evidence in the bundle. No prose outside the JSON object.

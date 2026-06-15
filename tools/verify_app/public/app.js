@@ -972,8 +972,10 @@ async function saveCurrent(advance) {
 function setView(view) {
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === view));
   $("#view-verify").classList.toggle("hidden", view !== "verify");
+  $("#view-json").classList.toggle("hidden", view !== "json");
   $("#view-dashboard").classList.toggle("hidden", view !== "dashboard");
   if (view === "dashboard") renderDashboard();
+  if (view === "json" && window.renderJsonView) window.renderJsonView();
 }
 
 // ===========================================================================

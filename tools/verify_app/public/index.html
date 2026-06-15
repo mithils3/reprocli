@@ -30,6 +30,7 @@
       <div class="brand">Artifact Verification</div>
       <nav class="tabs">
         <button class="tab active" data-view="verify">Review</button>
+        <button class="tab" data-view="json">JSON</button>
         <button class="tab admin-only hidden" data-view="dashboard">Dashboard</button>
       </nav>
       <div class="who">
@@ -51,6 +52,23 @@
       </section>
     </main>
 
+    <!-- JSON VIEW -->
+    <main id="view-json" class="view hidden">
+      <div class="json-view">
+        <div class="json-toolbar">
+          <input id="json-search" type="search" placeholder="Search id or title…" />
+          <select id="json-picker" aria-label="Pick a paper"></select>
+          <span class="grow"></span>
+          <button id="json-collapse" class="secondary">Collapse all</button>
+          <button id="json-expand" class="secondary">Expand all</button>
+          <button id="json-copy" class="secondary">Copy</button>
+          <button id="json-download" class="secondary">Download</button>
+        </div>
+        <div id="json-head" class="json-head"></div>
+        <div id="json-tree" class="json-tree"></div>
+      </div>
+    </main>
+
     <!-- DASHBOARD VIEW -->
     <main id="view-dashboard" class="view hidden">
       <div id="dashboard" class="dashboard"></div>
@@ -60,5 +78,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <script src="json_view.js"></script>
 </body>
 </html>

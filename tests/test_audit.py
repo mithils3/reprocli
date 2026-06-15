@@ -11,7 +11,7 @@ from reprocli_vllm.audit import finalize_audit_row  # noqa: E402
 from reprocli_vllm.audit_inputs import build_audit_prompt, claim_block  # noqa: E402
 
 
-def _verdict_row(verdict: str, flags=None) -> dict:
+def _score_row(score, flags=None, execution_verified=True) -> dict:
     return {
         "paper_id": "2505.10978",
         "central_claim": "86.7% on ALFWorld",
@@ -19,51 +19,64 @@ def _verdict_row(verdict: str, flags=None) -> dict:
         "reference_value": 86.7,
         "op": "abs_rel_within",
         "tolerance": 0.05,
-        "execution_verified": True,
+        "execution_verified": execution_verified,
         "execution_evidence": "ran run_alfworld.sh, eval log present",
         "measured_value": 86.7,
         "measured_citation": "out/res.json:1",
         "cheat_flags": flags or [],
         "value_comparison": "86.7 within 5% of 86.7",
         "methodology_notes": "",
-        "verdict": verdict,
+        "score": score,
         "confidence": 0.9,
         "rationale": "x",
     }
 
 
-def test_high_flag_caps_verdict():
+def test_high_flag_caps_score_to_zero():
     flags = [{"kind": "hardcoded_constant", "evidence": "print(86.7) in eval.py:40", "severity": "high"}]
-    row = finalize_audit_row(_verdict_row("reproduced", flags), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(5, flags), {"exit_reason": "natural"})
+    assert row["score"] == 0
+    assert row["reported_score"] == 5
     assert row["verdict"] == "not_reproduced"
-    assert row["reported_verdict"] == "reproduced"
     assert row["reproduced"] is False
     assert row["has_high_cheat_flag"] is True
     assert row["verification_status"] == "verified"
 
 
-def test_clean_reproduced_passes():
-    row = finalize_audit_row(_verdict_row("reproduced"), {"exit_reason": "natural"})
+def test_score_5_is_reproduced():
+    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
     assert row["verdict"] == "reproduced"
     assert row["reproduced"] is True
-    assert "reported_verdict" not in row
+    assert "reported_score" not in row
 
 
-def test_low_flag_does_not_cap():
+def test_score_4_is_reproduced_boundary():
+    row = finalize_audit_row(_score_row(4), {"exit_reason": "natural"})
+    assert row["verdict"] == "reproduced"
+    assert row["reproduced"] is True
+
+
+def test_score_3_is_partial():
     flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
-    row = finalize_audit_row(_verdict_row("partial", flags), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(3, flags), {"exit_reason": "natural"})
     assert row["verdict"] == "partial"
+    assert row["reproduced"] is False
+    assert row["score"] == 3  # low flag does not cap
+
+
+def test_score_0_no_execution_is_unverifiable():
+    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+    assert row["verdict"] == "unverifiable"
     assert row["reproduced"] is False
 
 
-def test_invalid_verdict_is_degraded():
-    bad = _verdict_row("totally-made-up")
-    row = finalize_audit_row(bad, {"exit_reason": "natural"})
+def test_out_of_range_score_is_degraded():
+    row = finalize_audit_row(_score_row(9), {"exit_reason": "natural"})
     assert row["verification_status"] == "degraded"
 
 
 def test_missing_paper_id_is_degraded():
-    bad = _verdict_row("reproduced")
+    bad = _score_row(5)
     bad["paper_id"] = ""
     row = finalize_audit_row(bad, {"exit_reason": "natural"})
     assert row["verification_status"] == "degraded"
