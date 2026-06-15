@@ -12,14 +12,26 @@ from reprocli_vllm.config import (
     DEFAULT_MODEL,
     DEFAULT_OUTPUT,
     DEFAULT_VLLM_DATASET,
+    FINAL_NO_TOOLS_MESSAGE,
+    MRE_PLACEHOLDER,
     PAPER_BUNDLE_DATASET_URL,
     PLACEHOLDER,
+    VERIFICATION_DEFAULT_EXTRACTED,
+    VERIFICATION_DEFAULT_OUTPUT,
+    VERIFICATION_FINAL_NO_TOOLS_MESSAGE,
+    VERIFICATION_MRE_RECORDS_DEFAULT,
+    VERIFICATION_PROMPT_FILE,
+    VERIFICATION_SYSTEM_MESSAGE,
+    WEB_SYSTEM_MESSAGE,
 )
 from reprocli_vllm.hf_upload import hf_run_uploader
 from reprocli_vllm.minimax_defaults import apply_model_defaults
+from reprocli_vllm.mre_records import load_mre_records, mre_record_text
 from reprocli_vllm.paper_bundles import load_bundle_papers
+from reprocli_vllm.papers import Paper
 from reprocli_vllm.tool_loop import run_tool_loop
 from reprocli_vllm.trace_io import trace_output_path
+from reprocli_vllm.verification_schema import VERIFICATION_RESPONSE_FORMAT
 from reprocli_vllm.vllm_server import VllmServer
 from reprocli_vllm.vllm_cache import default_cache_dir
 
@@ -27,16 +39,24 @@ from reprocli_vllm.vllm_cache import default_cache_dir
 def main() -> int:
     args = parse_args()
     prompt_template = args.prompt_file.read_text(encoding="utf-8")
-    if PLACEHOLDER not in prompt_template:
-        raise SystemExit(f"{args.prompt_file} must contain {PLACEHOLDER}.")
+    required_placeholder = MRE_PLACEHOLDER if args.mode == "verification" else PLACEHOLDER
+    if required_placeholder not in prompt_template:
+        raise SystemExit(f"{args.prompt_file} must contain {required_placeholder}.")
 
-    papers = load_bundle_papers(args.dataset)
-    papers = [paper for paper in papers if paper.tex_files]
+    mre_records: dict[str, dict] = {}
+    if args.mode == "verification":
+        # MRE-only, tools-off: the records ARE the paper list; the bundle and
+        # full paper text are not needed.
+        mre_records = load_mre_records(args.mre_records)
+        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in mre_records]
+    else:
+        papers = load_bundle_papers(args.dataset)
+        papers = [paper for paper in papers if paper.tex_files]
     if args.paper_ids_file:
         papers = filter_papers_by_ids(papers, args.paper_ids_file)
     papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
-        prompt_template.replace(PLACEHOLDER, paper.text())
+        build_prompt(prompt_template, paper, mre_records, args.mode)
         for paper in papers_to_run
     ]
 
@@ -75,9 +95,24 @@ def parse_args() -> argparse.Namespace:
             f"Default: {PAPER_BUNDLE_DATASET_URL}"
         ),
     )
-    parser.add_argument("--prompt-file", type=argparse_path, default=argparse_path("prompt.txt"))
-    parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
+    parser.add_argument(
+        "--mode",
+        choices=("classification", "verification"),
+        default="classification",
+        help="classification curates the artifact tier; verification curates the deterministic target.json.",
+    )
+    parser.add_argument(
+        "--mre-records",
+        help=(
+            "Already-chosen MRE rows (classifier extracted output) joined by arxiv "
+            "id and injected into the verification prompt. A local JSONL path or an "
+            "hf://datasets/<owner>/<name>/<file> reference. Default: "
+            f"{VERIFICATION_MRE_RECORDS_DEFAULT}."
+        ),
+    )
+    parser.add_argument("--prompt-file", type=argparse_path)
+    parser.add_argument("--output", type=argparse_path)
+    parser.add_argument("--extracted-output", type=argparse_path)
     parser.add_argument("--trace-output", type=argparse_path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument(
@@ -155,6 +190,7 @@ def parse_args() -> argparse.Namespace:
     )
     args = parser.parse_args()
     apply_model_defaults(args)
+    resolve_mode_settings(args)
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
     if args.num_prompts is not None and args.num_prompts < 1:
@@ -199,6 +235,33 @@ def filter_papers_by_ids(papers: list, ids_file) -> list:
             file=sys.stderr,
         )
     return selected
+
+
+def resolve_mode_settings(args: argparse.Namespace) -> None:
+    """Fill prompt/output/schema/message defaults for the selected mode."""
+    if args.mode == "verification":
+        args.prompt_file = args.prompt_file or VERIFICATION_PROMPT_FILE
+        args.output = args.output or VERIFICATION_DEFAULT_OUTPUT
+        args.extracted_output = args.extracted_output or VERIFICATION_DEFAULT_EXTRACTED
+        args.mre_records = args.mre_records or VERIFICATION_MRE_RECORDS_DEFAULT
+        args.response_format = VERIFICATION_RESPONSE_FORMAT
+        args.system_message = VERIFICATION_SYSTEM_MESSAGE
+        args.final_no_tools_message = VERIFICATION_FINAL_NO_TOOLS_MESSAGE
+        args.use_tools = False
+        return
+    args.prompt_file = args.prompt_file or argparse_path("prompt.txt")
+    args.output = args.output or DEFAULT_OUTPUT
+    args.extracted_output = args.extracted_output or DEFAULT_EXTRACTED_OUTPUT
+    args.response_format = None
+    args.system_message = WEB_SYSTEM_MESSAGE
+    args.final_no_tools_message = FINAL_NO_TOOLS_MESSAGE
+    args.use_tools = True
+
+
+def build_prompt(template: str, paper: Paper, mre_records: dict[str, dict], mode: str) -> str:
+    if mode == "verification":
+        return template.replace(MRE_PLACEHOLDER, mre_record_text(mre_records.get(paper.arxiv_id)))
+    return template.replace(PLACEHOLDER, paper.text())
 
 
 def normalized_server_url(value: str) -> str:

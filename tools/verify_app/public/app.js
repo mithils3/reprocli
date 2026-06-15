@@ -194,9 +194,8 @@ async function signIn(name) {
   localStorage.setItem("reviewer", name);
   $("#who-name").textContent = name;
   const isAdmin = ADMINS.includes(name.toLowerCase());
+  // everyone gets the browsable sidebar; only the Dashboard stays admin-gated.
   $$(".admin-only").forEach((e) => e.classList.toggle("hidden", !isAdmin));
-  // guided flow: reviewers don't pick papers — the queue does. Admins keep the sidebar.
-  document.body.classList.toggle("is-admin", isAdmin);
   $("#gate").classList.add("hidden");
   $("#app").classList.remove("hidden");
 

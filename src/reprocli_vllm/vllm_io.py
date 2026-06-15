@@ -9,11 +9,12 @@ from typing import Any
 from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
 from .output_schema import FINAL_RESPONSE_FORMAT
 from .run_health import degraded_row, finalize_extracted_row
+from .verification_grade import finalize_verification_row
 
 
-def initial_messages(prompt: str) -> list[dict[str, Any]]:
+def initial_messages(prompt: str, system_message: str = WEB_SYSTEM_MESSAGE) -> list[dict[str, Any]]:
     return [
-        {"role": "system", "content": WEB_SYSTEM_MESSAGE},
+        {"role": "system", "content": system_message},
         {"role": "user", "content": prompt},
     ]
 
@@ -41,7 +42,7 @@ def build_chat_completion_request(
         body["tools"] = WEB_TOOLS
         body["tool_choice"] = tool_choice
     else:
-        body["response_format"] = FINAL_RESPONSE_FORMAT
+        body["response_format"] = getattr(args, "response_format", None) or FINAL_RESPONSE_FORMAT
     return {
         "custom_id": custom_id,
         "method": "POST",
@@ -63,7 +64,9 @@ def truncate_output_file(path: Path) -> None:
     path.write_text("", encoding="utf-8")
 
 
-def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
+def extracted_response(
+    custom_id: str, row: dict[str, Any], mode: str = "classification"
+) -> dict[str, Any]:
     message = response_message(row)
     content = message.get("content") or ""
     tool_loop = row.get("tool_loop") or {}
@@ -71,7 +74,10 @@ def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         return degraded_row(custom_id, content, parsed, tool_loop)
     result: dict[str, Any] = {"custom_id": custom_id}
-    result.update(finalize_extracted_row(parsed, tool_loop))
+    if mode == "verification":
+        result.update(finalize_verification_row(parsed, tool_loop))
+    else:
+        result.update(finalize_extracted_row(parsed, tool_loop))
     return result
 
 

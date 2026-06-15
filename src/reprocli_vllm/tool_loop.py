@@ -33,7 +33,7 @@ def run_tool_loop(
     server_url: str,
 ) -> None:
     conversations = {
-        paper.arxiv_id: initial_messages(prompt)
+        paper.arxiv_id: initial_messages(prompt, args.system_message)
         for paper, prompt in zip(papers, prompts, strict=True)
     }
     papers_by_id = {paper.arxiv_id: paper for paper in papers}
@@ -62,6 +62,7 @@ def run_tool_loop(
                 conversations[custom_id],
                 include_tools,
                 budget_note=exit_reasons.get(custom_id) == "context_budget",
+                final_message=args.final_no_tools_message,
             )
             request = build_chat_completion_request(
                 args.model,
@@ -86,7 +87,7 @@ def run_tool_loop(
             }
 
         for custom_id in original_ids:
-            submit_request(custom_id, 0, include_tools=True)
+            submit_request(custom_id, 0, include_tools=args.use_tools)
 
         while request_futures or tool_futures:
             done, _ = wait(
@@ -195,6 +196,7 @@ def handle_request_done(
         tool_calls,
         bool(state["include_tools"]),
         budget_note=exit_reason == "context_budget",
+        final_message=args.final_no_tools_message,
     )
     final_rows[custom_id] = row
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
@@ -215,7 +217,11 @@ def append_completed_outputs(
 ) -> None:
     with OUTPUT_WRITE_LOCK:
         append_jsonl_row(args.output, row, truncate=False)
-        append_jsonl_row(args.extracted_output, extracted_response(custom_id, row), truncate=False)
+        append_jsonl_row(
+            args.extracted_output,
+            extracted_response(custom_id, row, args.mode),
+            truncate=False,
+        )
         if args.save_round_jsonl:
             append_trace_row(args.trace_output, custom_id, messages, row)
 
@@ -224,8 +230,8 @@ def noop() -> None:
     return None
 
 
-def final_user_message(budget_note: bool) -> dict[str, Any]:
-    content = FINAL_NO_TOOLS_MESSAGE
+def final_user_message(budget_note: bool, final_message: str = FINAL_NO_TOOLS_MESSAGE) -> dict[str, Any]:
+    content = final_message
     if budget_note:
         content = CONTEXT_BUDGET_NOTE + content
     return {"role": "user", "content": content}
@@ -236,10 +242,11 @@ def conversation_for_round(
     include_tools: bool,
     *,
     budget_note: bool = False,
+    final_message: str = FINAL_NO_TOOLS_MESSAGE,
 ) -> list[dict]:
     if include_tools:
         return messages
-    return [*messages, final_user_message(budget_note)]
+    return [*messages, final_user_message(budget_note, final_message)]
 
 
 def append_tool_results(
@@ -263,7 +270,8 @@ def append_final_message(
     include_tools: bool,
     *,
     budget_note: bool = False,
+    final_message: str = FINAL_NO_TOOLS_MESSAGE,
 ) -> None:
     if not include_tools:
-        messages.append(final_user_message(budget_note))
+        messages.append(final_user_message(budget_note, final_message))
     messages.append(assistant_message(message, tool_calls))

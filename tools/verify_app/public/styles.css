@@ -79,12 +79,8 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
 
 /* layout */
 .layout { display: grid; grid-template-columns: 330px 1fr; height: calc(100vh - 58px); }
-/* guided flow: reviewers don't pick papers — the queue feeds them one at a time.
-   Only admins (body.is-admin) get the browsable sidebar. */
-body:not(.is-admin) .sidebar { display: none; }
-body:not(.is-admin) .layout { grid-template-columns: 1fr; }
-body:not(.is-admin) .detail { max-width: 920px; margin: 0 auto; width: 100%; }
-body:not(.is-admin) .dfooter { left: 0; }
+/* every reviewer gets the browsable sidebar; sign-in still auto-drops them into
+   the next unlabelled paper, so the guided queue keeps working alongside it. */
 .sidebar { background: var(--bg-side); border-right: 1px solid var(--line);
   display: flex; flex-direction: column; min-height: 0; }
 .sidebar #search { margin: 12px 12px 8px; padding: 9px 12px; border-radius: 10px;

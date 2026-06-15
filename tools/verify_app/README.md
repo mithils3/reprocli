@@ -35,10 +35,11 @@ tools/verify_app/
 > script pulls the authoritative title, authors, year, and abstract from the arXiv
 > API, keyed by arXiv id, and `build_data.py` re-merges the cache on every rebuild.
 
-## How reviewers use it (guided flow — no choices)
+## How reviewers use it (guided flow + browsable sidebar)
 
-Reviewers **don't pick papers**: the queue feeds them one at a time. There is no
-paper list / no filters for non-admins — just the current paper and one button.
+Reviewers are **dropped straight into the next unlabelled paper** and can just keep
+hitting "Save & next" — the queue feeds them one at a time. Everyone also gets the
+browsable sidebar (search + filters + paper list) on the left if they'd rather jump around.
 
 1. Open the URL, type your name — you're **dropped straight into the next unlabelled paper**.
    The header shows the real arXiv title, authors, year, and the **abstract** so you know what to search for.
@@ -63,7 +64,7 @@ paper list / no filters for non-admins — just the current paper and one button
 The queue is shared: **the moment any reviewer completes a paper it disappears from everyone's queue**, so people just keep getting the next unprocessed one. Everything updates **live**:
 
 - A red **● live** banner shows when someone else is viewing the same paper *right now* (Supabase Realtime presence).
-- **Admins** additionally get the browsable sidebar with filters (**To label / My in-progress / Completed / Disagreements / All**), search, and per-paper ✓N / ⋯N reviewer markers. Your work always reloads by name.
+- **Everyone** gets the browsable sidebar — filters (**To label / My in-progress / Completed / Disagreements / All**), tier/score dropdowns, search, and per-paper ✓N / ⋯N reviewer markers. Your work always reloads by name. Only the **Dashboard** stays admin-only.
 
 ## Telemetry
 

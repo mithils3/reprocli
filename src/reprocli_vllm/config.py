@@ -77,6 +77,42 @@ CONTEXT_BUDGET_NOTE = (
     "paper_text_only instead of guessing. "
 )
 
+# --- Verification-target curation mode -------------------------------------
+MRE_PLACEHOLDER = "{MRE_RECORD}"
+VERIFICATION_PROMPT_FILE = Path("prompt_verification.txt")
+VERIFICATION_DEFAULT_OUTPUT = Path("outputs/v5/audit_pool_verification_targets.jsonl")
+VERIFICATION_DEFAULT_EXTRACTED = Path("outputs/v5/audit_pool_verification_targets_extracted.jsonl")
+VERIFICATION_MRE_RECORDS_DEFAULT = Path("outputs/v5/audit_pool_extracted.jsonl")
+VERIFICATION_SYSTEM_MESSAGE = (
+    "You are a verification-target curator for an ML reproduction benchmark. "
+    "You are given the MRE record the benchmark already chose for one paper: its "
+    "central claim, the MRE experiment, the repo and links, the agent task, and "
+    "the reported numbers. You have NO tools. From that record alone, produce ONE "
+    "flat target.json that a deterministic grader can run with no further model "
+    "judgment: it deletes stale_outputs, runs harness_cmd (and baseline_cmd) at "
+    "the pinned repo, reads ONLY artifact_path, computes measured = metric_name "
+    "over artifact_path[metric_field], and PASSes iff every target satisfies "
+    "op(measured, value, tol). Take repo and commands from verified_links, "
+    "mre_config, and agent_task; take reference numbers from claim_evidence and "
+    "mre_config. If the exact output filename is unknown, force a dump with a "
+    "--dump/--output flag in harness_cmd and name that file as artifact_path; "
+    "leave commit empty for the curator to pin. Never grade prose or a printed "
+    "scalar. If the claim is not deterministically gradeable, set "
+    "exclusion_reason and leave the run fields empty. Return only the JSON object."
+)
+VERIFICATION_FINAL_NO_TOOLS_MESSAGE = (
+    "Write the final target.json now from the MRE record above. Checklist: "
+    "harness_cmd is the exact command we run and bakes in any injected input; "
+    "artifact_path is a file the run creates (never agent stdout); stale_outputs "
+    "lists shipped result/metric/pred files to delete first; metric_name + "
+    "metric_field name a scoring function and the artifact field it reads; "
+    "metric_spec says how measured is computed; each target has value (number, or "
+    "null only for is_true), op, and tol; set answer_key only when ground truth "
+    "is withheld; if not deterministically gradeable, set exclusion_reason and "
+    "leave the run fields empty. Return only the JSON object: the first output "
+    "character must be { and the last must be }. No prose, no markdown."
+)
+
 
 def function_tool(
     name: str,
