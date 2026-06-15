@@ -1,0 +1,101 @@
+"""Audit-mode output schema: the structured verdict an LLM auditor returns.
+
+Replaces the deterministic verification target. The auditor reads a paper's
+central claim plus one agent run bundle (code, logs, artifacts) and grades it
+against rubric_audit.md. Every graded quantity must be traceable to cited
+evidence in the bundle; the verdict is reconstructable from the flags and
+citations alone (see audit.py for the deterministic post-processing).
+"""
+
+from __future__ import annotations
+
+
+VERDICTS = ("reproduced", "partial", "not_reproduced", "unverifiable")
+FLAG_KINDS = (
+    "hardcoded_constant",
+    "echoed_prose_number",
+    "self_scored_or_fabricated",
+    "wrong_split_scale_dataset",
+    "cherry_picked_metric",
+    "stale_artifact",
+)
+SEVERITIES = ("low", "med", "high")
+
+_STR = {"type": "string"}
+_NUM_OR_NULL = {"type": ["number", "null"]}
+_BOOL = {"type": "boolean"}
+
+
+def _obj(properties: dict, required: list[str]) -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": required,
+        "properties": properties,
+    }
+
+
+def _flag_item() -> dict:
+    return _obj(
+        {
+            "kind": {"type": "string", "enum": list(FLAG_KINDS)},
+            "evidence": _STR,
+            "severity": {"type": "string", "enum": list(SEVERITIES)},
+        },
+        ["kind", "evidence", "severity"],
+    )
+
+
+AUDIT_JSON_SCHEMA = _obj(
+    {
+        "paper_id": _STR,
+        # C1: the auditor's restatement of the claim as a checkable target.
+        "central_claim": _STR,
+        "target_metric": _STR,
+        "reference_value": _NUM_OR_NULL,
+        "op": _STR,
+        "tolerance": _NUM_OR_NULL,
+        # C2: proof the metric was actually computed by a run, with citation.
+        "execution_verified": _BOOL,
+        "execution_evidence": _STR,
+        # C3: the agent's reproduced value and where it was found.
+        "measured_value": _NUM_OR_NULL,
+        "measured_citation": _STR,
+        # C4: anti-cheat flags; any high-severity flag caps the verdict.
+        "cheat_flags": {"type": "array", "items": _flag_item()},
+        # C5/C6: the comparison and experiment fidelity.
+        "value_comparison": _STR,
+        "methodology_notes": _STR,
+        # verdict.
+        "verdict": {"type": "string", "enum": list(VERDICTS)},
+        "confidence": {"type": "number"},
+        "rationale": _STR,
+    },
+    [
+        "paper_id",
+        "central_claim",
+        "target_metric",
+        "reference_value",
+        "op",
+        "tolerance",
+        "execution_verified",
+        "execution_evidence",
+        "measured_value",
+        "measured_citation",
+        "cheat_flags",
+        "value_comparison",
+        "methodology_notes",
+        "verdict",
+        "confidence",
+        "rationale",
+    ],
+)
+
+
+AUDIT_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "audit_verdict",
+        "schema": AUDIT_JSON_SCHEMA,
+    },
+}

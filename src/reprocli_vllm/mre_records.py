@@ -14,19 +14,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-# Fields copied from the classifier extracted row into the curator prompt.
-MRE_FIELDS = (
-    "central_claim",
-    "claim_evidence",
-    "paper_kind",
-    "mre_config",
-    "agent_task",
-    "verified_links",
-    "tier",
-    "score",
-    "h100_estimate",
-)
-
 
 def load_mre_records(source) -> dict[str, dict]:
     path = _resolve_records_path(source)
@@ -67,10 +54,3 @@ def _parse_hf_spec(spec: str) -> tuple[str, str] | None:
             "(expected hf://datasets/<owner>/<name>/<file>)"
         )
     return "/".join(segments[:2]), "/".join(segments[2:])
-
-
-def mre_record_text(record: dict | None) -> str:
-    if not record:
-        return "(no MRE record found for this paper; derive the MRE from the paper text)"
-    selected = {key: record[key] for key in MRE_FIELDS if key in record}
-    return json.dumps(selected, ensure_ascii=False, indent=2)

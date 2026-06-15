@@ -8,30 +8,32 @@ import random
 import sys
 
 from reprocli_vllm.config import (
+    AUDIT_CLAIMS_DEFAULT,
+    AUDIT_DEFAULT_EXTRACTED,
+    AUDIT_DEFAULT_OUTPUT,
+    AUDIT_FINAL_NO_TOOLS_MESSAGE,
+    AUDIT_PROMPT_FILE,
+    AUDIT_RUBRIC_FILE,
+    AUDIT_SYSTEM_MESSAGE,
+    CLAIM_PLACEHOLDER,
     DEFAULT_EXTRACTED_OUTPUT,
     DEFAULT_MODEL,
     DEFAULT_OUTPUT,
     DEFAULT_VLLM_DATASET,
     FINAL_NO_TOOLS_MESSAGE,
-    MRE_PLACEHOLDER,
     PAPER_BUNDLE_DATASET_URL,
     PLACEHOLDER,
-    VERIFICATION_DEFAULT_EXTRACTED,
-    VERIFICATION_DEFAULT_OUTPUT,
-    VERIFICATION_FINAL_NO_TOOLS_MESSAGE,
-    VERIFICATION_MRE_RECORDS_DEFAULT,
-    VERIFICATION_PROMPT_FILE,
-    VERIFICATION_SYSTEM_MESSAGE,
     WEB_SYSTEM_MESSAGE,
 )
+from reprocli_vllm.audit_inputs import build_audit_prompt, load_audit_rubric
+from reprocli_vllm.audit_schema import AUDIT_RESPONSE_FORMAT
 from reprocli_vllm.hf_upload import hf_run_uploader
 from reprocli_vllm.minimax_defaults import apply_model_defaults
-from reprocli_vllm.mre_records import load_mre_records, mre_record_text
+from reprocli_vllm.mre_records import load_mre_records
 from reprocli_vllm.paper_bundles import load_bundle_papers
 from reprocli_vllm.papers import Paper
 from reprocli_vllm.tool_loop import run_tool_loop
 from reprocli_vllm.trace_io import trace_output_path
-from reprocli_vllm.verification_schema import VERIFICATION_RESPONSE_FORMAT
 from reprocli_vllm.vllm_server import VllmServer
 from reprocli_vllm.vllm_cache import default_cache_dir
 
@@ -39,16 +41,18 @@ from reprocli_vllm.vllm_cache import default_cache_dir
 def main() -> int:
     args = parse_args()
     prompt_template = args.prompt_file.read_text(encoding="utf-8")
-    required_placeholder = MRE_PLACEHOLDER if args.mode == "verification" else PLACEHOLDER
+    required_placeholder = CLAIM_PLACEHOLDER if args.mode == "audit" else PLACEHOLDER
     if required_placeholder not in prompt_template:
         raise SystemExit(f"{args.prompt_file} must contain {required_placeholder}.")
 
-    mre_records: dict[str, dict] = {}
-    if args.mode == "verification":
-        # MRE-only, tools-off: the records ARE the paper list; the bundle and
-        # full paper text are not needed.
-        mre_records = load_mre_records(args.mre_records)
-        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in mre_records]
+    claim_records: dict[str, dict] = {}
+    rubric = ""
+    if args.mode == "audit":
+        # Claims-only, tools-off: the audit-pool rows ARE the paper list; the
+        # auditor reads the agent run bundle, not the paper text.
+        claim_records = load_mre_records(args.claims)
+        rubric = load_audit_rubric(args.rubric_file)
+        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in claim_records]
     else:
         papers = load_bundle_papers(args.dataset)
         papers = [paper for paper in papers if paper.tex_files]
@@ -56,7 +60,7 @@ def main() -> int:
         papers = filter_papers_by_ids(papers, args.paper_ids_file)
     papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
-        build_prompt(prompt_template, paper, mre_records, args.mode)
+        build_prompt(prompt_template, paper, claim_records, rubric, args.mode, args.runs_dir)
         for paper in papers_to_run
     ]
 
@@ -97,18 +101,29 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("classification", "verification"),
+        choices=("classification", "audit"),
         default="classification",
-        help="classification curates the artifact tier; verification curates the deterministic target.json.",
+        help="classification curates the artifact tier; audit grades an agent reproduction attempt against the rubric.",
     )
     parser.add_argument(
-        "--mre-records",
+        "--claims",
+        type=argparse_path,
         help=(
-            "Already-chosen MRE rows (classifier extracted output) joined by arxiv "
-            "id and injected into the verification prompt. A local JSONL path or an "
-            "hf://datasets/<owner>/<name>/<file> reference. Default: "
-            f"{VERIFICATION_MRE_RECORDS_DEFAULT}."
+            "Audit-pool rows (classifier extracted output) carrying the "
+            "central_claim per paper, injected into the audit prompt. A local "
+            "JSONL path or an hf://datasets/<owner>/<name>/<file> reference. "
+            f"Default: {AUDIT_CLAIMS_DEFAULT}."
         ),
+    )
+    parser.add_argument(
+        "--rubric-file",
+        type=argparse_path,
+        help="Audit rubric markdown injected into the audit prompt (default: rubric_audit.md).",
+    )
+    parser.add_argument(
+        "--runs-dir",
+        type=argparse_path,
+        help="Directory of agent reproduction run bundles, one per paper. PENDING: format TBD (see TODO(agent-runs)).",
     )
     parser.add_argument("--prompt-file", type=argparse_path)
     parser.add_argument("--output", type=argparse_path)
@@ -239,14 +254,15 @@ def filter_papers_by_ids(papers: list, ids_file) -> list:
 
 def resolve_mode_settings(args: argparse.Namespace) -> None:
     """Fill prompt/output/schema/message defaults for the selected mode."""
-    if args.mode == "verification":
-        args.prompt_file = args.prompt_file or VERIFICATION_PROMPT_FILE
-        args.output = args.output or VERIFICATION_DEFAULT_OUTPUT
-        args.extracted_output = args.extracted_output or VERIFICATION_DEFAULT_EXTRACTED
-        args.mre_records = args.mre_records or VERIFICATION_MRE_RECORDS_DEFAULT
-        args.response_format = VERIFICATION_RESPONSE_FORMAT
-        args.system_message = VERIFICATION_SYSTEM_MESSAGE
-        args.final_no_tools_message = VERIFICATION_FINAL_NO_TOOLS_MESSAGE
+    if args.mode == "audit":
+        args.prompt_file = args.prompt_file or AUDIT_PROMPT_FILE
+        args.rubric_file = args.rubric_file or AUDIT_RUBRIC_FILE
+        args.output = args.output or AUDIT_DEFAULT_OUTPUT
+        args.extracted_output = args.extracted_output or AUDIT_DEFAULT_EXTRACTED
+        args.claims = args.claims or AUDIT_CLAIMS_DEFAULT
+        args.response_format = AUDIT_RESPONSE_FORMAT
+        args.system_message = AUDIT_SYSTEM_MESSAGE
+        args.final_no_tools_message = AUDIT_FINAL_NO_TOOLS_MESSAGE
         args.use_tools = False
         return
     args.prompt_file = args.prompt_file or argparse_path("prompt.txt")
@@ -258,9 +274,18 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     args.use_tools = True
 
 
-def build_prompt(template: str, paper: Paper, mre_records: dict[str, dict], mode: str) -> str:
-    if mode == "verification":
-        return template.replace(MRE_PLACEHOLDER, mre_record_text(mre_records.get(paper.arxiv_id)))
+def build_prompt(
+    template: str,
+    paper: Paper,
+    claim_records: dict[str, dict],
+    rubric: str,
+    mode: str,
+    runs_dir,
+) -> str:
+    if mode == "audit":
+        return build_audit_prompt(
+            template, rubric, claim_records.get(paper.arxiv_id), paper.arxiv_id, runs_dir
+        )
     return template.replace(PLACEHOLDER, paper.text())
 
 
