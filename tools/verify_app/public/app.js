@@ -16,6 +16,7 @@ const state = {
   drafts: {},        // paper_id -> editable verification fields (mine)
   saved: {},         // paper_id -> last-saved row (for dirty checks)
   others: {},        // paper_id -> { done: [names], progress: [names] } (everyone else)
+  othersFull: {},    // paper_id -> [full verification rows] (everyone else, for the compare panel)
   presence: {},      // paper_id -> [names] viewing RIGHT NOW (everyone else)
   current: null,     // paper_id
   filter: "queue",
@@ -236,13 +237,15 @@ function draft(id) {
 // --- everyone else's status (so two people don't redo the same paper) ------
 async function loadAllVerifications() {
   state.others = {};
+  state.othersFull = {};
   if (!sb) return;
-  const { data, error } = await sb.from("verifications").select("paper_id,reviewer,status");
+  const { data, error } = await sb.from("verifications").select("*");
   if (error) { console.error(error); return; }
   for (const r of data || []) {
     if (r.reviewer === state.reviewer) continue;
     const m = state.others[r.paper_id] || (state.others[r.paper_id] = { done: [], progress: [] });
     (r.status === "completed" ? m.done : m.progress).push(r.reviewer);
+    (state.othersFull[r.paper_id] || (state.othersFull[r.paper_id] = [])).push(r);
   }
 }
 
@@ -262,6 +265,7 @@ function startLiveSync() {
     await loadAllVerifications();
     renderList();
     refreshConflictBanner();
+    refreshOthersPanel();
   }, 400);
   sb.channel("verifs-live")
     .on("postgres_changes", { event: "*", schema: "public", table: "verifications" }, refresh)
@@ -316,8 +320,7 @@ function tierFromScore(s, data, standard) {
 
 // turn each agree/disagree verdict into the reviewer's effective boolean
 // (agree -> model's value, disagree -> flipped, unsure/unset -> null)
-function reviewerSignals(p) {
-  const d = draft(p.custom_id);
+function reviewerSignals(p, d = draft(p.custom_id)) {
   const sig = p.signals || {};
   const out = {};
   for (const step of STEPS) {
@@ -332,8 +335,8 @@ function reviewerSignals(p) {
 }
 
 // reviewer's computed score/tier, or null if any signal is unsure/unanswered
-function reviewerScore(p) {
-  const e = reviewerSignals(p);
+function reviewerScore(p, d = draft(p.custom_id)) {
+  const e = reviewerSignals(p, d);
   if ([e.code, e.dataset, e.weights, e.dataset_standard].some((x) => x === null)) return null;
   const score = scoreFromSignals(e.code, e.dataset, e.weights, e.dataset_standard);
   return { score, tier: tierFromScore(score, e.dataset, e.dataset_standard) };
@@ -582,6 +585,9 @@ function renderDetail() {
   // score step
   root.appendChild(renderScoreStep(p, STEPS.length + 1));
 
+  // what other reviewers labelled (collapsed so you form your own view first)
+  root.appendChild(el(`<div id="others-panel"></div>`));
+
   // trace (on demand)
   if (p.has_trace && CFG.TRACE_BASE_URL) {
     const box = collapsible("🔍 Show model reasoning trace (loads on demand — may bias you)", `<div class="trace-body">Loading…</div>`, false);
@@ -614,6 +620,70 @@ function renderDetail() {
   updateStepProgress();
   refreshScorePanel();
   refreshConflictBanner();
+  refreshOthersPanel();
+}
+
+// ---- other reviewers' labels (compare panel) ------------------------------
+// effective answer for an arbitrary reviewer row (no "Your answer" prefix)
+function effectiveAnswer(step, p, row) {
+  const v = row[`${step.key}_verdict`];
+  if (!v) return "";
+  if (v === "unsure") return "unsure";
+  const mv = ((p.signals || {})[step.signal] || {}).value;
+  if (typeof mv !== "boolean") return "answered (model gave no value)";
+  const eff = v === "agree" ? mv : !mv;
+  return `${step.noun} — ${eff ? "YES" : "NO"}`;
+}
+
+// What everyone else recorded for the current paper: per-signal verdicts,
+// effective YES/NO, notes, found links, and their computed score/tier.
+function otherReviewerCard(p, row) {
+  const sc = reviewerScore(p, row);
+  const rows = STEPS.map((step) => {
+    const eff = effectiveAnswer(step, p, row);
+    const note = row[`${step.key}_note`];
+    const found = step.foundKey ? row[step.foundKey] : null;
+    if (!eff && !note && !found) return "";
+    return `<div class="orow">
+      <div class="ostep">${esc(step.q)}</div>
+      <div class="oeff">${eff ? esc(eff) : "<span class=\"muted\">—</span>"}</div>
+      ${note ? `<div class="onote">“${esc(note)}”</div>` : ""}
+      ${found ? `<div class="ofound"><a href="${esc(found)}" target="_blank" rel="noopener">${esc(found)}</a></div>` : ""}
+    </div>`;
+  }).join("");
+  const scoreNote = row.score_note ? `<div class="onote">“${esc(row.score_note)}”</div>` : "";
+  const scoreSugg = (row.score_verdict === "disagree" && row.score_suggested != null)
+    ? ` · suggested ${esc(row.score_suggested)}` : "";
+  return `<div class="ocard">
+    <div class="ohead">
+      <b>${esc(row.reviewer)}</b>
+      <span class="badge ${row.status === "completed" ? "yes" : "unk"}">${esc(row.status === "completed" ? "completed" : "in progress")}</span>
+      ${sc ? `<span class="badge tier ${tierClass(sc.tier)}">${esc(sc.tier)} · score ${sc.score}</span>` : ""}
+      ${row.score_verdict ? `<span class="muted">score: ${esc(row.score_verdict)}${scoreSugg}</span>` : ""}
+    </div>
+    ${rows || `<div class="muted small">No per-signal verdicts recorded.</div>`}
+    ${scoreNote}
+  </div>`;
+}
+
+function refreshOthersPanel() {
+  const node = document.getElementById("others-panel");
+  if (!node) return;
+  const p = state.byId[state.current];
+  const rows = (state.othersFull[state.current] || []).slice()
+    .sort((a, b) => (a.reviewer || "").localeCompare(b.reviewer || ""));
+  if (!p || !rows.length) { node.innerHTML = ""; return; }
+  const wasOpen = !!node.querySelector("details[open]");
+  const body = `<div class="others-body">${rows.map((r) => otherReviewerCard(p, r)).join("")}</div>`;
+  node.innerHTML = "";
+  node.appendChild(collapsible(
+    `👥 What other reviewers labelled (${rows.length}) — open to compare (may bias you)`,
+    body, wasOpen));
+  if (!wasOpen) {
+    node.querySelector("details").addEventListener("toggle", function () {
+      if (this.open) trackOnce("others_opened", state.current, { reviewers: rows.length });
+    }, { once: true });
+  }
 }
 
 let stepCards = {};   // step.key -> card element for the currently open paper
