@@ -63,6 +63,8 @@ env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS
 nvidia-smi topo -m || true
 
 python src/run_arxiv_prompt_vllm.py \
+  --model /tmp/$USER/MiniMax-M3 \
+  --vllm-cache-dir /tmp/$USER/MiniMax-M3/vllm_cache \
   --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
@@ -70,7 +72,7 @@ python src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bfvr/hding4/MiniMax-M2.7/vllm_cache \
+  # --vllm-cache-dir /projects/bfvr/hding4/MiniMax-M2.7/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
