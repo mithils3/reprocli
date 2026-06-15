@@ -1,0 +1,10 @@
+2403.00397
+
+npm install
+npm run build
+
+node dist/run.js \
+  --benchmark ../outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
+  --paper-id 2403.00397 \
+  --workdir /tmp/repro-sandboxes \
+  --output ../outputs/reproduction_results.jsonl
