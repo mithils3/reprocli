@@ -22,8 +22,8 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from reprocli_vllm.config import PLACEHOLDER
-from reprocli_vllm.output_schema import FINAL_JSON_SCHEMA, normalize_score_and_tier
+from reprocli_vllm.config.config import PLACEHOLDER
+from reprocli_vllm.schema.output import FINAL_JSON_SCHEMA, normalize_score_and_tier
 
 MODEL = "gpt-5.5"
 REASONING_EFFORT = "low"

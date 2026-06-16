@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..config import TOOL_MAX_CHARS, TOOL_RESULT_MAX_CHARS, TOOL_TIMEOUT
-from ..papers import Paper
+from reprocli_vllm.config.config import TOOL_MAX_CHARS, TOOL_RESULT_MAX_CHARS, TOOL_TIMEOUT
+from reprocli_vllm.papers.papers import Paper
 from .github_mcp import (
     github_file_contents_tool,
     github_repo_tool,

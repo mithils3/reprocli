@@ -6,15 +6,15 @@ from __future__ import annotations
 import random
 import sys
 
-from reprocli_vllm.config import CLAIM_PLACEHOLDER, PLACEHOLDER
-from reprocli_vllm.audit_inputs import build_audit_prompt, load_audit_rubric
-from reprocli_vllm.cli_args import parse_args
+from reprocli_vllm.config.config import CLAIM_PLACEHOLDER, PLACEHOLDER
+from reprocli_vllm.audit.inputs import build_audit_prompt, load_audit_rubric
+from reprocli_vllm.config.cli_args import parse_args
 from reprocli_vllm.hf_upload import hf_run_uploader
-from reprocli_vllm.mre_records import load_mre_records
-from reprocli_vllm.paper_bundles import load_bundle_papers
-from reprocli_vllm.papers import Paper
-from reprocli_vllm.tool_loop import run_tool_loop
-from reprocli_vllm.vllm_server import VllmServer
+from reprocli_vllm.runtime.mre_records import load_mre_records
+from reprocli_vllm.papers.bundles import load_bundle_papers
+from reprocli_vllm.papers.papers import Paper
+from reprocli_vllm.runtime.tool_loop import run_tool_loop
+from reprocli_vllm.vllm.server import VllmServer
 
 
 def main() -> int:

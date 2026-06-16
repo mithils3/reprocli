@@ -6,7 +6,7 @@ import urllib.parse
 from functools import cache
 from typing import Any
 
-from ..config import TOOL_TIMEOUT
+from reprocli_vllm.config.config import TOOL_TIMEOUT
 from .mcp_client import MCPError, StdioMCPClient, StreamableHTTPMCPClient
 from .mcp_results import mcp_tool_result
 

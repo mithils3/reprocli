@@ -1,19 +1,21 @@
-"""Read-only run-directory tools for the LLM reproduction auditor.
+"""Run-directory tools for the LLM reproduction auditor.
 
 The auditor is handed ONE agent reproduction run directory -- a collection of
 ``*.log`` files, output artifacts, and any code the agent wrote -- and explores
 it to trace how every graded number was actually produced. These tools are
 scoped to that one directory:
 
-  - ``list_run_files`` -- list files and directories in the run dir,
-  - ``read_run_file``  -- read one text file (a log, an output JSON, a script),
-  - ``bash``           -- run a shell command with the run dir as the cwd
-                          (grep logs, inspect outputs, run ``python3 -c ...``),
-  - ``python``         -- TODO(audit-python): a real Python interpreter; stubbed
-                          for now (use ``bash`` with ``python3`` instead).
+  - ``list_run_files``  -- list files and directories in the run dir,
+  - ``read_run_file``   -- read one text file (a log, an output JSON, a script),
+  - ``write_run_file``  -- write a NEW text file (e.g. a re-scoring script) into
+                           the run dir to run with ``bash`` and cite; never
+                           overwrites an existing file,
+  - ``bash``            -- run a shell command with the run dir as the cwd (grep
+                           logs, inspect outputs, run a written script).
 
-``run_dir_manifest`` builds the file listing injected into the audit prompt so
-the auditor knows what is there before it starts opening files.
+There is deliberately no separate Python interpreter: re-scoring goes through a
+``write_run_file`` script + ``bash``, keeping every computation on disk and
+citable. ``run_dir_manifest`` builds the file listing injected into the prompt.
 """
 
 from __future__ import annotations
@@ -22,10 +24,11 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from ..config import (
+from reprocli_vllm.config.config import (
     BASH_TIMEOUT,
     RUN_FILE_DEFAULT_CHARS,
     RUN_FILE_MAX_CHARS,
+    RUN_FILE_WRITE_MAX_CHARS,
     RUN_MANIFEST_MAX_ENTRIES,
     function_tool,
 )
@@ -100,25 +103,39 @@ def run_bash(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     }
 
 
-def run_python(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
-    # TODO(audit-python): wire a real sandboxed Python interpreter (persistent
-    # namespace, numpy/torch available for re-scoring artifacts). Until then,
-    # fall back to the bash tool with `python3 -c "..."` scoped to the run dir.
+def write_run_file(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+    resolved = _resolve_within(run_dir, arguments.get("path"))
+    if not resolved["ok"]:
+        return resolved
+    target: Path = resolved["path"]
+    if target == run_dir or target.is_dir():
+        return {"ok": False, "error": f"Not a writable file path: {arguments.get('path')}"}
+    if target.exists():
+        # The run dir is the evidence under audit; never clobber an agent artifact.
+        rel = _rel(target, run_dir)
+        return {"ok": False, "error": f"Refusing to overwrite {rel}; write to a new path."}
+    content = arguments.get("content")
+    if not isinstance(content, str):
+        return {"ok": False, "error": "Missing 'content' string to write."}
+    if len(content) > RUN_FILE_WRITE_MAX_CHARS:
+        return {"ok": False, "error": f"Content exceeds {RUN_FILE_WRITE_MAX_CHARS} chars."}
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
     return {
-        "ok": False,
-        "tool": "python",
-        "error": (
-            "python interpreter not implemented yet (TODO(audit-python)). "
-            'Run `python3 -c "..."` or a script through the bash tool instead.'
-        ),
+        "ok": True,
+        "path": _rel(target, run_dir),
+        "bytes_written": len(content.encode("utf-8")),
     }
 
 
 AUDIT_TOOL_HANDLERS = {
     "list_run_files": list_run_files,
     "read_run_file": read_run_file,
+    "write_run_file": write_run_file,
     "bash": run_bash,
-    "python": run_python,
 }
 
 
@@ -174,11 +191,22 @@ AUDIT_TOOLS = [
         ["command"],
     ),
     function_tool(
-        "python",
-        "Run Python over the run artifacts. NOT IMPLEMENTED YET (TODO); use the "
-        "bash tool with python3 for now.",
-        {"code": {"type": "string", "description": "Python source to execute."}},
-        ["code"],
+        "write_run_file",
+        "Write a NEW text file (e.g. a re-scoring Python script) into the run "
+        "directory so you can run it with bash and cite it as evidence. Use this "
+        "for multi-line scripts instead of fighting `python3 -c` quoting. Will "
+        "not overwrite an existing file -- pick a new path.",
+        {
+            "path": {
+                "type": "string",
+                "description": "New file path relative to the run directory; must not already exist.",
+            },
+            "content": {
+                "type": "string",
+                "description": "Text content to write (e.g. Python source).",
+            },
+        },
+        ["path", "content"],
     ),
 ]
 
@@ -201,7 +229,8 @@ def run_dir_manifest(run_dir: Path) -> str:
         lines.append(f"  ... and {len(files) - len(shown)} more")
     lines.append(
         "\nUse list_run_files, read_run_file, and bash (cwd = this run directory) "
-        "to open these files and trace how every reported number was produced."
+        "to open these files and trace how every reported number was produced. "
+        "To re-score an artifact, write_run_file a script and run it with bash."
     )
     return "\n".join(lines)
 

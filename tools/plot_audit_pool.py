@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Plot the audit pool: composition and compute-feasibility by artifact tier.
 
-Reads the selected-pool JSONL emitted by ``python -m reprocli_vllm.select_pool``
+Reads the selected-pool JSONL emitted by ``python -m reprocli_vllm.audit.select_pool``
 and renders two panels:
 
   (a) pool composition — papers per selection band, grouped by tier;
