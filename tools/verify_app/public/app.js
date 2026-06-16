@@ -167,7 +167,7 @@ function el(html) {
 // requested width (e.g. 760xN). So we (a) prewarm every link the moment a paper
 // opens — generation runs while you read, not when you hover — and (b) detect
 // readiness by width, so the placeholder is never shown or cached.
-const PREVIEW = { delay: 320, width: 1000, maxRetries: 8, retryEvery: 1400 };
+const PREVIEW = { delay: 320, width: 1280, maxRetries: 8, retryEvery: 1400 };  // 1280 = mShots' max render width
 
 const shotCache = new Map();      // url -> ready screenshot src (instant re-hover)
 const shotPending = new Map();    // url -> [callbacks] awaiting the first ready shot
@@ -217,9 +217,24 @@ function requestShot(url, cb) {
 // Kick off generation for every external link in a freshly-rendered paper,
 // staggered so we don't hammer mShots, so hovers land on a warm cache.
 function prewarmShots(root) {
-  if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
   const urls = [...new Set($$('a[href^="http"]', root).map((a) => a.href))];
   urls.forEach((url, i) => setTimeout(() => requestShot(url), i * 200));
+}
+
+// Pinned, click-to-open screenshot shown inline under a model link — the easy
+// way to eyeball whether the agent's link is actually live (a 404 page looks
+// nothing like a real repo/dataset, which a status check can't tell you).
+function renderInlineShot(box, url) {
+  box.innerHTML = `<div class="lp-shot"><div class="lp-shimmer"></div><img alt="" /></div>`;
+  const img = $("img", box), shimmer = $(".lp-shimmer", box);
+  requestShot(url, (src, ready) => {
+    if (!ready || !src) {
+      box.innerHTML = `<div class="shot-fail">Couldn't generate a preview — open the link directly ↗ to check it.</div>`;
+      return;
+    }
+    img.onload = () => { shimmer.style.display = "none"; img.classList.add("ready"); };
+    img.src = src;
+  });
 }
 
 function setupLinkPreviews() {
@@ -312,6 +327,12 @@ async function init() {
   $("#signout").addEventListener("click", signOut);
   $$(".tab").forEach((t) => t.addEventListener("click", () => setView(t.dataset.view)));
   $("#search").addEventListener("input", (e) => { state.search = e.target.value.toLowerCase(); renderList(); });
+  $("#sidebar-toggle").addEventListener("click", () => {
+    const hidden = !$("#view-verify").classList.contains("nolist");
+    localStorage.setItem("sidebar_hidden", hidden ? "1" : "0");
+    applySidebar(hidden);
+  });
+  applySidebar(localStorage.getItem("sidebar_hidden") === "1");
   setupLinkPreviews();
 
   await loadPapers();
@@ -635,6 +656,7 @@ async function openPaper(id) {
   trackPresence();          // tell everyone else I'm now on this paper
   renderList();
   renderDetail();
+  $("#detail").scrollTop = 0;   // start each paper at the top, not wherever the last one was
 }
 
 function refreshConflictBanner() {
@@ -848,11 +870,11 @@ function renderStep(p, step, n, links) {
       <div class="step-h"><span class="stepn">${n}</span><h3>${esc(step.q)}</h3>${signalBadge(sig.value)}</div>
       <p class="guide">${esc(step.guide)}</p>
       <details class="ev" open><summary>Model's evidence</summary><p>${esc(sig.evidence || "(none)")}</p></details>
-      ${modelLinks.length ? `<div class="mlinks"><b>Model links</b> <span class="mlinks-hint">— click 👁 to see the live page</span>
+      ${modelLinks.length ? `<div class="mlinks"><b>Model links</b> <span class="mlinks-hint">— live page previews (use ✕ to hide one)</span>
         <ul class="mlink-list">${modelLinks.map((u) => `<li class="mlink">
-          <button class="mlink-prev" data-url="${esc(u)}" type="button" title="Preview the live page">👁 preview</button>
+          <button class="mlink-prev on" data-url="${esc(u)}" type="button" title="Hide preview">✕ hide</button>
           <a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
-          <div class="mlink-shot" hidden></div></li>`).join("")}</ul></div>` : ""}
+          <div class="mlink-shot"></div></li>`).join("")}</ul></div>` : ""}
       <div class="searchrow">${step.searches(p).map(([lab, url]) => `<a class="searchbtn" data-lab="${esc(lab)}" href="${esc(url)}" target="_blank" rel="noopener">Search: ${esc(lab)} ↗</a>`).join("")}</div>
       <div class="verdicts">${VERDICTS.map((v) => `<button class="vbtn ${d[verdictField] === v ? "sel " + v : ""}" data-v="${v}">${v === "agree" ? "✓ Agree" : v === "disagree" ? "✗ Disagree" : "? Unsure"}</button>`).join("")}<span class="effective">${esc(effectiveText(step, p, d))}</span></div>
       ${step.foundKey ? `<input class="found" type="url" placeholder="Link you found (optional)" value="${esc(d[step.foundKey] || "")}" />` : ""}
@@ -869,6 +891,17 @@ function renderStep(p, step, n, links) {
   }));
   $$(".searchbtn", card).forEach((a) => a.addEventListener("click", () =>
     track("search_click", state.current, { step: step.key, label: a.dataset.lab })));
+  $$(".mlink-prev", card).forEach((btn) => {
+    const box = $(".mlink-shot", btn.closest(".mlink"));
+    const load = () => { if (!box.dataset.loaded) { box.dataset.loaded = "1"; renderInlineShot(box, btn.dataset.url); } };
+    if (btn.classList.contains("on")) load();          // previews are open by default
+    btn.addEventListener("click", () => {
+      const open = btn.classList.toggle("on");
+      box.hidden = !open;
+      btn.textContent = open ? "✕ hide" : "👁 preview";
+      if (open) { load(); track("link_preview", state.current, { step: step.key, url: btn.dataset.url }); }
+    });
+  });
   $(".ev", card).addEventListener("toggle", function () {
     if (this.open) trackOnce("evidence_opened", step.key, { step: step.key });
   });
@@ -1111,8 +1144,16 @@ async function saveCurrent(advance) {
 // ===========================================================================
 // views
 // ===========================================================================
+function applySidebar(hidden) {
+  $("#view-verify").classList.toggle("nolist", hidden);
+  const btn = $("#sidebar-toggle");
+  btn.classList.toggle("on", !hidden);
+  btn.title = hidden ? "Show the paper list" : "Hide the paper list";
+}
+
 function setView(view) {
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === view));
+  $("#sidebar-toggle").classList.toggle("hidden", view !== "verify");
   $("#view-verify").classList.toggle("hidden", view !== "verify");
   $("#view-json").classList.toggle("hidden", view !== "json");
   $("#view-dashboard").classList.toggle("hidden", view !== "dashboard");

@@ -79,6 +79,15 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
 
 /* layout */
 .layout { display: grid; grid-template-columns: 330px 1fr; height: calc(100vh - 58px); }
+.layout.nolist { grid-template-columns: 1fr; }
+.layout.nolist .sidebar { display: none; }
+.sidebar-toggle {
+  flex: none; width: 34px; height: 32px; margin-right: 10px;
+  background: transparent; border: 1px solid var(--line-strong); color: var(--txt);
+  border-radius: 9px; font-size: 15px; line-height: 1; cursor: pointer;
+}
+.sidebar-toggle:hover { background: var(--bg-side); border-color: var(--txt); }
+.sidebar-toggle.on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent-strong); }
 /* every reviewer gets the browsable sidebar; sign-in still auto-drops them into
    the next unlabelled paper, so the guided queue keeps working alongside it. */
 .sidebar { background: var(--bg-side); border-right: 1px solid var(--line);
@@ -200,7 +209,37 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
 .ev p { background: var(--panel2); padding: 10px 12px; border-radius: 8px; white-space: pre-wrap;
   max-height: 220px; overflow: auto; margin: 6px 0; font-size: 13px; }
 .mlinks { font-size: 12px; margin: 8px 0; word-break: break-all; }
-.mlinks a { margin-right: 8px; }
+.mlinks-hint { color: var(--muted); font-weight: 400; }
+.mlink-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mlink { font: 13px/1.5 var(--sans); }
+.mlink > a { color: var(--accent-strong); margin-left: 4px; }
+.mlink-prev {
+  display: inline-block; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--panel);
+  color: var(--txt); border-radius: 7px; padding: 2px 9px;
+  font: 600 12px var(--sans); white-space: nowrap; vertical-align: baseline;
+}
+.mlink-prev:hover { background: var(--bg-side); }
+.mlink-prev.on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent-strong); }
+.mlink-shot {
+  margin: 8px 0 2px; width: 100%; max-width: 560px;
+  border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.mlink-shot .lp-shot {
+  position: relative; width: 100%; aspect-ratio: 1000 / 580; background: var(--bg-side);
+}
+.mlink-shot .lp-shot img {
+  width: 100%; height: 100%; object-fit: cover; object-position: top center;
+  display: block; opacity: 0; transition: opacity .25s ease;
+}
+.mlink-shot .lp-shot img.ready { opacity: 1; }
+.mlink-shot .lp-shimmer {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, var(--bg-side) 30%, var(--panel) 50%, var(--bg-side) 70%);
+  background-size: 220% 100%; animation: lp-shimmer 1.15s linear infinite;
+}
+.shot-fail { padding: 14px; font: 13px var(--sans); color: var(--muted); }
 .searchrow { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
 .searchbtn { background: var(--accent-tint); border: 1px solid rgba(217, 119, 87, .4);
   color: var(--accent-strong); padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 500;
