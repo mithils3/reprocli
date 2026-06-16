@@ -1,0 +1,2474 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A benchmark for reproducing ML-paper claims — one lockfile, three LLM agent roles (classifier, reproduction, auditor) over a single tool-calling core.">
+      
+      
+        <meta name="author" content="mithils3">
+      
+      
+        <link rel="canonical" href="https://mithils3.github.io/reprocli/architecture/">
+      
+      
+        <link rel="prev" href="../getting-started/concepts/">
+      
+      
+        <link rel="next" href="../agent-core/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Architecture - ReproBench</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#reprobench-system-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ReproBench" class="md-header__button md-logo" aria-label="ReproBench" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ReproBench
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mithils3/reprocli" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mithils3/reprocli
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ReproBench" class="md-nav__button md-logo" aria-label="ReproBench" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ReproBench
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mithils3/reprocli" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mithils3/reprocli
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-the-whole-system-mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. The whole system (Mermaid)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../agent-core/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The agent core
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    The agent core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent-core/tool-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime & tool loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent-core/guardrails/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guardrails & termination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent-core/structured-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Structured output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent modes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Agent modes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/auditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auditor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/reproduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproduction (designed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../dataset/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dataset pipeline
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dataset pipeline
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dataset/stages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dataset/bundle-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bundle schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockfile & selection
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lockfile & selection
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../selection/lockfile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The lockfile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../selection/select-pool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pool selection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../selection/h100-budget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    H100 budget & bands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools & schemas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools & schemas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/web-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web / MCP tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/run-dir-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run-dir tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output & audit schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running on SLURM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Running on SLURM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../slurm/clusters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clusters & allocations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../slurm/sbatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batch jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/run-arxiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    run_arxiv_prompt_vllm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/build-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    build_dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Review apps
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Review apps
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apps/verify-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verification app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apps/v3-viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v3 viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repo layout & conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-the-whole-system-mermaid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. The whole system (Mermaid)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="reprobench-system-architecture">ReproBench — system architecture<a class="headerlink" href="#reprobench-system-architecture" title="Permanent link">&para;</a></h1>
+<p>End to end: how the dataset is built, how papers are reproduced, and how those
+reproductions are graded. The whole system turns on <strong>one lockfile</strong> (the
+band-selected audit pool) and <strong>three LLM agent roles</strong> arranged around it — all
+three reuse one tool-calling agent core, only their tools, prompt, and output
+schema differ.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>  CLASSIFIER agent ──► LOCKFILE ──► REPRODUCTION agent (srun) ──► run bundle ──► AUDITOR agent
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   (build dataset)    (the data)     (actually run the MRE)       (evidence)     (grade 0–5)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        S1                S5                  S6 🚧                                   S7
+</span></code></pre></div>
+<blockquote>
+<p>Verified against: <code>run_arxiv_prompt_vllm.py</code>, <code>runtime/tool_loop.py</code>, <code>config/cli_args.py</code>,
+<code>vllm/io.py</code>, <code>vllm/server.py</code>, <code>runtime/loop_guards.py</code>, <code>config/config.py</code>,
+<code>schema/output.py</code>, <code>schema/audit.py</code>, <code>tools/web_tools.py</code>,
+<code>tools/run_dir_tools.py</code>, <code>runtime/run_health.py</code>, <code>audit/audit.py</code>, <code>audit/select_pool.py</code>,
+<code>scripts/*.sbatch</code>, <code>scripts/delta_scripts.sh</code>,
+<code>scripts/kimi_k2_6_multinode_interactive.md</code>.
+Status legend: ✅ live · 🚧 designed, not yet wired.</p>
+</blockquote>
+<h2 id="0-the-whole-system-mermaid">0. The whole system (Mermaid)<a class="headerlink" href="#0-the-whole-system-mermaid" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TD
+  classDef lock fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#000;
+  classDef llm  fill:#dbeafe,stroke:#1d4ed8,color:#000;
+  classDef gpu  fill:#dcfce7,stroke:#15803d,color:#000;
+
+  A["NeurIPS 2025 arXiv LaTeX bundles + OpenReview supplements"]
+  CL["① CLASSIFIER agent ✅&lt;br/&gt;run_tool_loop · WEB_TOOLS (GitHub/HF MCP, fetch_url)&lt;br/&gt;verify artifacts → MRE record"]:::llm
+  POST1["normalize_score_and_tier · web_verification · h100 audit"]
+  SEL["audit/select_pool.py · band-stratified, cheapest-first"]
+  LOCK["THE LOCKFILE — audit_pool_extracted.jsonl (~200 rows)&lt;br/&gt;central_claim · mre_config · match_bar · agent_task · tier · band · budget"]:::lock
+  RA["② REPRODUCTION agent 🚧&lt;br/&gt;orchestrator (CPU) + run_gpu→srun (GPU)&lt;br/&gt;actually runs the MRE under an H100-hr budget"]:::llm
+  GPU["SLURM GPU allocation (DeltaAI ghx4 / Delta gpuH200x8)"]:::gpu
+  BUN["run bundle  runs/&amp;lt;paper&amp;gt;/&amp;lt;budget&amp;gt;h/&amp;lt;run&amp;gt;/&lt;br/&gt;result.json · report.json · repro.yaml · evidence/"]
+  AU["③ AUDITOR agent ✅&lt;br/&gt;run_tool_loop · read-only run-dir tools&lt;br/&gt;grade 0–5 + cheat_flags"]:::llm
+  POST2["finalize_audit_row · anti-cheat cap → verdict"]
+
+  A --&gt; CL --&gt; POST1 --&gt; SEL --&gt; LOCK
+  LOCK --&gt;|"agent_task"| RA
+  RA &lt;--&gt;|"run_gpu = srun --jobid=$ALLOC …"| GPU
+  RA --&gt; BUN
+  LOCK --&gt;|"central_claim · match_bar (verbatim)"| AU
+  BUN --&gt;|"runs_dir"| AU --&gt; POST2
+
+  class LOCK lock;</code></pre>
+<p>Through-line for all three roles: <strong>the model reports evidence, the code computes
+every consequential label</strong> (tier, score, verdict, run-health, and the
+reproduction verdict). No agent ever grades itself.</p>
+<hr />
+<h1 id="part-i-dataset-construction-s1s5">Part I — Dataset construction (S1–S5) ✅<a class="headerlink" href="#part-i-dataset-construction-s1s5" title="Permanent link">&para;</a></h1>
+<p>Two stages produce the lockfile that the other two consumers read.</p>
+<h2 id="i1-pipeline-ascii">I.1 Pipeline (ASCII)<a class="headerlink" href="#i1-pipeline-ascii" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>STAGE 1 — DATASET CONSTRUCTION  (classifier pass, mode = classification)    ✅
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>   NeurIPS 2025 arXiv LaTeX bundles
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        │  load_bundle_papers()  →  Paper(tex_files)
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        ▼
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>   prompt.txt {PAPER_TEXT} ──► vLLM + tool loop ──► web_tools (verify links)
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        ▼
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>   ONE MRE record per paper   (output_schema.FINAL_JSON_SCHEMA)
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>     ├ central_claim, claim_evidence, paper_kind
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>     ├ mre_config     — smallest experiment that tests the claim
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>     ├ match_bar      — {kind, op, reference_value, tolerance, note}   ◄ pinned here
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>     ├ agent_task     — what the repro agent is told to do
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>     ├ verified_links, signals   (code / data / weights)
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>     └ h100_estimate  (compute cost)
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        ▼  normalize_score_and_tier · web_verification · h100 audit
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>   &lt;run&gt;_extracted.jsonl   (every classified paper)
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>STAGE 2 — POOL SELECTION  (audit/select_pool.py)                            ✅
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>   keep if  verified  AND  audited H100 ≤ 192 hr
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>   band-stratified Easy/Medium/Hard · bands 0-8/8-32/32-96/96-192 · cheapest-first
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>        ▼
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>   audit_pool_extracted.jsonl   ◄══ THE LOCKFILE (~200 rows)
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>   each row = claim + mre_config + match_bar + agent_task + tier + cost
+</span></code></pre></div>
+<h2 id="i2-the-match_bar-through-line">I.2 The <code>match_bar</code> through-line<a class="headerlink" href="#i2-the-match_bar-through-line" title="Permanent link">&para;</a></h2>
+<p>The pinned success bar — "how close counts as a match" — is set once and reused,
+so every agent is judged against the same ruler instead of one the auditor
+re-infers each run.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Stage 1 classifier PINS it  →  lockfile CARRIES it  →  Auditor APPLIES it verbatim
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th><code>kind</code></th>
+<th>what counts as a match</th>
+<th>example fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point_estimate</code></td>
+<td>land near a value</td>
+<td><code>op=abs_rel_within, ref=25.76, tol=0.05</code></td>
+</tr>
+<tr>
+<td><code>threshold</code></td>
+<td>clear a floor/ceiling</td>
+<td><code>op="&gt;=", ref=85, tol=null</code></td>
+</tr>
+<tr>
+<td><code>direction</code></td>
+<td>beat a baseline (no tolerance band)</td>
+<td><code>op="measured_method &gt; measured_baseline", ref=null, tol=null</code></td>
+</tr>
+<tr>
+<td><code>magnitude</code></td>
+<td>the <em>size</em> of a delta is the target</td>
+<td><code>op="delta within tol", ref=+5, tol=0.05</code></td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td>no checkable scalar/relation (theory/position)</td>
+<td>all null</td>
+</tr>
+</tbody>
+</table>
+<p>Rows that predate the field (or <code>kind = none</code>) fall back to the rubric defaults in
+<code>rubric_audit.md</code> C1: ±5 % for a point estimate, direction-only for a comparative.</p>
+<hr />
+<h1 id="part-ii-the-single-agent-core">Part II — The single agent core<a class="headerlink" href="#part-ii-the-single-agent-core" title="Permanent link">&para;</a></h1>
+<p>There is <strong>one agent core</strong> (<code>run_tool_loop</code>, <code>runtime/tool_loop.py</code>); the classifier and
+auditor are <em>modes</em> of it (<code>resolve_mode_settings</code>), differing only in prompt,
+toolset, and output schema. The reproduction agent (Part III) is the same skeleton
+with an execution toolset bolted on.</p>
+<ul>
+<li><strong>Single agent, not multi-agent.</strong> One model, one conversation per item, one
+  fixed toolset. Parallelism is <em>across items</em> (N independent episodes), never
+  within one episode.</li>
+<li><strong>ReAct-style, <code>tool_choice="auto"</code>.</strong> The model decides whether/which tool to
+  call; the loop never scripts a tool sequence — it enforces budgets and harvests
+  results.</li>
+<li><strong>Bounded autonomy.</strong> Every episode provably terminates: a round cap, a
+  repeat-call cap, and a context budget each force a final answer.</li>
+<li><strong>Trust-but-verify.</strong> The LLM proposes; deterministic code decides every
+  consequential label.</li>
+</ul>
+<h2 id="ii1-runtime-ascii">II.1 Runtime (ASCII)<a class="headerlink" href="#ii1-runtime-ascii" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>                          run_arxiv_prompt_vllm.main()
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                          parse_args → resolve_mode_settings (mode picks prompt/tools/schema)
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                                      │
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        ┌─────────────────────────────┼──────────────────────────────────────────┐
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        ▼                             ▼                                            ▼
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a> ┌──────────────┐          ┌──────────────────────┐                     ┌──────────────────┐
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a> │ INPUT LOADER │          │  MODEL SERVER (vLLM)  │                     │   OUTPUT SINKS    │
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a> │ papers +     │          │  OpenAI /v1/chat      │                     │  raw .jsonl       │
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a> │ prompts      │          │  completions          │                     │  extracted .jsonl │
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a> │ classify:    │          │  ┌─ embedded VllmServer│                    │  trace .jsonl opt │
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a> │  bundle text │          │  │   (subprocess, TP, │                     │  HF upload (opt)  │
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a> │ audit:       │          │  │   auto-tool-choice) │                    └────────▲─────────┘
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a> │  claim+run_dir│         │  └─ OR --vllm-server-url│                            │ OUTPUT_WRITE_LOCK
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a> └──────┬───────┘          └───────────▲───────────┘                             │
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        │ initial_messages             │ HTTP (stateless completions)            │
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        │ [system, user]               │                                         │
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        ▼                              │                                         │
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a> ┌───────────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a> │ ORCHESTRATOR — run_tool_loop  (runtime/tool_loop.py)                                    │
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a> │   conversations{id → [messages]}    ← per-episode memory lives HERE, not the server     │
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a> │   two ThreadPoolExecutors:  requests pool → vLLM   ·   tools pool → tool layer           │
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a> │   event loop: wait(request_futures ∪ tool_futures, FIRST_COMPLETED)                      │
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a> │   GUARDRAILS (runtime/loop_guards.py): repeated_call_cutoff · round_limit · context_budget │
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a> └───────────────┬───────────────────────────────────────────────────────┬─────────────────┘
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>                 │ tool_calls present                                     │ tools OFF (final pass)
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>                 ▼                                                        ▼
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a> ┌─────────────────────────────────────┐                  ┌──────────────────────────────────┐
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a> │ TOOL EXECUTION LAYER (web_tools.py)  │                  │ STRUCTURED-OUTPUT FINALIZATION     │
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a> │  retry-once on transient + truncate  │                  │ response_format = json_schema      │
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a> │  classify: GitHub/HF MCP · fetch_url │                  │  classify → FINAL_RESPONSE_FORMAT  │
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a> │           · paper_bundle_file_…      │                  │  audit    → AUDIT_RESPONSE_FORMAT  │
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a> │  audit:   list/read/bash (run-dir)   │                  └────────────────┬─────────────────┘
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a> └─────────────────────────────────────┘                                   ▼
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>        results appended → next round                     ┌──────────────────────────────────┐
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>                                                          │ POST-PROCESSING (run_health/audit) │
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>                                                          │  LLM proposes · CODE decides label │
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>                                                          └──────────────────────────────────┘
+</span></code></pre></div>
+<h2 id="ii2-one-episode-the-state-machine">II.2 One episode — the state machine<a class="headerlink" href="#ii2-one-episode-the-state-machine" title="Permanent link">&para;</a></h2>
+<p><code>handle_request_done</code> is the transition function. Two phases: a <em>free
+tool-exploration</em> phase (tools on, <code>tool_choice=auto</code>) then exactly one <em>forced
+structured-output</em> phase (tools removed, <code>response_format=json_schema</code>) — which is
+why the final JSON parses reliably.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a> round 0:  request WITH tools  ([system, user-prompt])
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    │
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    ▼ request completes
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a> tools enabled?
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>   ├─ YES + tool_calls → repeated? → exit repeated_call_cutoff → force final
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>   │                   → round+1 ≥ tool_rounds? → exit round_limit
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>   │                   → append_tool_results (run every call) → next round
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>   ├─ YES, no tool_calls → re-issue ONE tools-off pass → schema-forced JSON
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>   └─ NO (final pass)   → record telemetry+exit_reason → write rows
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    │ next request: include_tools = not force_final AND next_round &lt; tool_rounds
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    └─                              AND not context_budget_exceeded   → loop
+</span></code></pre></div>
+<p>Exit reasons (<code>natural · round_limit · repeated_call_cutoff · context_budget</code>)
+roll into <code>verification_status</code> (<code>verified · incomplete · degraded</code>).</p>
+<h2 id="ii3-one-core-two-live-modes">II.3 One core, two live modes<a class="headerlink" href="#ii3-one-core-two-live-modes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Classifier</strong> (<code>--mode classification</code>) ✅</th>
+<th><strong>Auditor</strong> (<code>--mode audit</code>) ✅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Job</td>
+<td>Read a paper, <em>verify</em> artifacts, emit one MRE record</td>
+<td>Grade one agent's reproduction run against the rubric</td>
+</tr>
+<tr>
+<td>Input</td>
+<td><code>{PAPER_TEXT}</code> (bundle LaTeX + supplement)</td>
+<td><code>{CENTRAL_CLAIM}</code> + <code>{RUBRIC}</code> + run-dir manifest</td>
+</tr>
+<tr>
+<td>Tools</td>
+<td>GitHub/HF MCP, <code>fetch_url</code>, bundle reader</td>
+<td><code>list_run_files</code>, <code>read_run_file</code>, <code>bash</code>, <code>python</code> 🚧</td>
+</tr>
+<tr>
+<td>Tool scope</td>
+<td>Open web / MCP, read-only evidence</td>
+<td>Read-only, path-confined to <code>&lt;runs-dir&gt;/&lt;arxiv_id&gt;</code></td>
+</tr>
+<tr>
+<td>Final schema</td>
+<td><code>FINAL_RESPONSE_FORMAT</code> (signals, match_bar, h100)</td>
+<td><code>AUDIT_RESPONSE_FORMAT</code> (0–5 score, cheat_flags, citations)</td>
+</tr>
+<tr>
+<td>Code decides</td>
+<td>tier, web_verification rollup, h100 audit</td>
+<td>anti-cheat cap (high flag → 0), verdict, run-health</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ii4-statelessness-concurrency">II.4 Statelessness &amp; concurrency<a class="headerlink" href="#ii4-statelessness-concurrency" title="Permanent link">&para;</a></h2>
+<p>The vLLM server is a pure completion endpoint — <strong>all conversation memory is the
+orchestrator's <code>conversations</code> dict</strong>. That's what makes "attach to an existing
+multi-node server" (<code>--vllm-server-url</code>) and embedded-server runs the same code
+path, and it is exactly the property Part III exploits: the reproduction agent's
+<em>brain</em> can be the same served model while its <em>hands</em> (<code>srun</code>) live elsewhere.
+Up to <code>--request-workers</code> episodes run at once; request and tool pools are
+separate so a slow tool never blocks a model response; rows are appended as each
+item finishes under <code>OUTPUT_WRITE_LOCK</code>.</p>
+<hr />
+<h1 id="part-iii-the-reproduction-agent-s6-designed-not-yet-wired">Part III — The reproduction agent (S6) 🚧 designed, not yet wired<a class="headerlink" href="#part-iii-the-reproduction-agent-s6-designed-not-yet-wired" title="Permanent link">&para;</a></h1>
+<p>The missing consumer: given <strong>one lockfile row</strong> (<code>agent_task</code>, <code>central_claim</code>,
+<code>mre_config</code>, <code>match_bar</code>, <code>tier</code>, <code>band</code>, <code>budget_h100_hours</code>), an agent that
+<em>actually runs the experiment</em> on the cluster under a metered H100-hour budget and
+emits the run bundle the auditor grades. It is the same <code>run_tool_loop</code> skeleton,
+but its toolset executes real commands — the heavy ones via <code>srun</code>.</p>
+<h2 id="iii1-the-core-design-decision-decouple-orchestration-from-gpu">III.1 The core design decision: decouple orchestration from GPU<a class="headerlink" href="#iii1-the-core-design-decision-decouple-orchestration-from-gpu" title="Permanent link">&para;</a></h2>
+<p>The agent's <em>thinking</em> (LLM calls, file edits, dependency installs, reading
+results) is cheap CPU work; only the experiment itself needs a GPU. Renting a GPU
+for the whole episode while the LLM reasons would burn the H100 budget on idle
+time. So:</p>
+<ul>
+<li><strong>Orchestrator</strong> runs on a <strong>login or CPU allocation</strong> — long-lived, cheap, no
+  GPU. It holds the agent loop, the budget meter, evidence capture, and the
+  bundle writer.</li>
+<li><strong>GPU work</strong> is dispatched as discrete <strong><code>srun</code> steps</strong> into a GPU allocation
+  held open for the budget window. <strong>The allocation is the budget container; each
+  <code>run_gpu</code> tool call is one <code>srun</code> step inside it.</strong></li>
+</ul>
+<p>This matches the repo's existing split — sbatch/<code>salloc</code> holds the nodes,
+<code>srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 … bash -lc '…'</code> runs each step
+(see <code>scripts/kimi_k2_6_multinode_interactive.md</code> §5 and <code>delta_scripts.sh</code>).</p>
+<h2 id="iii2-runtime-ascii">III.2 Runtime (ASCII)<a class="headerlink" href="#iii2-runtime-ascii" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>                    LOCKFILE ROW  (one paper × budget cell)
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>       agent_task · central_claim · mre_config · match_bar · tier · band · budget_h100
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                              │
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                              ▼
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a> ┌──────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a> │ ORCHESTRATOR  (login / CPU allocation — cheap, long-lived, NO GPU)                 │
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a> │  run_tool_loop core (same skeleton as classifier/auditor)                          │
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a> │  reproduction LLM  → any OpenAI-compatible /v1/chat/completions endpoint,           │
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a> │                      selected by base URL (swap the brain by changing the URL)      │
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a> │                                                                                    │
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a> │  budget meter   cumulative H100-equiv = Σ gpus × wallclock × hw_multiplier (R9)    │
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a> │  evidence rec.  → commands.log · trajectory.jsonl · env.lock · patches/            │
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a> │                                                                                    │
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a> │  TOOLS                                                                             │
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a> │   workspace_bash → CPU step  (git clone, uv venv, edit, inspect)  [orchestrator]   │
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a> │   run_gpu        → srun step into the held GPU allocation ───────────────┐         │
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a> │   read_file / write_file / apply_patch  (workspace-confined)             │         │
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a> │   write_repro_yaml / submit  → the agent&#39;s submission contract           │         │
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a> └──────────────────────────────────────────────────────────────────────────│────────┘
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>            salloc holds N GPUs for the budget window                        │ srun --jobid=$ALLOC
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>                              │                                               ▼
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a> ┌──────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a> │ GPU ALLOCATION  (DeltaAI ghx4 GH200×N / Delta gpuH200x8 — reserved for this cell)  │
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a> │  srun --jobid=$ALLOC --nodes=1 --ntasks=1 bash -lc &#39;cd &lt;workspace&gt; &amp;&amp; &lt;cmd&gt;&#39;        │
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a> │  per-paper workspace on NVMe · per-paper uv venv · network egress (reads GitHub)    │
+</span><span id="__span-5-26"><a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a> │  every step: capture stdout/stderr/exit + wallclock×gpus → meter + trajectory.jsonl │
+</span><span id="__span-5-27"><a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a> └──────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-5-28"><a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>                              │ budget exhausted OR agent writes repro.yaml → stops
+</span><span id="__span-5-29"><a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>                              ▼
+</span><span id="__span-5-30"><a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a> ┌──────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-5-31"><a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a> │ HARNESS RE-EXECUTION  (CORE-Bench style — the verdict the agent CANNOT write)      │
+</span><span id="__span-5-32"><a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a> │  one final srun step runs repro.yaml&#39;s scoring entrypoint FRESH → parse metric     │
+</span><span id="__span-5-33"><a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a> │  apply match_bar → result.json {status, measured, within_tolerance,                │
+</span><span id="__span-5-34"><a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a> │                                 budget_at_first_pass, integrity.flags}             │
+</span><span id="__span-5-35"><a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a> └──────────────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-5-36"><a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>                              │
+</span><span id="__span-5-37"><a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a>                              ▼
+</span><span id="__span-5-38"><a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a>   run bundle  runs/&lt;paper_id&gt;/&lt;budget&gt;h/&lt;run_id&gt;/   →   Part II auditor (--mode audit)
+</span></code></pre></div>
+<h2 id="iii3-tools-the-reproduction-agent-gets">III.3 Tools the reproduction agent gets<a class="headerlink" href="#iii3-tools-the-reproduction-agent-gets" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>tool</th>
+<th>runs where</th>
+<th>role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workspace_bash</code></td>
+<td>orchestrator / CPU <code>srun</code> step</td>
+<td>clone the repo at a pinned commit, create the per-paper <code>uv</code> venv, install deps, edit files, inspect data — anything that does not need a GPU</td>
+</tr>
+<tr>
+<td><code>run_gpu</code></td>
+<td><code>srun --jobid=$ALLOC</code> into the GPU allocation</td>
+<td>the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, <strong>meters</strong> <code>gpus × wallclock × hw_multiplier</code>, enforces a per-step timeout and the <strong>remaining</strong> budget</td>
+</tr>
+<tr>
+<td><code>read_file</code> / <code>write_file</code> / <code>apply_patch</code></td>
+<td>orchestrator (workspace-confined)</td>
+<td>structured edits; <code>apply_patch</code> feeds <code>patches/author_code.diff</code> (R11 integrity)</td>
+</tr>
+<tr>
+<td><code>write_repro_yaml</code> + <code>submit</code></td>
+<td>orchestrator</td>
+<td>the submission contract: the scoring entrypoint command + where the metric lands. <code>submit</code> ends the episode</td>
+</tr>
+</tbody>
+</table>
+<p>The toolset swaps in via the same <code>resolve_mode_settings</code> seam (a new
+<code>--mode reproduce</code>); the loop body, guardrails, structured-output finalization,
+and trace capture are unchanged from Part II.</p>
+<p><strong>The brain is provider-agnostic.</strong> The agent's reasoning runs on <strong>any
+OpenAI-compatible <code>/v1/chat/completions</code> server, chosen purely by base URL</strong> — the
+existing <code>--vllm-server-url</code> + <code>build_chat_completion_request</code> →
+<code>post_chat_completion_row</code> path already speaks that protocol, so the brain is
+swapped by changing the URL (a cluster vLLM server, or any other OpenAI-compatible
+gateway), with no provider-specific code in the harness.</p>
+<h2 id="iii4-the-budget-meter-the-new-guardrail">III.4 The budget meter (the new guardrail)<a class="headerlink" href="#iii4-the-budget-meter-the-new-guardrail" title="Permanent link">&para;</a></h2>
+<p>Where the classifier/auditor guardrails bound <em>tokens and rounds</em>, the
+reproduction agent's hard guardrail bounds <em>compute</em>. <code>run_gpu</code> is wrapped so:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>remaining = budget_h100_hours − Σ(step.gpus × step.wallclock_h × hw_multiplier)
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>if remaining ≤ 0:  run_gpu refuses → forces the agent toward write_repro_yaml/submit
+</span></code></pre></div>
+<p><code>hw_multiplier</code> comes from the H100-equivalence table (report-format R9), so a
+GH200 step and an H200 step are both charged in H100-equivalent hours. Every step
+appends a <code>trajectory.jsonl</code> row (<code>{t, h100_hours_consumed, measured, note}</code>) so
+<code>budget_at_first_pass</code> is reconstructable.</p>
+<h2 id="iii5-the-verdict-is-harness-written-not-agent-written">III.5 The verdict is harness-written, not agent-written<a class="headerlink" href="#iii5-the-verdict-is-harness-written-not-agent-written" title="Permanent link">&para;</a></h2>
+<p>The agent's last act is <code>repro.yaml</code> (the submission contract) — it never writes
+<code>result.json</code>. The harness then <strong>re-executes the scoring entrypoint fresh</strong> in a
+final <code>srun</code> step, parses the metric, applies the lockfile's <code>match_bar</code>, and
+writes <code>result.json</code>:</p>
+<table>
+<thead>
+<tr>
+<th><code>status</code></th>
+<th>meaning</th>
+<th>counts in the success curve as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reproduced</code></td>
+<td>≥1 in-tolerance measurement within budget</td>
+<td>success</td>
+</tr>
+<tr>
+<td><code>out_of_tolerance</code></td>
+<td>a measurement exists; best is outside tolerance</td>
+<td>failure (measured)</td>
+</tr>
+<tr>
+<td><code>no_result</code></td>
+<td>no valid measurement before budget/termination</td>
+<td>failure (unmeasured)</td>
+</tr>
+<tr>
+<td><code>invalid_run</code></td>
+<td>harness/infra fault</td>
+<td>excluded, rerun</td>
+</tr>
+</tbody>
+</table>
+<p>An agent claim that contradicts the harness measurement is recorded as an
+<code>integrity.flag</code>, not silently resolved. This is the same trust-but-verify posture
+as Parts I–II, applied to execution. The full bundle layout (<code>report.json</code>,
+checklist R1–R12, failure taxonomy E1–E8, <code>evidence/</code>) is the report-format spec;
+this section pins only the <em>execution architecture</em> around it.</p>
+<h2 id="iii6-proposed-module-layout">III.6 Proposed module layout<a class="headerlink" href="#iii6-proposed-module-layout" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>src/reprocli_repro/                 # the S6 execution agent (mode = reproduce)
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  __init__.py
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  cli_args.py        # --mode reproduce wiring; reuses resolve_mode_settings seam
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  slurm.py           # salloc/srun wrappers, allocation lifecycle, node discovery
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  budget.py          # H100-equiv meter + hw_multiplier table (R9)
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  workspace.py       # per-paper workspace + uv venv + pinned-commit clone
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  evidence.py        # commands.log / trajectory.jsonl / env.lock / patches capture
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  tools/
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    workspace_bash.py
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    run_gpu.py       # the srun-dispatching tool
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>src/reprocli/report/                # the bundle layer (also feeds the auditor)
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  schema.py · validate.py · render.py   # report.json/result.json schema + report.md
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  reexecute.py       # harness re-runs repro.yaml → result.json (CORE-Bench style)
+</span></code></pre></div>
+<p>Splitting <code>reprocli_vllm</code> (classifier+auditor) from <code>reprocli_repro</code> (execution)
+also closes the TODO to separate classification/audit from the harness, and keeps
+every module under the 300-line rule.</p>
+<hr />
+<h1 id="part-iv-the-slurm-execution-substrate">Part IV — The SLURM execution substrate<a class="headerlink" href="#part-iv-the-slurm-execution-substrate" title="Permanent link">&para;</a></h1>
+<p>How GPU work is actually managed in this repo today (the ground the reproduction
+agent builds on).</p>
+<h2 id="iv1-clusters-accounts">IV.1 Clusters &amp; accounts<a class="headerlink" href="#iv1-clusters-accounts" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>cluster</th>
+<th>account / partition</th>
+<th>hardware</th>
+<th>used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DeltaAI</strong> (NCSA)</td>
+<td><code>-A betw-dtai-gh -p ghx4</code></td>
+<td>GH200, 4 GPU/node</td>
+<td>the classifier/auditor sbatch jobs (<code>scripts/*.sbatch</code>)</td>
+</tr>
+<tr>
+<td><strong>Delta</strong> (NCSA)</td>
+<td><code>-A bfvr-delta-cpu -p cpu-interactive</code></td>
+<td>CPU</td>
+<td>model downloads, CPU orchestration</td>
+</tr>
+<tr>
+<td><strong>Delta</strong> (NCSA)</td>
+<td><code>-A bfvr-delta-gpu -p gpuH200x8-interactive</code></td>
+<td>H200 ×8/node</td>
+<td>interactive + multi-node model serving</td>
+</tr>
+</tbody>
+</table>
+<h2 id="iv2-the-allocation-step-pattern">IV.2 The allocation → step pattern<a class="headerlink" href="#iv2-the-allocation-step-pattern" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># 1. Hold GPUs for the budget window (the budget container)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>salloc<span class="w"> </span>-A<span class="w"> </span>betw-dtai-gh<span class="w"> </span>-p<span class="w"> </span>ghx4<span class="w"> </span>--nodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--gpus-per-node<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">       </span>--cpus-per-task<span class="o">=</span><span class="m">16</span><span class="w"> </span>--mem<span class="o">=</span>64G<span class="w"> </span>--time<span class="o">=</span>&lt;budget-derived&gt;
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># 2. Orchestrator (CPU, this shell) drives the agent loop and fires steps:</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>srun<span class="w"> </span>--jobid<span class="o">=</span><span class="nv">$SLURM_JOB_ID</span><span class="w"> </span>--nodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--ntasks<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">     </span>bash<span class="w"> </span>-lc<span class="w"> </span><span class="s1">&#39;cd &lt;workspace&gt; &amp;&amp; &lt;agent command&gt;&#39;</span>
+</span></code></pre></div>
+<p>Each <code>srun</code> step inherits the env block the sbatch scripts already standardize:
+caches under <code>/projects/bgnp/msalunkhe/.cache/{vllm,triton,torchinductor}</code>, NCCL /
+<code>TORCH_NCCL_*</code> tuning, <code>module load python/3.11.9</code>, and (for the agent's own venv)
+a <strong>per-paper <code>uv</code> venv</strong> rather than the shared <code>.venv</code> — per the
+decouple-and-isolate intent so one paper's dependency install can never poison
+another's.</p>
+<h2 id="iv3-why-this-maps-cleanly-onto-the-agent-core">IV.3 Why this maps cleanly onto the agent core<a class="headerlink" href="#iv3-why-this-maps-cleanly-onto-the-agent-core" title="Permanent link">&para;</a></h2>
+<p>The chat-completions server is stateless (Part II.4), so the reproduction agent
+attaches its brain to any already-running <strong>OpenAI-compatible endpoint by base
+URL</strong> and spends <strong>zero</strong> GPU budget on reasoning — the GPU allocation is touched
+only by <code>run_gpu</code>/<code>srun</code> steps that do real experiment work. Orchestration and GPU
+are physically different allocations, exactly as the design requires. (If that
+endpoint is itself a cluster vLLM server, it is its own allocation — never the one
+metered against the paper's H100 budget.)</p>
+<hr />
+<h1 id="part-v-status-the-one-remaining-handoff">Part V — Status &amp; the one remaining handoff<a class="headerlink" href="#part-v-status-the-one-remaining-handoff" title="Permanent link">&para;</a></h1>
+<table>
+<thead>
+<tr>
+<th>stage</th>
+<th>component</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Classifier agent → MRE records</td>
+<td>✅ live</td>
+</tr>
+<tr>
+<td>S5</td>
+<td><code>audit/select_pool.py</code> → lockfile (~200 rows)</td>
+<td>✅ live</td>
+</tr>
+<tr>
+<td>S6</td>
+<td><strong>Reproduction agent (srun) → run bundle</strong></td>
+<td>🚧 <strong>designed here, not built</strong></td>
+</tr>
+<tr>
+<td>S7</td>
+<td>Auditor agent (<code>--mode audit</code>) + anti-cheat cap</td>
+<td>✅ live</td>
+</tr>
+</tbody>
+</table>
+<p>The single open edge: <strong>S6 must emit one run dir per paper at
+<code>&lt;runs-dir&gt;/&lt;arxiv_id&gt;</code> matching <code>run_dir_manifest</code></strong> (no <code>outputs/v5/agent_runs/</code>
+exists yet). Building <code>src/reprocli_repro/</code> (Part III.6) is what turns this from a
+classifier-plus-auditor into an end-to-end benchmark — and the <code>run_gpu</code>→<code>srun</code>
+tool (Part III.3) is the piece that makes the agent "actually reproduce stuff."</p>
+<h3 id="known-caveats-carried-forward">Known caveats carried forward<a class="headerlink" href="#known-caveats-carried-forward" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The auditor re-scores artifacts (recompute a metric from a saved output) via
+  <code>bash</code> + <code>python3</code> (<code>run_dir_tools.py</code>); there is no dedicated interpreter tool.</li>
+<li>The audit <code>bash</code> is full shell scoped to the run dir — fine for grading our own
+  agents locally; container/seccomp is the prerequisite before grading untrusted
+  runs. The reproduction agent's <code>run_gpu</code>/<code>workspace_bash</code> need the same
+  sandboxing treatment before running untrusted paper code at scale.
+</content></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../getting-started/concepts/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Key concepts">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Key concepts
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../agent-core/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/mithils3/reprocli" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

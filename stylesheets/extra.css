@@ -1,0 +1,25 @@
+/* ReproBench docs — small visual touches on top of the Material theme. */
+
+/* Status colours used in tables/cards: ✅ live vs 🚧 designed. */
+.md-typeset .live {
+  color: #16a34a; /* green-600 */
+}
+.md-typeset .designed {
+  color: #d97706; /* amber-600 */
+}
+
+/* Slightly tighter, card-like grids for the landing page. */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.4rem;
+}
+
+/* Make the lockfile / match_bar tables breathe a little. */
+.md-typeset table:not([class]) th {
+  font-weight: 600;
+}
+
+/* Mermaid diagrams: center and add a touch of breathing room. */
+.md-typeset .mermaid {
+  text-align: center;
+  margin: 1.2em 0;
+}

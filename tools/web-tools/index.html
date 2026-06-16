@@ -1,0 +1,2462 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A benchmark for reproducing ML-paper claims — one lockfile, three LLM agent roles (classifier, reproduction, auditor) over a single tool-calling core.">
+      
+      
+        <meta name="author" content="mithils3">
+      
+      
+        <link rel="canonical" href="https://mithils3.github.io/reprocli/tools/web-tools/">
+      
+      
+        <link rel="prev" href="../../selection/h100-budget/">
+      
+      
+        <link rel="next" href="../run-dir-tools/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Web / MCP tools - ReproBench</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#web-tools-the-classifiers-read-only-evidence-toolset" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ReproBench" class="md-header__button md-logo" aria-label="ReproBench" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ReproBench
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Web / MCP tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mithils3/reprocli" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mithils3/reprocli
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ReproBench" class="md-nav__button md-logo" aria-label="ReproBench" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ReproBench
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mithils3/reprocli" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mithils3/reprocli
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../agent-core/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The agent core
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    The agent core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-core/tool-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime & tool loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-core/guardrails/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guardrails & termination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-core/structured-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Structured output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent modes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Agent modes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../modes/classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../modes/auditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auditor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../modes/reproduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproduction (designed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../dataset/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dataset pipeline
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dataset pipeline
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dataset/stages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dataset/bundle-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bundle schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockfile & selection
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lockfile & selection
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../selection/lockfile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The lockfile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../selection/select-pool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pool selection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../selection/h100-budget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    H100 budget & bands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools & schemas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools & schemas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web / MCP tools
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web / MCP tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-tool-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tool table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch-and-the-retry-once-then-truncate-wrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dispatch and the retry-once-then-truncate wrapper
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dispatch and the retry-once-then-truncate wrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-truncation-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How truncation works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-transport-github-hugging-face" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP transport (GitHub + Hugging Face)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP transport (GitHub + Hugging Face)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-transports-chosen-by-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two transports, chosen by environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints-tokens-and-toolsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints, tokens, and toolsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-result-compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP result compaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github-mcp-tools-toolsgithub_mcppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub MCP tools (tools/github_mcp.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hugging-face-mcp-tools-toolshuggingface_mcppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hugging Face MCP tools (tools/huggingface_mcp.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#huggingface_repository_tree-toolshuggingface_treepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        huggingface_repository_tree (tools/huggingface_tree.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_url-toolsweb_toolspy-toolshttp_utilspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fetch_url (tools/web_tools.py + tools/http_utils.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paper_bundle_file_contents-toolspaper_bundlepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        paper_bundle_file_contents (tools/paper_bundle.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-references
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-dir-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run-dir tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output & audit schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running on SLURM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Running on SLURM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../slurm/clusters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clusters & allocations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../slurm/sbatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batch jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/run-arxiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    run_arxiv_prompt_vllm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/build-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    build_dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Review apps
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Review apps
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apps/verify-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verification app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apps/v3-viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v3 viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repo layout & conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-tool-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tool table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch-and-the-retry-once-then-truncate-wrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dispatch and the retry-once-then-truncate wrapper
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dispatch and the retry-once-then-truncate wrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-truncation-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How truncation works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-transport-github-hugging-face" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP transport (GitHub + Hugging Face)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP transport (GitHub + Hugging Face)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-transports-chosen-by-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two transports, chosen by environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints-tokens-and-toolsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints, tokens, and toolsets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-result-compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP result compaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github-mcp-tools-toolsgithub_mcppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub MCP tools (tools/github_mcp.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hugging-face-mcp-tools-toolshuggingface_mcppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hugging Face MCP tools (tools/huggingface_mcp.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#huggingface_repository_tree-toolshuggingface_treepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        huggingface_repository_tree (tools/huggingface_tree.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_url-toolsweb_toolspy-toolshttp_utilspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fetch_url (tools/web_tools.py + tools/http_utils.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paper_bundle_file_contents-toolspaper_bundlepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        paper_bundle_file_contents (tools/paper_bundle.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-references
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="web-tools-the-classifiers-read-only-evidence-toolset">Web tools — the classifier's read-only evidence toolset<a class="headerlink" href="#web-tools-the-classifiers-read-only-evidence-toolset" title="Permanent link">&para;</a></h1>
+<p>The <strong>classifier agent</strong> (mode ① in <a href="../../architecture/">the architecture overview</a>) verifies a paper's reproduction artifacts by gathering read-only evidence: GitHub repos and files, Hugging Face repos and trees, the paper's own OpenReview supplement bundle, and arbitrary public URLs. Every tool here returns a JSON-serializable dict, never writes anything, and is funneled through one truncation chokepoint so no single result can blow the context budget. This page documents the exposed tool schemas, what each returns, the MCP transport behind the GitHub/HF tools, and the retry-once-then-truncate wrapper.</p>
+<blockquote>
+<p>Verified against: <code>tools/web_tools.py</code>, <code>tools/github_mcp.py</code>, <code>tools/huggingface_mcp.py</code>, <code>tools/huggingface_tree.py</code>, <code>tools/mcp_client.py</code>, <code>tools/mcp_results.py</code>, <code>tools/paper_bundle.py</code>, <code>tools/result_limits.py</code>, <code>tools/http_utils.py</code>, <code>config/config.py</code>.
+Status legend: ✅ live · 🚧 designed, not yet wired.</p>
+</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Scope of this page</p>
+<p>These are the tools the classifier sees. The auditor's run-directory tools live in <a href="../run-dir-tools/">run-dir tools</a>; the raw JSON-Schema for all tool roles is collected in <a href="../schemas/">tool schemas</a>. For where this toolset plugs into the agent, see <a href="../../agent-core/tool-loop/">the tool loop</a> and <a href="../../modes/classifier/">the classifier mode</a>.</p>
+</div>
+<h2 id="the-tool-table">The tool table<a class="headerlink" href="#the-tool-table" title="Permanent link">&para;</a></h2>
+<p>The schemas advertised to the model are built in <code>config/config.py</code> as <code>WEB_TOOLS</code>; dispatch happens in <code>tools/web_tools.py</code> via the <code>TOOL_HANDLERS</code> map (plus the two specially-routed handlers). All tools are read-only.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+<th>Scope / backing service</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>github_search_repositories</code></td>
+<td>Search repos like a GitHub-scoped web search</td>
+<td>GitHub MCP <code>search_repositories</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>github_search_code</code></td>
+<td>Code search with GitHub qualifiers (quotes, OR, NOT)</td>
+<td>GitHub MCP <code>search_code</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>github_repo</code></td>
+<td>One-shot repo overview: root files, README, latest release, tree</td>
+<td>GitHub MCP (4 calls)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>github_file_contents</code></td>
+<td>Read a file or directory listing</td>
+<td>GitHub MCP <code>get_file_contents</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>github_repository_tree</code></td>
+<td>List a repo tree, optionally filtered/recursive</td>
+<td>GitHub MCP <code>get_repository_tree</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>huggingface_search</code></td>
+<td>Search repos / papers / Spaces / docs / Hub</td>
+<td>Hugging Face MCP (tool chosen at runtime)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>huggingface_repo</code></td>
+<td>Repo details + README/card + compact root tree</td>
+<td>HF MCP + <code>huggingface_hub</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>huggingface_repository_tree</code></td>
+<td>List HF repo files/folders</td>
+<td><code>huggingface_hub</code> <code>HfApi.list_repo_tree</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>fetch_url</code></td>
+<td>Fetch a public http(s) URL, return status + text</td>
+<td>Direct <code>urllib</code> request</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>paper_bundle_file_contents</code></td>
+<td>Read a text file from the paper's OpenReview supplement</td>
+<td>Local paper bundle manifest</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Routing is not all <code>TOOL_HANDLERS</code></p>
+<p><code>TOOL_HANDLERS</code> only holds the GitHub/HF/<code>fetch_url</code> handlers. <code>paper_bundle_file_contents</code> is dispatched separately because it needs the current <code>Paper</code> object, and any name found in <code>AUDIT_TOOL_HANDLERS</code> (the run-dir tools) is dispatched ahead of everything else when a <code>run_dir</code> is bound. Unknown names return <code>{"ok": false, "error": "Unknown tool: …"}</code> with the full available-tool list.</p>
+</div>
+<h2 id="dispatch-and-the-retry-once-then-truncate-wrapper">Dispatch and the retry-once-then-truncate wrapper<a class="headerlink" href="#dispatch-and-the-retry-once-then-truncate-wrapper" title="Permanent link">&para;</a></h2>
+<p>Every classifier tool call enters through <code>execute_tool_call(call, paper)</code> in <code>tools/web_tools.py</code>. The flow:</p>
+<pre class="mermaid"><code>flowchart TD
+  A["execute_tool_call(call, paper)"] --&gt; B["run_tool_call → handler dict"]
+  B --&gt; C{is_transient_error?}
+  C --&gt;|"ok is False and error&lt;br/&gt;matches a transient marker"| D["run_tool_call again&lt;br/&gt;result['retried'] = True"]
+  C --&gt;|no| E["truncate_tool_result(...)"]
+  D --&gt; E
+  E --&gt; F["result within TOOL_RESULT_MAX_CHARS"]</code></pre>
+<ul>
+<li><strong><code>run_tool_call</code></strong> parses the function arguments (a dict, or a JSON string via <code>parse_tool_arguments</code>), picks the handler, and wraps any exception as <code>{"ok": false, "tool": name, "error": "&lt;ExcType&gt;: &lt;msg&gt;"}</code>.</li>
+<li><strong>Retry once on transient errors.</strong> <code>is_transient_error</code> (in <code>tools/result_limits.py</code>) only fires when <code>ok</code> is <code>False</code> <em>and</em> the lowercased <code>error</code> contains one of: <code>timeouterror</code>, <code>timed out</code>, <code>urlerror</code>, <code>connectionerror</code>, <code>connectionreseterror</code>, <code>remotedisconnected</code>, <code>rate limit</code>, <code>429</code>. On a hit the call runs exactly once more and the result is stamped <code>"retried": true</code>. There is no backoff and no second retry.</li>
+<li><strong>Truncate last.</strong> Whatever comes back is passed through <code>truncate_tool_result(result, TOOL_RESULT_MAX_CHARS)</code>.</li>
+</ul>
+<h3 id="how-truncation-works">How truncation works<a class="headerlink" href="#how-truncation-works" title="Permanent link">&para;</a></h3>
+<p><code>truncate_tool_result</code> (<code>tools/result_limits.py</code>) keeps the <em>whole result dict shape</em> but shrinks oversized strings:</p>
+<ol>
+<li>If <code>len(json.dumps(result))</code> is already ≤ <code>TOOL_RESULT_MAX_CHARS</code> (<strong>40 000</strong>, from <code>config/config.py</code>), return unchanged.</li>
+<li>Otherwise, up to 64 times: find the single longest string leaf anywhere in the nested dict/list (<code>longest_string_leaf</code>) and halve it (never below <code>MIN_KEPT_CHARS</code> = 200), appending <code>…[truncated]</code>.</li>
+<li>Stamp <code>"truncated": true</code> and a <code>"truncation_note"</code> telling the model to request a specific file path, <code>path_filter</code>, or smaller range.</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Two different budgets</p>
+<p><code>TOOL_MAX_CHARS</code> (<strong>24 000</strong>) is the <em>per-fetch</em> cap passed into <code>fetch_url</code> and HTTP reads. <code>TOOL_RESULT_MAX_CHARS</code> (<strong>40 000</strong>) is the <em>final serialized-dict</em> cap applied to every tool result by the wrapper. The bundle-file tool has its own pair (<code>BUNDLE_FILE_DEFAULT_CHARS</code> = 60 000, <code>BUNDLE_FILE_MAX_CHARS</code> = 200 000) applied to the file body <em>before</em> the 40 000 result cap clamps it again.</p>
+</div>
+<h2 id="mcp-transport-github-hugging-face">MCP transport (GitHub + Hugging Face)<a class="headerlink" href="#mcp-transport-github-hugging-face" title="Permanent link">&para;</a></h2>
+<p>The GitHub and Hugging Face tools talk to remote MCP servers through one tiny client in <code>tools/mcp_client.py</code>. The clients are constructed lazily and <code>@cache</code>-d (one per process) by <code>github_mcp_client()</code> and <code>hf_mcp_client()</code>.</p>
+<h3 id="two-transports-chosen-by-environment">Two transports, chosen by environment<a class="headerlink" href="#two-transports-chosen-by-environment" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+  E{"*_MCP_COMMAND&lt;br/&gt;set?"} --&gt;|yes| S["StdioMCPClient&lt;br/&gt;(subprocess, JSON-RPC over stdin/stdout)"]
+  E --&gt;|no| H["StreamableHTTPMCPClient&lt;br/&gt;(HTTP POST, JSON or SSE)"]</code></pre>
+<table>
+<thead>
+<tr>
+<th>Transport</th>
+<th>When</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>StdioMCPClient</code></td>
+<td><code>GITHUB_MCP_COMMAND</code> / <code>HF_MCP_COMMAND</code> is set</td>
+<td>Spawns the command with <code>subprocess.Popen</code>, exchanges newline-delimited JSON-RPC; reads with <code>select</code> until the deadline; <code>atexit</code>-registers <code>close()</code>.</td>
+</tr>
+<tr>
+<td><code>StreamableHTTPMCPClient</code></td>
+<td>default</td>
+<td>POSTs JSON-RPC to the server URL with <code>Accept: application/json, text/event-stream</code>; tracks <code>Mcp-Session-Id</code> and <code>MCP-Protocol-Version</code>; decodes either a JSON body or an SSE <code>data:</code> stream.</td>
+</tr>
+</tbody>
+</table>
+<p>Both share <code>BaseMCPClient</code>, which performs the MCP handshake once (<code>initialize</code> → <code>notifications/initialized</code>, protocol version <code>2025-06-18</code>) behind a lock before the first <code>tools/call</code> or <code>tools/list</code>, then reuses the session.</p>
+<h3 id="endpoints-tokens-and-toolsets">Endpoints, tokens, and toolsets<a class="headerlink" href="#endpoints-tokens-and-toolsets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Server</th>
+<th>Default URL</th>
+<th>Token env (first match wins)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub</td>
+<td><code>https://api.githubcopilot.com/mcp/</code> (<code>GITHUB_MCP_URL</code> overrides)</td>
+<td><code>GITHUB_MCP_TOKEN</code>, <code>GITHUB_TOKEN</code>, <code>GH_TOKEN</code></td>
+<td>Token sent as <code>Authorization: Bearer …</code>. Toolsets via <code>X-MCP-Toolsets</code> (default <code>repos,git,issues,pull_requests</code>, override with <code>GITHUB_MCP_TOOLSETS</code>).</td>
+</tr>
+<tr>
+<td>Hugging Face</td>
+<td><code>https://huggingface.co/mcp</code> (<code>HF_MCP_URL</code> overrides)</td>
+<td><code>HF_MCP_TOKEN</code>, <code>HF_TOKEN</code>, <code>HUGGINGFACE_TOKEN</code></td>
+<td>Token sent as <code>Authorization: Bearer …</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">No silent anonymous mode</p>
+<p>If no token is found <strong>and</strong> the URL env var is unset, client construction raises <code>MCPError</code> (e.g. <em>"Set GITHUB_MCP_TOKEN, GITHUB_TOKEN, GH_TOKEN, or GITHUB_MCP_COMMAND"</em>). Setting <code>*_MCP_URL</code> explicitly lets you point at an unauthenticated/local server without a token.</p>
+</div>
+<h3 id="mcp-result-compaction">MCP result compaction<a class="headerlink" href="#mcp-result-compaction" title="Permanent link">&para;</a></h3>
+<p>Raw MCP <code>tools/call</code> responses are normalized by <code>mcp_tool_result</code> (<code>tools/mcp_results.py</code>) into <code>{"ok": not isError, "tool": name, "result": {...}}</code>. The <code>result</code> is compacted: all <code>content[].text</code> (and embedded resource text) is concatenated into <code>"text"</code>, and if that text parses as JSON it is <em>also</em> attached as <code>"json"</code>. Tool wrappers (<code>github_result</code>, <code>hf_result</code>) then add <code>provider</code>, <code>name</code>, <code>arguments</code>, and often a <code>hint</code>.</p>
+<h2 id="github-mcp-tools-toolsgithub_mcppy">GitHub MCP tools (<code>tools/github_mcp.py</code>)<a class="headerlink" href="#github-mcp-tools-toolsgithub_mcppy" title="Permanent link">&para;</a></h2>
+<p>Repo arguments accept either <code>owner/name</code> or a <code>github.com</code> URL, parsed by <code>parse_github_repo</code> (URL <code>.git</code> suffix stripped). <code>github_owner_repo</code> also accepts separate <code>owner</code>/<code>name</code> keys.</p>
+<ul>
+<li><strong><code>github_search_repositories</code> / <code>github_search_code</code></strong> — require a non-empty <code>query</code>; <code>max_results</code> is clamped to <code>[1, 20]</code> (default 5) and passed as <code>perPage</code>. Repo search adds <code>minimal_output: true</code>. Optional <code>sort</code>/<code>order</code> are forwarded. Each returns the compacted MCP <code>result</code> plus a <code>hint</code> nudging the model to inspect candidate repos/files before counting code as available, and to try alternate title/acronym/arXiv-ID queries before concluding nothing exists.</li>
+<li><strong><code>github_file_contents</code></strong> — reads a single <code>path</code> (file or directory listing) at optional <code>ref</code>/<code>sha</code>. Long results are truncated, so the schema description tells the model to request specific paths.</li>
+<li><strong><code>github_repository_tree</code></strong> — lists the tree; forwards optional <code>tree_sha</code>, <code>path_filter</code>, and a boolean <code>recursive</code>. The schema steers callers toward <code>path_filter</code> over recursive listings.</li>
+<li><strong><code>github_repo</code></strong> — a convenience aggregate that fires <strong>four</strong> MCP calls via <code>safe_call_github_mcp</code> (which never raises, capturing per-call errors): root listing (<code>get_file_contents</code> at path <code>""</code>), the first README found among <code>README.md</code>, <code>readme.md</code>, <code>README.rst</code>, <code>README.txt</code>, <code>get_latest_release</code>, and <code>get_repository_tree</code>. Returns <code>root</code>, <code>readme</code>, <code>latest_release</code>, <code>tree</code>, an <code>errors</code> list for whichever calls failed, and <code>ok = true</code> if <strong>any</strong> of the four succeeded.</li>
+</ul>
+<h2 id="hugging-face-mcp-tools-toolshuggingface_mcppy">Hugging Face MCP tools (<code>tools/huggingface_mcp.py</code>)<a class="headerlink" href="#hugging-face-mcp-tools-toolshuggingface_mcppy" title="Permanent link">&para;</a></h2>
+<p>The HF MCP server's tool names vary, so the wrapper <strong>discovers</strong> the right tool at call time: <code>choose_hf_tool(search_type)</code> calls <code>list_tools()</code>, prefers a known name (<code>hub_repo_search</code>, <code>paper_search</code>, <code>space_search</code>, <code>hf_hub_query</code>, <code>hub_repo_details</code>), and otherwise scores tools by keyword (<code>tool_score</code>). <code>params_for_schema</code> then maps the wrapper's arguments onto whatever parameter names the chosen tool's <code>inputSchema</code> actually declares (e.g. <code>query</code>/<code>message</code>/<code>q</code>/<code>text</code>; <code>results_limit</code>/<code>limit</code>/<code>perPage</code>/…).</p>
+<ul>
+<li><strong><code>huggingface_search</code></strong> — needs a <code>query</code> (accepts <code>query</code>/<code>message</code>/<code>q</code>/<code>text</code>); <code>search_type</code> is one of <code>repositories</code> (default), <code>papers</code>, <code>spaces</code>, <code>docs</code>, <code>hub</code>. Returns the compacted MCP result plus a <code>hint</code> listing alternate query strategies.</li>
+<li><strong><code>huggingface_repo</code></strong> — parses one or more repo ids from <code>repo</code>/<code>repo_ids</code> (<code>namespace/repo</code> or a <code>huggingface.co</code> URL), resolves <code>repo_type</code> (<code>model</code>/<code>dataset</code>/<code>space</code>/<code>auto</code>), requests details with <code>include_readme: true</code>, and <strong>augments</strong> the response with a <code>root_tree</code>: a compact first-40-entry tree fetched directly from the Hub via <code>safe_repository_tree_summary</code> (errors captured, never raised).</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">huggingface_repo combines two backends</p>
+<p>Details/README come from the <strong>MCP server</strong>, while <code>root_tree</code> comes from the <strong><code>huggingface_hub</code> Hub API</strong> — so a repo can return useful tree data even when the MCP details call is weak.</p>
+</div>
+<h2 id="huggingface_repository_tree-toolshuggingface_treepy"><code>huggingface_repository_tree</code> (<code>tools/huggingface_tree.py</code>)<a class="headerlink" href="#huggingface_repository_tree-toolshuggingface_treepy" title="Permanent link">&para;</a></h2>
+<p>This tool does <strong>not</strong> go through MCP — it calls <code>huggingface_hub</code>'s <code>HfApi.list_repo_tree</code> directly. It accepts <code>repo</code> (or <code>repo_id</code>), <code>repo_type</code> (aliases like <code>datasets</code>→<code>dataset</code>, <code>repo</code>→<code>auto</code> are normalized), optional <code>path</code>, <code>revision</code>, and a boolean <code>recursive</code>. <code>max_entries</code> defaults to <strong>80</strong> and is clamped to <code>[1, 500]</code> (<code>MAX_ALLOWED_ENTRIES</code>).</p>
+<p>It returns <code>entries</code> (each <code>{path, type, size?, lfs?, lfs_size?}</code>, type derived from the entry class name), plus <code>entry_count</code>, and a <code>truncated</code> flag set when more than <code>max_entries</code> entries were observed. The schema description tells the model to use this for deeper structure <em>after</em> <code>huggingface_repo</code> finds a candidate.</p>
+<h2 id="fetch_url-toolsweb_toolspy-toolshttp_utilspy"><code>fetch_url</code> (<code>tools/web_tools.py</code> + <code>tools/http_utils.py</code>)<a class="headerlink" href="#fetch_url-toolsweb_toolspy-toolshttp_utilspy" title="Permanent link">&para;</a></h2>
+<p>Fetches a single public URL and returns its text — used for project pages, raw files, docs, etc.</p>
+<ul>
+<li>Only <code>http</code>/<code>https</code> URLs are allowed (<code>is_http_url</code>); anything else returns <code>{"ok": false, "error": "Only http(s) URLs are supported: …"}</code>.</li>
+<li><code>max_chars</code> defaults to <code>TOOL_MAX_CHARS</code> (<strong>24 000</strong>) and is capped at that value via <code>min(...)</code>.</li>
+<li>The body is decoded with the response charset; if the <code>Content-Type</code> looks like HTML it is run through <code>html_to_text</code> (strips <code>&lt;script&gt;</code>/<code>&lt;style&gt;</code>, converts block tags to newlines, unescapes entities). Non-text content types yield an empty <code>text</code>.</li>
+<li>Returns <code>{ok, url, status, final_url, content_type, text}</code> where <code>ok</code> is <code>200 ≤ status &lt; 400</code>. <code>text</code> is sliced to <code>max_chars</code> before the result-level truncation runs.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Not a search engine</p>
+<p><code>fetch_url</code> is a direct GET of a known URL — there is no web-search tool in this toolset. Discovery happens through GitHub/HF search; <code>fetch_url</code> is for following a specific link.</p>
+</div>
+<h2 id="paper_bundle_file_contents-toolspaper_bundlepy"><code>paper_bundle_file_contents</code> (<code>tools/paper_bundle.py</code>)<a class="headerlink" href="#paper_bundle_file_contents-toolspaper_bundlepy" title="Permanent link">&para;</a></h2>
+<p>Reads a text file from the <strong>current paper's</strong> OpenReview supplement bundle. It is routed specially: if no <code>Paper</code> is bound, it returns <code>{"ok": false, "error": "paper_bundle_file_contents requires current Paper context"}</code>.</p>
+<ul>
+<li>The <code>path</code> argument is sanitized by <code>normalize_manifest_path</code>: backslashes, absolute paths (<code>/…</code>), and <code>..</code> traversal are rejected; a leading <code>supplement/</code> segment is stripped; the path is <code>posixpath.normpath</code>-ed.</li>
+<li>Resolved against the paper's manifest (<code>supplement_files</code>, keyed by <code>relative_path</code>/<code>filename</code>). An unknown path returns <code>available_paths</code> (sorted, capped at 40 with an "… and N more" tail).</li>
+<li><code>max_chars</code> defaults to <code>BUNDLE_FILE_DEFAULT_CHARS</code> (<strong>60 000</strong>) and is clamped to <code>[1, BUNDLE_FILE_MAX_CHARS]</code> (<strong>200 000</strong>).</li>
+<li>Returns file metadata (<code>path</code>, <code>filename</code>, <code>extension</code>, <code>file_size</code>, <code>sha256</code>, <code>is_text</code>). For text files it adds <code>text</code> (sliced to <code>max_chars</code>), <code>truncated</code>, and <code>max_chars</code>; non-text files return metadata only.</li>
+</ul>
+<p>See <a href="../../dataset/bundle-schema/">the bundle schema</a> for how <code>supplement_files</code> is built and what the manifest contains.</p>
+<h2 id="cross-references">Cross-references<a class="headerlink" href="#cross-references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../modes/classifier/">Classifier mode</a> — how this toolset is wired into artifact verification.</li>
+<li><a href="../../agent-core/tool-loop/">Tool loop</a> — the agent core that issues these calls.</li>
+<li><a href="../schemas/">Tool schemas</a> — full JSON-Schema for every tool role.</li>
+<li><a href="../run-dir-tools/">Run-dir tools</a> — the auditor's read-only counterpart.</li>
+<li><a href="../../architecture/">Architecture overview</a> — where the classifier sits end-to-end.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../selection/h100-budget/" class="md-footer__link md-footer__link--prev" aria-label="Previous: H100 budget &amp; bands">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                H100 budget & bands
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../run-dir-tools/" class="md-footer__link md-footer__link--next" aria-label="Next: Run-dir tools">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Run-dir tools
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/mithils3/reprocli" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
