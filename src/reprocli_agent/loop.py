@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import re
 import sys
+import time
 from typing import Any
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 from .prompt import BenchmarkEntry, build_prompt, SYSTEM_PROMPT
 from .tools import TOOL_SCHEMAS, dispatch
@@ -55,6 +56,37 @@ def _log_tool_result(id_: str, name: str, result: str) -> None:
         _log(id_, f"  │  ... ({len(result) - _PREVIEW_CHARS} more chars truncated)")
 
 
+_RETRY_AFTER_RE = re.compile(r"try again in ([\d.]+)s", re.IGNORECASE)
+_MAX_RETRIES = 6
+
+
+def _chat_with_retry(
+    id_: str,
+    client: OpenAI,
+    model: str,
+    messages: list[dict],
+) -> Any:
+    for attempt in range(_MAX_RETRIES + 1):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=TOOL_SCHEMAS,
+                tool_choice="auto",
+            )
+        except RateLimitError as exc:
+            if attempt == _MAX_RETRIES:
+                _log(id_, f"API error (gave up after {_MAX_RETRIES} retries): {exc}")
+                raise
+            m = _RETRY_AFTER_RE.search(str(exc))
+            wait = float(m.group(1)) + 1.0 if m else 2 ** (attempt + 1) * 5.0
+            _log(id_, f"rate limited — waiting {wait:.1f}s (attempt {attempt + 1}/{_MAX_RETRIES})")
+            time.sleep(wait)
+        except Exception as exc:
+            _log(id_, f"API error: {type(exc).__name__}: {exc}")
+            raise
+
+
 def run_session(
     entry: BenchmarkEntry,
     workdir: str,
@@ -79,16 +111,7 @@ def run_session(
 
     for round_i in range(max_rounds):
         _log(id_, f"round {round_i + 1}/{max_rounds}  bash_run={bash_run}")
-        try:
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                tools=TOOL_SCHEMAS,
-                tool_choice="auto",
-            )
-        except Exception as exc:
-            _log(id_, f"API error: {type(exc).__name__}: {exc}")
-            raise
+        response = _chat_with_retry(id_, client, model, messages)
         msg = response.choices[0].message
         _log(
             id_,
