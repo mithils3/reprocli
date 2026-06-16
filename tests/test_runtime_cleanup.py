@@ -4,12 +4,13 @@ import json
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from reprocli_vllm.config import DEFAULT_MODEL, MINIMAX_M2_MODEL
+from reprocli_vllm.config import DEFAULT_MODEL, KIMI_K2_6_MODEL, MINIMAX_M2_MODEL
+from reprocli_vllm.vllm_server import VllmServer
 from run_arxiv_prompt_vllm import parse_args
 
 
@@ -28,6 +29,47 @@ class RuntimeCleanupTests(unittest.TestCase):
         self.assertEqual(args.top_p, 0.95)
         self.assertEqual(args.top_k, 40)
         self.assertEqual(json.loads(args.compilation_config), {"cudagraph_mode": "PIECEWISE"})
+
+    def test_kimi_k2_6_defaults_are_available(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            ["run_arxiv_prompt_vllm.py", "--model", KIMI_K2_6_MODEL],
+        ):
+            args = parse_args()
+
+        self.assertEqual(args.model, KIMI_K2_6_MODEL)
+        self.assertEqual(args.tool_call_parser, "kimi_k2")
+        self.assertEqual(args.reasoning_parser, "kimi_k2")
+        self.assertEqual(args.mm_encoder_tp_mode, "data")
+        self.assertEqual(args.tensor_parallel_size, 8)
+        self.assertTrue(args.trust_remote_code)
+
+    def test_kimi_server_command_uses_vllm_parser_flags(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            ["run_arxiv_prompt_vllm.py", "--model", KIMI_K2_6_MODEL],
+        ):
+            args = parse_args()
+
+        process = MagicMock()
+        process.poll.return_value = None
+        with (
+            patch("reprocli_vllm.vllm_server.local_open_port", return_value=12345),
+            patch.object(VllmServer, "wait_until_ready"),
+            patch("reprocli_vllm.vllm_server.subprocess.Popen", return_value=process) as popen,
+        ):
+            server = VllmServer(args)
+            server.__enter__()
+            server.__exit__(None, None, None)
+
+        command = popen.call_args.args[0]
+        self.assertEqual(command[command.index("--tool-call-parser") + 1], "kimi_k2")
+        self.assertEqual(command[command.index("--reasoning-parser") + 1], "kimi_k2")
+        self.assertEqual(command[command.index("--mm-encoder-tp-mode") + 1], "data")
+        self.assertIn("--enable-auto-tool-choice", command)
+        self.assertIn("--trust-remote-code", command)
 
     def test_removed_cli_flags_are_absent_from_active_docs(self) -> None:
         texts = "\n".join(
@@ -73,6 +115,10 @@ class RuntimeCleanupTests(unittest.TestCase):
     def test_source_keeps_only_vllm_serving_api_openai_literal(self) -> None:
         hits = []
         for path in (ROOT / "src").rglob("*.py"):
+            # reprocli_openai is the dedicated OpenAI re-check package; its
+            # openai usage is intentional and outside the vLLM runtime surface.
+            if "reprocli_openai" in path.parts:
+                continue
             text = path.read_text(encoding="utf-8")
             stripped = text.replace("vllm.entrypoints.openai.api_server", "")
             if "openai" in stripped.lower():

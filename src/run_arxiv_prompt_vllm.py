@@ -3,37 +3,43 @@
 
 from __future__ import annotations
 
-import argparse
 import random
 import sys
 
-from reprocli_vllm.config import (
-    DEFAULT_EXTRACTED_OUTPUT,
-    DEFAULT_MODEL,
-    DEFAULT_OUTPUT,
-    DEFAULT_VLLM_DATASET,
-    PAPER_BUNDLE_DATASET_URL,
-    PLACEHOLDER,
-)
-from reprocli_vllm.minimax_defaults import apply_minimax_defaults
+from reprocli_vllm.config import CLAIM_PLACEHOLDER, PLACEHOLDER
+from reprocli_vllm.audit_inputs import build_audit_prompt, load_audit_rubric
+from reprocli_vllm.cli_args import parse_args
+from reprocli_vllm.hf_upload import hf_run_uploader
+from reprocli_vllm.mre_records import load_mre_records
 from reprocli_vllm.paper_bundles import load_bundle_papers
+from reprocli_vllm.papers import Paper
 from reprocli_vllm.tool_loop import run_tool_loop
-from reprocli_vllm.trace_io import trace_output_path
 from reprocli_vllm.vllm_server import VllmServer
-from reprocli_vllm.vllm_cache import default_cache_dir
 
 
 def main() -> int:
     args = parse_args()
     prompt_template = args.prompt_file.read_text(encoding="utf-8")
-    if PLACEHOLDER not in prompt_template:
-        raise SystemExit(f"{args.prompt_file} must contain {PLACEHOLDER}.")
+    required_placeholder = CLAIM_PLACEHOLDER if args.mode == "audit" else PLACEHOLDER
+    if required_placeholder not in prompt_template:
+        raise SystemExit(f"{args.prompt_file} must contain {required_placeholder}.")
 
-    papers = load_bundle_papers(args.dataset)
-    papers = [paper for paper in papers if paper.tex_files]
+    claim_records: dict[str, dict] = {}
+    rubric = ""
+    if args.mode == "audit":
+        # Claims-only, tools-off: the audit-pool rows ARE the paper list; the
+        # auditor reads the agent run bundle, not the paper text.
+        claim_records = load_mre_records(args.claims)
+        rubric = load_audit_rubric(args.rubric_file)
+        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in claim_records]
+    else:
+        papers = load_bundle_papers(args.dataset)
+        papers = [paper for paper in papers if paper.tex_files]
+    if args.paper_ids_file:
+        papers = filter_papers_by_ids(papers, args.paper_ids_file)
     papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
-        prompt_template.replace(PLACEHOLDER, paper.text())
+        build_prompt(prompt_template, paper, claim_records, rubric, args.mode, args.runs_dir)
         for paper in papers_to_run
     ]
 
@@ -42,80 +48,23 @@ def main() -> int:
         f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
         file=sys.stderr,
     )
-    with VllmServer(args) as server_url:
-        run_tool_loop(args, papers_to_run, prompts, server_url)
+    with hf_run_uploader(args):
+        if args.vllm_server_url:
+            server_url = normalized_server_url(args.vllm_server_url)
+            print(f"Using existing vLLM server at {server_url}", file=sys.stderr)
+            run_tool_loop(args, papers_to_run, prompts, server_url)
+        else:
+            with VllmServer(args) as server_url:
+                run_tool_loop(args, papers_to_run, prompts, server_url)
 
     print(f"Finished writing {len(prompts)} responses to {args.output}", file=sys.stderr)
     print(f"Finished writing extracted JSONL to {args.extracted_output}", file=sys.stderr)
+    if args.hf_repo:
+        print(
+            f"Uploaded run outputs to https://huggingface.co/datasets/{args.hf_repo}",
+            file=sys.stderr,
+        )
     return 0
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--num-prompts", type=int)
-    parser.add_argument(
-        "--dataset",
-        default=DEFAULT_VLLM_DATASET,
-        help=(
-            "Paper-bundle dataset with LaTeX and OpenReview supplements. "
-            f"Default: {PAPER_BUNDLE_DATASET_URL}"
-        ),
-    )
-    parser.add_argument("--prompt-file", type=argparse_path, default=argparse_path("prompt.txt"))
-    parser.add_argument("--output", type=argparse_path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--extracted-output", type=argparse_path, default=DEFAULT_EXTRACTED_OUTPUT)
-    parser.add_argument("--trace-output", type=argparse_path)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--vllm-cache-dir", type=argparse_path)
-    parser.add_argument("--max-tokens", type=int, default=8192)
-    parser.add_argument("--max-input-tokens", type=int, default=128000)
-    parser.add_argument("--tool-rounds", type=int, default=10)
-    parser.add_argument("--max-repeated-tool-calls", type=int, default=1)
-    parser.add_argument("--request-workers", type=int, default=8)
-    parser.add_argument("--tensor-parallel-size", type=int)
-    parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
-    parser.add_argument("--max-model-len", type=int)
-    parser.add_argument("--gpu-memory-utilization", type=float)
-    parser.add_argument("--temperature", type=float)
-    parser.add_argument("--top-p", type=float)
-    parser.add_argument("--top-k", type=int)
-    parser.add_argument("--stream-first-response", action="store_true")
-    parser.add_argument("--save-round-jsonl", action="store_true")
-    parser.add_argument(
-        "--structured-outputs-backend",
-        default=None,
-        help=(
-            "Structured outputs backend for the embedded vLLM server, passed as "
-            "--structured-outputs-config.backend (e.g. xgrammar). Defaults to "
-            "the server's auto selection."
-        ),
-    )
-    parser.add_argument(
-        "--compilation-config",
-        default=None,
-        help="Optional vLLM compilation JSON override.",
-    )
-    args = parser.parse_args()
-    apply_minimax_defaults(args)
-    if args.tool_rounds < 1:
-        parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
-    if args.request_workers < 1:
-        parser.error("--request-workers must be >= 1")
-    if args.max_repeated_tool_calls < 1:
-        parser.error("--max-repeated-tool-calls must be >= 1")
-    if args.max_input_tokens < 1:
-        parser.error("--max-input-tokens must be >= 1")
-    if args.top_k is not None and args.top_k < 1:
-        parser.error("--top-k must be >= 1")
-    if args.max_input_tokens + args.max_tokens > args.max_model_len:
-        parser.error("--max-input-tokens + --max-tokens must fit within model context")
-    if args.vllm_cache_dir is None:
-        args.vllm_cache_dir = default_cache_dir(args.model)
-    if args.trace_output is None:
-        args.trace_output = trace_output_path(args.output)
-    return args
 
 
 def select_papers(papers: list, num_prompts: int | None) -> list:
@@ -124,10 +73,43 @@ def select_papers(papers: list, num_prompts: int | None) -> list:
     return random.sample(papers, min(num_prompts, len(papers)))
 
 
-def argparse_path(value: str):
-    from pathlib import Path
+def filter_papers_by_ids(papers: list, ids_file) -> list:
+    wanted = {
+        line.strip()
+        for line in ids_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
+    selected = [paper for paper in papers if paper.arxiv_id in wanted]
+    missing = wanted - {paper.arxiv_id for paper in selected}
+    if missing:
+        print(
+            f"Warning: {len(missing)} requested id(s) not in dataset: "
+            f"{', '.join(sorted(missing)[:10])}",
+            file=sys.stderr,
+        )
+    return selected
 
-    return Path(value)
+
+def build_prompt(
+    template: str,
+    paper: Paper,
+    claim_records: dict[str, dict],
+    rubric: str,
+    mode: str,
+    runs_dir,
+) -> str:
+    if mode == "audit":
+        return build_audit_prompt(
+            template, rubric, claim_records.get(paper.arxiv_id), paper.arxiv_id, runs_dir
+        )
+    return template.replace(PLACEHOLDER, paper.text())
+
+
+def normalized_server_url(value: str) -> str:
+    url = value.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    return url
 
 
 if __name__ == "__main__":

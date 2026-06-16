@@ -7,12 +7,14 @@ from pathlib import Path
 from typing import Any
 
 from .config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
-from .output_schema import FINAL_RESPONSE_FORMAT, normalize_score_and_tier
+from .output_schema import FINAL_RESPONSE_FORMAT
+from .audit import finalize_audit_row
+from .run_health import degraded_row, finalize_extracted_row
 
 
-def initial_messages(prompt: str) -> list[dict[str, Any]]:
+def initial_messages(prompt: str, system_message: str = WEB_SYSTEM_MESSAGE) -> list[dict[str, Any]]:
     return [
-        {"role": "system", "content": WEB_SYSTEM_MESSAGE},
+        {"role": "system", "content": system_message},
         {"role": "user", "content": prompt},
     ]
 
@@ -40,7 +42,7 @@ def build_chat_completion_request(
         body["tools"] = WEB_TOOLS
         body["tool_choice"] = tool_choice
     else:
-        body["response_format"] = FINAL_RESPONSE_FORMAT
+        body["response_format"] = getattr(args, "response_format", None) or FINAL_RESPONSE_FORMAT
     return {
         "custom_id": custom_id,
         "method": "POST",
@@ -62,19 +64,20 @@ def truncate_output_file(path: Path) -> None:
     path.write_text("", encoding="utf-8")
 
 
-def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
+def extracted_response(
+    custom_id: str, row: dict[str, Any], mode: str = "classification"
+) -> dict[str, Any]:
     message = response_message(row)
     content = message.get("content") or ""
-    result: dict[str, Any] = {"custom_id": custom_id}
+    tool_loop = row.get("tool_loop") or {}
     parsed = parse_json_content(content)
-    if parsed is None:
-        result["extracted_json"] = None
-        result["raw_content"] = content
-        return result
-    if isinstance(parsed, dict):
-        result.update(normalize_score_and_tier(parsed))
-        return result
-    result["extracted_json"] = parsed
+    if not isinstance(parsed, dict):
+        return degraded_row(custom_id, content, parsed, tool_loop)
+    result: dict[str, Any] = {"custom_id": custom_id}
+    if mode == "audit":
+        result.update(finalize_audit_row(parsed, tool_loop))
+    else:
+        result.update(finalize_extracted_row(parsed, tool_loop))
     return result
 
 
@@ -115,22 +118,6 @@ def normalize_tool_calls(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any
         item.setdefault("function", {})
         normalized.append(item)
     return normalized
-
-
-def append_assistant_tool_call(
-    messages: list[dict[str, Any]],
-    message: dict[str, Any],
-    tool_calls: list[dict[str, Any]],
-) -> None:
-    assistant_message: dict[str, Any] = {
-        "role": "assistant",
-        "tool_calls": tool_calls,
-    }
-    if message.get("content"):
-        assistant_message["content"] = message["content"]
-    if message.get("reasoning"):
-        assistant_message["reasoning"] = message["reasoning"]
-    messages.append(assistant_message)
 
 
 def tool_result_message(call: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:

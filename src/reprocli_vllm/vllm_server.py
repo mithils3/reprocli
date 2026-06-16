@@ -62,6 +62,8 @@ class VllmServer:
             command.extend(["--kv-cache-dtype", self.args.kv_cache_dtype])
         if self.args.block_size:
             command.extend(["--block-size", str(self.args.block_size)])
+        if self.args.mm_encoder_tp_mode:
+            command.extend(["--mm-encoder-tp-mode", self.args.mm_encoder_tp_mode])
         if self.args.trust_remote_code:
             command.append("--trust-remote-code")
         if getattr(self.args, "structured_outputs_backend", None):

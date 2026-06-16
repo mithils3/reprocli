@@ -1,52 +1,10 @@
 from __future__ import annotations
 
-import json
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from html import unescape
-from typing import Any
-
-
-def build_url(base_url: str, params: dict[str, str]) -> str:
-    return base_url + "?" + urllib.parse.urlencode(params)
-
-
-def http_json(
-    url: str,
-    timeout: float,
-    *,
-    data: bytes | None = None,
-    headers: dict[str, str] | None = None,
-) -> Any:
-    status, final_url, content_type, text = http_text(
-        url,
-        timeout,
-        data=data,
-        headers=headers,
-        max_chars=2_000_000,
-    )
-    if not 200 <= status < 300:
-        raise RuntimeError(f"HTTP {status} for {url}: {text[:500]}")
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            f"Expected JSON from {final_url} ({content_type}), got: {text[:500]}"
-        ) from exc
-
-
-def safe_http_json(
-    url: str,
-    timeout: float,
-    *,
-    headers: dict[str, str] | None = None,
-) -> Any:
-    try:
-        return http_json(url, timeout, headers=headers)
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)}
 
 
 def http_text(

@@ -3,20 +3,19 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ARXIV_SOURCE_DATASET = "Mithilss/neurips-2025-arxiv-latex-sources"
 PAPER_BUNDLE_DATASET = "Mithilss/neurips-2025-paper-bundles"
 PAPER_BUNDLE_DATASET_URL = "https://huggingface.co/datasets/Mithilss/neurips-2025-paper-bundles"
-DEFAULT_DATASET = ARXIV_SOURCE_DATASET
 DEFAULT_VLLM_DATASET = PAPER_BUNDLE_DATASET
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
+KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 DEFAULT_MODEL = MINIMAX_M2_MODEL
 DEFAULT_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial.jsonl")
 DEFAULT_EXTRACTED_OUTPUT = Path("outputs/neurips_2025_minimax_m2_trial_extracted.jsonl")
 PLACEHOLDER = "{PAPER_TEXT}"
-TEX_EXTENSION = ".tex"
 MAX_MODEL_LEN = 196608
 TOOL_TIMEOUT = 20.0
-TOOL_MAX_CHARS = 2_000_000
+TOOL_MAX_CHARS = 24_000
+TOOL_RESULT_MAX_CHARS = 40_000
 BUNDLE_FILE_DEFAULT_CHARS = 60_000
 BUNDLE_FILE_MAX_CHARS = 200_000
 REQUEST_TIMEOUT = 1800.0
@@ -57,21 +56,62 @@ WEB_SYSTEM_MESSAGE = (
     "promising GitHub repos, read README files and key docs, configs, examples, "
     "or scripts with github_file_contents before counting code as available. Do not call the "
     "same tool with identical arguments twice. After reasonable variant "
-    "searches and direct checks are exhausted, mark missing artifacts "
-    "unavailable or unverified. Return only the requested JSON object."
+    "searches and direct checks are exhausted, set the signal value to false "
+    "with verification tool_searched_not_found; finding nothing after a real "
+    "search is successful verification of absence, not a tool failure. Return "
+    "only the requested JSON object."
 )
 FINAL_NO_TOOLS_MESSAGE = (
-    "Tool use is complete and no tools are available in this request. Use only "
-    "the paper text and prior tool results already in the conversation. Think "
-    "through the private consistency checklist before answering: clean URLs only "
-    "in verified_links, web_verification is available/partial/unavailable, signals "
-    "booleans are scoped to the MRE, and h100_hours_estimate matches its basis. "
-    "Do not include score or tier; the extractor computes them deterministically. "
-    "If searches failed, summarize the meaningful query families tried "
-    "inside the relevant evidence string; do not put search text in "
-    "verified_links. Return only the requested JSON object. The first output "
-    "character must be { and the last output character must be }. Do not write "
-    "search plans, tool calls, markdown fences, or prose outside the JSON."
+    "The tool phase is finished. Write the final JSON now from the paper text "
+    "and the tool results above. Fill each signal's verification field with "
+    "what actually happened during the tool phase; this message is not a tool "
+    "failure. Checklist: clean URLs only in verified_links; search summaries go "
+    "in evidence strings, not URL arrays; signals are scoped to the MRE; "
+    "h100_estimate.hours matches its arithmetic fields; no score or tier. "
+    "Return only the JSON object: the first output character must be { and the "
+    "last must be }. No prose, no markdown fences, no tool calls."
+)
+CONTEXT_BUDGET_NOTE = (
+    "The conversation hit its context budget, so the tool phase ended early. "
+    "Mark any category you could not finish checking as tool_failed or "
+    "paper_text_only instead of guessing. "
+)
+
+# --- Audit mode (LLM reproduction auditor) ---------------------------------
+# The auditor grades one agent reproduction attempt per paper against the rubric,
+# using the central_claim (from the classifier audit pool) plus the agent's run
+# bundle. Replaces the deterministic verification-target curator.
+CLAIM_PLACEHOLDER = "{CENTRAL_CLAIM}"
+BUNDLE_PLACEHOLDER = "{RUN_BUNDLE}"
+RUBRIC_PLACEHOLDER = "{RUBRIC}"
+AUDIT_PROMPT_FILE = Path("prompt_audit.txt")
+AUDIT_RUBRIC_FILE = Path("rubric_audit.md")
+AUDIT_DEFAULT_OUTPUT = Path("outputs/v5/audit_pool_audit_verdicts.jsonl")
+AUDIT_DEFAULT_EXTRACTED = Path("outputs/v5/audit_pool_audit_verdicts_extracted.jsonl")
+# Source of per-paper central claims (the classifier audit pool).
+AUDIT_CLAIMS_DEFAULT = Path("outputs/v5/audit_pool_extracted.jsonl")
+AUDIT_SYSTEM_MESSAGE = (
+    "You are an adversarial reproduction auditor for an ML reproduction "
+    "benchmark. You grade ONE agent's attempt to reproduce ONE paper's central "
+    "claim, using only the agent's run bundle (its code, commands, stdout/stderr, "
+    "and output files) and the rubric provided. You have NO tools. You never "
+    "trust a number because the agent printed it: trace how every value was "
+    "produced, and flag hardcoded constants, echoed prose numbers, self-scored "
+    "or fabricated predictions, wrong split/scale/dataset, and cherry-picked "
+    "metrics. Default to a low score; absence of evidence is a low score, not a "
+    "pass. Grade the attempt with an integer 0-5 score per the rubric's score "
+    "scale. Return only the JSON object matching the schema."
+)
+AUDIT_FINAL_NO_TOOLS_MESSAGE = (
+    "Write the final audit verdict JSON now from the run bundle above. Apply "
+    "every rubric criterion and cite evidence from the bundle: restate the "
+    "target (metric, reference value, op, tolerance); give execution evidence; "
+    "report the measured value with an exact file/line or log citation; list "
+    "every anti-cheat flag with its evidence and severity; give the op/tolerance "
+    "comparison and methodology notes; end with an integer 0-5 score per the "
+    "rubric's score scale, a 0-1 confidence, and a one-paragraph rationale. "
+    "Return only the JSON object: the first output character must be { and the "
+    "last must be }. No prose, no markdown."
 )
 
 
@@ -95,7 +135,7 @@ def function_tool(
     }
 
 
-def query_tool(name: str, description: str, *, repo_scope: bool = False) -> dict:
+def query_tool(name: str, description: str) -> dict:
     properties = {
         "query": {
             "type": "string",
@@ -110,9 +150,6 @@ def query_tool(name: str, description: str, *, repo_scope: bool = False) -> dict
         "sort": {"type": "string", "description": "Optional GitHub sort field."},
         "order": {"type": "string", "enum": ["asc", "desc"]},
     }
-    if repo_scope:
-        properties["owner"] = {"type": "string", "description": "Optional repository owner."}
-        properties["repo"] = {"type": "string", "description": "Optional repository name."}
     return function_tool(name, description, properties, ["query"])
 
 
@@ -142,20 +179,6 @@ WEB_TOOLS = [
         "github_search_code",
         "Search GitHub code through MCP. Supports GitHub code-search syntax such as quoted phrases, OR, NOT, and qualifiers; keep query under 256 characters.",
     ),
-    query_tool(
-        "github_search_commits",
-        "Search GitHub commits through MCP for artifact-release or implementation clues.",
-    ),
-    query_tool(
-        "github_search_issues",
-        "Search GitHub issues through MCP for release-status or reproduction evidence.",
-        repo_scope=True,
-    ),
-    query_tool(
-        "github_search_pull_requests",
-        "Search GitHub pull requests through MCP for merged artifact or implementation evidence.",
-        repo_scope=True,
-    ),
     function_tool(
         "github_repo",
         "Inspect a GitHub repo through MCP for root files, README candidates, latest release, and tree; read key files with github_file_contents before final verification.",
@@ -164,7 +187,7 @@ WEB_TOOLS = [
     ),
     function_tool(
         "github_file_contents",
-        "Read a GitHub file or directory through MCP. Use for README.md, docs, configs, examples, scripts, and training/eval files; MCP text is returned without local truncation.",
+        "Read a GitHub file or directory through MCP. Use for README.md, docs, configs, examples, scripts, and training/eval files; long results are truncated, so request specific paths.",
         {
             "repo": {"type": "string", "description": "GitHub URL or owner/repo."},
             "path": {"type": "string", "description": "File or directory path."},
@@ -174,7 +197,7 @@ WEB_TOOLS = [
     ),
     function_tool(
         "github_repository_tree",
-        "Read a GitHub repository tree through MCP.",
+        "Read a GitHub repository tree through MCP. Prefer path_filter over recursive listings; large trees are truncated.",
         {
             "repo": {"type": "string", "description": "GitHub URL or owner/repo."},
             "path_filter": {"type": "string", "description": "Optional path prefix."},

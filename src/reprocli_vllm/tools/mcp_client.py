@@ -19,33 +19,29 @@ class MCPError(RuntimeError):
     pass
 
 
-class StreamableHTTPMCPClient:
-    def __init__(self, url: str, headers: dict[str, str], timeout: float) -> None:
-        self.url = url
-        self.headers = headers
+class BaseMCPClient:
+    def __init__(self, timeout: float) -> None:
         self.timeout = timeout
         self.lock = threading.Lock()
         self.next_id = 1
-        self.session_id: str | None = None
         self.protocol_version = MCP_PROTOCOL_VERSION
         self.initialized = False
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         with self.lock:
-            self.ensure_initialized()
-            return self.request("tools/call", {"name": name, "arguments": arguments})
+            self.ensure_ready_locked()
+            return self.request_locked("tools/call", {"name": name, "arguments": arguments})
 
     def list_tools(self) -> list[dict[str, Any]]:
         with self.lock:
-            self.ensure_initialized()
-            result = self.request("tools/list", {})
-            tools = result.get("tools") or []
-            return [tool for tool in tools if isinstance(tool, dict)]
+            self.ensure_ready_locked()
+            result = self.request_locked("tools/list", {})
+            return [tool for tool in result.get("tools") or [] if isinstance(tool, dict)]
 
-    def ensure_initialized(self) -> None:
+    def ensure_ready_locked(self) -> None:
         if self.initialized:
             return
-        result = self.request(
+        result = self.request_locked(
             "initialize",
             {
                 "protocolVersion": MCP_PROTOCOL_VERSION,
@@ -55,10 +51,14 @@ class StreamableHTTPMCPClient:
             initialize=True,
         )
         self.protocol_version = str(result.get("protocolVersion") or MCP_PROTOCOL_VERSION)
-        self.notify("notifications/initialized", {})
+        self.send_message(
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            expect_response=False,
+            initialize=False,
+        )
         self.initialized = True
 
-    def request(
+    def request_locked(
         self,
         method: str,
         params: dict[str, Any],
@@ -67,20 +67,28 @@ class StreamableHTTPMCPClient:
     ) -> dict[str, Any]:
         request_id = self.next_id
         self.next_id += 1
-        message = {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "method": method,
-            "params": params,
-        }
-        response = self.post(message, expect_response=True, initialize=initialize)
+        message = {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
+        response = self.send_message(message, expect_response=True, initialize=initialize)
         return response_result(response, request_id)
 
-    def notify(self, method: str, params: dict[str, Any]) -> None:
-        message = {"jsonrpc": "2.0", "method": method, "params": params}
-        self.post(message, expect_response=False, initialize=False)
+    def send_message(
+        self,
+        message: dict[str, Any],
+        *,
+        expect_response: bool,
+        initialize: bool,
+    ) -> Any:
+        raise NotImplementedError
 
-    def post(
+
+class StreamableHTTPMCPClient(BaseMCPClient):
+    def __init__(self, url: str, headers: dict[str, str], timeout: float) -> None:
+        super().__init__(timeout)
+        self.url = url
+        self.headers = headers
+        self.session_id: str | None = None
+
+    def send_message(
         self,
         message: dict[str, Any],
         *,
@@ -115,31 +123,17 @@ class StreamableHTTPMCPClient:
         return decode_http_response(content_type, text)
 
 
-class StdioMCPClient:
+class StdioMCPClient(BaseMCPClient):
     def __init__(self, command: Sequence[str], env: dict[str, str], timeout: float) -> None:
+        super().__init__(timeout)
         self.command = list(command)
         self.env = env
-        self.timeout = timeout
-        self.lock = threading.Lock()
-        self.next_id = 1
         self.process: subprocess.Popen[str] | None = None
-        self.protocol_version = MCP_PROTOCOL_VERSION
-        self.initialized = False
         atexit.register(self.close)
 
-    def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        with self.lock:
-            self.ensure_started()
-            self.ensure_initialized()
-            return self.request_locked("tools/call", {"name": name, "arguments": arguments})
-
-    def list_tools(self) -> list[dict[str, Any]]:
-        with self.lock:
-            self.ensure_started()
-            self.ensure_initialized()
-            result = self.request_locked("tools/list", {})
-            tools = result.get("tools") or []
-            return [tool for tool in tools if isinstance(tool, dict)]
+    def ensure_ready_locked(self) -> None:
+        self.ensure_started()
+        super().ensure_ready_locked()
 
     def ensure_started(self) -> None:
         if self.process and self.process.poll() is None:
@@ -158,34 +152,20 @@ class StdioMCPClient:
             raise MCPError(f"Could not start MCP command {self.command!r}: {exc}") from exc
         self.initialized = False
 
-    def ensure_initialized(self) -> None:
-        if self.initialized:
-            return
-        result = self.request_locked(
-            "initialize",
-            {
-                "protocolVersion": MCP_PROTOCOL_VERSION,
-                "capabilities": {},
-                "clientInfo": {"name": "reprocli-vllm", "version": "0.1"},
-            },
-        )
-        self.protocol_version = str(result.get("protocolVersion") or MCP_PROTOCOL_VERSION)
-        self.notify_locked("notifications/initialized", {})
-        self.initialized = True
-
-    def request_locked(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
-        request_id = self.next_id
-        self.next_id += 1
-        self.write_locked(
-            {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
-        )
+    def send_message(
+        self,
+        message: dict[str, Any],
+        *,
+        expect_response: bool,
+        initialize: bool,
+    ) -> dict[str, Any] | None:
+        self.write_locked(message)
+        if not expect_response:
+            return None
         while True:
             response = self.read_locked()
-            if response.get("id") == request_id:
-                return response_result(response, request_id)
-
-    def notify_locked(self, method: str, params: dict[str, Any]) -> None:
-        self.write_locked({"jsonrpc": "2.0", "method": method, "params": params})
+            if response.get("id") == message["id"]:
+                return response
 
     def write_locked(self, message: dict[str, Any]) -> None:
         if not self.process or not self.process.stdin:

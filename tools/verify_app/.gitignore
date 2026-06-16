@@ -1,0 +1,3 @@
+# split per-paper traces (49 MB) — upload to Supabase Storage, don't commit
+traces_out/
+__pycache__/

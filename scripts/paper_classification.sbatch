@@ -8,7 +8,7 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 #SBATCH --mem=256G
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
 #SBATCH --export=ALL
@@ -62,11 +62,10 @@ env | sort | grep -E '^(CUDA|NCCL|VLLM|SLURM|MASTER|OMP|TORCH|TRITON|SAFETENSORS
 nvidia-smi topo -m || true
 
 python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 500 \
   --tool-rounds 12 \
   --max-input-tokens 128000 \
   --max-tokens 8192 \
-  --request-workers 16 \
+  --request-workers 32 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
   --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
@@ -75,4 +74,5 @@ python3 src/run_arxiv_prompt_vllm.py \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
   --save-round-jsonl \
   --max-model-len 196608 \
-  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'
+  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
+  --hf-repo Mithilss/neurips-2025-results
