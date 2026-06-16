@@ -156,9 +156,11 @@ def _bash(command: str, workdir: str, timeout: int) -> str:
             capture_output=True, text=True, timeout=timeout,
         )
         combined = (result.stdout + result.stderr).strip()
-        return (combined or "(no output)")[:MAX_OUTPUT]
+        body = combined or "(no output)"
+        prefix = "" if result.returncode == 0 else f"[exit {result.returncode}]\n"
+        return (prefix + body)[:MAX_OUTPUT]
     except subprocess.TimeoutExpired:
-        return f"Error: command timed out after {timeout}s"
+        return f"[exit TIMEOUT] command timed out after {timeout}s"
 
 
 def _read_file(path: str, workdir: str, max_chars: int) -> str:

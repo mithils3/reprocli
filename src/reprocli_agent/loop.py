@@ -20,7 +20,39 @@ _SETUP_RE = re.compile(r"git\s+clone|apptainer\s+build|pip\s+install|apt[- ]|wge
 # Patterns that signal the experiment has been submitted/run
 _RUN_RE = re.compile(r"\bsbatch\b|\bsrun\b|apptainer\s+exec.*--nv")
 
+_PREVIEW_CHARS = 400  # chars of tool output shown in log
+
 _log = lambda id_, msg: print(f"[{id_}] {msg}", file=sys.stderr, flush=True)
+
+
+def _log_tool_call(id_: str, name: str, args: dict) -> None:
+    if name == "bash":
+        cmd = args.get("command", "")
+        env = f"  [timeout={args['timeout']}s]" if "timeout" in args else ""
+        _log(id_, f"  ┌─ bash{env}")
+        for line in cmd.splitlines():
+            _log(id_, f"  │  {line}")
+        _log(id_, "  └─")
+    elif name == "github_browse":
+        _log(id_, f"  → github_browse  repo={args.get('repo', '')}  path={args.get('path', '(README)')}")
+    elif name == "hf_browse":
+        _log(id_, f"  → hf_browse  repo={args.get('repo', '')}  type={args.get('repo_type', 'model')}")
+    elif name == "fetch_url":
+        _log(id_, f"  → fetch_url  {args.get('url', '')}")
+    elif name in ("read_file", "write_file"):
+        _log(id_, f"  → {name}  path={args.get('path', '')}")
+    else:
+        _log(id_, f"  → {name}")
+
+
+def _log_tool_result(id_: str, name: str, result: str) -> None:
+    failed = result.startswith("[exit ") and not result.startswith("[exit 0]")
+    status = "FAILED" if failed else "ok"
+    _log(id_, f"  ← {name}  {status}  ({len(result)} chars)")
+    for line in result[:_PREVIEW_CHARS].splitlines():
+        _log(id_, f"  │  {line}")
+    if len(result) > _PREVIEW_CHARS:
+        _log(id_, f"  │  ... ({len(result) - _PREVIEW_CHARS} more chars truncated)")
 
 
 def run_session(
@@ -108,9 +140,9 @@ def run_session(
             except json.JSONDecodeError:
                 args = {}
 
-            _log(id_, f"  → {name}")
+            _log_tool_call(id_, name, args)
             result = dispatch(name, args, workdir)
-            _log(id_, f"  ← {name}  ({len(result)} chars)")
+            _log_tool_result(id_, name, result)
 
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
 
