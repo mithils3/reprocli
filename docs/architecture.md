@@ -426,8 +426,8 @@ tool (Part III.3) is the piece that makes the agent "actually reproduce stuff."
 
 ### Known caveats carried forward
 
-- The audit `python` tool is stubbed (`run_dir_tools.py`, `TODO(audit-python)`);
-  re-scoring goes through `bash` + `python3` until a sandboxed interpreter lands.
+- The auditor re-scores artifacts (recompute a metric from a saved output) via
+  `bash` + `python3` (`run_dir_tools.py`); there is no dedicated interpreter tool.
 - The audit `bash` is full shell scoped to the run dir — fine for grading our own
   agents locally; container/seccomp is the prerequisite before grading untrusted
   runs. The reproduction agent's `run_gpu`/`workspace_bash` need the same

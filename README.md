@@ -3,6 +3,28 @@
 Utilities for running the NeurIPS paper-bundle artifact-availability prompt
 through MiniMax M2 or Kimi K2.6 on vLLM.
 
+## Documentation
+
+Full project documentation lives in [`docs/`](docs/) and is published as a
+browsable site built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/):
+**<https://mithils3.github.io/reprocli/>** (live once GitHub Pages is enabled).
+It covers the architecture, the three agent roles, the dataset pipeline, the
+lockfile/selection, the tool & schema reference, SLURM recipes, and a complete
+CLI flag reference.
+
+Read it locally with live reload:
+
+```bash
+uv pip install -r requirements-docs.txt   # one-time, into a venv of your choice
+mkdocs serve                              # → http://127.0.0.1:8000
+```
+
+Publish/refresh the public site (builds and pushes to the `gh-pages` branch):
+
+```bash
+mkdocs gh-deploy
+```
+
 ## Run Classification
 
 The active production path is `scripts/paper_classification.sbatch`. The runner
