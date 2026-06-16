@@ -5,7 +5,6 @@ import json
 import os
 import subprocess
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -21,7 +20,9 @@ TOOL_SCHEMAS: list[dict] = [
             "name": "bash",
             "description": (
                 "Run a shell command in the sandbox working directory. "
-                "Use for git clone, pip install, conda install, and running experiment scripts."
+                "Use for host inspection, git clone, apptainer build/exec, sbatch, "
+                "and monitoring SLURM jobs. Pass timeout=1800 for long commands like "
+                "apptainer build."
             ),
             "parameters": {
                 "type": "object",
@@ -29,8 +30,7 @@ TOOL_SCHEMAS: list[dict] = [
                     "command": {"type": "string", "description": "Shell command to run."},
                     "timeout": {
                         "type": "integer",
-                        "description": "Timeout in seconds (default 300).",
-                        "default": DEFAULT_TIMEOUT,
+                        "description": "Timeout in seconds (default 300, use 1800 for apptainer build).",
                     },
                 },
                 "required": ["command"],
@@ -46,7 +46,7 @@ TOOL_SCHEMAS: list[dict] = [
                 "type": "object",
                 "properties": {
                     "path": {"type": "string", "description": "Relative path inside workdir."},
-                    "max_chars": {"type": "integer", "default": MAX_OUTPUT},
+                    "max_chars": {"type": "integer"},
                 },
                 "required": ["path"],
             },
@@ -56,7 +56,10 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "write_file",
-            "description": "Write content to a file in the sandbox working directory.",
+            "description": (
+                "Write content to a file in the sandbox working directory. "
+                "Use for paper.def, reproduce.sh, slurm_run.sh, and JSON artifacts."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -76,7 +79,7 @@ TOOL_SCHEMAS: list[dict] = [
                 "type": "object",
                 "properties": {
                     "url": {"type": "string", "description": "HTTP or HTTPS URL."},
-                    "max_chars": {"type": "integer", "default": MAX_CHARS},
+                    "max_chars": {"type": "integer"},
                 },
                 "required": ["url"],
             },
@@ -110,11 +113,7 @@ TOOL_SCHEMAS: list[dict] = [
                 "type": "object",
                 "properties": {
                     "repo": {"type": "string", "description": "namespace/name or full HF URL."},
-                    "repo_type": {
-                        "type": "string",
-                        "enum": ["model", "dataset"],
-                        "default": "model",
-                    },
+                    "repo_type": {"type": "string", "enum": ["model", "dataset"]},
                 },
                 "required": ["repo"],
             },
@@ -153,12 +152,8 @@ def _confined(workdir: str, rel: str) -> Path:
 def _bash(command: str, workdir: str, timeout: int) -> str:
     try:
         result = subprocess.run(
-            command,
-            shell=True,
-            cwd=workdir,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
+            command, shell=True, cwd=workdir,
+            capture_output=True, text=True, timeout=timeout,
         )
         combined = (result.stdout + result.stderr).strip()
         return (combined or "(no output)")[:MAX_OUTPUT]
@@ -212,17 +207,18 @@ def _github_browse(repo: str, path: str | None, ref: str | None) -> str:
         return f"Could not parse GitHub repo: {repo}"
     owner, name = parsed
     ref_q = f"?ref={ref}" if ref else ""
-    if path:
-        url = f"https://api.github.com/repos/{owner}/{name}/contents/{path}{ref_q}"
-    else:
-        url = f"https://api.github.com/repos/{owner}/{name}/readme"
+    url = (
+        f"https://api.github.com/repos/{owner}/{name}/contents/{path}{ref_q}"
+        if path
+        else f"https://api.github.com/repos/{owner}/{name}/readme"
+    )
     raw = _http_get(url, headers=headers)
     try:
         data = json.loads(raw)
         if isinstance(data, dict) and "content" in data:
             return base64.b64decode(data["content"]).decode("utf-8", errors="replace")[:MAX_CHARS]
         return raw[:MAX_CHARS]
-    except (json.JSONDecodeError, Exception):
+    except Exception:
         return raw[:MAX_CHARS]
 
 
@@ -236,6 +232,10 @@ def _hf_browse(repo: str, repo_type: str) -> str:
         data = json.loads(raw)
         files = [f["rfilename"] for f in (data.get("siblings") or [])[:40]]
         card = json.dumps(data.get("cardData") or {}, indent=2)
-        return f"repo: {repo_id}\ntype: {repo_type}\n\nfiles:\n" + "\n".join(files) + f"\n\ncard:\n{card}"
-    except (json.JSONDecodeError, Exception):
+        return (
+            f"repo: {repo_id}\ntype: {repo_type}\n\nfiles:\n"
+            + "\n".join(files)
+            + f"\n\ncard:\n{card}"
+        )
+    except Exception:
         return raw[:MAX_CHARS]

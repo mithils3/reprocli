@@ -15,10 +15,10 @@ MAX_ROUNDS = 30
 MAX_BROWSE_NUDGES = 1  # steering messages to hurry browsing along
 MAX_BASH_NUDGES = 3  # nudges when bash never runs
 
-_SETUP_RE = re.compile(
-    r"git\s+clone|pip\s+install|conda\s+install|npm\s+install|apt[- ]|wget\b|curl\b"
-)
-_RUN_RE = re.compile(r"\bpython\b|\bpytest\b|\bbash\b|\bsh\b|\.\/|train|eval|inference")
+# Patterns that signal the setup phase (cloning, building container)
+_SETUP_RE = re.compile(r"git\s+clone|apptainer\s+build|pip\s+install|apt[- ]|wget\b")
+# Patterns that signal the experiment has been submitted/run
+_RUN_RE = re.compile(r"\bsbatch\b|\bsrun\b|apptainer\s+exec.*--nv")
 
 _log = lambda id_, msg: print(f"[{id_}] {msg}", file=sys.stderr, flush=True)
 
@@ -129,9 +129,11 @@ def run_session(
                 {
                     "role": "user",
                     "content": (
-                        "The experiment has run. Now emit the final JSON result. "
-                        "Extract every metric value from the command output above. "
-                        "Your entire response must be a single JSON object — no prose, no fences."
+                        "The experiment has been submitted or run. "
+                        "If you used sbatch, poll with squeue until the job finishes, "
+                        "then read slurm-<jobid>.out for metric values. "
+                        "Once you have the results, emit the final JSON object — "
+                        "no prose, no fences."
                     ),
                 }
             )

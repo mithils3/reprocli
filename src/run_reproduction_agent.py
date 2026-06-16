@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Reproduction agent CLI — runs the MRE for each benchmark entry and writes results."""
 
-"""
-python src/run_reproduction_agent.py \
-  --benchmark /Users/haochending/reprocli/outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
-  --paper-id 2504.12216 \
-  --model gpt-5.5
-"""
+# python src/run_reproduction_agent.py \
+#   --benchmark /Users/haochending/reprocli/outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
+#   --paper-id 2504.12216 \
+#   --model gpt-5.5
+#   --api-key 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
 from __future__ import annotations
 
 import argparse
