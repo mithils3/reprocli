@@ -33,6 +33,21 @@ class OutputSchemaTests(unittest.TestCase):
         self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["required"])
         self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["properties"])
 
+    def test_model_schema_requests_pinned_match_bar(self) -> None:
+        self.assertIn("match_bar", FINAL_JSON_SCHEMA["required"])
+        bar = FINAL_JSON_SCHEMA["properties"]["match_bar"]
+        self.assertEqual(
+            set(bar["required"]),
+            {"kind", "op", "reference_value", "tolerance", "note"},
+        )
+        kinds = bar["properties"]["kind"]["enum"]
+        # direction claims and no-bar claims must be representable, not just scalars
+        self.assertIn("direction", kinds)
+        self.assertIn("none", kinds)
+        # reference_value/tolerance must be nullable for direction/none
+        self.assertEqual(bar["properties"]["reference_value"]["type"], ["number", "null"])
+        self.assertEqual(bar["properties"]["tolerance"]["type"], ["number", "null"])
+
     def test_signals_require_verification_state(self) -> None:
         signal = FINAL_JSON_SCHEMA["properties"]["signals"]["properties"]["code_available"]
         self.assertIn("verification", signal["required"])

@@ -17,6 +17,7 @@ from .config import (
     AUDIT_FINAL_NO_TOOLS_MESSAGE,
     AUDIT_PROMPT_FILE,
     AUDIT_RUBRIC_FILE,
+    AUDIT_RUNS_DIR_DEFAULT,
     AUDIT_SYSTEM_MESSAGE,
     DEFAULT_EXTRACTED_OUTPUT,
     DEFAULT_MODEL,
@@ -25,8 +26,10 @@ from .config import (
     FINAL_NO_TOOLS_MESSAGE,
     PAPER_BUNDLE_DATASET_URL,
     WEB_SYSTEM_MESSAGE,
+    WEB_TOOLS,
 )
 from .audit_schema import AUDIT_RESPONSE_FORMAT
+from .tools.run_dir_tools import AUDIT_TOOLS
 from .minimax_defaults import apply_model_defaults
 from .trace_io import trace_output_path
 from .vllm_cache import default_cache_dir
@@ -67,7 +70,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--runs-dir",
         type=argparse_path,
-        help="Directory of agent reproduction run bundles, one per paper. PENDING: format TBD (see TODO(agent-runs)).",
+        help=(
+            "Root directory of agent reproduction runs; the auditor reads one "
+            "run dir per paper at <runs-dir>/<arxiv_id> via the read-only "
+            f"run-dir tools (default: {AUDIT_RUNS_DIR_DEFAULT})."
+        ),
     )
     parser.add_argument("--prompt-file", type=argparse_path)
     parser.add_argument("--output", type=argparse_path)
@@ -181,10 +188,13 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
         args.output = args.output or AUDIT_DEFAULT_OUTPUT
         args.extracted_output = args.extracted_output or AUDIT_DEFAULT_EXTRACTED
         args.claims = args.claims or AUDIT_CLAIMS_DEFAULT
+        args.runs_dir = args.runs_dir or AUDIT_RUNS_DIR_DEFAULT
         args.response_format = AUDIT_RESPONSE_FORMAT
         args.system_message = AUDIT_SYSTEM_MESSAGE
         args.final_no_tools_message = AUDIT_FINAL_NO_TOOLS_MESSAGE
-        args.use_tools = False
+        # The auditor explores the agent's run directory with read-only tools.
+        args.tools = AUDIT_TOOLS
+        args.use_tools = True
         return
     args.prompt_file = args.prompt_file or argparse_path("prompt.txt")
     args.output = args.output or DEFAULT_OUTPUT
@@ -192,6 +202,7 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     args.response_format = None
     args.system_message = WEB_SYSTEM_MESSAGE
     args.final_no_tools_message = FINAL_NO_TOOLS_MESSAGE
+    args.tools = WEB_TOOLS
     args.use_tools = True
 
 

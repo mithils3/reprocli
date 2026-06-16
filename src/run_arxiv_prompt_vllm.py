@@ -27,11 +27,15 @@ def main() -> int:
     claim_records: dict[str, dict] = {}
     rubric = ""
     if args.mode == "audit":
-        # Claims-only, tools-off: the audit-pool rows ARE the paper list; the
-        # auditor reads the agent run bundle, not the paper text.
+        # Claims-only: the audit-pool rows ARE the paper list; the auditor reads
+        # the agent's run directory (one per paper) with read-only run-dir tools,
+        # not the paper text.
         claim_records = load_mre_records(args.claims)
         rubric = load_audit_rubric(args.rubric_file)
-        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in claim_records]
+        papers = [
+            Paper(arxiv_id=arxiv_id, run_dir=run_dir_for(args.runs_dir, arxiv_id))
+            for arxiv_id in claim_records
+        ]
     else:
         papers = load_bundle_papers(args.dataset)
         papers = [paper for paper in papers if paper.tex_files]
@@ -65,6 +69,10 @@ def main() -> int:
             file=sys.stderr,
         )
     return 0
+
+
+def run_dir_for(runs_dir, arxiv_id: str) -> str:
+    return str(runs_dir / arxiv_id) if runs_dir else ""
 
 
 def select_papers(papers: list, num_prompts: int | None) -> list:

@@ -39,7 +39,7 @@ def build_chat_completion_request(
     if args.top_k is not None:
         body["top_k"] = args.top_k
     if include_tools:
-        body["tools"] = WEB_TOOLS
+        body["tools"] = getattr(args, "tools", None) or WEB_TOOLS
         body["tool_choice"] = tool_choice
     else:
         body["response_format"] = getattr(args, "response_format", None) or FINAL_RESPONSE_FORMAT

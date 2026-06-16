@@ -88,9 +88,43 @@ def test_claim_block_uses_central_claim():
     assert "Reported numbers" in block
 
 
+def test_claim_block_surfaces_pinned_match_bar():
+    block = claim_block(
+        {
+            "central_claim": "86.7% on ALFWorld",
+            "match_bar": {
+                "kind": "point_estimate",
+                "op": "abs_rel_within",
+                "reference_value": 86.7,
+                "tolerance": 0.05,
+                "note": "implicit bar, 5% default",
+            },
+        }
+    )
+    assert "Pinned match bar" in block
+    assert "abs_rel_within" in block
+    assert "86.7" in block
+
+
+def test_claim_block_omits_match_bar_when_absent():
+    block = claim_block({"central_claim": "A beats B", "claim_evidence": {"x": 1}})
+    assert "Pinned match bar" not in block
+
+
 def test_build_audit_prompt_fills_placeholders():
     template = "CLAIM:{CENTRAL_CLAIM}\nRUBRIC:{RUBRIC}\nBUNDLE:{RUN_BUNDLE}"
     out = build_audit_prompt(template, "RUBRIC_TEXT", {"central_claim": "C"}, "2505.10978", None)
     assert "{CENTRAL_CLAIM}" not in out and "{RUBRIC}" not in out and "{RUN_BUNDLE}" not in out
     assert "RUBRIC_TEXT" in out
-    assert "NO AGENT RUN BUNDLE WIRED YET" in out
+    assert "unverifiable" in out  # no run dir bound → unverifiable
+
+
+def test_build_audit_prompt_lists_run_directory(tmp_path):
+    run_dir = tmp_path / "2505.10978"
+    run_dir.mkdir()
+    (run_dir / "train.log").write_text("success_rate: 86.7\n", encoding="utf-8")
+    out = build_audit_prompt(
+        "{CENTRAL_CLAIM}\n{RUBRIC}\n{RUN_BUNDLE}", "R", {"central_claim": "C"}, "2505.10978", tmp_path
+    )
+    assert "train.log" in out
+    assert "AGENT RUN DIRECTORY" in out

@@ -372,3 +372,54 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
   .cards, .dash-grid { grid-template-columns: 1fr 1fr; }
   .json-toolbar { top: 0; }
 }
+
+/* ---- link hover preview --------------------------------------------------- */
+#linkpreview {
+  position: absolute;
+  z-index: 9999;
+  width: 540px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(45, 42, 36, .22);
+  overflow: hidden;
+  pointer-events: none;            /* mouse passes through → no flicker */
+  opacity: 0;
+  transform: translateY(7px) scale(.97);
+  transform-origin: top left;
+  transition: opacity .16s ease, transform .18s cubic-bezier(.2, .8, .25, 1);
+}
+#linkpreview.show { opacity: 1; transform: translateY(0) scale(1); }
+#linkpreview .lp-shot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 760 / 480;
+  background: var(--bg-side);
+}
+#linkpreview .lp-shot img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  display: block;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+#linkpreview .lp-shot img.ready { opacity: 1; }
+#linkpreview .lp-shimmer {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, var(--bg-side) 30%, var(--panel) 50%, var(--bg-side) 70%);
+  background-size: 220% 100%;
+  animation: lp-shimmer 1.15s linear infinite;
+}
+@keyframes lp-shimmer {
+  from { background-position: 220% 0; }
+  to   { background-position: -220% 0; }
+}
+#linkpreview .lp-cap {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 11px;
+  font: 500 12px var(--sans);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#linkpreview .lp-cap b { color: var(--txt); font-weight: 600; }

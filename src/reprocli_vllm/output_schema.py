@@ -24,6 +24,16 @@ H100_BASIS_KINDS = (
     "comparable_experiment",
     "compute_unspecified",
 )
+# Shape of the central claim's success bar, pinned once into the lockfile so every
+# agent is judged against the same target (rubric_audit.md C1). The auditor adopts
+# this verbatim instead of re-inferring the bar from prose each run.
+MATCH_BAR_KINDS = (
+    "point_estimate",  # land near reference_value; op abs_rel_within, tolerance set
+    "threshold",       # reference_value is a floor/ceiling; op >= or <=, tolerance null
+    "direction",       # beat a baseline; op names the inequality, reference/tolerance null
+    "magnitude",       # the size of a delta is the target; tolerance applies to the delta
+    "none",            # no checkable scalar/relation (theoretical/position); all null
+)
 
 
 def signal_schema() -> dict:
@@ -35,6 +45,25 @@ def signal_schema() -> dict:
             "value": {"type": "boolean"},
             "verification": {"type": "string", "enum": list(VERIFICATION_STATES)},
             "evidence": {"type": "string"},
+        },
+    }
+
+
+def match_bar_schema() -> dict:
+    # The pinned, machine-readable success bar. `op` carries the relation in the
+    # auditor's own vocabulary (e.g. "abs_rel_within", ">=", "measured_method >
+    # measured_baseline, same protocol"); `reference_value`/`tolerance` are null
+    # whenever the kind has no single scalar to be near (direction/none).
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["kind", "op", "reference_value", "tolerance", "note"],
+        "properties": {
+            "kind": {"type": "string", "enum": list(MATCH_BAR_KINDS)},
+            "op": {"type": "string"},
+            "reference_value": {"type": ["number", "null"]},
+            "tolerance": {"type": ["number", "null"]},
+            "note": {"type": "string"},
         },
     }
 
@@ -76,6 +105,7 @@ FINAL_RESPONSE_FORMAT = {
                 "claim_evidence",
                 "paper_kind",
                 "mre_config",
+                "match_bar",
                 "verified_links",
                 "signals",
                 "agent_task",
@@ -86,6 +116,7 @@ FINAL_RESPONSE_FORMAT = {
                 "claim_evidence": {"type": "string"},
                 "paper_kind": {"type": "string", "enum": list(PAPER_KINDS)},
                 "mre_config": {"type": "string"},
+                "match_bar": match_bar_schema(),
                 "verified_links": {
                     "type": "object",
                     "additionalProperties": False,

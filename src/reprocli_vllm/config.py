@@ -79,8 +79,9 @@ CONTEXT_BUDGET_NOTE = (
 
 # --- Audit mode (LLM reproduction auditor) ---------------------------------
 # The auditor grades one agent reproduction attempt per paper against the rubric,
-# using the central_claim (from the classifier audit pool) plus the agent's run
-# bundle. Replaces the deterministic verification-target curator.
+# using the central_claim (from the classifier audit pool) plus read-only tools
+# scoped to the agent's run directory. Replaces the deterministic
+# verification-target curator.
 CLAIM_PLACEHOLDER = "{CENTRAL_CLAIM}"
 BUNDLE_PLACEHOLDER = "{RUN_BUNDLE}"
 RUBRIC_PLACEHOLDER = "{RUBRIC}"
@@ -90,17 +91,28 @@ AUDIT_DEFAULT_OUTPUT = Path("outputs/v5/audit_pool_audit_verdicts.jsonl")
 AUDIT_DEFAULT_EXTRACTED = Path("outputs/v5/audit_pool_audit_verdicts_extracted.jsonl")
 # Source of per-paper central claims (the classifier audit pool).
 AUDIT_CLAIMS_DEFAULT = Path("outputs/v5/audit_pool_extracted.jsonl")
+# One agent reproduction run directory per paper, at AUDIT_RUNS_DIR_DEFAULT/<id>.
+AUDIT_RUNS_DIR_DEFAULT = Path("outputs/v5/agent_runs")
+RUN_FILE_DEFAULT_CHARS = 40_000
+RUN_FILE_MAX_CHARS = 200_000
+RUN_MANIFEST_MAX_ENTRIES = 200
+BASH_TIMEOUT = 60
 AUDIT_SYSTEM_MESSAGE = (
     "You are an adversarial reproduction auditor for an ML reproduction "
     "benchmark. You grade ONE agent's attempt to reproduce ONE paper's central "
-    "claim, using only the agent's run bundle (its code, commands, stdout/stderr, "
-    "and output files) and the rubric provided. You have NO tools. You never "
-    "trust a number because the agent printed it: trace how every value was "
-    "produced, and flag hardcoded constants, echoed prose numbers, self-scored "
-    "or fabricated predictions, wrong split/scale/dataset, and cherry-picked "
-    "metrics. Default to a low score; absence of evidence is a low score, not a "
-    "pass. Grade the attempt with an integer 0-5 score per the rubric's score "
-    "scale. Return only the JSON object matching the schema."
+    "claim by investigating the agent's run directory: its *.log files, output "
+    "artifacts, and any code it wrote. You have read-only tools scoped to that "
+    "directory: list_run_files (list files and folders), read_run_file (read one "
+    "file), and bash (run a shell command with the run directory as the working "
+    "directory, e.g. grep the logs or run python3). The python tool is not "
+    "available yet, so use bash with python3 instead. You never trust a number "
+    "because the agent printed it: open the file it came from and trace how it "
+    "was produced, and flag hardcoded constants, echoed prose numbers, "
+    "self-scored or fabricated predictions, wrong split/scale/dataset, and "
+    "cherry-picked metrics. Default to a low score; absence of evidence is a low "
+    "score, not a pass. When you have gathered enough evidence, grade the attempt "
+    "with an integer 0-5 score per the rubric's score scale and return only the "
+    "JSON object matching the schema."
 )
 AUDIT_FINAL_NO_TOOLS_MESSAGE = (
     "Write the final audit verdict JSON now from the run bundle above. Apply "

@@ -1,12 +1,10 @@
-"""Audit-mode inputs: render the central claim and (pending) the agent run bundle.
+"""Audit-mode inputs: render the central claim and the agent run-directory manifest.
 
 The auditor grades one agent reproduction attempt per paper. Its inputs are:
   - the paper's ``central_claim`` (from the classifier audit pool), and
-  - the agent's run bundle: the code it wrote, the commands it ran, stdout/stderr,
-    and output files from its reproduction attempt.
-
-The run-bundle ingester is intentionally a stub: the agent reproduction-run
-format is not decided yet. See ``load_run_bundle`` / TODO(agent-runs).
+  - a manifest of the agent's run directory (its *.log files, output artifacts,
+    and any code it wrote), which the auditor then explores with the read-only
+    run-dir tools (list_run_files / read_run_file / bash).
 """
 
 from __future__ import annotations
@@ -15,11 +13,12 @@ import json
 from pathlib import Path
 
 from .config import BUNDLE_PLACEHOLDER, CLAIM_PLACEHOLDER, RUBRIC_PLACEHOLDER
+from .tools.run_dir_tools import run_dir_manifest
 
-RUN_BUNDLE_PENDING_TEXT = (
-    "(NO AGENT RUN BUNDLE WIRED YET. The agent reproduction-run format is not "
-    "decided; see TODO(agent-runs) in audit_inputs.load_run_bundle. With no run "
-    "to inspect, the only defensible verdict is `unverifiable`.)"
+RUN_BUNDLE_NO_DIR_TEXT = (
+    "(No --runs-dir configured, so no agent reproduction run directory is bound "
+    "for this paper. With no run to inspect, the only defensible verdict is "
+    "`unverifiable` with score 0.)"
 )
 
 
@@ -40,16 +39,22 @@ def claim_block(record: dict | None) -> str:
             "\nReported numbers / experiment context:\n"
             + json.dumps(evidence, ensure_ascii=False, indent=2)
         )
+    bar = record.get("match_bar")
+    if bar:
+        parts.append(
+            "\nPinned match bar (the frozen lockfile target — adopt it verbatim as "
+            "the C1 bar; do NOT re-infer it):\n"
+            + json.dumps(bar, ensure_ascii=False, indent=2)
+        )
     return "\n".join(parts) if parts else "(no central claim found for this paper)"
 
 
 def load_run_bundle(paper_id: str, runs_dir) -> str:
-    # TODO(agent-runs): once the agent reproduction-run format is decided, load
-    # this paper's run bundle here -- the code the agent wrote, the commands it
-    # ran, stdout/stderr, and any output files -- packed as text under a token
-    # budget. Until then the auditor receives the placeholder below and the
-    # rubric forces an `unverifiable` verdict (no run = no evidence).
-    return RUN_BUNDLE_PENDING_TEXT
+    # The prompt is seeded with a manifest of the paper's run directory; the
+    # auditor reads the file contents on demand through the run-dir tools.
+    if not runs_dir:
+        return RUN_BUNDLE_NO_DIR_TEXT
+    return run_dir_manifest(Path(str(runs_dir)) / paper_id)
 
 
 def build_audit_prompt(

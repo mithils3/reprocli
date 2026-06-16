@@ -159,6 +159,142 @@ function el(html) {
   return t.content.firstElementChild;
 }
 
+// ---- link hover preview ---------------------------------------------------
+// Pops a screenshot card when hovering any external link. Screenshots come from
+// WordPress mShots (free, no API key, CORS-friendly <img>). mShots renders the
+// shot server-side on first request and returns a fixed 400x300 "Generating
+// Preview…" placeholder until it's ready; the real shot comes back at the
+// requested width (e.g. 760xN). So we (a) prewarm every link the moment a paper
+// opens — generation runs while you read, not when you hover — and (b) detect
+// readiness by width, so the placeholder is never shown or cached.
+const PREVIEW = { delay: 320, width: 1000, maxRetries: 8, retryEvery: 1400 };
+
+const shotCache = new Map();      // url -> ready screenshot src (instant re-hover)
+const shotPending = new Map();    // url -> [callbacks] awaiting the first ready shot
+
+function shotUrl(url, attempt) {
+  const base = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=${PREVIEW.width}`;
+  return attempt ? `${base}&retry=${attempt}` : base;   // a new URL forces a re-fetch past the placeholder
+}
+
+// real screenshots return at ~the requested width; the placeholder is 400x300.
+const isReadyShot = (img) => img.naturalWidth >= PREVIEW.width - 8;
+
+// Fetch + cache a screenshot, retrying past the "Generating Preview…" placeholder.
+// cb(src, ready) fires once: the real shot, or null if we gave up. Concurrent
+// requests for the same url (e.g. prewarm + a hover) share one in-flight fetch.
+function requestShot(url, cb) {
+  if (!/^https?:/i.test(url)) { if (cb) cb(null, false); return; }
+  const cached = shotCache.get(url);
+  if (cached) { if (cb) cb(cached, true); return; }
+  if (shotPending.has(url)) { if (cb) shotPending.get(url).push(cb); return; }
+  shotPending.set(url, cb ? [cb] : []);
+
+  let attempt = 0;
+  const finish = (src, ready) => {
+    const cbs = shotPending.get(url) || [];
+    shotPending.delete(url);
+    if (ready) shotCache.set(url, src);
+    cbs.forEach((f) => f(src, ready));
+  };
+  const tick = () => {
+    const src = shotUrl(url, attempt);
+    const probe = new Image();
+    probe.onload = () => {
+      if (isReadyShot(probe)) return finish(src, true);        // got the real screenshot
+      if (attempt < PREVIEW.maxRetries) { attempt++; setTimeout(tick, PREVIEW.retryEvery); }
+      else finish(null, false);                                // still generating after N tries
+    };
+    probe.onerror = () => {
+      if (attempt < PREVIEW.maxRetries) { attempt++; setTimeout(tick, PREVIEW.retryEvery); }
+      else finish(null, false);
+    };
+    probe.src = src;
+  };
+  tick();
+}
+
+// Kick off generation for every external link in a freshly-rendered paper,
+// staggered so we don't hammer mShots, so hovers land on a warm cache.
+function prewarmShots(root) {
+  if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
+  const urls = [...new Set($$('a[href^="http"]', root).map((a) => a.href))];
+  urls.forEach((url, i) => setTimeout(() => requestShot(url), i * 200));
+}
+
+function setupLinkPreviews() {
+  if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;  // skip touch
+
+  const card = el(`
+    <div id="linkpreview" hidden>
+      <div class="lp-shot"><div class="lp-shimmer"></div><img alt="" /></div>
+      <div class="lp-cap"></div>
+    </div>`);
+  document.body.appendChild(card);
+  const img = $("img", card), shimmer = $(".lp-shimmer", card), cap = $(".lp-cap", card);
+
+  let showTimer = null, curUrl = null;
+
+  const eligible = (a) => a && a.href && /^https?:/i.test(a.href) && !a.closest("#linkpreview");
+
+  function hide() {
+    clearTimeout(showTimer);
+    showTimer = curUrl = null;
+    card.classList.remove("show");
+    card.hidden = true;
+    img.classList.remove("ready");
+    img.removeAttribute("src");
+  }
+
+  function place(a) {
+    const r = a.getBoundingClientRect();
+    const w = card.offsetWidth, h = card.offsetHeight;
+    const vw = document.documentElement.clientWidth;
+    let left = Math.min(r.left, vw - w - 12);
+    left = Math.max(8, left) + window.scrollX;
+    const above = r.top - h - 10;                       // prefer above the link
+    const top = (above > 8 ? above : r.bottom + 10) + window.scrollY;
+    card.style.left = left + "px";
+    card.style.top = top + "px";
+  }
+
+  function show(a) {
+    const url = a.href;
+    curUrl = url;
+    let host = url;
+    try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) { /* keep raw */ }
+    cap.innerHTML = `<b>${esc(host)}</b>`;
+    img.classList.remove("ready");
+    shimmer.style.display = "";                          // shimmer until the real shot lands
+    card.hidden = false;
+    card.classList.remove("show");
+    place(a);
+    requestAnimationFrame(() => { place(a); card.classList.add("show"); });
+    requestShot(url, (src, ready) => {
+      if (curUrl !== url) return;                        // user moved on before it resolved
+      if (!ready || !src) { shimmer.style.display = "none"; return; }
+      img.onload = () => { if (curUrl === url) { shimmer.style.display = "none"; img.classList.add("ready"); } };
+      img.src = src;                                      // already fetched → paints immediately
+    });
+  }
+
+  document.addEventListener("mouseover", (e) => {
+    const a = e.target.closest && e.target.closest("a");
+    if (!eligible(a) || a.href === curUrl) return;
+    clearTimeout(showTimer);
+    showTimer = setTimeout(() => show(a), PREVIEW.delay);
+  });
+  document.addEventListener("mouseout", (e) => {
+    const a = e.target.closest && e.target.closest("a");
+    if (!eligible(a)) return;
+    const to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest("a");
+    if (to === a) return;                               // moving within the same link
+    hide();
+  });
+  document.addEventListener("click", hide);
+  window.addEventListener("scroll", hide, { passive: true });
+}
+
 // ===========================================================================
 // boot
 // ===========================================================================
@@ -176,6 +312,7 @@ async function init() {
   $("#signout").addEventListener("click", signOut);
   $$(".tab").forEach((t) => t.addEventListener("click", () => setView(t.dataset.view)));
   $("#search").addEventListener("input", (e) => { state.search = e.target.value.toLowerCase(); renderList(); });
+  setupLinkPreviews();
 
   await loadPapers();
   if (saved) signIn(saved);
@@ -620,6 +757,7 @@ function renderDetail() {
   refreshScorePanel();
   refreshConflictBanner();
   refreshOthersPanel();
+  prewarmShots(root);   // start generating link screenshots now, so hovers are instant
 }
 
 // ---- other reviewers' labels (compare panel) ------------------------------
@@ -709,8 +847,12 @@ function renderStep(p, step, n, links) {
     <div class="step ${d[verdictField] ? "answered" : ""}">
       <div class="step-h"><span class="stepn">${n}</span><h3>${esc(step.q)}</h3>${signalBadge(sig.value)}</div>
       <p class="guide">${esc(step.guide)}</p>
-      <details class="ev"><summary>Model's evidence</summary><p>${esc(sig.evidence || "(none)")}</p></details>
-      ${modelLinks.length ? `<div class="mlinks"><b>Model links:</b> ${modelLinks.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join(" ")}</div>` : ""}
+      <details class="ev" open><summary>Model's evidence</summary><p>${esc(sig.evidence || "(none)")}</p></details>
+      ${modelLinks.length ? `<div class="mlinks"><b>Model links</b> <span class="mlinks-hint">— click 👁 to see the live page</span>
+        <ul class="mlink-list">${modelLinks.map((u) => `<li class="mlink">
+          <button class="mlink-prev" data-url="${esc(u)}" type="button" title="Preview the live page">👁 preview</button>
+          <a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
+          <div class="mlink-shot" hidden></div></li>`).join("")}</ul></div>` : ""}
       <div class="searchrow">${step.searches(p).map(([lab, url]) => `<a class="searchbtn" data-lab="${esc(lab)}" href="${esc(url)}" target="_blank" rel="noopener">Search: ${esc(lab)} ↗</a>`).join("")}</div>
       <div class="verdicts">${VERDICTS.map((v) => `<button class="vbtn ${d[verdictField] === v ? "sel " + v : ""}" data-v="${v}">${v === "agree" ? "✓ Agree" : v === "disagree" ? "✗ Disagree" : "? Unsure"}</button>`).join("")}<span class="effective">${esc(effectiveText(step, p, d))}</span></div>
       ${step.foundKey ? `<input class="found" type="url" placeholder="Link you found (optional)" value="${esc(d[step.foundKey] || "")}" />` : ""}

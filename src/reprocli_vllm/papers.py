@@ -15,6 +15,8 @@ class Paper:
     supplement_source_url: str = ""
     supplement_status: str = ""
     supplement_files: list[dict] = field(default_factory=list)
+    # Audit mode: the agent's reproduction run directory the auditor explores.
+    run_dir: str = ""
 
     def text(self) -> str:
         header = [
