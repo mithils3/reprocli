@@ -14,11 +14,14 @@ Follow these steps in order. Save intermediate results as JSON/log files using w
 
 STEP 1 — INSPECT HOST ENVIRONMENT
 Run the commands below and write the results to host_profile.json:
+  uname -m
   which apptainer && apptainer --version
   nvidia-smi
   sinfo
   df -h
   ls -ld /work/nvme/$USER /work/hdd/$USER 2>/dev/null || true
+
+Record host_arch (x86_64 or aarch64). This determines which base images are safe to use.
 
 STEP 2 — CLONE AND INSPECT REPO
 Clone from verified_links.code. Then read README, requirements.txt, environment.yml,
@@ -27,22 +30,36 @@ PyTorch/JAX version, packages, dataset/model download commands, training/eval co
 Write findings to repo_profile.json.
 
 STEP 3 — PLAN ENVIRONMENT
-Choose a base Docker image that satisfies the repo's CUDA + framework requirements
-(e.g. pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel). The host only needs a compatible
-NVIDIA driver and Apptainer; Python/PyTorch go inside the container.
-Write env_plan.json with: base_image, python_version, cuda_version, packages, notes.
+Apptainer builds for the host architecture, so the container arch must match the
+compute node arch. On Delta the compute nodes are x86_64; build on a Delta login node.
+
+ALWAYS prefer NVIDIA NGC base images (nvcr.io/nvidia/) — they publish multi-arch
+manifests covering both x86_64 and aarch64, so the same From: line works on either host:
+  nvcr.io/nvidia/pytorch:24.05-py3          (PyTorch + CUDA, both arches)
+  nvcr.io/nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04  (bare CUDA, both arches)
+
+Avoid pytorch/pytorch:* or tensorflow/tensorflow:*-gpu — those are x86_64-only and
+will fail on aarch64 build hosts even if the target compute node is x86_64.
+
+If the repo requires a specific PyTorch version, pick the closest NGC tag and install
+the exact version via pip inside %post rather than relying on the image's bundled version.
+
+Write env_plan.json with: host_arch, base_image, python_version, cuda_version, packages, notes.
 
 STEP 4 — BUILD CONTAINER
 Write paper.def (Apptainer definition file). Example structure:
   Bootstrap: docker
-  From: <base_image>
+  From: nvcr.io/nvidia/pytorch:24.05-py3
   %post
-      pip install <packages>
+      pip install --upgrade pip
+      pip install <repo-specific packages>
       ...
   %environment
       export PYTHONPATH=/workspace:$PYTHONPATH
 Then run: apptainer build paper.sif paper.def   (use timeout=1800)
 Capture stdout/stderr to build.log.
+If the build fails with a manifest/architecture error, confirm the base image has a
+manifest for the host arch (check with: apptainer inspect --deffile <image>).
 
 STEP 5 — SMOKE TEST
   apptainer exec paper.sif python3 --version
