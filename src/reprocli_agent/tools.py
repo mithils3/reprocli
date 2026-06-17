@@ -11,7 +11,7 @@ from typing import Iterator
 
 MAX_OUTPUT = 10_000
 MAX_CHARS = 50_000
-DEFAULT_TIMEOUT = 300
+DEFAULT_TIMEOUT = 3600
 _UA = {"User-Agent": "reprocli-repro-agent/0.1"}
 
 TOOL_SCHEMAS: list[dict] = [
@@ -31,7 +31,7 @@ TOOL_SCHEMAS: list[dict] = [
                     "command": {"type": "string", "description": "Shell command to run."},
                     "timeout": {
                         "type": "integer",
-                        "description": "Timeout in seconds (default 300, use 1800 for apptainer build).",
+                        "description": "Timeout in seconds (default 3600).",
                     },
                 },
                 "required": ["command"],
