@@ -15,7 +15,7 @@ ReproBench runs **one tool-calling agent core** — `run_tool_loop` in `runtime/
 | `args.tools` | `WEB_TOOLS` (defined in `config/config.py`, executed by `tools/web_tools.py`) | `AUDIT_TOOLS` (`tools/run_dir_tools.py`) |
 | `args.response_format` | `None` → falls back to `FINAL_RESPONSE_FORMAT` (`schema/output.py`) | `AUDIT_RESPONSE_FORMAT` (`schema/audit.py`) |
 | `args.final_no_tools_message` | `FINAL_NO_TOOLS_MESSAGE` | `AUDIT_FINAL_NO_TOOLS_MESSAGE` |
-| `args.prompt_file` | `prompt.txt` | `prompt_audit.txt` (+ `rubric_audit.md`) |
+| `args.prompt_file` | `prompts/prompt.txt` | `prompts/prompt_audit.txt` (+ `rubric_audit.md`) |
 | `args.use_tools` | `True` | `True` |
 | input | bundle LaTeX text (`{PAPER_TEXT}`) | central claim + rubric + run-dir (`{CENTRAL_CLAIM}`) |
 

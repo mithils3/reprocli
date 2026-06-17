@@ -5,10 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifact Verification</title>
   <meta name="theme-color" content="#FAF9F5" />
+  <!-- set the theme before first paint so there's no light-mode flash -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var theme = saved ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
 <body>
   <!-- Sign-in gate -->
@@ -37,6 +49,7 @@
       <div class="who">
         <span id="who-name"></span>
         <span id="who-progress" class="pill"></span>
+        <button id="theme-toggle" class="theme-toggle" title="Switch theme" aria-label="Switch theme">☾</button>
         <button id="signout" class="link">switch user</button>
       </div>
     </header>
@@ -80,5 +93,29 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script src="json_view.js"></script>
+  <script>
+    /* theme toggle: flip data-theme, persist the choice, keep the icon +
+       browser UI colour in sync. The no-flash script in <head> applies it. */
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      function sync() {
+        var dark = root.getAttribute('data-theme') === 'dark';
+        btn.textContent = dark ? '☀' : '☾';
+        btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+        btn.setAttribute('aria-label', btn.title);
+        if (meta) meta.setAttribute('content', dark ? '#0c0b0a' : '#FAF9F5');
+      }
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        sync();
+      });
+      sync();
+    })();
+  </script>
 </body>
 </html>

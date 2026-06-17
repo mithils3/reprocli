@@ -30,7 +30,8 @@ reprocli/
 ├── scripts/                         ✅ SLURM sbatch + interactive notes
 ├── tests/                           ✅ pytest, mirrors reprocli_vllm subpackages
 ├── docs/                            this MkDocs Material site
-├── prompt.txt · prompt_audit.txt · rubric_audit.md   prompts + audit rubric
+├── prompts/                       prompt.txt · prompt_audit.txt · prompt_openai_websearch.txt
+├── rubric_audit.md                 audit rubric
 ├── data/ · outputs/                 generated datasets, run bundles, model outputs
 └── CLAUDE.md · AGENTS.md · README.md · mkdocs.yml · requirements.txt
 ```

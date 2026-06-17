@@ -60,7 +60,7 @@ python3 src/run_arxiv_prompt_vllm.py \
 
 | flag | effect |
 |---|---|
-| (no `--mode`) | defaults to `classification` (`config/cli_args.py`); loads bundle papers with `tex_files`, prompt template `prompt.txt`, `{PAPER_TEXT}` placeholder |
+| (no `--mode`) | defaults to `classification` (`config/cli_args.py`); loads bundle papers with `tex_files`, prompt template `prompts/prompt.txt`, `{PAPER_TEXT}` placeholder |
 | (no `--num-prompts`) | runs the **full** dataset (`select_papers` returns all papers) |
 | `--request-workers 32` | up to 32 episodes in flight against the embedded server |
 | `--compilation-config` | explicit override of the per-model default (`{"cudagraph_mode":"PIECEWISE"}`); enables the `fuse_minimax_qk_norm` pass |
@@ -114,7 +114,7 @@ This script was the launcher for an earlier **deterministic verification-target 
 
     - `--mode verification` — `config/cli_args.py` now only allows `choices=("classification", "audit")`.
     - `--mre-records hf://…/audit_pool_extracted.jsonl` — no such argument exists; the auditor reads claims via `--claims` instead.
-    - `--prompt-file prompt_verification.txt` — that prompt file was deleted (the live audit prompt is `prompt_audit.txt`).
+    - `--prompt-file prompt_verification.txt` — that prompt file was deleted (the live audit prompt is `prompts/prompt_audit.txt`).
 
     Running it today fails at `parse_args`. The audit pass it represents is now the **auditor mode** (`--mode audit`), documented on [the auditor page](../modes/auditor.md).
 

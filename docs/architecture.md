@@ -66,7 +66,7 @@ STAGE 1 — DATASET CONSTRUCTION  (classifier pass, mode = classification)    �
    NeurIPS 2025 arXiv LaTeX bundles
         │  load_bundle_papers()  →  Paper(tex_files)
         ▼
-   prompt.txt {PAPER_TEXT} ──► vLLM + tool loop ──► web_tools (verify links)
+   prompts/prompt.txt {PAPER_TEXT} ──► vLLM + tool loop ──► web_tools (verify links)
         ▼
    ONE MRE record per paper   (output_schema.FINAL_JSON_SCHEMA)
      ├ central_claim, claim_evidence, paper_kind

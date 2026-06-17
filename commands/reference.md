@@ -42,3 +42,7 @@ PYTHONPATH=src python3 -m reprocli_repro.reference --out-dir refs --limit 50
 - `--ids-file` — file of arXiv ids, one per line.
 - `--limit` — stop after writing this many papers (ignored with `--arxiv-id`/`--ids-file`).
 - `--overwrite` — rewrite an existing paper dir (default: skip).
+
+```bash
+PYTHONPATH=src python3 -m reprocli_repro.reference --out-dir /tmp/refs --limit 50
+```

@@ -203,7 +203,7 @@ if not weights_available:                            score += 1
 ```bash
 python src/run_arxiv_prompt_vllm.py \
   --mode classification \
-  --prompt-file prompt.txt \
+  --prompt-file prompts/prompt.txt \
   --dataset Mithilss/neurips-2025-paper-bundles \
   --num-prompts 10
 ```

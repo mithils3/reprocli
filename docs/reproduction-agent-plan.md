@@ -63,7 +63,7 @@ grades.
   prompt from `agent_task · central_claim · mre_config · match_bar · tier · band
   · budget_h100_hours`.
 - `--paper-id <arxiv_id>` (single-paper first-class) plus `--num-prompts` later.
-- `prompt_reproduce.txt` at repo root with placeholders; resolve workspace/run-dir
+- `prompts/prompt_reproduce.txt` with placeholders; resolve workspace/run-dir
   to `<runs-dir>/<arxiv_id>/<budget>h/<run_id>/` — **the S6→S7 contract the
   existing auditor reads.**
 
@@ -158,7 +158,7 @@ src/reprocli_repro/
   loop.py · context.py · inputs.py · budget.py · slurm.py · workspace.py · reference.py · evidence.py
   tools/__init__.py · tools/workspace_bash.py · tools/run_gpu.py · tools/files.py
   report/schema.py · report/validate.py · report/reexecute.py
-prompt_reproduce.txt · scripts/paper_reproduce.sbatch
+prompts/prompt_reproduce.txt · scripts/paper_reproduce.sbatch
 ```
 
 The only thing repro borrows from `reprocli_vllm` is import-level primitives;

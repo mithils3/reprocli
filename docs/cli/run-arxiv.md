@@ -72,7 +72,7 @@ the run directory per paper.
 | `--dataset` | str | `Mithilss/neurips-2025-paper-bundles` (`DEFAULT_VLLM_DATASET`) | Paper-bundle dataset with LaTeX and OpenReview supplements. (classification only) |
 | `--num-prompts` | int | `None` (all papers) | Run a random sample of N papers instead of the full set. Must be ≥ 1. |
 | `--paper-ids-file` | path | `None` | Run only the arXiv ids listed in this file (one per line), e.g. the output of `python -m reprocli_vllm.rerun select`. |
-| `--prompt-file` | path | `prompt.txt` (classification) · `prompt_audit.txt` (audit, `AUDIT_PROMPT_FILE`) | **mode**-resolved prompt template. Must contain `{PAPER_TEXT}` (classification) or `{CENTRAL_CLAIM}` (audit). |
+| `--prompt-file` | path | `prompts/prompt.txt` (classification) · `prompts/prompt_audit.txt` (audit, `AUDIT_PROMPT_FILE`) | **mode**-resolved prompt template. Must contain `{PAPER_TEXT}` (classification) or `{CENTRAL_CLAIM}` (audit). |
 | `--claims` | path | `outputs/v5/audit_pool_extracted.jsonl` (`AUDIT_CLAIMS_DEFAULT`) | **audit only.** Audit-pool rows (classifier extracted output) carrying the `central_claim` per paper, injected into the audit prompt. A local JSONL path or an `hf://datasets/<owner>/<name>/<file>` reference. |
 | `--rubric-file` | path | `rubric_audit.md` (`AUDIT_RUBRIC_FILE`) | **audit only.** Audit rubric markdown injected into the audit prompt. |
 | `--runs-dir` | path | `outputs/v5/agent_runs` (`AUDIT_RUNS_DIR_DEFAULT`) | **audit only.** Root directory of agent reproduction runs; the auditor reads one run dir per paper at `<runs-dir>/<arxiv_id>` via the read-only run-dir tools. |
@@ -235,7 +235,7 @@ flowchart TD
     python src/run_arxiv_prompt_vllm.py \
       --mode classification \
       --num-prompts 5 \
-      --prompt-file prompt.txt
+      --prompt-file prompts/prompt.txt
     ```
 
 !!! example "Audit a batch of agent runs"

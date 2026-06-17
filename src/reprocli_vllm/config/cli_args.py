@@ -196,7 +196,7 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
         args.tools = AUDIT_TOOLS
         args.use_tools = True
         return
-    args.prompt_file = args.prompt_file or argparse_path("prompt.txt")
+    args.prompt_file = args.prompt_file or argparse_path("prompts/prompt.txt")
     args.output = args.output or DEFAULT_OUTPUT
     args.extracted_output = args.extracted_output or DEFAULT_EXTRACTED_OUTPUT
     args.response_format = None

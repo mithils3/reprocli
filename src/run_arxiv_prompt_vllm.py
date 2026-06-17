@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run prompt.txt over NeurIPS arXiv LaTeX papers with vLLM."""
+"""Run prompts/prompt.txt over NeurIPS arXiv LaTeX papers with vLLM."""
 
 from __future__ import annotations
 
