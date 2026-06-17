@@ -17,6 +17,18 @@ Copy-paste command references live in [`commands/`](commands/), one file per tas
   supplement into local `latex/` and `supplement/` directories.
 - [commands/docs.md](commands/docs.md) — build, serve, and publish the docs site.
 
+## Serving the model
+
+The agents here are **provider-agnostic** — they only make chat-completions
+requests to a base URL, so the model is a swappable service, not part of the
+runner. Standing that service up lives in a sibling repo, **`../reprocli-serve`**,
+which boots a vLLM server on a GPU node (e.g. 4×GH200, TP=4), binds `0.0.0.0`, and
+publishes its URL for any other Delta/DeltaAI node to attach to. Point the runner
+at it with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or `$REPROCLI_ENDPOINT_FILE`
+(falling back to the embedded local server when none is set). See
+[docs/slurm/serve.md](docs/slurm/serve.md) and
+`scripts/paper_classification_serve.sbatch`.
+
 ## Documentation
 
 Full project documentation lives in [`docs/`](docs/) and is published with

@@ -14,6 +14,7 @@ from reprocli_vllm.runtime.mre_records import load_mre_records
 from reprocli_vllm.papers.bundles import load_bundle_papers
 from reprocli_vllm.papers.papers import Paper
 from reprocli_vllm.runtime.tool_loop import run_tool_loop
+from reprocli_vllm.vllm.endpoint import resolve_server_url
 from reprocli_vllm.vllm.server import VllmServer
 
 
@@ -52,9 +53,9 @@ def main() -> int:
         f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
         file=sys.stderr,
     )
+    server_url = resolve_server_url(args.vllm_server_url)
     with hf_run_uploader(args):
-        if args.vllm_server_url:
-            server_url = normalized_server_url(args.vllm_server_url)
+        if server_url:
             print(f"Using existing vLLM server at {server_url}", file=sys.stderr)
             run_tool_loop(args, papers_to_run, prompts, server_url)
         else:
@@ -111,13 +112,6 @@ def build_prompt(
             template, rubric, claim_records.get(paper.arxiv_id), paper.arxiv_id, runs_dir
         )
     return template.replace(PLACEHOLDER, paper.text())
-
-
-def normalized_server_url(value: str) -> str:
-    url = value.rstrip("/")
-    if url.endswith("/v1"):
-        url = url[:-3]
-    return url
 
 
 if __name__ == "__main__":

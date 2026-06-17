@@ -89,6 +89,13 @@ server. If the server was launched without a served model alias, set `--model`
 to the exact model name printed by vLLM at startup, such as
 `/work/hdd/bfvr/msalunkhe/models/`.
 
+Instead of the flag, you can export `REPROCLI_SERVER_URL=http://<ip>:8000` or
+`REPROCLI_ENDPOINT_FILE=/path/to/vllm_endpoint.json` (the file published by the
+`reprocli-serve` sibling repo); the runner resolves the URL from any of the
+three, and falls back to its embedded local server when none is set. This is the
+recommended path for standing up one shared server many nodes attach to — see the
+[serving page](../docs/slurm/serve.md).
+
 `--num-prompts` samples that many papers at random. Omit it to process the full
 dataset.
 

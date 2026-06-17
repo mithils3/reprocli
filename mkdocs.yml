@@ -131,6 +131,7 @@ nav:
       - Output & audit schemas: tools/schemas.md
   - Running on SLURM:
       - Clusters & allocations: slurm/clusters.md
+      - Serving (reprocli-serve): slurm/serve.md
       - Batch jobs: slurm/sbatch.md
   - CLI reference:
       - run_arxiv_prompt_vllm: cli/run-arxiv.md

@@ -232,6 +232,8 @@ provider-specific code in the harness.
 
 ## Where to go next
 
+- [Serving (reprocli-serve)](serve.md) — the standalone central vLLM server other
+  nodes attach to by URL, and the endpoint contract that decouples it from the runner.
 - [Sbatch jobs](sbatch.md) — the batch (`#SBATCH`) form of the classifier/auditor
   runs that pin this env block.
 - [Reproduction mode](../modes/reproduction.md) — the 🚧 `salloc` +
