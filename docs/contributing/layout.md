@@ -111,7 +111,7 @@ Details on each stage and the emitted schema live in [dataset stages](../dataset
 - `v3_viewer/` — view runs / quality (see [v3 viewer](../apps/v3-viewer.md)).
 - `plot_audit_pool.py`, `tier_composition.py`, `upload_audit_pool_hf.py` — pool analysis + publishing the [lockfile](../selection/lockfile.md).
 
-`scripts/` holds the SLURM substrate: `paper_classification.sbatch`, `paper_classification_kimi_k2_6.sbatch`, `paper_verification.sbatch`, the `delta_scripts.sh` helpers, and `kimi_k2_6_multinode_interactive.md`. See [clusters](../slurm/clusters.md) and [sbatch](../slurm/sbatch.md).
+`scripts/` holds the SLURM substrate: `paper_classification.sbatch` and `paper_classification_kimi_k2_6.sbatch` (classifiers), the `serve_*.sbatch` central-server launchers + `serve_attach_runner.sh`, the `delta_scripts.sh` helpers, and `kimi_k2_6_multinode_interactive.md`. See [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md), and [serving](../slurm/serve.md).
 
 ## `tests/`
 

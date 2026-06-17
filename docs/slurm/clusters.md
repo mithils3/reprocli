@@ -115,10 +115,10 @@ harness re-execution verdict.
 Every `srun` step inherits the environment the sbatch scripts already
 standardize. The block below is shared across
 `scripts/paper_classification.sbatch`,
-`scripts/paper_classification_kimi_k2_6.sbatch`,
-`scripts/paper_verification.sbatch`, and the interactive runbook's §2
-(`scripts/kimi_k2_6_multinode_interactive.md`). The one divergence: the three
-single-node sbatch scripts additionally pin loopback rendezvous
+`scripts/paper_classification_kimi_k2_6.sbatch`, the `serve_*.sbatch` servers, and
+the interactive runbook's §2
+(`scripts/kimi_k2_6_multinode_interactive.md`). The one divergence: the single-node
+sbatch scripts additionally pin loopback rendezvous
 (`export MASTER_ADDR=127.0.0.1` / `export VLLM_HOST_IP=127.0.0.1`), which the
 **multi-node** runbook deliberately omits — there the head address is discovered
 as `HEAD_IP` (see the multi-node warning below).

@@ -1,13 +1,13 @@
 # Batch jobs (`scripts/*.sbatch`)
 
-The three SLURM batch scripts in `scripts/` are thin launchers: each sets the same DeltaAI environment block, activates the project venv, then calls the one entry point `src/run_arxiv_prompt_vllm.py` with a different flag set. The Python process embeds its own vLLM server (`vllm/server.py`) and drives the [tool loop](../agent-core/tool-loop.md) over the [paper bundles](../dataset/index.md) — there is no separate `srun` server step inside these scripts. See [Clusters & accounts](clusters.md) for the account/partition table and the `salloc`→`srun` pattern the (designed) reproduction agent uses.
+The two classifier batch scripts in `scripts/` are thin launchers: each sets the same DeltaAI environment block, activates the project venv, and drives the [tool loop](../agent-core/tool-loop.md) over the [paper bundles](../dataset/index.md) via `src/run_arxiv_prompt_vllm.py`. They differ in how the model is served: `paper_classification.sbatch` uses the **serve paradigm** (a background `reprocli_serve` server, then the runner attached by URL — see [serving](serve.md)), while `paper_classification_kimi_k2_6.sbatch` lets the runner **embed** its own vLLM server (`vllm/server.py`). The standalone `serve_*.sbatch` servers are documented on the [serving page](serve.md). See [Clusters & accounts](clusters.md) for the account/partition table and the `salloc`→`srun` pattern the (designed) reproduction agent uses.
 
-!!! note "One runner, three invocations"
-    All three scripts run `python3 src/run_arxiv_prompt_vllm.py …`. What differs is the model, the toolset, the mode, and the I/O paths — the loop body, guardrails, and structured-output finalization are shared (see [architecture](../architecture.md), Part II).
+!!! note "One runner, two invocations"
+    Both scripts drive `python3 src/run_arxiv_prompt_vllm.py …`; what differs is the model and how it is served. The loop body, guardrails, and structured-output finalization are shared (see [architecture](../architecture.md), Part II).
 
 ## The shared header
 
-Every script opens with an identical block. The SLURM directives differ only in job name, CPU/GPU/mem/time, and output-file prefix (next section); the env block below is byte-for-byte the same in all three.
+Every script opens with an identical block. The SLURM directives differ only in job name, CPU/GPU/mem/time, and output-file prefix (next section); the env block below is byte-for-byte the same in both.
 
 | concern | what the header does |
 |---|---|
@@ -25,36 +25,41 @@ Every script opens with an identical block. The SLURM directives differ only in 
 
 ## SLURM directives at a glance
 
-All three target DeltaAI: account `betw-dtai-gh`, partition `ghx4`, one node, `--gpu-bind=none`, `--export=ALL`, and email to `mithils3@illinois.edu` on `BEGIN,END,FAIL`. They diverge on size and walltime:
+Both target DeltaAI: account `betw-dtai-gh`, partition `ghx4`, one node, `--gpu-bind=none`, `--export=ALL`, and email to `mithils3@illinois.edu` on `BEGIN,END,FAIL`. They diverge on size and walltime:
 
 | script | job name | `--cpus-per-task` | `--gpus-per-node` | `--mem` | `--time` | log prefix |
 |---|---|---|---|---|---|---|
 | `paper_classification.sbatch` | `reprocli_paper_classification` | 16 | 4 | 256G | 48:00:00 | `slurm-%j` |
 | `paper_classification_kimi_k2_6.sbatch` | `reprocli_kimi_k2_6` | 32 | 8 | 512G | 12:00:00 | `slurm-kimi-k2-6-%j` |
-| `paper_verification.sbatch` | `reprocli_paper_verification` | 16 | 4 | 256G | 4:00:00 | `slurm-verify-%j` |
 
-The Kimi job is the heavy one — 8 GPUs and 512G — because the model runs at tensor-parallel 8 (below). The other two fit MiniMax on 4 GPUs.
+The Kimi job is the heavy one — 8 GPUs and 512G — because the model runs at tensor-parallel 8 (below). The MiniMax classifier fits on 4 GPUs.
 
 ## ✅ `paper_classification.sbatch` — the MiniMax classifier
 
-The stage-1 dataset-construction pass: read each NeurIPS bundle, verify its artifacts via the web/MCP toolset, and emit one MRE record per paper. Uses the default model (`DEFAULT_MODEL = MINIMAX_M2_MODEL`, so `--model` is omitted), which routes through `apply_minimax_profile` in `config/minimax_defaults.py` (TP 4, `minimax_m2` parsers, `trust_remote_code=True`, `temperature=1.0/top_p=0.95/top_k=40`).
+The stage-1 dataset-construction pass: read each NeurIPS bundle, verify its artifacts via the web/MCP toolset, and emit one MRE record per paper. It runs the **serve paradigm** on one node — step 1 stands the model up with `reprocli_serve`, step 2 attaches the model-agnostic runner by the published URL. The model is the default `MINIMAX_M2_MODEL`, whose serve flags come from `reprocli_serve/profiles.py` (TP 4, `minimax_m2` parsers, `trust_remote_code`); sampling (`temperature=1.0/top_p=0.95/top_k=40`) is applied client-side by the runner.
 
-Salient flags:
+Step 1 — the server (background), TP 4 with the MiniMax fusion pass:
+
+```bash
+python -m reprocli_serve \
+  --model "$MODEL" --served-model-name MiniMaxAI/MiniMax-M2.7 \
+  --port 8000 --tensor-parallel-size 4 --max-model-len 196608 \
+  --distributed-executor-backend mp \
+  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
+  --endpoint-file "$ENDPOINT_FILE" &
+```
+
+Step 2 — the runner attaches by `$SERVER_URL` (read from the endpoint file) and writes the dataset:
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
-  --tool-rounds 12 \
-  --max-input-tokens 128000 --max-tokens 8192 \
-  --request-workers 32 \
-  --stream-first-response \
+  --vllm-server-url "$SERVER_URL" --model MiniMaxAI/MiniMax-M2.7 \
+  --tool-rounds 12 --max-input-tokens 128000 --max-tokens 8192 \
+  --request-workers 32 --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
-  --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
-  --save-round-jsonl \
-  --max-model-len 196608 \
-  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
+  --save-round-jsonl --max-model-len 196608 \
   --hf-repo Mithilss/neurips-2025-results
 ```
 
@@ -62,11 +67,11 @@ python3 src/run_arxiv_prompt_vllm.py \
 |---|---|
 | (no `--mode`) | defaults to `classification` (`config/cli_args.py`); loads bundle papers with `tex_files`, prompt template `prompts/prompt.txt`, `{PAPER_TEXT}` placeholder |
 | (no `--num-prompts`) | runs the **full** dataset (`select_papers` returns all papers) |
-| `--request-workers 32` | up to 32 episodes in flight against the embedded server |
-| `--compilation-config` | explicit override of the per-model default (`{"cudagraph_mode":"PIECEWISE"}`); enables the `fuse_minimax_qk_norm` pass |
+| `--request-workers 32` | up to 32 episodes in flight against the served model |
+| `--compilation-config` (server) | explicit override of the per-model default (`{"cudagraph_mode":"PIECEWISE"}`); enables the `fuse_minimax_qk_norm` pass |
 | `--hf-repo` | incremental + final upload of run outputs to the Hub (`hf_run_uploader`) |
 
-The classifier's tools, schema, and post-processing are documented on [the classifier page](../modes/classifier.md).
+To run **embedded** instead (no separate server), omit `--vllm-server-url` / `$REPROCLI_SERVER_URL` / `$REPROCLI_ENDPOINT_FILE` and the runner launches its own local vLLM (see [serving](serve.md)). The classifier's tools, schema, and post-processing are on [the classifier page](../modes/classifier.md).
 
 ## ✅ `paper_classification_kimi_k2_6.sbatch` — Kimi K2.6 classifier
 
@@ -105,20 +110,9 @@ python3 src/run_arxiv_prompt_vllm.py \
 !!! note "`trust-remote-code` is a default, not a flag here"
     Neither classifier script passes `--trust-remote-code` on the command line. `apply_minimax_profile` / `apply_kimi_defaults` set `args.trust_remote_code = True`, and `VllmServer.__enter__` appends `--trust-remote-code` to the vLLM command when that attribute is truthy. Both model families load with remote code enabled.
 
-## 🚧 `paper_verification.sbatch` — stale audit-pass launcher
+## Audit pass (`--mode audit`)
 
-This script was the launcher for an earlier **deterministic verification-target curator** (`--mode verification`, MRE-only, tools-off — one schema-forced generation per paper from its MRE record, no bundle and no tool loop). Its in-file comment still describes that design.
-
-!!! warning "This script is out of date — do not run it as-is"
-    The verification mode it invokes was **removed** when the curator was replaced by the LLM reproduction auditor (commit `f98dc43`, "Replace deterministic verification curator with LLM reproduction auditor"). The current runner does **not** accept the flags this script passes:
-
-    - `--mode verification` — `config/cli_args.py` now only allows `choices=("classification", "audit")`.
-    - `--mre-records hf://…/audit_pool_extracted.jsonl` — no such argument exists; the auditor reads claims via `--claims` instead.
-    - `--prompt-file prompt_verification.txt` — that prompt file was deleted (the live audit prompt is `prompts/prompt_audit.txt`).
-
-    Running it today fails at `parse_args`. The audit pass it represents is now the **auditor mode** (`--mode audit`), documented on [the auditor page](../modes/auditor.md).
-
-The audit pass it stood in for is now driven like this (a corrected, minimal invocation — verify exact paths against `config/cli_args.py` defaults before use):
+There is no batch script for the auditor; run it directly (verify exact paths against `config/cli_args.py` defaults first):
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
@@ -129,11 +123,11 @@ python3 src/run_arxiv_prompt_vllm.py \
   --extracted-output outputs/v5/audit_extracted.jsonl
 ```
 
-`--mode audit` reads each paper's `central_claim` from the audit pool plus the agent's run directory at `<runs-dir>/<arxiv_id>` with read-only run-dir tools, and grades 0–5 against `rubric_audit.md` ([run-dir tools](../tools/run-dir-tools.md), [auditor](../modes/auditor.md)). The SLURM header and walltime in the stale script (4h, 4 GPUs, 256G) are still a reasonable shape for an audit pass; only the Python invocation needs to be rewritten.
+`--mode audit` reads each paper's `central_claim` from the audit pool plus the agent's run directory at `<runs-dir>/<arxiv_id>` with read-only run-dir tools, and grades 0–5 against `rubric_audit.md` ([run-dir tools](../tools/run-dir-tools.md), [auditor](../modes/auditor.md)). A ~4h / 4-GPU / 256G allocation is a reasonable shape for an audit pass.
 
-## How the runner launches vLLM and drives the loop
+## How the embedded path launches vLLM and drives the loop
 
-None of these scripts starts vLLM with `srun`. The Python entry point launches the server **inside the same job step** as a subprocess and then loops in-process:
+The **embedded** path — the Kimi script, and any run without `--vllm-server-url` / `$REPROCLI_SERVER_URL` / `$REPROCLI_ENDPOINT_FILE` — starts no `srun` server step. The Python entry point launches vLLM **inside the same job step** as a subprocess and then loops in-process (the serve paradigm instead points the runner at a separately launched `reprocli_serve`):
 
 ```mermaid
 flowchart TD

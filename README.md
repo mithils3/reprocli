@@ -32,9 +32,9 @@ The repo splits into two decoupled halves that talk only over a published URL:
 
 Point the runner at a server with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
 `$REPROCLI_ENDPOINT_FILE` (falling back to the embedded local server when none is
-set) — so swapping the model is a URL change. See
-[docs/slurm/serve.md](docs/slurm/serve.md) and
-`scripts/paper_classification_serve.sbatch`.
+set) — so swapping the model is a URL change. The classifier job
+`scripts/paper_classification.sbatch` uses this serve paradigm on a single node;
+see [docs/slurm/serve.md](docs/slurm/serve.md).
 
 ## Documentation
 

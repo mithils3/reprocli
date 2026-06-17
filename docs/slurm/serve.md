@@ -57,11 +57,11 @@ through this JSON contract — neither imports the other.
 
 ## Dataset production with the serve paradigm
 
-`scripts/paper_classification_serve.sbatch` runs the classifier on a single node
-the new way: step 1 starts the central server, step 2 attaches the runner by URL.
-It produces the **same outputs** as `scripts/paper_classification.sbatch` (the
-embedded-server form); the only change is that the model is now a swappable
-service rather than a process bolted into the runner.
+`scripts/paper_classification.sbatch` runs the stage-1 classifier on a single node
+this way: step 1 starts the central server, step 2 attaches the runner by URL.
+The dataset outputs are unchanged from the older embedded-server form; the only
+difference is that the model is now a swappable service rather than a process
+bolted into the runner (so changing providers is a server-step / URL change).
 
 ## DeltaAI networking notes
 
