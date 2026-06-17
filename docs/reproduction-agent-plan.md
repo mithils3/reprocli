@@ -144,9 +144,92 @@ script; an agent claim contradicting the measurement becomes an `integrity.flag`
 stops it; auditor grades the real bundle.
 
 ### Phase 8 — Hardening (post-M3)
-Sandboxing `run_gpu`/`workspace_bash` before untrusted code at scale;
 `invalid_run` retry into a fresh `<run_id>`; agent-owned `salloc` (v1 assumes a
-pre-held allocation).
+pre-held allocation); and the **sandboxing model** below, which is the gate
+before running untrusted paper code beyond hand-checked papers.
+
+#### Sandboxing model (the security boundary)
+
+Two concerns the word "sandbox" conflates — keep them separate:
+
+- **Environment isolation (reproducibility):** already decided — per-paper
+  `uv venv --system-site-packages` over a shared read-only NGC PyTorch ARM `.sif`
+  (`workspace.py` / `reference.py`). One paper's install can't poison another's.
+- **Security isolation (untrusted code):** the open gap. Every lockfile row is
+  `git clone <arbitrary repo>` → install → execute, i.e. arbitrary code running
+  under NCSA credentials with the orchestrator's secrets (OpenAI key in bashrc,
+  HF token) reachable in the env. This is the Phase-8 work.
+
+**When it's required:** *not* for M1–M3 — running our own agents over a few
+hand-checked papers, the per-paper venv + `run_dir_tools` path-confinement is
+adequate (same posture as the auditor's `bash`). The boundary becomes mandatory
+the moment we scale past trusted, eyeballed papers.
+
+**Which tool: Apptainer, run hardened — not a new dependency.** On DeltaAI/Delta
+the choice is forced: no root, no daemon on compute nodes, so Docker / Podman /
+gVisor / Firecracker / cloud sandboxes are all out, and none would give us the
+GH200 GPUs. Apptainer is already present, `--nv` passes the GPU through, and we
+already build on an NGC base `.sif` — so we turn that `.sif` into the boundary
+rather than adding tooling. Apptainer is **not** a sandbox by default (it passes
+`$HOME`, env, binds, and network through), so `run_gpu` / `workspace_bash` must
+wrap each step as:
+
+```bash
+apptainer exec --containall --cleanenv --no-home --nv \
+  --writable-tmpfs \
+  --bind <per-paper-workspace>:<...>:rw \
+  --bind <reference>:<...>:ro \
+  <base.sif> bash -lc 'cd <ws> && <cmd>'
+```
+
+- `--containall --cleanenv --no-home` → the orchestrator's env (OpenAI/HF keys)
+  never enters the paper's process; bind only the workspace (rw) and `reference/`
+  (ro), nothing under `/projects` or `/u`.
+- Inject only the secret a step actually needs — for a train/eval step that is
+  usually **none** (the brain runs in the orchestrator; the GPU step just trains).
+
+**The two controls that matter more than the container** (compute nodes can't be
+firewalled per-job, so don't lean on Apptainer alone) — both reuse decisions
+already in this plan:
+
+1. **Credential split = the real boundary.** The orchestrator/GPU split
+   (Phase 3) is already physical; make it a *credential* split too — scrub the
+   env so the untrusted `srun` step runs with no keys. Highest-value, near-free
+   mitigation. Land this early, ahead of full container hardening.
+2. **Resolve-then-run-offline.** `evidence.py` already captures `env.lock` /
+   `uv pip freeze`; resolve deps with network once, then run the experiment step
+   with network off — kills exfiltration and tightens reproducibility together.
+
+#### When the untrusted step legitimately needs a token (HF, W&B, …)
+
+Real paper code routinely pulls gated/large HF datasets or model weights, so
+"scrub everything" is too blunt. The rule is **whose token and when**, in
+priority order:
+
+1. **Prefetch in the orchestrator, run offline (default).** The *trusted*
+   orchestrator does the authenticated HF download into a shared read-only cache
+   *before* the untrusted step; the step then runs with `HF_HUB_OFFLINE=1` /
+   `TRANSFORMERS_OFFLINE=1` reading from that cache. The untrusted process never
+   sees a token at all. This is the Phase-2 `reference.py` pattern (bundle bytes
+   materialized ahead of execution) extended to the paper's own data/weights, and
+   it doubles as budget savings — downloads happen on CPU, once, not per attempt
+   on GPU time.
+2. **Inject a least-privilege, separate-identity token (escape hatch).** When a
+   repo must fetch live mid-run, `--cleanenv` strips the env and then we add back
+   *exactly one* var explicitly — `apptainer exec ... --env HF_TOKEN=$RUNNER_HF`
+   (or `APPTAINERENV_HF_TOKEN`). Critically, `$RUNNER_HF` is **never the
+   orchestrator's token**: it's a dedicated read-only, fine-grained,
+   rotatable token on a separate benchmark-runner identity with **no write scope
+   and no access to the `Mithilss/neurips-2025-paper-bundles` dataset**, so a
+   leak is contained and revocable. The orchestrator's real key (which can write
+   our datasets) stays in the orchestrator and is never bound into a step.
+
+Net: selective injection is already expressible (`--cleanenv` + explicit
+`--env`); the policy is that anything injected is purpose-built and least-
+privilege, with prefetch-offline preferred so the common case injects nothing.
+
+Wraps live in `slurm.py` (the step builder) so `--executor {local,srun}` gains a
+hardened Apptainer path without touching the loop or the toolset.
 
 ---
 

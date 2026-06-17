@@ -28,7 +28,7 @@ set -euo pipefail
 # --- Paths (override from the environment) ----------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"      # reprocli_serve lives in src/
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"        # any venv with vllm installed
-MODEL="${MODEL:-/projects/bgnp/msalunkhe/MiniMax-M2.7}"
+MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 # Publish on a SHARED filesystem so other nodes can read the URL.
