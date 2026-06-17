@@ -24,10 +24,15 @@ Run the commands below and write the results to host_profile.json:
 Record host_arch (x86_64 or aarch64). This determines which base images are safe to use.
 
 STEP 2 — CLONE AND INSPECT REPO
-Clone from verified_links.code. Then read README, requirements.txt, environment.yml,
-pyproject.toml, setup.py, Dockerfile. Identify: required Python version, CUDA version,
-PyTorch/JAX version, packages, dataset/model download commands, training/eval commands.
-Write findings to repo_profile.json.
+Clone from verified_links.code. Then:
+  a. Call list_files(path="<repo-dir>") to see the full directory tree.
+  b. Read the key files you find: README, requirements.txt, environment.yml,
+     pyproject.toml, setup.py, Dockerfile, scripts/, configs/, examples/.
+     Use read_file for local files after cloning, or github_browse(repo, path=<file>)
+     before cloning. github_browse also accepts a directory path and returns a listing.
+  c. Identify: required Python version, CUDA version, PyTorch/JAX version, packages,
+     dataset/model download commands, training/eval entry-point commands.
+Write all findings to repo_profile.json.
 
 STEP 3 — PLAN ENVIRONMENT
 Apptainer builds for the host architecture, so the container arch must match the

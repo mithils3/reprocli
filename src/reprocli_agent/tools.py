@@ -7,6 +7,7 @@ import subprocess
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Iterator
 
 MAX_OUTPUT = 10_000
 MAX_CHARS = 50_000
@@ -34,6 +35,35 @@ TOOL_SCHEMAS: list[dict] = [
                     },
                 },
                 "required": ["command"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_files",
+            "description": (
+                "List the file tree of a directory in the sandbox working directory "
+                "or inside a cloned repo. Use after git clone to find scripts, configs, "
+                "requirements files, and entry points before deciding what to install or run."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Relative path to list (default '.' = workdir root).",
+                    },
+                    "max_depth": {
+                        "type": "integer",
+                        "description": "Maximum directory depth to show (default 4).",
+                    },
+                    "max_entries": {
+                        "type": "integer",
+                        "description": "Maximum number of entries to return (default 300).",
+                    },
+                },
+                "required": [],
             },
         },
     },
@@ -126,6 +156,13 @@ def dispatch(name: str, args: dict, workdir: str) -> str:
     try:
         if name == "bash":
             return _bash(args["command"], workdir, int(args.get("timeout") or DEFAULT_TIMEOUT))
+        if name == "list_files":
+            return _list_files(
+                args.get("path") or ".",
+                workdir,
+                int(args.get("max_depth") or 4),
+                int(args.get("max_entries") or 300),
+            )
         if name == "read_file":
             return _read_file(args["path"], workdir, int(args.get("max_chars") or MAX_OUTPUT))
         if name == "write_file":
@@ -175,6 +212,43 @@ def _write_file(path: str, content: str, workdir: str) -> str:
     return f"Written {len(content)} chars to {path}"
 
 
+_SKIP_DIRS = {".git", "__pycache__", ".tox", "node_modules", ".mypy_cache", ".pytest_cache"}
+
+
+def _list_files(path: str, workdir: str, max_depth: int, max_entries: int) -> str:
+    root = _confined(workdir, path)
+    if not root.exists():
+        return f"Path does not exist: {path}"
+    if root.is_file():
+        return str(root.relative_to(Path(workdir).resolve()))
+
+    lines: list[str] = [f"{path}/"]
+    count = 0
+
+    def _walk(directory: Path, depth: int, prefix: str) -> Iterator[str]:
+        nonlocal count
+        if depth > max_depth or count >= max_entries:
+            return
+        try:
+            entries = sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name.lower()))
+        except PermissionError:
+            return
+        for i, entry in enumerate(entries):
+            if count >= max_entries:
+                yield f"{prefix}... (truncated)"
+                return
+            connector = "└── " if i == len(entries) - 1 else "├── "
+            suffix = "/" if entry.is_dir() else ""
+            yield f"{prefix}{connector}{entry.name}{suffix}"
+            count += 1
+            if entry.is_dir() and entry.name not in _SKIP_DIRS:
+                extension = "    " if i == len(entries) - 1 else "│   "
+                yield from _walk(entry, depth + 1, prefix + extension)
+
+    lines.extend(_walk(root, 1, ""))
+    return "\n".join(lines)
+
+
 def _http_get(url: str, headers: dict | None = None, max_chars: int = MAX_CHARS) -> str:
     req = urllib.request.Request(url, headers={**_UA, **(headers or {})})
     try:
@@ -218,7 +292,15 @@ def _github_browse(repo: str, path: str | None, ref: str | None) -> str:
     try:
         data = json.loads(raw)
         if isinstance(data, dict) and "content" in data:
+            # single file — decode and return content
             return base64.b64decode(data["content"]).decode("utf-8", errors="replace")[:MAX_CHARS]
+        if isinstance(data, list):
+            # directory listing — format as tree
+            lines = [f"{path or '(root)/'}", ]
+            for entry in sorted(data, key=lambda e: (e.get("type") == "file", e.get("name", ""))):
+                suffix = "/" if entry.get("type") == "dir" else f"  ({entry.get('size', '')} bytes)"
+                lines.append(f"  {entry.get('name', '')}{suffix}")
+            return "\n".join(lines)
         return raw[:MAX_CHARS]
     except Exception:
         return raw[:MAX_CHARS]

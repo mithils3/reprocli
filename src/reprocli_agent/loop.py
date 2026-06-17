@@ -40,6 +40,8 @@ def _log_tool_call(id_: str, name: str, args: dict) -> None:
         _log(id_, f"  → hf_browse  repo={args.get('repo', '')}  type={args.get('repo_type', 'model')}")
     elif name == "fetch_url":
         _log(id_, f"  → fetch_url  {args.get('url', '')}")
+    elif name == "list_files":
+        _log(id_, f"  → list_files  path={args.get('path', '.')}  depth={args.get('max_depth', 4)}")
     elif name in ("read_file", "write_file"):
         _log(id_, f"  → {name}  path={args.get('path', '')}")
     else:
