@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
             "Existing vLLM chat-completions server base URL. When set, the "
             "runner skips launching its embedded local server. If omitted, the "
             "runner also checks $REPROCLI_SERVER_URL and the base_url in the file "
-            "named by $REPROCLI_ENDPOINT_FILE (published by reprocli-serve) before "
+            "named by $REPROCLI_ENDPOINT_FILE (published by reprocli_serve) before "
             "falling back to the embedded server."
         ),
     )

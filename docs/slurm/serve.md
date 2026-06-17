@@ -1,26 +1,27 @@
-# Serving: the central vLLM server (`reprocli-serve`)
+# Serving: the central vLLM server (`reprocli_serve`)
 
-The agents in this repo are **provider-agnostic brains** — like Codex, Claude
-Code, or opencode, they run no model themselves; they only POST
-chat-completions to a base URL (see
-[the reproduction agent's note on this](../modes/reproduction.md#tools-the-reproduction-agent-gets)
-and [the architecture's agent core](../architecture.md#part-ii-the-single-agent-core)).
-Standing the model up is a **separate concern**, owned by a separate repo:
+reprocli splits into two halves that couple only through a published URL:
 
-> **`reprocli-serve`** (sibling repo, `../reprocli-serve`) — boots a vLLM server
-> on a GPU node, binds `0.0.0.0`, discovers the routable fabric IP, and publishes
-> the URL so any other Delta / DeltaAI node can attach.
+- the **CC half** — the provider-agnostic agent brains (classifier, auditor,
+  reproduction). Like Codex, Claude Code, or opencode, they run no model
+  themselves; they only POST chat-completions to a base URL (see
+  [the reproduction agent's note](../modes/reproduction.md#tools-the-reproduction-agent-gets)
+  and [the agent core](../architecture.md#part-ii-the-single-agent-core)).
+- the **serving half** — `src/reprocli_serve/`. It boots a vLLM server on a GPU
+  node, binds `0.0.0.0`, discovers the routable fabric IP, and publishes the URL
+  so any other Delta / DeltaAI node can attach.
 
-This is the same split the [clusters page](clusters.md) describes (serving is a GPU
-allocation; the agent loop is cheap CPU work) made concrete: **one server, many
-consumers, provider swap = URL change.**
+Both live in this repo but stay decoupled: `reprocli_serve` must not import the
+agent packages, and the agents reach it only by URL. That is the same split the
+[clusters page](clusters.md) describes (serving is a GPU allocation; the agent
+loop is cheap CPU work) made concrete: **one server, many consumers, provider
+swap = URL change.**
 
 ## Stand up the server
 
-On DeltaAI (1× 4×GH200 node, tensor-parallel 4):
+On DeltaAI (1× 4×GH200 node, tensor-parallel 4), from the repo root:
 
 ```bash
-cd ../reprocli-serve
 sbatch scripts/serve_gh200.sbatch          # MiniMax-M2.7, publishes endpoint JSON
 # multi-node (Kimi-K2.6, TP=4 + PP=N):
 sbatch --nodes=2 scripts/serve_multinode.sbatch
@@ -50,9 +51,9 @@ python3 src/run_arxiv_prompt_vllm.py \
   --model MiniMaxAI/MiniMax-M2.7 --num-prompts 2
 ```
 
-The resolver lives in `reprocli_vllm/vllm/endpoint.py`; the publish side is
-`reprocli_serve/endpoint.py`. The two repos couple **only** through this JSON
-contract — neither imports the other.
+The resolver lives in `reprocli_vllm/vllm/endpoint.py` (CC half); the publish side
+is `reprocli_serve/endpoint.py` (serving half). The two halves couple **only**
+through this JSON contract — neither imports the other.
 
 ## Dataset production with the serve paradigm
 

@@ -1,6 +1,6 @@
 """Resolve which served endpoint the runner should talk to.
 
-This is the consumer side of the reprocli-serve seam. The agent core is
+This is the consumer side of the reprocli_serve seam. The agent core is
 provider-agnostic: it only POSTs chat-completions to a base URL, so swapping the
 model behind it is purely a URL change. A base URL can come from three places, in
 priority order:
@@ -8,7 +8,7 @@ priority order:
 1. an explicit ``--vllm-server-url`` flag,
 2. the ``REPROCLI_SERVER_URL`` environment variable,
 3. an endpoint file named by ``REPROCLI_ENDPOINT_FILE`` (the JSON that
-   reprocli-serve publishes; we read its ``base_url`` field).
+   reprocli_serve publishes; we read its ``base_url`` field).
 
 If none is set, the resolver returns ``None`` and the runner falls back to its
 embedded local server exactly as before — so default behavior is unchanged.

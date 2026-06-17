@@ -1,7 +1,7 @@
 #!/bin/bash
 # Serve-paradigm classifier run (same node, same outputs as
 # paper_classification.sbatch) but decoupled: step 1 stands up the central vLLM
-# server via reprocli-serve, step 2 attaches the model-agnostic runner by URL.
+# server via reprocli_serve, step 2 attaches the model-agnostic runner by URL.
 # Swap providers later by changing only the server step / the URL.
 #
 #SBATCH -J reprocli_classification_serve
@@ -22,7 +22,6 @@
 
 set -euo pipefail
 
-REPROCLI_SERVE="${REPROCLI_SERVE:-/u/msalunkhe/reprocli-serve}"
 MODEL="${MODEL:-/projects/bgnp/msalunkhe/MiniMax-M2.7}"
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
@@ -55,7 +54,7 @@ echo "host=$(hostname)  endpoint_file=${ENDPOINT_FILE}"
 nvidia-smi topo -m || true
 
 # --- Step 1: central server (background), same vLLM flags as the embedded path -
-PYTHONPATH="${REPROCLI_SERVE}:${PYTHONPATH:-}" python -m reprocli_serve \
+PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-} python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \

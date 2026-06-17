@@ -17,15 +17,22 @@ Copy-paste command references live in [`commands/`](commands/), one file per tas
   supplement into local `latex/` and `supplement/` directories.
 - [commands/docs.md](commands/docs.md) — build, serve, and publish the docs site.
 
-## Serving the model
+## CC and serving
 
-The agents here are **provider-agnostic** — they only make chat-completions
-requests to a base URL, so the model is a swappable service, not part of the
-runner. Standing that service up lives in a sibling repo, **`../reprocli-serve`**,
-which boots a vLLM server on a GPU node (e.g. 4×GH200, TP=4), binds `0.0.0.0`, and
-publishes its URL for any other Delta/DeltaAI node to attach to. Point the runner
-at it with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or `$REPROCLI_ENDPOINT_FILE`
-(falling back to the embedded local server when none is set). See
+The repo splits into two decoupled halves that talk only over a published URL:
+
+- **CC (the agent half)** — `reprocli_vllm` (classifier/auditor core),
+  `reprocli_repro` (reproduction agent), and `run_arxiv_prompt_vllm.py`. These are
+  **provider-agnostic brains**: like Codex / Claude Code / opencode they run no
+  model, they only make chat-completions requests to a base URL.
+- **Serving** — `src/reprocli_serve/` boots a vLLM server on a GPU node (e.g.
+  4×GH200, TP=4), binds `0.0.0.0`, and publishes its URL for any other
+  Delta/DeltaAI node to attach to (`scripts/serve_gh200.sbatch`,
+  `scripts/serve_multinode.sbatch`).
+
+Point the runner at a server with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
+`$REPROCLI_ENDPOINT_FILE` (falling back to the embedded local server when none is
+set) — so swapping the model is a URL change. See
 [docs/slurm/serve.md](docs/slurm/serve.md) and
 `scripts/paper_classification_serve.sbatch`.
 
