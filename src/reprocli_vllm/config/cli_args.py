@@ -92,6 +92,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--served-model-name",
+        help=(
+            "Model id to send in requests when attached to an existing server. "
+            "Defaults to the single model the server advertises at /v1/models "
+            "(also reads $REPROCLI_SERVED_MODEL). Ignored when the runner launches "
+            "its own embedded server, which uses --model."
+        ),
+    )
+    parser.add_argument(
         "--paper-ids-file",
         type=argparse_path,
         help=(

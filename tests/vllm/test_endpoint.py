@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm.endpoint import (
     ENV_ENDPOINT_FILE,
+    ENV_SERVED_MODEL,
     ENV_SERVER_URL,
     normalize_server_url,
+    resolve_served_model,
     resolve_server_url,
 )
 
@@ -53,6 +55,46 @@ class ResolvePrecedenceTests(unittest.TestCase):
         env = {ENV_ENDPOINT_FILE: "/no/such/endpoint.json"}
         with patch.dict("os.environ", env, clear=True):
             self.assertIsNone(resolve_server_url(None))
+
+
+class ResolveServedModelTests(unittest.TestCase):
+    def _patch_models(self, ids: list[str]):
+        return patch(
+            "reprocli_vllm.vllm.endpoint.fetch_served_models",
+            return_value=list(ids),
+        )
+
+    def test_picks_only_advertised_model(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._patch_models(["m/A"]):
+            self.assertEqual(resolve_served_model("http://h:8000"), "m/A")
+
+    def test_picks_first_when_several(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._patch_models(["m/A", "m/B"]):
+            self.assertEqual(resolve_served_model("http://h:8000"), "m/A")
+
+    def test_cli_override_wins_when_advertised(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._patch_models(["m/A", "m/B"]):
+            self.assertEqual(resolve_served_model("http://h:8000", "m/B"), "m/B")
+
+    def test_env_override_when_no_flag(self) -> None:
+        env = {ENV_SERVED_MODEL: "m/B"}
+        with patch.dict("os.environ", env, clear=True), self._patch_models(["m/A", "m/B"]):
+            self.assertEqual(resolve_served_model("http://h:8000"), "m/B")
+
+    def test_flag_beats_env(self) -> None:
+        env = {ENV_SERVED_MODEL: "m/B"}
+        with patch.dict("os.environ", env, clear=True), self._patch_models(["m/A", "m/B"]):
+            self.assertEqual(resolve_served_model("http://h:8000", "m/A"), "m/A")
+
+    def test_override_not_served_raises(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._patch_models(["m/A"]):
+            with self.assertRaises(RuntimeError):
+                resolve_served_model("http://h:8000", "m/typo")
+
+    def test_no_models_advertised_raises(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._patch_models([]):
+            with self.assertRaises(RuntimeError):
+                resolve_served_model("http://h:8000")
 
 
 if __name__ == "__main__":

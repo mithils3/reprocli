@@ -14,7 +14,7 @@ from reprocli_vllm.runtime.mre_records import load_mre_records
 from reprocli_vllm.papers.bundles import load_bundle_papers
 from reprocli_vllm.papers.papers import Paper
 from reprocli_vllm.runtime.tool_loop import run_tool_loop
-from reprocli_vllm.vllm.endpoint import resolve_server_url
+from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 from reprocli_vllm.vllm.server import VllmServer
 
 
@@ -56,8 +56,12 @@ def main() -> int:
     server_url = resolve_server_url(args.vllm_server_url)
     with hf_run_uploader(args):
         if server_url:
-            print(f"Using existing vLLM server at {server_url}", file=sys.stderr)
-            run_tool_loop(args, papers_to_run, prompts, server_url)
+            model_id = resolve_served_model(server_url, args.served_model_name)
+            print(
+                f"Using existing vLLM server at {server_url} (model={model_id})",
+                file=sys.stderr,
+            )
+            run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
         else:
             with VllmServer(args) as server_url:
                 run_tool_loop(args, papers_to_run, prompts, server_url)

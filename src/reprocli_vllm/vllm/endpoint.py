@@ -12,16 +12,25 @@ priority order:
 
 If none is set, the resolver returns ``None`` and the runner falls back to its
 embedded local server exactly as before — so default behavior is unchanged.
+
+Which model id to send in each request is resolved the same way: ask the server
+what it serves (``GET /v1/models``) and use the single advertised model, unless an
+explicit name is given via ``--served-model-name`` / ``REPROCLI_SERVED_MODEL``.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ENV_SERVER_URL = "REPROCLI_SERVER_URL"
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
+ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
+MODELS_FETCH_TIMEOUT = 30.0
 
 
 def normalize_server_url(value: str) -> str:
@@ -55,3 +64,56 @@ def resolve_server_url(cli_value: str | None) -> str | None:
         if url:
             return normalize_server_url(url)
     return None
+
+
+def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
+    """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
+    url = f"{base_url.rstrip('/')}/v1/models"
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"could not list models at {url}: {exc}") from exc
+    entries = data.get("data") if isinstance(data, dict) else None
+    return [
+        entry["id"]
+        for entry in entries or []
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str) and entry["id"]
+    ]
+
+
+def resolve_served_model(
+    base_url: str,
+    cli_value: str | None = None,
+    timeout: float = MODELS_FETCH_TIMEOUT,
+) -> str:
+    """Pick the model id to send in requests against an attached server.
+
+    Priority for the name: ``--served-model-name`` flag > ``REPROCLI_SERVED_MODEL``
+    env > the model the server advertises at ``/v1/models``. With no override we use
+    the single advertised model (the common case: one model per serve job); if the
+    server lists several we take the first and say so. An explicit override is used
+    verbatim but checked against the advertised list so a typo fails loudly here
+    rather than as a per-request 404.
+    """
+    available = fetch_served_models(base_url, timeout)
+    override = (cli_value or os.environ.get(ENV_SERVED_MODEL) or "").strip()
+    if override:
+        if available and override not in available:
+            raise RuntimeError(
+                f"requested model {override!r} is not served by {base_url}; "
+                f"available: {available}"
+            )
+        return override
+    if not available:
+        raise RuntimeError(
+            f"{base_url}/v1/models advertised no models; cannot auto-select. "
+            f"Pass --served-model-name to choose explicitly."
+        )
+    if len(available) > 1:
+        print(
+            f"Server advertises {len(available)} models {available}; using the "
+            f"first ({available[0]!r}). Pass --served-model-name to override.",
+            file=sys.stderr,
+        )
+    return available[0]

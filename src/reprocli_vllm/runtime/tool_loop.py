@@ -31,7 +31,11 @@ def run_tool_loop(
     papers: list[Paper],
     prompts: list[str],
     server_url: str,
+    model_id: str | None = None,
 ) -> None:
+    # Embedded server is addressed by --model (its weights path); an attached
+    # server is addressed by the id it advertises, resolved by the caller.
+    request_model = model_id or args.model
     conversations = {
         paper.arxiv_id: initial_messages(prompt, args.system_message)
         for paper, prompt in zip(papers, prompts, strict=True)
@@ -65,7 +69,7 @@ def run_tool_loop(
                 final_message=args.final_no_tools_message,
             )
             request = build_chat_completion_request(
-                args.model,
+                request_model,
                 custom_id,
                 messages,
                 args,
