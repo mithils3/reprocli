@@ -1,0 +1,129 @@
+"""Tests for the audit-mode finalizer: the anti-cheat cap is enforced in code."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+
+from reprocli_vllm.audit.audit import finalize_audit_row  # noqa: E402
+from reprocli_vllm.audit.inputs import build_audit_prompt, claim_block  # noqa: E402
+
+
+def _score_row(score, flags=None, execution_verified=True) -> dict:
+    return {
+        "paper_id": "2505.10978",
+        "central_claim": "86.7% on ALFWorld",
+        "target_metric": "success_rate",
+        "reference_value": 86.7,
+        "op": "abs_rel_within",
+        "tolerance": 0.05,
+        "execution_verified": execution_verified,
+        "execution_evidence": "ran run_alfworld.sh, eval log present",
+        "measured_value": 86.7,
+        "measured_citation": "out/res.json:1",
+        "cheat_flags": flags or [],
+        "value_comparison": "86.7 within 5% of 86.7",
+        "methodology_notes": "",
+        "score": score,
+        "rationale": "x",
+    }
+
+
+def test_high_flag_caps_score_to_zero():
+    flags = [{"kind": "hardcoded_constant", "evidence": "print(86.7) in eval.py:40", "severity": "high"}]
+    row = finalize_audit_row(_score_row(5, flags), {"exit_reason": "natural"})
+    assert row["score"] == 0
+    assert row["reported_score"] == 5
+    assert row["verdict"] == "not_reproduced"
+    assert row["reproduced"] is False
+    assert row["has_high_cheat_flag"] is True
+    assert row["verification_status"] == "verified"
+
+
+def test_score_5_is_reproduced():
+    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
+    assert row["verdict"] == "reproduced"
+    assert row["reproduced"] is True
+    assert "reported_score" not in row
+
+
+def test_score_4_is_reproduced_boundary():
+    row = finalize_audit_row(_score_row(4), {"exit_reason": "natural"})
+    assert row["verdict"] == "reproduced"
+    assert row["reproduced"] is True
+
+
+def test_score_3_is_partial():
+    flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
+    row = finalize_audit_row(_score_row(3, flags), {"exit_reason": "natural"})
+    assert row["verdict"] == "partial"
+    assert row["reproduced"] is False
+    assert row["score"] == 3  # low flag does not cap
+
+
+def test_score_0_no_execution_is_unverifiable():
+    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+    assert row["verdict"] == "unverifiable"
+    assert row["reproduced"] is False
+
+
+def test_out_of_range_score_is_degraded():
+    row = finalize_audit_row(_score_row(9), {"exit_reason": "natural"})
+    assert row["verification_status"] == "degraded"
+
+
+def test_missing_paper_id_is_degraded():
+    bad = _score_row(5)
+    bad["paper_id"] = ""
+    row = finalize_audit_row(bad, {"exit_reason": "natural"})
+    assert row["verification_status"] == "degraded"
+
+
+def test_claim_block_uses_central_claim():
+    block = claim_block({"central_claim": "msf-CNN uses 50% less RAM", "claim_evidence": {"x": 1}})
+    assert "msf-CNN uses 50% less RAM" in block
+    assert "Reported numbers" in block
+
+
+def test_claim_block_surfaces_pinned_match_bar():
+    block = claim_block(
+        {
+            "central_claim": "86.7% on ALFWorld",
+            "match_bar": {
+                "kind": "point_estimate",
+                "op": "abs_rel_within",
+                "reference_value": 86.7,
+                "tolerance": 0.05,
+                "note": "implicit bar, 5% default",
+            },
+        }
+    )
+    assert "Pinned match bar" in block
+    assert "abs_rel_within" in block
+    assert "86.7" in block
+
+
+def test_claim_block_omits_match_bar_when_absent():
+    block = claim_block({"central_claim": "A beats B", "claim_evidence": {"x": 1}})
+    assert "Pinned match bar" not in block
+
+
+def test_build_audit_prompt_fills_placeholders():
+    template = "CLAIM:{CENTRAL_CLAIM}\nRUBRIC:{RUBRIC}\nBUNDLE:{RUN_BUNDLE}"
+    out = build_audit_prompt(template, "RUBRIC_TEXT", {"central_claim": "C"}, "2505.10978", None)
+    assert "{CENTRAL_CLAIM}" not in out and "{RUBRIC}" not in out and "{RUN_BUNDLE}" not in out
+    assert "RUBRIC_TEXT" in out
+    assert "unverifiable" in out  # no run dir bound → unverifiable
+
+
+def test_build_audit_prompt_lists_run_directory(tmp_path):
+    run_dir = tmp_path / "2505.10978"
+    run_dir.mkdir()
+    (run_dir / "train.log").write_text("success_rate: 86.7\n", encoding="utf-8")
+    out = build_audit_prompt(
+        "{CENTRAL_CLAIM}\n{RUBRIC}\n{RUN_BUNDLE}", "R", {"central_claim": "C"}, "2505.10978", tmp_path
+    )
+    assert "train.log" in out
+    assert "AGENT RUN DIRECTORY" in out

@@ -27,7 +27,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from reprocli_openai import recheck  # noqa: E402
-from reprocli_vllm.output_schema import normalize_score_and_tier  # noqa: E402
+from reprocli_vllm.schema.output import normalize_score_and_tier  # noqa: E402
 from build_data import build, upload_traces  # noqa: E402
 
 BASE = REPO / "outputs/v5/audit_pool"

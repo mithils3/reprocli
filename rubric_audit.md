@@ -19,9 +19,45 @@ clears the criteria below. Absence of evidence is a low score, not a pass.
 ## Criteria
 
 ### C1 — Target identified
-Restate the central claim as a checkable target: metric, reference value(s),
-dataset/split, model/config, and what counts as a match (op + tolerance). If the
-claim has no re-scorable scalar, assign **score 0** and stop.
+**If the record supplies a pinned `match_bar`**, adopt it verbatim as the bar — it
+is the frozen lockfile target (`kind`, `op`, `reference_value`, `tolerance`) and
+echo it into your `op`/`reference_value`/`tolerance`. The resolution steps below
+apply only when no `match_bar` is given (older rows, or `kind` = "none").
+
+Restate the central claim as a checkable target. Prefer a **scalar target** when
+the claim has one: metric, reference value(s), dataset/split, model/config, and
+what counts as a match (op + tolerance). The match bar is usually left **implicit**
+— most claims pin a value but not how close counts (`~25.76`, `≈ 39%`, "improves to
+~65–70"). When the paper states a bar, use it: an explicit margin ("within 1%" →
+`tolerance` = 0.01), or a threshold (`ACC ≥ 85` → `op` = `>=`, `tolerance` = null,
+the bar is the threshold). **When no bar is stated for a scalar point estimate,
+default to a ±5% relative tolerance**: `op` = `abs_rel_within`, `tolerance` = 0.05
+against `reference_value`. This default is the *starting* bar — note in the
+rationale if the claim's own precision clearly warrants a tighter or looser one.
+The ±5% default applies **only** to a standalone point estimate — a claim whose
+success is "land near this value." It must **never** be applied to a comparative
+claim, even when that claim quotes a number (`39% vs 35%`, "+4 points over the
+baseline"): there the bar is *direction*, not nearness — being within 5% of the
+baseline can still mean the method lost. Classify the claim's shape **first**; the
+mere presence of a number does not make it a point estimate. When the claim is
+inherently
+**relational or qualitative** — an ordering ("A has lower variance than B"), a
+comparison against a baseline ("method beats the baseline on the same protocol"),
+a delta/improvement, or a property that must hold ("the estimator is unbiased") —
+restate it as that relation instead: the quantities involved, the
+baseline/condition it is judged against, and what observation counts as the claim
+holding. Set `reference_value` and `tolerance` to null in that case and carry the
+bar in `target_metric`/`op` (e.g. `op` = "measured_A > measured_B, same
+protocol"). For a direction claim the comparison is a **strict inequality with no
+tolerance band**: "method beats baseline" with measured method = 41% vs baseline =
+40% **passes** — a 1-point win in the right direction *is* the claim holding, and
+"within 5%" never enters (do not require the margin to clear any tolerance, and do
+not reject a thin win as "too close"). The exception is a **magnitude/delta** claim
+("+5 points", "halves the error", "2× faster") — there the *size* of the gap is the
+target, so judge the measured delta against the claimed delta (which may itself take
+the ±5% point-estimate default on that delta). Assign **score 0** and stop only when the claim has **no checkable
+target at all** — neither a re-scorable scalar nor a well-defined relation to
+verify — not merely because it lacks a single scalar.
 
 ### C2 — Execution verified
 Find evidence the agent actually *ran code that computed the metric*: training/eval
@@ -30,8 +66,9 @@ banners. A number that appears only as an assertion, a comment, or prose — wit
 execution trace — fails C2 → **score 0**. Cite the evidence.
 
 ### C3 — Measured value located
-Find the agent's reproduced value for the C1 metric. Cite the exact file + line or
-log snippet. If several candidates exist, pick the one matching the claim's
+Find the agent's reproduced value(s) for the C1 target — for a relational claim,
+both the method's and the baseline's/condition's value. Cite the exact file + line
+or log snippet. If several candidates exist, pick the one matching the claim's
 dataset/split/config and say why.
 
 ### C4 — Anti-cheat (grade the *provenance*, not the value)
@@ -49,9 +86,13 @@ Actively try to *refute* the number. Raise a flag (with evidence + severity) for
   did not regenerate this run.
 Any HIGH-severity flag caps the **score at 0** regardless of value match.
 
-### C5 — Value matches claim
-Apply the C1 op/tolerance to (measured, reference). Report the comparison
-explicitly. A match here only counts if C2–C4 are clean.
+### C5 — Result matches claim
+Apply the C1 criterion. For a scalar target, apply the op/tolerance to (measured,
+reference) — the explicit bar when the paper gave one, otherwise the defaulted ±5%
+relative tolerance from C1. For a relational/qualitative target, check the stated relation holds
+against its baseline/condition — the ordering, comparison, delta, or property —
+using the agent's own measured numbers for *both* sides where applicable. Report
+the comparison explicitly. A match here only counts if C2–C4 are clean.
 
 ### C6 — Methodological fidelity
 Did the run reproduce the *actual experiment* of the claim (right benchmark,
@@ -62,18 +103,22 @@ protocol, ablation arm)? Note deviations even when the number matches.
 Assign one integer. Each level is an anchor; pick the highest whose conditions
 are fully met by cited evidence.
 
-- **5 — Faithful reproduction.** Right experiment, executed, measured value within
-  the C1 tolerance, clean provenance (no flags), correct protocol/split/scale.
+- **5 — Faithful reproduction.** Right experiment, executed, result meets the C1
+  criterion (scalar within tolerance, or the relation/property clearly holds),
+  clean provenance (no flags), correct protocol/split/scale.
 - **4 — Reproduced, minor deviations.** Central claim clearly supported; value
-  within a slightly loose margin, or a single low-severity caveat.
-- **3 — Partial.** Right experiment executed, but value is close yet outside
-  tolerance, or only some of a multi-metric/multi-arm claim is met.
+  within a slightly loose margin (or the relation holds with a minor caveat), or a
+  single low-severity caveat.
+- **3 — Partial.** Right experiment executed, but the result falls just short of
+  the C1 criterion (scalar close yet outside tolerance, or the relation holds only
+  weakly/partially), or only some of a multi-metric/multi-arm claim is met.
 - **2 — Weak attempt.** Executed, but the value is substantially off or there is a
   significant (non-cheating) methodological deviation.
 - **1 — Off-target / failed.** Code ran but did not address the claim's experiment
   (wrong task/benchmark) or crashed before producing the metric.
-- **0 — Unverifiable or disqualified.** No execution evidence, no re-scorable
-  result, bundle too thin, OR a HIGH-severity anti-cheat flag. Cheating is 0.
+- **0 — Unverifiable or disqualified.** No execution evidence, no checkable target
+  at all (neither a re-scorable scalar nor a verifiable relation), bundle too thin,
+  OR a HIGH-severity anti-cheat flag. Cheating is 0.
 
 Downstream, score ≥ 4 counts as a reproduction; 3 → partial; 0 with no execution
 → unverifiable; everything else → not reproduced. You assign only the score.

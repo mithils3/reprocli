@@ -3,8 +3,8 @@ from __future__ import annotations
 import posixpath
 from typing import Any
 
-from ..config import BUNDLE_FILE_DEFAULT_CHARS, BUNDLE_FILE_MAX_CHARS
-from ..papers import Paper
+from reprocli_vllm.config.config import BUNDLE_FILE_DEFAULT_CHARS, BUNDLE_FILE_MAX_CHARS
+from reprocli_vllm.papers.papers import Paper
 
 
 def paper_bundle_file_contents_tool(

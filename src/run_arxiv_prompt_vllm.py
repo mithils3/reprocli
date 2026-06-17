@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""Run prompt.txt over NeurIPS arXiv LaTeX papers with vLLM."""
+"""Run prompts/prompt.txt over NeurIPS arXiv LaTeX papers with vLLM."""
 
 from __future__ import annotations
 
 import random
 import sys
 
-from reprocli_vllm.config import CLAIM_PLACEHOLDER, PLACEHOLDER
-from reprocli_vllm.audit_inputs import build_audit_prompt, load_audit_rubric
-from reprocli_vllm.cli_args import parse_args
+from reprocli_vllm.config.config import CLAIM_PLACEHOLDER, PLACEHOLDER
+from reprocli_vllm.audit.inputs import build_audit_prompt, load_audit_rubric
+from reprocli_vllm.config.cli_args import parse_args
 from reprocli_vllm.hf_upload import hf_run_uploader
-from reprocli_vllm.mre_records import load_mre_records
-from reprocli_vllm.paper_bundles import load_bundle_papers
-from reprocli_vllm.papers import Paper
-from reprocli_vllm.tool_loop import run_tool_loop
-from reprocli_vllm.vllm_server import VllmServer
+from reprocli_vllm.runtime.mre_records import load_mre_records
+from reprocli_vllm.papers.bundles import load_bundle_papers
+from reprocli_vllm.papers.papers import Paper
+from reprocli_vllm.runtime.tool_loop import run_tool_loop
+from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
+from reprocli_vllm.vllm.server import VllmServer
 
 
 def main() -> int:
@@ -27,11 +28,15 @@ def main() -> int:
     claim_records: dict[str, dict] = {}
     rubric = ""
     if args.mode == "audit":
-        # Claims-only, tools-off: the audit-pool rows ARE the paper list; the
-        # auditor reads the agent run bundle, not the paper text.
+        # Claims-only: the audit-pool rows ARE the paper list; the auditor reads
+        # the agent's run directory (one per paper) with read-only run-dir tools,
+        # not the paper text.
         claim_records = load_mre_records(args.claims)
         rubric = load_audit_rubric(args.rubric_file)
-        papers = [Paper(arxiv_id=arxiv_id) for arxiv_id in claim_records]
+        papers = [
+            Paper(arxiv_id=arxiv_id, run_dir=run_dir_for(args.runs_dir, arxiv_id))
+            for arxiv_id in claim_records
+        ]
     else:
         papers = load_bundle_papers(args.dataset)
         papers = [paper for paper in papers if paper.tex_files]
@@ -48,11 +53,15 @@ def main() -> int:
         f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
         file=sys.stderr,
     )
+    server_url = resolve_server_url(args.vllm_server_url)
     with hf_run_uploader(args):
-        if args.vllm_server_url:
-            server_url = normalized_server_url(args.vllm_server_url)
-            print(f"Using existing vLLM server at {server_url}", file=sys.stderr)
-            run_tool_loop(args, papers_to_run, prompts, server_url)
+        if server_url:
+            model_id = resolve_served_model(server_url, args.served_model_name)
+            print(
+                f"Using existing vLLM server at {server_url} (model={model_id})",
+                file=sys.stderr,
+            )
+            run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
         else:
             with VllmServer(args) as server_url:
                 run_tool_loop(args, papers_to_run, prompts, server_url)
@@ -65,6 +74,10 @@ def main() -> int:
             file=sys.stderr,
         )
     return 0
+
+
+def run_dir_for(runs_dir, arxiv_id: str) -> str:
+    return str(runs_dir / arxiv_id) if runs_dir else ""
 
 
 def select_papers(papers: list, num_prompts: int | None) -> list:
@@ -103,13 +116,6 @@ def build_prompt(
             template, rubric, claim_records.get(paper.arxiv_id), paper.arxiv_id, runs_dir
         )
     return template.replace(PLACEHOLDER, paper.text())
-
-
-def normalized_server_url(value: str) -> str:
-    url = value.rstrip("/")
-    if url.endswith("/v1"):
-        url = url[:-3]
-    return url
 
 
 if __name__ == "__main__":

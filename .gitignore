@@ -1,7 +1,12 @@
 data/
 .codex/
 .agents/
+.claude/
 __pycache__/
 *.pyc
 outputs/
 notes
+
+# Docs site
+.venv-docs/
+site/

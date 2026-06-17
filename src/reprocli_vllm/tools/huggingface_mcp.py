@@ -6,7 +6,7 @@ import json
 from functools import cache
 from typing import Any
 
-from ..config import TOOL_TIMEOUT
+from ..config.config import TOOL_TIMEOUT
 from .huggingface_tree import (
     normalize_repo_type,
     parse_repo_arg as parse_hf_repo,

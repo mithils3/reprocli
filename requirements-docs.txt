@@ -1,0 +1,4 @@
+# Documentation site dependencies (MkDocs Material).
+# Install locally:  uv pip install -r requirements-docs.txt   (or pip)
+# Used by .github/workflows/docs.yml to build + deploy to GitHub Pages.
+mkdocs-material>=9.7,<10

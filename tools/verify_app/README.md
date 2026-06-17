@@ -2,7 +2,7 @@
 
 A lightweight, **static** web app for your team to manually verify the
 classifier outputs paper-by-paper (currently the **v5 200-paper audit pool**
-from `python -m reprocli_vllm.select_pool` — see `notes/Methodology/Dataset Construction.md`): each reviewer reads the model's verdict for
+from `python -m reprocli_vllm.audit.select_pool` — see `notes/Methodology/Dataset Construction.md`): each reviewer reads the model's verdict for
 an artifact (code / dataset / weights / standard-dataset) and the score, does
 their **own** Google / GitHub / Hugging Face search, and records agree /
 disagree / unsure + a note. You get an admin **dashboard** of who did what,

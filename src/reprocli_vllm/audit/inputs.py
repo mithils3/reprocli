@@ -1,0 +1,67 @@
+"""Audit-mode inputs: render the central claim and the agent run-directory manifest.
+
+The auditor grades one agent reproduction attempt per paper. Its inputs are:
+  - the paper's ``central_claim`` (from the classifier audit pool), and
+  - a manifest of the agent's run directory (its *.log files, output artifacts,
+    and any code it wrote), which the auditor then explores with the read-only
+    run-dir tools (list_run_files / read_run_file / bash).
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from reprocli_vllm.config.config import BUNDLE_PLACEHOLDER, CLAIM_PLACEHOLDER, RUBRIC_PLACEHOLDER
+from reprocli_vllm.tools.run_dir_tools import run_dir_manifest
+
+RUN_BUNDLE_NO_DIR_TEXT = (
+    "(No --runs-dir configured, so no agent reproduction run directory is bound "
+    "for this paper. With no run to inspect, the only defensible verdict is "
+    "`unverifiable` with score 0.)"
+)
+
+
+def load_audit_rubric(path) -> str:
+    return Path(str(path)).read_text(encoding="utf-8")
+
+
+def claim_block(record: dict | None) -> str:
+    if not record:
+        return "(no central claim found for this paper)"
+    parts: list[str] = []
+    claim = record.get("central_claim")
+    if isinstance(claim, str) and claim.strip():
+        parts.append(claim.strip())
+    evidence = {key: record[key] for key in ("claim_evidence", "mre_config") if record.get(key)}
+    if evidence:
+        parts.append(
+            "\nReported numbers / experiment context:\n"
+            + json.dumps(evidence, ensure_ascii=False, indent=2)
+        )
+    bar = record.get("match_bar")
+    if bar:
+        parts.append(
+            "\nPinned match bar (the frozen lockfile target — adopt it verbatim as "
+            "the C1 bar; do NOT re-infer it):\n"
+            + json.dumps(bar, ensure_ascii=False, indent=2)
+        )
+    return "\n".join(parts) if parts else "(no central claim found for this paper)"
+
+
+def load_run_bundle(paper_id: str, runs_dir) -> str:
+    # The prompt is seeded with a manifest of the paper's run directory; the
+    # auditor reads the file contents on demand through the run-dir tools.
+    if not runs_dir:
+        return RUN_BUNDLE_NO_DIR_TEXT
+    return run_dir_manifest(Path(str(runs_dir)) / paper_id)
+
+
+def build_audit_prompt(
+    template: str, rubric: str, record: dict | None, paper_id: str, runs_dir
+) -> str:
+    return (
+        template.replace(CLAIM_PLACEHOLDER, claim_block(record))
+        .replace(RUBRIC_PLACEHOLDER, rubric)
+        .replace(BUNDLE_PLACEHOLDER, load_run_bundle(paper_id, runs_dir))
+    )

@@ -2,7 +2,7 @@
 """Build static data for the verification app.
 
 Reads an extracted/trace output pair (default: the v5 audit pool emitted by
-``python -m reprocli_vllm.select_pool``) and produces:
+``python -m reprocli_vllm.audit.select_pool``) and produces:
 
   public/papers.json             -- one compact record per paper (shipped with the site)
   traces_out/<custom_id>.json    -- per-paper conversation trace (uploaded on demand)
@@ -136,7 +136,7 @@ def build(base: Path, out_dir: Path, traces_dir: Path) -> dict[str, dict[str, An
             "h100_recomputed_hours": row.get("h100_recomputed_hours"),
             "h100_arithmetic_mismatch": row.get("h100_arithmetic_mismatch"),
             "h100_needs_human_review": row.get("h100_needs_human_review"),
-            # selection-time adjudication from reprocli_vllm.select_pool
+            # selection-time adjudication from reprocli_vllm.audit.select_pool
             "audited_h100_hours": row.get("audited_h100_hours"),
             "h100_hours_adjudicated": row.get("h100_hours_adjudicated"),
             "selection_band": row.get("selection_band"),

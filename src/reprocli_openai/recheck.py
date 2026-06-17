@@ -22,8 +22,8 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from reprocli_vllm.config import PLACEHOLDER
-from reprocli_vllm.output_schema import FINAL_JSON_SCHEMA, normalize_score_and_tier
+from reprocli_vllm.config.config import PLACEHOLDER
+from reprocli_vllm.schema.output import FINAL_JSON_SCHEMA, normalize_score_and_tier
 
 MODEL = "gpt-5.5"
 REASONING_EFFORT = "low"
@@ -31,7 +31,7 @@ MAX_OUTPUT_TOKENS = 32768
 WORKERS = 4
 MAX_RETRIES = 10
 REQUEST_TIMEOUT = 900
-PROMPT_FILE = Path("prompt_openai_websearch.txt")
+PROMPT_FILE = Path("prompts/prompt_openai_websearch.txt")
 POOL = Path("outputs/v5/audit_pool_extracted.jsonl")
 TRACE = Path("outputs/v5/audit_pool_trace.jsonl")
 OUT_DIR = Path("outputs/v5/openai_hard_recheck_gpt55_low")
