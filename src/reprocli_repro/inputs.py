@@ -21,7 +21,6 @@ prompt with any placeholder left unfilled.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import secrets
 import time
@@ -200,7 +199,6 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{CENTRAL_CLAIM}": _text_or(row.get("central_claim"), "(no central claim recorded)"),
         "{CLAIM_EVIDENCE}": _text_or(row.get("claim_evidence"), "(no reported numbers recorded)"),
         "{MRE_CONFIG}": _text_or(row.get("mre_config"), "(no MRE configuration recorded)"),
-        "{MATCH_BAR}": _match_bar_block(row),
         "{AGENT_TASK}": _text_or(row.get("agent_task"), "(no step-by-step task recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
         "{WORKSPACE_DIR}": str(run_paths.workspace),
@@ -213,19 +211,6 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
 def _text_or(value: object, fallback: str) -> str:
     text = str(value).strip() if value is not None else ""
     return text or fallback
-
-
-def _match_bar_block(row: dict) -> str:
-    bar = row.get("match_bar")
-    if isinstance(bar, (dict, list)):
-        return json.dumps(bar, ensure_ascii=False, indent=2)
-    if isinstance(bar, str) and bar.strip():
-        return bar.strip()
-    return (
-        "(No separately pinned match bar for this paper. The success bar IS the "
-        "expected value(s) and tolerance stated in the MRE above — adopt those exact "
-        "numbers and that tolerance as your pass condition; do not loosen them.)"
-    )
 
 
 def _verified_links_block(row: dict) -> str:
@@ -244,8 +229,8 @@ def _verified_links_block(row: dict) -> str:
             lines.extend(f"  - {url}" for url in urls)
     if not lines:
         return (
-            "(No artifacts were verified at curation time — you may need to locate "
-            "the code yourself or re-implement the method from the paper.)"
+            "(No released artifacts for this paper — locate the code yourself or "
+            "re-implement the method from the paper.)"
         )
     return "\n".join(lines)
 

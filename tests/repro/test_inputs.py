@@ -113,19 +113,6 @@ class RenderTests(unittest.TestCase):
         self.assertIn("8 H100-equivalent hours", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
 
-    def test_missing_match_bar_falls_back_to_mre(self):
-        template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "x", 8.0, run_id="RID")
-        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
-        self.assertIn("No separately pinned match bar", prompt)
-
-    def test_present_match_bar_is_rendered(self):
-        template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "x", 8.0, run_id="RID")
-        row = dict(ROW, match_bar={"metric": "peak_mem", "op": "<=", "tolerance": 0.05})
-        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
-        self.assertIn('"metric": "peak_mem"', prompt)
-
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):
             render_reproduce_prompt(

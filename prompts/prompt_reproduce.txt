@@ -36,14 +36,10 @@ looser one.
 Minimal reproduction example:
 {MRE_CONFIG}
 
-Pinned match bar:
-{MATCH_BAR}
-
 Step-by-step task:
 {AGENT_TASK}
 
-Known released artifacts (verified to exist at curation time; confirm before you
-rely on them, and prefer them over re-implementing from scratch):
+Released artifacts (use these; prefer them over re-implementing the method):
 {VERIFIED_LINKS}
 
 ======================================================================
@@ -93,8 +89,8 @@ You work entirely through the tools provided. A typical episode:
    produces the claimed metric.
 4. Record evidence continuously: the exact commands you ran, their stdout/stderr,
    the output files, and the measured metric with the file and line it came from.
-5. Compare the measured value against the pinned bar above using the stated
-   operator and tolerance.
+5. Compare the measured value against the MRE's stated target using the expected
+   value(s) and tolerance given above.
 
 Integrity rules (the auditor enforces these — violating them fails the run):
 
@@ -118,6 +114,6 @@ End by writing the reproduction contract the harness re-executes and grades:
 
 You do NOT write the pass/fail verdict yourself. After your loop ends the harness
 runs your scoring entrypoint once more from a clean state, parses the metric,
-applies the pinned bar, and records the result. Your job is to make that
+applies the target's tolerance, and records the result. Your job is to make that
 re-execution reproduce your number. Make every command, path, and metric in your
 submission reconstructable from the evidence directory.
