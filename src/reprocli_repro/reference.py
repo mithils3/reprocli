@@ -44,6 +44,20 @@ def main() -> int:
     return 0
 
 
+def stream_bundle(dataset: str):
+    """Open the paper-bundle as a streaming dataset (never loads all shards)."""
+    from datasets import load_dataset
+
+    return load_dataset(dataset, split="train", streaming=True)
+
+
+def arxiv_matches(row_id: str, wanted: str) -> bool:
+    """True if ``row_id`` is ``wanted``, ignoring any trailing version (``v2``)."""
+    row_id = str(row_id or "").strip()
+    wanted = str(wanted or "").strip()
+    return bool(row_id) and (row_id == wanted or row_id.split("v")[0] == wanted.split("v")[0])
+
+
 def materialize(
     *,
     dataset: str,
@@ -52,11 +66,8 @@ def materialize(
     limit: int | None,
     overwrite: bool,
 ) -> int:
-    from datasets import load_dataset
-
-    stream = load_dataset(dataset, split="train", streaming=True)
     written = 0
-    for row in stream:
+    for row in stream_bundle(dataset):
         arxiv_id = str(row.get("arxiv_id") or "").strip()
         if not arxiv_id:
             continue
@@ -195,13 +206,8 @@ def materialize_reference(
 
 def find_bundle_row(arxiv_id: str, *, dataset: str = DEFAULT_DATASET) -> dict | None:
     """Stream the bundle and return the first row whose arXiv id matches."""
-    from datasets import load_dataset
-
-    target = str(arxiv_id).strip()
-    base = target.split("v")[0]
-    for row in load_dataset(dataset, split="train", streaming=True):
-        rid = str(row.get("arxiv_id") or "").strip()
-        if rid and (rid == target or rid.split("v")[0] == base):
+    for row in stream_bundle(dataset):
+        if arxiv_matches(row.get("arxiv_id"), arxiv_id):
             return dict(row)
     return None
 
