@@ -95,16 +95,22 @@ flowchart TD
 ### Designed extension: orchestrator vs. GPU steps 🚧
 
 The reproduction agent (Part III, [reproduction mode](../modes/reproduction.md))
-turns this pattern into its execution model:
+keeps the same allocation→step *shape* but flips *who holds the allocation and
+when*. The classifier/auditor pre-hold one sbatch allocation for a whole job; the
+reproduction agent instead provisions GPUs **just-in-time** — it holds nothing
+until a GPU command runs, then `salloc`s a fresh allocation for that one step and
+releases it:
 
 | concern | where it lives | why |
 |---|---|---|
-| agent loop, budget meter, evidence, bundle writer | **login / CPU allocation** — long-lived, cheap, no GPU | LLM reasoning + file edits + installs are cheap CPU work; renting a GPU for the whole episode would burn the H100 budget on idle time |
-| the experiment (train / eval / score) | **`srun --jobid=$ALLOC` step into a held GPU allocation** | only the experiment itself needs a GPU; **the allocation is the budget container, each `run_gpu` call is one `srun` step inside it** |
+| agent loop, budget meter, evidence, bundle writer, **and all CPU work** (clone / venv / install / edit) | **login / CPU allocation** — long-lived, cheap, **never holds a GPU** | LLM reasoning + file edits + installs are cheap CPU work; holding a GPU across the whole episode would burn the H100 budget on idle time |
+| the experiment (train / eval / score) | **agent-owned, just-in-time `salloc` per `run_gpu` call** — provisioned only while the command runs, then released | only the experiment itself needs a GPU; the agent allocates GPUs *only when it needs them*, so idle GPU time is never charged |
 
-Each `run_gpu` step is metered as `gpus × wallclock_h × hw_multiplier` against the
-row's `budget_h100_hours`; when the remaining budget hits zero, `run_gpu` refuses
-and the agent is forced toward `write_repro_yaml`/`submit`. See
+Each `run_gpu` step is metered as `gpus × elapsed_h × hw_multiplier` (actual
+elapsed; queue wait is not charged) against the row's `budget_h100_hours`; when
+the remaining budget hits zero, `run_gpu` refuses and the agent is forced toward
+`write_repro_yaml`/`submit`. The model sets `gpus`/`minutes` per call; the
+account/partition/node come from the cluster profile it's entitled to. See
 [the reproduction mode](../modes/reproduction.md) for the budget meter and the
 harness re-execution verdict.
 

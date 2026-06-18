@@ -21,6 +21,8 @@ from pathlib import Path
 from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
+from reprocli_repro.budget import HW_MULTIPLIER
+from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args as resolve_cluster
 from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET
 from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
 
@@ -48,6 +50,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="reprocli_repro", description=__doc__)
     _add_run_selection(parser)
     _add_workspace(parser)
+    _add_cluster(parser)
     _add_endpoint(parser)
     _add_sampling(parser)
     _add_context_management(parser)
@@ -97,10 +100,10 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("workspace + reference (Phase 2)")
     group.add_argument(
         "--executor",
-        choices=("local", "srun"),
+        choices=("local", "slurm"),
         default="local",
-        help="Where workspace steps run. 'local' builds a plain per-paper uv venv; "
-        "'srun' (Phase 3+) builds it --system-site-packages over the Apptainer image.",
+        help="Where GPU steps run. 'local' runs a plain subprocess (offline loop); "
+        "'slurm' provisions a fresh JIT salloc per run_gpu step and releases it.",
     )
     group.add_argument(
         "--bundle-dataset",
@@ -121,17 +124,46 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
         help="Build the empty per-paper uv venv at setup (default: on).",
     )
     group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
+
+
+def _add_cluster(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_argument_group(
+        "cluster / JIT GPU substrate (consumed by --executor slurm)"
+    )
+    group.add_argument(
+        "--cluster",
+        choices=cluster_names(),
+        default=DEFAULT_CLUSTER,
+        help=f"Built-in cluster profile (account/partition/hw/modules) the agent's "
+        f"JIT salloc uses (default: {DEFAULT_CLUSTER}). Override individual fields below.",
+    )
+    group.add_argument("--account", help="SLURM account (salloc -A); overrides the profile.")
+    group.add_argument("--partition", help="SLURM partition (salloc -p); overrides the profile.")
+    group.add_argument(
+        "--gpus-per-node",
+        type=int,
+        help="Upper bound on a single step's --gpus; overrides the profile.",
+    )
+    group.add_argument(
+        "--hw",
+        choices=tuple(sorted(HW_MULTIPLIER)),
+        help="Node hardware keying the H100-equiv budget multiplier; overrides the profile.",
+    )
+    group.add_argument(
+        "--scratch-root",
+        help="NVMe root for per-paper workspaces (Phase 7); overrides the profile.",
+    )
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Deferred seam (Phase 3/7 srun): base .sif the GPU step is wrapped in; "
-        "unused by --executor local. Defaults to $REPRO_APPTAINER_SIF.",
+        help="Phase 8 sandboxing seam: base .sif the GPU step is wrapped in; unused by "
+        "--executor local. Defaults to $REPRO_APPTAINER_SIF.",
     )
     group.add_argument(
         "--modules",
         default="",
-        help="Deferred seam (Phase 3/7 srun): space-separated `module load` names for "
-        "the GPU step; unused by --executor local.",
+        help="Space-separated `module load` names prepended to each slurm GPU step; "
+        "overrides the profile's modules. Unused by --executor local.",
     )
 
 
@@ -228,6 +260,8 @@ def _validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
         parser.error("--microcompact-threshold must be in (0, 1]")
     if args.budget_h100_hours < 0:
         parser.error("--budget-h100-hours must be >= 0")
+    if args.gpus_per_node is not None and args.gpus_per_node < 1:
+        parser.error("--gpus-per-node must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
 
@@ -240,5 +274,8 @@ def _apply_defaults(args: argparse.Namespace) -> None:
     # fill these; left unset, the loop is import-clean but has nothing to dispatch.
     args.tools = None
     args.response_format = None
+    # Resolve the JIT-allocation substrate once: the named profile merged with any
+    # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
+    args.cluster_profile = resolve_cluster(args)
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)
