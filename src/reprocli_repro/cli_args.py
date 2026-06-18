@@ -20,6 +20,8 @@ from pathlib import Path
 from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
+from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET
+
 DEFAULT_OUTPUT = Path("outputs/repro/reproduce.jsonl")
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 DEFAULT_RUNS_DIR = Path("outputs/repro/agent_runs")
@@ -57,10 +59,19 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("run selection (consumed starting Phase 1)")
     group.add_argument("--paper-id", help="arXiv id of the single paper to reproduce.")
     group.add_argument("--num-prompts", type=int, help="Reproduce a random N papers instead of one.")
+    group.add_argument("--seed", type=int, default=0, help="Sampling seed for --num-prompts (default: 0).")
+    group.add_argument(
+        "--run-id",
+        help="Pin the run id (default: a fresh time+random id, so re-runs never collide).",
+    )
     group.add_argument(
         "--lockfile",
-        type=Path,
-        help="Audit-pool extracted JSONL (the lockfile rows) carrying each paper's target.",
+        default=DEFAULT_LOCKFILE_DATASET,
+        help=(
+            "Audited lockfile carrying each paper's reproduction target. An HF dataset "
+            "repo id (owner/name), an hf://datasets/<owner>/<name>/<file> reference, or "
+            f"a local .jsonl path (default: {DEFAULT_LOCKFILE_DATASET})."
+        ),
     )
     group.add_argument(
         "--prompt-file",
