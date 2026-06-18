@@ -84,12 +84,15 @@ def materialize(
     return written
 
 
-def write_paper(row: dict, paper_dir: Path) -> None:
+def write_paper(row: dict, paper_dir: Path) -> dict:
+    """Materialize one bundle row into ``paper_dir`` and return its counts."""
     latex_dir = paper_dir / "latex"
     supp_dir = paper_dir / "supplement"
     n_tex = write_tex_files(row.get("paper_tex_files") or [], latex_dir)
     n_supp = write_supplement_files(row.get("supplement_files") or [], supp_dir)
     write_info(row, paper_dir, n_tex, n_supp)
+    write_manifest(paper_dir)
+    return {"arxiv_id": row.get("arxiv_id"), "latex_files": n_tex, "supplement_files": n_supp}
 
 
 def write_tex_files(items: list, latex_dir: Path) -> int:
@@ -144,6 +147,63 @@ def write_info(row: dict, paper_dir: Path, n_tex: int, n_supp: int) -> None:
     }
     paper_dir.mkdir(parents=True, exist_ok=True)
     (paper_dir / "info.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+
+
+def write_manifest(paper_dir: Path) -> Path:
+    """List every materialized reference file (latex/ + supplement/) with sizes."""
+    lines = [f"REFERENCE MANIFEST for {paper_dir.name}", ""]
+    total = 0
+    for sub in ("latex", "supplement"):
+        root = paper_dir / sub
+        files = sorted(p for p in root.rglob("*") if p.is_file()) if root.is_dir() else []
+        lines.append(f"{sub}/ ({len(files)} file(s)):")
+        for path in files:
+            size = path.stat().st_size
+            total += size
+            lines.append(f"  {path.relative_to(paper_dir)}  ({size} bytes)")
+        lines.append("")
+    lines.append(f"{total} bytes total across latex/ and supplement/.")
+    manifest = paper_dir / "MANIFEST.txt"
+    manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return manifest
+
+
+def materialize_reference(
+    arxiv_id: str,
+    dest: Path,
+    *,
+    dataset: str = DEFAULT_DATASET,
+    overwrite: bool = False,
+    row: dict | None = None,
+) -> dict:
+    """Write one paper's read-only ``reference/`` dir (latex + supplement + manifest).
+
+    ``row`` lets callers (and tests) skip the network; otherwise the bundle is
+    streamed until ``arxiv_id`` is found. Returns the per-paper counts plus an
+    ``ok`` flag so the workspace setup can report what landed.
+    """
+    dest = Path(dest)
+    if dest.exists() and any(dest.iterdir()) and not overwrite:
+        return {"ok": True, "skipped": True, "reason": "reference already materialized", "dest": str(dest)}
+    if row is None:
+        row = find_bundle_row(arxiv_id, dataset=dataset)
+    if row is None:
+        return {"ok": False, "error": f"arxiv_id {arxiv_id!r} not found in bundle {dataset!r}", "dest": str(dest)}
+    counts = write_paper(row, dest)
+    return {"ok": True, "skipped": False, "dest": str(dest), **counts}
+
+
+def find_bundle_row(arxiv_id: str, *, dataset: str = DEFAULT_DATASET) -> dict | None:
+    """Stream the bundle and return the first row whose arXiv id matches."""
+    from datasets import load_dataset
+
+    target = str(arxiv_id).strip()
+    base = target.split("v")[0]
+    for row in load_dataset(dataset, split="train", streaming=True):
+        rid = str(row.get("arxiv_id") or "").strip()
+        if rid and (rid == target or rid.split("v")[0] == base):
+            return dict(row)
+    return None
 
 
 def safe_target(base: Path, rel: object) -> Path | None:

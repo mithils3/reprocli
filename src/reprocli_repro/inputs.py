@@ -266,6 +266,7 @@ def build_context(ep: EpisodeInput, *, allocation: str | None = None) -> Executi
         arxiv_id=ep.arxiv_id,
         lockfile_row=ep.row,
         workspace=ep.run_paths.workspace,
+        reference=ep.run_paths.reference,
         evidence=ep.run_paths.evidence,
         budget=Budget(total_h100_hours=ep.budget),
         allocation=allocation,

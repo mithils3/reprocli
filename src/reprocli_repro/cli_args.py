@@ -15,12 +15,14 @@ stable; they are consumed by the input pipeline starting in Phase 1.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET
+from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
 
 DEFAULT_OUTPUT = Path("outputs/repro/reproduce.jsonl")
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
@@ -45,6 +47,7 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="reprocli_repro", description=__doc__)
     _add_run_selection(parser)
+    _add_workspace(parser)
     _add_endpoint(parser)
     _add_sampling(parser)
     _add_context_management(parser)
@@ -87,6 +90,48 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
             "Root of the run bundles written to <runs-dir>/<arxiv_id>/...; this is "
             f"the S6->S7 contract the auditor reads (default: {DEFAULT_RUNS_DIR})."
         ),
+    )
+
+
+def _add_workspace(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_argument_group("workspace + reference (Phase 2)")
+    group.add_argument(
+        "--executor",
+        choices=("local", "srun"),
+        default="local",
+        help="Where workspace steps run. 'local' builds a plain per-paper uv venv; "
+        "'srun' (Phase 3+) builds it --system-site-packages over the Apptainer image.",
+    )
+    group.add_argument(
+        "--bundle-dataset",
+        default=DEFAULT_BUNDLE_DATASET,
+        help=f"Paper-bundle dataset the read-only reference/ is materialized from "
+        f"(default: {DEFAULT_BUNDLE_DATASET}).",
+    )
+    group.add_argument(
+        "--reference",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Materialize the read-only reference/ copy at setup (default: on).",
+    )
+    group.add_argument(
+        "--build-venv",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Build the empty per-paper uv venv at setup (default: on).",
+    )
+    group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
+    group.add_argument(
+        "--apptainer-image",
+        default=os.environ.get("REPRO_APPTAINER_SIF"),
+        help="Deferred seam (Phase 3/7 srun): base .sif the GPU step is wrapped in; "
+        "unused by --executor local. Defaults to $REPRO_APPTAINER_SIF.",
+    )
+    group.add_argument(
+        "--modules",
+        default="",
+        help="Deferred seam (Phase 3/7 srun): space-separated `module load` names for "
+        "the GPU step; unused by --executor local.",
     )
 
 

@@ -49,7 +49,8 @@ class ExecutionContext:
 
     arxiv_id: str
     lockfile_row: dict[str, Any] = field(default_factory=dict)
-    workspace: Path | None = None        # Phase 2: editable code clone + venv
+    workspace: Path | None = None        # Phase 2: editable code clone + venv (rw)
+    reference: Path | None = None        # Phase 2: read-only paper LaTeX + supplement (ro)
     budget: Budget | None = None         # Phase 3: metered compute budget
     allocation: str | None = None        # Phase 3: SLURM allocation jobid / executor
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
