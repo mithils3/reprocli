@@ -2,7 +2,7 @@
 # Stand up a single-node vLLM server on 1x 4xGH200 (DeltaAI ghx4), reachable
 # from any other Delta/DeltaAI node by the URL it publishes.
 #
-#   sbatch scripts/serve_gh200.sbatch
+#   sbatch scripts/serve/serve_gh200.sbatch
 #   # then, on a login node or another compute node:
 #   #   export REPROCLI_ENDPOINT_FILE=$ENDPOINT_FILE   (same path as below)
 #   #   <consumer> --vllm-server-url "$(jq -r .base_url "$ENDPOINT_FILE")"

@@ -10,8 +10,10 @@ DeltaAI ghx4 nodes and throw a few classification prompts at it.
 - Pipeline parallel: `2` (across the two nodes)
 - Total GPUs: `8` — head rank `0`, worker rank `1`
 
-The batch path is `bash scripts/m3.sh` (submits `serve_multinode.sbatch`). Use
-this runbook when you want a server in an interactive allocation you can poke at.
+For the unattended full run, use
+`scripts/minimax_m3/paper_classification_minimax_m3.sbatch` (it serves M3 on 2
+nodes and classifies the whole dataset). Use this runbook when you want a server
+in an interactive allocation you can poke at.
 
 ## 0. Prerequisites
 
@@ -56,9 +58,9 @@ source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli
 export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
 
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
@@ -104,12 +106,13 @@ and set `IFACE_NAME` to the routable fabric interface.
 One process per node via `reprocli_serve`; only rank 0 serves the API and
 publishes the endpoint file. The M3 flags (`--block-size 128`,
 `--tool-call-parser minimax_m3`, `--reasoning-parser minimax_m3`,
-`--mm-encoder-tp-mode data`, `--enable-auto-tool-choice`, `--trust-remote-code`)
-come from the `minimax_m3` serving profile, so they don't have to be retyped here.
+`--kv-cache-dtype fp8`, `--mm-encoder-tp-mode data`, `--enable-auto-tool-choice`,
+`--trust-remote-code`) come from the `minimax_m3` serving profile, so they don't
+have to be retyped here.
 
 ```bash
 mkdir -p logs
-ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m3.json
+ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/minimax_m3.json
 
 srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
   --gpus-per-task=4 --cpus-per-task=32 bash -lc '
@@ -136,9 +139,10 @@ tail -f "logs/minimax-m3-multinode-${SLURM_JOB_ID}.log"   # wait for "vLLM serve
 > `vllm serve MiniMaxAI/MiniMax-M3-MXFP8 --host 0.0.0.0 --served-model-name
 > MiniMaxAI/MiniMax-M3 --trust-remote-code --tensor-parallel-size 4
 > --pipeline-parallel-size 2 --nnodes 2 --node-rank "$SLURM_PROCID"
-> --master-addr "$HEAD_IP" --block-size 128 --tool-call-parser minimax_m3
-> --reasoning-parser minimax_m3 --enable-auto-tool-choice --mm-encoder-tp-mode
-> data` (raw `vllm serve` does not publish the endpoint file).
+> --master-addr "$HEAD_IP" --block-size 128 --kv-cache-dtype fp8
+> --tool-call-parser minimax_m3 --reasoning-parser minimax_m3
+> --enable-auto-tool-choice --mm-encoder-tp-mode data` (raw `vllm serve` does not
+> publish the endpoint file).
 
 ## 5. Health Check and Sample Classification Prompts
 
@@ -148,21 +152,33 @@ Once the log shows `vLLM server READY`:
 curl -fsS "http://${HEAD_IP}:8000/health" && echo "  health: ok"
 ```
 
-Run a few real classification prompts through it (same runner/flags as
-`scripts/paper_classification.sbatch`, capped to 2 papers):
+Run a few real classification prompts through it — the same runner and flags as
+the batch job, capped with `--num-prompts` so it returns quickly:
 
 ```bash
-REPROCLI_SERVER_URL="http://${HEAD_IP}:8000" bash scripts/m3_sample_prompts.sh
-# or, since the endpoint file was published:
-ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m3.json bash scripts/m3_sample_prompts.sh
+cd /u/msalunkhe/reprocli
+export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
+mkdir -p outputs
+python3 src/run_arxiv_prompt_vllm.py \
+  --vllm-server-url "http://${HEAD_IP}:8000" \
+  --model MiniMaxAI/MiniMax-M3 \
+  --num-prompts 2 \
+  --tool-rounds 12 \
+  --max-input-tokens 128000 \
+  --max-tokens 8192 \
+  --request-workers 2 \
+  --temperature 1.0 --top-p 0.95 --top-k 40 \
+  --stream-first-response \
+  --save-round-jsonl \
+  --max-model-len 196608 \
+  --dataset Mithilss/neurips-2025-paper-bundles \
+  --output outputs/neurips_2025_minimax_m3_smoke.jsonl \
+  --extracted-output outputs/neurips_2025_minimax_m3_smoke_extracted.jsonl
 ```
 
-Bump `NUM_PROMPTS` / `REQUEST_WORKERS` once the smoke run looks right:
-
-```bash
-NUM_PROMPTS=20 REQUEST_WORKERS=8 \
-  REPROCLI_SERVER_URL="http://${HEAD_IP}:8000" bash scripts/m3_sample_prompts.sh
-```
+Raise `--num-prompts` / `--request-workers` once the smoke run looks right. To run
+the **whole** dataset and push results to Hugging Face, use the batch job
+(`scripts/minimax_m3/paper_classification_minimax_m3.sbatch`) instead.
 
 ## 6. Stop
 
@@ -176,8 +192,9 @@ exit   # also ends the allocation
 - **Scaling**: for `N` nodes keep `--tensor-parallel-size 4`, set
   `--pipeline-parallel-size N` and `--nnodes N`; `--node-rank` runs `0..N-1` and
   only rank 0 omits `--headless`. Two nodes is the floor for MXFP8.
-- **Longer context**: `--max-model-len` defaults to 196608. M3's native context
-  is larger; pass a bigger `--max-model-len` (and `--kv-cache-dtype fp8` for a
-  ~1.5× KV pool) if you need it, at the cost of more KV memory.
-- **Full run / batch**: `bash scripts/m3.sh` submits the same serve as a 2-node
-  batch job; attach the full classifier with `scripts/serve_attach_runner.sh`.
+- **KV cache / context**: the serve already passes `--kv-cache-dtype fp8` (a
+  ~1.5× KV pool). `--max-model-len` defaults to 196608; raise it for longer
+  context, at the cost of more KV memory.
+- **Full run / batch**: `sbatch scripts/minimax_m3/paper_classification_minimax_m3.sbatch`
+  serves M3 on 2 nodes and classifies the entire dataset, pushing results to a
+  Hugging Face dataset.

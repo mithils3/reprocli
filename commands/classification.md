@@ -5,8 +5,8 @@ Run the agent core over paper bundles on vLLM. The runner launches through
 existing one), drives the Python tool loop, and writes raw, extracted, and
 optional trace JSONL rows as papers complete.
 
-The active production path is `scripts/paper_classification.sbatch`. Use
-`scripts/paper_classification_kimi_k2_6.sbatch` for `moonshotai/Kimi-K2.6` with
+The active production path is `scripts/minimax_m2/paper_classification.sbatch`. Use
+`scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` for `moonshotai/Kimi-K2.6` with
 `kimi_k2` tool/reasoning parsers, 8-way tensor parallelism, trust-remote-code,
 and `--mm-encoder-tp-mode data`.
 

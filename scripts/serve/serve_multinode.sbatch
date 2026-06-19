@@ -1,9 +1,9 @@
 #!/bin/bash
 # Stand up a MULTI-NODE vLLM server (e.g. Kimi-K2.6: TP=4 per node, PP=#nodes)
 # on DeltaAI ghx4, reachable from any other node by the URL rank 0 publishes.
-# Batch form of scripts/serve_interactive.md.
+# Batch form of scripts/serve/serve_interactive.md.
 #
-#   sbatch --nodes=2 scripts/serve_multinode.sbatch
+#   sbatch --nodes=2 scripts/serve/serve_multinode.sbatch
 #
 #SBATCH -J reprocli_serve_mn
 #SBATCH -A betw-dtai-gh

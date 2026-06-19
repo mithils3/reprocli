@@ -27,13 +27,13 @@ The repo splits into two decoupled halves that talk only over a published URL:
   model, they only make chat-completions requests to a base URL.
 - **Serving** — `src/reprocli_serve/` boots a vLLM server on a GPU node (e.g.
   4×GH200, TP=4), binds `0.0.0.0`, and publishes its URL for any other
-  Delta/DeltaAI node to attach to (`scripts/serve_gh200.sbatch`,
-  `scripts/serve_multinode.sbatch`).
+  Delta/DeltaAI node to attach to (`scripts/serve/serve_gh200.sbatch`,
+  `scripts/serve/serve_multinode.sbatch`).
 
 Point the runner at a server with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
 `$REPROCLI_ENDPOINT_FILE` (falling back to the embedded local server when none is
 set) — so swapping the model is a URL change. The classifier job
-`scripts/paper_classification.sbatch` uses this serve paradigm on a single node;
+`scripts/minimax_m2/paper_classification.sbatch` uses this serve paradigm on a single node;
 see [docs/slurm/serve.md](docs/slurm/serve.md).
 
 ## Documentation

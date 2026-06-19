@@ -7,9 +7,9 @@
 #           paper-bundle dataset, and pushes results to a Hugging Face dataset
 #           (incrementally + at the end, so a wall-time kill keeps partial results).
 #
-#   sbatch scripts/paper_classification_minimax_m3.sbatch
+#   sbatch scripts/minimax_m3/paper_classification_minimax_m3.sbatch
 #   # override the HF target / dataset from the environment if needed:
-#   HF_REPO=Mithilss/neurips-2025-minimax-m3 sbatch scripts/paper_classification_minimax_m3.sbatch
+#   HF_REPO=Mithilss/neurips-2025-minimax-m3 sbatch scripts/minimax_m3/paper_classification_minimax_m3.sbatch
 #
 # HF upload needs a logged-in token (huggingface-cli login, or HF_TOKEN in the
 # submitting env -- carried in by --export=ALL).
@@ -40,12 +40,12 @@ IFACE_NAME="${IFACE_NAME:-hsn0}"
 TP="${TP:-4}"
 DATASET="${DATASET:-Mithilss/neurips-2025-paper-bundles}"
 HF_REPO="${HF_REPO:-Mithilss/neurips-2025-minimax-m3}"
-ENDPOINT_FILE="${ENDPOINT_FILE:-/projects/bgnp/msalunkhe/endpoints/minimax_m3_${SLURM_JOB_ID}.json}"
+ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/outputs/minimax_m3_${SLURM_JOB_ID}.json}"
 
 # --- Standardized multi-node env block (no loopback pin; the fabric is required) ---
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID

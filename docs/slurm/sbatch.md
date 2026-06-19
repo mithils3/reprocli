@@ -1,4 +1,4 @@
-# Batch jobs (`scripts/*.sbatch`)
+# Batch jobs (`scripts/**/*.sbatch`)
 
 The two classifier batch scripts in `scripts/` are thin launchers: each sets the same DeltaAI environment block, activates the project venv, and drives the [tool loop](../agent-core/tool-loop.md) over the [paper bundles](../dataset/index.md) via `src/run_arxiv_prompt_vllm.py`. They differ in how the model is served: `paper_classification.sbatch` uses the **serve paradigm** (a background `reprocli_serve` server, then the runner attached by URL — see [serving](serve.md)), while `paper_classification_kimi_k2_6.sbatch` lets the runner **embed** its own vLLM server (`vllm/server.py`). The standalone `serve_*.sbatch` servers are documented on the [serving page](serve.md). See [Clusters & accounts](clusters.md) for the account/partition table and the `salloc`→`srun` pattern the (designed) reproduction agent uses.
 
@@ -149,7 +149,7 @@ Concretely (`run_arxiv_prompt_vllm.py`):
 5. On exit, `VllmServer.__exit__` terminates the subprocess; rows are flushed and, if `--hf-repo` is set, uploaded.
 
 !!! note "Attaching to an external server"
-    These scripts always use the embedded server. The same runner can attach to an already-running multi-node vLLM via `--vllm-server-url` (e.g. the interactive Kimi serving in `scripts/kimi_k2_6_multinode_interactive.md`); see [architecture](../architecture.md) II.4 and [Clusters & accounts](clusters.md).
+    These scripts always use the embedded server. The same runner can attach to an already-running multi-node vLLM via `--vllm-server-url` (e.g. the interactive Kimi serving in `scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`); see [architecture](../architecture.md) II.4 and [Clusters & accounts](clusters.md).
 
 ## See also
 

@@ -22,8 +22,8 @@ reusing only mode-agnostic primitives.
 > `loop.py`, `context.py`, `inputs.py`, `workspace.py`, `reference.py`,
 > `evidence.py`, `budget.py`, `cluster.py`, `slurm.py`, `compaction.py`,
 > `transcript.py`, `dispatch.py`, `tools/workspace_bash.py`, `tools/files.py`),
-> `reprocli_serve/`, `prompts/prompt_reproduce.txt`, `scripts/*.sbatch`,
-> `scripts/kimi_k2_6_multinode_interactive.md`,
+> `reprocli_serve/`, `prompts/prompt_reproduce.txt`, `scripts/**/*.sbatch`,
+> `scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`,
 > `docs/reproduction-agent-plan.md`.
 > Status legend: ✅ live · 🛠 partially built (phased) · 🚧 designed, not yet wired.
 
@@ -502,8 +502,8 @@ salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus=<k> --time=<minutes> \
        srun --ntasks=1 bash -lc 'cd <workspace> && module load python/3.11.9 && <command>'
 ```
 
-Pattern A is the live classifier/auditor shape (`scripts/*.sbatch`,
-`scripts/kimi_k2_6_multinode_interactive.md`): the allocation is the budget
+Pattern A is the live classifier/auditor shape (`scripts/**/*.sbatch`,
+`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`): the allocation is the budget
 container and every unit of work runs as an `srun --jobid=$SLURM_JOB_ID` step
 inside it. Pattern B is the reproduction agent's `slurm.py`: the agent owns and
 releases each allocation, so it holds no GPU while reasoning or installing.

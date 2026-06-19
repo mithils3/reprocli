@@ -48,8 +48,9 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         command.extend(["--compilation-config", compilation])
     if args.distributed_executor_backend:
         command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
-    if args.kv_cache_dtype:
-        command.extend(["--kv-cache-dtype", args.kv_cache_dtype])
+    kv_cache_dtype = args.kv_cache_dtype or profile.kv_cache_dtype
+    if kv_cache_dtype:
+        command.extend(["--kv-cache-dtype", kv_cache_dtype])
     block_size = args.block_size or profile.block_size
     if block_size:
         command.extend(["--block-size", str(block_size)])

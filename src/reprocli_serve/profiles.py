@@ -37,6 +37,7 @@ class Profile:
     mm_encoder_tp_mode: str | None = None
     compilation_config: str | None = None
     block_size: int | None = None
+    kv_cache_dtype: str | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -52,7 +53,7 @@ def minimax_profile() -> Profile:
 
 def kimi_profile() -> Profile:
     # 8 GPUs of tensor parallel; on 4-GPU/node DeltaAI this is TP=4 + PP=2 across
-    # two nodes (see scripts/serve_multinode.sbatch). The parser flags are the
+    # two nodes (see scripts/serve/serve_multinode.sbatch). The parser flags are the
     # invariant; tensor/pipeline parallel are set by the launcher for the layout.
     return Profile(
         name="kimi_k2",
@@ -71,7 +72,9 @@ def minimax_m3_profile() -> Profile:
     # M3 does not take M2's compilation-config. Per the official recipe
     # (https://recipes.vllm.ai/MiniMaxAI/MiniMax-M3) the layout is TP=8; on
     # DeltaAI's 4-GPU ghx4 nodes that is TP=4 + PP=2 across two nodes, which the
-    # launcher sets for the layout (see scripts/serve_multinode.sbatch).
+    # launcher sets for the layout (see scripts/serve/serve_multinode.sbatch).
+    # kv_cache_dtype fp8 buys a ~1.5x KV pool (a recipe option) for more
+    # concurrent requests / longer context at the same HBM.
     return Profile(
         name="minimax_m3",
         tensor_parallel_size=4,
@@ -79,6 +82,7 @@ def minimax_m3_profile() -> Profile:
         reasoning_parser="minimax_m3",
         mm_encoder_tp_mode="data",
         block_size=128,
+        kv_cache_dtype="fp8",
     )
 
 

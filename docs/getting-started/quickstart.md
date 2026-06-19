@@ -117,8 +117,8 @@ python3 src/run_arxiv_prompt_vllm.py \
 !!! warning "This needs GPUs"
     An embedded run loads the full model — run it inside a GPU allocation, not on
     a login node. On the cluster, submit
-    `scripts/paper_classification.sbatch` (MiniMax, 4×GH200) or
-    `scripts/paper_classification_kimi_k2_6.sbatch` (Kimi, 8 GPU) rather than
+    `scripts/minimax_m2/paper_classification.sbatch` (MiniMax, 4×GH200) or
+    `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` (Kimi, 8 GPU) rather than
     invoking Python by hand. See the [SLURM scripts](../slurm/sbatch.md) page.
 
 ---

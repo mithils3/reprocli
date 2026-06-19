@@ -6,7 +6,7 @@
 # attaches to the server purely by URL. Swap providers by changing the URL.
 #
 #   ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m2.json \
-#     bash scripts/serve_attach_runner.sh --num-prompts 2
+#     bash scripts/serve/serve_attach_runner.sh --num-prompts 2
 set -euo pipefail
 
 ENDPOINT_FILE="${ENDPOINT_FILE:-/projects/bgnp/msalunkhe/endpoints/minimax_m2.json}"
