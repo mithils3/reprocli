@@ -50,8 +50,9 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
     if args.kv_cache_dtype:
         command.extend(["--kv-cache-dtype", args.kv_cache_dtype])
-    if args.block_size:
-        command.extend(["--block-size", str(args.block_size)])
+    block_size = args.block_size or profile.block_size
+    if block_size:
+        command.extend(["--block-size", str(block_size)])
     if args.tokenizer_mode:
         command.extend(["--tokenizer-mode", args.tokenizer_mode])
     if args.structured_outputs_backend:

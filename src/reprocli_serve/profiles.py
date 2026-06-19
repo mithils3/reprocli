@@ -36,6 +36,7 @@ class Profile:
     trust_remote_code: bool = True
     mm_encoder_tp_mode: str | None = None
     compilation_config: str | None = None
+    block_size: int | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -62,6 +63,25 @@ def kimi_profile() -> Profile:
     )
 
 
+def minimax_m3_profile() -> Profile:
+    # MiniMax-M3: a 428B-param MoE (~22B active) with MiniMax Sparse Attention
+    # (MSA) and a native vision encoder. --block-size 128 is MANDATORY: MSA's
+    # sparse/index cache is sized to 128, and the vLLM default (16) misaligns the
+    # sparse-attention indexing. The parsers are minimax_m3 (NOT minimax_m2), and
+    # M3 does not take M2's compilation-config. Per the official recipe
+    # (https://recipes.vllm.ai/MiniMaxAI/MiniMax-M3) the layout is TP=8; on
+    # DeltaAI's 4-GPU ghx4 nodes that is TP=4 + PP=2 across two nodes, which the
+    # launcher sets for the layout (see scripts/serve_multinode.sbatch).
+    return Profile(
+        name="minimax_m3",
+        tensor_parallel_size=4,
+        tool_call_parser="minimax_m3",
+        reasoning_parser="minimax_m3",
+        mm_encoder_tp_mode="data",
+        block_size=128,
+    )
+
+
 def is_kimi_k2_6(model: str) -> bool:
     if model == KIMI_K2_6_MODEL or model.rstrip("/").endswith("/Kimi-K2.6"):
         return True
@@ -76,8 +96,24 @@ def is_kimi_k2_6(model: str) -> bool:
     return any(str(name).startswith("KimiK25") for name in architectures)
 
 
+def is_minimax_m3(model: str) -> bool:
+    if "MiniMax-M3" in model.rstrip("/"):
+        return True
+    config_path = Path(model) / "config.json"
+    if not config_path.exists():
+        return False
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    architectures = config.get("architectures") or []
+    return any(str(name).startswith("MiniMaxM3") for name in architectures)
+
+
 def resolve_profile(model: str) -> Profile:
     """Pick the serving profile for ``model`` (a HF id or a local path)."""
     if is_kimi_k2_6(model):
         return kimi_profile()
+    if is_minimax_m3(model):
+        return minimax_m3_profile()
     return minimax_profile()
