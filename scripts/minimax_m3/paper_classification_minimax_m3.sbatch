@@ -112,6 +112,14 @@ srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
     source "'"${VENV}"'/bin/activate"
     export PYTHONPATH="'"${REPROCLI}"'/src:${PYTHONPATH:-}"
     cd "'"${REPROCLI}"'"
+    # Pin NCCL to the four real Slingshot NICs INSIDE the srun payload, so a
+    # bare "hsn" (or anything) leaked from the submitting env / ~/.bashrc can
+    # not poison the inter-node bootstrap. A bare "hsn" prefix also matches the
+    # hsn0.561.. VLAN aliases (public 141.142.x IPs); mixing those with the
+    # 172.28.x fabric hangs the cross-node socket connect right after NCCL init.
+    export NCCL_SOCKET_IFNAME=hsn0,hsn1,hsn2,hsn3
+    export GLOO_SOCKET_IFNAME='"${IFACE_NAME}"'
+    export NCCL_DEBUG="${NCCL_DEBUG:-INFO}"
     # Pin vLLM internal RPC / multiproc message queue to the fabric. vLLMs
     # get_ip() otherwise picks the public 141.142.x VLAN (mq_connect_ip=...),
     # which is unroutable compute-to-compute, so workers finish NCCL on the
