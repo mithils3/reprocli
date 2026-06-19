@@ -27,11 +27,6 @@ class ResolveClusterTests(unittest.TestCase):
         self.assertEqual(c.hw, "h200")
         self.assertEqual(c.gpus_per_node, 8)
 
-    def test_local_profile_has_no_account(self):
-        c = resolve_cluster("local")
-        self.assertIsNone(c.account)
-        self.assertEqual(c.hw, "h100")
-
     def test_per_field_overrides_win(self):
         c = resolve_cluster(
             "deltaai",
@@ -81,7 +76,7 @@ class FromArgsTests(unittest.TestCase):
         self.assertEqual(c.account, "betw-dtai-gh")
 
     def test_from_args_overrides_and_splits_modules(self):
-        c = from_args(self._args(cluster="local", account="acct", modules="a b c"))
+        c = from_args(self._args(cluster="deltaai", account="acct", modules="a b c"))
         self.assertEqual(c.account, "acct")
         self.assertEqual(c.modules, ("a", "b", "c"))
 

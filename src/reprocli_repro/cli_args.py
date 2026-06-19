@@ -99,13 +99,6 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
 def _add_workspace(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("workspace + reference (Phase 2)")
     group.add_argument(
-        "--executor",
-        choices=("local", "slurm"),
-        default="local",
-        help="Where GPU steps run. 'local' runs a plain subprocess (offline loop); "
-        "'slurm' provisions a fresh JIT salloc per run_gpu step and releases it.",
-    )
-    group.add_argument(
         "--bundle-dataset",
         default=DEFAULT_BUNDLE_DATASET,
         help=f"Paper-bundle dataset the read-only reference/ is materialized from "
@@ -127,9 +120,7 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group(
-        "cluster / JIT GPU substrate (consumed by --executor slurm)"
-    )
+    group = parser.add_argument_group("cluster / JIT GPU substrate")
     group.add_argument(
         "--cluster",
         choices=cluster_names(),
@@ -156,14 +147,14 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Phase 8 sandboxing seam: base .sif the GPU step is wrapped in; unused by "
-        "--executor local. Defaults to $REPRO_APPTAINER_SIF.",
+        help="Phase 8 sandboxing seam: base .sif the GPU step is wrapped in. "
+        "Defaults to $REPRO_APPTAINER_SIF.",
     )
     group.add_argument(
         "--modules",
         default="",
-        help="Space-separated `module load` names prepended to each slurm GPU step; "
-        "overrides the profile's modules. Unused by --executor local.",
+        help="Space-separated `module load` names prepended to each JIT GPU step; "
+        "overrides the profile's modules.",
     )
 
 

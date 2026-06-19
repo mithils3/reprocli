@@ -31,7 +31,7 @@ class Cluster:
     name: str
     hw: str                              # budget multiplier key (see budget.HW_MULTIPLIER)
     gpus_per_node: int                   # upper bound on a single step's --gpus
-    account: str | None = None           # salloc -A  (None => local executor only)
+    account: str | None = None           # salloc -A  (every built-in JIT profile sets one)
     partition: str | None = None         # salloc -p
     modules: tuple[str, ...] = ()         # `module load ...` prepended to each GPU step
     apptainer_image: str | None = None   # Phase 8 sandboxing seam; unused by local
@@ -39,7 +39,8 @@ class Cluster:
 
 
 # Built-ins. DeltaAI/Delta strings are the exact ones the live scripts pass
-# (docs/slurm/clusters.md); `local` is the offline, no-SLURM profile.
+# (docs/slurm/clusters.md). Every profile is a real SLURM target — GPU steps
+# always run through a JIT salloc, so an account/partition is mandatory.
 _PROFILES: dict[str, Cluster] = {
     "deltaai": Cluster(
         name="deltaai",
@@ -59,7 +60,6 @@ _PROFILES: dict[str, Cluster] = {
         modules=("python/3.11.9",),
         scratch_root="/work/nvme",
     ),
-    "local": Cluster(name="local", hw="h100", gpus_per_node=1),
 }
 
 

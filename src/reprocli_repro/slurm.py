@@ -9,8 +9,7 @@ released the instant the command exits — nothing is pre-held:
 ``<account>/<partition>/<modules>`` come from the cluster profile (``cluster.py``);
 ``<k>``/``<minutes>`` come from the model's ``run_gpu`` arguments. ``--time`` is
 the budget pre-authorization (SLURM hard-kills at the wall limit), so the meter
-can refuse a step before it launches. ``--executor local`` swaps the whole
-allocation for a plain subprocess so the loop runs offline.
+can refuse a step before it launches.
 
 ``build_command`` is pure (the gate asserts the exact argv); ``run_step`` executes
 it and times the *run* so ``budget.charge`` bills elapsed, not queue wait. The
@@ -28,9 +27,6 @@ from pathlib import Path
 
 from reprocli_repro.cluster import Cluster
 
-LOCAL = "local"
-SLURM = "slurm"
-
 
 @dataclass
 class StepResult:
@@ -42,7 +38,6 @@ class StepResult:
     stderr: str
     elapsed_s: float
     command: list[str]
-    executor: str
 
 
 def _inner_script(workspace: Path | str, modules: tuple[str, ...], cmd: str) -> str:
@@ -61,18 +56,12 @@ def build_command(
     *,
     gpus: int,
     minutes: int,
-    executor: str = SLURM,
 ) -> list[str]:
-    """Build the argv for one step. ``local`` => plain bash; ``slurm`` => JIT salloc."""
-    if executor == LOCAL:
-        # No SLURM, no modules (`module` may not exist off-cluster): just run it.
-        return ["bash", "-lc", _inner_script(workspace, (), cmd)]
-    if executor != SLURM:
-        raise SystemExit(f"unknown executor {executor!r}; choose from {LOCAL}, {SLURM}")
+    """Build the argv for one just-in-time ``salloc`` GPU step."""
     if not cluster.account or not cluster.partition:
         raise SystemExit(
-            f"--executor slurm needs an account and partition; cluster {cluster.name!r} "
-            "has none (pass --account/--partition or pick a cluster profile that sets them)."
+            f"cluster {cluster.name!r} has no account/partition for a JIT GPU step "
+            "(pass --account/--partition or pick a cluster profile that sets them)."
         )
     if gpus < 1 or gpus > cluster.gpus_per_node:
         raise SystemExit(
@@ -98,11 +87,10 @@ def run_step(
     *,
     gpus: int,
     minutes: int,
-    executor: str = SLURM,
     timeout: float | None = None,
 ) -> StepResult:
     """Run one step and time the wall it actually took (for the budget meter)."""
-    argv = build_command(cluster, workspace, cmd, gpus=gpus, minutes=minutes, executor=executor)
+    argv = build_command(cluster, workspace, cmd, gpus=gpus, minutes=minutes)
     start = time.monotonic()
     try:
         proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
@@ -112,10 +100,9 @@ def run_step(
             ok=False,
             returncode=124,
             stdout=exc.stdout or "",
-            stderr=(exc.stderr or "") + "\n[step exceeded --executor timeout]",
+            stderr=(exc.stderr or "") + "\n[step exceeded timeout]",
             elapsed_s=elapsed,
             command=argv,
-            executor=executor,
         )
     elapsed = time.monotonic() - start
     return StepResult(
@@ -125,5 +112,4 @@ def run_step(
         stderr=proc.stderr,
         elapsed_s=elapsed,
         command=argv,
-        executor=executor,
     )

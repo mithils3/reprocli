@@ -52,5 +52,5 @@ class ExecutionContext:
     workspace: Path | None = None        # Phase 2: editable code clone + venv (rw)
     reference: Path | None = None        # Phase 2: read-only paper LaTeX + supplement (ro)
     budget: Budget | None = None         # Phase 3: metered compute budget
-    allocation: str | None = None        # Phase 3: SLURM allocation jobid / executor
+    allocation: str | None = None        # Phase 3: active JIT SLURM allocation jobid
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...

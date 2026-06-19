@@ -14,8 +14,7 @@ materializes everything the agent needs *before* the loop starts:
 It deliberately does **not** clone the paper's code or install its dependencies:
 that is the agent's job through ``workspace_bash`` (clone) into this venv. The
 Apptainer/module substrate (``--apptainer-image`` / ``--modules``) is a deferred
-seam consumed by Phase 3/7's ``srun`` path; the local executor builds a plain
-venv and ignores it.
+seam consumed by Phase 7's ``srun`` path.
 """
 
 from __future__ import annotations
