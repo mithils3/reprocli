@@ -69,6 +69,22 @@ def advertised_host(explicit: str | None, iface: str | None) -> str:
     return socket.gethostname()
 
 
+def fabric_ipv4(iface: str | None) -> str | None:
+    """This node's own fabric IPv4 (hsn family), or None — no public-IP fallback.
+
+    Used to pin vLLM's internal RPC / multiproc message queue to the same fabric
+    NCCL uses. Unlike :func:`advertised_host`, this never falls back to the
+    outbound-socket guess (which returns the public VLAN, unroutable
+    compute-to-compute) or the explicit ``--advertise-ip`` (which is the *head*
+    IP on every node); each node must resolve its own interface address.
+    """
+    for candidate in _iface_candidates(iface):
+        ip = discover_ipv4(candidate)
+        if ip:
+            return ip
+    return None
+
+
 def _iface_candidates(iface: str | None) -> list[str]:
     """The requested interface first, then the rest of the hsn family, deduped."""
     ordered: list[str] = []

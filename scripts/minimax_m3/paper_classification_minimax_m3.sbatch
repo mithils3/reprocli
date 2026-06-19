@@ -63,6 +63,8 @@ export NCCL_DEBUG="${NCCL_DEBUG:-INFO}"
 export NCCL_NET_PLUGIN="${NCCL_NET_PLUGIN_OVERRIDE:-none}"
 export OMP_NUM_THREADS=1
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC="${TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC:-1200}"
+# Surface a stuck collective as a stack trace instead of an indefinite hang.
+export TORCH_NCCL_ASYNC_ERROR_HANDLING="${TORCH_NCCL_ASYNC_ERROR_HANDLING:-1}"
 # Gloo's TCPStore rendezvous needs one interface; NCCL data should use the four
 # Slingshot NICs. Pin them by exact name -- a bare "hsn" prefix also matches the
 # hsn0.561.. VLAN aliases (public 141.142.x IPs), and mixing those with the
@@ -110,6 +112,12 @@ srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
     source "'"${VENV}"'/bin/activate"
     export PYTHONPATH="'"${REPROCLI}"'/src:${PYTHONPATH:-}"
     cd "'"${REPROCLI}"'"
+    # Pin vLLM internal RPC / multiproc message queue to the fabric. vLLMs
+    # get_ip() otherwise picks the public 141.142.x VLAN (mq_connect_ip=...),
+    # which is unroutable compute-to-compute, so workers finish NCCL on the
+    # 172.28.x fabric then hang dialing the engine MQ. Each node uses its OWN
+    # fabric IP, not HEAD_IP.
+    export VLLM_HOST_IP="$(ip -o -4 addr show '"${IFACE_NAME}"' | awk "{split(\$4,a,\"/\"); print a[1]; exit}")"
     HEADLESS=()
     [[ "${SLURM_PROCID}" != "0" ]] && HEADLESS=(--headless)
     python -m reprocli_serve \

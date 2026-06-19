@@ -99,7 +99,13 @@ def _multinode_flags(args: argparse.Namespace) -> list[str]:
     return flags
 
 
-def start_process(command: list[str]) -> subprocess.Popen:
-    """Launch vLLM, inheriting stdout/stderr so logs land in the Slurm log."""
+def start_process(
+    command: list[str], env: dict[str, str] | None = None
+) -> subprocess.Popen:
+    """Launch vLLM, inheriting stdout/stderr so logs land in the Slurm log.
+
+    ``env`` of None inherits this process's environment unchanged; a dict
+    replaces it wholesale (callers pass a copy of ``os.environ`` plus overrides).
+    """
     print("Starting vLLM server: " + " ".join(command), file=sys.stderr, flush=True)
-    return subprocess.Popen(command)
+    return subprocess.Popen(command, env=env)
