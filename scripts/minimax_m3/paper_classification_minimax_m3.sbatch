@@ -1,8 +1,11 @@
 #!/bin/bash
 # Full-dataset Stage-1 classification with MiniMax-M3 (MXFP8) on 2x DeltaAI ghx4
 # nodes. Multi-node serve paradigm, in one job:
-#   step 1  one reprocli_serve process per node -- TP=4 within a node, PP=2 across
-#           the two nodes; rank 0 serves the API and publishes the endpoint file.
+#   step 1  one reprocli_serve process per node -- TP=8 spanning the two nodes
+#           (inter-node tensor parallel over the Slingshot fabric, 4 GPUs each)
+#           plus --enable-expert-parallel to shard the MoE experts across all 8
+#           ranks; the MXFP8 weights split over 8 GPUs. rank 0 serves the API and
+#           publishes the endpoint file.
 #   step 2  the model-agnostic classifier attaches by URL, runs the ENTIRE
 #           paper-bundle dataset, and pushes results to a Hugging Face dataset
 #           (incrementally + at the end, so a wall-time kill keeps partial results).
@@ -37,7 +40,8 @@ MODEL="${MODEL:-MiniMaxAI/MiniMax-M3-MXFP8}"
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M3}"
 PORT="${PORT:-8000}"
 IFACE_NAME="${IFACE_NAME:-hsn0}"
-TP="${TP:-4}"
+TP="${TP:-8}"                         # tensor parallel spans both nodes (4 GPUs each)
+GPUS_PER_NODE="${GPUS_PER_NODE:-4}"   # GPUs each srun task binds (one task per node)
 DATASET="${DATASET:-Mithilss/neurips-2025-paper-bundles}"
 HF_REPO="${HF_REPO:-Mithilss/neurips-2025-minimax-m3}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/outputs/minimax_m3_${SLURM_JOB_ID}.json}"
@@ -81,16 +85,19 @@ if [[ -z "${HEAD_IP}" || "${HEAD_IP}" == 127.* ]]; then
   echo "Bad HEAD_IP='${HEAD_IP}' from '${IFACE_NAME}' on ${HEAD_NODE}; check the fabric interface." >&2
   exit 1
 fi
-echo "NNODES=${NNODES} HEAD_NODE=${HEAD_NODE} HEAD_IP=${HEAD_IP} TP=${TP} PP=${NNODES}"
+echo "NNODES=${NNODES} HEAD_NODE=${HEAD_NODE} HEAD_IP=${HEAD_IP} TP=${TP} EP=on"
 echo "model=${MODEL} served=${SERVED_NAME} hf_repo=${HF_REPO} endpoint_file=${ENDPOINT_FILE}"
 nvidia-smi topo -m || true
 
 # --- Step 1: multi-node server (background); only rank 0 serves & publishes ---
-# The M3 flags (--block-size 128, --tool-call-parser/--reasoning-parser minimax_m3,
-# --mm-encoder-tp-mode data, --enable-auto-tool-choice, --trust-remote-code) come
-# from the minimax_m3 serving profile (src/reprocli_serve/profiles.py).
+# TP=8 spans both nodes: each srun task binds its node's 4 GPUs and the
+# --nnodes/--node-rank/--master-addr rendezvous joins them into one TP=8 group.
+# Expert parallel, the M3 flags (--block-size 128, --tool-call-parser/
+# --reasoning-parser minimax_m3, --mm-encoder-tp-mode data, --enable-auto-tool-choice,
+# --trust-remote-code) come from the minimax_m3 serving profile
+# (src/reprocli_serve/profiles.py), so they don't have to be retyped here.
 srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
-  --ntasks-per-node=1 --gpus-per-task="${TP}" --cpus-per-task=32 \
+  --ntasks-per-node=1 --gpus-per-task="${GPUS_PER_NODE}" --cpus-per-task=32 \
   bash -lc '
     set -euo pipefail
     module load python/3.11.9
@@ -104,7 +111,6 @@ srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
       --served-model-name "'"${SERVED_NAME}"'" \
       --port "'"${PORT}"'" \
       --tensor-parallel-size "'"${TP}"'" \
-      --pipeline-parallel-size "'"${NNODES}"'" \
       --nnodes "'"${NNODES}"'" \
       --node-rank "${SLURM_PROCID}" \
       --master-addr "'"${HEAD_IP}"'" \

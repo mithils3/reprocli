@@ -34,6 +34,7 @@ class Profile:
     max_model_len: int = MAX_MODEL_LEN
     gpu_memory_utilization: float = DEFAULT_GPU_MEMORY_UTILIZATION
     trust_remote_code: bool = True
+    enable_expert_parallel: bool = False
     mm_encoder_tp_mode: str | None = None
     compilation_config: str | None = None
     block_size: int | None = None
@@ -70,16 +71,20 @@ def minimax_m3_profile() -> Profile:
     # sparse/index cache is sized to 128, and the vLLM default (16) misaligns the
     # sparse-attention indexing. The parsers are minimax_m3 (NOT minimax_m2), and
     # M3 does not take M2's compilation-config. Per the official recipe
-    # (https://recipes.vllm.ai/MiniMaxAI/MiniMax-M3) the layout is TP=8; on
-    # DeltaAI's 4-GPU ghx4 nodes that is TP=4 + PP=2 across two nodes, which the
-    # launcher sets for the layout (see scripts/serve/serve_multinode.sbatch).
-    # kv_cache_dtype fp8 buys a ~1.5x KV pool (a recipe option) for more
+    # (https://recipes.vllm.ai/MiniMaxAI/MiniMax-M3) the layout is TP=8 with
+    # expert parallel; on DeltaAI's 4-GPU ghx4 nodes that is TP=8 spanning two
+    # nodes (inter-node TP over the Slingshot fabric) plus --enable-expert-parallel
+    # to shard the MoE experts across all 8 ranks. The launcher wires the
+    # cross-node rendezvous (see scripts/minimax_m3/paper_classification_minimax_m3.sbatch);
+    # enable_expert_parallel here makes EP part of the profile so it is on by
+    # default. kv_cache_dtype fp8 buys a ~1.5x KV pool (a recipe option) for more
     # concurrent requests / longer context at the same HBM.
     return Profile(
         name="minimax_m3",
-        tensor_parallel_size=4,
+        tensor_parallel_size=8,
         tool_call_parser="minimax_m3",
         reasoning_parser="minimax_m3",
+        enable_expert_parallel=True,
         mm_encoder_tp_mode="data",
         block_size=128,
         kv_cache_dtype="fp8",

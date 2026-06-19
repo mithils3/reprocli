@@ -55,6 +55,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # Profile overrides (None => use the model's profile default).
     parser.add_argument("--tensor-parallel-size", type=int)
     parser.add_argument("--pipeline-parallel-size", type=int)
+    parser.add_argument(
+        "--enable-expert-parallel",
+        action="store_true",
+        help="Shard MoE experts across the parallel group (instead of replicating "
+        "them per TP rank). An alternative to pipeline parallelism for MoE models.",
+    )
     parser.add_argument("--max-model-len", type=int)
     parser.add_argument("--gpu-memory-utilization", type=float)
     parser.add_argument("--tool-call-parser")
@@ -72,6 +78,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--nnodes", type=int)
     parser.add_argument("--node-rank", type=int)
     parser.add_argument("--master-addr")
+
+    # Data-parallel rendezvous (wide-EP: TP stays intra-node, DP spans nodes, and
+    # --enable-expert-parallel shards the MoE across all DP*TP ranks). An
+    # alternative to pipeline parallel for spanning nodes without inter-node TP.
+    parser.add_argument("--data-parallel-size", type=int)
+    parser.add_argument("--data-parallel-size-local", type=int)
+    parser.add_argument("--data-parallel-start-rank", type=int)
+    parser.add_argument("--data-parallel-address")
+    parser.add_argument("--data-parallel-rpc-port", type=int)
     parser.add_argument(
         "--headless",
         action="store_true",
