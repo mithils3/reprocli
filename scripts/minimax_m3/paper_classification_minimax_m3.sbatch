@@ -5,7 +5,9 @@
 #           (inter-node tensor parallel over the Slingshot fabric, 4 GPUs each)
 #           plus --enable-expert-parallel to shard the MoE experts across all 8
 #           ranks; the MXFP8 weights split over 8 GPUs. rank 0 serves the API and
-#           publishes the endpoint file.
+#           publishes the endpoint file. (PP across nodes would be lighter on the
+#           fabric, but MiniMax-M3's vLLM arch does not support pipeline parallel,
+#           so inter-node TP is the only option -- pin NCCL to the hsn NICs below.)
 #   step 2  the model-agnostic classifier attaches by URL, runs the ENTIRE
 #           paper-bundle dataset, and pushes results to a Hugging Face dataset
 #           (incrementally + at the end, so a wall-time kill keeps partial results).
@@ -60,10 +62,12 @@ export NCCL_DEBUG="${NCCL_DEBUG:-INFO}"
 export NCCL_NET_PLUGIN="${NCCL_NET_PLUGIN_OVERRIDE:-none}"
 export OMP_NUM_THREADS=1
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC="${TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC:-1200}"
-# Gloo's TCPStore rendezvous needs one interface; NCCL data should use ALL four
-# Slingshot NICs, so match the whole hsn family by prefix (NCSA guidance).
+# Gloo's TCPStore rendezvous needs one interface; NCCL data should use the four
+# Slingshot NICs. Pin them by exact name -- a bare "hsn" prefix also matches the
+# hsn0.561.. VLAN aliases (public 141.142.x IPs), and mixing those with the
+# private 172.28.x fabric makes the cross-node socket connect hang at NCCL init.
 export GLOO_SOCKET_IFNAME="${IFACE_NAME}"
-export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-hsn}"
+export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-hsn0,hsn1,hsn2,hsn3}"
 ulimit -l unlimited || true
 ulimit -s unlimited || true
 

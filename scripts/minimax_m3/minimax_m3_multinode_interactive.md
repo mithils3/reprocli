@@ -89,7 +89,10 @@ export IFACE_NAME=hsn0
 srun --jobid="$SLURM_JOB_ID" --nodes=1 --ntasks=1 bash -lc "ip -o -4 addr show $IFACE_NAME"
 
 export GLOO_SOCKET_IFNAME="$IFACE_NAME"
-export NCCL_SOCKET_IFNAME=hsn   # NCCL data uses all four hsn0..hsn3 NICs
+# Pin the four hsn NICs by exact name. A bare "hsn" prefix also matches the
+# hsn0.561.. VLAN aliases (public 141.142.x IPs); mixing those with the private
+# 172.28.x fabric makes the cross-node socket connect hang at NCCL init.
+export NCCL_SOCKET_IFNAME=hsn0,hsn1,hsn2,hsn3
 
 mapfile -t NODES < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
 HEAD_IP=$(srun --jobid="$SLURM_JOB_ID" --nodes=1 --ntasks=1 --nodelist="${NODES[0]}" \
