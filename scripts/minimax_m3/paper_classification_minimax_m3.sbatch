@@ -1,13 +1,14 @@
 #!/bin/bash
 # Full-dataset Stage-1 classification with MiniMax-M3 (MXFP8) on 2x DeltaAI ghx4
 # nodes. Multi-node serve paradigm, in one job:
-#   step 1  one reprocli_serve process per node -- TP=8 spanning the two nodes
-#           (inter-node tensor parallel over the Slingshot fabric, 4 GPUs each)
-#           plus --enable-expert-parallel to shard the MoE experts across all 8
-#           ranks; the MXFP8 weights split over 8 GPUs. rank 0 serves the API and
-#           publishes the endpoint file. (PP across nodes would be lighter on the
-#           fabric, but MiniMax-M3's vLLM arch does not support pipeline parallel,
-#           so inter-node TP is the only option -- pin NCCL to the hsn NICs below.)
+#   step 1  one reprocli_serve process per node -- plain TP=8 spanning the two
+#           nodes (inter-node tensor parallel over the Slingshot fabric, 4 GPUs
+#           each); the MXFP8 weights split over 8 GPUs. rank 0 serves the API and
+#           publishes the endpoint file. (No expert parallel: EP would put a MoE
+#           all-to-all on the inter-node socket fabric; with it off the experts
+#           are TP-sharded and ride the same all-reduce as the rest of the model.
+#           PP across nodes would be lighter still, but MiniMax-M3's vLLM arch
+#           does not support pipeline parallel -- pin NCCL to the hsn NICs below.)
 #   step 2  the model-agnostic classifier attaches by URL, runs the ENTIRE
 #           paper-bundle dataset, and pushes results to a Hugging Face dataset
 #           (incrementally + at the end, so a wall-time kill keeps partial results).
@@ -89,17 +90,18 @@ if [[ -z "${HEAD_IP}" || "${HEAD_IP}" == 127.* ]]; then
   echo "Bad HEAD_IP='${HEAD_IP}' from '${IFACE_NAME}' on ${HEAD_NODE}; check the fabric interface." >&2
   exit 1
 fi
-echo "NNODES=${NNODES} HEAD_NODE=${HEAD_NODE} HEAD_IP=${HEAD_IP} TP=${TP} EP=on"
+echo "NNODES=${NNODES} HEAD_NODE=${HEAD_NODE} HEAD_IP=${HEAD_IP} TP=${TP} EP=off"
 echo "model=${MODEL} served=${SERVED_NAME} hf_repo=${HF_REPO} endpoint_file=${ENDPOINT_FILE}"
 nvidia-smi topo -m || true
 
 # --- Step 1: multi-node server (background); only rank 0 serves & publishes ---
 # TP=8 spans both nodes: each srun task binds its node's 4 GPUs and the
 # --nnodes/--node-rank/--master-addr rendezvous joins them into one TP=8 group.
-# Expert parallel, the M3 flags (--block-size 128, --tool-call-parser/
-# --reasoning-parser minimax_m3, --mm-encoder-tp-mode data, --enable-auto-tool-choice,
+# The M3 flags (--block-size 128, --tool-call-parser/--reasoning-parser
+# minimax_m3, --mm-encoder-tp-mode data, --enable-auto-tool-choice,
 # --trust-remote-code) come from the minimax_m3 serving profile
 # (src/reprocli_serve/profiles.py), so they don't have to be retyped here.
+# Expert parallel is off (TP-sharded MoE); add --enable-expert-parallel to opt in.
 srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
   --ntasks-per-node=1 --gpus-per-task="${GPUS_PER_NODE}" --cpus-per-task=32 \
   bash -lc '

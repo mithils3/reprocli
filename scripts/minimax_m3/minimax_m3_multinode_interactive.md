@@ -6,9 +6,10 @@ DeltaAI ghx4 nodes and throw a few classification prompts at it.
 - Model: `MiniMaxAI/MiniMax-M3-MXFP8` (428B-param MoE, ~22B active, MiniMax
   Sparse Attention, native vision encoder). The MXFP8 weights (~428 GB) do not
   fit one node's 4×96 GB HBM, so this needs **2 nodes**.
-- Topology: tensor parallel `8` spanning both nodes (inter-node TP over the
-  Slingshot fabric, 4 GPUs each) plus expert parallel (`--enable-expert-parallel`)
-  to shard the MoE experts across all 8 ranks.
+- Topology: plain tensor parallel `8` spanning both nodes (inter-node TP over the
+  Slingshot fabric, 4 GPUs each); the MoE experts are TP-sharded. No expert
+  parallel — EP would add a MoE all-to-all over the inter-node socket fabric; add
+  `--enable-expert-parallel` to opt back in.
 - Total GPUs: `8` — head rank `0`, worker rank `1`
 
 For the unattended full run, use
@@ -110,11 +111,12 @@ and set `IFACE_NAME` to the routable fabric interface.
 One process per node via `reprocli_serve`; only rank 0 serves the API and
 publishes the endpoint file. `--tensor-parallel-size 8` spans both nodes (each
 binds its 4 GPUs; the `--nnodes`/`--node-rank`/`--master-addr` rendezvous joins
-them into one TP=8 group). Expert parallel and the M3 flags (`--block-size 128`,
+them into one TP=8 group). The M3 flags (`--block-size 128`,
 `--tool-call-parser minimax_m3`, `--reasoning-parser minimax_m3`,
 `--kv-cache-dtype fp8`, `--mm-encoder-tp-mode data`, `--enable-auto-tool-choice`,
 `--trust-remote-code`) come from the `minimax_m3` serving profile, so they don't
-have to be retyped here.
+have to be retyped here. Expert parallel is off (TP-sharded MoE); pass
+`--enable-expert-parallel` to opt in.
 
 ```bash
 mkdir -p logs
@@ -144,7 +146,7 @@ tail -f "logs/minimax-m3-multinode-${SLURM_JOB_ID}.log"   # wait for "vLLM serve
 > Raw equivalent (no profile): swap `python -m reprocli_serve` for
 > `vllm serve MiniMaxAI/MiniMax-M3-MXFP8 --host 0.0.0.0 --served-model-name
 > MiniMaxAI/MiniMax-M3 --trust-remote-code --tensor-parallel-size 8
-> --enable-expert-parallel --nnodes 2 --node-rank "$SLURM_PROCID"
+> --nnodes 2 --node-rank "$SLURM_PROCID"
 > --master-addr "$HEAD_IP" --block-size 128 --kv-cache-dtype fp8
 > --tool-call-parser minimax_m3 --reasoning-parser minimax_m3
 > --enable-auto-tool-choice --mm-encoder-tp-mode data` (raw `vllm serve` does not
@@ -198,7 +200,8 @@ exit   # also ends the allocation
 - **Scaling**: TP=8 over two nodes is the floor for MXFP8 (the weights need 8
   GPUs). For more nodes set `--tensor-parallel-size 4*N` and `--nnodes N`;
   `--node-rank` runs `0..N-1` and only rank 0 omits `--headless`. Expert parallel
-  stays on via `--enable-expert-parallel`.
+  is off by default; add `--enable-expert-parallel` to shard whole experts
+  (adds a MoE all-to-all over the fabric).
 - **KV cache / context**: the serve already passes `--kv-cache-dtype fp8` (a
   ~1.5× KV pool). `--max-model-len` defaults to 196608; raise it for longer
   context, at the cost of more KV memory.
