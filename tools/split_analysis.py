@@ -1,8 +1,10 @@
-"""Trend analysis of the frozen eval-100 + dev-15 splits.
+"""Trend analysis of the published eval-100 + dev-15 splits.
 
-Reads the two split files written by ``tools/build_eval_dev_splits.py`` and
-prints the tables that back ``notes/Analysis/Final Split Analysis
-(eval-100 + dev-15).md``: artifact-signal x tier, compute band x tier, the
+Reads the released HF dataset ``Mithilss/reprobench-splits`` (``eval_100.jsonl``
++ ``dev_split.jsonl``) directly, falling back to the byte-identical local
+builder output if offline. Prints the tables that back
+``notes/Analysis/Final Split Analysis (eval-100 + dev-15).md``: artifact-signal
+x tier, compute band x tier, the
 hand-curated domain x tier census, anchor-metric type, arXiv recency, GPU
 hardware, and compute concentration.
 
@@ -23,8 +25,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EVAL = ROOT / "outputs/v5/audit_pool_eval100_extracted.jsonl"
-DEV = ROOT / "outputs/v5/audit_pool_dev15_extracted.jsonl"
+HF_BASE = "https://huggingface.co/datasets/Mithilss/reprobench-splits/resolve/main"
+EVAL_URL, DEV_URL = f"{HF_BASE}/eval_100.jsonl", f"{HF_BASE}/dev_split.jsonl"
+LOCAL_EVAL = ROOT / "outputs/v5/audit_pool_eval100_extracted.jsonl"  # byte-identical mirror
+LOCAL_DEV = ROOT / "outputs/v5/audit_pool_dev15_extracted.jsonl"
 
 TIERS = ("Easy", "Medium", "Hard")
 BANDS = ("0-8", "8-32", "32-96", "96-192")
@@ -83,8 +87,17 @@ _SOTA = re.compile(r"outperform|state-of-the-art|sota|surpass|beats|better than|
                    r"achieves? (?:superior|state|competitive|the best|higher|strong)", re.I)
 
 
-def load(path: Path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+def fetch(url: str, fallback: Path):
+    """Load the published HF split; fall back to the local mirror if offline."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            text = resp.read().decode("utf-8")
+        print(f"  source: {url}")
+    except Exception as exc:  # offline / blocked -> byte-identical local mirror
+        text = fallback.read_text()
+        print(f"  source: {fallback}  (HF fetch failed: {exc})")
+    return [json.loads(line) for line in text.splitlines() if line.strip()]
 
 
 def metric_type(claim: str) -> str:
@@ -161,7 +174,7 @@ def report(name: str, rows: list[dict]) -> None:
 
 
 def main() -> None:
-    eval_rows, dev_rows = load(EVAL), load(DEV)
+    eval_rows, dev_rows = fetch(EVAL_URL, LOCAL_EVAL), fetch(DEV_URL, LOCAL_DEV)
     overlap = {r["custom_id"] for r in eval_rows} & {r["custom_id"] for r in dev_rows}
     print(f"eval={len(eval_rows)}  dev={len(dev_rows)}  overlap={len(overlap)}")
     report("EVAL-100", eval_rows)
