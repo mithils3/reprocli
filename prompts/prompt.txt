@@ -247,8 +247,12 @@ A valid MRE must identify:
 1. The smallest model/configuration that demonstrates the claim.
 2. The dataset or benchmark used for that experiment.
 3. The minimum training, fine-tuning, inference, or evaluation protocol needed.
-4. The anchor metric used to verify the claim.
-5. A reasonable tolerance for matching the paper's result.
+4. The anchor metric used to verify the claim, and the paper's reported value(s)
+   for it (capture these in `central_claim` / `claim_evidence`).
+
+Do NOT pin a match tolerance ("how close counts as a match"). The Stage-7 auditor
+owns and derives the success bar at grading time; your job is only to name the
+metric and record the reported number(s).
 
 All artifact checks are scoped to this MRE, not to every experiment in the paper.
 

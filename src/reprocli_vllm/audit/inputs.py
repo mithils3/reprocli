@@ -39,13 +39,16 @@ def claim_block(record: dict | None) -> str:
             "\nReported numbers / experiment context:\n"
             + json.dumps(evidence, ensure_ascii=False, indent=2)
         )
-    bar = record.get("match_bar")
-    if bar:
-        parts.append(
-            "\nPinned match bar (the frozen lockfile target — adopt it verbatim as "
-            "the C1 bar; do NOT re-infer it):\n"
-            + json.dumps(bar, ensure_ascii=False, indent=2)
-        )
+    # The match bar is no longer pinned in the lockfile — the auditor OWNS it.
+    # Derive the C1 bar (kind, op, reference_value, tolerance) from the claim and
+    # the reported numbers above, per rubric C1.
+    # TODO(final-audits): in the final per-paper audit pass, capture and review the
+    # derived bars so the headline reproduction rate uses a stable, agreed ruler.
+    parts.append(
+        "\nNo success bar is pinned for this paper. Derive the C1 match bar "
+        "(classify match_bar_kind first, then set op / reference_value / "
+        "tolerance) from the claim and reported numbers above, per the rubric."
+    )
     return "\n".join(parts) if parts else "(no central claim found for this paper)"
 
 

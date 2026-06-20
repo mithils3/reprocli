@@ -87,27 +87,24 @@ def test_claim_block_uses_central_claim():
     assert "Reported numbers" in block
 
 
-def test_claim_block_surfaces_pinned_match_bar():
+def test_claim_block_never_pins_bar_and_asks_auditor_to_derive():
+    # Even if a legacy record carries a match_bar, the auditor owns the bar now:
+    # claim_block must not present it as a frozen target to adopt verbatim.
     block = claim_block(
         {
             "central_claim": "86.7% on ALFWorld",
-            "match_bar": {
-                "kind": "point_estimate",
-                "op": "abs_rel_within",
-                "reference_value": 86.7,
-                "tolerance": 0.05,
-                "note": "implicit bar, 5% default",
-            },
+            "match_bar": {"kind": "point_estimate", "reference_value": 86.7},
         }
     )
-    assert "Pinned match bar" in block
-    assert "abs_rel_within" in block
-    assert "86.7" in block
+    assert "Pinned match bar" not in block
+    assert "Derive the C1 match bar" in block
+    assert "match_bar_kind" in block
 
 
-def test_claim_block_omits_match_bar_when_absent():
+def test_claim_block_asks_auditor_to_derive_when_absent():
     block = claim_block({"central_claim": "A beats B", "claim_evidence": {"x": 1}})
     assert "Pinned match bar" not in block
+    assert "Derive the C1 match bar" in block
 
 
 def test_build_audit_prompt_fills_placeholders():

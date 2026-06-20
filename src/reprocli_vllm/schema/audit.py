@@ -10,6 +10,19 @@ citations alone (see audit.py for the deterministic post-processing).
 from __future__ import annotations
 
 
+# Shape of the central claim's success bar. The auditor OWNS and derives this at
+# grading time (it is no longer pinned by the classifier into the lockfile): it
+# classifies the bar kind, then sets op/reference_value/tolerance per rubric C1.
+# TODO(final-audits): during the final per-paper audit pass, review/freeze the
+# derived bars so headline reproduction rates are reported against a stable ruler.
+MATCH_BAR_KINDS = (
+    "point_estimate",  # land near reference_value; op abs_rel_within, tolerance set
+    "threshold",       # reference_value is a floor/ceiling; op >= or <=, tolerance null
+    "direction",       # beat a baseline; op names the inequality, reference/tolerance null
+    "magnitude",       # the size of a delta is the target; tolerance applies to the delta
+    "none",            # no checkable scalar/relation (theoretical/position); all null
+)
+
 # Granular reproduction score the auditor assigns (anchors in rubric_audit.md).
 SCORE_MIN, SCORE_MAX = 0, 5
 FLAG_KINDS = (
@@ -50,8 +63,11 @@ def _flag_item() -> dict:
 AUDIT_JSON_SCHEMA = _obj(
     {
         "paper_id": _STR,
-        # C1: the auditor's restatement of the claim as a checkable target.
+        # C1: the auditor's restatement of the claim as a checkable target. The
+        # auditor derives the whole bar here (kind first, then op/value/tolerance);
+        # it is not adopted from a pinned lockfile value.
         "central_claim": _STR,
+        "match_bar_kind": {"type": "string", "enum": list(MATCH_BAR_KINDS)},
         "target_metric": _STR,
         "reference_value": _NUM_OR_NULL,
         "op": _STR,
@@ -74,6 +90,7 @@ AUDIT_JSON_SCHEMA = _obj(
     [
         "paper_id",
         "central_claim",
+        "match_bar_kind",
         "target_metric",
         "reference_value",
         "op",

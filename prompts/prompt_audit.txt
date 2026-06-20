@@ -28,7 +28,9 @@ THE RUBRIC (apply every criterion; cite evidence from the bundle)
 OUTPUT
 ======================================================================
 
-Return exactly one JSON object matching the audit schema: the restated target,
+Return exactly one JSON object matching the audit schema: the restated target
+(you derive the success bar — classify `match_bar_kind`, then set the
+op/reference_value/tolerance; it is not pinned for you),
 execution evidence, the measured value with an exact file/line or log citation,
 every anti-cheat flag with its evidence and severity, the op/tolerance comparison,
 methodology notes, an integer `score` from 0 to 5 per the rubric's score scale, a
