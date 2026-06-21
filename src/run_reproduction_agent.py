@@ -5,12 +5,12 @@
 #   --benchmark /Users/haochending/reprocli/outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
 #   --paper-id 2504.12216 \
 #   --model gpt-5.5
-#   --api-key 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
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -40,15 +40,30 @@ def main() -> None:
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # host_profile.json lives alongside the benchmark file (collected once via
+    # scripts/collect_host_profile.py) — copy it into each paper's sandbox so
+    # the agent finds it where it expects, without re-running host inspection.
+    host_profile_src = Path(args.benchmark).resolve().parent / "host_profile.json"
+    if not host_profile_src.exists():
+        print(
+            f"Warning: no host_profile.json at {host_profile_src} — "
+            "agent will fall back to inspecting the host itself",
+            file=sys.stderr,
+        )
+
     with out_path.open("a", encoding="utf-8") as out_f:
         for entry in entries:
             safe_id = entry.custom_id.replace("/", "_")
             workdir = Path(args.workdir) / safe_id
             workdir.mkdir(parents=True, exist_ok=True)
+            if host_profile_src.exists():
+                shutil.copy(host_profile_src, workdir / "host_profile.json")
             print(f"[{entry.custom_id}] workdir={workdir}", file=sys.stderr)
             try:
                 result = run_session(
-                    entry, str(workdir), client, args.model, args.max_rounds
+                    entry, str(workdir), client, args.model,
+                    use_container=args.use_container,
+                    use_slurm=args.use_slurm,
                 )
             except Exception as exc:
                 result = ReproResult(
@@ -97,13 +112,25 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--benchmark", required=True, help="Path to benchmark JSONL file")
     p.add_argument("--paper-id", help="Run only this paper (custom_id)")
     p.add_argument("--output", default="outputs/reproduction_results.jsonl")
-    p.add_argument("--workdir", default="/tmp/repro-sandboxes")
+    p.add_argument("--workdir", default=os.path.expanduser("~/tmp/repro-sandboxes"))
     p.add_argument("--model", default=os.environ.get("REPRO_MODEL", "gpt-4o"))
     p.add_argument("--max-rounds", type=int, default=30)
     p.add_argument(
         "--base-url", help="OpenAI-compatible base URL (e.g. http://127.0.0.1:8000/v1)"
     )
     p.add_argument("--api-key", help="API key (defaults to OPENAI_API_KEY env var)")
+    p.add_argument(
+        "--use-container", action="store_true",
+        help="Use Apptainer container pipeline (default: conda pipeline)",
+    )
+    p.add_argument(
+        "--use-slurm", action="store_true",
+        help=(
+            "Submit the experiment via sbatch/slurm_run.sh (container pipeline only). "
+            "Default: run selected_command directly with apptainer exec, for use "
+            "when already on an allocated compute node (e.g. under srun)."
+        ),
+    )
     return p.parse_args()
 
 

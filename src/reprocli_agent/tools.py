@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 import subprocess
 import urllib.error
 import urllib.request
@@ -14,148 +15,23 @@ MAX_CHARS = 50_000
 DEFAULT_TIMEOUT = 3600
 _UA = {"User-Agent": "reprocli-repro-agent/0.1"}
 
-TOOL_SCHEMAS: list[dict] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "bash",
-            "description": (
-                "Run a shell command in the sandbox working directory. "
-                "Use for host inspection, git clone, apptainer build/exec, sbatch, "
-                "and monitoring SLURM jobs. Pass timeout=1800 for long commands like "
-                "apptainer build."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {"type": "string", "description": "Shell command to run."},
-                    "timeout": {
-                        "type": "integer",
-                        "description": "Timeout in seconds (default 3600).",
-                    },
-                },
-                "required": ["command"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "list_files",
-            "description": (
-                "List the file tree of a directory in the sandbox working directory "
-                "or inside a cloned repo. Use after git clone to find scripts, configs, "
-                "requirements files, and entry points before deciding what to install or run."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {
-                        "type": "string",
-                        "description": "Relative path to list (default '.' = workdir root).",
-                    },
-                    "max_depth": {
-                        "type": "integer",
-                        "description": "Maximum directory depth to show (default 4).",
-                    },
-                    "max_entries": {
-                        "type": "integer",
-                        "description": "Maximum number of entries to return (default 300).",
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "read_file",
-            "description": "Read a text file from the sandbox working directory.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside workdir."},
-                    "max_chars": {"type": "integer"},
-                },
-                "required": ["path"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": (
-                "Write content to a file in the sandbox working directory. "
-                "Use for paper.def, reproduce.sh, slurm_run.sh, and JSON artifacts."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside workdir."},
-                    "content": {"type": "string", "description": "Text content to write."},
-                },
-                "required": ["path", "content"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "fetch_url",
-            "description": "Fetch a public HTTP/HTTPS URL and return its text content.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "url": {"type": "string", "description": "HTTP or HTTPS URL."},
-                    "max_chars": {"type": "integer"},
-                },
-                "required": ["url"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "github_browse",
-            "description": (
-                "Browse a GitHub repository. Returns the README by default, "
-                "or a specific file if path is given."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "repo": {"type": "string", "description": "owner/repo or full GitHub URL."},
-                    "path": {"type": "string", "description": "File path in repo (omit for README)."},
-                    "ref": {"type": "string", "description": "Branch, tag, or commit SHA."},
-                },
-                "required": ["repo"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "hf_browse",
-            "description": "Browse a HuggingFace model or dataset: returns card metadata and file listing.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "repo": {"type": "string", "description": "namespace/name or full HF URL."},
-                    "repo_type": {"type": "string", "enum": ["model", "dataset"]},
-                },
-                "required": ["repo"],
-            },
-        },
-    },
-]
+# Schema definitions live in schemas.py; re-export for convenience.
+from .schemas import TOOL_SCHEMAS_CONTAINER, TOOL_SCHEMAS_CONDA, get_tool_schemas  # noqa: E402
 
 
 def dispatch(name: str, args: dict, workdir: str) -> str:
     try:
         if name == "bash":
-            return _bash(args["command"], workdir, int(args.get("timeout") or DEFAULT_TIMEOUT))
+            return _bash(
+                args["command"], workdir,
+                int(args.get("timeout") or DEFAULT_TIMEOUT),
+                conda_env=args.get("conda_env"),
+            )
+        if name == "create_conda_env":
+            return _create_conda_env(
+                args["name"], args["python_version"],
+                list(args.get("packages") or []), workdir,
+            )
         if name == "list_files":
             return _list_files(
                 args.get("path") or ".",
@@ -186,7 +62,22 @@ def _confined(workdir: str, rel: str) -> Path:
     return target
 
 
-def _bash(command: str, workdir: str, timeout: int) -> str:
+_MINICONDA_BIN = Path.home() / "miniconda3" / "bin" / "conda"
+
+
+def _conda_exe() -> str:
+    """Return the conda executable, preferring system PATH then ~/miniconda3."""
+    if shutil.which("conda"):
+        return "conda"
+    if _MINICONDA_BIN.exists():
+        return str(_MINICONDA_BIN)
+    return "conda"  # will fail with a clear error if missing
+
+
+def _bash(command: str, workdir: str, timeout: int, conda_env: str | None = None) -> str:
+    if conda_env:
+        conda = _conda_exe()
+        command = f"{conda} run -n {conda_env} --no-capture-output bash -c {_shell_quote(command)}"
     try:
         result = subprocess.run(
             command, shell=True, cwd=workdir,
@@ -198,6 +89,27 @@ def _bash(command: str, workdir: str, timeout: int) -> str:
         return (prefix + body)[:MAX_OUTPUT]
     except subprocess.TimeoutExpired:
         return f"[exit TIMEOUT] command timed out after {timeout}s"
+
+
+def _shell_quote(s: str) -> str:
+    return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _create_conda_env(name: str, python_version: str, packages: list[str], workdir: str) -> str:
+    pkgs = " ".join(packages)
+    conda = _conda_exe()
+    cmd = f"{conda} create -n {name} python={python_version} {pkgs} -y 2>&1"
+    try:
+        result = subprocess.run(
+            cmd, shell=True, cwd=workdir,
+            capture_output=True, text=True, timeout=DEFAULT_TIMEOUT,
+        )
+        combined = (result.stdout + result.stderr).strip()
+        if result.returncode != 0:
+            return f"[exit {result.returncode}]\n{combined}"[:MAX_OUTPUT]
+        return f"Conda env '{name}' created (python={python_version}).\n{combined}"[:MAX_OUTPUT]
+    except subprocess.TimeoutExpired:
+        return f"[exit TIMEOUT] conda create timed out"
 
 
 def _read_file(path: str, workdir: str, max_chars: int) -> str:

@@ -10,24 +10,22 @@ from typing import Any
 
 from openai import OpenAI, RateLimitError
 
-from .prompt import BenchmarkEntry, build_prompt, SYSTEM_PROMPT
-from .tools import TOOL_SCHEMAS, dispatch
-from .output import ReproResult, parse_output
-
-MAX_ROUNDS = 30
-MAX_BASH_NUDGES = 3
-_PREVIEW_CHARS = 400
-
-# Patterns that signal setup / experiment phases
-_SETUP_RE = re.compile(r"git\s+clone|apptainer\s+build|pip\s+install|apt[- ]|wget\b")
-_RUN_RE = re.compile(r"\bsbatch\b|\bsrun\b|apptainer\s+exec.*--nv")
+from .phases import Phase, get_phases
+from .prompt import BenchmarkEntry, build_phase_messages
+from .repair import MAX_REPAIRS
+from .schemas import get_tool_schemas, filter_schemas
+from .state import ReproState
+from .tools import dispatch
+from .output import ReproResult, looks_like_final_json, parse_output
 
 _RETRY_AFTER_RE = re.compile(r"try again in ([\d.]+)s", re.IGNORECASE)
 _MAX_RETRIES = 6
+_PREVIEW_CHARS = 400
+MAX_BASH_NUDGES = 3
 
 
 # ---------------------------------------------------------------------------
-# Logger: tees to stderr + repro.log
+# Logger
 # ---------------------------------------------------------------------------
 
 class _Logger:
@@ -42,7 +40,6 @@ class _Logger:
         self._f.flush()
 
     def full(self, header: str, content: str) -> None:
-        """Write full content to the log file; only a preview goes to stderr."""
         self._f.write(f"=== {header} ===\n{content}\n=== END {header} ===\n\n")
         self._f.flush()
 
@@ -56,22 +53,17 @@ class _Logger:
 
 def _log_call(log: _Logger, name: str, args: dict) -> None:
     if name == "bash":
-        cmd = args.get("command", "")
-        timeout_note = f"  [timeout={args['timeout']}s]" if "timeout" in args else ""
-        log(f"  ┌─ bash{timeout_note}")
-        for line in cmd.splitlines():
+        env = f"  [conda_env={args['conda_env']}]" if "conda_env" in args else ""
+        timeout = f"  [timeout={args['timeout']}s]" if "timeout" in args else ""
+        log(f"  ┌─ bash{env}{timeout}")
+        for line in args.get("command", "").splitlines():
             log(f"  │  {line}")
         log("  └─")
-    elif name == "github_browse":
-        log(f"  → github_browse  repo={args.get('repo', '')}  path={args.get('path', '(README)')}")
-    elif name == "hf_browse":
-        log(f"  → hf_browse  repo={args.get('repo', '')}  type={args.get('repo_type', 'model')}")
-    elif name == "fetch_url":
-        log(f"  → fetch_url  {args.get('url', '')}")
-    elif name == "list_files":
-        log(f"  → list_files  path={args.get('path', '.')}  depth={args.get('max_depth', 4)}")
-    elif name in ("read_file", "write_file"):
-        log(f"  → {name}  path={args.get('path', '')}")
+    elif name in ("github_browse", "hf_browse", "fetch_url"):
+        key = args.get("repo") or args.get("url", "")
+        log(f"  → {name}  {key}")
+    elif name in ("read_file", "write_file", "list_files"):
+        log(f"  → {name}  path={args.get('path', '.')}")
     else:
         log(f"  → {name}")
 
@@ -80,35 +72,34 @@ def _log_result(log: _Logger, name: str, result: str) -> None:
     failed = result.startswith("[exit ") and not result.startswith("[exit 0]")
     status = "FAILED" if failed else "ok"
     log(f"  ← {name}  {status}  ({len(result)} chars)")
-    # preview to stderr via log()
     for line in result[:_PREVIEW_CHARS].splitlines():
         log(f"  │  {line}")
     if len(result) > _PREVIEW_CHARS:
         log(f"  │  ... ({len(result) - _PREVIEW_CHARS} more chars — see repro.log)")
-    # full output to file
     log.full(f"{name} output", result)
 
 
 # ---------------------------------------------------------------------------
-# API call with rate-limit retry
+# API call with retry
 # ---------------------------------------------------------------------------
 
-def _chat_with_retry(log: _Logger, client: OpenAI, model: str, messages: list[dict]) -> Any:
+def _chat(
+    log: _Logger, client: OpenAI, model: str,
+    messages: list[dict], tool_schemas: list[dict],
+) -> Any:
     for attempt in range(_MAX_RETRIES + 1):
         try:
             return client.chat.completions.create(
-                model=model,
-                messages=messages,
-                tools=TOOL_SCHEMAS,
-                tool_choice="auto",
+                model=model, messages=messages,
+                tools=tool_schemas, tool_choice="auto",
             )
         except RateLimitError as exc:
             if attempt == _MAX_RETRIES:
-                log(f"API error (gave up after {_MAX_RETRIES} retries): {exc}")
+                log(f"rate limit — gave up after {_MAX_RETRIES} retries: {exc}")
                 raise
             m = _RETRY_AFTER_RE.search(str(exc))
             wait = float(m.group(1)) + 1.0 if m else 2 ** (attempt + 1) * 5.0
-            log(f"rate limited — waiting {wait:.1f}s (attempt {attempt + 1}/{_MAX_RETRIES})")
+            log(f"rate limited — waiting {wait:.1f}s (attempt {attempt + 1})")
             time.sleep(wait)
         except Exception as exc:
             log(f"API error: {type(exc).__name__}: {exc}")
@@ -116,7 +107,117 @@ def _chat_with_retry(log: _Logger, client: OpenAI, model: str, messages: list[di
 
 
 # ---------------------------------------------------------------------------
-# Main agent loop
+# Single-phase mini-loop
+# ---------------------------------------------------------------------------
+
+def _run_phase(
+    phase: Phase,
+    entry: BenchmarkEntry,
+    state: ReproState,
+    workdir: str,
+    client: OpenAI,
+    model: str,
+    use_container: bool,
+    use_slurm: bool,
+    log: _Logger,
+) -> None:
+    """Run one phase to completion (mutates state in place)."""
+    all_schemas = get_tool_schemas(use_container)
+    tool_schemas = filter_schemas(all_schemas, phase.allowed_tools)
+
+    messages = build_phase_messages(entry, state, phase)
+    bash_nudges = 0
+    tool_rounds = 0
+    phase_names = [p.name for p in get_phases(use_container, use_slurm)]
+
+    log(f"phase={phase.name}  max_rounds={phase.max_rounds}  tools={phase.allowed_tools}")
+
+    for round_i in range(phase.max_rounds):
+        vr = phase.verifier(workdir, state)
+        if vr.status == "success":
+            log(f"  verifier: success — {vr.message}")
+            state.mark_done(phase.name)
+            state.save()
+            return
+        if vr.status == "repair":
+            target = vr.repair_phase or phase.name
+            log(f"  verifier: repair → {target} — {vr.message}")
+            state.repair_to(target, phase_names, failure_message=vr.message, failed_phase=phase.name)
+            if state.repair_count >= MAX_REPAIRS:
+                state.blockers.append(f"{phase.name}: exceeded repair budget ({MAX_REPAIRS}) — last failure: {vr.message}")
+                state.phase = "blocked"
+                state.save()
+                raise RuntimeError(f"exceeded repair budget in {phase.name}: {vr.message}")
+            state.save()
+            return
+        if vr.status == "blocked":
+            state.blockers.append(f"{phase.name}: {vr.message}")
+            state.save()
+            raise RuntimeError(f"blocked in {phase.name}: {vr.message}")
+
+        log(f"  round {round_i + 1}/{phase.max_rounds}  verifier=continue ({vr.message})")
+        response = _chat(log, client, model, messages, tool_schemas)
+        msg = response.choices[0].message
+        log(f"  finish_reason={response.choices[0].finish_reason}  tool_calls={len(msg.tool_calls or [])}")
+
+        if phase.name != "finalize" and looks_like_final_json(msg.content):
+            log("  rejected: final reproduction JSON emitted outside finalize phase")
+            messages.append({"role": "assistant", "content": msg.content})
+            messages.append({"role": "user", "content": (
+                "Final JSON is not allowed yet — you are still in phase "
+                f"{phase.name}. Continue working on this phase's artifacts."
+            )})
+            continue
+
+        assistant_entry: dict[str, Any] = {"role": "assistant", "content": msg.content}
+        if msg.tool_calls:
+            assistant_entry["tool_calls"] = [
+                {"id": tc.id, "type": "function",
+                 "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                for tc in msg.tool_calls
+            ]
+        messages.append(assistant_entry)
+
+        if not msg.tool_calls:
+            if bash_nudges < MAX_BASH_NUDGES:
+                bash_nudges += 1
+                messages.append({"role": "user", "content": (
+                    f"You have not completed {phase.name} yet. "
+                    "Check the required artifacts in your phase instructions and continue."
+                )})
+                continue
+            log(f"  model stopped without completing phase — giving up on {phase.name}")
+            break
+
+        tool_rounds += 1
+        state.total_tool_rounds += 1
+
+        for tc in msg.tool_calls:
+            name = tc.function.name
+            if name not in phase.allowed_tools:
+                result = f"Tool '{name}' is not allowed in phase {phase.name}. Allowed: {phase.allowed_tools}"
+            else:
+                try:
+                    args = json.loads(tc.function.arguments)
+                except json.JSONDecodeError:
+                    args = {}
+                _log_call(log, name, args)
+                result = dispatch(name, args, workdir)
+                _log_result(log, name, result)
+
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+
+    # Final verifier check after exhausting rounds
+    vr = phase.verifier(workdir, state)
+    if vr.status == "success":
+        state.mark_done(phase.name)
+        state.save()
+    else:
+        log(f"  phase {phase.name} exhausted rounds without success: {vr.message}")
+
+
+# ---------------------------------------------------------------------------
+# Top-level session
 # ---------------------------------------------------------------------------
 
 def run_session(
@@ -124,12 +225,13 @@ def run_session(
     workdir: str,
     client: OpenAI,
     model: str,
-    max_rounds: int = MAX_ROUNDS,
+    use_container: bool = False,
+    use_slurm: bool = True,
 ) -> ReproResult:
     id_ = entry.custom_id
     log = _Logger(id_, Path(workdir) / "repro.log")
     try:
-        return _run(entry, workdir, client, model, max_rounds, log)
+        return _run(entry, workdir, client, model, use_container, use_slurm, log)
     finally:
         log.close()
 
@@ -139,99 +241,61 @@ def _run(
     workdir: str,
     client: OpenAI,
     model: str,
-    max_rounds: int,
+    use_container: bool,
+    use_slurm: bool,
     log: _Logger,
 ) -> ReproResult:
-    id_ = entry.custom_id
-    log(f"starting  model={model}  workdir={workdir}")
+    phases = get_phases(use_container, use_slurm)
+    phase_names = [p.name for p in phases]
 
-    messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_prompt(entry)},
+    state = ReproState.load(workdir) or ReproState.new(
+        paper_id=entry.custom_id,
+        workdir=workdir,
+        env_mode="apptainer" if use_container else "conda",
+        first_phase=phase_names[0],
+    )
+    state.verification_targets = [
+        {"metric": t.metric, "expected_value": t.expected_value} for t in entry.verification_targets
     ]
+    log(f"starting  pipeline={'container' if use_container else 'conda'}  "
+        f"slurm={use_slurm if use_container else 'n/a'}  phase={state.phase}")
 
-    bash_run = False
-    browse_count = 0
-    browse_nudge_sent = False
-    bash_nudges = 0
-    tool_rounds = 0
-    run_steer_sent = False
+    # Build a lookup so we can resume from the right position
+    phase_by_name = {p.name: p for p in phases}
 
-    for round_i in range(max_rounds):
-        log(f"round {round_i + 1}/{max_rounds}  bash_run={bash_run}")
-        response = _chat_with_retry(log, client, model, messages)
-        msg = response.choices[0].message
-        log(f"  finish_reason={response.choices[0].finish_reason}  tool_calls={len(msg.tool_calls or [])}")
+    while state.phase in phase_by_name:
+        phase = phase_by_name[state.phase]
+        if phase.name in state.phases_completed:
+            # advance to next
+            idx = phase_names.index(phase.name)
+            if idx + 1 < len(phase_names):
+                state.phase = phase_names[idx + 1]
+                state.save()
+            else:
+                break
+            continue
 
-        assistant_entry: dict[str, Any] = {"role": "assistant", "content": msg.content}
-        if msg.tool_calls:
-            assistant_entry["tool_calls"] = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {"name": tc.function.name, "arguments": tc.function.arguments},
-                }
-                for tc in msg.tool_calls
-            ]
-        messages.append(assistant_entry)
+        try:
+            _run_phase(phase, entry, state, workdir, client, model, use_container, use_slurm, log)
+        except RuntimeError as exc:
+            return ReproResult(
+                custom_id=entry.custom_id,
+                reproduction_status="failed",
+                metric_results=[],
+                claim_supported=None,
+                claim_assessment="",
+                failure_reason=str(exc),
+                tool_rounds_used=state.total_tool_rounds,
+            )
 
-        if not msg.tool_calls:
-            if not bash_run and bash_nudges < MAX_BASH_NUDGES:
-                bash_nudges += 1
-                log(f"bash not run — nudge {bash_nudges}/{MAX_BASH_NUDGES}")
-                messages.append({
-                    "role": "user",
-                    "content": (
-                        "You have not run bash yet. Proceed to Step 1: "
-                        "inspect the host, then Step 2: clone the repo."
-                    ),
-                })
-                continue
-            log("agent finished")
-            break
+        # After _run_phase, state.phase may have been rewound (repair) or is still this phase
+        if phase.name in state.phases_completed:
+            idx = phase_names.index(phase.name)
+            if idx + 1 < len(phase_names):
+                state.phase = phase_names[idx + 1]
+                state.save()
+            else:
+                break
 
-        tool_rounds += 1
-        run_steer_needed = False
-
-        for tc in msg.tool_calls:
-            name = tc.function.name
-            try:
-                args = json.loads(tc.function.arguments)
-            except json.JSONDecodeError:
-                args = {}
-
-            _log_call(log, name, args)
-            result = dispatch(name, args, workdir)
-            _log_result(log, name, result)
-
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
-
-            if name == "bash":
-                bash_run = True
-                if _RUN_RE.search(str(args.get("command", ""))) and not run_steer_sent:
-                    run_steer_needed = True
-            elif name in ("fetch_url", "github_browse", "hf_browse"):
-                browse_count += 1
-
-        if run_steer_needed and not run_steer_sent:
-            run_steer_sent = True
-            messages.append({
-                "role": "user",
-                "content": (
-                    "The experiment has been submitted or run. "
-                    "If you used sbatch, poll with squeue until the job finishes, "
-                    "then read slurm-<jobid>.out for metric values. "
-                    "Once you have the results, emit the final JSON object — no prose, no fences."
-                ),
-            })
-        elif not bash_run and not browse_nudge_sent and browse_count >= 3:
-            browse_nudge_sent = True
-            messages.append({
-                "role": "user",
-                "content": (
-                    "You have browsed enough. Proceed to Step 2: "
-                    "clone the repository and inspect its structure."
-                ),
-            })
-
-    return parse_output(entry.custom_id, messages, tool_rounds_used=tool_rounds)
+    # Collect any messages for parse_output (just use finalize phase messages as proxy)
+    return parse_output(entry.custom_id, [], tool_rounds_used=state.total_tool_rounds, workdir=workdir)
