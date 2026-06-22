@@ -25,16 +25,18 @@ in play:
   `datasets` + stdlib HTTP, but the same venv works.
 - `uv` on `PATH` (the agent builds a per-paper `uv` venv in each workspace).
 - MiniMax-M2.7 weights reachable (HF id `MiniMaxAI/MiniMax-M2.7` or the local
-  mirror `/projects/bgnp/msalunkhe/MiniMax-M2.7`).
+  mirror `/work/nvme/bfvr/msalunkhe/MiniMax-M2.7`).
 - `HF_TOKEN` exported (the lockfile dataset and the paper bundle stream from the
   Hub).
 
-Pick a sample paper from the eval-100 benchmark (cheapest-first, Easy tier is the
-fastest first run):
+Pick a sample paper from the **dev-15** split (`validation`), **not** the eval-100
+benchmark: running the agent against eval-100 during development would leak into /
+contaminate the frozen benchmark. dev-15 is the disjoint development split kept for
+exactly this. Easy tier is the cheapest first run:
 
 ```bash
-# 2505.11483 is an Easy eval-100 paper — a good smoke target.
-ARXIV_ID=2505.11483
+# 2506.09045 is an Easy dev-15 paper — a good smoke target that never touches eval.
+ARXIV_ID=2506.09045
 ```
 
 ---
@@ -48,13 +50,13 @@ the model profile) and publishes an **endpoint file** with the routable URL once
 ```bash
 cd /u/msalunkhe/reprocli
 sbatch scripts/serve/serve_gh200.sbatch
-# default ENDPOINT_FILE = /projects/bgnp/msalunkhe/endpoints/minimax_m2.json
+# default ENDPOINT_FILE = /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json
 ```
 
 Wait for it, then sanity-check from a login node:
 
 ```bash
-ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m2.json
+ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json
 until [[ -f "$ENDPOINT_FILE" ]]; do sleep 5; done
 curl -f "$(jq -r .base_url "$ENDPOINT_FILE")/health" && echo "  brain up"
 ```
@@ -77,11 +79,11 @@ source .venv/bin/activate
 export PYTHONPATH="$PWD/src:${PYTHONPATH:-}"
 
 # Attach to the brain by URL (zero-flag: the runner auto-discovers it from this).
-export REPROCLI_ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m2.json
+export REPROCLI_ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json
 
 python -m reprocli_repro \
   --paper-id "$ARXIV_ID" \
-  --split eval \
+  --split dev \
   --cluster deltaai \
   --budget-h100-hours 8 \
   --tool-rounds 40 \
@@ -90,9 +92,10 @@ python -m reprocli_repro \
 
 What each flag does:
 
-- `--paper-id` / `--split eval` — load this one row from the lockfile dataset
-  `Mithilss/reprobench-splits`, `test` split (the eval-100 benchmark; `--split dev`
-  → the 15-paper `validation` split).
+- `--paper-id` / `--split dev` — load this one row from the lockfile dataset
+  `Mithilss/reprobench-splits`. `--split dev` is the 15-paper `validation`
+  (development) split; `--split eval` is the frozen 100-paper `test` benchmark —
+  reserve it for final scoring so development never contaminates it.
 - `--cluster deltaai` — the JIT GPU substrate `run_gpu` allocates on: account
   `betw-dtai-gh`, partition `ghx4`, `hw=gh200`, 4 GPU/node, `module load
   python/3.11.9`. (Default, shown for clarity.)
@@ -106,7 +109,7 @@ What each flag does:
 Equivalent explicit-URL form (instead of the env var):
 
 ```bash
-python -m reprocli_repro --paper-id "$ARXIV_ID" --split eval \
+python -m reprocli_repro --paper-id "$ARXIV_ID" --split dev \
   --vllm-server-url "$(jq -r .base_url "$ENDPOINT_FILE")" \
   --served-model-name MiniMaxAI/MiniMax-M2.7
 ```
@@ -152,7 +155,7 @@ rendered prompt, nothing more.
 
 ```bash
 unset REPROCLI_ENDPOINT_FILE REPROCLI_SERVER_URL
-python -m reprocli_repro --paper-id "$ARXIV_ID" --split eval \
+python -m reprocli_repro --paper-id "$ARXIV_ID" --split dev \
   --no-reference --no-build-venv --runs-dir /tmp/repro_dryrun
 ```
 
