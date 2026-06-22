@@ -85,9 +85,11 @@ but not a pre-pinned deep-learning stack, you install the paper's own dependenci
   on PATH; prefer it over `.venv/bin/pip` — it resolves far faster and never needs
   you to bootstrap pip. (The venv does ship pip as a fallback, so `.venv/bin/pip`
   works too, but do not run `ensurepip` or `python -m venv` — the venv exists.)
-- Install a CUDA build of any GPU library the paper needs (e.g. a torch wheel for
-  the CUDA version present, not the default CPU wheel) — pick the version the paper
-  pins. Verify `torch.cuda.is_available()` is True on a GPU step before the real run.
+- Install a CUDA build of any GPU library the paper needs (e.g. a torch wheel built
+  for CUDA, not the default CPU wheel). The paper's pins are a starting point, not a
+  hard constraint: this node is aarch64, so if a pinned version has no CUDA wheel for
+  it, install a newer one that does. Verify `torch.cuda.is_available()` is True on a
+  GPU step before the real run.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
