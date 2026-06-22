@@ -6,6 +6,8 @@ The reproduction agent acts on its episode through these tools:
   **and all file reading** via ``grep``/``sed``/``cat`` -- there is no read_file
   tool: targeted shell reads are far cheaper than dumping whole files to context),
 * ``write_file`` / ``apply_patch`` -- path-confined file writes/edits,
+* ``fetch_url`` -- read-only fetch of a public http(s) URL (docs, wheel index, raw
+  repo files); there is no general web search, so it fetches URLs the agent knows,
 * ``run_gpu`` -- the one metered path to a GPU (JIT ``salloc``, budget-charged).
 
 ``REPRO_TOOLS`` is the schema list advertised to the model (wired onto
@@ -28,6 +30,7 @@ from reprocli_vllm.tools.web_tools import parse_tool_arguments
 
 from reprocli_repro.cluster import DEFAULT_CLUSTER, resolve_cluster
 from reprocli_repro.context import ExecutionContext
+from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
 from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
@@ -40,7 +43,7 @@ _DEFAULT_GPUS_PER_NODE = resolve_cluster(DEFAULT_CLUSTER).gpus_per_node
 
 def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]:
     """The tool schemas advertised to the model, with run_gpu's GPU cap = node size."""
-    return [WORKSPACE_BASH_TOOL, *FILE_TOOLS, run_gpu_tool(gpus_per_node)]
+    return [WORKSPACE_BASH_TOOL, *FILE_TOOLS, *FETCH_TOOLS, run_gpu_tool(gpus_per_node)]
 
 
 REPRO_TOOLS: list[dict] = build_repro_tools()
@@ -48,6 +51,7 @@ REPRO_TOOLS: list[dict] = build_repro_tools()
 REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
     **FILE_TOOL_HANDLERS,
+    **FETCH_TOOL_HANDLERS,
     **RUN_GPU_HANDLERS,
 }
 

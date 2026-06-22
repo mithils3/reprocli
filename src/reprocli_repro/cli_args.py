@@ -207,8 +207,8 @@ def _add_sampling(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--tool-rounds",
         type=int,
-        default=40,
-        help="Max model turns; the compute-budget guardrail is the real bound (default: 40).",
+        default=150,
+        help="Max model turns; the compute-budget guardrail is the real bound (default: 150).",
     )
     group.add_argument("--max-repeated-tool-calls", type=int, default=2)
     group.add_argument("--request-workers", type=int, default=8)

@@ -90,13 +90,15 @@ Building the environment is YOUR job — nothing is pre-installed except pip:
 - Install with `uv pip`, targeting that venv explicitly — e.g.
   `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>` (`uv` is on PATH;
   the venv also ships pip as a fallback).
-- This node is aarch64 (GH200 Grace-Hopper). The DEFAULT PyPI `torch` wheel for
-  aarch64 is CPU-only — installing `torch` plainly gives you a build with no CUDA.
-  Install a CUDA build by pointing at the matching PyTorch index, e.g.
-  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python torch \
-  --index-url https://download.pytorch.org/whl/cu126` (choose the cuXXX series that
-  matches the paper's torch pin and the node's driver). Honor the paper's pinned
-  torch version — install it as a CUDA build rather than skipping it.
+- This node is aarch64 (GH200 Grace-Hopper). Heads-up: the DEFAULT PyPI `torch`
+  wheel for aarch64 is CPU-only, so `pip install torch` alone gives you a build with
+  no CUDA — you need the CUDA-enabled aarch64 build, which lives on a separate index.
+  Work out the correct install for THIS platform yourself rather than guessing:
+  check the node's GPU driver / CUDA version (e.g. `nvidia-smi` inside a run_gpu
+  step) and the paper's torch pin, then use `fetch_url` to consult the current
+  PyTorch install instructions / wheel index and pick the matching aarch64+CUDA
+  wheel. Honor the paper's pinned torch version — install it as a CUDA build rather
+  than skipping it.
 - Do the torch install and an end-to-end smoke test inside a `run_gpu` step, and
   confirm `torch.cuda.is_available()` is True there before committing to the full
   metered run. A dependency install inside `run_gpu` costs a little GPU budget —
