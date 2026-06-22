@@ -107,8 +107,7 @@ submission, result or not — and a half-finished run produces no gradeable numb
 HOW TO WORK
 ======================================================================
 
-You work entirely through the tools provided (no read_file tool — read files via
-`workspace_bash`). A typical episode:
+You work entirely through the tools provided. A typical episode:
 
 1. Read the reference paper and the MRE target. Form a concrete plan.
 2. Set up the workspace: clone the released code (pin the commit when you can),
