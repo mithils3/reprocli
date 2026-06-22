@@ -47,9 +47,9 @@ module load python/3.11.9
 source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli
 
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID

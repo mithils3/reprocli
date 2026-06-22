@@ -509,7 +509,7 @@ inside it. Pattern B is the reproduction agent's `slurm.py`: the agent owns and
 releases each allocation, so it holds no GPU while reasoning or installing.
 
 Each step inherits the env block the sbatch scripts standardize (caches under
-`/projects/bgnp/msalunkhe/.cache/{vllm,triton,torchinductor}`, NCCL / `TORCH_NCCL_*`
+`/work/nvme/bfvr/msalunkhe/.cache/{vllm,triton,torchinductor}`, NCCL / `TORCH_NCCL_*`
 tuning, `module load python/3.11.9`). The reproduction agent layers a **per-paper
 `uv` venv** on top — never the shared `.venv` — so one paper's dependency install
 can never poison another's.

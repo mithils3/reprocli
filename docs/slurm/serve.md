@@ -47,7 +47,7 @@ local server if none is set (so default behavior is unchanged):
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
-  --vllm-server-url "$(jq -r .base_url /projects/bgnp/msalunkhe/endpoints/minimax_m2.json)" \
+  --vllm-server-url "$(jq -r .base_url /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json)" \
   --model MiniMaxAI/MiniMax-M2.7 --num-prompts 2
 ```
 

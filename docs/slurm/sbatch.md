@@ -12,7 +12,7 @@ Every script opens with an identical block. The SLURM directives differ only in 
 | concern | what the header does |
 |---|---|
 | `set -euo pipefail` | fail fast on any error or unset var |
-| caches | `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `VLLM_CACHE_ROOT` → `/projects/bgnp/msalunkhe/.cache/{torchinductor,triton,vllm}` |
+| caches | `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `VLLM_CACHE_ROOT` → `/work/nvme/bfvr/msalunkhe/.cache/{torchinductor,triton,vllm}` |
 | single-host vLLM | `MASTER_ADDR=127.0.0.1`, `VLLM_HOST_IP=127.0.0.1` |
 | NCCL / Torch tuning | `NCCL_CUMEM_ENABLE=0`, `NCCL_NET_PLUGIN` (default `none`), `OMP_NUM_THREADS=1`, `TORCH_NCCL_*` async-error / heartbeat (`1200s`) |
 | `PYTHONPATH` | prepends `/u/msalunkhe/reprocli/src` |
@@ -21,7 +21,7 @@ Every script opens with an identical block. The SLURM directives differ only in 
 | diagnostics | echoes host + GPU vars, dumps the `CUDA|NCCL|VLLM|SLURM|…` env, runs `nvidia-smi topo -m` |
 
 !!! tip "These paths are operator-specific"
-    The header hard-codes one operator's NCSA paths (`/u/msalunkhe/…`, `/projects/bgnp/msalunkhe/…`). Treat the scripts as a template: the env tuning is reusable, the absolute paths are not.
+    The header hard-codes one operator's NCSA paths (`/u/msalunkhe/…`, `/work/nvme/bfvr/msalunkhe/…`). Treat the scripts as a template: the env tuning is reusable, the absolute paths are not.
 
 ## SLURM directives at a glance
 
@@ -86,7 +86,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
   --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \

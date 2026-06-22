@@ -23,7 +23,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--model",
         required=True,
-        help="HF id or local path, e.g. /projects/bgnp/msalunkhe/MiniMax-M2.7.",
+        help="HF id or local path, e.g. /work/nvme/bfvr/msalunkhe/MiniMax-M2.7.",
     )
     parser.add_argument(
         "--served-model-name",

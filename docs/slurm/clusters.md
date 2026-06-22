@@ -131,13 +131,13 @@ as `HEAD_IP` (see the multi-node warning below).
 
 ### Caches (project-scoped, not `$HOME`)
 
-Compile/runtime caches are pinned under `/projects/bgnp/msalunkhe/.cache/…` so
+Compile/runtime caches are pinned under `/work/nvme/bfvr/msalunkhe/.cache/…` so
 they survive and are shared across jobs rather than filling a home quota:
 
 ```bash
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 ```
 
 ### NCCL / Torch-NCCL tuning

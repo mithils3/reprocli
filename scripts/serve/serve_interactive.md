@@ -16,21 +16,21 @@ source /u/msalunkhe/reprocli/.venv/bin/activate
 export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
 cd /u/msalunkhe/reprocli
 
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 
 python -m reprocli_serve \
-  --model /projects/bgnp/msalunkhe/MiniMax-M2.7 \
+  --model /work/nvme/bfvr/msalunkhe/MiniMax-M2.7 \
   --served-model-name MiniMaxAI/MiniMax-M2.7 \
   --port 8000 \
   --tensor-parallel-size 4 \
-  --endpoint-file /projects/bgnp/msalunkhe/endpoints/minimax_m2.json
+  --endpoint-file /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json
 ```
 
 It prints the routable base URL once `/health` is green and writes the endpoint
 file. From any other node:
 
 ```bash
-curl -f "$(jq -r .base_url /projects/bgnp/msalunkhe/endpoints/minimax_m2.json)/health"
+curl -f "$(jq -r .base_url /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json)/health"
 ```
 
 ## Multi node (e.g. Kimi-K2.6, TP=4 per node, PP=#nodes)
@@ -68,7 +68,7 @@ srun --jobid=$SLURM_JOB_ID --nodes=2 --ntasks=2 --ntasks-per-node=1 \
       --port 8000 --tensor-parallel-size 4 --pipeline-parallel-size 2 \
       --nnodes 2 --node-rank "$SLURM_PROCID" --master-addr '"$HEAD_IP"' \
       --advertise-ip '"$HEAD_IP"' \
-      --endpoint-file /projects/bgnp/msalunkhe/endpoints/kimi_k2_6.json \
+      --endpoint-file /work/nvme/bfvr/msalunkhe/endpoints/kimi_k2_6.json \
       "${H[@]}"
   '
 ```
