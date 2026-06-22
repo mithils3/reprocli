@@ -90,7 +90,11 @@ the plain command. You install only the paper's *remaining* dependencies on top:
   GPU. Treat the paper's torch pin as already satisfied. If a repo's setup.py /
   requirements would pull torch in transitively, install it with `--no-deps` and add
   the remaining deps explicitly, or drop the torch pin — keep the container's torch.
-  Confirm `torch.cuda.is_available()` is True on a GPU step before the real run.
+- `torch.cuda.is_available()` is False on a plain shell command (no GPU is attached
+  there) and only True inside a `run_gpu` step — that is where the GPU lives. A False
+  on a CPU command does NOT mean the torch build is CPU-only; it is the same CUDA
+  build either way, so never reinstall torch to "fix" it. Confirm availability is
+  True from inside a `run_gpu` step before the real run.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
@@ -111,7 +115,10 @@ or not you have a result — so spend deliberately:
 HOW TO WORK
 ======================================================================
 
-You work entirely through the tools provided. A typical episode:
+You work entirely through the tools provided (there is no read_file tool — read
+files with `workspace_bash`: `grep -n` to locate, then `sed -n 'A,Bp'` for just
+the lines you need; never `cat` a whole large file repeatedly into context). A
+typical episode:
 
 1. Read the reference paper and the MRE target. Form a concrete plan.
 2. Set up the workspace: clone the released code (pin the commit when you can),

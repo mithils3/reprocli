@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro import evidence
 from reprocli_repro.context import ExecutionContext
-from reprocli_repro.tools.files import apply_patch, read_file, write_file
+from reprocli_repro.tools.files import apply_patch, write_file
 from reprocli_repro.tools.workspace_bash import workspace_bash
 
 
@@ -23,15 +23,10 @@ def _ctx(root: Path) -> ExecutionContext:
 
 
 class FileToolTests(unittest.TestCase):
-    def test_read_workspace_and_reference_but_not_write_reference(self):
+    def test_reference_copy_is_never_writable(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            (ctx.workspace / "note.txt").write_text("ws body")
             (ctx.reference / "paper.tex").write_text("ref body")
-            self.assertEqual(read_file({"path": "note.txt"}, ctx)["text"], "ws body")
-            # reference is readable via absolute path within the bundle...
-            self.assertEqual(read_file({"path": str(ctx.reference / "paper.tex")}, ctx)["text"], "ref body")
-            # ...but never writable.
             blocked = write_file({"path": str(ctx.reference / "paper.tex"), "content": "x"}, ctx)
             self.assertFalse(blocked["ok"])
             self.assertIn("writable", blocked["error"])
@@ -43,12 +38,11 @@ class FileToolTests(unittest.TestCase):
             self.assertTrue(res["ok"])
             self.assertEqual((ctx.workspace / "src" / "model.py").read_text(), "x = 1\n")
 
-    def test_path_escape_is_rejected(self):
+    def test_write_path_escape_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            self.assertFalse(read_file({"path": "../../etc/passwd"}, ctx)["ok"])
-            self.assertFalse(read_file({"path": "/etc/passwd"}, ctx)["ok"])
             self.assertFalse(write_file({"path": "../escape.txt", "content": "x"}, ctx)["ok"])
+            self.assertFalse(write_file({"path": "/etc/passwd", "content": "x"}, ctx)["ok"])
 
 
 class ApplyPatchTests(unittest.TestCase):

@@ -1,9 +1,11 @@
 """Repro toolset — the agent's hands, assembled and dispatched.
 
-The reproduction agent acts on its episode through four tools:
+The reproduction agent acts on its episode through these tools:
 
-* ``workspace_bash`` -- cwd-confined shell (clone, venv, installs, run CPU work),
-* ``read_file`` / ``write_file`` / ``apply_patch`` -- path-confined file ops,
+* ``workspace_bash`` -- cwd-confined shell (clone, venv, installs, run CPU work,
+  **and all file reading** via ``grep``/``sed``/``cat`` -- there is no read_file
+  tool: targeted shell reads are far cheaper than dumping whole files to context),
+* ``write_file`` / ``apply_patch`` -- path-confined file writes/edits,
 * ``run_gpu`` -- the one metered path to a GPU (JIT ``salloc``, budget-charged).
 
 ``REPRO_TOOLS`` is the schema list advertised to the model (wired onto

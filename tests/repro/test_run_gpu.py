@@ -146,7 +146,7 @@ class GpuChoiceTests(unittest.TestCase):
 class DispatchTests(unittest.TestCase):
     def test_run_gpu_is_advertised_and_routed(self):
         names = {t["function"]["name"] for t in REPRO_TOOLS}
-        self.assertEqual(names, {"workspace_bash", "read_file", "write_file", "apply_patch", "run_gpu"})
+        self.assertEqual(names, {"workspace_bash", "write_file", "apply_patch", "run_gpu"})
 
     def test_execute_routes_run_gpu_through_context(self):
         call = {"function": {"name": "run_gpu", "arguments": {"command": "python x.py", "minutes": 5}}}

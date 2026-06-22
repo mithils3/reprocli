@@ -19,10 +19,10 @@ exactly the same environment as CPU-side setup. When the cluster profile sets
 wrap instead runs the step *inside* that image via ``apptainer exec --nv`` so a
 GH200-correct CUDA PyTorch is already present (the bare aarch64 host only resolves
 CPU torch wheels). ``--nv`` passes the GPU through; we bind the scratch root
-(workspace/venv/reference) and the host ``uv`` binary into the container. The
-hardening flags (``--containall``/``--cleanenv``) are the Phase-8 security
-boundary and are intentionally still off, so $HOME/env (HF caches, tokens) and
-``uv`` keep working for trusted M1–M3 papers.
+(workspace/venv/reference) and the host ``uv`` binary into the container. We run
+with ``--cleanenv`` (the login shell's ``LD_LIBRARY_PATH``/``PYTHONPATH`` otherwise
+leak in and shadow the image's own libs/packages); ``--containall``/``--no-home``
+stay off so $HOME (HF caches) and binds keep working for trusted M1–M3 papers.
 """
 
 from __future__ import annotations
@@ -37,18 +37,26 @@ if TYPE_CHECKING:
 
 
 def _apptainer_prefix(cluster: "Cluster", workspace: Path | str) -> str:
-    """``apptainer exec --nv ...`` prefix that runs a step inside the NGC base image.
+    """``apptainer exec --nv --cleanenv ...`` prefix that runs a step in the NGC image.
 
-    Binds the scratch root (so the per-paper workspace/venv/reference are visible
-    inside the container) and the host ``uv`` binary (NGC images ship ``pip`` but
-    not ``uv``, and the prompt steers the agent to ``uv pip``).
+    ``--cleanenv`` is mandatory for correctness, not just hygiene: the orchestrator's
+    login shell exports ``LD_LIBRARY_PATH`` (spack/CUDA modules) and ``PYTHONPATH``,
+    and apptainer would otherwise leak them into the container — the host libs then
+    shadow the image's own (e.g. the container ``git``/``libcurl`` loading an older
+    host ``libnghttp2`` → ``undefined symbol`` crash) and host ``PYTHONPATH`` could
+    drag a CPU ``torch`` onto ``sys.path``. ``--cleanenv`` gives the container its
+    own environment; ``$HOME`` is still mounted (no ``--no-home``) so ``~/.cache``
+    (HF) works, and ``uv`` is bound onto the container's default PATH.
+
+    Binds the scratch root (workspace/venv/reference visible) and the host ``uv``
+    binary (NGC images ship ``pip`` but not ``uv``, and the prompt uses ``uv pip``).
     """
     root = cluster.scratch_root or str(Path(workspace).parent)
     binds = ["--bind", shlex.quote(str(root))]
     uv = shutil.which("uv")
     if uv:
         binds += ["--bind", f"{shlex.quote(uv)}:/usr/local/bin/uv"]
-    return "apptainer exec --nv " + " ".join(binds) + " " + shlex.quote(str(cluster.apptainer_image))
+    return "apptainer exec --nv --cleanenv " + " ".join(binds) + " " + shlex.quote(str(cluster.apptainer_image))
 
 
 def env_inner(cluster: "Cluster | None", workspace: Path | str, command: str) -> str:
