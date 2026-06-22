@@ -12,8 +12,8 @@ from reprocli_repro import evidence
 from reprocli_repro.cluster import resolve_cluster
 from reprocli_repro.context import Budget, ExecutionContext
 from reprocli_repro.slurm import StepResult
-from reprocli_repro.tools import REPRO_TOOLS, execute_repro_tool_call
-from reprocli_repro.tools.run_gpu import run_gpu
+from reprocli_repro.tools import REPRO_TOOLS, build_repro_tools, execute_repro_tool_call
+from reprocli_repro.tools.run_gpu import run_gpu, run_gpu_tool
 
 
 def _ctx(root: Path, *, budget_hours: float = 8.0) -> ExecutionContext:
@@ -107,6 +107,40 @@ class RunGpuGuardrailTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
             self.assertFalse(run_gpu({"command": "  "}, ctx)["ok"])
+
+
+class GpuChoiceTests(unittest.TestCase):
+    def test_schema_max_gpus_tracks_node_capacity(self):
+        for cap in (4, 8):
+            schema = run_gpu_tool(cap)["function"]["parameters"]["properties"]["gpus"]
+            self.assertEqual(schema["maximum"], cap)
+            self.assertEqual(schema["minimum"], 1)
+        # build_repro_tools threads the cap through to the advertised run_gpu tool.
+        tool = next(t for t in build_repro_tools(8) if t["function"]["name"] == "run_gpu")
+        self.assertEqual(tool["function"]["parameters"]["properties"]["gpus"]["maximum"], 8)
+
+    def test_agent_gpu_choice_is_honored(self):
+        captured = {}
+
+        def fake_run_step(cluster, workspace, cmd, **kw):
+            captured.update(kw)
+            return _step("ok", "")
+
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))  # deltaai: 4 GPU/node
+            with mock.patch("reprocli_repro.tools.run_gpu.run_step", side_effect=fake_run_step):
+                res = run_gpu({"command": "python train.py", "gpus": 3, "minutes": 10}, ctx)
+            self.assertEqual(captured["gpus"], 3)
+            self.assertEqual(res["gpus"], 3)
+            self.assertNotIn("note", res)
+
+    def test_over_capacity_request_is_clamped_and_noted(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))  # deltaai: cap 4
+            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("ok", "")):
+                res = run_gpu({"command": "python train.py", "gpus": 9, "minutes": 10}, ctx)
+            self.assertEqual(res["gpus"], 4)
+            self.assertIn("clamped", res["note"])
 
 
 class DispatchTests(unittest.TestCase):

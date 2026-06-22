@@ -127,6 +127,9 @@ The agent loops against the brain through its toolset:
 - **`run_gpu`** — the one metered path to a GPU: a JIT `salloc -A betw-dtai-gh -p
   ghx4 --gpus=K --time=MIN srun … bash -lc 'cd <ws> && module load … && <cmd>'`,
   charged on the command's **run time** (queue wait excluded), released on exit.
+  The **agent chooses K** (1–4 on deltaai, capped at the node's GPU count) and the
+  wall cap per step; the operator only sets the entitlements (account / partition /
+  node type) via `--cluster`.
 
 Everything lands under the run bundle (the S6→S7 contract the auditor reads):
 

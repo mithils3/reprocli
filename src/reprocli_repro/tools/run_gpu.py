@@ -69,7 +69,9 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
     command = str(arguments.get("command") or "").strip()
     if not command:
         return {"ok": False, "tool": "run_gpu", "error": "Missing GPU command to run."}
-    gpus = _bounded(arguments.get("gpus"), DEFAULT_GPUS, ctx.cluster.gpus_per_node)
+    cap = ctx.cluster.gpus_per_node
+    gpus = _bounded(arguments.get("gpus"), DEFAULT_GPUS, cap)
+    clamp_note = _clamp_note(arguments.get("gpus"), gpus, cap)
     minutes = _bounded(arguments.get("minutes"), DEFAULT_MINUTES, MAX_MINUTES)
     hw = ctx.cluster.hw
 
@@ -98,7 +100,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
     remaining = ctx.budget.consume(cost)
     _record(ctx, command, gpus, minutes, hw, step=step, run_seconds=run_seconds, cost=cost)
 
-    return {
+    result = {
         "ok": step.ok,
         "tool": "run_gpu",
         "command": command,
@@ -115,6 +117,9 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         "truncated": len(step.stdout) > RUN_FILE_DEFAULT_CHARS
         or len(_clean(step.stderr)) > RUN_FILE_DEFAULT_CHARS,
     }
+    if clamp_note:
+        result["note"] = clamp_note
+    return result
 
 
 # --------------------------------------------------------------------------- #
@@ -203,35 +208,61 @@ def _bounded(value: Any, default: int, maximum: int) -> int:
         return default
 
 
-RUN_GPU_TOOL = function_tool(
-    "run_gpu",
-    "Provision a just-in-time GPU allocation and run ONE command on it (training, "
-    "evaluation, or scoring). GPUs are not held while you reason or install -- only "
-    "for this command -- and every GPU-second is charged against the paper's "
-    "H100-hour budget, so request the fewest gpus and minutes that suffice and do "
-    "all CPU work (clone, venv, deps, edits) with workspace_bash first. The command "
-    "runs with the workspace as its working directory; cost and remaining budget are "
-    "returned and recorded to evidence/.",
-    {
-        "command": {
-            "type": "string",
-            "description": "The GPU command to run (e.g. `python train.py ...`).",
+def _clamp_note(requested: Any, effective: int, cap: int) -> str | None:
+    """Tell the agent when its requested GPU count was clamped to the node cap."""
+    if requested in (None, ""):
+        return None
+    try:
+        asked = int(requested)
+    except (TypeError, ValueError):
+        return None
+    if asked != effective:
+        return f"requested gpus={asked} clamped to {effective} (node capacity is {cap})."
+    return None
+
+
+def run_gpu_tool(gpus_per_node: int) -> dict:
+    """Build the ``run_gpu`` schema, advertising this cluster's per-node GPU cap.
+
+    The cap is dynamic because each cluster profile has a different
+    ``gpus_per_node``; baking it into ``maximum`` lets the model pick a valid GPU
+    count for the actual substrate instead of guessing and getting clamped.
+    """
+    return function_tool(
+        "run_gpu",
+        "Provision a just-in-time GPU allocation and run ONE command on it (training, "
+        "evaluation, or scoring). GPUs are not held while you reason or install -- only "
+        "for this command -- and every GPU-second is charged against the paper's "
+        "H100-hour budget, so request the fewest gpus and minutes that suffice and do "
+        "all CPU work (clone, venv, deps, edits) with workspace_bash first. YOU choose "
+        f"how many GPUs to allocate for this step: 1 to {gpus_per_node} on one node. The "
+        "command runs with the workspace as its working directory; cost and remaining "
+        "budget are returned and recorded to evidence/.",
+        {
+            "command": {
+                "type": "string",
+                "description": "The GPU command to run (e.g. `python train.py ...`).",
+            },
+            "gpus": {
+                "type": "integer",
+                "default": DEFAULT_GPUS,
+                "minimum": 1,
+                "maximum": gpus_per_node,
+                "description": (
+                    f"How many GPUs to allocate for this single step (1-{gpus_per_node}, "
+                    "one node). More GPUs finish faster but cost proportionally more budget."
+                ),
+            },
+            "minutes": {
+                "type": "integer",
+                "default": DEFAULT_MINUTES,
+                "minimum": 1,
+                "maximum": MAX_MINUTES,
+                "description": "Wallclock cap (SLURM --time); also the budget pre-authorization.",
+            },
         },
-        "gpus": {
-            "type": "integer",
-            "default": DEFAULT_GPUS,
-            "minimum": 1,
-            "description": "GPUs for this single step (bounded by the node's capacity).",
-        },
-        "minutes": {
-            "type": "integer",
-            "default": DEFAULT_MINUTES,
-            "minimum": 1,
-            "maximum": MAX_MINUTES,
-            "description": "Wallclock cap (SLURM --time); also the budget pre-authorization.",
-        },
-    },
-    ["command"],
-)
+        ["command"],
+    )
+
 
 RUN_GPU_HANDLERS = {"run_gpu": run_gpu}

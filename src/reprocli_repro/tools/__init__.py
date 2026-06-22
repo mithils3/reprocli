@@ -24,12 +24,24 @@ from reprocli_vllm.config.config import TOOL_RESULT_MAX_CHARS
 from reprocli_vllm.tools.result_limits import is_transient_error, truncate_tool_result
 from reprocli_vllm.tools.web_tools import parse_tool_arguments
 
+from reprocli_repro.cluster import DEFAULT_CLUSTER, resolve_cluster
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
-from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, RUN_GPU_TOOL
+from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
-REPRO_TOOLS: list[dict] = [WORKSPACE_BASH_TOOL, *FILE_TOOLS, RUN_GPU_TOOL]
+# The per-node GPU cap baked into run_gpu's schema is cluster-specific; cli_args
+# rebuilds the toolset with the resolved cluster's gpus_per_node. This default
+# covers the common case (the default cluster profile).
+_DEFAULT_GPUS_PER_NODE = resolve_cluster(DEFAULT_CLUSTER).gpus_per_node
+
+
+def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]:
+    """The tool schemas advertised to the model, with run_gpu's GPU cap = node size."""
+    return [WORKSPACE_BASH_TOOL, *FILE_TOOLS, run_gpu_tool(gpus_per_node)]
+
+
+REPRO_TOOLS: list[dict] = build_repro_tools()
 
 REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
@@ -64,4 +76,4 @@ def _run_tool_call(call: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any
         return {"ok": False, "tool": name, "error": f"{type(exc).__name__}: {exc}"}
 
 
-__all__ = ["REPRO_TOOLS", "REPRO_TOOL_HANDLERS", "execute_repro_tool_call"]
+__all__ = ["REPRO_TOOLS", "REPRO_TOOL_HANDLERS", "build_repro_tools", "execute_repro_tool_call"]
