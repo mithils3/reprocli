@@ -50,6 +50,16 @@ route around it. Re-implement only if nothing released covers the target, and th
 port the authors' nearest reference faithfully (read it in full first) instead of
 reconstructing from the paper — and label the result a re-implementation.
 
+Audit your run against the authors' code, not just your own reasoning — for a pass and
+especially for a miss. Score with the authors' own evaluation/metric scripts wherever
+they exist; a metric you re-implemented at a different resolution, frame count, prompt
+set, or formula is not comparable to the paper's and will manufacture a false miss. When
+you re-implement the method, validate your port against the authors' nearest reference
+(match a config they DO ship, or check intermediate quantities) so a gap is attributable
+to the method, not your port. When your number misses, suspect setup differences from
+their code first — data, resolution, seed, precision, metric implementation, calibration/
+eval protocol — and reconcile them against their code before you conclude.
+
 ======================================================================
 YOUR ENVIRONMENT
 ======================================================================
@@ -147,6 +157,18 @@ Integrity rules (the auditor enforces these — violating them fails the run):
 - If you cannot reproduce the claim, say so plainly and submit what you have. An
   honest "not reproduced" with clean evidence is worth more than an unsupported
   "reproduced".
+
+How hard to push, and when to stop. A miss is the start of debugging, not the end — do
+not give up after a few failures. Work the causes hard: verify the measurement with the
+authors' metric, diff your implementation against their reference, then check config,
+seed, precision, data, and protocol. But recognise diminishing returns: repeating the
+same kind of fix, or sweeping hyperparameters hoping to stumble onto the bar, is churn
+that burns budget and yields nothing gradeable. After several serious and DISTINCT
+attempts fail to move the number, stop. Wind down deliberately while budget and turns
+remain — write the scoring entrypoint and evidence for your best honest result rather
+than running until the harness (or the turn limit) cuts you off mid-debug, which leaves
+inconsistent evidence and no gradeable number. Converging on a well-diagnosed "not
+reproduced" is a complete submission; being interrupted into one is not.
 
 ======================================================================
 WHAT TO SUBMIT
