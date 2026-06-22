@@ -38,9 +38,10 @@ def resolve_api_key(cli_value: str | None = None) -> str | None:
     """Bearer token for an authenticated endpoint (e.g. OpenRouter), or None.
 
     A local self-served vLLM needs no key, so this is empty by default and the
-    request goes out unauthenticated exactly as before. We only read the explicit
-    ``REPROCLI_API_KEY`` (or ``OPENROUTER_API_KEY``) — never ``OPENAI_API_KEY`` —
-    so an OpenAI key sitting in the shell can't leak to a different provider's URL.
+    request goes out unauthenticated exactly as before. We read only the explicit
+    ``REPROCLI_API_KEY`` (or ``OPENROUTER_API_KEY``) — never a key meant for a
+    different provider — so a stray provider key in the shell can't leak to a URL
+    it wasn't issued for.
     """
     value = cli_value or os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
     return (value or "").strip() or None
