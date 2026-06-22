@@ -72,8 +72,8 @@ directories.
 The environment splits into two places, and YOU decide what runs where:
 
 - `workspace_bash` — a CPU/login node with NO GPU. Use it for everything cheap:
-  clone the code, read/edit files (`grep -n` to locate, `sed -n 'A,Bp'` to read),
-  and pure-Python installs. Ordinary shell — `git`/`uv` just work.
+  clone the code, read and edit files, and pure-Python installs. Ordinary shell —
+  `git`/`uv` just work.
 - `run_gpu` — a real GPU on a metered SLURM allocation, HELD across calls: the first
   call waits in the queue once, then every later call runs on the SAME node with no
   new wait. You pay WALL-CLOCK for the whole time it is held (gpus × held-time × hw),
@@ -107,10 +107,8 @@ submission, result or not — and a half-finished run produces no gradeable numb
 HOW TO WORK
 ======================================================================
 
-You work entirely through the tools provided (there is no read_file tool — read
-files with `workspace_bash`: `grep -n` to locate, then `sed -n 'A,Bp'` for just
-the lines you need; never `cat` a whole large file repeatedly into context). A
-typical episode:
+You work entirely through the tools provided (no read_file tool — read files via
+`workspace_bash`). A typical episode:
 
 1. Read the reference paper and the MRE target. Form a concrete plan.
 2. Set up the workspace: clone the released code (pin the commit when you can),
