@@ -71,70 +71,37 @@ directories.
 
 The environment splits into two places, and YOU decide what runs where:
 
-- `workspace_bash` runs on a CPU/login node with NO GPU attached. Use it for
-  everything cheap: clone the released code, inspect and edit files (read with
-  `grep -n` to locate, then `sed -n 'A,Bp'` for just the lines you need), and any
-  pure-Python dependency installs. It is an ordinary shell — nothing is auto-loaded,
-  so `git`, `uv`, and the usual tools just work. `torch.cuda.is_available()` is
-  False here only because there is no GPU on this node, not because of the build.
-- `run_gpu` provisions a real GPU (a metered SLURM allocation) and is where the
-  CUDA toolkit and driver live. Do your GPU-dependent work here: install a
-  CUDA-enabled PyTorch, build any custom CUDA extensions, and run the experiment.
-  The allocation is HELD across calls — the first `run_gpu` acquires a GPU node (you
-  may wait in the queue once) and every later `run_gpu` runs on the SAME node with no
-  new queue wait, so install → verify CUDA → run as successive `run_gpu` calls rather
-  than expecting a fresh node each time. You are billed WALL-CLOCK for the entire time
-  the node is held (including while you reason or install between commands), so set
-  `release=true` the moment you are done with the GPU to stop the meter; re-acquire by
-  calling `run_gpu` again if you need it later. `gpus`/`minutes` take effect only on
-  the call that STARTS the session (gpus = how many to hold, minutes = its max
-  lifetime); they are fixed until you release and start a new one.
+- `workspace_bash` — a CPU/login node with NO GPU. Use it for everything cheap:
+  clone the code, read/edit files (`grep -n` to locate, `sed -n 'A,Bp'` to read),
+  and pure-Python installs. Ordinary shell — `git`/`uv` just work.
+- `run_gpu` — a real GPU on a metered SLURM allocation, HELD across calls: the first
+  call waits in the queue once, then every later call runs on the SAME node with no
+  new wait. You pay WALL-CLOCK for the whole time it is held (gpus × held-time × hw),
+  so `release=true` the moment you are done and re-request when you need it again.
+  Behave like a human on a shared cluster: grab a small, quick allocation (e.g. 1 GPU
+  for 30 min — small/short allocations are granted fastest) to install deps and
+  smoke-test, release it, then request what the real run actually needs. `gpus`/
+  `minutes` are set when a session starts and fixed until you release it.
 
-Building the environment is YOUR job — nothing is pre-installed except pip:
-
-- A clean, isolated per-paper venv already exists at {WORKSPACE_DIR}/.venv (empty
-  apart from pip/setuptools/wheel, with no system packages leaking in). Install into
-  it and always run Python through it (e.g. {WORKSPACE_DIR}/.venv/bin/python), never
-  a bare system `python`. Do not run `python -m venv` or `ensurepip` — it exists.
-- Install with `uv pip`, targeting that venv explicitly — e.g.
-  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>` (`uv` is on PATH;
-  the venv also ships pip as a fallback).
-- This node is aarch64 (GH200 Grace-Hopper). Heads-up: the DEFAULT PyPI `torch`
-  wheel for aarch64 is CPU-only, so `pip install torch` alone gives you a build with
-  no CUDA — you need the CUDA-enabled aarch64 build, which lives on a separate index.
-  Work out the correct install for THIS platform yourself rather than guessing:
-  check the node's GPU driver / CUDA version (e.g. `nvidia-smi` inside a run_gpu
-  step) and the paper's torch pin, then use `fetch_url` to consult the current
-  PyTorch install instructions / wheel index and pick the matching aarch64+CUDA
-  wheel. Honor the paper's pinned torch version — install it as a CUDA build rather
-  than skipping it.
-- Do the torch install and an end-to-end smoke test inside `run_gpu`, and confirm
-  `torch.cuda.is_available()` is True there before committing to the full metered run.
-  Because the node is held, the install, the CUDA check, and the run happen on the
-  same allocation back-to-back — no re-queue between them — but you pay wall-clock the
-  whole time it is held, so do the clone and any pure-Python installs in
-  `workspace_bash` first, and `release=true` as soon as the GPU work for now is done.
-  The venv lives on disk, so packages you install in one `run_gpu` step persist into
-  the next even across a release/re-acquire.
+Build the environment yourself — a clean per-paper venv exists at
+{WORKSPACE_DIR}/.venv (only pip). Always run Python through it
+({WORKSPACE_DIR}/.venv/bin/python) and install with
+`uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>`. Install PyTorch
+(the version the paper pins) from inside a `run_gpu` step with `--torch-backend=auto`
+— uv detects the GPU and picks the right CUDA build — and confirm
+`torch.cuda.is_available()` is True before the full run. The venv lives on disk, so
+packages persist across a release/re-acquire.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
 ======================================================================
 
-You have {BUDGET_H100_HOURS} H100-equivalent hours for this episode. The GPU
-allocation is billed by WALL-CLOCK while it is held — gpus x (time the node is held)
-x hardware-multiplier — so the meter runs from the moment you acquire it until you
-release it, including any reasoning or installing you do in between. When the budget
-is exhausted the harness stops you and forces your final submission, whether or not
-you have a result — so spend deliberately:
-
-- Release the GPU (`run_gpu` with release=true) the moment you are not actively using
-  it; do your thinking, edits, and pure-Python installs with the GPU released.
-- Build and debug on the cheapest path first (smallest model/config, a few steps,
-  CPU or a single GPU) before committing to the full metered run.
-- Confirm the code runs end-to-end on a tiny slice before scaling to the real MRE.
-- Reserve enough budget to run the scoring experiment to completion; a half-finished
-  run produces no gradeable number.
+You have {BUDGET_H100_HOURS} H100-equivalent hours. The meter runs for the whole
+time the GPU is held (gpus × held-time × hw), not just while a command runs — so
+release between GPU bursts, debug on the cheapest path first (tiny slice, fewest
+gpus) before the full run, and reserve enough to run the scoring experiment to
+completion. When the budget is exhausted the harness stops you and forces your final
+submission, result or not — and a half-finished run produces no gradeable number.
 
 ======================================================================
 HOW TO WORK
