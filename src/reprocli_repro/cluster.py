@@ -53,12 +53,13 @@ _PROFILES: dict[str, Cluster] = {
         partition="ghx4",
         modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
-        # GH200 is aarch64: the bare host only resolves CPU torch wheels (no
-        # aarch64 CUDA wheels exist for older pins). Running every step inside a
-        # shared NGC PyTorch ARM .sif gives a GH200-correct CUDA torch out of the
-        # box; the venv inherits it via --system-site-packages. Override per-run
-        # with --apptainer-image / $REPRO_APPTAINER_SIF.
-        apptainer_image="/sw/user/NGC_containers/pytorch_25.08-py3.sif",
+        # GH200 is aarch64. We no longer wrap steps in an NGC container: the agent
+        # installs a CUDA-enabled torch into the per-paper venv from the matching
+        # PyTorch index (the *default* PyPI aarch64 wheel is CPU-only — the trap)
+        # and runs the install + experiment inside a `run_gpu` step, where the GPU
+        # and the `module load`ed CUDA toolkit live. Set --apptainer-image /
+        # $REPRO_APPTAINER_SIF to opt back into the container path (apptainer_image
+        # defaults to None → bare host + on-GPU module load).
     ),
     "delta-h200": Cluster(
         name="delta-h200",

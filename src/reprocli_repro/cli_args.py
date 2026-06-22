@@ -162,9 +162,10 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="NGC base .sif every step runs inside (apptainer exec --nv); the venv "
-        "inherits its CUDA PyTorch. Overrides the profile (DeltaAI defaults to a "
-        "shared NGC PyTorch ARM sif). Defaults to $REPRO_APPTAINER_SIF.",
+        help="Opt-in NGC base .sif every step runs inside (apptainer exec --nv); the "
+        "venv inherits its CUDA PyTorch. Off by default — the agent installs a CUDA "
+        "torch into the venv instead. Set this (or $REPRO_APPTAINER_SIF) to use the "
+        "container path.",
     )
     group.add_argument(
         "--modules",

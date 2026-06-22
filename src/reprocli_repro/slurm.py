@@ -9,10 +9,13 @@ released the instant the command exits — nothing is pre-held:
 ``<account>/<partition>`` come from the cluster profile (``cluster.py``);
 ``<k>``/``<minutes>`` come from the model's ``run_gpu`` arguments. ``--time`` is
 the budget pre-authorization (SLURM hard-kills at the wall limit), so the meter
-can refuse a step before it launches. The ``srun`` payload (the ``cd`` + module
-load) is built by ``env.exec_argv``, so a GPU step runs in exactly the same
-tool-enforced CUDA environment as the CPU-side ``workspace_bash`` — never the bare
-host.
+can refuse a step before it launches.
+
+The ``srun`` payload (the ``cd`` + the on-GPU ``module load``) is built by
+``env.exec_argv(..., on_gpu=True)`` — so a GPU step gets the CUDA toolkit that the
+CPU-side ``workspace_bash`` deliberately omits (loading CUDA modules onto the
+login shell breaks ``git``). This is where the agent's CUDA-torch install and the
+experiment run.
 
 ``build_command`` is pure (the gate asserts the exact argv); ``run_step`` executes
 it and times the *run* so ``budget.charge`` bills elapsed, not queue wait. The
@@ -70,7 +73,7 @@ def build_command(
         f"--gpus={int(gpus)}",
         f"--time={int(minutes)}",
         "srun", "--ntasks=1",
-        *env.exec_argv(cluster, workspace, cmd),
+        *env.exec_argv(cluster, workspace, cmd, on_gpu=True),
     ]
 
 

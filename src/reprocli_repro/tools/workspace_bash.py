@@ -1,13 +1,15 @@
 """Workspace-scoped shell for the reproduction agent.
 
-The agent does its real work here: ``git clone`` the released code into the
-workspace, install deps into the per-paper venv, run the experiment. The shell's
-cwd is pinned to ``ctx.workspace`` (the same root the file tools confine to) and
-every command is appended to ``evidence/commands.log`` so the auditor can re-trace
-exactly what ran. The command runs through the tool-enforced environment seam
-(``env.exec_argv``): the agent issues a plain command and the tool wraps it to
-``module load`` the cluster's CUDA modules, so a dependency install can never land
-in the bare CPU env.
+The agent does its CPU-side work here: ``git clone`` the released code, inspect and
+edit files, build the venv, install pure-Python deps. This runs on the
+orchestrator/login node, which has **no GPU** — the metered ``run_gpu`` tool is
+where the GPU, the CUDA toolkit, and the CUDA-torch install + experiment run live.
+The shell's cwd is pinned to ``ctx.workspace`` (the same root the file tools
+confine to) and every command is appended to ``evidence/commands.log`` so the
+auditor can re-trace exactly what ran. Commands run through the env seam
+(``env.exec_argv`` with ``on_gpu=False``): a plain ``cd <ws> && <cmd>``, a *clean*
+shell with no ``module load`` — loading the CUDA modules here would shadow the
+system ``git``'s libcurl and break ``git clone``, and CPU setup needs no CUDA libs.
 """
 
 from __future__ import annotations

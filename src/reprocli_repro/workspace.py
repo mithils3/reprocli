@@ -12,10 +12,11 @@ materializes everything the agent needs *before* the loop starts:
   - the durable ``evidence/`` sinks.
 
 It deliberately does **not** clone the paper's code or install its dependencies:
-that is the agent's job through ``workspace_bash`` (clone) into this venv. The venv
-itself is built through the env seam, so on DeltaAI it is created *inside* the NGC
-``apptainer_image`` (``--system-site-packages`` forced on) and inherits the image's
-CUDA PyTorch.
+that is the agent's job. It clones via ``workspace_bash`` and installs into this
+venv — including a CUDA-enabled torch — inside a ``run_gpu`` step (see
+``prompts/prompt_reproduce.txt``). The venv is created **clean** (no
+``--system-site-packages``) so nothing from the host/login site-packages leaks
+onto ``sys.path`` and shadows what the agent installs.
 """
 
 from __future__ import annotations
@@ -63,22 +64,18 @@ def build_venv(
 ) -> dict:
     """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
 
-    Built through the env seam (``env.exec_argv``) so the venv's base Python is the
-    same CUDA env the experiment runs in, not the orchestrator's. ``--system-site-
-    packages`` is normally **off** on the bare host on purpose: inheriting the
-    host's site-packages is exactly how a CPU ``torch`` leaks in. But when the
-    cluster runs steps inside an NGC ``apptainer_image``, the venv's base Python IS
-    the container's, so we **force it on** — the venv then inherits the image's
-    GH200-correct CUDA PyTorch and the agent installs only the paper's *other*
-    deps on top (it must not reinstall torch; see ``prompts/prompt_reproduce.txt``).
+    Built through the env seam (``env.exec_argv``) on the CPU-setup path. ``--system-
+    site-packages`` is **off**: inheriting the host/login site-packages is exactly
+    how a CPU ``torch`` (or the user's ``~/.local`` packages) leaks onto ``sys.path``
+    and shadows what the agent installs. The venv starts empty and the agent installs
+    everything it needs — including a CUDA-enabled torch from the matching PyTorch
+    index, inside a ``run_gpu`` step (see ``prompts/prompt_reproduce.txt``).
 
     ``--seed`` is **on by default** so the venv ships with ``pip``/``setuptools``/
     ``wheel`` already present: agents (and build backends that shell out to pip)
     otherwise hit a venv with no ``pip`` and waste rounds bootstrapping it via
     ``ensurepip``.
     """
-    if cluster is not None and cluster.apptainer_image:
-        system_site_packages = True
     venv_path = Path(workspace) / ".venv"
     parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
     if system_site_packages:

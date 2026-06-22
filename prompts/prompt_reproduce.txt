@@ -69,32 +69,40 @@ Read the reference copy for ground truth about the method, hyperparameters, and 
 exact reported numbers. Do your work in the workspace. Never write outside these
 directories.
 
-The execution environment is handled FOR you. Every command you run through the
-shell tool, and every GPU step, runs inside a prebuilt NGC PyTorch container (the
-harness wraps each command in `apptainer exec --nv` for you) — so a CUDA-enabled
-PyTorch is ALREADY installed, and on a GPU step `torch.cuda.is_available()` is
-already True. Do NOT run `module load`, `srun`, or `apptainer` yourself; just run
-the plain command. You install only the paper's *remaining* dependencies on top:
+The environment splits into two places, and YOU decide what runs where:
 
-- The per-paper venv at {WORKSPACE_DIR}/.venv is already created and inherits the
-  container's packages (made with --system-site-packages), so it already sees the
-  base PyTorch/CUDA stack. Install into it and run Python through it (e.g.
-  .venv/bin/python), never a bare system `python`.
+- `workspace_bash` runs on a CPU/login node with NO GPU attached. Use it for
+  everything cheap: clone the released code, inspect and edit files (read with
+  `grep -n` to locate, then `sed -n 'A,Bp'` for just the lines you need), and any
+  pure-Python dependency installs. It is an ordinary shell — nothing is auto-loaded,
+  so `git`, `uv`, and the usual tools just work. `torch.cuda.is_available()` is
+  False here only because there is no GPU on this node, not because of the build.
+- `run_gpu` provisions a real GPU (a metered SLURM allocation) and is where the
+  CUDA toolkit and driver live. Do your GPU-dependent work here: install a
+  CUDA-enabled PyTorch, build any custom CUDA extensions, and run the experiment.
+
+Building the environment is YOUR job — nothing is pre-installed except pip:
+
+- A clean, isolated per-paper venv already exists at {WORKSPACE_DIR}/.venv (empty
+  apart from pip/setuptools/wheel, with no system packages leaking in). Install into
+  it and always run Python through it (e.g. {WORKSPACE_DIR}/.venv/bin/python), never
+  a bare system `python`. Do not run `python -m venv` or `ensurepip` — it exists.
 - Install with `uv pip`, targeting that venv explicitly — e.g.
-  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>`. `uv` is on
-  PATH; the venv also ships pip as a fallback. Do not run `ensurepip` or
-  `python -m venv` — the venv exists.
-- Do NOT reinstall torch / torchvision / any CUDA library — they come from the base
-  image, and reinstalling would replace the working CUDA build with a CPU-only wheel
-  (this node is aarch64, where the default PyPI wheels are CPU-only) and break the
-  GPU. Treat the paper's torch pin as already satisfied. If a repo's setup.py /
-  requirements would pull torch in transitively, install it with `--no-deps` and add
-  the remaining deps explicitly, or drop the torch pin — keep the container's torch.
-- `torch.cuda.is_available()` is False on a plain shell command (no GPU is attached
-  there) and only True inside a `run_gpu` step — that is where the GPU lives. A False
-  on a CPU command does NOT mean the torch build is CPU-only; it is the same CUDA
-  build either way, so never reinstall torch to "fix" it. Confirm availability is
-  True from inside a `run_gpu` step before the real run.
+  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>` (`uv` is on PATH;
+  the venv also ships pip as a fallback).
+- This node is aarch64 (GH200 Grace-Hopper). The DEFAULT PyPI `torch` wheel for
+  aarch64 is CPU-only — installing `torch` plainly gives you a build with no CUDA.
+  Install a CUDA build by pointing at the matching PyTorch index, e.g.
+  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python torch \
+  --index-url https://download.pytorch.org/whl/cu126` (choose the cuXXX series that
+  matches the paper's torch pin and the node's driver). Honor the paper's pinned
+  torch version — install it as a CUDA build rather than skipping it.
+- Do the torch install and an end-to-end smoke test inside a `run_gpu` step, and
+  confirm `torch.cuda.is_available()` is True there before committing to the full
+  metered run. A dependency install inside `run_gpu` costs a little GPU budget —
+  that is expected and fine; keep the GPU step short by doing the clone and any
+  pure-Python installs in `workspace_bash` first. The venv lives on disk, so
+  packages you install in one `run_gpu` step persist into the next.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
