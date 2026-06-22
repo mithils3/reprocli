@@ -39,8 +39,16 @@ Minimal reproduction example:
 Step-by-step task:
 {AGENT_TASK}
 
-Released artifacts (use these; prefer them over re-implementing the method):
+Released artifacts (prefer running these over re-implementing the method):
 {VERIFIED_LINKS}
+
+"Code is available" does not mean it covers YOUR MRE. Before building on a repo,
+confirm it implements the exact target (this model/variant/setting), not just the
+method in general or the base model — a method shipped only for sibling models, or a
+missing config/script/checkpoint, is itself a finding; record it, do not silently
+route around it. Re-implement only if nothing released covers the target, and then
+port the authors' nearest reference faithfully (read it in full first) instead of
+reconstructing from the paper — and label the result a re-implementation.
 
 ======================================================================
 YOUR ENVIRONMENT
