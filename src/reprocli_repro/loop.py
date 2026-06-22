@@ -40,7 +40,7 @@ from reprocli_vllm.vllm.io import (
     response_message,
 )
 
-from reprocli_repro import live_log
+from reprocli_repro import gpu_session, live_log
 from reprocli_repro.compaction import microcompact
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
@@ -167,8 +167,13 @@ def apply_guardrails(
     room before falling back to the hard tools-off context cutoff.
     """
     if not include_tools:
+        gpu_session.release(ctx, "tools_off")
         return False
+    # Bill any GPU wall held since the last charge so a held node depletes the budget
+    # even across a long reasoning gap, and the ceiling is enforced mid-hold.
+    gpu_session.charge_accrued(ctx)
     if ctx.budget is not None and ctx.budget.exhausted():
+        gpu_session.release(ctx, "budget_exhausted")
         exit_reasons[custom_id] = "budget_exhausted"
         print(f"Stopping reproduce loop for {custom_id}: compute budget exhausted", file=sys.stderr)
         return False
@@ -185,6 +190,7 @@ def apply_guardrails(
                 file=sys.stderr,
             )
     if context_budget_exceeded(messages, args.max_input_tokens):
+        gpu_session.release(ctx, "context_budget")
         exit_reasons[custom_id] = "context_budget"
         return False
     return True
@@ -247,6 +253,9 @@ def handle_request_done(
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}
         return
     exit_reason = exit_reasons.get(custom_id, "natural")
+    # Free any GPU allocation still held at the end of the episode (the model is told
+    # to release itself, but never leak a node if it didn't).
+    gpu_session.release(contexts_by_id[custom_id], exit_reason)
     row["tool_loop"] = {
         "tool_rounds_used": tool_rounds_used[custom_id],
         "max_tool_rounds": args.tool_rounds,

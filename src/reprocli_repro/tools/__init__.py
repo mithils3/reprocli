@@ -8,7 +8,9 @@ The reproduction agent acts on its episode through these tools:
 * ``write_file`` / ``apply_patch`` -- path-confined file writes/edits,
 * ``fetch_url`` -- read-only fetch of a public http(s) URL (docs, wheel index, raw
   repo files); there is no general web search, so it fetches URLs the agent knows,
-* ``run_gpu`` -- the one metered path to a GPU (JIT ``salloc``, budget-charged).
+* ``run_gpu`` -- the one metered path to a GPU: a ``salloc`` allocation held across
+  calls (``srun --jobid`` per step, released on ``release=true``/teardown), billed by
+  wall clock (``gpu_session``).
 
 ``REPRO_TOOLS`` is the schema list advertised to the model (wired onto
 ``args.tools`` in ``cli_args``); ``REPRO_TOOL_HANDLERS`` maps each name to its

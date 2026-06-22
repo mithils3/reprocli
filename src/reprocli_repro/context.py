@@ -47,6 +47,31 @@ class Budget:
 
 
 @dataclass
+class GpuSession:
+    """A held SLURM allocation the agent runs successive ``run_gpu`` steps into.
+
+    The first ``run_gpu`` call acquires one allocation (``salloc --no-shell``) that
+    stays up; every later call runs into it (``srun --jobid``) with no re-queue, so
+    the agent stops paying a fresh queue wait between install → verify → run. It is
+    released when the agent is done (``run_gpu`` with ``release=true``) or at episode
+    teardown.
+
+    Because the node is held across the agent's reasoning/install gaps too — not
+    only while a command runs — the meter bills **wall clock**: ``gpus x (held
+    seconds) x hw``, charged incrementally (``gpu_session.charge_accrued``) so the
+    budget ceiling still fires mid-hold. ``last_charged`` advances on every charge so
+    the running total equals the real held wall, never double-counting.
+    """
+
+    jobid: str
+    gpus: int
+    minutes: int                         # salloc --time: the hold's max lifetime + pre-auth
+    hw: str
+    started: float                       # time.monotonic() just after the allocation was granted
+    last_charged: float                  # time.monotonic() at the most recent budget charge
+
+
+@dataclass
 class ExecutionContext:
     """Mutable per-episode state the repro tool loop dispatches against."""
 
@@ -55,6 +80,7 @@ class ExecutionContext:
     workspace: Path | None = None        # Phase 2: editable code clone + venv (rw)
     reference: Path | None = None        # Phase 2: read-only paper LaTeX + supplement (ro)
     budget: Budget | None = None         # Phase 3: metered compute budget
-    allocation: str | None = None        # Phase 3: active JIT SLURM allocation jobid
+    allocation: str | None = None        # jobid of the held GPU allocation (mirrors session.jobid)
+    session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
-    cluster: "Cluster | None" = None     # Phase 4: JIT GPU substrate run_gpu allocates on
+    cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on

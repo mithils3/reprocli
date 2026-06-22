@@ -80,6 +80,15 @@ The environment splits into two places, and YOU decide what runs where:
 - `run_gpu` provisions a real GPU (a metered SLURM allocation) and is where the
   CUDA toolkit and driver live. Do your GPU-dependent work here: install a
   CUDA-enabled PyTorch, build any custom CUDA extensions, and run the experiment.
+  The allocation is HELD across calls — the first `run_gpu` acquires a GPU node (you
+  may wait in the queue once) and every later `run_gpu` runs on the SAME node with no
+  new queue wait, so install → verify CUDA → run as successive `run_gpu` calls rather
+  than expecting a fresh node each time. You are billed WALL-CLOCK for the entire time
+  the node is held (including while you reason or install between commands), so set
+  `release=true` the moment you are done with the GPU to stop the meter; re-acquire by
+  calling `run_gpu` again if you need it later. `gpus`/`minutes` take effect only on
+  the call that STARTS the session (gpus = how many to hold, minutes = its max
+  lifetime); they are fixed until you release and start a new one.
 
 Building the environment is YOUR job — nothing is pre-installed except pip:
 
@@ -99,22 +108,28 @@ Building the environment is YOUR job — nothing is pre-installed except pip:
   PyTorch install instructions / wheel index and pick the matching aarch64+CUDA
   wheel. Honor the paper's pinned torch version — install it as a CUDA build rather
   than skipping it.
-- Do the torch install and an end-to-end smoke test inside a `run_gpu` step, and
-  confirm `torch.cuda.is_available()` is True there before committing to the full
-  metered run. A dependency install inside `run_gpu` costs a little GPU budget —
-  that is expected and fine; keep the GPU step short by doing the clone and any
-  pure-Python installs in `workspace_bash` first. The venv lives on disk, so
-  packages you install in one `run_gpu` step persist into the next.
+- Do the torch install and an end-to-end smoke test inside `run_gpu`, and confirm
+  `torch.cuda.is_available()` is True there before committing to the full metered run.
+  Because the node is held, the install, the CUDA check, and the run happen on the
+  same allocation back-to-back — no re-queue between them — but you pay wall-clock the
+  whole time it is held, so do the clone and any pure-Python installs in
+  `workspace_bash` first, and `release=true` as soon as the GPU work for now is done.
+  The venv lives on disk, so packages you install in one `run_gpu` step persist into
+  the next even across a release/re-acquire.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
 ======================================================================
 
-You have {BUDGET_H100_HOURS} H100-equivalent hours for this episode. Every GPU step
-you run is charged against it as gpus x wallclock x hardware-multiplier. When the
-budget is exhausted the harness stops you and forces your final submission, whether
-or not you have a result — so spend deliberately:
+You have {BUDGET_H100_HOURS} H100-equivalent hours for this episode. The GPU
+allocation is billed by WALL-CLOCK while it is held — gpus x (time the node is held)
+x hardware-multiplier — so the meter runs from the moment you acquire it until you
+release it, including any reasoning or installing you do in between. When the budget
+is exhausted the harness stops you and forces your final submission, whether or not
+you have a result — so spend deliberately:
 
+- Release the GPU (`run_gpu` with release=true) the moment you are not actively using
+  it; do your thinking, edits, and pure-Python installs with the GPU released.
 - Build and debug on the cheapest path first (smallest model/config, a few steps,
   CPU or a single GPU) before committing to the full metered run.
 - Confirm the code runs end-to-end on a tiny slice before scaling to the real MRE.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -10,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro import evidence
 from reprocli_repro.cluster import resolve_cluster
-from reprocli_repro.context import Budget, ExecutionContext
-from reprocli_repro.slurm import StepResult
+from reprocli_repro.context import Budget, ExecutionContext, GpuSession
+from reprocli_repro.slurm import SessionHandle, StepResult
 from reprocli_repro.tools import REPRO_TOOLS, build_repro_tools, execute_repro_tool_call
 from reprocli_repro.tools.run_gpu import run_gpu, run_gpu_tool
 
@@ -31,82 +32,126 @@ def _ctx(root: Path, *, budget_hours: float = 8.0) -> ExecutionContext:
     )
 
 
-def _step(stdout: str = "", stderr: str = "", *, rc: int = 0, elapsed: float = 1.0) -> StepResult:
-    return StepResult(ok=rc == 0, returncode=rc, stdout=stdout, stderr=stderr, elapsed_s=elapsed, command=["salloc"])
+def _handle(jobid: str | None = "555", *, ok: bool = True, stderr: str = "") -> SessionHandle:
+    return SessionHandle(ok=ok, jobid=jobid, stderr=stderr, command=["salloc"])
 
 
-class RunGpuMeteringTests(unittest.TestCase):
-    def test_charges_run_time_from_markers_not_queue_wait(self):
-        # 30s of marker-bracketed run inside a 600s wall (the extra 570s is queue).
-        stderr = "__REPRO_GPU_T0__:1000.0\nreal output\n__REPRO_GPU_T1__:1030.0\n"
+def _step(stdout: str = "ok", stderr: str = "", *, rc: int = 0, elapsed: float = 1.0) -> StepResult:
+    return StepResult(ok=rc == 0, returncode=rc, stdout=stdout, stderr=stderr, elapsed_s=elapsed, command=["srun"])
+
+
+def _patch(*, acquire=None, run=None, release=None):
+    """Patch the three slurm seams the session lifecycle calls (shared module attrs)."""
+    return (
+        mock.patch("reprocli_repro.slurm.acquire_session", return_value=acquire or _handle()),
+        mock.patch("reprocli_repro.slurm.run_in_session", return_value=run if run is not None else _step()),
+        mock.patch("reprocli_repro.slurm.release_session", side_effect=release or (lambda *_: None)),
+    )
+
+
+class SessionLifecycleTests(unittest.TestCase):
+    def test_first_call_acquires_session_then_runs_into_it(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("done", stderr, elapsed=600.0)):
-                res = run_gpu({"command": "python train.py", "gpus": 2, "minutes": 60}, ctx)
+            acq, run, rel = _patch(acquire=_handle("555"), run=_step("torch 2.11"))
+            with acq as a, run as r, rel:
+                res = run_gpu({"command": "python -c 'import torch'", "gpus": 1, "minutes": 30}, ctx)
             self.assertTrue(res["ok"], res)
-            self.assertAlmostEqual(res["run_seconds"], 30.0, places=1)
-            # 2 gpu x (30/3600) h x 1.0 (gh200) = 0.016667 H100-h, not the 600s wall.
-            self.assertAlmostEqual(res["cost_h100_hours"], 2 * 30 / 3600, places=4)
-            self.assertAlmostEqual(ctx.budget.spent_h100_hours, 2 * 30 / 3600, places=4)
-            # The agent never sees the timing markers.
-            self.assertNotIn("__REPRO_GPU", res["stderr"])
-            self.assertIn("real output", res["stderr"])
+            self.assertEqual(res["session_jobid"], "555")
+            self.assertFalse(res["session_released"])
+            self.assertEqual(ctx.session.jobid, "555")
+            self.assertEqual(ctx.allocation, "555")
+            a.assert_called_once()
+            r.assert_called_once()
+            self.assertIn("torch 2.11", res["stdout"])
 
-    def test_falls_back_to_wall_when_markers_absent(self):
+    def test_second_call_reuses_allocation_without_reacquiring(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("ok", "", elapsed=1800.0)):
-                res = run_gpu({"command": "echo hi", "gpus": 1, "minutes": 60}, ctx)
-            self.assertAlmostEqual(res["run_seconds"], 1800.0, places=1)
-            self.assertAlmostEqual(res["cost_h100_hours"], 0.5, places=4)  # 1 gpu x 0.5h
+            acq, run, rel = _patch(acquire=_handle("555"))
+            with acq as a, run as r, rel:
+                run_gpu({"command": "python a.py"}, ctx)
+                res = run_gpu({"command": "python b.py"}, ctx)
+            a.assert_called_once()  # acquired once, reused for the second step
+            self.assertEqual(r.call_count, 2)
+            self.assertEqual(res["session_jobid"], "555")
+            # srun ran into the held jobid, not a fresh allocation.
+            self.assertEqual(r.call_args.kwargs["jobid"], "555")
 
-    def test_wrapped_command_brackets_user_command_with_markers(self):
-        captured = {}
-
-        def fake_run_step(cluster, workspace, cmd, **kw):
-            captured["cmd"] = cmd
-            captured["kw"] = kw
-            return _step("ok", "")
-
+    def test_release_true_frees_the_allocation_after_the_command(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", side_effect=fake_run_step):
-                run_gpu({"command": "python eval.py", "minutes": 5}, ctx)
-        self.assertIn("python eval.py", captured["cmd"])
-        self.assertIn("__REPRO_GPU_T0__", captured["cmd"])
-        self.assertIn("__REPRO_GPU_T1__", captured["cmd"])
-        # Per-step subprocess timeout is the wall cap plus queue grace, not unbounded.
-        self.assertEqual(captured["kw"]["minutes"], 5)
-        self.assertGreater(captured["kw"]["timeout"], 5 * 60)
+            acq, run, rel = _patch(acquire=_handle("555"))
+            with acq, run, rel as scancel:
+                run_gpu({"command": "python a.py"}, ctx)
+                res = run_gpu({"command": "python score.py", "release": True}, ctx)
+            self.assertTrue(res["session_released"])
+            self.assertIsNone(ctx.session)
+            self.assertIsNone(ctx.allocation)
+            scancel.assert_called_once_with("555")
 
-    def test_records_trajectory_and_command_log(self):
+    def test_release_only_with_no_command_frees_session(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("ok", "")):
-                run_gpu({"command": "python train.py", "minutes": 5}, ctx)
-            traj = (ctx.evidence / "trajectory.jsonl").read_text()
-            self.assertIn('"type": "run_gpu"', traj)
-            self.assertIn("python train.py", traj)
-            self.assertIn("run_gpu", (ctx.evidence / "commands.log").read_text())
+            acq, run, rel = _patch(acquire=_handle("555"))
+            with acq, run as r, rel as scancel:
+                run_gpu({"command": "python a.py"}, ctx)
+                res = run_gpu({"release": True}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertTrue(res["session_released"])
+            self.assertEqual(r.call_count, 1)  # the bare release ran no srun
+            scancel.assert_called_once_with("555")
+
+    def test_lost_session_is_surfaced_and_cleared(self):
+        lost = _step(stderr="srun: error: Unable to confirm allocation for job 555: Invalid job id", rc=1)
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(acquire=_handle("555"), run=lost)
+            with acq, run, rel:
+                res = run_gpu({"command": "python a.py"}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("expired", res["error"])
+            self.assertIsNone(ctx.session)  # dropped so the next call re-acquires
 
 
 class RunGpuGuardrailTests(unittest.TestCase):
-    def test_refuses_when_worst_case_overspends_and_does_not_launch(self):
+    def test_refuses_to_start_a_session_that_overspends_and_does_not_acquire(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d), budget_hours=1.0)
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step") as run:
+            acq, run, rel = _patch()
+            with acq as a, run, rel:
                 res = run_gpu({"command": "python train.py", "gpus": 4, "minutes": 60}, ctx)
-            run.assert_not_called()  # refused before launch
+            a.assert_not_called()  # refused before any allocation
             self.assertFalse(res["ok"])
             self.assertIn("refused", res["error"])
             self.assertEqual(ctx.budget.spent_h100_hours, 0.0)
-            # The refusal is still recorded for the auditor.
             self.assertIn('"refused"', (ctx.evidence / "trajectory.jsonl").read_text())
+
+    def test_acquire_failure_is_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(acquire=_handle(None, ok=False, stderr="salloc: error: out of nodes"))
+            with acq, run, rel:
+                res = run_gpu({"command": "python a.py"}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("could not acquire", res["error"])
+            self.assertIsNone(ctx.session)
 
     def test_missing_command_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
             self.assertFalse(run_gpu({"command": "  "}, ctx)["ok"])
+
+    def test_records_trajectory_and_command_log(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch()
+            with acq, run, rel:
+                run_gpu({"command": "python train.py", "minutes": 5}, ctx)
+            traj = (ctx.evidence / "trajectory.jsonl").read_text()
+            self.assertIn('"type": "run_gpu"', traj)
+            self.assertIn("python train.py", traj)
+            self.assertIn("run_gpu", (ctx.evidence / "commands.log").read_text())
 
 
 class GpuChoiceTests(unittest.TestCase):
@@ -115,20 +160,26 @@ class GpuChoiceTests(unittest.TestCase):
             schema = run_gpu_tool(cap)["function"]["parameters"]["properties"]["gpus"]
             self.assertEqual(schema["maximum"], cap)
             self.assertEqual(schema["minimum"], 1)
-        # build_repro_tools threads the cap through to the advertised run_gpu tool.
         tool = next(t for t in build_repro_tools(8) if t["function"]["name"] == "run_gpu")
         self.assertEqual(tool["function"]["parameters"]["properties"]["gpus"]["maximum"], 8)
 
-    def test_agent_gpu_choice_is_honored(self):
+    def test_release_param_is_advertised(self):
+        props = run_gpu_tool(4)["function"]["parameters"]["properties"]
+        self.assertIn("release", props)
+        self.assertEqual(props["release"]["type"], "boolean")
+
+    def test_agent_gpu_choice_sizes_the_session(self):
         captured = {}
 
-        def fake_run_step(cluster, workspace, cmd, **kw):
-            captured.update(kw)
-            return _step("ok", "")
+        def fake_acquire(cluster, *, gpus, minutes, timeout=None):
+            captured["gpus"] = gpus
+            return _handle("555")
 
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))  # deltaai: 4 GPU/node
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", side_effect=fake_run_step):
+            with mock.patch("reprocli_repro.slurm.acquire_session", side_effect=fake_acquire), \
+                 mock.patch("reprocli_repro.slurm.run_in_session", return_value=_step()), \
+                 mock.patch("reprocli_repro.slurm.release_session"):
                 res = run_gpu({"command": "python train.py", "gpus": 3, "minutes": 10}, ctx)
             self.assertEqual(captured["gpus"], 3)
             self.assertEqual(res["gpus"], 3)
@@ -137,7 +188,8 @@ class GpuChoiceTests(unittest.TestCase):
     def test_over_capacity_request_is_clamped_and_noted(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))  # deltaai: cap 4
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("ok", "")):
+            acq, run, rel = _patch()
+            with acq, run, rel:
                 res = run_gpu({"command": "python train.py", "gpus": 9, "minutes": 10}, ctx)
             self.assertEqual(res["gpus"], 4)
             self.assertIn("clamped", res["note"])
@@ -152,7 +204,8 @@ class DispatchTests(unittest.TestCase):
         call = {"function": {"name": "run_gpu", "arguments": {"command": "python x.py", "minutes": 5}}}
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            with mock.patch("reprocli_repro.tools.run_gpu.run_step", return_value=_step("ok", "")):
+            acq, run, rel = _patch()
+            with acq, run, rel:
                 res = execute_repro_tool_call(call, ctx)
             self.assertTrue(res["ok"], res)
             self.assertEqual(res["tool"], "run_gpu")
