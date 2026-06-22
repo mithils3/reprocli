@@ -10,10 +10,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm.endpoint import (
+    ENV_API_KEY,
     ENV_ENDPOINT_FILE,
     ENV_SERVED_MODEL,
     ENV_SERVER_URL,
+    auth_headers,
     normalize_server_url,
+    resolve_api_key,
     resolve_served_model,
     resolve_server_url,
 )
@@ -95,6 +98,31 @@ class ResolveServedModelTests(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True), self._patch_models([]):
             with self.assertRaises(RuntimeError):
                 resolve_served_model("http://h:8000")
+
+
+class AuthHeaderTests(unittest.TestCase):
+    def test_no_key_means_no_header(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(resolve_api_key())
+            self.assertEqual(auth_headers(), {})
+
+    def test_cli_value_wins(self) -> None:
+        with patch.dict("os.environ", {ENV_API_KEY: "env"}, clear=True):
+            self.assertEqual(auth_headers("sk-or-cli"), {"Authorization": "Bearer sk-or-cli"})
+
+    def test_reprocli_env_key(self) -> None:
+        with patch.dict("os.environ", {ENV_API_KEY: "sk-or-env"}, clear=True):
+            self.assertEqual(auth_headers(), {"Authorization": "Bearer sk-or-env"})
+
+    def test_openrouter_env_is_a_fallback(self) -> None:
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "sk-or-2"}, clear=True):
+            self.assertEqual(resolve_api_key(), "sk-or-2")
+
+    def test_openai_key_is_never_used(self) -> None:
+        # Guard against leaking an OpenAI key to a different provider's URL.
+        with patch.dict("os.environ", {"OPENAI_API_KEY": "sk-openai"}, clear=True):
+            self.assertIsNone(resolve_api_key())
+            self.assertEqual(auth_headers(), {})
 
 
 if __name__ == "__main__":

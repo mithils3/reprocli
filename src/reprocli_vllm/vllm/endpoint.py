@@ -30,7 +30,26 @@ from pathlib import Path
 ENV_SERVER_URL = "REPROCLI_SERVER_URL"
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
+ENV_API_KEY = "REPROCLI_API_KEY"
 MODELS_FETCH_TIMEOUT = 30.0
+
+
+def resolve_api_key(cli_value: str | None = None) -> str | None:
+    """Bearer token for an authenticated endpoint (e.g. OpenRouter), or None.
+
+    A local self-served vLLM needs no key, so this is empty by default and the
+    request goes out unauthenticated exactly as before. We only read the explicit
+    ``REPROCLI_API_KEY`` (or ``OPENROUTER_API_KEY``) — never ``OPENAI_API_KEY`` —
+    so an OpenAI key sitting in the shell can't leak to a different provider's URL.
+    """
+    value = cli_value or os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
+    return (value or "").strip() or None
+
+
+def auth_headers(cli_value: str | None = None) -> dict[str, str]:
+    """``Authorization: Bearer`` header when a key is configured, else ``{}``."""
+    key = resolve_api_key(cli_value)
+    return {"Authorization": f"Bearer {key}"} if key else {}
 
 
 def normalize_server_url(value: str) -> str:
@@ -69,8 +88,9 @@ def resolve_server_url(cli_value: str | None) -> str | None:
 def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
     """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
+    request = urllib.request.Request(url, headers=auth_headers(), method="GET")
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             data = json.loads(response.read().decode("utf-8"))
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"could not list models at {url}: {exc}") from exc
