@@ -19,6 +19,7 @@ from reprocli_vllm.runtime.loop_guards import record_tool_call
 from reprocli_vllm.runtime.trace_io import assistant_message
 from reprocli_vllm.vllm.io import tool_result_message
 
+from reprocli_repro import live_log
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.tools import execute_repro_tool_call
 
@@ -31,9 +32,15 @@ def append_tool_results(
     tool_calls: list[dict],
     ctx: ExecutionContext,
     counts: Counter,
+    round_index: int | None = None,
 ) -> None:
     messages.append(assistant_message(message, tool_calls))
+    # Stream to <run_dir>/agent.log: the round's reasoning first, then each call's
+    # command before it runs and its result the moment it returns (see live_log).
+    live_log.log_round_open(ctx, message, round_index=round_index)
     for call in tool_calls:
+        live_log.log_call_start(ctx, call)
         result = execute_repro_tool_call(call, ctx)
         record_tool_call(counts, call, result)
         messages.append(tool_result_message(call, result))
+        live_log.log_call_result(ctx, result)

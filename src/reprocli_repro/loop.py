@@ -40,6 +40,7 @@ from reprocli_vllm.vllm.io import (
     response_message,
 )
 
+from reprocli_repro import live_log
 from reprocli_repro.compaction import microcompact
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
@@ -234,6 +235,7 @@ def handle_request_done(
             tool_calls,
             contexts_by_id[custom_id],
             tool_call_counts[custom_id],
+            round_index,
         )
         tool_futures[tool_future] = state
         return
@@ -241,6 +243,7 @@ def handle_request_done(
         # Model stopped without a tool call while tools were live; re-issue one
         # tools-off pass to get the schema-constrained final submission.
         conversations[custom_id].append(assistant_message(message, tool_calls))
+        live_log.log_round_open(contexts_by_id[custom_id], message, round_index=round_index)
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}
         return
     exit_reason = exit_reasons.get(custom_id, "natural")
@@ -260,4 +263,7 @@ def handle_request_done(
         final_message=args.final_no_tools_message,
     )
     final_rows[custom_id] = row
+    live_log.log_final(
+        contexts_by_id[custom_id], message, round_index=round_index, exit_reason=exit_reason
+    )
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
