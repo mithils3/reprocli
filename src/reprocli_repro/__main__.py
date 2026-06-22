@@ -35,6 +35,12 @@ def main(argv: list[str] | None = None) -> int:
     contexts: list[ExecutionContext] = []
     for ep in episodes:
         print(_summary(ep), file=sys.stderr)
+        if args.reference:
+            print(
+                f"  materializing reference for {ep.arxiv_id} "
+                "(first run downloads + caches the paper bundle)...",
+                file=sys.stderr,
+            )
         result = prepare_workspace(
             ep.run_paths,
             arxiv_id=ep.arxiv_id,

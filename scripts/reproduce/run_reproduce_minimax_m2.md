@@ -26,8 +26,10 @@ in play:
 - `uv` on `PATH` (the agent builds a per-paper `uv` venv in each workspace).
 - MiniMax-M2.7 weights reachable (HF id `MiniMaxAI/MiniMax-M2.7` or the local
   mirror `/work/nvme/bfvr/msalunkhe/MiniMax-M2.7`).
-- `HF_TOKEN` exported (the lockfile dataset and the paper bundle stream from the
-  Hub).
+- `HF_TOKEN` exported (the lockfile dataset and the paper bundle come from the Hub).
+- Point the HF cache at the NVMe work dir, not `$HOME` — the paper bundle is large
+  and is downloaded in full (non-streaming) on first use, then cached:
+  `export HF_HOME=/work/nvme/bfvr/msalunkhe/hf_cache`
 
 Pick a sample paper from the **dev-15** split (`validation`), **not** the eval-100
 benchmark: running the agent against eval-100 during development would leak into /
@@ -86,9 +88,12 @@ python -m reprocli_repro \
   --split dev \
   --cluster deltaai \
   --budget-h100-hours 8 \
-  --tool-rounds 40 \
-  --runs-dir outputs/repro/agent_runs
+  --tool-rounds 40
 ```
+
+Run bundles default to `/work/nvme/bfvr/msalunkhe/reprocli/agent_runs` (the NVMe
+work dir, **not** the repo) — override the root with `$REPRO_WORK_ROOT`, or the
+exact path with `--runs-dir`.
 
 What each flag does:
 
@@ -139,7 +144,7 @@ The agent loops against the brain through its toolset:
 Everything lands under the run bundle (the S6→S7 contract the auditor reads):
 
 ```
-outputs/repro/agent_runs/<arxiv_id>/8h/<run_id>/
+/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/<arxiv_id>/8h/<run_id>/
   workspace/            # the editable code clone + per-paper .venv
   reference/            # read-only paper LaTeX + every supplement file
   evidence/
@@ -150,8 +155,9 @@ outputs/repro/agent_runs/<arxiv_id>/8h/<run_id>/
     patches/            # every diff applied, verbatim
 ```
 
-The agent's raw responses go to `outputs/repro/reproduce.jsonl` (override with
-`--output`; add `--save-round-jsonl` for a per-round trace).
+The agent's raw responses go to
+`/work/nvme/bfvr/msalunkhe/reprocli/reproduce.jsonl` (override with `--output`;
+add `--save-round-jsonl` for a per-round trace).
 
 ---
 

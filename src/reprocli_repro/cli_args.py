@@ -27,9 +27,14 @@ from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPL
 from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
 from reprocli_repro.tools import build_repro_tools
 
-DEFAULT_OUTPUT = Path("outputs/repro/reproduce.jsonl")
+# Run bundles + outputs land on the NVMe work filesystem, not the repo working
+# dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
+# or the individual paths with --runs-dir / --output. The prompt template stays a
+# repo asset.
+DEFAULT_WORK_ROOT = Path(os.environ.get("REPRO_WORK_ROOT", "/work/nvme/bfvr/msalunkhe/reprocli"))
+DEFAULT_OUTPUT = DEFAULT_WORK_ROOT / "reproduce.jsonl"
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
-DEFAULT_RUNS_DIR = Path("outputs/repro/agent_runs")
+DEFAULT_RUNS_DIR = DEFAULT_WORK_ROOT / "agent_runs"
 
 # Phase 0 placeholders; Phase 1 swaps in the real operating prompt file and
 # Phase 5 the structured submission contract. The loop reads these off ``args``.
