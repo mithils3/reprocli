@@ -97,9 +97,14 @@ PyTorch inside the venv:
   `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python torch --torch-backend=auto`
 Run it inside `run_gpu` so uv detects the card and picks the right CUDA build, then
 confirm `torch.cuda.is_available()` is True. Nothing else matters until CUDA torch
-imports and sees the GPU. Only once that is green do you read the paper and, if it
-pins a specific torch version, reinstall it the same way (`uv pip install ...
---torch-backend=auto`).
+imports and sees the GPU.
+
+KEEP this bootstrapped torch. Ignore any torch / torchvision / torchaudio pin in
+the repo's `requirements.txt` / `setup.py` / `environment.yml` — the paper's pinned
+torch usually has no CUDA wheel on this aarch64 node, and forcing it just reinstalls
+the CPU-only trap. When you install the repo's deps, strip those torch lines out (or
+`uv pip install` the rest and let your existing torch satisfy them); never let a
+dependency downgrade the working CUDA torch.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
@@ -123,8 +128,9 @@ You work entirely through the tools provided. A typical episode:
    confirming `torch.cuda.is_available()` before you invest in anything else.
 2. Read the reference paper and the MRE target. Form a concrete plan.
 3. Set up the workspace: clone the released code (pin the commit when you can),
-   install its deps with `uv pip install`, pin torch to the version the paper needs
-   (again `uv ... --torch-backend=auto`), fetch only the data/weights the MRE needs.
+   install its deps with `uv pip install` but ignore the torch pins in
+   requirements.txt (keep the CUDA torch you bootstrapped), fetch only the
+   data/weights the MRE needs.
 4. Get the experiment running cheaply, then run the real metered experiment that
    produces the claimed metric.
 5. Record evidence continuously: the exact commands you ran, their stdout/stderr,
