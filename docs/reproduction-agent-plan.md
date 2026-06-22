@@ -26,8 +26,7 @@ grades.
 - `vllm.io`: `build_chat_completion_request`, `initial_messages`,
   `normalize_tool_calls`, `response_message`, `tool_result_message`,
   `append_jsonl_row`, `truncate_output_file`
-- `runtime.loop_guards` (`repeated_tool_call`, `record_tool_call`,
-  `context_budget_exceeded`, `conversation_chars`)
+- `runtime.loop_guards` (`context_budget_exceeded`, `conversation_chars`)
 - `runtime.trace_io` (`assistant_message`, `append_trace_row`)
 - `runtime.run_health.loop_telemetry`
 - `config.config.function_tool` (the tool-schema builder)
@@ -195,8 +194,7 @@ Modules:
 
 - Budget guardrail in `loop.py`: `run_gpu` refuses when `remaining() <= 0` or when
   the step's pre-authorized worst case (`gpus × minutes/60 × hw_multiplier`) would
-  overspend; exhaustion sets `exit_reason="budget_exhausted"` and force-finals
-  (same mechanism as `repeated_call_cutoff`).
+  overspend; exhaustion sets `exit_reason="budget_exhausted"` and force-finals.
 
 **Tradeoff (accepted):** JIT means each GPU step may sit in the SLURM queue,
 adding latency to the loop on a busy cluster. That's the accepted price of an

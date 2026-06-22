@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
@@ -28,7 +27,6 @@ from reprocli_vllm.config.config import REQUEST_TIMEOUT
 from reprocli_vllm.runtime.loop_guards import (
     BUDGET_CHARS_PER_TOKEN,
     context_budget_exceeded,
-    repeated_tool_call,
 )
 from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.runtime.trace_io import assistant_message
@@ -72,7 +70,6 @@ def run_reproduce_loop(
     original_ids = [ctx.arxiv_id for ctx in contexts]
     final_rows: dict[str, dict] = {}
     exit_reasons: dict[str, str] = {}
-    tool_call_counts = {custom_id: Counter() for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
     base_url = server_url.rstrip("/")
@@ -127,7 +124,6 @@ def run_reproduce_loop(
                         final_rows,
                         tool_rounds_used,
                         exit_reasons,
-                        tool_call_counts,
                         contexts_by_id,
                         args,
                     )
@@ -209,7 +205,6 @@ def handle_request_done(
     final_rows: dict[str, dict],
     tool_rounds_used: dict[str, int],
     exit_reasons: dict[str, str],
-    tool_call_counts: dict[str, Counter],
     contexts_by_id: dict[str, ExecutionContext],
     args: argparse.Namespace,
 ) -> None:
@@ -221,17 +216,6 @@ def handle_request_done(
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
         tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)
-        repeated = repeated_tool_call(
-            custom_id, tool_calls, tool_call_counts, args.max_repeated_tool_calls
-        )
-        if repeated:
-            print(
-                f"Stopping reproduce loop for {custom_id}: repeated tool call {repeated}",
-                file=sys.stderr,
-            )
-            exit_reasons[custom_id] = "repeated_call_cutoff"
-            tool_futures[tools.submit(noop)] = {**state, "force_final": True}
-            return
         if round_index + 1 >= args.tool_rounds:
             exit_reasons[custom_id] = "round_limit"
         tool_future = tools.submit(
@@ -240,7 +224,6 @@ def handle_request_done(
             message,
             tool_calls,
             contexts_by_id[custom_id],
-            tool_call_counts[custom_id],
             round_index,
         )
         tool_futures[tool_future] = state

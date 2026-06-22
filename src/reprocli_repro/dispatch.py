@@ -8,14 +8,11 @@ rather than a read-only ``Paper``.
 The handler routing itself lives in ``tools/__init__.py`` (``REPRO_TOOLS`` — the
 workspace shell, file read/write/patch, and the metered ``run_gpu`` tool); this
 module owns only the conversation-shaping seam that records each call's result
-into the running transcript and the loop-guard counters.
+into the running transcript.
 """
 
 from __future__ import annotations
 
-from collections import Counter
-
-from reprocli_vllm.runtime.loop_guards import record_tool_call
 from reprocli_vllm.runtime.trace_io import assistant_message
 from reprocli_vllm.vllm.io import tool_result_message
 
@@ -31,7 +28,6 @@ def append_tool_results(
     message: dict,
     tool_calls: list[dict],
     ctx: ExecutionContext,
-    counts: Counter,
     round_index: int | None = None,
 ) -> None:
     messages.append(assistant_message(message, tool_calls))
@@ -41,6 +37,5 @@ def append_tool_results(
     for call in tool_calls:
         live_log.log_call_start(ctx, call)
         result = execute_repro_tool_call(call, ctx)
-        record_tool_call(counts, call, result)
         messages.append(tool_result_message(call, result))
         live_log.log_call_result(ctx, result)

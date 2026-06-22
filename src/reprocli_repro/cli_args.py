@@ -210,7 +210,6 @@ def _add_sampling(parser: argparse.ArgumentParser) -> None:
         default=150,
         help="Max model turns; the compute-budget guardrail is the real bound (default: 150).",
     )
-    group.add_argument("--max-repeated-tool-calls", type=int, default=2)
     group.add_argument("--request-workers", type=int, default=8)
     group.add_argument(
         "--budget-h100-hours",
@@ -256,8 +255,6 @@ def _validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
         parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
-    if args.max_repeated_tool_calls < 1:
-        parser.error("--max-repeated-tool-calls must be >= 1")
     if args.max_input_tokens < 1:
         parser.error("--max-input-tokens must be >= 1")
     if args.top_k is not None and args.top_k < 1:
