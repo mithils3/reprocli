@@ -50,6 +50,30 @@ class LiveLogTests(unittest.TestCase):
             self.assertIn("exit=natural", text)
             self.assertIn("done", text)
 
+    def test_full_log_keeps_everything_agent_log_truncates(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            n = live_log.HEAD_LINES + 30
+            live_log.log_round_open(
+                ctx, {"reasoning": "\n".join(f"think {i}" for i in range(n))}, round_index=0
+            )
+            live_log.log_call_result(
+                ctx, {"ok": True, "stdout": "\n".join(f"out {i}" for i in range(n))}
+            )
+
+            skim = (Path(d) / "agent.log").read_text()
+            full = (Path(d) / "agent.full.log").read_text()
+
+            # agent.log head-truncates each block and marks the elision...
+            self.assertIn("more line", skim)
+            self.assertNotIn(f"think {n - 1}", skim)
+            self.assertNotIn(f"out {n - 1}", skim)
+            # ...agent.full.log keeps every line and never elides.
+            self.assertNotIn("more line", full)
+            self.assertIn("think 0", full)
+            self.assertIn(f"think {n - 1}", full)
+            self.assertIn(f"out {n - 1}", full)
+
     def test_no_evidence_is_a_noop(self):
         ctx = ExecutionContext(arxiv_id="x", evidence=None)
         live_log.log_round_open(ctx, {"reasoning": "x"})  # must not raise
