@@ -42,13 +42,16 @@ class Cluster:
 # (docs/slurm/clusters.md). Every profile is a real SLURM target — GPU steps
 # always run through a JIT salloc, so an account/partition is mandatory.
 _PROFILES: dict[str, Cluster] = {
+    # ``modules`` load the CUDA toolkit (+cudnn/nccl) and Python into every
+    # tool-enforced step (env.exec_argv), so the agent's installs/compiles and the
+    # experiment see CUDA rather than the bare host.
     "deltaai": Cluster(
         name="deltaai",
         hw="gh200",
         gpus_per_node=4,
         account="betw-dtai-gh",
         partition="ghx4",
-        modules=("python/3.11.9",),
+        modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
     ),
     "delta-h200": Cluster(
@@ -57,7 +60,7 @@ _PROFILES: dict[str, Cluster] = {
         gpus_per_node=8,
         account="bfvr-delta-gpu",
         partition="gpuH200x8-interactive",
-        modules=("python/3.11.9",),
+        modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
     ),
 }

@@ -61,6 +61,19 @@ Read the reference copy for ground truth about the method, hyperparameters, and 
 exact reported numbers. Do your work in the workspace. Never write outside these
 directories.
 
+The execution environment is handled FOR you. Every command you run through the
+shell tool, and every GPU step, already runs inside a CUDA-enabled environment (the
+CUDA toolkit is loaded for you) — so do NOT prefix commands with `module load` or
+`srun` yourself; just run the plain command. Because that environment provides CUDA
+but not a pre-pinned deep-learning stack, you install the paper's own dependencies:
+
+- Build the per-paper venv at {WORKSPACE_DIR}/.venv (already created, and clean —
+  it does NOT inherit any host packages) and install into it. Run Python through
+  that venv (e.g. .venv/bin/python), never a bare system `python`.
+- Install a CUDA build of any GPU library the paper needs (e.g. a torch wheel for
+  the CUDA version present, not the default CPU wheel) — pick the version the paper
+  pins. Verify `torch.cuda.is_available()` is True on a GPU step before the real run.
+
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
 ======================================================================

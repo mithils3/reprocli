@@ -6,10 +6,13 @@ released the instant the command exits — nothing is pre-held:
     salloc -A <account> -p <partition> --nodes=1 --gpus=<k> --time=<minutes> \\
       srun --ntasks=1 bash -lc 'cd <ws> && module load ... && <cmd>'
 
-``<account>/<partition>/<modules>`` come from the cluster profile (``cluster.py``);
+``<account>/<partition>`` come from the cluster profile (``cluster.py``);
 ``<k>``/``<minutes>`` come from the model's ``run_gpu`` arguments. ``--time`` is
 the budget pre-authorization (SLURM hard-kills at the wall limit), so the meter
-can refuse a step before it launches.
+can refuse a step before it launches. The ``srun`` payload (the ``cd`` + module
+load) is built by ``env.exec_argv``, so a GPU step runs in exactly the same
+tool-enforced CUDA environment as the CPU-side ``workspace_bash`` — never the bare
+host.
 
 ``build_command`` is pure (the gate asserts the exact argv); ``run_step`` executes
 it and times the *run* so ``budget.charge`` bills elapsed, not queue wait. The
@@ -19,12 +22,12 @@ need ``SallocDefaultCommand`` or ``sbatch --wait`` instead.
 
 from __future__ import annotations
 
-import shlex
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from reprocli_repro import env
 from reprocli_repro.cluster import Cluster
 
 
@@ -38,15 +41,6 @@ class StepResult:
     stderr: str
     elapsed_s: float
     command: list[str]
-
-
-def _inner_script(workspace: Path | str, modules: tuple[str, ...], cmd: str) -> str:
-    """The ``bash -lc`` body: cd into the workspace, load modules, run the command."""
-    parts = [f"cd {shlex.quote(str(workspace))}"]
-    if modules:
-        parts.append("module load " + " ".join(modules))
-    parts.append(cmd)
-    return " && ".join(parts)
 
 
 def build_command(
@@ -68,7 +62,6 @@ def build_command(
             f"run_gpu gpus={gpus} out of range for {cluster.name!r} "
             f"(1..{cluster.gpus_per_node} per node)."
         )
-    inner = _inner_script(workspace, cluster.modules, cmd)
     return [
         "salloc",
         "-A", cluster.account,
@@ -76,7 +69,8 @@ def build_command(
         "--nodes=1",
         f"--gpus={int(gpus)}",
         f"--time={int(minutes)}",
-        "srun", "--ntasks=1", "bash", "-lc", inner,
+        "srun", "--ntasks=1",
+        *env.exec_argv(cluster, workspace, cmd),
     ]
 
 

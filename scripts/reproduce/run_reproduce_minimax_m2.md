@@ -120,8 +120,13 @@ python -m reprocli_repro --paper-id "$ARXIV_ID" --split dev \
 
 The agent loops against the brain through its toolset:
 
-- **`workspace_bash`** — clone the released code, build the per-paper `uv` venv,
-  install deps, run CPU work (cwd-confined to the workspace).
+- **`workspace_bash`** — clone the released code, build/populate the per-paper
+  `uv` venv, install deps, run CPU work (cwd-confined to the workspace). The tool
+  wraps every command to `module load` the cluster's CUDA modules (`cuda cudnn
+  nccl` on deltaai), so installs see CUDA — the agent never writes `module load` or
+  `srun` itself. The per-paper venv is **clean** (no `--system-site-packages`), so
+  the agent installs the paper's own deps (incl. a CUDA torch wheel), not the
+  host's CPU packages.
 - **`read_file` / `write_file` / `apply_patch`** — inspect and edit, path-confined
   to the workspace; `reference/` (paper LaTeX + supplement) is read-only.
 - **`run_gpu`** — the one metered path to a GPU: a JIT `salloc -A betw-dtai-gh -p

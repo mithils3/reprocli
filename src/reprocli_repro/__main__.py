@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
             bundle_dataset=args.bundle_dataset,
             make_venv=args.build_venv,
             materialize_ref=args.reference,
-            system_site_packages=True,
+            cluster=args.cluster_profile,
             venv_python=args.venv_python,
         )
         print(_setup_summary(result), file=sys.stderr)

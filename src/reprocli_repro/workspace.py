@@ -19,14 +19,20 @@ seam consumed by Phase 7's ``srun`` path.
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+from reprocli_repro import env
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import reference as reference_mod
 from reprocli_repro.evidence import EvidencePaths
 from reprocli_repro.inputs import RunPaths, resolve_run_paths
+
+if TYPE_CHECKING:
+    from reprocli_repro.cluster import Cluster
 
 
 @dataclass
@@ -48,19 +54,28 @@ def create_layout(run_paths: RunPaths) -> None:
 def build_venv(
     workspace: Path,
     *,
+    cluster: "Cluster | None" = None,
     system_site_packages: bool = False,
     python: str | None = None,
     uv_bin: str = "uv",
 ) -> dict:
-    """Create an empty per-paper ``uv`` venv at ``workspace/.venv`` (empty on purpose)."""
+    """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
+
+    Built through the env seam (``env.exec_argv``) so the venv's base Python is the
+    same CUDA env the experiment runs in (the module-provided Python), not the
+    orchestrator's. ``--system-site-packages`` is **off by default** on purpose:
+    inheriting the bare host's site-packages is exactly how a CPU ``torch`` leaks
+    in; the agent installs the paper's own deps (incl. a CUDA build of torch) on top.
+    """
     venv_path = Path(workspace) / ".venv"
-    cmd = [uv_bin, "venv", str(venv_path)]
+    parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
     if system_site_packages:
-        cmd.append("--system-site-packages")
+        parts.append("--system-site-packages")
     if python:
-        cmd += ["--python", python]
+        parts += ["--python", shlex.quote(python)]
+    argv = env.exec_argv(cluster, workspace, " ".join(parts))
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        proc = subprocess.run(argv, cwd=str(workspace), capture_output=True, text=True, timeout=600)
     except (OSError, subprocess.SubprocessError) as exc:
         return {"ok": False, "venv": str(venv_path), "error": f"{type(exc).__name__}: {exc}"}
     return {
@@ -78,6 +93,7 @@ def prepare_workspace(
     bundle_dataset: str = reference_mod.DEFAULT_DATASET,
     make_venv: bool = True,
     materialize_ref: bool = True,
+    cluster: "Cluster | None" = None,
     system_site_packages: bool = False,
     venv_python: str | None = None,
     overwrite_reference: bool = False,
@@ -99,6 +115,7 @@ def prepare_workspace(
     if make_venv:
         venv = build_venv(
             run_paths.workspace,
+            cluster=cluster,
             system_site_packages=system_site_packages,
             python=venv_python,
         )

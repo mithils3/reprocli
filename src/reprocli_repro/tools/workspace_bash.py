@@ -4,9 +4,10 @@ The agent does its real work here: ``git clone`` the released code into the
 workspace, install deps into the per-paper venv, run the experiment. The shell's
 cwd is pinned to ``ctx.workspace`` (the same root the file tools confine to) and
 every command is appended to ``evidence/commands.log`` so the auditor can re-trace
-exactly what ran. This mirrors the auditor's ``bash`` posture (cwd-scoped, no hard
-jail); the security boundary for untrusted paper code is the Phase-8 Apptainer
-wrap, not this tool.
+exactly what ran. The command runs through the tool-enforced environment seam
+(``env.exec_argv``): the agent issues a plain command and the tool wraps it to
+``module load`` the cluster's CUDA modules, so a dependency install can never land
+in the bare CPU env.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from typing import Any
 
 from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
 
+from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
 
@@ -39,7 +41,7 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
     start = time.time()
     try:
         proc = subprocess.run(
-            ["bash", "-lc", command],
+            env.exec_argv(ctx.cluster, workspace, command),
             cwd=str(workspace),
             capture_output=True,
             text=True,
