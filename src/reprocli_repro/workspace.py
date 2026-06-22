@@ -57,6 +57,7 @@ def build_venv(
     cluster: "Cluster | None" = None,
     system_site_packages: bool = False,
     python: str | None = None,
+    seed: bool = True,
     uv_bin: str = "uv",
 ) -> dict:
     """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
@@ -66,11 +67,19 @@ def build_venv(
     orchestrator's. ``--system-site-packages`` is **off by default** on purpose:
     inheriting the bare host's site-packages is exactly how a CPU ``torch`` leaks
     in; the agent installs the paper's own deps (incl. a CUDA build of torch) on top.
+
+    ``--seed`` is **on by default** so the venv ships with ``pip``/``setuptools``/
+    ``wheel`` already present: agents (and build backends that shell out to pip)
+    otherwise hit a venv with no ``pip`` and waste rounds bootstrapping it via
+    ``ensurepip``. Seeding does not pull in the host's site-packages, so the
+    CPU-torch isolation above is unaffected.
     """
     venv_path = Path(workspace) / ".venv"
     parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
     if system_site_packages:
         parts.append("--system-site-packages")
+    if seed:
+        parts.append("--seed")
     if python:
         parts += ["--python", shlex.quote(python)]
     argv = env.exec_argv(cluster, workspace, " ".join(parts))

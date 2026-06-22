@@ -67,9 +67,16 @@ CUDA toolkit is loaded for you) — so do NOT prefix commands with `module load`
 `srun` yourself; just run the plain command. Because that environment provides CUDA
 but not a pre-pinned deep-learning stack, you install the paper's own dependencies:
 
-- Build the per-paper venv at {WORKSPACE_DIR}/.venv (already created, and clean —
-  it does NOT inherit any host packages) and install into it. Run Python through
-  that venv (e.g. .venv/bin/python), never a bare system `python`.
+- The per-paper venv at {WORKSPACE_DIR}/.venv is already created, clean (it does
+  NOT inherit any host packages), and seeded with pip/setuptools/wheel. Install
+  into it and run Python through it (e.g. .venv/bin/python), never a bare system
+  `python`.
+- Install with `uv pip`, targeting that venv explicitly — e.g.
+  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>` (or
+  `uv pip install --python .venv/bin/python -r requirements.txt`). `uv` is already
+  on PATH; prefer it over `.venv/bin/pip` — it resolves far faster and never needs
+  you to bootstrap pip. (The venv does ship pip as a fallback, so `.venv/bin/pip`
+  works too, but do not run `ensurepip` or `python -m venv` — the venv exists.)
 - Install a CUDA build of any GPU library the paper needs (e.g. a torch wheel for
   the CUDA version present, not the default CPU wheel) — pick the version the paper
   pins. Verify `torch.cuda.is_available()` is True on a GPU step before the real run.
