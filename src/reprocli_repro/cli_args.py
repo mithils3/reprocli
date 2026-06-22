@@ -23,8 +23,9 @@ from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.budget import HW_MULTIPLIER
 from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args as resolve_cluster
-from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET
+from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
+from reprocli_repro.tools import REPRO_TOOLS
 
 DEFAULT_OUTPUT = Path("outputs/repro/reproduce.jsonl")
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
@@ -77,6 +78,15 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
             "Audited lockfile carrying each paper's reproduction target. An HF dataset "
             "repo id (owner/name), an hf://datasets/<owner>/<name>/<file> reference, or "
             f"a local .jsonl path (default: {DEFAULT_LOCKFILE_DATASET})."
+        ),
+    )
+    group.add_argument(
+        "--split",
+        default=DEFAULT_LOCKFILE_SPLIT,
+        help=(
+            "Which published split of the lockfile dataset to load: 'test' (the "
+            "100-paper frozen benchmark, default) or 'validation' (the dev-15 split); "
+            "aliases 'eval'/'dev' are accepted. Ignored for a local .jsonl / hf:// file."
         ),
     )
     group.add_argument(
@@ -261,9 +271,11 @@ def _apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
-    # The repro toolset (Phase 4) and the structured submission contract (Phase 5)
-    # fill these; left unset, the loop is import-clean but has nothing to dispatch.
-    args.tools = None
+    # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
+    # metered run_gpu) to the model. The structured submission contract
+    # (response_format) lands in Phase 5; until then the final tools-off turn
+    # falls back to the classifier's default response format.
+    args.tools = REPRO_TOOLS
     args.response_format = None
     # Resolve the JIT-allocation substrate once: the named profile merged with any
     # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.

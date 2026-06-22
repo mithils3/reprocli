@@ -16,7 +16,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from reprocli_repro.cluster import Cluster
 
 
 @dataclass
@@ -54,3 +57,4 @@ class ExecutionContext:
     budget: Budget | None = None         # Phase 3: metered compute budget
     allocation: str | None = None        # Phase 3: active JIT SLURM allocation jobid
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
+    cluster: "Cluster | None" = None     # Phase 4: JIT GPU substrate run_gpu allocates on
