@@ -162,8 +162,9 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Phase 8 sandboxing seam: base .sif the GPU step is wrapped in. "
-        "Defaults to $REPRO_APPTAINER_SIF.",
+        help="NGC base .sif every step runs inside (apptainer exec --nv); the venv "
+        "inherits its CUDA PyTorch. Overrides the profile (DeltaAI defaults to a "
+        "shared NGC PyTorch ARM sif). Defaults to $REPRO_APPTAINER_SIF.",
     )
     group.add_argument(
         "--modules",

@@ -26,8 +26,10 @@ class BuildCommandTests(unittest.TestCase):
         self.assertIn("--time=90", argv)
         self.assertIn("srun", argv)
         inner = argv[-1]
+        # DeltaAI splices the apptainer-wrapped step in after srun.
+        self.assertIn("apptainer exec --nv", inner)
+        self.assertIn("pytorch_25.08-py3.sif", inner)
         self.assertIn("cd /ws", inner)
-        self.assertIn("module load python/3.11.9", inner)
         self.assertIn("python train.py", inner)
 
     def test_rejects_profile_without_account(self):

@@ -34,7 +34,7 @@ class Cluster:
     account: str | None = None           # salloc -A  (every built-in JIT profile sets one)
     partition: str | None = None         # salloc -p
     modules: tuple[str, ...] = ()         # `module load ...` prepended to each GPU step
-    apptainer_image: str | None = None   # Phase 8 sandboxing seam; unused by local
+    apptainer_image: str | None = None   # NGC base .sif each step runs inside (apptainer exec --nv); None = bare host
     scratch_root: str | None = None      # NVMe root for per-paper workspaces (Phase 7)
 
 
@@ -53,6 +53,12 @@ _PROFILES: dict[str, Cluster] = {
         partition="ghx4",
         modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
+        # GH200 is aarch64: the bare host only resolves CPU torch wheels (no
+        # aarch64 CUDA wheels exist for older pins). Running every step inside a
+        # shared NGC PyTorch ARM .sif gives a GH200-correct CUDA torch out of the
+        # box; the venv inherits it via --system-site-packages. Override per-run
+        # with --apptainer-image / $REPRO_APPTAINER_SIF.
+        apptainer_image="/sw/user/NGC_containers/pytorch_25.08-py3.sif",
     ),
     "delta-h200": Cluster(
         name="delta-h200",
