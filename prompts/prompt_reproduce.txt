@@ -125,8 +125,26 @@ pin in the repo's requirements.txt / setup.py / environment.yml — the paper's 
 has no CUDA wheel on aarch64, so forcing it just reinstalls the CPU trap. The downgrade is
 transitive: a bare `uv pip install -e .` or `-r requirements.txt` re-resolves that pin
 (it's in setup.py/pyproject too, so stripping requirements.txt alone won't stop it) and
-swaps your CUDA torch for a CPU wheel. So install the repo with `--no-deps` and install
-its other requirements with the torch line removed.
+swaps your CUDA torch for a CPU wheel.
+
+So once torch is up, install everything else with FULL dependency resolution — do NOT
+reach for `--no-deps` to protect torch. `--no-deps` is command-global: on a line that
+also lists packages like transformers/datasets it suppresses THEIR transitive deps too,
+and you'll chase a `ModuleNotFoundError` import-by-import across a dozen installs. Protect
+torch by not re-resolving it, not by starving the resolver. Two commands, kept separate:
+
+  # 1) the repo's other requirements — torch line stripped, resolver ON:
+  grep -viE '^[[:space:]]*torch([[:space:]=<>~!]|$)' requirements.txt > req.notorch.txt
+  uv pip install --python {WORKSPACE_DIR}/.venv/bin/python -r req.notorch.txt
+  #    no requirements.txt? just name the deps and let uv resolve them:
+  #    uv pip install --python {WORKSPACE_DIR}/.venv/bin/python transformers datasets ...
+  # 2) the repo package ITSELF — the only place `--no-deps` belongs:
+  uv pip install --python {WORKSPACE_DIR}/.venv/bin/python -e . --no-deps
+
+`--no-deps` goes ONLY on the bare `-e .`/repo install, run as its own command — never on
+a line that also lists PyPI packages. If a dependency itself drags in torch (an explicit
+pin you can't strip), add `--torch-backend=auto` to that install and run it inside
+`run_gpu` so uv resolves torch to the CUDA wheel instead of the CPU trap.
 
 Re-check `torch.cuda.is_available()` after every install. If it flipped to False, a plain
 reinstall won't fix it (uv sees the CPU wheel as already satisfying `torch` and no-ops):
