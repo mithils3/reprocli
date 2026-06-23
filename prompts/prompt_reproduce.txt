@@ -92,25 +92,11 @@ Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch �
 quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download
 datasets, checkpoints, and other large inputs there without rationing: at that size or
 under, don't deliberate over whether a fetch is "too big" — just pull what the MRE needs.
-Prefer the Hugging Face Hub as your primary source — its CDN is the fastest path on Delta.
-Pull weights and datasets with the HF API/CLI into an explicit local dir under `/tmp`, then
-point everything at that local path:
-  - model/repo:  `huggingface-cli download <repo> --local-dir /tmp/<name>`
-  - dataset:     `huggingface-cli download <repo> --repo-type dataset --local-dir /tmp/<name>`
-  - Python:      `from huggingface_hub import snapshot_download;
-                  snapshot_download("<repo>", local_dir="/tmp/<name>")`  (`repo_type="dataset"` for data)
-When a script or loader you invoke takes a repo id and would download internally — e.g.
-`AirRep.from_pretrained("<repo>")` or `load_dataset("<repo>")` — prefer to pre-fetch the
-repo to `/tmp` with `--local-dir` as above and pass the LOCAL PATH: that path is
-inspectable and is exactly what your scoring entrypoint re-uses. If the script won't take a
-local path, scoping the HF cache to `/tmp` for that one command is also fine —
-`HF_HOME=/tmp/<name> <cmd>` (or `HF_DATASETS_CACHE=...`) is a per-process assignment, scoped
-to that single command, so it can't leak to a later step or a re-run; just keep the cache on
-`/tmp` (never the quota'd workspace) and set the same var in your scoring entrypoint so its
-clean re-run downloads to `/tmp` too. If something the MRE needs isn't on HF, you have a
-free hand — `wget`/`curl -o /tmp/...`, `git clone <url> /tmp/<name>`, or whatever the source
-offers; just land it under `/tmp`. Two Delta specifics decide *where* the data must live and
-for *how long*:
+Prefer the HF Hub (fastest on Delta): pull weights/datasets to an explicit `--local-dir`
+under `/tmp` and point things at that path — or, if a script downloads internally from a
+repo id, scope its cache with `HF_HOME=/tmp/<name> <cmd>` (per-command, doesn't leak).
+Anything not on HF, fetch however you like (`wget`/`curl`/`git clone`) into `/tmp`. Two
+Delta specifics decide *where* the data must live and for *how long*:
 
 - `/tmp` is per-node and wiped when the allocation ends. The GPU node's `/tmp` (inside
   `run_gpu`) is a DIFFERENT disk from the login node's (`workspace_bash`), so fetch the
