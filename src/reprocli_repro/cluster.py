@@ -50,7 +50,7 @@ _PROFILES: dict[str, Cluster] = {
         hw="gh200",
         gpus_per_node=4,
         account="betw-dtai-gh",
-        partition="ghx4",
+        partition="ghx4-interactive",
         modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
         # GH200 is aarch64. We no longer wrap steps in an NGC container: the agent

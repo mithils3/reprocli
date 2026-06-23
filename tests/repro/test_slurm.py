@@ -29,7 +29,7 @@ class BuildAcquireTests(unittest.TestCase):
         self.assertIn("-A", argv)
         self.assertIn("betw-dtai-gh", argv)
         self.assertIn("-p", argv)
-        self.assertIn("ghx4", argv)
+        self.assertIn("ghx4-interactive", argv)
         self.assertIn("--gpus=4", argv)
         self.assertIn("--time=90", argv)
         # Acquire holds the node only; the command is spliced in later by build_srun.

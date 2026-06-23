@@ -15,7 +15,7 @@ class ResolveClusterTests(unittest.TestCase):
         c = resolve_cluster(DEFAULT_CLUSTER)
         self.assertEqual(c.name, "deltaai")
         self.assertEqual(c.account, "betw-dtai-gh")
-        self.assertEqual(c.partition, "ghx4")
+        self.assertEqual(c.partition, "ghx4-interactive")
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.gpus_per_node, 4)
         self.assertIn("python/3.11.9", c.modules)
