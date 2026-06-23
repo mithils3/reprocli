@@ -45,7 +45,9 @@ def project_ref(args) -> str:
 def run_via_management_api(ref: str, token: str, sql: str) -> int:
     api = f"https://api.supabase.com/v1/projects/{ref}/database/query"
     body = json.dumps({"query": sql}).encode()
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+               # Cloudflare in front of the Management API 403s the default urllib UA (code 1010)
+               "User-Agent": "reprocli-setup/1.0"}
     req = urllib.request.Request(api, data=body, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:

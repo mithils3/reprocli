@@ -51,6 +51,7 @@ create table if not exists public.repro_events (
   role           text,
   reasoning      text,
   content        text,
+  exit_reason    text,                           -- on 'final' events (mirrors the run's exit)
   tool_name      text,
   command        text,
   detail_kind    text,                           -- 'command'|'diff'|'path'|'json'
@@ -70,6 +71,9 @@ create table if not exists public.repro_events (
 );
 
 create index if not exists repro_events_run_idx on public.repro_events (run_id, seq);
+
+-- existing deployments: add columns introduced after first run (safe to run twice)
+alter table public.repro_events add column if not exists exit_reason text;
 
 -- keep updated_at fresh on every PATCH
 create or replace function public.touch_updated_at()

@@ -1,12 +1,12 @@
 """Best-effort live upload of the reproduce transcript to Supabase (opt-in).
 
-Disabled unless ``SUPABASE_URL`` + ``SUPABASE_SERVICE_KEY`` are set, so default
-runs are byte-for-byte unchanged. When enabled, a background worker drains a
-bounded queue and batches PostgREST writes (a full queue drops, never blocks).
-Mirrors ``live_log``'s swallow-all discipline: no network failure may slow or
-crash the loop — the on-disk ``agent.full.log`` stays the source of truth. Fed via
-``live_log.register_sink(sink.on_event)``: each round's data becomes ``repro_events``
-rows (plus throttled ``repro_runs`` meter patches); on ``final`` the full log is
+Disabled unless ``SUPABASE_URL`` + ``SUPABASE_SERVICE_KEY`` are set (default runs
+unchanged). When enabled, a background worker drains a bounded queue and batches
+PostgREST writes (a full queue drops, never blocks). Mirrors ``live_log``'s
+swallow-all discipline: no network failure may slow or crash the loop — the
+on-disk ``agent.full.log`` stays the source of truth. Fed via
+``live_log.register_sink(sink.on_event)``: each round becomes ``repro_events`` rows
+(plus throttled ``repro_runs`` meter patches); on ``final`` the full log is
 optionally pushed to Storage.
 """
 
@@ -238,12 +238,12 @@ class SupabaseSink:
                 self._patch_run(payload[0], payload[1])
             elif kind == "full_log":
                 self._do_full_log(payload[0], payload[1])
-        if events:
-            self._post("POST", "/rest/v1/repro_events", events, prefer="return=minimal")
+        if events:  # PostgREST bulk insert needs identical keys per row -> pad to union
+            ks = set().union(*(e.keys() for e in events))
+            self._post("POST", "/rest/v1/repro_events", [{k: e.get(k) for k in ks} for e in events], prefer="return=minimal")
 
     def _headers(self, prefer=None, content="application/json"):
-        h = {"apikey": self.cfg.service_key, "Authorization": f"Bearer {self.cfg.service_key}",
-             "Content-Type": content}
+        h = {"apikey": self.cfg.service_key, "Authorization": f"Bearer {self.cfg.service_key}", "Content-Type": content}
         if prefer:
             h["Prefer"] = prefer
         return h
