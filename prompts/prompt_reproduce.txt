@@ -92,11 +92,21 @@ Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch �
 quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download
 datasets, checkpoints, and other large inputs there without rationing: at that size or
 under, don't deliberate over whether a fetch is "too big" — just pull what the MRE needs.
-Send each download straight to `/tmp` via that command's own destination argument — e.g.
-`huggingface-cli download <repo> --local-dir /tmp/<name>`, `load_dataset(...,
-cache_dir="/tmp/<name>")`, `wget`/`curl -o /tmp/...`, `git clone <url> /tmp/<name>` — not
-by redirecting global cache env vars like `HF_HOME`. Two Delta specifics decide *where* the
-data must live and for *how long*:
+Prefer the Hugging Face Hub as your primary source — its CDN is the fastest path on Delta.
+Pull weights and datasets with the HF API/CLI into an explicit local dir under `/tmp`, then
+point everything at that local path:
+  - model/repo:  `huggingface-cli download <repo> --local-dir /tmp/<name>`
+  - dataset:     `huggingface-cli download <repo> --repo-type dataset --local-dir /tmp/<name>`
+  - Python:      `from huggingface_hub import snapshot_download;
+                  snapshot_download("<repo>", local_dir="/tmp/<name>")`  (`repo_type="dataset"` for data)
+When a script or loader you invoke takes a repo id and would download internally — e.g.
+`AirRep.from_pretrained("<repo>")` or `load_dataset("<repo>")` — pre-fetch the repo to
+`/tmp` with `--local-dir` as above and pass the LOCAL PATH instead. Do NOT redirect it by
+setting global cache env vars like `HF_HOME` / `HF_DATASETS_CACHE`: an explicit local dir is
+inspectable, is the exact path your scoring entrypoint re-uses, and keeps data off the
+quota'd workspace. If something the MRE needs isn't on HF, you have a free hand — `wget`/
+`curl -o /tmp/...`, `git clone <url> /tmp/<name>`, or whatever the source offers; just land
+it under `/tmp`. Two Delta specifics decide *where* the data must live and for *how long*:
 
 - `/tmp` is per-node and wiped when the allocation ends. The GPU node's `/tmp` (inside
   `run_gpu`) is a DIFFERENT disk from the login node's (`workspace_bash`), so fetch the
