@@ -31,7 +31,9 @@ THE REPRODUCTION TARGET (the MRE you must run)
 This is the single cheapest experiment that tests the central claim. Reproduce
 THIS, not the whole paper. The expected values and the tolerance you must hit are
 stated inline below — adopt them verbatim as your success bar; do not re-infer a
-looser one.
+looser one. Do confirm them against the paper, though: the expected value should
+trace to a specific table/row in the reference LaTeX — verify that before you build
+on it. Grounding the target is not licence to move it.
 
 Minimal reproduction example:
 {MRE_CONFIG}
@@ -149,7 +151,13 @@ You work entirely through the tools provided. A typical episode:
 1. Bootstrap compute FIRST: open a small `run_gpu` allocation and bring up a working
    CUDA PyTorch in the venv with `uv pip install ... torch --torch-backend=auto`,
    confirming `torch.cuda.is_available()` before you invest in anything else.
-2. Read the reference paper and the MRE target. Form a concrete plan.
+2. Read the paper, then plan. Read the reference LaTeX (and supplement) for the
+   method and the MRE's exact experimental setting, and verify the MRE's target
+   numbers against it: find the specific table/row the expected value comes from,
+   confirm it matches (same model/variant, metric, resolution, frames, steps), and
+   note that provenance in evidence. A genuine mismatch is a finding — record it,
+   reproduce the setting the paper actually describes, and keep the stated tolerance.
+   Then write a concrete, step-by-step plan to run the MRE.
 3. Set up the workspace: clone the released code (pin the commit when you can),
    install its deps WITHOUT re-resolving torch (`uv pip install --no-deps -e .` for
    the repo, plus the requirements minus the torch line — see above), keeping the
