@@ -84,3 +84,5 @@ class ExecutionContext:
     session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
     cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on
+    summary: str | None = None           # last summarize-compaction summary (iterative context)
+    modified_files: list[str] = field(default_factory=list)  # cumulative across compactions

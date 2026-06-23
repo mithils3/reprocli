@@ -7,12 +7,13 @@ the loop body:
 * tool calls dispatch through a per-episode ``ExecutionContext`` via
   ``dispatch.append_tool_results`` (workspace + budget + allocation + evidence)
   instead of ``execute_tool_call(call, paper=paper)``;
-* the post-round seam (the ``tool_loop.py:122`` analog) adds the compute-budget
-  guardrail and the ``microcompact`` context-management tier *ahead of* the hard
-  context cutoff.
+* the post-round seam (the ``tool_loop.py:122`` analog) calls
+  ``guardrails.apply_guardrails`` — the compute-budget force-final plus the
+  ``microcompact`` → ``summarize-compact`` context tiers that keep the loop going.
 
 Conversation shaping and output writing live in ``transcript.py``; the tool seam
-lives in ``dispatch.py``. Phase 5's post-loop re-execution writes the graded
+lives in ``dispatch.py``; the between-round budget + context guardrails live in
+``guardrails.py``. Phase 5's post-loop re-execution writes the graded
 ``result.json`` this loop deliberately does not.
 """
 
@@ -24,10 +25,6 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
 from reprocli_vllm.config.config import REQUEST_TIMEOUT
-from reprocli_vllm.runtime.loop_guards import (
-    BUDGET_CHARS_PER_TOKEN,
-    context_budget_exceeded,
-)
 from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.runtime.trace_io import assistant_message
 from reprocli_vllm.vllm.client import post_chat_completion_row, response_row
@@ -39,9 +36,9 @@ from reprocli_vllm.vllm.io import (
 )
 
 from reprocli_repro import gpu_session, live_log
-from reprocli_repro.compaction import microcompact
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
+from reprocli_repro.guardrails import apply_guardrails
 from reprocli_repro.transcript import (
     append_completed_outputs,
     append_final_message,
@@ -140,60 +137,14 @@ def run_reproduce_loop(
                     args,
                     exit_reasons,
                     include_tools,
+                    base_url,
+                    request_model,
                 )
                 submit_request(custom_id, next_round, include_tools)
 
     missing = [custom_id for custom_id in original_ids if custom_id not in final_rows]
     if missing:
         raise SystemExit(f"Missing final responses for: {', '.join(missing)}")
-
-
-def apply_guardrails(
-    custom_id: str,
-    ctx: ExecutionContext,
-    messages: list[dict[str, Any]],
-    args: argparse.Namespace,
-    exit_reasons: dict[str, str],
-    include_tools: bool,
-) -> bool:
-    """Budget guardrail + context management, run between tool rounds.
-
-    Returns whether the next request should still offer tools. Force-finals
-    first when the compute budget is spent, then lets ``microcompact`` reclaim
-    room before falling back to the hard tools-off context cutoff.
-    """
-    if not include_tools:
-        gpu_session.release(ctx, "tools_off")
-        return False
-    # Bill any GPU wall held since the last charge so a held node depletes the budget
-    # even across a long reasoning gap, and the ceiling is enforced mid-hold.
-    gpu_session.charge_accrued(ctx)
-    if ctx.budget is not None and ctx.budget.exhausted():
-        gpu_session.release(ctx, "budget_exhausted")
-        exit_reasons[custom_id] = "budget_exhausted"
-        print(f"Stopping reproduce loop for {custom_id}: compute budget exhausted", file=sys.stderr)
-        return False
-    if args.microcompact:
-        stats = microcompact(
-            messages,
-            keep_recent_tool_results=args.microcompact_keep,
-            soft_limit_chars=microcompact_soft_limit(args),
-        )
-        if stats["compacted"]:
-            print(
-                f"microcompact {custom_id}: elided {stats['elided_messages']} stale tool "
-                f"result(s), {stats['chars_before']}->{stats['chars_after']} chars",
-                file=sys.stderr,
-            )
-    if context_budget_exceeded(messages, args.max_input_tokens):
-        gpu_session.release(ctx, "context_budget")
-        exit_reasons[custom_id] = "context_budget"
-        return False
-    return True
-
-
-def microcompact_soft_limit(args: argparse.Namespace) -> int:
-    return int(args.microcompact_threshold * args.max_input_tokens * BUDGET_CHARS_PER_TOKEN)
 
 
 def handle_request_done(

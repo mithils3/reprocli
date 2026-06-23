@@ -19,13 +19,12 @@ import os
 from pathlib import Path
 
 from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
-from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.budget import HW_MULTIPLIER
-from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args as resolve_cluster
+from reprocli_repro.cli_resolve import apply_defaults, validate
+from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names
 from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
-from reprocli_repro.tools import build_repro_tools
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
 # dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
@@ -35,21 +34,6 @@ DEFAULT_WORK_ROOT = Path(os.environ.get("REPRO_WORK_ROOT", "/work/nvme/bfvr/msal
 DEFAULT_OUTPUT = DEFAULT_WORK_ROOT / "reproduce.jsonl"
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 DEFAULT_RUNS_DIR = DEFAULT_WORK_ROOT / "agent_runs"
-
-# Phase 0 placeholders; Phase 1 swaps in the real operating prompt file and
-# Phase 5 the structured submission contract. The loop reads these off ``args``.
-REPRO_SYSTEM_MESSAGE = (
-    "You are a reproduction agent. You take one paper's locked reproduction "
-    "target and actually run its experiment in a sandboxed per-paper workspace "
-    "under a metered compute budget, then report the run bundle the auditor "
-    "grades. Spend budget deliberately; write durable evidence as you go. "
-    "(Phase 0 placeholder operating prompt; the full toolset and instructions "
-    "land in later phases.)"
-)
-REPRO_FINAL_NO_TOOLS_MESSAGE = (
-    "The tool phase is finished. Produce the final structured submission now "
-    "from the evidence gathered above. Return only the requested object."
-)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -62,8 +46,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     _add_context_management(parser)
     _add_outputs(parser)
     args = parser.parse_args(argv)
-    _validate(parser, args)
-    _apply_defaults(args)
+    validate(parser, args)
+    apply_defaults(args)
     return args
 
 
@@ -239,6 +223,26 @@ def _add_context_management(parser: argparse.ArgumentParser) -> None:
         default=0.8,
         help="Soft threshold as a fraction of --max-input-tokens (default: 0.8).",
     )
+    group.add_argument(
+        "--summarize-compact",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="When microcompact can't keep up, summarize old turns with one brain "
+        "call and keep going instead of stopping (default: on).",
+    )
+    group.add_argument(
+        "--summarize-keep-tokens",
+        type=int,
+        default=20000,
+        help="Recent tokens kept verbatim when summarize-compacting (default: 20000).",
+    )
+    group.add_argument(
+        "--summarize-threshold",
+        type=float,
+        default=0.9,
+        help="Fraction of --max-input-tokens that triggers summarize-compaction; "
+        "fires after microcompact (default: 0.9).",
+    )
 
 
 def _add_outputs(parser: argparse.ArgumentParser) -> None:
@@ -246,44 +250,3 @@ def _add_outputs(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     group.add_argument("--trace-output", type=Path)
     group.add_argument("--save-round-jsonl", action="store_true")
-
-
-def _validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
-    if args.tool_rounds < 1:
-        parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
-    if args.request_workers < 1:
-        parser.error("--request-workers must be >= 1")
-    if args.max_input_tokens < 1:
-        parser.error("--max-input-tokens must be >= 1")
-    if args.top_k is not None and args.top_k < 1:
-        parser.error("--top-k must be >= 1")
-    if args.microcompact_keep < 0:
-        parser.error("--microcompact-keep must be >= 0")
-    if not 0 < args.microcompact_threshold <= 1:
-        parser.error("--microcompact-threshold must be in (0, 1]")
-    if args.budget_h100_hours < 0:
-        parser.error("--budget-h100-hours must be >= 0")
-    if args.gpus_per_node is not None and args.gpus_per_node < 1:
-        parser.error("--gpus-per-node must be >= 1")
-    if args.max_input_tokens + args.max_tokens > args.max_model_len:
-        parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
-
-
-def _apply_defaults(args: argparse.Namespace) -> None:
-    args.system_message = REPRO_SYSTEM_MESSAGE
-    args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
-    args.use_tools = True
-    args.response_format = None
-    # Resolve the JIT-allocation substrate once: the named profile merged with any
-    # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
-    args.cluster_profile = resolve_cluster(args)
-    # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
-    # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
-    # per-node size, so the model picks a valid GPU count for this substrate. The
-    # structured submission contract (response_format) lands in Phase 5; until then
-    # the final tools-off turn falls back to the classifier's default format.
-    args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
-    if args.trace_output is None:
-        args.trace_output = trace_output_path(args.output)
