@@ -13,9 +13,10 @@ where each one runs. There are two kinds of step and they wrap differently:
 
 * **GPU steps** (``run_gpu``, spliced after ``srun`` by ``slurm.py``) DO need the
   CUDA toolkit — to build any custom CUDA extensions and to run the experiment —
-  so those take the ``on_gpu=True`` wrap: ``cd <ws> && module load <modules> &&
-  <cmd>``. The NVIDIA driver is always present on a GPU node, so a CUDA-enabled
-  torch wheel runs there regardless; the ``module load`` is for the build toolkit.
+  so those take the ``on_gpu=True`` wrap: ``cd <ws> && module load <modules>
+  2>/dev/null && <cmd>`` (the redirect drops Lmod's per-load banner). The NVIDIA
+  driver is always present on a GPU node, so a CUDA-enabled torch wheel runs there
+  regardless; the ``module load`` is for the build toolkit.
 
 ``exec_argv`` is the single seam both sides use, with ``on_gpu`` selecting the
 wrap: the orchestrator tools pass it straight to ``subprocess.run``; the GPU
@@ -72,10 +73,13 @@ def env_inner(
 
     Opt-in apptainer path (``apptainer_image`` set): ``apptainer exec --nv ... <sif>
     bash -c 'cd <ws> && <cmd>'`` (CUDA torch comes from the image; modules skipped).
-    Otherwise the bare-host path: always ``cd <ws>``, plus ``module load <modules>``
-    only when ``on_gpu`` — GPU steps need the CUDA toolkit, while the CPU-setup shell
-    stays clean so it doesn't break ``git``. Single-quoting the inner body on the
-    apptainer path defers expansion to the in-container shell.
+    Otherwise the bare-host path: always ``cd <ws>``, plus ``module load <modules>
+    2>/dev/null`` only when ``on_gpu`` — GPU steps need the CUDA toolkit, while the
+    CPU-setup shell stays clean so it doesn't break ``git``. The ``2>/dev/null`` drops
+    the per-load Lmod banner (it would otherwise repeat in every GPU step's output);
+    it binds only to ``module load``, so the command's own stderr is preserved.
+    Single-quoting the inner body on the apptainer path defers expansion to the
+    in-container shell.
     """
     cd = f"cd {shlex.quote(str(workspace))}"
     if cluster is not None and cluster.apptainer_image:
@@ -83,7 +87,12 @@ def env_inner(
         return f"{_apptainer_prefix(cluster, workspace)} bash -c {shlex.quote(inner)}"
     parts = [cd]
     if on_gpu and cluster is not None and cluster.modules:
-        parts.append("module load " + " ".join(cluster.modules))
+        # `2>/dev/null` drops the Lmod banner the modulefiles print to stderr on
+        # every load (e.g. "CUDA Toolkit 13.1.1 loaded", "Requires NVIDIA driver
+        # 590+") — it would otherwise repeat in every GPU step's output and pollute
+        # the model's context. The redirect binds only to `module load`, so the
+        # command's own stderr is untouched.
+        parts.append("module load " + " ".join(cluster.modules) + " 2>/dev/null")
     parts.append(command)
     return " && ".join(parts)
 

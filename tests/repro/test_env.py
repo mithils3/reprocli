@@ -24,7 +24,8 @@ class ModulesPathTests(unittest.TestCase):
         self.assertEqual(argv[:2], ["bash", "-lc"])
         inner = argv[2]
         self.assertTrue(inner.startswith("cd /ws &&"))
-        self.assertIn("module load python/3.11.9 cuda cudnn nccl", inner)
+        # The load is silenced so the Lmod banner doesn't repeat in every step's output.
+        self.assertIn("module load python/3.11.9 cuda cudnn nccl 2>/dev/null", inner)
         self.assertIn("python train.py", inner)
         self.assertNotIn("apptainer", inner)
 
