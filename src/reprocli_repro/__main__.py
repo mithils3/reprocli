@@ -22,7 +22,7 @@ import sys
 
 from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 
-from reprocli_repro import gpu_session
+from reprocli_repro import gpu_session, supabase_sink
 from reprocli_repro.cli_args import parse_args
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.inputs import EpisodeInput, band_of, build_context, prepare_episodes
@@ -66,12 +66,21 @@ def main(argv: list[str] | None = None) -> int:
         f"cluster={args.cluster_profile.name} hw={args.cluster_profile.hw}",
         file=sys.stderr,
     )
+    # Opt-in live upload to Supabase (no-op unless SUPABASE_URL + SUPABASE_SERVICE_KEY
+    # are set); registers itself on the live_log seam so each round streams to the
+    # dashboard. Best-effort — never affects the loop.
+    sink = supabase_sink.install(supabase_sink.SinkConfig.from_env())
+    if sink:
+        for ctx in contexts:
+            sink.upsert_run(ctx, model=model_id, status="running")
     try:
         run_reproduce_loop(args, contexts, [ep.prompt for ep in episodes], server_url, model_id)
     finally:
         # Never leak a held GPU allocation on a crash/interrupt — the loop releases
         # each episode's session on completion, this sweeps any that survived.
         gpu_session.teardown_all(contexts)
+        if sink:
+            sink.close()
     print(
         f"\nReproduce loop finished {len(episodes)} episode(s); responses in "
         f"{args.output}. Phase 5 re-executes each repro.yaml to write result.json.",

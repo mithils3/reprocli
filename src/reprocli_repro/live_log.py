@@ -39,6 +39,27 @@ from reprocli_repro.context import ExecutionContext
 HEAD_LINES = 24
 RULE = "─" * 72
 
+# Optional structured sink (e.g. the Supabase uploader). Registered once at
+# startup; fed the *raw* per-round data alongside the file writes so a remote
+# dashboard sees the same events. Best-effort: a sink failure must never break
+# the loop, exactly like the file writers below.
+_SINK: "Callable[[str, ExecutionContext, dict[str, Any]], None] | None" = None
+
+
+def register_sink(fn: "Callable[[str, ExecutionContext, dict[str, Any]], None] | None") -> None:
+    """Install (or clear with ``None``) the structured live sink."""
+    global _SINK
+    _SINK = fn
+
+
+def _notify(kind: str, ctx: ExecutionContext, payload: dict[str, Any]) -> None:
+    if _SINK is None:
+        return
+    try:
+        _SINK(kind, ctx, payload)
+    except Exception:  # noqa: BLE001 — best-effort, never break the loop
+        return
+
 
 def _log_path(ctx: ExecutionContext) -> Path | None:
     """``<run_dir>/agent.log`` — sibling of the evidence dir — or None if unknown."""
@@ -171,6 +192,7 @@ def log_round_open(
     rnd = f"round {round_index}" if round_index is not None else "round"
     header = f" {rnd} · {getattr(ctx, 'arxiv_id', '?')} · {_stamp()}"
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full)])
+    _notify("round_open", ctx, {"round_index": round_index, "message": message})
 
 
 def log_call_start(ctx: ExecutionContext, call: dict[str, Any]) -> None:
@@ -184,11 +206,13 @@ def log_call_start(ctx: ExecutionContext, call: dict[str, Any]) -> None:
         return lines
 
     _emit(ctx, build)
+    _notify("call_start", ctx, {"call": call})
 
 
 def log_call_result(ctx: ExecutionContext, result: dict[str, Any]) -> None:
     """Flush a tool result the instant it returns."""
     _emit(ctx, lambda full: _result_lines(result, full=full))
+    _notify("call_result", ctx, {"result": result})
 
 
 def log_final(
@@ -204,3 +228,4 @@ def log_final(
         f" ✅ FINAL{rnd} · {getattr(ctx, 'arxiv_id', '?')} · exit={exit_reason} · {_stamp()}"
     )
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full), ""])
+    _notify("final", ctx, {"round_index": round_index, "message": message, "exit_reason": exit_reason})

@@ -1,0 +1,90 @@
+/* Repro Run Viewer — round-card, tool-call, stdout/stderr, cost-meter, dropzone
+   and JSON-tree blocks. Reuses the design-system variables from styles.css. */
+
+/* cost / budget meter (reuses verify_app's .bar/.bar-fill grammar) */
+.meter { margin: 14px 0 6px; position: sticky; top: 0; background: var(--bg);
+  padding: 8px 0 10px; z-index: 2; border-bottom: 1px solid var(--line); }
+.meter-row { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+.bar { flex: 1; height: 7px; border-radius: 4px; background: var(--panel2); overflow: hidden; max-width: 420px; }
+.bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .3s; }
+.bar-fill.done { background: var(--yes); }
+.meter b { color: var(--txt); font-variant-numeric: tabular-nums; }
+
+/* round cards */
+.rounds { display: grid; gap: 14px; margin-top: 16px; }
+.rcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 15px 18px; box-shadow: var(--shadow); }
+.rcard.final { border-color: var(--yes); box-shadow: inset 3px 0 0 var(--yes), var(--shadow); }
+.rcard.final.bad { border-color: var(--no); box-shadow: inset 3px 0 0 var(--no), var(--shadow); }
+.rcard-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.rcard-h .schip { font-size: 11px; }
+.rcard-h .ftime { color: var(--muted); font-size: 11px; margin-left: auto; }
+
+/* reasoning / assistant blocks */
+.block { margin: 10px 0 0; }
+.block-l { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  font-weight: 600; margin-bottom: 3px; }
+.rprose { margin: 0; font-family: var(--serif); font-size: 14px; line-height: 1.62; color: var(--txt);
+  white-space: pre-wrap; word-break: break-word; }
+
+/* tool calls */
+.call { margin: 12px 0 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.call-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; background: var(--panel2); border-bottom: 1px solid var(--line); }
+.call-h .tool { font-weight: 600; font-size: 13px; }
+.call-h .tool::before { content: "⏺ "; color: var(--accent); }
+.call-body { padding: 10px 12px; display: grid; gap: 8px; }
+.cmd { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap;
+  word-break: break-word; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 11px; color: var(--txt); max-height: 260px; overflow: auto; }
+.cmd::before { content: "$ "; color: var(--accent-strong); }
+.cmd.path::before, .cmd.diff::before { content: ""; }
+.result { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.err { color: var(--no-deep); font-size: 12.5px; font-family: var(--mono); white-space: pre-wrap;
+  background: var(--no-tint); border: 1px solid var(--no); border-radius: 8px; padding: 7px 10px; }
+.err::before { content: "! "; }
+
+/* stdout / stderr collapsibles */
+.collapse { margin: 0; }
+.collapse details { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.collapse summary { padding: 7px 11px; cursor: pointer; color: var(--muted); font-weight: 500;
+  font-size: 12px; list-style: none; }
+.collapse summary::-webkit-details-marker { display: none; }
+.collapse summary::before { content: "▸ "; }
+.collapse details[open] summary::before { content: "▾ "; }
+.collapse summary:hover { color: var(--txt); }
+.stream { margin: 0; padding: 9px 12px; border-top: 1px solid var(--line); font-family: var(--mono);
+  font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  max-height: 360px; overflow: auto; }
+.stream.out { color: var(--txt); }
+.stream.errt { color: var(--no-deep); background: var(--no-tint); }
+.trunc { font-size: 11px; color: var(--unk-deep); background: var(--unk-tint); border: 1px solid var(--unk);
+  border-radius: 8px; padding: 5px 9px; }
+
+/* drop zone (Local tab) */
+.drop { margin: 40px auto; max-width: 560px; border: 2px dashed var(--line-strong); border-radius: 18px;
+  padding: 48px 32px; text-align: center; color: var(--muted); background: var(--panel);
+  transition: border-color .15s, background .15s; cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-tint); color: var(--accent-strong); }
+.drop h2 { margin: 0 0 8px; font-size: 19px; color: var(--txt); }
+.drop .hint { font-size: 13px; }
+.drop .hint code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; font-family: var(--mono); font-size: 12px; }
+
+/* raw json tree (tool-call args) — borrowed from verify_app json_view.js styling */
+.jraw { font-family: var(--mono); font-size: 12px; line-height: 1.7; padding: 2px; overflow-x: auto; }
+.jchildren { padding-left: 1.25em; border-left: 1px solid var(--line); margin-left: .4em; }
+.jline { white-space: pre-wrap; word-break: break-word; }
+.jhead { cursor: pointer; border-radius: 6px; transition: background .12s; }
+.jhead:hover { background: var(--panel2); }
+.jtoggle { display: inline-block; width: 1.1em; color: var(--muted); user-select: none; text-align: center; }
+.branch > .jhead > .jtoggle::before { content: "▾"; }
+.jnode.collapsed > .jhead > .jtoggle::before { content: "▸"; }
+.jnode.collapsed > .jchildren, .jnode.collapsed > .jclose { display: none; }
+.jpreview { display: none; color: var(--muted); }
+.jnode.collapsed > .jhead .jpreview { display: inline; }
+.jcount { color: var(--muted); font-size: 11px; font-style: italic; font-family: var(--serif); }
+.jkey { color: var(--accent-strong); font-weight: 500; }
+.jpunc, .jbrace { color: var(--muted); }
+.jstr, .jnum { color: var(--txt); }
+.jbool { color: var(--unk-deep); font-weight: 600; }
+.jnull { color: var(--muted); font-style: italic; }
