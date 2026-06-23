@@ -109,12 +109,25 @@ Run it inside `run_gpu` so uv detects the card and picks the right CUDA build, t
 confirm `torch.cuda.is_available()` is True. Nothing else matters until CUDA torch
 imports and sees the GPU.
 
-KEEP this bootstrapped torch. Ignore any torch / torchvision / torchaudio pin in
-the repo's `requirements.txt` / `setup.py` / `environment.yml` — the paper's pinned
-torch usually has no CUDA wheel on this aarch64 node, and forcing it just reinstalls
-the CPU-only trap. When you install the repo's deps, strip those torch lines out (or
-`uv pip install` the rest and let your existing torch satisfy them); never let a
-dependency downgrade the working CUDA torch.
+KEEP this bootstrapped torch and NEVER reinstall it. Once `torch.cuda.is_available()`
+is True, torch / torchvision / torchaudio are FROZEN: do not reinstall, upgrade, or
+re-pin them, and run no install that would replace them. Ignore any torch pin in the
+repo's `requirements.txt` / `setup.py` / `environment.yml` — the paper's pinned torch
+usually has no CUDA wheel on this aarch64 node, so forcing it just reinstalls the
+CPU-only trap.
+
+The downgrade is transitive, not something you ask for. A bare `uv pip install -e .`
+or `uv pip install -r requirements.txt` re-resolves the repo's torch pin (it lives in
+setup.py / pyproject too, so stripping requirements.txt alone does NOT stop it) and
+silently swaps your CUDA torch for a CPU wheel. Prevent it: install the repo itself
+with `--no-deps` (`uv pip install --no-deps -e .`) and install its other requirements
+explicitly with the torch / torchvision / torchaudio lines stripped out. Never run a
+repo install that re-resolves torch.
+
+Re-check `torch.cuda.is_available()` after any install. If it flipped to False you
+clobbered torch — and a plain `uv pip install torch --torch-backend=auto` will NOT
+recover it (uv sees the CPU wheel as already satisfying `torch` and no-ops); you must
+`uv pip uninstall -y torch torchvision` first, then re-bootstrap on a GPU.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
@@ -138,9 +151,9 @@ You work entirely through the tools provided. A typical episode:
    confirming `torch.cuda.is_available()` before you invest in anything else.
 2. Read the reference paper and the MRE target. Form a concrete plan.
 3. Set up the workspace: clone the released code (pin the commit when you can),
-   install its deps with `uv pip install` but ignore the torch pins in
-   requirements.txt (keep the CUDA torch you bootstrapped), fetch only the
-   data/weights the MRE needs.
+   install its deps WITHOUT re-resolving torch (`uv pip install --no-deps -e .` for
+   the repo, plus the requirements minus the torch lines — see above), keeping the
+   CUDA torch you bootstrapped, fetch only the data/weights the MRE needs.
 4. Get the experiment running cheaply, then run the real metered experiment that
    produces the claimed metric.
 5. Record evidence continuously: the exact commands you ran, their stdout/stderr,
