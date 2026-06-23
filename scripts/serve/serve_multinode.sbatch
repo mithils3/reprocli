@@ -1,9 +1,9 @@
 #!/bin/bash
 # Stand up a MULTI-NODE vLLM server (e.g. Kimi-K2.6: TP=4 per node, PP=#nodes)
 # on DeltaAI ghx4, reachable from any other node by the URL rank 0 publishes.
-# Batch form of scripts/serve_interactive.md.
+# Batch form of scripts/serve/serve_interactive.md.
 #
-#   sbatch --nodes=2 scripts/serve_multinode.sbatch
+#   sbatch --nodes=2 scripts/serve/serve_multinode.sbatch
 #
 #SBATCH -J reprocli_serve_mn
 #SBATCH -A betw-dtai-gh
@@ -27,14 +27,14 @@ VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
 MODEL="${MODEL:-/work/hdd/bfvr/msalunkhe/models/Kimi-K2.6}"
 SERVED_NAME="${SERVED_NAME:-moonshotai/Kimi-K2.6}"
 PORT="${PORT:-8000}"
-ENDPOINT_FILE="${ENDPOINT_FILE:-/projects/bgnp/msalunkhe/endpoints/kimi_k2_6.json}"
+ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/endpoints/kimi_k2_6.json}"
 IFACE_NAME="${IFACE_NAME:-hsn0}"
 TP="${TP:-4}"
 
 # --- Standardized env block (no loopback pin: multi-node needs the fabric) ---
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID

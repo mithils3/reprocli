@@ -19,6 +19,9 @@ class ResolveClusterTests(unittest.TestCase):
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.gpus_per_node, 4)
         self.assertIn("python/3.11.9", c.modules)
+        # Apptainer is opt-in and off by default now: the agent installs a CUDA
+        # torch into the venv instead of inheriting a container's.
+        self.assertIsNone(c.apptainer_image)
 
     def test_delta_h200_profile(self):
         c = resolve_cluster("delta-h200")

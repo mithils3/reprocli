@@ -18,24 +18,24 @@ standalone form of Part IV of the [architecture overview](../architecture.md).
 
 | cluster | account / partition | hardware | used for |
 |---|---|---|---|
-| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | the classifier/auditor sbatch jobs (`scripts/*.sbatch`) |
+| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | the classifier/auditor sbatch jobs (`scripts/**/*.sbatch`) |
 | **Delta** (NCSA) | `-A bfvr-delta-cpu -p cpu-interactive` | CPU | model downloads, CPU orchestration |
 | **Delta** (NCSA) | `-A bfvr-delta-gpu -p gpuH200x8-interactive` | H200 ×8/node | interactive + multi-node model serving |
 
 !!! note "Interactive partitions"
     For interactive allocations on DeltaAI, the runbook uses
     `-p ghx4-interactive` instead of `ghx4`
-    (`scripts/kimi_k2_6_multinode_interactive.md` §1). Pick the interactive
+    (`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §1). Pick the interactive
     variant when your allocation policy requires it.
 
 These three account/partition triples are not hypothetical — they are the exact
 strings the live scripts pass:
 
-- `scripts/paper_classification_kimi_k2_6.sbatch` → `#SBATCH -A betw-dtai-gh`,
+- `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` → `#SBATCH -A betw-dtai-gh`,
   `#SBATCH -p ghx4` (single node, `--gpus-per-node=8`, `--gpu-bind=none`).
-- `scripts/delta_scripts.sh` line 1 → `srun -A bfvr-delta-cpu -p cpu-interactive
+- `scripts/cluster/delta_scripts.sh` line 1 → `srun -A bfvr-delta-cpu -p cpu-interactive
   …` to grab a CPU shell for an `hf download`.
-- `scripts/delta_scripts.sh` line 4 → `srun -A bfvr-delta-gpu -p
+- `scripts/cluster/delta_scripts.sh` line 4 → `srun -A bfvr-delta-gpu -p
   gpuH200x8-interactive --gpus-per-node=6 …` for an interactive H200 shell.
 
 ---
@@ -60,7 +60,7 @@ srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 \
 This is the same shape the multi-node runbook uses for *every* in-allocation
 command — interface discovery, head-IP probing, and the `vllm serve` launch all
 go through `srun --jobid=$SLURM_JOB_ID … bash -lc '…'`
-(`scripts/kimi_k2_6_multinode_interactive.md` §3–§5).
+(`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §3–§5).
 
 ```mermaid
 flowchart TD
@@ -120,10 +120,10 @@ harness re-execution verdict.
 
 Every `srun` step inherits the environment the sbatch scripts already
 standardize. The block below is shared across
-`scripts/paper_classification.sbatch`,
-`scripts/paper_classification_kimi_k2_6.sbatch`, the `serve_*.sbatch` servers, and
+`scripts/minimax_m2/paper_classification.sbatch`,
+`scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch`, the `serve_*.sbatch` servers, and
 the interactive runbook's §2
-(`scripts/kimi_k2_6_multinode_interactive.md`). The one divergence: the single-node
+(`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`). The one divergence: the single-node
 sbatch scripts additionally pin loopback rendezvous
 (`export MASTER_ADDR=127.0.0.1` / `export VLLM_HOST_IP=127.0.0.1`), which the
 **multi-node** runbook deliberately omits — there the head address is discovered
@@ -131,13 +131,13 @@ as `HEAD_IP` (see the multi-node warning below).
 
 ### Caches (project-scoped, not `$HOME`)
 
-Compile/runtime caches are pinned under `/projects/bgnp/msalunkhe/.cache/…` so
+Compile/runtime caches are pinned under `/work/nvme/bfvr/msalunkhe/.cache/…` so
 they survive and are shared across jobs rather than filling a home quota:
 
 ```bash
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 ```
 
 ### NCCL / Torch-NCCL tuning
@@ -182,7 +182,7 @@ export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
     For a **multi-node** serve, the env block alone is not enough: the runbook
     also discovers the high-speed fabric interface (`hsn0` on DeltaAI) and the
     head IP, then exports `GLOO_SOCKET_IFNAME` / `NCCL_SOCKET_IFNAME`
-    (`scripts/kimi_k2_6_multinode_interactive.md` §3–§4). If `IFACE_NAME` is unset
+    (`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §3–§4). If `IFACE_NAME` is unset
     when probing, `ip -o -4 addr show` lists every interface and the first match
     is loopback — silently making `HEAD_IP=127.0.0.1`, which breaks the
     rendezvous (the worker node times out with `4/8 clients joined`). The runbook

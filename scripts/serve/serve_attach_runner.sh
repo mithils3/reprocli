@@ -5,11 +5,11 @@
 # reproduction agent) is model-agnostic and only makes HTTP requests, so it
 # attaches to the server purely by URL. Swap providers by changing the URL.
 #
-#   ENDPOINT_FILE=/projects/bgnp/msalunkhe/endpoints/minimax_m2.json \
-#     bash scripts/serve_attach_runner.sh --num-prompts 2
+#   ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json \
+#     bash scripts/serve/serve_attach_runner.sh --num-prompts 2
 set -euo pipefail
 
-ENDPOINT_FILE="${ENDPOINT_FILE:-/projects/bgnp/msalunkhe/endpoints/minimax_m2.json}"
+ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json}"
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 
 if [[ ! -f "${ENDPOINT_FILE}" ]]; then

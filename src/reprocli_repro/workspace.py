@@ -12,21 +12,29 @@ materializes everything the agent needs *before* the loop starts:
   - the durable ``evidence/`` sinks.
 
 It deliberately does **not** clone the paper's code or install its dependencies:
-that is the agent's job through ``workspace_bash`` (clone) into this venv. The
-Apptainer/module substrate (``--apptainer-image`` / ``--modules``) is a deferred
-seam consumed by Phase 7's ``srun`` path.
+that is the agent's job. It clones via ``workspace_bash`` and installs into this
+venv — including a CUDA-enabled torch — inside a ``run_gpu`` step (see
+``prompts/prompt_reproduce.txt``). The venv is created **clean** (no
+``--system-site-packages``) so nothing from the host/login site-packages leaks
+onto ``sys.path`` and shadows what the agent installs.
 """
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+from reprocli_repro import env
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import reference as reference_mod
 from reprocli_repro.evidence import EvidencePaths
 from reprocli_repro.inputs import RunPaths, resolve_run_paths
+
+if TYPE_CHECKING:
+    from reprocli_repro.cluster import Cluster
 
 
 @dataclass
@@ -48,19 +56,37 @@ def create_layout(run_paths: RunPaths) -> None:
 def build_venv(
     workspace: Path,
     *,
+    cluster: "Cluster | None" = None,
     system_site_packages: bool = False,
     python: str | None = None,
+    seed: bool = True,
     uv_bin: str = "uv",
 ) -> dict:
-    """Create an empty per-paper ``uv`` venv at ``workspace/.venv`` (empty on purpose)."""
+    """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
+
+    Built through the env seam (``env.exec_argv``) on the CPU-setup path. ``--system-
+    site-packages`` is **off**: inheriting the host/login site-packages is exactly
+    how a CPU ``torch`` (or the user's ``~/.local`` packages) leaks onto ``sys.path``
+    and shadows what the agent installs. The venv starts empty and the agent installs
+    everything it needs — including a CUDA-enabled torch from the matching PyTorch
+    index, inside a ``run_gpu`` step (see ``prompts/prompt_reproduce.txt``).
+
+    ``--seed`` is **on by default** so the venv ships with ``pip``/``setuptools``/
+    ``wheel`` already present: agents (and build backends that shell out to pip)
+    otherwise hit a venv with no ``pip`` and waste rounds bootstrapping it via
+    ``ensurepip``.
+    """
     venv_path = Path(workspace) / ".venv"
-    cmd = [uv_bin, "venv", str(venv_path)]
+    parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
     if system_site_packages:
-        cmd.append("--system-site-packages")
+        parts.append("--system-site-packages")
+    if seed:
+        parts.append("--seed")
     if python:
-        cmd += ["--python", python]
+        parts += ["--python", shlex.quote(python)]
+    argv = env.exec_argv(cluster, workspace, " ".join(parts))
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        proc = subprocess.run(argv, cwd=str(workspace), capture_output=True, text=True, timeout=600)
     except (OSError, subprocess.SubprocessError) as exc:
         return {"ok": False, "venv": str(venv_path), "error": f"{type(exc).__name__}: {exc}"}
     return {
@@ -78,6 +104,7 @@ def prepare_workspace(
     bundle_dataset: str = reference_mod.DEFAULT_DATASET,
     make_venv: bool = True,
     materialize_ref: bool = True,
+    cluster: "Cluster | None" = None,
     system_site_packages: bool = False,
     venv_python: str | None = None,
     overwrite_reference: bool = False,
@@ -99,6 +126,7 @@ def prepare_workspace(
     if make_venv:
         venv = build_venv(
             run_paths.workspace,
+            cluster=cluster,
             system_site_packages=system_site_packages,
             python=venv_python,
         )

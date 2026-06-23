@@ -16,9 +16,9 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 set -euo pipefail
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
@@ -70,7 +70,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
   --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \

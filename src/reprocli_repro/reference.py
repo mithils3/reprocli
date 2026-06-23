@@ -51,6 +51,19 @@ def stream_bundle(dataset: str):
     return load_dataset(dataset, split="train", streaming=True)
 
 
+def load_bundle(dataset: str):
+    """Load the paper-bundle fully (non-streaming): download + cache every shard once.
+
+    Unlike streaming, this shows HF download progress (no silent per-run scan) and,
+    once cached, lookups are local memory-mapped reads — so the second run is fast.
+    Point ``HF_HOME``/``HF_HUB_CACHE`` at the NVMe work filesystem, not ``$HOME``,
+    since the full bundle is large.
+    """
+    from datasets import load_dataset
+
+    return load_dataset(dataset, split="train")
+
+
 def arxiv_matches(row_id: str, wanted: str) -> bool:
     """True if ``row_id`` is ``wanted``, ignoring any trailing version (``v2``)."""
     row_id = str(row_id or "").strip()
@@ -205,10 +218,16 @@ def materialize_reference(
 
 
 def find_bundle_row(arxiv_id: str, *, dataset: str = DEFAULT_DATASET) -> dict | None:
-    """Stream the bundle and return the first row whose arXiv id matches."""
-    for row in stream_bundle(dataset):
-        if arxiv_matches(row.get("arxiv_id"), arxiv_id):
-            return dict(row)
+    """Return the bundle row whose arXiv id matches, from the non-streaming dataset.
+
+    Reads the lightweight ``arxiv_id`` column to locate the row, then materializes
+    just that one row's heavy ``content`` bytes — so finding one paper never pulls
+    every row's payload into memory.
+    """
+    ds = load_bundle(dataset)
+    for index, row_id in enumerate(ds["arxiv_id"]):
+        if arxiv_matches(row_id, arxiv_id):
+            return dict(ds[index])
     return None
 
 

@@ -18,7 +18,7 @@ layer reads.
 ## 1. Python environment
 
 The cluster jobs target **Python 3.11** (`module load python/3.11.9` in
-`scripts/*.sbatch`). Create an isolated environment with `uv`:
+`scripts/**/*.sbatch`). Create an isolated environment with `uv`:
 
 ```bash
 # from the repo root
@@ -70,7 +70,7 @@ uv pip install -r requirements.txt
 
 There is no install step that puts the packages on `sys.path`, so every
 invocation prepends `src/`. The entry point is `src/run_arxiv_prompt_vllm.py`;
-`scripts/*.sbatch` set `export PYTHONPATH=.../reprocli/src` for exactly this.
+`scripts/**/*.sbatch` set `export PYTHONPATH=.../reprocli/src` for exactly this.
 
 ```bash
 # agent entry point (classifier is the default mode)

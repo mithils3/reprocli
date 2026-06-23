@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
@@ -28,7 +27,6 @@ from reprocli_vllm.config.config import REQUEST_TIMEOUT
 from reprocli_vllm.runtime.loop_guards import (
     BUDGET_CHARS_PER_TOKEN,
     context_budget_exceeded,
-    repeated_tool_call,
 )
 from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.runtime.trace_io import assistant_message
@@ -40,6 +38,7 @@ from reprocli_vllm.vllm.io import (
     response_message,
 )
 
+from reprocli_repro import gpu_session, live_log
 from reprocli_repro.compaction import microcompact
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
@@ -71,7 +70,6 @@ def run_reproduce_loop(
     original_ids = [ctx.arxiv_id for ctx in contexts]
     final_rows: dict[str, dict] = {}
     exit_reasons: dict[str, str] = {}
-    tool_call_counts = {custom_id: Counter() for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
     base_url = server_url.rstrip("/")
@@ -126,7 +124,6 @@ def run_reproduce_loop(
                         final_rows,
                         tool_rounds_used,
                         exit_reasons,
-                        tool_call_counts,
                         contexts_by_id,
                         args,
                     )
@@ -166,8 +163,13 @@ def apply_guardrails(
     room before falling back to the hard tools-off context cutoff.
     """
     if not include_tools:
+        gpu_session.release(ctx, "tools_off")
         return False
+    # Bill any GPU wall held since the last charge so a held node depletes the budget
+    # even across a long reasoning gap, and the ceiling is enforced mid-hold.
+    gpu_session.charge_accrued(ctx)
     if ctx.budget is not None and ctx.budget.exhausted():
+        gpu_session.release(ctx, "budget_exhausted")
         exit_reasons[custom_id] = "budget_exhausted"
         print(f"Stopping reproduce loop for {custom_id}: compute budget exhausted", file=sys.stderr)
         return False
@@ -184,6 +186,7 @@ def apply_guardrails(
                 file=sys.stderr,
             )
     if context_budget_exceeded(messages, args.max_input_tokens):
+        gpu_session.release(ctx, "context_budget")
         exit_reasons[custom_id] = "context_budget"
         return False
     return True
@@ -202,7 +205,6 @@ def handle_request_done(
     final_rows: dict[str, dict],
     tool_rounds_used: dict[str, int],
     exit_reasons: dict[str, str],
-    tool_call_counts: dict[str, Counter],
     contexts_by_id: dict[str, ExecutionContext],
     args: argparse.Namespace,
 ) -> None:
@@ -214,17 +216,6 @@ def handle_request_done(
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
         tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)
-        repeated = repeated_tool_call(
-            custom_id, tool_calls, tool_call_counts, args.max_repeated_tool_calls
-        )
-        if repeated:
-            print(
-                f"Stopping reproduce loop for {custom_id}: repeated tool call {repeated}",
-                file=sys.stderr,
-            )
-            exit_reasons[custom_id] = "repeated_call_cutoff"
-            tool_futures[tools.submit(noop)] = {**state, "force_final": True}
-            return
         if round_index + 1 >= args.tool_rounds:
             exit_reasons[custom_id] = "round_limit"
         tool_future = tools.submit(
@@ -233,7 +224,7 @@ def handle_request_done(
             message,
             tool_calls,
             contexts_by_id[custom_id],
-            tool_call_counts[custom_id],
+            round_index,
         )
         tool_futures[tool_future] = state
         return
@@ -241,9 +232,13 @@ def handle_request_done(
         # Model stopped without a tool call while tools were live; re-issue one
         # tools-off pass to get the schema-constrained final submission.
         conversations[custom_id].append(assistant_message(message, tool_calls))
+        live_log.log_round_open(contexts_by_id[custom_id], message, round_index=round_index)
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}
         return
     exit_reason = exit_reasons.get(custom_id, "natural")
+    # Free any GPU allocation still held at the end of the episode (the model is told
+    # to release itself, but never leak a node if it didn't).
+    gpu_session.release(contexts_by_id[custom_id], exit_reason)
     row["tool_loop"] = {
         "tool_rounds_used": tool_rounds_used[custom_id],
         "max_tool_rounds": args.tool_rounds,
@@ -260,4 +255,7 @@ def handle_request_done(
         final_message=args.final_no_tools_message,
     )
     final_rows[custom_id] = row
+    live_log.log_final(
+        contexts_by_id[custom_id], message, round_index=round_index, exit_reason=exit_reason
+    )
     append_completed_outputs(custom_id, row, conversations[custom_id], args)

@@ -5,8 +5,8 @@ Run the agent core over paper bundles on vLLM. The runner launches through
 existing one), drives the Python tool loop, and writes raw, extracted, and
 optional trace JSONL rows as papers complete.
 
-The active production path is `scripts/paper_classification.sbatch`. Use
-`scripts/paper_classification_kimi_k2_6.sbatch` for `moonshotai/Kimi-K2.6` with
+The active production path is `scripts/minimax_m2/paper_classification.sbatch`. Use
+`scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` for `moonshotai/Kimi-K2.6` with
 `kimi_k2` tool/reasoning parsers, 8-way tensor parallelism, trust-remote-code,
 and `--mm-encoder-tp-mode data`.
 
@@ -31,7 +31,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/MiniMax-M2.7/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
@@ -52,7 +52,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
   --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \

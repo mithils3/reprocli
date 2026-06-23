@@ -23,12 +23,18 @@ from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.budget import HW_MULTIPLIER
 from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args as resolve_cluster
-from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET
+from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
+from reprocli_repro.tools import build_repro_tools
 
-DEFAULT_OUTPUT = Path("outputs/repro/reproduce.jsonl")
+# Run bundles + outputs land on the NVMe work filesystem, not the repo working
+# dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
+# or the individual paths with --runs-dir / --output. The prompt template stays a
+# repo asset.
+DEFAULT_WORK_ROOT = Path(os.environ.get("REPRO_WORK_ROOT", "/work/nvme/bfvr/msalunkhe/reprocli"))
+DEFAULT_OUTPUT = DEFAULT_WORK_ROOT / "reproduce.jsonl"
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
-DEFAULT_RUNS_DIR = Path("outputs/repro/agent_runs")
+DEFAULT_RUNS_DIR = DEFAULT_WORK_ROOT / "agent_runs"
 
 # Phase 0 placeholders; Phase 1 swaps in the real operating prompt file and
 # Phase 5 the structured submission contract. The loop reads these off ``args``.
@@ -77,6 +83,15 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
             "Audited lockfile carrying each paper's reproduction target. An HF dataset "
             "repo id (owner/name), an hf://datasets/<owner>/<name>/<file> reference, or "
             f"a local .jsonl path (default: {DEFAULT_LOCKFILE_DATASET})."
+        ),
+    )
+    group.add_argument(
+        "--split",
+        default=DEFAULT_LOCKFILE_SPLIT,
+        help=(
+            "Which published split of the lockfile dataset to load: 'test' (the "
+            "100-paper frozen benchmark, default) or 'validation' (the dev-15 split); "
+            "aliases 'eval'/'dev' are accepted. Ignored for a local .jsonl / hf:// file."
         ),
     )
     group.add_argument(
@@ -147,8 +162,10 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Phase 8 sandboxing seam: base .sif the GPU step is wrapped in. "
-        "Defaults to $REPRO_APPTAINER_SIF.",
+        help="Opt-in NGC base .sif every step runs inside (apptainer exec --nv); the "
+        "venv inherits its CUDA PyTorch. Off by default — the agent installs a CUDA "
+        "torch into the venv instead. Set this (or $REPRO_APPTAINER_SIF) to use the "
+        "container path.",
     )
     group.add_argument(
         "--modules",
@@ -190,10 +207,9 @@ def _add_sampling(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--tool-rounds",
         type=int,
-        default=40,
-        help="Max model turns; the compute-budget guardrail is the real bound (default: 40).",
+        default=150,
+        help="Max model turns; the compute-budget guardrail is the real bound (default: 150).",
     )
-    group.add_argument("--max-repeated-tool-calls", type=int, default=2)
     group.add_argument("--request-workers", type=int, default=8)
     group.add_argument(
         "--budget-h100-hours",
@@ -239,8 +255,6 @@ def _validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
         parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
-    if args.max_repeated_tool_calls < 1:
-        parser.error("--max-repeated-tool-calls must be >= 1")
     if args.max_input_tokens < 1:
         parser.error("--max-input-tokens must be >= 1")
     if args.top_k is not None and args.top_k < 1:
@@ -261,12 +275,15 @@ def _apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
-    # The repro toolset (Phase 4) and the structured submission contract (Phase 5)
-    # fill these; left unset, the loop is import-clean but has nothing to dispatch.
-    args.tools = None
     args.response_format = None
     # Resolve the JIT-allocation substrate once: the named profile merged with any
     # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
     args.cluster_profile = resolve_cluster(args)
+    # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
+    # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
+    # per-node size, so the model picks a valid GPU count for this substrate. The
+    # structured submission contract (response_format) lands in Phase 5; until then
+    # the final tools-off turn falls back to the classifier's default format.
+    args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)

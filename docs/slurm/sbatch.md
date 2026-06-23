@@ -1,4 +1,4 @@
-# Batch jobs (`scripts/*.sbatch`)
+# Batch jobs (`scripts/**/*.sbatch`)
 
 The two classifier batch scripts in `scripts/` are thin launchers: each sets the same DeltaAI environment block, activates the project venv, and drives the [tool loop](../agent-core/tool-loop.md) over the [paper bundles](../dataset/index.md) via `src/run_arxiv_prompt_vllm.py`. They differ in how the model is served: `paper_classification.sbatch` uses the **serve paradigm** (a background `reprocli_serve` server, then the runner attached by URL — see [serving](serve.md)), while `paper_classification_kimi_k2_6.sbatch` lets the runner **embed** its own vLLM server (`vllm/server.py`). The standalone `serve_*.sbatch` servers are documented on the [serving page](serve.md). See [Clusters & accounts](clusters.md) for the account/partition table and the `salloc`→`srun` pattern the (designed) reproduction agent uses.
 
@@ -12,7 +12,7 @@ Every script opens with an identical block. The SLURM directives differ only in 
 | concern | what the header does |
 |---|---|
 | `set -euo pipefail` | fail fast on any error or unset var |
-| caches | `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `VLLM_CACHE_ROOT` → `/projects/bgnp/msalunkhe/.cache/{torchinductor,triton,vllm}` |
+| caches | `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `VLLM_CACHE_ROOT` → `/work/nvme/bfvr/msalunkhe/.cache/{torchinductor,triton,vllm}` |
 | single-host vLLM | `MASTER_ADDR=127.0.0.1`, `VLLM_HOST_IP=127.0.0.1` |
 | NCCL / Torch tuning | `NCCL_CUMEM_ENABLE=0`, `NCCL_NET_PLUGIN` (default `none`), `OMP_NUM_THREADS=1`, `TORCH_NCCL_*` async-error / heartbeat (`1200s`) |
 | `PYTHONPATH` | prepends `/u/msalunkhe/reprocli/src` |
@@ -21,7 +21,7 @@ Every script opens with an identical block. The SLURM directives differ only in 
 | diagnostics | echoes host + GPU vars, dumps the `CUDA|NCCL|VLLM|SLURM|…` env, runs `nvidia-smi topo -m` |
 
 !!! tip "These paths are operator-specific"
-    The header hard-codes one operator's NCSA paths (`/u/msalunkhe/…`, `/projects/bgnp/msalunkhe/…`). Treat the scripts as a template: the env tuning is reusable, the absolute paths are not.
+    The header hard-codes one operator's NCSA paths (`/u/msalunkhe/…`, `/work/nvme/bfvr/msalunkhe/…`). Treat the scripts as a template: the env tuning is reusable, the absolute paths are not.
 
 ## SLURM directives at a glance
 
@@ -86,7 +86,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
   --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \
@@ -149,7 +149,7 @@ Concretely (`run_arxiv_prompt_vllm.py`):
 5. On exit, `VllmServer.__exit__` terminates the subprocess; rows are flushed and, if `--hf-repo` is set, uploaded.
 
 !!! note "Attaching to an external server"
-    These scripts always use the embedded server. The same runner can attach to an already-running multi-node vLLM via `--vllm-server-url` (e.g. the interactive Kimi serving in `scripts/kimi_k2_6_multinode_interactive.md`); see [architecture](../architecture.md) II.4 and [Clusters & accounts](clusters.md).
+    These scripts always use the embedded server. The same runner can attach to an already-running multi-node vLLM via `--vllm-server-url` (e.g. the interactive Kimi serving in `scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`); see [architecture](../architecture.md) II.4 and [Clusters & accounts](clusters.md).
 
 ## See also
 

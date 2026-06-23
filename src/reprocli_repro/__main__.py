@@ -1,44 +1,103 @@
 """Entry point: ``python -m reprocli_repro``.
 
-Phase 0 stood up the package skeleton (CLI, forked tool loop, ExecutionContext,
-microcompact). Phase 1 adds the input pipeline: one audited lockfile row becomes
-one fully-rendered reproduction episode (opening prompt + resolved run directory).
-The phases that *run* the episode — workspace/reference/evidence (Phase 2), budget
-meter + SLURM (Phase 3), the repro toolset (Phase 4), and post-loop re-execution
-into ``result.json`` (Phase 5) — wire on top of these inputs.
+Phases 0-3 stood up the package: CLI, forked tool loop, ``ExecutionContext``,
+microcompact, the lockfile->episode input pipeline, the per-paper
+workspace/reference/evidence, and the budget meter + JIT-SLURM substrate. Phase 4
+closes the loop: each prepared episode becomes an ``ExecutionContext`` (workspace +
+budget + cluster + evidence), and ``run_reproduce_loop`` drives the model through
+the execution toolset (``workspace_bash`` / file ops / the metered ``run_gpu``)
+until it submits or the compute budget is spent.
+
+The brain is an already-served vLLM endpoint (``--vllm-server-url`` /
+``$REPROCLI_SERVER_URL`` / ``$REPROCLI_ENDPOINT_FILE``); this agent never
+self-hosts a model. With no endpoint configured the command falls back to a dry
+run -- it still prepares every episode's bundle and prints the rendered prompt, so
+the inputs can be inspected offline. Phase 5 adds the post-loop re-execution that
+writes the graded ``result.json`` the loop deliberately does not.
 """
 
 from __future__ import annotations
 
 import sys
 
+from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
+
+from reprocli_repro import gpu_session, supabase_sink
 from reprocli_repro.cli_args import parse_args
-from reprocli_repro.inputs import EpisodeInput, band_of, prepare_episodes
+from reprocli_repro.context import ExecutionContext
+from reprocli_repro.inputs import EpisodeInput, band_of, build_context, prepare_episodes
+from reprocli_repro.loop import run_reproduce_loop
 from reprocli_repro.workspace import WorkspaceResult, prepare_workspace
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     episodes = prepare_episodes(args)
+    contexts: list[ExecutionContext] = []
     for ep in episodes:
         print(_summary(ep), file=sys.stderr)
+        if args.reference:
+            print(
+                f"  materializing reference for {ep.arxiv_id} "
+                "(first run downloads + caches the paper bundle)...",
+                file=sys.stderr,
+            )
         result = prepare_workspace(
             ep.run_paths,
             arxiv_id=ep.arxiv_id,
             bundle_dataset=args.bundle_dataset,
             make_venv=args.build_venv,
             materialize_ref=args.reference,
-            system_site_packages=True,
+            cluster=args.cluster_profile,
             venv_python=args.venv_python,
         )
         print(_setup_summary(result), file=sys.stderr)
+        ctx = build_context(ep)
+        ctx.cluster = args.cluster_profile
+        contexts.append(ctx)
+
+    server_url = resolve_server_url(args.vllm_server_url)
+    if server_url is None:
+        return _dry_run(args, episodes)
+
+    model_id = resolve_served_model(server_url, args.served_model_name)
+    print(
+        f"Attached to brain at {server_url} (model {model_id!r}); "
+        f"cluster={args.cluster_profile.name} hw={args.cluster_profile.hw}",
+        file=sys.stderr,
+    )
+    # Opt-in live upload to Supabase (no-op unless SUPABASE_URL + SUPABASE_SERVICE_KEY
+    # are set); registers itself on the live_log seam so each round streams to the
+    # dashboard. Best-effort — never affects the loop.
+    sink = supabase_sink.install(supabase_sink.SinkConfig.from_env())
+    if sink:
+        for ctx in contexts:
+            sink.upsert_run(ctx, model=model_id, status="running")
+    try:
+        run_reproduce_loop(args, contexts, [ep.prompt for ep in episodes], server_url, model_id)
+    finally:
+        # Never leak a held GPU allocation on a crash/interrupt — the loop releases
+        # each episode's session on completion, this sweeps any that survived.
+        gpu_session.teardown_all(contexts)
+        if sink:
+            sink.close()
+    print(
+        f"\nReproduce loop finished {len(episodes)} episode(s); responses in "
+        f"{args.output}. Phase 5 re-executes each repro.yaml to write result.json.",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def _dry_run(args, episodes: list[EpisodeInput]) -> int:
+    for ep in episodes:
         sys.stdout.write(f"\n===== reproduction prompt: {ep.arxiv_id} =====\n")
         sys.stdout.write(ep.prompt)
         sys.stdout.write("\n")
     print(
-        f"\nPrepared + set up {len(episodes)} episode(s) from {args.lockfile}. Phase 2 "
-        "materializes the per-paper workspace, reference, and evidence; the reproduce "
-        "loop (toolset + metered GPU execution) is wired in Phases 4-5.",
+        f"\nPrepared {len(episodes)} episode(s) from {args.lockfile} (dry run: no brain "
+        "attached). Pass --vllm-server-url (or set $REPROCLI_SERVER_URL / "
+        "$REPROCLI_ENDPOINT_FILE) to drive the reproduce loop.",
         file=sys.stderr,
     )
     return 0

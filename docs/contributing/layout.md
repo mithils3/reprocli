@@ -49,7 +49,7 @@ reprocli/
 | `src/reprocli_openai/` | Re-check Hard-tier no-code rows on gpt-5.5 (Responses API) | [classifier](../modes/classifier.md) |
 | `tools/verify_app/`, `tools/v3_viewer/` | Browser apps to review classifier output & runs | [verify app](../apps/verify-app.md), [v3 viewer](../apps/v3-viewer.md) |
 | `tools/*.py` | Pool plots, tier composition, HF upload of the lockfile | [select-pool](../selection/select-pool.md) |
-| `scripts/*.sbatch`, `delta_scripts.sh`, `*.md` | SLURM launch + interactive multi-node notes | [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md) |
+| `scripts/**/*.sbatch`, `delta_scripts.sh`, `*.md` | SLURM launch + interactive multi-node notes | [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md) |
 | `tests/` | pytest suite, one subpackage per `reprocli_vllm` subpackage | [testing](testing.md) |
 
 ## `src/reprocli_vllm/` — the agent core ✅
@@ -111,7 +111,7 @@ Details on each stage and the emitted schema live in [dataset stages](../dataset
 - `v3_viewer/` — view runs / quality (see [v3 viewer](../apps/v3-viewer.md)).
 - `plot_audit_pool.py`, `tier_composition.py`, `upload_audit_pool_hf.py` — pool analysis + publishing the [lockfile](../selection/lockfile.md).
 
-`scripts/` holds the SLURM substrate: `paper_classification.sbatch` and `paper_classification_kimi_k2_6.sbatch` (classifiers), the `serve_*.sbatch` central-server launchers + `serve_attach_runner.sh`, the `delta_scripts.sh` helpers, and `kimi_k2_6_multinode_interactive.md`. See [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md), and [serving](../slurm/serve.md).
+`scripts/` holds the SLURM substrate, grouped into folders: `serve/` (the `serve_*.sbatch` central-server launchers + `serve_attach_runner.sh`), per-model folders `minimax_m2/`, `kimi_k2_6/`, and `minimax_m3/` (each with a `paper_classification*.sbatch`; Kimi and M3 also ship a multi-node interactive runbook), and `cluster/delta_scripts.sh`. See [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md), and [serving](../slurm/serve.md).
 
 ## `tests/`
 

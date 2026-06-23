@@ -47,9 +47,9 @@ module load python/3.11.9
 source /u/msalunkhe/reprocli/.venv/bin/activate
 cd /u/msalunkhe/reprocli
 
-export TORCHINDUCTOR_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/torchinductor
-export TRITON_CACHE_DIR=/projects/bgnp/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/projects/bgnp/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
@@ -236,7 +236,7 @@ curl "http://${HEAD_IP}:8000/v1/chat/completions" \
 
 ## 7. Run Paper Classification Through This Server
 
-This uses the same classifier/tool loop as `scripts/paper_classification*.sbatch`,
+This uses the same classifier/tool loop as `scripts/*/paper_classification*.sbatch`,
 but attaches it to the multi-node server instead of starting another local
 server.
 
@@ -302,7 +302,7 @@ case, a 2-node run has `TP=8`, `PP=2`, and `16` total GPUs.
 3. Re-run the step-4 HEAD_IP discovery, verify `echo $HEAD_IP` prints a real address (not empty, not `127.x`).
 4. Re-run the step-5 `srun ... vllm serve` block. The old job step already exited, so nothing needs killing.
 
-**Runbook hardened:** I updated `scripts/kimi_k2_6_multinode_interactive.md` so step 4 now fails fast if `IFACE_NAME` is unset or if the derived `HEAD_IP` is empty/loopback, with a note explaining that `master_addr=127.0.0.1` in the vLLM log always means this exact failure. The change is unstaged on your `kimi-k2-6-model` branch — commit it when you're happy with it.
+**Runbook hardened:** I updated `scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` so step 4 now fails fast if `IFACE_NAME` is unset or if the derived `HEAD_IP` is empty/loopback, with a note explaining that `master_addr=127.0.0.1` in the vLLM log always means this exact failure. The change is unstaged on your `kimi-k2-6-model` branch — commit it when you're happy with it.
 HEAD_IP=$(srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 --nodelist=gh049 \
   ip -o -4 addr show hsn0 | awk '{split($4,a,"/"); print a[1]; exit}')
 export HEAD_IP

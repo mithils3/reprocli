@@ -80,7 +80,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/MiniMax-M2.7/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/MiniMax-M2.7/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_minimax_m2_trial.jsonl \
   --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
@@ -102,7 +102,7 @@ python3 src/run_arxiv_prompt_vllm.py \
   --request-workers 16 \
   --stream-first-response \
   --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /projects/bgnp/msalunkhe/Kimi-K2.6/vllm_cache \
+  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
   --distributed-executor-backend mp \
   --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
   --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \
@@ -117,8 +117,8 @@ python3 src/run_arxiv_prompt_vllm.py \
 !!! warning "This needs GPUs"
     An embedded run loads the full model — run it inside a GPU allocation, not on
     a login node. On the cluster, submit
-    `scripts/paper_classification.sbatch` (MiniMax, 4×GH200) or
-    `scripts/paper_classification_kimi_k2_6.sbatch` (Kimi, 8 GPU) rather than
+    `scripts/minimax_m2/paper_classification.sbatch` (MiniMax, 4×GH200) or
+    `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` (Kimi, 8 GPU) rather than
     invoking Python by hand. See the [SLURM scripts](../slurm/sbatch.md) page.
 
 ---

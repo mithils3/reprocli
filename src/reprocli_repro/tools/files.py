@@ -1,13 +1,16 @@
-"""Path-confined file tools for the reproduction agent.
+"""Path-confined write tools for the reproduction agent.
 
-Adapted from ``run_dir_tools._resolve_within``: every path the agent touches must
-resolve inside one of the episode's roots. Reads are allowed across ``workspace``
-(the editable clone), ``reference`` (read-only paper + supplement), and
-``evidence``; writes are allowed only under ``workspace`` and ``evidence`` -- the
-``reference/`` copy is never writable. Relative paths resolve against the
-workspace (the same cwd ``workspace_bash`` runs in); absolute paths must still
-fall within an allowed root, so traversal and writes outside the bundle are
-rejected before any I/O happens.
+The agent *reads* files through ``workspace_bash`` (``grep -n`` / ``sed -n`` /
+``cat`` -- targeted, line-numbered, and far cheaper than dumping whole files into
+context), so this module ships only the mutating ops: ``write_file`` and
+``apply_patch``.
+
+Adapted from ``run_dir_tools._resolve_within``: every path the agent writes must
+resolve inside one of the episode's writable roots -- ``workspace`` (the editable
+clone) and ``evidence``; the ``reference/`` copy is never writable. Relative paths
+resolve against the workspace (the same cwd ``workspace_bash`` runs in); absolute
+paths must still fall within an allowed root, so traversal and writes outside the
+bundle are rejected before any I/O happens.
 """
 
 from __future__ import annotations
@@ -16,36 +19,10 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config.config import (
-    RUN_FILE_DEFAULT_CHARS,
-    RUN_FILE_MAX_CHARS,
-    RUN_FILE_WRITE_MAX_CHARS,
-    function_tool,
-)
+from reprocli_vllm.config.config import RUN_FILE_WRITE_MAX_CHARS, function_tool
 
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
-
-
-def read_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
-    resolved = _resolve(ctx, arguments.get("path"), writable=False)
-    if not resolved["ok"]:
-        return resolved
-    target: Path = resolved["path"]
-    if not target.is_file():
-        return {"ok": False, "error": f"Not a file: {arguments.get('path')}"}
-    max_chars = _bounded(arguments.get("max_chars"), RUN_FILE_DEFAULT_CHARS, RUN_FILE_MAX_CHARS)
-    try:
-        text = target.read_text(encoding="utf-8", errors="replace")
-    except OSError as exc:
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-    return {
-        "ok": True,
-        "path": str(target),
-        "size": _size(target),
-        "text": text[:max_chars],
-        "truncated": len(text) > max_chars,
-    }
 
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -120,6 +97,8 @@ def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, An
 
 
 def _roots(ctx: ExecutionContext, *, writable: bool) -> list[Path]:
+    # ``writable=False`` (reference readable too) is retained for callers that only
+    # inspect paths; the live write tools always pass ``writable=True``.
     candidates = [ctx.workspace, ctx.evidence] if writable else [ctx.workspace, ctx.reference, ctx.evidence]
     return [Path(p) for p in candidates if p is not None]
 
@@ -160,34 +139,7 @@ def _git_apply(diff: str, workspace: Path, strip: int) -> dict[str, Any]:
     }
 
 
-def _bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default
-
-
-def _size(path: Path) -> int:
-    try:
-        return path.stat().st_size
-    except OSError:
-        return 0
-
-
 FILE_TOOLS = [
-    function_tool(
-        "read_file",
-        "Read a UTF-8 text file from the workspace or the read-only reference copy. "
-        "Relative paths resolve against the workspace; reference files are readable "
-        "but not writable.",
-        {
-            "path": {"type": "string", "description": "File path (relative to workspace, or absolute within the bundle)."},
-            "max_chars": {"type": "integer", "default": RUN_FILE_DEFAULT_CHARS, "minimum": 1, "maximum": RUN_FILE_MAX_CHARS},
-        },
-        ["path"],
-    ),
     function_tool(
         "write_file",
         "Write (or overwrite) a UTF-8 text file in the workspace or evidence dir. "
@@ -211,7 +163,6 @@ FILE_TOOLS = [
 ]
 
 FILE_TOOL_HANDLERS = {
-    "read_file": read_file,
     "write_file": write_file,
     "apply_patch": apply_patch,
 }

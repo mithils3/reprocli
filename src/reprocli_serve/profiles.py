@@ -34,8 +34,11 @@ class Profile:
     max_model_len: int = MAX_MODEL_LEN
     gpu_memory_utilization: float = DEFAULT_GPU_MEMORY_UTILIZATION
     trust_remote_code: bool = True
+    enable_expert_parallel: bool = False
     mm_encoder_tp_mode: str | None = None
     compilation_config: str | None = None
+    block_size: int | None = None
+    kv_cache_dtype: str | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -51,7 +54,7 @@ def minimax_profile() -> Profile:
 
 def kimi_profile() -> Profile:
     # 8 GPUs of tensor parallel; on 4-GPU/node DeltaAI this is TP=4 + PP=2 across
-    # two nodes (see scripts/serve_multinode.sbatch). The parser flags are the
+    # two nodes (see scripts/serve/serve_multinode.sbatch). The parser flags are the
     # invariant; tensor/pipeline parallel are set by the launcher for the layout.
     return Profile(
         name="kimi_k2",
@@ -59,6 +62,32 @@ def kimi_profile() -> Profile:
         tool_call_parser="kimi_k2",
         reasoning_parser="kimi_k2",
         mm_encoder_tp_mode="data",
+    )
+
+
+def minimax_m3_profile() -> Profile:
+    # MiniMax-M3: a 428B-param MoE (~22B active) with MiniMax Sparse Attention
+    # (MSA) and a native vision encoder. --block-size 128 is MANDATORY: MSA's
+    # sparse/index cache is sized to 128, and the vLLM default (16) misaligns the
+    # sparse-attention indexing. The parsers are minimax_m3 (NOT minimax_m2), and
+    # M3 does not take M2's compilation-config. On DeltaAI's 4-GPU ghx4 nodes the
+    # layout is plain TP=8 spanning two nodes (inter-node TP over the Slingshot
+    # fabric); the launcher wires the cross-node rendezvous (see
+    # scripts/minimax_m3/paper_classification_minimax_m3.sbatch). Expert parallel
+    # is left OFF: EP would shard whole experts across all 8 ranks, putting the
+    # MoE all-to-all on the inter-node socket fabric on top of the TP all-reduce;
+    # with EP off the experts are TP-sharded instead and the MoE rides the same
+    # all-reduce as the rest of the model. Pass --enable-expert-parallel at the
+    # CLI to opt back in. kv_cache_dtype fp8 buys a ~1.5x KV pool (a recipe
+    # option) for more concurrent requests / longer context at the same HBM.
+    return Profile(
+        name="minimax_m3",
+        tensor_parallel_size=8,
+        tool_call_parser="minimax_m3",
+        reasoning_parser="minimax_m3",
+        mm_encoder_tp_mode="data",
+        block_size=128,
+        kv_cache_dtype="fp8",
     )
 
 
@@ -76,8 +105,24 @@ def is_kimi_k2_6(model: str) -> bool:
     return any(str(name).startswith("KimiK25") for name in architectures)
 
 
+def is_minimax_m3(model: str) -> bool:
+    if "MiniMax-M3" in model.rstrip("/"):
+        return True
+    config_path = Path(model) / "config.json"
+    if not config_path.exists():
+        return False
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    architectures = config.get("architectures") or []
+    return any(str(name).startswith("MiniMaxM3") for name in architectures)
+
+
 def resolve_profile(model: str) -> Profile:
     """Pick the serving profile for ``model`` (a HF id or a local path)."""
     if is_kimi_k2_6(model):
         return kimi_profile()
+    if is_minimax_m3(model):
+        return minimax_m3_profile()
     return minimax_profile()

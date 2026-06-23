@@ -22,9 +22,9 @@ swap = URL change.**
 On DeltaAI (1× 4×GH200 node, tensor-parallel 4), from the repo root:
 
 ```bash
-sbatch scripts/serve_gh200.sbatch          # MiniMax-M2.7, publishes endpoint JSON
+sbatch scripts/serve/serve_gh200.sbatch          # MiniMax-M2.7, publishes endpoint JSON
 # multi-node (Kimi-K2.6, TP=4 + PP=N):
-sbatch --nodes=2 scripts/serve_multinode.sbatch
+sbatch --nodes=2 scripts/serve/serve_multinode.sbatch
 ```
 
 The launcher writes `vllm_endpoint.json` (to a shared path) once `/health` is
@@ -47,7 +47,7 @@ local server if none is set (so default behavior is unchanged):
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
-  --vllm-server-url "$(jq -r .base_url /projects/bgnp/msalunkhe/endpoints/minimax_m2.json)" \
+  --vllm-server-url "$(jq -r .base_url /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json)" \
   --model MiniMaxAI/MiniMax-M2.7 --num-prompts 2
 ```
 
@@ -57,7 +57,7 @@ through this JSON contract — neither imports the other.
 
 ## Dataset production with the serve paradigm
 
-`scripts/paper_classification.sbatch` runs the stage-1 classifier on a single node
+`scripts/minimax_m2/paper_classification.sbatch` runs the stage-1 classifier on a single node
 this way: step 1 starts the central server, step 2 attaches the runner by URL.
 The dataset outputs are unchanged from the older embedded-server form; the only
 difference is that the model is now a swappable service rather than a process

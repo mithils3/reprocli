@@ -5,6 +5,8 @@ import sys
 import urllib.request
 from typing import Any
 
+from reprocli_vllm.vllm.endpoint import auth_headers
+
 
 def post_chat_completion_row(
     base_url: str,
@@ -36,6 +38,7 @@ def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: floa
         headers={
             "Content-Type": "application/json",
             "Accept": "application/json",
+            **auth_headers(),
         },
         method="POST",
     )
@@ -65,6 +68,7 @@ def post_streaming_chat_completion(
         headers={
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
+            **auth_headers(),
         },
         method="POST",
     )

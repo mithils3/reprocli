@@ -19,10 +19,15 @@ clears the criteria below. Absence of evidence is a low score, not a pass.
 ## Criteria
 
 ### C1 — Target identified
-**If the record supplies a pinned `match_bar`**, adopt it verbatim as the bar — it
-is the frozen lockfile target (`kind`, `op`, `reference_value`, `tolerance`) and
-echo it into your `op`/`reference_value`/`tolerance`. The resolution steps below
-apply only when no `match_bar` is given (older rows, or `kind` = "none").
+**You own the success bar.** It is not pinned in the lockfile; you derive it here
+from the claim and the reported numbers. First classify the bar shape into
+`match_bar_kind` (`point_estimate` / `threshold` / `direction` / `magnitude` /
+`none`), then set `op` / `reference_value` / `tolerance` to match that shape using
+the resolution steps below.
+
+> TODO (final audits): these derived bars are the per-paper rulers for the headline
+> reproduction rate. In the final audit pass they should be reviewed/frozen so the
+> same claim is graded against the same bar across runs and years.
 
 Restate the central claim as a checkable target. Prefer a **scalar target** when
 the claim has one: metric, reference value(s), dataset/split, model/config, and

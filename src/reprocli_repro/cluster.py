@@ -34,7 +34,7 @@ class Cluster:
     account: str | None = None           # salloc -A  (every built-in JIT profile sets one)
     partition: str | None = None         # salloc -p
     modules: tuple[str, ...] = ()         # `module load ...` prepended to each GPU step
-    apptainer_image: str | None = None   # Phase 8 sandboxing seam; unused by local
+    apptainer_image: str | None = None   # NGC base .sif each step runs inside (apptainer exec --nv); None = bare host
     scratch_root: str | None = None      # NVMe root for per-paper workspaces (Phase 7)
 
 
@@ -42,14 +42,24 @@ class Cluster:
 # (docs/slurm/clusters.md). Every profile is a real SLURM target — GPU steps
 # always run through a JIT salloc, so an account/partition is mandatory.
 _PROFILES: dict[str, Cluster] = {
+    # ``modules`` load the CUDA toolkit (+cudnn/nccl) and Python into every
+    # tool-enforced step (env.exec_argv), so the agent's installs/compiles and the
+    # experiment see CUDA rather than the bare host.
     "deltaai": Cluster(
         name="deltaai",
         hw="gh200",
         gpus_per_node=4,
         account="betw-dtai-gh",
         partition="ghx4",
-        modules=("python/3.11.9",),
+        modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
+        # GH200 is aarch64. We no longer wrap steps in an NGC container: the agent
+        # installs a CUDA-enabled torch into the per-paper venv from the matching
+        # PyTorch index (the *default* PyPI aarch64 wheel is CPU-only — the trap)
+        # and runs the install + experiment inside a `run_gpu` step, where the GPU
+        # and the `module load`ed CUDA toolkit live. Set --apptainer-image /
+        # $REPRO_APPTAINER_SIF to opt back into the container path (apptainer_image
+        # defaults to None → bare host + on-GPU module load).
     ),
     "delta-h200": Cluster(
         name="delta-h200",
@@ -57,7 +67,7 @@ _PROFILES: dict[str, Cluster] = {
         gpus_per_node=8,
         account="bfvr-delta-gpu",
         partition="gpuH200x8-interactive",
-        modules=("python/3.11.9",),
+        modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
     ),
 }

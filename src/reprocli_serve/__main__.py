@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     profile = resolve_profile(args.model)
     command = build_serve_command(args, profile)
-    process = start_process(command)
+    process = start_process(command, _serve_env(args))
 
     def _forward(signum: int, _frame: types.FrameType | None) -> None:
         process.send_signal(signum)
@@ -59,6 +59,38 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         if published:
             remove_endpoint(args.endpoint_file)
+
+
+def _serve_env(args) -> dict[str, str] | None:
+    """Extra env for the vLLM subprocess, or None to inherit ours unchanged.
+
+    Multi-node only: pin ``VLLM_HOST_IP`` to this node's own fabric IP so vLLM's
+    internal RPC / multiproc message queue lands on the same fabric as NCCL.
+    Otherwise vLLM's ``get_ip()`` guesses the public VLAN, and remote workers
+    hang dialing the engine message queue *after* NCCL init has completed. We
+    also force ``TORCH_NCCL_ASYNC_ERROR_HANDLING`` so a future fabric mismatch
+    fails with a stack instead of an indefinite hang. An explicit value set in
+    the environment (e.g. by the launch runbook) always wins.
+    """
+    if not (args.nnodes and args.nnodes > 1):
+        return None
+    overrides: dict[str, str] = {}
+    if not os.environ.get("VLLM_HOST_IP"):
+        ip = network.fabric_ipv4(args.iface)
+        if ip:
+            overrides["VLLM_HOST_IP"] = ip
+    overrides.setdefault("TORCH_NCCL_ASYNC_ERROR_HANDLING", os.environ.get("TORCH_NCCL_ASYNC_ERROR_HANDLING", "1"))
+    if not overrides:
+        return None
+    env = dict(os.environ)
+    env.update(overrides)
+    print(
+        "reprocli_serve: pinning vLLM subprocess env "
+        + " ".join(f"{k}={v}" for k, v in overrides.items()),
+        file=sys.stderr,
+        flush=True,
+    )
+    return env
 
 
 def _announce(url: str, args) -> None:

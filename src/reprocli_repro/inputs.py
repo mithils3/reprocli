@@ -4,12 +4,19 @@ Turns the audited lockfile (the selected-paper audit pool) into the inputs the
 forked tool loop needs: the opening prompt and the per-episode run directory.
 
 Source of truth is a **Hugging Face dataset** (default
-``Mithilss/neurips-2025-audit-pool``), not a local JSON file. ``load_lockfile_rows``
-accepts, in priority order:
+``Mithilss/reprobench-splits``), not a local JSON file. That dataset publishes two
+named splits: ``test`` (the 100-paper frozen benchmark, ``split="eval"`` in-row)
+and ``validation`` (the disjoint 15-paper ``dev`` split); there is no ``train``
+split, so the loader defaults to ``test`` and accepts the friendly aliases
+``eval``/``dev``. ``load_lockfile_rows`` accepts, in priority order:
 
-* a bare HF dataset repo id (``owner/name``) loaded with ``datasets.load_dataset``;
+* a bare HF dataset repo id (``owner/name``) loaded with ``datasets.load_dataset``
+  at the requested ``split``;
 * an ``hf://datasets/<owner>/<name>/<file>`` reference (a loose file on the Hub);
 * a local ``.jsonl`` path (offline development and the Phase-1 gate test).
+
+The ``split`` selector applies only to the bare-repo path; a loose file or local
+``.jsonl`` is read whole.
 
 The run directory is resolved to ``<runs-dir>/<arxiv_id>/<budget>h/<run_id>/`` —
 the S6->S7 contract the existing ``reprocli_vllm`` auditor reads (it walks
@@ -33,7 +40,17 @@ from reprocli_vllm.runtime.mre_records import load_mre_records
 from reprocli_repro.context import Budget, ExecutionContext
 from reprocli_repro.reference import safe_component
 
-DEFAULT_LOCKFILE_DATASET = "Mithilss/neurips-2025-audit-pool"
+DEFAULT_LOCKFILE_DATASET = "Mithilss/reprobench-splits"
+# The reproduction agent reproduces the frozen benchmark by default; "validation"
+# (dev-15) is for development. "train" does not exist in this dataset.
+DEFAULT_LOCKFILE_SPLIT = "test"
+_SPLIT_ALIASES = {"eval": "test", "eval100": "test", "dev": "validation", "dev15": "validation"}
+
+
+def normalize_split(name: str | None) -> str:
+    """Map friendly split aliases (eval/dev) to the dataset's real split names."""
+    key = str(name or "").strip().lower()
+    return _SPLIT_ALIASES.get(key, key) or DEFAULT_LOCKFILE_SPLIT
 
 # Every uppercase {TOKEN} the template carries. Literal JSON shown to the agent is
 # lowercase on purpose, so this regex only ever matches a real placeholder.
@@ -64,11 +81,13 @@ class EpisodeInput:
 # --------------------------------------------------------------------------- #
 # Loading                                                                      #
 # --------------------------------------------------------------------------- #
-def load_lockfile_rows(source: str | None, *, split: str = "train") -> dict[str, dict]:
+def load_lockfile_rows(
+    source: str | None, *, split: str = DEFAULT_LOCKFILE_SPLIT
+) -> dict[str, dict]:
     """Return ``{arxiv_id: row}`` from an HF dataset, an hf:// file, or local JSONL."""
     spec = str(source or DEFAULT_LOCKFILE_DATASET)
     if _looks_like_dataset_repo(spec):
-        return _index_rows(_iter_hf_dataset(spec, split))
+        return _index_rows(_iter_hf_dataset(spec, normalize_split(split)))
     # Local .jsonl path or hf://datasets/<owner>/<name>/<file> — reuse the tested
     # file loader the classifier/auditor already share.
     return load_mre_records(spec)
@@ -240,7 +259,10 @@ def _verified_links_block(row: dict) -> str:
 # --------------------------------------------------------------------------- #
 def prepare_episodes(args: argparse.Namespace) -> list[EpisodeInput]:
     template = Path(args.prompt_file).read_text(encoding="utf-8")
-    rows = load_lockfile_rows(getattr(args, "lockfile", None))
+    rows = load_lockfile_rows(
+        getattr(args, "lockfile", None),
+        split=getattr(args, "split", DEFAULT_LOCKFILE_SPLIT),
+    )
     selected = select_episode_rows(
         rows,
         paper_id=args.paper_id,

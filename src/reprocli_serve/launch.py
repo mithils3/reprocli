@@ -48,17 +48,39 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         command.extend(["--compilation-config", compilation])
     if args.distributed_executor_backend:
         command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
-    if args.kv_cache_dtype:
-        command.extend(["--kv-cache-dtype", args.kv_cache_dtype])
-    if args.block_size:
-        command.extend(["--block-size", str(args.block_size)])
+    kv_cache_dtype = args.kv_cache_dtype or profile.kv_cache_dtype
+    if kv_cache_dtype:
+        command.extend(["--kv-cache-dtype", kv_cache_dtype])
+    block_size = args.block_size or profile.block_size
+    if block_size:
+        command.extend(["--block-size", str(block_size)])
+    if args.enable_expert_parallel or profile.enable_expert_parallel:
+        command.append("--enable-expert-parallel")
     if args.tokenizer_mode:
         command.extend(["--tokenizer-mode", args.tokenizer_mode])
     if args.structured_outputs_backend:
         command.extend(["--structured-outputs-config.backend", args.structured_outputs_backend])
+    command.extend(_dataparallel_flags(args))
     command.extend(_multinode_flags(args))
     command.extend(args.extra_vllm_args)
     return command
+
+
+def _dataparallel_flags(args: argparse.Namespace) -> list[str]:
+    """Data-parallel rendezvous flags (wide-EP), set only for a multi-node DP serve."""
+    flags: list[str] = []
+    if not (args.data_parallel_size and args.data_parallel_size > 1):
+        return flags
+    flags.extend(["--data-parallel-size", str(args.data_parallel_size)])
+    if args.data_parallel_size_local is not None:
+        flags.extend(["--data-parallel-size-local", str(args.data_parallel_size_local)])
+    if args.data_parallel_start_rank is not None:
+        flags.extend(["--data-parallel-start-rank", str(args.data_parallel_start_rank)])
+    if args.data_parallel_address:
+        flags.extend(["--data-parallel-address", args.data_parallel_address])
+    if args.data_parallel_rpc_port:
+        flags.extend(["--data-parallel-rpc-port", str(args.data_parallel_rpc_port)])
+    return flags
 
 
 def _multinode_flags(args: argparse.Namespace) -> list[str]:
@@ -77,7 +99,13 @@ def _multinode_flags(args: argparse.Namespace) -> list[str]:
     return flags
 
 
-def start_process(command: list[str]) -> subprocess.Popen:
-    """Launch vLLM, inheriting stdout/stderr so logs land in the Slurm log."""
+def start_process(
+    command: list[str], env: dict[str, str] | None = None
+) -> subprocess.Popen:
+    """Launch vLLM, inheriting stdout/stderr so logs land in the Slurm log.
+
+    ``env`` of None inherits this process's environment unchanged; a dict
+    replaces it wholesale (callers pass a copy of ``os.environ`` plus overrides).
+    """
     print("Starting vLLM server: " + " ".join(command), file=sys.stderr, flush=True)
-    return subprocess.Popen(command)
+    return subprocess.Popen(command, env=env)
