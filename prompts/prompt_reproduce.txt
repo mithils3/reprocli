@@ -100,13 +100,17 @@ point everything at that local path:
   - Python:      `from huggingface_hub import snapshot_download;
                   snapshot_download("<repo>", local_dir="/tmp/<name>")`  (`repo_type="dataset"` for data)
 When a script or loader you invoke takes a repo id and would download internally — e.g.
-`AirRep.from_pretrained("<repo>")` or `load_dataset("<repo>")` — pre-fetch the repo to
-`/tmp` with `--local-dir` as above and pass the LOCAL PATH instead. Do NOT redirect it by
-setting global cache env vars like `HF_HOME` / `HF_DATASETS_CACHE`: an explicit local dir is
-inspectable, is the exact path your scoring entrypoint re-uses, and keeps data off the
-quota'd workspace. If something the MRE needs isn't on HF, you have a free hand — `wget`/
-`curl -o /tmp/...`, `git clone <url> /tmp/<name>`, or whatever the source offers; just land
-it under `/tmp`. Two Delta specifics decide *where* the data must live and for *how long*:
+`AirRep.from_pretrained("<repo>")` or `load_dataset("<repo>")` — prefer to pre-fetch the
+repo to `/tmp` with `--local-dir` as above and pass the LOCAL PATH: that path is
+inspectable and is exactly what your scoring entrypoint re-uses. If the script won't take a
+local path, scoping the HF cache to `/tmp` for that one command is also fine —
+`HF_HOME=/tmp/<name> <cmd>` (or `HF_DATASETS_CACHE=...`) is a per-process assignment, scoped
+to that single command, so it can't leak to a later step or a re-run; just keep the cache on
+`/tmp` (never the quota'd workspace) and set the same var in your scoring entrypoint so its
+clean re-run downloads to `/tmp` too. If something the MRE needs isn't on HF, you have a
+free hand — `wget`/`curl -o /tmp/...`, `git clone <url> /tmp/<name>`, or whatever the source
+offers; just land it under `/tmp`. Two Delta specifics decide *where* the data must live and
+for *how long*:
 
 - `/tmp` is per-node and wiped when the allocation ends. The GPU node's `/tmp` (inside
   `run_gpu`) is a DIFFERENT disk from the login node's (`workspace_bash`), so fetch the
