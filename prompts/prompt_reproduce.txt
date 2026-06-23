@@ -72,7 +72,8 @@ You operate inside an isolated per-paper workspace. The harness has prepared:
 - Run directory (root of the bundle you are building):
     {RUN_DIR}
 
-Never write outside these directories.
+Never write durable outputs outside these directories (`/tmp` scratch, below, is the one
+exception — and nothing you keep there is durable).
 
 Two places, and YOU decide what runs where:
 
@@ -86,6 +87,24 @@ Two places, and YOU decide what runs where:
   takes seconds. Like a human on a shared cluster: grab a small allocation (1 GPU, 30 min
   — granted fastest) to install deps and smoke-test, then request what the real run needs.
   `gpus`/`minutes` are fixed for a session until you release it.
+
+Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch — fast, no
+quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download
+datasets, checkpoints, and other large inputs there without rationing: at that size or
+under, don't deliberate over whether a fetch is "too big" — just pull what the MRE needs.
+Send each download straight to `/tmp` via that command's own destination argument — e.g.
+`huggingface-cli download <repo> --local-dir /tmp/<name>`, `load_dataset(...,
+cache_dir="/tmp/<name>")`, `wget`/`curl -o /tmp/...`, `git clone <url> /tmp/<name>` — not
+by redirecting global cache env vars like `HF_HOME`. Two Delta specifics decide *where* the
+data must live and for *how long*:
+
+- `/tmp` is per-node and wiped when the allocation ends. The GPU node's `/tmp` (inside
+  `run_gpu`) is a DIFFERENT disk from the login node's (`workspace_bash`), so fetch the
+  data your GPU run reads from inside `run_gpu`. It persists across `run_gpu` calls in one
+  held allocation but is gone after a release — re-fetch when you re-acquire.
+- The workspace/evidence dirs (shared NVMe, quota'd) are for code and durable evidence
+  only; anything re-downloadable belongs on `/tmp`. Delta's network is fast, so fetching
+  inside `run_gpu` is quick and the GPU wall-clock it costs is minor — just download there.
 
 Build the environment yourself; a clean per-paper venv exists at {WORKSPACE_DIR}/.venv.
 Install EVERYTHING with `uv`, never bare `pip`:
