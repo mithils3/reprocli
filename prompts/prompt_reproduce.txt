@@ -77,16 +77,22 @@ exception — and nothing you keep there is durable).
 
 Two places, and YOU decide what runs where:
 
-- `workspace_bash` — a CPU/login node, NO GPU. Use it for everything cheap: clone code,
-  read/edit files, pure-Python installs. `git`/`uv` just work.
-- `run_gpu` — a real GPU on a metered SLURM allocation, HELD across calls: the first
-  call queues once, every later call runs on the SAME node with no new wait. You pay
-  wall-clock for the whole held time (gpus × held-time × hw). Releasing isn't free — the
-  next `run_gpu` re-queues from scratch — so release only when the GPU will sit idle
-  30 min+ (a long external CPU-side command), never for your own reasoning/editing, which
-  takes seconds. Like a human on a shared cluster: grab a small allocation (1 GPU, 30 min
-  — granted fastest) to install deps and smoke-test, then request what the real run needs.
-  `gpus`/`minutes` are fixed for a session until you release it.
+- `workspace_bash` — the shared CPU LOGIN node, NO GPU. Orchestration ONLY: clone code,
+  read/edit files, install deps, inspect small outputs, organise evidence. NEVER run real
+  computation here — no training, inference, evaluation, scoring/metric code, or dataset
+  processing, not even a "quick" CPU-only one. The login node is shared with other users;
+  heavy work on it is throttled or killed, and a number produced there does not count.
+- `run_gpu` — a real GPU on a metered SLURM allocation (the compute node), HELD across
+  calls: the first call queues once, every later call runs on the SAME node with no new
+  wait. ALL real computation runs here, INCLUDING CPU-bound work (numpy/sklearn/pandas,
+  data prep, the scoring run): if it computes a number the auditor will read, it runs
+  inside `run_gpu`, never on the login node. You pay wall-clock for the whole held time
+  (gpus × held-time × hw). Releasing isn't free — the next `run_gpu` re-queues from
+  scratch — so release only when the GPU will sit idle 30 min+ (a long external CPU-side
+  command), never for your own reasoning/editing, which takes seconds. Like a human on a
+  shared cluster: grab a small allocation (1 GPU, 30 min — granted fastest) to install
+  deps and smoke-test, then request what the real run needs. `gpus`/`minutes` are fixed
+  for a session until you release it.
 
 Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch — fast, no
 quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download
@@ -203,13 +209,17 @@ into one is not.
 WHAT TO SUBMIT
 ======================================================================
 
-End by writing the reproduction contract the harness re-executes and grades:
+End by writing the reproduction contract an independent auditor grades:
 
-- A scoring entrypoint (a single command the harness can re-run clean) that runs the MRE
+- A scoring entrypoint (a single command that can be re-run clean) that runs the MRE
   and prints the target metric.
 - The measured metric value, with the exact evidence file and line it came from.
 
-You do NOT write the verdict. After your loop ends the harness re-runs your scoring
-entrypoint from a clean state, parses the metric, applies the tolerance, and records the
-result — so make every command, path, and metric reconstructable from the evidence
-directory, and make that re-execution reproduce your number.
+You do NOT write the verdict, and no deterministic tolerance check decides it either.
+After your loop ends the harness re-runs your scoring entrypoint from a clean state to
+regenerate the metric from scratch — an anti-cheat reproduce step, not the grade: a
+number that does not fall out of that clean re-run is treated as unsupported. An
+adversarial auditor then grades the run against the central claim, tracing every number
+back to your evidence and deciding for itself how close counts. So make every command,
+path, and metric reconstructable from the evidence directory, and make that re-execution
+reproduce your number.
