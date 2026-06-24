@@ -39,16 +39,27 @@ def claim_block(record: dict | None) -> str:
             "\nReported numbers / experiment context:\n"
             + json.dumps(evidence, ensure_ascii=False, indent=2)
         )
-    # The match bar is no longer pinned in the lockfile — the auditor OWNS it.
-    # Derive the C1 bar (kind, op, reference_value, tolerance) from the claim and
-    # the reported numbers above, per rubric C1.
-    # TODO(final-audits): in the final per-paper audit pass, capture and review the
-    # derived bars so the headline reproduction rate uses a stable, agreed ruler.
-    parts.append(
-        "\nNo success bar is pinned for this paper. Derive the C1 match bar "
-        "(classify match_bar_kind first, then set op / reference_value / "
-        "tolerance) from the claim and reported numbers above, per the rubric."
-    )
+    # The success bar is now PINNED in the lockfile as a coherent
+    # (config, metric, value, scope, match_bar_kind) tuple. The auditor ADOPTS it
+    # verbatim and sets only op / tolerance — it does not re-derive the bar.
+    # TODO(final-audits): in the final per-paper audit pass, human-review the pinned
+    # tuples so the headline reproduction rate uses a stable, agreed ruler.
+    target = record.get("match_target")
+    if isinstance(target, dict) and any(target.get(k) for k in target):
+        parts.append(
+            "\nPinned success bar (adopt verbatim — do NOT re-derive):\n"
+            + json.dumps(target, ensure_ascii=False, indent=2)
+            + "\nUse this tuple's config / metric / value (reference_value) / scope "
+            "and match_bar_kind as given; set only `op` and `tolerance` to match the "
+            "pinned match_bar_kind, per rubric C1."
+        )
+    else:
+        # Legacy rows with no pinned tuple fall back to deriving the bar.
+        parts.append(
+            "\nNo success bar is pinned for this paper. Derive the C1 match bar "
+            "(classify match_bar_kind first, then set op / reference_value / "
+            "tolerance) from the claim and reported numbers above, per the rubric."
+        )
     return "\n".join(parts) if parts else "(no central claim found for this paper)"
 
 

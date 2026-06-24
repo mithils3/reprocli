@@ -29,11 +29,13 @@ OUTPUT
 ======================================================================
 
 Return exactly one JSON object matching the audit schema: the restated target
-(you derive the success bar — classify `match_bar_kind`, then set the
-op/reference_value/tolerance; it is not pinned for you),
+(ADOPT the pinned success bar — copy `match_bar_kind`, `target_metric`,
+`reference_value`, and `target_scope` from the lockfile's pinned tuple verbatim,
+then set only `op` / `tolerance` to match the pinned `match_bar_kind`; do not
+re-derive the bar. Only if no tuple is pinned do you derive it yourself),
 execution evidence, the measured value with an exact file/line or log citation,
 every anti-cheat flag with its evidence and severity, the op/tolerance comparison,
-methodology notes, an integer `score` from 0 to 5 per the rubric's score scale, a
-0-1 confidence, and a one-paragraph rationale. (The coarse verdict is derived from
+methodology notes, an integer `score` from 0 to 5 per the rubric's score scale,
+and a one-paragraph rationale. (The coarse verdict is derived from
 your score downstream — do not emit it.) Every field must be reconstructable from
 cited evidence in the bundle. No prose outside the JSON object.

@@ -10,11 +10,12 @@ citations alone (see audit.py for the deterministic post-processing).
 from __future__ import annotations
 
 
-# Shape of the central claim's success bar. The auditor OWNS and derives this at
-# grading time (it is no longer pinned by the classifier into the lockfile): it
-# classifies the bar kind, then sets op/reference_value/tolerance per rubric C1.
-# TODO(final-audits): during the final per-paper audit pass, review/freeze the
-# derived bars so headline reproduction rates are reported against a stable ruler.
+# Shape of the central claim's success bar. The classifier PINS the coherent tuple
+# (config, metric, value, scope, match_bar_kind) into the lockfile's `match_target`;
+# the auditor ADOPTS it verbatim and sets only op / tolerance to match the pinned
+# match_bar_kind, per rubric C1 (it no longer re-derives the bar).
+# TODO(final-audits): during the final per-paper audit pass, human-review the pinned
+# tuples so headline reproduction rates are reported against a stable ruler.
 MATCH_BAR_KINDS = (
     "point_estimate",  # land near reference_value; op abs_rel_within, tolerance set
     "threshold",       # reference_value is a floor/ceiling; op >= or <=, tolerance null
@@ -63,12 +64,13 @@ def _flag_item() -> dict:
 AUDIT_JSON_SCHEMA = _obj(
     {
         "paper_id": _STR,
-        # C1: the auditor's restatement of the claim as a checkable target. The
-        # auditor derives the whole bar here (kind first, then op/value/tolerance);
-        # it is not adopted from a pinned lockfile value.
+        # C1: the checkable target. The auditor ADOPTS the pinned match_target tuple
+        # (match_bar_kind / target_metric / reference_value / target_scope from the
+        # lockfile) verbatim and sets only op / tolerance to match the pinned kind.
         "central_claim": _STR,
         "match_bar_kind": {"type": "string", "enum": list(MATCH_BAR_KINDS)},
         "target_metric": _STR,
+        "target_scope": _STR,
         "reference_value": _NUM_OR_NULL,
         "op": _STR,
         "tolerance": _NUM_OR_NULL,
@@ -92,6 +94,7 @@ AUDIT_JSON_SCHEMA = _obj(
         "central_claim",
         "match_bar_kind",
         "target_metric",
+        "target_scope",
         "reference_value",
         "op",
         "tolerance",

@@ -87,23 +87,34 @@ def test_claim_block_uses_central_claim():
     assert "Reported numbers" in block
 
 
-def test_claim_block_never_pins_bar_and_asks_auditor_to_derive():
-    # Even if a legacy record carries a match_bar, the auditor owns the bar now:
-    # claim_block must not present it as a frozen target to adopt verbatim.
+def test_claim_block_adopts_pinned_match_target():
+    # The classifier now pins a coherent tuple; the auditor adopts it verbatim and
+    # sets only op/tolerance — it does not re-derive the bar.
     block = claim_block(
         {
             "central_claim": "86.7% on ALFWorld",
-            "match_bar": {"kind": "point_estimate", "reference_value": 86.7},
+            "match_target": {
+                "config": "ReAct, GPT-4o",
+                "metric": "success_rate",
+                "value": "86.7%",
+                "scope": "ALFWorld test",
+                "match_bar_kind": "point_estimate",
+            },
         }
     )
-    assert "Pinned match bar" not in block
-    assert "Derive the C1 match bar" in block
-    assert "match_bar_kind" in block
+    assert "Pinned success bar" in block
+    assert "adopt verbatim" in block.lower()
+    # the pinned tuple's fields are present for the auditor to copy
+    for token in ("ReAct, GPT-4o", "86.7%", "ALFWorld test", "point_estimate"):
+        assert token in block, token
+    # it must NOT tell the auditor to re-derive the bar
+    assert "Derive the C1 match bar" not in block
 
 
-def test_claim_block_asks_auditor_to_derive_when_absent():
+def test_claim_block_falls_back_to_derive_when_no_tuple_pinned():
+    # Legacy rows without a pinned match_target still ask the auditor to derive.
     block = claim_block({"central_claim": "A beats B", "claim_evidence": {"x": 1}})
-    assert "Pinned match bar" not in block
+    assert "Pinned success bar" not in block
     assert "Derive the C1 match bar" in block
 
 

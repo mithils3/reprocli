@@ -19,15 +19,18 @@ clears the criteria below. Absence of evidence is a low score, not a pass.
 ## Criteria
 
 ### C1 — Target identified
-**You own the success bar.** It is not pinned in the lockfile; you derive it here
-from the claim and the reported numbers. First classify the bar shape into
-`match_bar_kind` (`point_estimate` / `threshold` / `direction` / `magnitude` /
-`none`), then set `op` / `reference_value` / `tolerance` to match that shape using
-the resolution steps below.
+**Adopt the pinned success bar.** The lockfile pins a coherent
+`match_target` tuple — `config`, `metric`, `value`, `scope`, and `match_bar_kind`.
+Copy it verbatim: `match_bar_kind` ← pinned kind, `target_metric` ← pinned metric,
+`reference_value` ← pinned value, `target_scope` ← pinned scope. Then set **only**
+`op` / `tolerance` to match the pinned `match_bar_kind`, using the resolution steps
+below. Do **not** re-derive the metric, value, or scope, and do not substitute a
+different config — grade the agent's run against the pinned tuple as given. (Only a
+legacy row with no pinned `match_target` falls back to deriving the bar yourself.)
 
-> TODO (final audits): these derived bars are the per-paper rulers for the headline
-> reproduction rate. In the final audit pass they should be reviewed/frozen so the
-> same claim is graded against the same bar across runs and years.
+> TODO (final audits): these pinned tuples are the per-paper rulers for the headline
+> reproduction rate. In the final audit pass they should be human-reviewed/frozen so
+> the same claim is graded against the same bar across runs and years.
 
 Restate the central claim as a checkable target. Prefer a **scalar target** when
 the claim has one: metric, reference value(s), dataset/split, model/config, and
@@ -129,5 +132,5 @@ Downstream, score ≥ 4 counts as a reproduction; 3 → partial; 0 with no execu
 → unverifiable; everything else → not reproduced. You assign only the score.
 
 Always emit: the restated target, measured value + citation, every flag with
-evidence, the score, a 0–1 confidence, and a one-paragraph rationale. The score
+evidence, the score, and a one-paragraph rationale. The score
 must be reconstructable from the cited evidence alone.
