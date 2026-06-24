@@ -1,19 +1,17 @@
 #!/bin/bash
 # Re-pin run: re-classify ONLY the 115 frozen benchmark papers (eval-100 +
 # dev-15) with MiniMax-M2.7 and the updated prompt, so each row gains a coherent
-# pinned `match_target` tuple. Same serve paradigm as paper_classification.sbatch
-# (step 1 stands up the vLLM server, step 2 attaches the runner by URL), but
-# scoped to the frozen ids via --paper-ids-file and written to outputs/v6/.
+# pinned `match_target` tuple, then publish the updated splits to Hugging Face.
+# Same serve paradigm as paper_classification.sbatch (step 1 stands up the vLLM
+# server, step 2 attaches the runner by URL), scoped to the frozen ids via
+# --paper-ids-file. Steps 3-4 merge the re-pinned claim fields onto the frozen
+# splits (preserving all selection metadata) and upload eval_100.jsonl /
+# dev_split.jsonl to Mithilss/reprobench-splits.
 #
-# After the job: merge onto the frozen splits and upload —
-#   python tools/merge_repin_into_splits.py \
-#     --repin outputs/v6/repin_eval_dev_115_extracted.jsonl \
-#     --splits-repo Mithilss/reprobench-splits \
-#     --out-eval outputs/v6/eval_100.jsonl --out-dev outputs/v6/dev_split.jsonl
-#   python tools/upload_audit_pool_hf.py --repo Mithilss/reprobench-splits \
-#     --file outputs/v6/eval_100.jsonl  --path-in-repo eval_100.jsonl
-#   python tools/upload_audit_pool_hf.py --repo Mithilss/reprobench-splits \
-#     --file outputs/v6/dev_split.jsonl --path-in-repo dev_split.jsonl
+# Upload needs HF auth on the compute node: export HF_TOKEN (write scope) before
+# sbatch, or have a cached `hf auth login` token. Set DO_UPLOAD=0 to stop after
+# the merge (writes outputs/v6/, no push) if you want to eyeball the tuples first
+# — coherence is prompt-only, so spot-check MagCache/AIPW before publishing.
 #
 #SBATCH -J reprocli_repin_eval_dev_115
 #SBATCH -A betw-dtai-gh
@@ -38,6 +36,8 @@ SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SLURM_TMPDIR:-/tmp}/minimax_endpoint_${SLURM_JOB_ID}.json}"
 IDS_FILE="${IDS_FILE:-outputs/v6/eval_dev_115_ids.txt}"
+SPLITS_REPO="${SPLITS_REPO:-Mithilss/reprobench-splits}"
+DO_UPLOAD="${DO_UPLOAD:-1}"
 
 export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
 export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
@@ -122,3 +122,25 @@ python3 src/run_arxiv_prompt_vllm.py \
   --extracted-output outputs/v6/repin_eval_dev_115_extracted.jsonl \
   --save-round-jsonl \
   --max-model-len 196608
+
+# --- Step 3: merge re-pinned claim fields onto the frozen splits -------------
+# Field-level overlay (claim fields + match_target) keyed by arXiv id; every
+# selection-metadata field is preserved. Aborts (set -e) if any frozen paper has
+# no re-pinned row, so we never publish a partial split.
+python3 tools/merge_repin_into_splits.py \
+  --repin outputs/v6/repin_eval_dev_115_extracted.jsonl \
+  --splits-repo "${SPLITS_REPO}" \
+  --out-eval outputs/v6/eval_100.jsonl \
+  --out-dev  outputs/v6/dev_split.jsonl
+
+# --- Step 4: publish the updated splits to Hugging Face ----------------------
+if [[ "${DO_UPLOAD}" == "1" ]]; then
+  MSG="Re-pin coherent match_target tuples (MiniMax-M2.7, eval-100 + dev-15)"
+  python3 tools/upload_audit_pool_hf.py --repo "${SPLITS_REPO}" \
+    --file outputs/v6/eval_100.jsonl  --path-in-repo eval_100.jsonl  --commit-message "${MSG}"
+  python3 tools/upload_audit_pool_hf.py --repo "${SPLITS_REPO}" \
+    --file outputs/v6/dev_split.jsonl --path-in-repo dev_split.jsonl --commit-message "${MSG}"
+  echo "published updated splits to https://huggingface.co/datasets/${SPLITS_REPO}"
+else
+  echo "DO_UPLOAD=0 — merged splits written to outputs/v6/, not uploaded."
+fi

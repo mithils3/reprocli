@@ -29,12 +29,13 @@ def main() -> int:
 
     api = HfApi()
     api.create_repo(repo_id=args.repo, repo_type="dataset", private=args.private, exist_ok=True)
+    commit_message = args.commit_message or f"Add audit pool MRE records ({n_rows} papers)"
     api.upload_file(
         path_or_fileobj=str(args.file),
         path_in_repo=args.path_in_repo,
         repo_id=args.repo,
         repo_type="dataset",
-        commit_message=f"Add audit pool MRE records ({n_rows} papers)",
+        commit_message=commit_message,
     )
     print(f"Uploaded {n_rows} rows to https://huggingface.co/datasets/{args.repo}")
     print(f"Use it with: --mre-records hf://datasets/{args.repo}/{args.path_in_repo}")
@@ -47,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo", default=DEFAULT_REPO)
     parser.add_argument("--path-in-repo", default=DEFAULT_PATH_IN_REPO)
     parser.add_argument("--private", action="store_true")
+    parser.add_argument("--commit-message", help="override the HF commit message")
     return parser.parse_args()
 
 
