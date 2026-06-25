@@ -121,11 +121,27 @@ def forward_env() -> None:
     ``--cleanenv``. Setting it in *our* process environment (never on argv) forwards HF
     auth and cache/proxy settings without exposing a token via ``ps``. Idempotent — an
     explicit ``APPTAINERENV_*`` already in the environment wins.
+
+    It also redirects the tool dirs that default to ``$HOME`` into the rw-bound
+    ``~/.cache``: under ``--no-home`` the container's home is read-only, so e.g.
+    ``uv venv --python X`` (which downloads a managed CPython to
+    ``~/.local/share/uv/python`` when the raw CUDA image has no Python) otherwise dies
+    with ``Read-only file system``. Pointing ``UV_PYTHON_INSTALL_DIR`` + the XDG dirs at
+    the bound cache makes setup work *and* persist the download across papers.
     """
     for var in FORWARD_ENV:
         value = os.environ.get(var)
         if value is not None:
             os.environ.setdefault(f"APPTAINERENV_{var}", value)
+    cache = Path.home() / ".cache"
+    home_write_defaults = {
+        "UV_PYTHON_INSTALL_DIR": cache / "uv" / "python",
+        "XDG_CACHE_HOME": cache,
+        "XDG_DATA_HOME": cache / "xdg-data",
+        "XDG_CONFIG_HOME": cache / "xdg-config",
+    }
+    for var, path in home_write_defaults.items():
+        os.environ.setdefault(f"APPTAINERENV_{var}", str(path))
 
 
 # Fixed, SHORT container mountpoints for the episode dirs. The host paths carry a deep,

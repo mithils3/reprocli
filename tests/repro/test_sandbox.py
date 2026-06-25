@@ -96,6 +96,16 @@ class ForwardEnvTests(unittest.TestCase):
             # forwarded via APPTAINERENV_* so --cleanenv keeps it (no token on argv)
             self.assertEqual(os.environ["APPTAINERENV_HF_TOKEN"], "secret")
 
+    def test_home_writing_tool_dirs_redirect_into_bound_cache(self):
+        # Under --no-home the container's $HOME is read-only, so uv's managed-Python
+        # download dir is pointed at the rw-bound ~/.cache instead.
+        with mock.patch.dict(os.environ, {}, clear=True):
+            forward_env()
+            self.assertTrue(
+                os.environ["APPTAINERENV_UV_PYTHON_INSTALL_DIR"].endswith("/.cache/uv/python")
+            )
+            self.assertIn("/.cache", os.environ["APPTAINERENV_XDG_DATA_HOME"])
+
 
 class FromRunPathsTests(unittest.TestCase):
     def test_remaps_episode_dirs_and_binds_caches(self):
