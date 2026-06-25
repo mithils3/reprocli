@@ -27,8 +27,9 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 # --mem holds the CPU KV-offload pool too: offloaded blocks live in Grace LPDDR5X
-# (4x Grace = ~1.9TB/node) and must fit the Slurm cgroup, so size above KV_OFFLOAD_GB.
-#SBATCH --mem=900G
+# and must fit the Slurm cgroup, so size above the 4x KV_OFFLOAD_GB total. ghx4 is
+# ~140GB LPDDR5/GH200, ~110GB usable after OS reserve -> ~440GB/node; cap at 400G.
+#SBATCH --mem=400G
 #SBATCH --time=08:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
@@ -38,8 +39,12 @@
 
 set -euo pipefail
 
-MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"
-SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
+# Pinned (not ${MODEL:-...}): load + serve MiniMaxAI/MiniMax-M2.7 from the hub.
+# Hardcoded so a stale MODEL exported in the submitting shell can't override it
+# via --export=ALL — that leak made an earlier run serve a missing local path
+# (/work/.../MiniMax-M2.7), which vLLM then mis-read as an HF repo id and rejected.
+MODEL="MiniMaxAI/MiniMax-M2.7"
+SERVED_NAME="MiniMaxAI/MiniMax-M2.7"
 PORT="${PORT:-8000}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SLURM_TMPDIR:-/tmp}/minimax_endpoint_${SLURM_JOB_ID}.json}"
 IDS_FILE="${IDS_FILE:-outputs/v6/eval_dev_115_ids.txt}"
@@ -49,11 +54,14 @@ DO_UPLOAD="${DO_UPLOAD:-1}"
 # conversations resident before eviction); KV_CACHE_DTYPE=auto reverts to bf16.
 # KV_OFFLOAD_GB sizes the CPU offload pool (per GPU); set 0 to serve fp8-only.
 KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8}"
-KV_OFFLOAD_GB="${KV_OFFLOAD_GB:-64}"
+KV_OFFLOAD_GB="${KV_OFFLOAD_GB:-32}"
 
 export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
 export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
 export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm_cache
+# Hub pull of M2.7 (~230B params) must land on /work/nvme, not the small $HOME
+# quota — without this HF defaults to $HOME/.cache/huggingface and fills it.
+export HF_HOME=/work/nvme/bfvr/msalunkhe/.cache/huggingface
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
