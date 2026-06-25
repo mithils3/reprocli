@@ -28,10 +28,13 @@ DEFAULT_CLUSTER = "deltaai"
 # PyTorch image: torch is NOT prebuilt here, so the agent installs the matched torch family
 # itself from the aarch64 CUDA wheel index (see prompts/prompt_reproduce.txt). This sidesteps
 # the NGC ``+nv`` torch ABI wall — no stock ``torchaudio``/``torchvision`` wheel matches an
-# NGC ``+nv`` torch, and NGC PyTorch images don't ship torchaudio at all. Every agent step
-# runs inside this read-only container (see sandbox.py); swap per-run / per-paper with
+# NGC ``+nv`` torch, and NGC PyTorch images don't ship torchaudio at all. The pinned sif is
+# the CUDA base with the agent's CLI tools (git/curl/build tools/ffmpeg) layered in — built
+# by scripts/cluster/build_cuda_sandbox.sh, since a bare CUDA image ships none of them and
+# host ``module load`` can't reach inside the --cleanenv sandbox. Every agent step runs
+# inside this read-only container (see sandbox.py); swap per-run / per-paper with
 # --apptainer-image / $REPRO_APPTAINER_SIF.
-DEFAULT_APPTAINER_SIF = "/work/nvme/bfvr/msalunkhe/cuda1290-cudnn-devel.sif"
+DEFAULT_APPTAINER_SIF = "/work/nvme/bfvr/msalunkhe/cuda1290-agent.sif"
 
 
 @dataclass(frozen=True)
