@@ -164,6 +164,14 @@ def handle_request_done(
     round_index = int(state["round_index"])
     row = response_row(custom_id, future.result())
     message = response_message(row)
+    # Capture the model's real token usage for this response (every round, the
+    # intermediate force-final pass, and the final turn each pass through here once).
+    body = row.get("response", {}).get("body")
+    live_log.log_usage(
+        contexts_by_id[custom_id],
+        body.get("usage") if isinstance(body, dict) else None,
+        round_index=round_index,
+    )
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
         tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)

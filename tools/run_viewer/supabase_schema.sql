@@ -39,6 +39,16 @@ create index if not exists repro_runs_status_idx  on public.repro_runs (status);
 create index if not exists repro_runs_updated_idx on public.repro_runs (updated_at desc);
 create index if not exists repro_runs_arxiv_idx   on public.repro_runs (arxiv_id);
 
+-- real per-run token usage (summed over rounds by the harness) + the detailed
+-- stats.json URL. Added after the first deploy; safe to run twice.
+alter table public.repro_runs add column if not exists prompt_tokens     bigint;
+alter table public.repro_runs add column if not exists completion_tokens bigint;
+alter table public.repro_runs add column if not exists total_tokens      bigint;
+alter table public.repro_runs add column if not exists cached_tokens     bigint;
+alter table public.repro_runs add column if not exists reasoning_tokens  bigint;
+alter table public.repro_runs add column if not exists tool_calls        int;
+alter table public.repro_runs add column if not exists stats_url         text;
+
 -- ---------------------------------------------------------------------------
 -- repro_events  (append-only; grouped into rounds client-side by round_index)
 -- ---------------------------------------------------------------------------
@@ -116,3 +126,6 @@ end $$;
 insert into storage.buckets (id, name, public)
   values ('repro-logs', 'repro-logs', true)
   on conflict (id) do update set public = true;
+
+-- tell PostgREST to pick up the new columns immediately (Supabase also auto-reloads)
+notify pgrst, 'reload schema';

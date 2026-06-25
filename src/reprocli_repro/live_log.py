@@ -229,3 +229,21 @@ def log_final(
     )
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full), ""])
     _notify("final", ctx, {"round_index": round_index, "message": message, "exit_reason": exit_reason})
+
+
+def log_usage(
+    ctx: ExecutionContext,
+    usage: dict[str, Any] | None,
+    *,
+    round_index: int | None = None,
+    kind: str = "round",
+) -> None:
+    """Forward one model response's token ``usage`` to the structured sink.
+
+    No file write — the human transcript stays clean; the usage is summed onto the
+    Supabase run row and the uploaded ``stats.json``. Best-effort and a no-op when
+    no sink is registered or ``usage`` is empty, exactly like the writers above.
+    """
+    if not usage:
+        return
+    _notify("usage", ctx, {"round_index": round_index, "kind": kind, "usage": usage})

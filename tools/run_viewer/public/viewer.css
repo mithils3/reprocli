@@ -81,8 +81,15 @@
 .stats-head { display: flex; align-items: baseline; gap: 14px; }
 .stats-head h2 { margin: 0; font-family: var(--serif); font-size: 22px; color: var(--txt); }
 .stats-controls { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 12px; }
-.s-note { color: var(--muted); font-size: 12px; margin: 4px 0 16px; }
+.s-note { color: var(--muted); font-size: 12px; margin: 4px 0 12px; }
 .s-note b { color: var(--txt); font-weight: 600; }
+
+/* filter chips + search (mirrors the Live sidebar) */
+.stats-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+.stats-filters .filters-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.s-search { margin-left: auto; min-width: 240px; padding: 6px 12px; border: 1px solid var(--line-strong);
+  border-radius: 999px; background: var(--panel); color: var(--txt); font-size: 12px; font-family: var(--sans); }
+.s-search:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
 
 .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(116px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
@@ -103,18 +110,12 @@
   font-family: var(--mono); }
 .stats-table tbody tr:hover { background: var(--panel2); }
 .s-model { font-family: var(--mono); font-size: 12px; color: var(--txt); white-space: nowrap; }
-.s-run summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px;
-  font-family: var(--mono); font-size: 12px; color: var(--txt); }
-.s-run summary::-webkit-details-marker { display: none; }
-.s-run summary::before { content: "▸"; color: var(--muted); font-size: 10px; }
-.s-run details[open] summary::before { content: "▾"; }
-.s-run .dot { margin-top: 0; }
-.s-rid { font-family: var(--mono); font-size: 10px; color: var(--muted); margin: 5px 0 2px 17px; }
-.s-break { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0 2px 17px; }
-.s-chip { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
-  padding: 2px 8px; white-space: nowrap; }
-.s-chip b { color: var(--txt); font-variant-numeric: tabular-nums; }
-.s-chip.warn { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
+.s-run { white-space: nowrap; }
+.s-run .dot { display: inline-block; margin: 0 7px 0 0; vertical-align: middle; }
+.s-arx { font-family: var(--mono); font-size: 12px; color: var(--txt); }
+.s-run .link { margin-left: 5px; font-size: 12px; }
+.s-rid { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+.s-sub { color: var(--muted); font-size: 11px; }
 
 /* raw json tree (tool-call args) — borrowed from verify_app json_view.js styling */
 .jraw { font-family: var(--mono); font-size: 12px; line-height: 1.7; padding: 2px; overflow-x: auto; }

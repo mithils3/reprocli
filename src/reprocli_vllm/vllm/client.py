@@ -93,8 +93,13 @@ class StreamedResponseBuilder:
         self.reasoning_parts: list[str] = []
         self.tool_calls: dict[int, dict[str, Any]] = {}
         self.finish_reason: str | None = None
+        self.usage: dict[str, Any] | None = None
 
     def add_chunk(self, chunk: dict[str, Any]) -> None:
+        # The final SSE chunk (with stream_options.include_usage) carries usage and
+        # an empty choices list — capture it before the early return below.
+        if chunk.get("usage"):
+            self.usage = chunk["usage"]
         choices = chunk.get("choices") or []
         if not choices:
             return
@@ -142,7 +147,7 @@ class StreamedResponseBuilder:
             message["tool_calls"] = [
                 self.tool_calls[index] for index in sorted(self.tool_calls)
             ]
-        return {
+        out: dict[str, Any] = {
             "id": "streamed",
             "object": "chat.completion",
             "model": self.model,
@@ -154,3 +159,6 @@ class StreamedResponseBuilder:
                 }
             ],
         }
+        if self.usage:
+            out["usage"] = self.usage
+        return out
