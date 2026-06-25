@@ -50,7 +50,11 @@ _PROFILES: dict[str, Cluster] = {
         hw="gh200",
         gpus_per_node=4,
         account="betw-dtai-gh",
-        partition="ghx4-interactive",
+        # ``ghx4`` (the 48 h batch pool) is the default; the faster-queueing
+        # ``ghx4-interactive`` (≤4 nodes, 2 h) is one of the partitions the agent can
+        # discover via the ``list_partitions`` tool and select per-step by passing
+        # ``partition`` to ``run_gpu``. The profile pins only the *default*.
+        partition="ghx4",
         modules=("python/3.11.9", "cuda", "cudnn", "nccl"),
         scratch_root="/work/nvme",
         # GH200 is aarch64. We no longer wrap steps in an NGC container: the agent
@@ -76,6 +80,24 @@ _PROFILES: dict[str, Cluster] = {
 def cluster_names() -> tuple[str, ...]:
     """Names accepted by ``--cluster`` (for argparse ``choices``)."""
     return tuple(_PROFILES)
+
+
+def cluster_defaults() -> dict[str, dict[str, Any]]:
+    """The built-in default substrate per known cluster (source for ``list_partitions``).
+
+    One source of truth for "the default choice for our known clusters": each entry
+    is the account / default partition / node size / hw the profile pins, which the
+    ``list_partitions`` tool surfaces alongside the live ``sinfo`` partition list.
+    """
+    return {
+        name: {
+            "account": c.account,
+            "default_partition": c.partition,
+            "gpus_per_node": c.gpus_per_node,
+            "hw": c.hw,
+        }
+        for name, c in _PROFILES.items()
+    }
 
 
 def resolve_cluster(

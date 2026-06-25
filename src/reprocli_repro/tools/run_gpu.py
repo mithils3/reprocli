@@ -79,8 +79,12 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
                 "error": f"run_gpu refused: {reason}",
                 "remaining_h100_hours": round(ctx.budget.remaining(), 4),
             }
+        # partition picks the pool for THIS allocation (default = the cluster profile's);
+        # discover the choices with list_partitions. Fixed until the session is released.
+        partition = str(arguments.get("partition") or "").strip() or None
         session, err = gpu_session.ensure_session(
-            ctx, gpus=gpus, minutes=minutes, timeout=minutes * 60 + QUEUE_GRACE_SECONDS
+            ctx, gpus=gpus, minutes=minutes, partition=partition,
+            timeout=minutes * 60 + QUEUE_GRACE_SECONDS,
         )
         if session is None:
             return {"ok": False, "tool": "run_gpu", "command": command, "error": f"could not acquire GPU allocation: {err}"}
@@ -116,6 +120,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         "gpus": session.gpus,
         "minutes": session.minutes,
         "hw": session.hw,
+        "partition": session.partition,
         "returncode": step.returncode,
         "run_seconds": round(step.elapsed_s, 1),
         "held_seconds": round(held, 1),
@@ -276,6 +281,13 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
                 "default": False,
                 "description": "Set true when you are done with the GPU: frees the allocation after "
                 "this command (or immediately if no command) so wall-clock billing stops.",
+            },
+            "partition": {
+                "type": "string",
+                "description": "SLURM partition (node pool) to allocate on. Omit to use this "
+                "cluster's default; call list_partitions to see the alternatives (e.g. a "
+                "faster-queueing interactive pool). Takes effect only on the call that STARTS "
+                "the session; fixed until you release it.",
             },
         },
         [],  # command is enforced by the handler (it is optional only with release=true)

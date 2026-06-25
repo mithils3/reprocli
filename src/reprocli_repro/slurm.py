@@ -67,9 +67,9 @@ class SessionHandle:
     command: list[str]
 
 
-def _require_target(cluster: Cluster, gpus: int) -> None:
+def _require_target(cluster: Cluster, gpus: int, partition: str | None) -> None:
     """Validate the operator-set substrate before building any allocation argv."""
-    if not cluster.account or not cluster.partition:
+    if not cluster.account or not partition:
         raise SystemExit(
             f"cluster {cluster.name!r} has no account/partition for a GPU allocation "
             "(pass --account/--partition or pick a cluster profile that sets them)."
@@ -81,14 +81,21 @@ def _require_target(cluster: Cluster, gpus: int) -> None:
         )
 
 
-def build_acquire(cluster: Cluster, *, gpus: int, minutes: int) -> list[str]:
-    """Argv that holds one allocation (``salloc --no-shell``) and returns once granted."""
-    _require_target(cluster, gpus)
+def build_acquire(
+    cluster: Cluster, *, gpus: int, minutes: int, partition: str | None = None
+) -> list[str]:
+    """Argv that holds one allocation (``salloc --no-shell``) and returns once granted.
+
+    ``partition`` overrides the profile's default pool for this allocation (the agent
+    picks it from ``list_partitions``); ``None`` falls back to ``cluster.partition``.
+    """
+    part = partition or cluster.partition
+    _require_target(cluster, gpus, part)
     return [
         "salloc",
         "--no-shell",
         "-A", cluster.account,
-        "-p", cluster.partition,
+        "-p", part,
         "--nodes=1",
         f"--gpus={int(gpus)}",
         f"--time={int(minutes)}",
@@ -106,10 +113,15 @@ def build_srun(cluster: Cluster, workspace: Path | str, cmd: str, *, jobid: str)
 
 
 def acquire_session(
-    cluster: Cluster, *, gpus: int, minutes: int, timeout: float | None = None
+    cluster: Cluster,
+    *,
+    gpus: int,
+    minutes: int,
+    timeout: float | None = None,
+    partition: str | None = None,
 ) -> SessionHandle:
     """Hold a GPU allocation; block through the queue wait, return once it is granted."""
-    argv = build_acquire(cluster, gpus=gpus, minutes=minutes)
+    argv = build_acquire(cluster, gpus=gpus, minutes=minutes, partition=partition)
     try:
         proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as exc:

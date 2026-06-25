@@ -8,9 +8,12 @@ The reproduction agent acts on its episode through these tools:
 * ``write_file`` / ``apply_patch`` -- path-confined file writes/edits,
 * ``fetch_url`` -- read-only fetch of a public http(s) URL (docs, wheel index, raw
   repo files); there is no general web search, so it fetches URLs the agent knows,
+* ``list_partitions`` -- read-only ``sinfo`` of the cluster's partitions (node pools)
+  + the known-cluster defaults, so the agent can pick a ``run_gpu`` ``partition``
+  instead of the profile's hardcoded default,
 * ``run_gpu`` -- the one metered path to a GPU: a ``salloc`` allocation held across
   calls (``srun --jobid`` per step, released on ``release=true``/teardown), billed by
-  wall clock (``gpu_session``).
+  wall clock (``gpu_session``); ``partition`` (optional) selects the pool to hold.
 
 ``REPRO_TOOLS`` is the schema list advertised to the model (wired onto
 ``args.tools`` in ``cli_args``); ``REPRO_TOOL_HANDLERS`` maps each name to its
@@ -34,6 +37,7 @@ from reprocli_repro.cluster import DEFAULT_CLUSTER, resolve_cluster
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
+from reprocli_repro.tools.partitions import LIST_PARTITIONS_HANDLERS, LIST_PARTITIONS_TOOLS
 from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
@@ -45,7 +49,13 @@ _DEFAULT_GPUS_PER_NODE = resolve_cluster(DEFAULT_CLUSTER).gpus_per_node
 
 def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]:
     """The tool schemas advertised to the model, with run_gpu's GPU cap = node size."""
-    return [WORKSPACE_BASH_TOOL, *FILE_TOOLS, *FETCH_TOOLS, run_gpu_tool(gpus_per_node)]
+    return [
+        WORKSPACE_BASH_TOOL,
+        *FILE_TOOLS,
+        *FETCH_TOOLS,
+        *LIST_PARTITIONS_TOOLS,
+        run_gpu_tool(gpus_per_node),
+    ]
 
 
 REPRO_TOOLS: list[dict] = build_repro_tools()
@@ -54,6 +64,7 @@ REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
     **FILE_TOOL_HANDLERS,
     **FETCH_TOOL_HANDLERS,
+    **LIST_PARTITIONS_HANDLERS,
     **RUN_GPU_HANDLERS,
 }
 

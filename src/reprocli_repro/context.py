@@ -69,6 +69,7 @@ class GpuSession:
     hw: str
     started: float                       # time.monotonic() just after the allocation was granted
     last_charged: float                  # time.monotonic() at the most recent budget charge
+    partition: str | None = None         # the pool this allocation was held on (default or model-picked)
 
 
 @dataclass

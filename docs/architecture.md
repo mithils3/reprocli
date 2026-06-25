@@ -380,7 +380,8 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 |---|---|---|---|
 | `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | ✅ built | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit, inspect — anything that does not need a GPU. Every command is appended to `evidence/commands.log` |
 | `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | ✅ built | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
-| `run_gpu` | one JIT `salloc … srun` per call | 🚧 Phase 4 | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget |
+| `list_partitions` | orchestrator (`sinfo`, read-only) | ✅ built | enumerates the cluster's partitions (node pools) — idle/total nodes, walltime, GPU gres — plus the built-in default for each known cluster, so the model can pick a `partition` for `run_gpu` instead of the profile's hardcoded default |
+| `run_gpu` | one JIT `salloc … srun` per call | 🚧 Phase 4 | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget. Optional `partition` (from `list_partitions`) overrides the profile default for that allocation; the cluster profile pins only the default |
 | `write_repro_yaml` + `submit` | orchestrator | 🚧 Phase 5 | the submission contract: the scoring entrypoint command + where the metric lands. The entrypoint must realize the pinned `match_target.config` so the harness re-run measures the same anchor `metric` over the same `scope`. `submit` ends the episode |
 
 The CPU tools (`workspace_bash`, file tools) and the JIT substrate (`slurm.py`,
@@ -497,6 +498,8 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
   tools/
     workspace_bash.py               # cwd-confined shell ✅
     files.py                        # read_file / write_file / apply_patch ✅
+    fetch.py                        # read-only fetch_url ✅
+    partitions.py                   # list_partitions — sinfo pools + known-cluster defaults ✅
     run_gpu.py                      # the JIT-dispatching metered GPU tool 🚧 Phase 4
   report/                           # 🚧 Phase 5: schema/validate/reexecute → result.json
                                     #   (grades the fresh re-run against the pinned match_target)

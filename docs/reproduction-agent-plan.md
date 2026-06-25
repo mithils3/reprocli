@@ -150,8 +150,10 @@ Modules:
   `Cluster{name, account, partition, hw, gpus_per_node, modules,
   apptainer_image, scratch_root}`. Built-ins:
   - `deltaai` (**default**) — `-A betw-dtai-gh -p ghx4`, `hw="gh200"`, 4 GPU/node,
-    `module load python/3.11.9`, NVMe scratch under `/work/nvme/...`
-    (interactive variant: `ghx4-interactive`).
+    `module load python/3.11.9`, NVMe scratch under `/work/nvme/...`. The profile pins
+    only the *default* partition; the agent can see the alternatives (e.g. the
+    faster-queueing `ghx4-interactive`) via the `list_partitions` tool and select one
+    per allocation by passing `partition` to `run_gpu`.
   - `delta-h200` — `-A bfvr-delta-gpu -p gpuH200x8-interactive`, `hw="h200"`,
     8 GPU/node.
   - `local` — `hw="h100"` (multiplier 1.0), `--executor local`, no SLURM.

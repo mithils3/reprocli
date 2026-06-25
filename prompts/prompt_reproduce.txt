@@ -92,7 +92,13 @@ Two places, and YOU decide what runs where:
   command), never for your own reasoning/editing, which takes seconds. Like a human on a
   shared cluster: grab a small allocation (1 GPU, 30 min — granted fastest) to install
   deps and smoke-test, then request what the real run needs. `gpus`/`minutes` are fixed
-  for a session until you release it.
+  for a session until you release it. By default the allocation lands on this cluster's
+  default partition; pass `partition` to hold it on a different node pool (also fixed for
+  the session) — fastest-queueing pool first if you are just smoke-testing.
+- `list_partitions` — read-only: lists the partitions (node pools) this cluster exposes
+  with their idle/total node counts, walltime limits, and GPU type, plus the default for
+  each known cluster. Call it once before a long run to pick the best `partition` for
+  `run_gpu` instead of blindly taking the default.
 
 Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch — fast, no
 quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download

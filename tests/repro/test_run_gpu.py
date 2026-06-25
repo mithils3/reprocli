@@ -65,6 +65,27 @@ class SessionLifecycleTests(unittest.TestCase):
             r.assert_called_once()
             self.assertIn("torch 2.11", res["stdout"])
 
+    def test_partition_arg_is_passed_to_acquire_and_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(acquire=_handle("777"))
+            with acq as a, run, rel:
+                res = run_gpu(
+                    {"command": "python eval.py", "partition": "ghx4-interactive"}, ctx
+                )
+            self.assertEqual(a.call_args.kwargs["partition"], "ghx4-interactive")
+            self.assertEqual(res["partition"], "ghx4-interactive")
+            self.assertEqual(ctx.session.partition, "ghx4-interactive")
+
+    def test_default_partition_is_the_profile_default(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(acquire=_handle("778"))
+            with acq as a, run, rel:
+                res = run_gpu({"command": "python eval.py"}, ctx)
+            self.assertIsNone(a.call_args.kwargs["partition"])  # nothing forced
+            self.assertEqual(res["partition"], "ghx4")  # session records the profile default
+
     def test_second_call_reuses_allocation_without_reacquiring(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
@@ -171,7 +192,7 @@ class GpuChoiceTests(unittest.TestCase):
     def test_agent_gpu_choice_sizes_the_session(self):
         captured = {}
 
-        def fake_acquire(cluster, *, gpus, minutes, timeout=None):
+        def fake_acquire(cluster, *, gpus, minutes, timeout=None, partition=None):
             captured["gpus"] = gpus
             return _handle("555")
 
@@ -198,7 +219,10 @@ class GpuChoiceTests(unittest.TestCase):
 class DispatchTests(unittest.TestCase):
     def test_run_gpu_is_advertised_and_routed(self):
         names = {t["function"]["name"] for t in REPRO_TOOLS}
-        self.assertEqual(names, {"workspace_bash", "write_file", "apply_patch", "fetch_url", "run_gpu"})
+        self.assertEqual(
+            names,
+            {"workspace_bash", "write_file", "apply_patch", "fetch_url", "list_partitions", "run_gpu"},
+        )
 
     def test_execute_routes_run_gpu_through_context(self):
         call = {"function": {"name": "run_gpu", "arguments": {"command": "python x.py", "minutes": 5}}}

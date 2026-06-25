@@ -29,11 +29,26 @@ class BuildAcquireTests(unittest.TestCase):
         self.assertIn("-A", argv)
         self.assertIn("betw-dtai-gh", argv)
         self.assertIn("-p", argv)
-        self.assertIn("ghx4-interactive", argv)
+        self.assertIn("ghx4", argv)
         self.assertIn("--gpus=4", argv)
         self.assertIn("--time=90", argv)
         # Acquire holds the node only; the command is spliced in later by build_srun.
         self.assertNotIn("srun", argv)
+
+    def test_partition_override_replaces_the_profile_default(self):
+        # The model picks a pool (from list_partitions) without touching the account.
+        argv = build_acquire(
+            resolve_cluster("deltaai"), gpus=1, minutes=10, partition="ghx4-interactive"
+        )
+        self.assertIn("ghx4-interactive", argv)
+        self.assertNotIn("ghx4", [a for a in argv if a == "ghx4"])  # default not used
+        self.assertIn("betw-dtai-gh", argv)  # account still the profile's
+
+    def test_partition_override_satisfies_a_profile_without_a_default(self):
+        # A bare cluster (no pinned partition) is allocatable once the model names one.
+        bare = Cluster(name="bare", hw="h100", gpus_per_node=1, account="acct")
+        argv = build_acquire(bare, gpus=1, minutes=5, partition="some-pool")
+        self.assertIn("some-pool", argv)
 
     def test_rejects_profile_without_account(self):
         bare = Cluster(name="bare", hw="h100", gpus_per_node=1)

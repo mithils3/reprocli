@@ -7,7 +7,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args, resolve_cluster
+from reprocli_repro.cluster import (
+    DEFAULT_CLUSTER,
+    cluster_defaults,
+    cluster_names,
+    from_args,
+    resolve_cluster,
+)
 
 
 class ResolveClusterTests(unittest.TestCase):
@@ -15,7 +21,7 @@ class ResolveClusterTests(unittest.TestCase):
         c = resolve_cluster(DEFAULT_CLUSTER)
         self.assertEqual(c.name, "deltaai")
         self.assertEqual(c.account, "betw-dtai-gh")
-        self.assertEqual(c.partition, "ghx4-interactive")
+        self.assertEqual(c.partition, "ghx4")
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.gpus_per_node, 4)
         self.assertIn("python/3.11.9", c.modules)
@@ -57,6 +63,20 @@ class ResolveClusterTests(unittest.TestCase):
 
     def test_default_is_a_known_name(self):
         self.assertIn(DEFAULT_CLUSTER, cluster_names())
+
+
+class ClusterDefaultsTests(unittest.TestCase):
+    def test_exposes_default_partition_per_known_cluster(self):
+        defaults = cluster_defaults()
+        self.assertEqual(defaults["deltaai"]["default_partition"], "ghx4")
+        self.assertEqual(defaults["deltaai"]["account"], "betw-dtai-gh")
+        self.assertEqual(defaults["delta-h200"]["default_partition"], "gpuH200x8-interactive")
+        # Every known cluster is represented, with the fields list_partitions surfaces.
+        self.assertEqual(set(defaults), set(cluster_names()))
+        for entry in defaults.values():
+            self.assertEqual(
+                set(entry), {"account", "default_partition", "gpus_per_node", "hw"}
+            )
 
 
 class FromArgsTests(unittest.TestCase):
