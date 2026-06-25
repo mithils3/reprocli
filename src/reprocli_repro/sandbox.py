@@ -127,20 +127,47 @@ def forward_env() -> None:
             os.environ.setdefault(f"APPTAINERENV_{var}", value)
 
 
+# Fixed, SHORT container mountpoints for the episode dirs. The host paths carry a deep,
+# per-run, random-id path (``…/agent_runs/<arxiv>/<budget>/<run_id>/workspace``); we bind
+# each onto a stable short name *inside* the container so the agent uses ``/repro/workspace``
+# etc. — the same across every episode, never has to ``cd`` (``--pwd`` lands each step in
+# the workspace), and never has to retype the long path. The file tools (``files.py``) run
+# host-side, so they translate these ``/repro/...`` paths back to the host run dir. The
+# layout mirrors ``inputs.RunPaths``: ``<run_dir>/{workspace,reference,evidence}`` ↔
+# ``/repro/{workspace,reference,evidence}``.
+CONTAINER_RUN = "/repro"
+CONTAINER_WORKSPACE = "/repro/workspace"
+CONTAINER_REFERENCE = "/repro/reference"
+CONTAINER_EVIDENCE = "/repro/evidence"
+
+
+@dataclass(frozen=True)
+class Bind:
+    """One ``apptainer --bind`` spec: ``src`` on the host → ``dst`` in the container."""
+
+    src: str
+    dst: str
+    ro: bool = False
+
+    def arg(self) -> str:
+        spec = self.src if self.dst == self.src else f"{self.src}:{self.dst}"
+        return f"{spec}:ro" if self.ro else spec
+
+
 @dataclass(frozen=True)
 class Sandbox:
     """How to wrap one step's ``bash -lc`` body in the episode's Apptainer container.
 
-    ``image`` is the read-only ``.sif`` that becomes ``/``; ``writable`` are the
-    *episode/cache* read-write bind roots (workspace, evidence, caches); ``readonly``
-    are the read-only binds (the paper ``reference``). The node-local ``/tmp`` is always
-    bound read-write (the agent's bulk scratch). The wrap is unconditional — there is no
-    opt-out (see module docstring).
+    ``image`` is the read-only ``.sif`` that becomes ``/``; ``binds`` are the mounts
+    (the episode's workspace/evidence remapped to short ``/repro`` paths rw, reference ro,
+    plus the node-local ``/tmp`` and the shared caches at their own paths); ``workdir`` is
+    the container cwd every step lands in (``--pwd``), so the agent never has to ``cd``.
+    The wrap is unconditional — there is no opt-out (see module docstring).
     """
 
     image: str
-    writable: tuple[Path, ...] = ()
-    readonly: tuple[Path, ...] = ()
+    binds: tuple[Bind, ...] = ()
+    workdir: str = CONTAINER_WORKSPACE
 
     def wrap_argv(self, body: str, *, nv: bool = False) -> list[str]:
         """``["apptainer", "exec", <flags...>, <image>, "bash", "-lc", <body>]``.
@@ -152,20 +179,18 @@ class Sandbox:
 
     def status(self) -> str:
         """Human-readable effective state for the setup summary / evidence."""
-        rw = ", ".join(str(p) for p in self.writable) or "(none)"
-        ro = ", ".join(str(p) for p in self.readonly) or "(none)"
-        return f"apptainer (mandatory) {self.image}; rw: /tmp, {rw}; ro: {ro}"
+        rw = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if not b.ro) or "(none)"
+        ro = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if b.ro) or "(none)"
+        return f"apptainer (mandatory) {self.image}; pwd {self.workdir}; rw: {rw}; ro: {ro}"
 
     def _apptainer_prefix(self, *, nv: bool) -> list[str]:
-        argv = ["apptainer", "exec", "--cleanenv", "--no-home"]
+        # --pwd lands each step in the workspace mount, so the body needs no `cd` to find
+        # it and the agent never types the long host path.
+        argv = ["apptainer", "exec", "--cleanenv", "--no-home", "--pwd", self.workdir]
         if nv:
             argv.append("--nv")
-        # node-local /tmp stays a real rw bind (NOT a tmpfs) — bulk weights/datasets.
-        argv += ["--bind", "/tmp"]
-        for path in self.writable:
-            argv += ["--bind", str(path)]
-        for path in self.readonly:
-            argv += ["--bind", f"{path}:{path}:ro"]
+        for bind in self.binds:
+            argv += ["--bind", bind.arg()]
         # NGC images ship `pip` but not `uv`, and the prompt installs with `uv pip`;
         # bind the host `uv` (aarch64, runs fine in the container) onto the default PATH.
         uv = shutil.which("uv")
@@ -200,25 +225,31 @@ def from_run_paths(
     image: str,
     caches: Iterable[Path] | None = None,
 ) -> Sandbox:
-    """Build the episode's sandbox: rw binds for its dirs + caches, ro bind for reference.
+    """Build the episode's sandbox binds: workspace/evidence remapped to short ``/repro``
+    paths (rw), reference ro, the node-local ``/tmp`` and the shared caches at their own
+    paths (rw).
 
-    Every bind source must exist before ``apptainer`` runs, so we create the episode
-    dirs and cache roots up front (idempotent) and drop any that can't be created.
-    ``/tmp`` is bound unconditionally by :class:`Sandbox`; cache roots default to
-    :func:`default_cache_dirs`.
+    Every bind source must exist before ``apptainer`` runs, so we create the episode dirs
+    and cache roots up front (idempotent) and drop any that can't be created. Cache roots
+    default to :func:`default_cache_dirs`.
     """
-    candidates = [run_paths.workspace, run_paths.evidence]
-    candidates += list(caches if caches is not None else default_cache_dirs())
-    writable: list[Path] = []
-    for path in candidates:
-        resolved = _ensure_dir(path)
-        if resolved is not None and resolved not in writable:
-            writable.append(resolved)
-    readonly: list[Path] = []
+    binds: list[Bind] = [Bind("/tmp", "/tmp")]  # node-local scratch (a real bind, not a tmpfs)
+    workspace = _ensure_dir(run_paths.workspace)
+    if workspace is not None:
+        binds.append(Bind(str(workspace), CONTAINER_WORKSPACE))
+    evidence = _ensure_dir(run_paths.evidence)
+    if evidence is not None:
+        binds.append(Bind(str(evidence), CONTAINER_EVIDENCE))
     reference = _ensure_dir(run_paths.reference)
     if reference is not None:
-        readonly.append(reference)
-    return Sandbox(image=image, writable=tuple(writable), readonly=tuple(readonly))
+        binds.append(Bind(str(reference), CONTAINER_REFERENCE, ro=True))
+    seen: set[str] = set()
+    for cache in (caches if caches is not None else default_cache_dirs()):
+        resolved = _ensure_dir(cache)
+        if resolved is not None and str(resolved) not in seen:
+            seen.add(str(resolved))
+            binds.append(Bind(str(resolved), str(resolved)))
+    return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE)
 
 
 def _ensure_dir(path: Path | None) -> Path | None:

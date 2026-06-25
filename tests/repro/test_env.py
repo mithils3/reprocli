@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro import env
-from reprocli_repro.sandbox import Sandbox
+from reprocli_repro.sandbox import CONTAINER_WORKSPACE, Bind, Sandbox
 
 
 class ExecArgvTests(unittest.TestCase):
@@ -27,17 +27,19 @@ class ExecArgvTests(unittest.TestCase):
             ["bash", "-lc", "cd /ws && python train.py"],
         )
 
-    def test_sandbox_wraps_body_in_apptainer(self):
-        sb = Sandbox(image="/img.sif", writable=(Path("/ws"),))
-        argv = env.exec_argv("/ws", "uv pip install x", on_gpu=True, sandbox=sb)
+    def test_sandbox_cds_to_container_workdir(self):
+        # Under the sandbox the body cd's to the SHORT container workdir, not the long
+        # host path passed in — the agent never sees the per-run path.
+        sb = Sandbox(image="/img.sif", binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
+        argv = env.exec_argv("/host/ws", "uv pip install x", on_gpu=True, sandbox=sb)
         self.assertEqual(argv[0], "apptainer")
         self.assertIn("--nv", argv)  # GPU step passes the device through
         self.assertEqual(argv[-4], "/img.sif")  # image right before bash
-        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /ws && uv pip install x"])
+        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /repro/workspace && uv pip install x"])
 
     def test_cpu_sandbox_step_omits_nv(self):
-        sb = Sandbox(image="/img.sif", writable=(Path("/ws"),))
-        self.assertNotIn("--nv", env.exec_argv("/ws", "echo hi", sandbox=sb))
+        sb = Sandbox(image="/img.sif", binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
+        self.assertNotIn("--nv", env.exec_argv("/host/ws", "echo hi", sandbox=sb))
 
 
 if __name__ == "__main__":

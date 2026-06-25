@@ -74,16 +74,17 @@ class BuildSrunTests(unittest.TestCase):
         self.assertEqual(inner, "cd /ws && python train.py")
 
     def test_sandbox_splices_apptainer_after_srun(self):
-        from reprocli_repro.sandbox import Sandbox
+        from reprocli_repro.sandbox import CONTAINER_WORKSPACE, Bind, Sandbox
 
-        sb = Sandbox(image="/img.sif", writable=(Path("/ws"),))
-        argv = build_srun(resolve_cluster("deltaai"), "/ws", "python train.py", jobid="42", sandbox=sb)
-        # srun (the trusted launcher) stays outside; the apptainer wrap is spliced after.
+        sb = Sandbox(image="/img.sif", binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
+        argv = build_srun(resolve_cluster("deltaai"), "/host/ws", "python train.py", jobid="42", sandbox=sb)
+        # srun (the trusted launcher) stays outside; the apptainer wrap is spliced after,
+        # and the payload cd's to the short container workdir.
         self.assertEqual(argv[0], "srun")
         self.assertIn("--jobid=42", argv)
         self.assertIn("apptainer", argv)
         self.assertIn("--nv", argv)  # GPU step
-        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /ws && python train.py"])
+        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /repro/workspace && python train.py"])
 
 
 class AcquireSessionTests(unittest.TestCase):

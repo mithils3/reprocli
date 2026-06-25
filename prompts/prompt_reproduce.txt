@@ -75,6 +75,11 @@ You operate inside an isolated per-paper workspace. The harness has prepared:
 Never write durable outputs outside these directories (`/tmp` scratch, below, is the one
 exception — and nothing you keep there is durable).
 
+Every command — on BOTH tools — starts already inside your workspace ({WORKSPACE_DIR}), so
+use plain relative paths (`.venv/bin/python`, `python train.py`, `git clone <url> .`); you
+NEVER need to `cd` into it. These paths are short and FIXED for the whole run, so reach the
+other dirs directly too (e.g. `{REFERENCE_DIR}/...`, `{EVIDENCE_DIR}/...`).
+
 Every command you run — on BOTH tools — executes INSIDE a read-only Apptainer container
 (an NGC PyTorch image: its CUDA stack and a GPU-ready `torch` are already installed).
 This is your operating system: `git`, `python3`, `pip`, `nvcc`, and the CUDA libraries all

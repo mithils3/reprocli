@@ -37,6 +37,7 @@ from typing import Any, Iterable
 
 from reprocli_vllm.runtime.mre_records import load_mre_records
 
+from reprocli_repro import sandbox
 from reprocli_repro.context import Budget, ExecutionContext
 from reprocli_repro.reference import safe_component
 
@@ -220,10 +221,12 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{MRE_CONFIG}": _text_or(row.get("mre_config"), "(no MRE configuration recorded)"),
         "{AGENT_TASK}": _text_or(row.get("agent_task"), "(no step-by-step task recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
-        "{WORKSPACE_DIR}": str(run_paths.workspace),
-        "{REFERENCE_DIR}": str(run_paths.reference),
-        "{EVIDENCE_DIR}": str(run_paths.evidence),
-        "{RUN_DIR}": str(run_paths.run_dir),
+        # Short, stable in-container paths the agent actually sees (sandbox.py remaps the
+        # long per-run host dirs onto these), so the prompt never hands it the long path.
+        "{WORKSPACE_DIR}": sandbox.CONTAINER_WORKSPACE,
+        "{REFERENCE_DIR}": sandbox.CONTAINER_REFERENCE,
+        "{EVIDENCE_DIR}": sandbox.CONTAINER_EVIDENCE,
+        "{RUN_DIR}": sandbox.CONTAINER_RUN,
     }
 
 

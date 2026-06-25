@@ -45,6 +45,37 @@ class FileToolTests(unittest.TestCase):
             self.assertFalse(write_file({"path": "/etc/passwd", "content": "x"}, ctx)["ok"])
 
 
+class ContainerPathTranslationTests(unittest.TestCase):
+    """The agent uses the short in-container /repro paths; the host-side file tools must
+    translate them back to the episode's real dirs and keep the same confinement."""
+
+    def test_repro_workspace_path_maps_to_host_workspace(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            res = write_file({"path": "/repro/workspace/src/m.py", "content": "x=1\n"}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "src" / "m.py").read_text(), "x=1\n")
+
+    def test_repro_evidence_path_is_writable(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            res = write_file({"path": "/repro/evidence/notes.md", "content": "hi\n"}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.evidence / "notes.md").read_text(), "hi\n")
+
+    def test_repro_reference_path_stays_read_only(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            blocked = write_file({"path": "/repro/reference/paper.tex", "content": "x"}, ctx)
+            self.assertFalse(blocked["ok"])
+
+    def test_repro_traversal_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            evil = {"path": "/repro/workspace/../../etc/passwd", "content": "x"}
+            self.assertFalse(write_file(evil, ctx)["ok"])
+
+
 class ApplyPatchTests(unittest.TestCase):
     DIFF = "--- a/a.txt\n+++ b/a.txt\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n"
 

@@ -79,7 +79,10 @@ def build_venv(
     ``ensurepip``.
     """
     venv_path = Path(workspace) / ".venv"
-    parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
+    # Relative `.venv`: the step lands in the workspace (the sandbox's container workdir,
+    # or the host workspace when bare), so the host's long/per-run path never appears in
+    # the in-container command.
+    parts = [uv_bin, "venv", ".venv"]
     if system_site_packages:
         parts.append("--system-site-packages")
     if seed:

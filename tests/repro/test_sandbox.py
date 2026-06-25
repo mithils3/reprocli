@@ -14,6 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_repro import env, sandbox
 from reprocli_repro.inputs import resolve_run_paths
 from reprocli_repro.sandbox import (
+    CONTAINER_EVIDENCE,
+    CONTAINER_REFERENCE,
+    CONTAINER_WORKSPACE,
+    Bind,
     Sandbox,
     apptainer_usable,
     forward_env,
@@ -28,38 +32,45 @@ TEST_SIF = os.environ.get("REPRO_TEST_SIF")
 
 
 class WrapArgvTests(unittest.TestCase):
-    def test_prefix_runs_inside_image_with_rw_and_ro_binds(self):
-        sb = Sandbox(image=IMAGE, writable=(Path("/ws"), Path("/ev")), readonly=(Path("/ref"),))
-        argv = sb.wrap_argv("cd /ws && echo hi")
+    def _sandbox(self) -> Sandbox:
+        return Sandbox(
+            image=IMAGE,
+            binds=(
+                Bind("/tmp", "/tmp"),
+                Bind("/host/ws", CONTAINER_WORKSPACE),
+                Bind("/host/ref", CONTAINER_REFERENCE, ro=True),
+            ),
+            workdir=CONTAINER_WORKSPACE,
+        )
+
+    def test_prefix_pwd_and_remapped_binds(self):
+        argv = self._sandbox().wrap_argv("cd /repro/workspace && echo hi")
         joined = " ".join(argv)
-        self.assertEqual(argv[:4], ["apptainer", "exec", "--cleanenv", "--no-home"])
-        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /ws && echo hi"])
-        # the image is the last apptainer arg, right before `bash`
-        self.assertEqual(argv[-4], IMAGE)
-        # node-local /tmp is always a real rw bind (bulk scratch — never a tmpfs)
+        # --pwd lands the step in the short container workspace; no `cd` to the long path
+        self.assertEqual(argv[:6], ["apptainer", "exec", "--cleanenv", "--no-home", "--pwd", CONTAINER_WORKSPACE])
+        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /repro/workspace && echo hi"])
+        self.assertEqual(argv[-4], IMAGE)  # image right before bash
+        # node-local /tmp (same path); the episode dirs remapped onto short /repro paths
         self.assertIn("--bind /tmp", joined)
-        self.assertNotIn("--tmpfs", joined)
-        # each writable root is a rw bind; reference is bound read-only
-        self.assertIn("--bind /ws", joined)
-        self.assertIn("--bind /ev", joined)
-        self.assertIn("--bind /ref:/ref:ro", joined)
+        self.assertIn("--bind /host/ws:/repro/workspace", joined)
+        self.assertIn("--bind /host/ref:/repro/reference:ro", joined)
 
     def test_nv_only_when_requested(self):
-        sb = Sandbox(image=IMAGE, writable=(Path("/ws"),))
-        self.assertNotIn("--nv", sb.wrap_argv("echo hi"))  # default: CPU step, no GPU
-        self.assertIn("--nv", sb.wrap_argv("echo hi", nv=True))  # GPU step
+        self.assertNotIn("--nv", self._sandbox().wrap_argv("echo hi"))  # CPU step
+        self.assertIn("--nv", self._sandbox().wrap_argv("echo hi", nv=True))  # GPU step
 
 
 class ExecArgvIntegrationTests(unittest.TestCase):
     def test_exec_argv_wraps_only_when_sandbox_passed(self):
-        # No sandbox -> the plain body (unchanged contract for the builders).
+        # No sandbox -> the plain body, cd to the given (host) workspace.
         self.assertEqual(env.exec_argv("/ws", "echo hi"), ["bash", "-lc", "cd /ws && echo hi"])
-        # With a sandbox -> the same body, wrapped in apptainer; on_gpu drives --nv.
-        sb = Sandbox(image=IMAGE, writable=(Path("/ws"),))
-        argv = env.exec_argv("/ws", "echo hi", on_gpu=True, sandbox=sb)
+        # With a sandbox -> cd to the short container workdir, wrapped in apptainer; the
+        # host workspace arg is ignored for the cd. on_gpu drives --nv.
+        sb = Sandbox(image=IMAGE, binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
+        argv = env.exec_argv("/host/ws", "echo hi", on_gpu=True, sandbox=sb)
         self.assertEqual(argv[0], "apptainer")
         self.assertIn("--nv", argv)
-        self.assertEqual(argv[-1], "cd /ws && echo hi")
+        self.assertEqual(argv[-1], "cd /repro/workspace && echo hi")
 
 
 class RequireApptainerTests(unittest.TestCase):
@@ -87,19 +98,24 @@ class ForwardEnvTests(unittest.TestCase):
 
 
 class FromRunPathsTests(unittest.TestCase):
-    def test_builds_rw_and_ro_roots_and_creates_caches(self):
+    def test_remaps_episode_dirs_and_binds_caches(self):
         with tempfile.TemporaryDirectory() as d:
             paths = resolve_run_paths(Path(d) / "runs", "2505.11483", 8.0, run_id="RID")
             create_layout(paths)
             cache = Path(d) / "cache"
             sb = from_run_paths(paths, image=IMAGE, caches=[cache])
             self.assertEqual(sb.image, IMAGE)
+            self.assertEqual(sb.workdir, CONTAINER_WORKSPACE)
             self.assertTrue(cache.is_dir())  # cache root created up front for the rw bind
-            for root in (paths.workspace, paths.evidence, cache):
-                self.assertIn(root.resolve(), sb.writable)
-            # reference is read-only; /tmp is bound by the prefix, not listed in writable
-            self.assertIn(paths.reference.resolve(), sb.readonly)
-            self.assertNotIn(Path("/tmp"), sb.writable)
+            by_dst = {b.dst: b for b in sb.binds}
+            # episode dirs remapped onto the short, stable container paths
+            self.assertEqual(by_dst[CONTAINER_WORKSPACE].src, str(paths.workspace.resolve()))
+            self.assertFalse(by_dst[CONTAINER_WORKSPACE].ro)
+            self.assertEqual(by_dst[CONTAINER_EVIDENCE].src, str(paths.evidence.resolve()))
+            self.assertTrue(by_dst[CONTAINER_REFERENCE].ro)  # reference is read-only
+            # /tmp + the cache are bound at their own paths (rw)
+            self.assertIn("/tmp", by_dst)
+            self.assertEqual(by_dst[str(cache.resolve())].src, str(cache.resolve()))
 
 
 @unittest.skipUnless(
@@ -109,22 +125,26 @@ class FromRunPathsTests(unittest.TestCase):
 class FunctionalConfinementTests(unittest.TestCase):
     def test_writes_outside_the_episode_are_blocked(self):
         # `outside` lives under $HOME, which the container does NOT mount — a real
-        # confinement check (it IS writable here without the sandbox). The workspace is
-        # bound read-write; /tmp would be too, so the out-of-bounds dir can't be there.
+        # confinement check. The workspace is remapped to /repro/workspace and is the cwd,
+        # so a relative write lands there; the out-of-bounds dir can't be reached.
         with tempfile.TemporaryDirectory() as wsroot, \
                 tempfile.TemporaryDirectory(dir=Path.home()) as outside:
             ws = Path(wsroot) / "workspace"
             ws.mkdir()
-            sb = Sandbox(image=TEST_SIF, writable=(ws.resolve(),))
+            sb = Sandbox(
+                image=TEST_SIF,
+                binds=(Bind(str(ws.resolve()), CONTAINER_WORKSPACE),),
+                workdir=CONTAINER_WORKSPACE,
+            )
             cmd = (
                 "echo ok > inside.txt; "
                 f"(echo bad > {outside}/leak.txt && echo WROTE) || echo BLOCKED"
             )
             proc = subprocess.run(
                 env.exec_argv(str(ws), cmd, sandbox=sb),
-                cwd=str(ws), capture_output=True, text=True, timeout=120,
+                capture_output=True, text=True, timeout=120,
             )
-            # the workspace write lands; the write to the unmounted $HOME path is denied
+            # the workspace write lands (via the remapped bind); the unmounted $HOME is denied
             self.assertEqual((ws / "inside.txt").read_text().strip(), "ok")
             self.assertIn("BLOCKED", proc.stdout)
             self.assertFalse((Path(outside) / "leak.txt").exists())

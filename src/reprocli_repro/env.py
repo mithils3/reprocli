@@ -26,16 +26,17 @@ if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
 
 
-def env_inner(workspace, command: str) -> str:
-    """The ``bash -lc`` body for one step: ``cd <ws> && <cmd>``.
+def env_inner(workdir, command: str) -> str:
+    """The ``bash -lc`` body for one step: ``cd <workdir> && <cmd>``.
 
     The container (``sandbox.py``) supplies the toolchain, so the body carries no
     ``module load`` — loading host modules would either be a no-op or, inside the
     ``--cleanenv`` container where ``module`` does not exist, fail and short-circuit the
-    real command. The cwd is pinned to the workspace (the same root the file tools and
-    the rw bind confine to).
+    real command. ``workdir`` is the short container workspace path (``/repro/workspace``)
+    under the sandbox, or the host workspace when running bare (tests/builders); the
+    ``cd`` is belt-and-suspenders alongside the sandbox's ``--pwd``.
     """
-    return f"cd {shlex.quote(str(workspace))} && {command}"
+    return f"cd {shlex.quote(str(workdir))} && {command}"
 
 
 def exec_argv(
@@ -49,11 +50,13 @@ def exec_argv(
 
     Pass directly to ``subprocess.run`` for orchestrator-side tools, or splice in after
     ``srun ...`` for a GPU step. When ``sandbox`` is supplied (every agent step — the
-    sandbox is mandatory) the ``bash -lc`` body is wrapped in the episode's Apptainer
-    container, so the step runs inside the read-only image and can only *write* the
-    episode's own dirs. ``on_gpu`` adds ``--nv`` for GPU steps.
+    sandbox is mandatory) the body ``cd``s to the sandbox's short container ``workdir``
+    and is wrapped in the episode's Apptainer container, so the step runs inside the
+    read-only image and can only *write* the episode's own dirs. ``on_gpu`` adds ``--nv``
+    for GPU steps. With no sandbox the body ``cd``s to the given host ``workspace``.
     """
-    body = env_inner(workspace, command)
+    workdir = sandbox.workdir if sandbox is not None else workspace
+    body = env_inner(workdir, command)
     if sandbox is not None:
         return sandbox.wrap_argv(body, nv=on_gpu)
     return ["bash", "-lc", body]

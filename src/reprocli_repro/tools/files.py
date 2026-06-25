@@ -13,8 +13,11 @@ tools stay tight to durable source/evidence, while bulk ``/tmp`` scratch is
 shell-driven, not a file-tool path — so the tool-layer check is a strict inner
 boundary nested inside the OS sandbox.
 
-Relative paths resolve against the workspace (the same cwd ``workspace_bash`` runs
-in); absolute paths must still fall within an allowed root. ``..`` segments and NUL
+The agent works against the short in-container paths the sandbox remaps the episode
+dirs onto (``/repro/workspace`` etc.); since these tools do real *host* I/O,
+``_to_host`` first translates a leading ``/repro`` back to the host run dir. Relative
+paths then resolve against the workspace (the same cwd ``workspace_bash`` runs in), and
+host-absolute paths must still fall within an allowed root. ``..`` segments and NUL
 bytes are rejected outright, and ``resolve()`` canonicalizes symlinks before the
 containment check, so traversal, symlink escapes, and writes outside the bundle are
 all rejected before any I/O happens. ``apply_patch`` additionally confines every
@@ -31,6 +34,7 @@ from reprocli_vllm.config.config import RUN_FILE_WRITE_MAX_CHARS, function_tool
 
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
+from reprocli_repro.sandbox import CONTAINER_RUN
 
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -82,12 +86,30 @@ def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, A
 # --------------------------------------------------------------------------- #
 # Helpers                                                                      #
 # --------------------------------------------------------------------------- #
+def _to_host(ctx: ExecutionContext, text: str) -> str:
+    """Map an in-container ``/repro/...`` path back to the host run dir for host-side I/O.
+
+    The agent works against the short, remapped container paths (``sandbox.py``), but these
+    tools do real host I/O, so ``/repro/workspace/x`` → ``<run_dir>/workspace/x`` (and the
+    run dir is the host workspace's parent — see ``inputs.RunPaths``). Host-absolute and
+    relative paths are returned unchanged; the containment check below still bounds them.
+    """
+    if ctx.workspace is None:
+        return text
+    if text == CONTAINER_RUN or text.startswith(CONTAINER_RUN + "/"):
+        run_dir = Path(ctx.workspace).parent
+        rel = text[len(CONTAINER_RUN):].lstrip("/")
+        return str(run_dir / rel) if rel else str(run_dir)
+    return text
+
+
 def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, Any]:
     text = str(raw or "").strip()
     if not text:
         return {"ok": False, "error": "Missing path."}
     if "\\" in text or "\x00" in text:
         return {"ok": False, "error": f"Unsafe path: {text!r}"}
+    text = _to_host(ctx, text)
     if ".." in Path(text).parts:
         return {"ok": False, "error": f"Path contains a '..' segment: {text}"}
     roots = _roots(ctx, writable=writable)
