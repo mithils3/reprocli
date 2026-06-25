@@ -107,6 +107,13 @@ under, don't deliberate over whether a fetch is "too big" — just pull what the
 Prefer the HF Hub (fastest on Delta): pull weights/datasets to an explicit `--local-dir`
 under `/tmp` and point things at that path — or, if a script downloads internally from a
 repo id, scope its cache with `HF_HOME=/tmp/<name> <cmd>` (per-command, doesn't leak).
+If a repo id is gated (a license click-through, or a 401/403 on download) and you lack
+access, don't stall on it — popular gated weights/datasets are almost always re-uploaded
+elsewhere. Search the Hub (`hf` CLI or the hub API) for a public mirror under another
+org/user, and confirm it's the same artifact before trusting it: check config.json,
+param count, and file sizes/shas against the original repo's listing. Prefer the
+canonical repo; fall back to a verified mirror, and record in evidence which you used and
+why, so the auditor can tell a faithful mirror from an unvetted reupload.
 Anything not on HF, fetch however you like (`wget`/`curl`/`git clone`) into `/tmp`. Two
 Delta specifics decide *where* the data must live and for *how long*:
 
