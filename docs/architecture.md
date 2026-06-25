@@ -39,7 +39,7 @@ flowchart TD
   CL["① CLASSIFIER agent ✅<br/>run_tool_loop · WEB_TOOLS (GitHub/HF MCP, fetch_url)<br/>verify artifacts → MRE record"]:::llm
   POST1["normalize_score_and_tier · web_verification · h100 audit"]
   SEL["audit/select_pool.py · band-stratified, cheapest-first"]
-  LOCK["THE LOCKFILE — Mithilss/neurips-2025-audit-pool (~200 rows)<br/>central_claim · mre_config · match_bar · agent_task · tier · band · budget"]:::lock
+  LOCK["THE LOCKFILE — Mithilss/neurips-2025-audit-pool (~200 rows)<br/>central_claim · mre_config · match_target · agent_task · tier · band · budget"]:::lock
   RA["② REPRODUCTION agent 🛠 building<br/>own package (reprocli_repro), forked loop<br/>orchestrator (CPU) + run_gpu → JIT salloc per step"]:::llm
   GPU["fresh salloc per step (DeltaAI ghx4 / Delta gpuH200x8)<br/>released the instant the step exits"]:::gpu
   BUN["run bundle  outputs/repro/agent_runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/<br/>workspace/ · reference/ · evidence/ · (result.json 🚧)"]
@@ -50,7 +50,7 @@ flowchart TD
   LOCK -->|"agent_task"| RA
   RA <-->|"run_gpu = one JIT salloc … srun (no pre-held alloc)"| GPU
   RA --> BUN
-  LOCK -->|"central_claim · match_bar (verbatim)"| AU
+  LOCK -->|"central_claim · match_target (verbatim)"| AU
   BUN -->|"runs_dir"| AU --> POST2
 
   class LOCK lock;
@@ -78,7 +78,7 @@ STAGE 1 — DATASET CONSTRUCTION  (classifier pass, mode = classification)    �
    ONE MRE record per paper   (output_schema.FINAL_JSON_SCHEMA)
      ├ central_claim, claim_evidence, paper_kind
      ├ mre_config     — smallest experiment that tests the claim
-     ├ match_bar      — {kind, op, reference_value, tolerance, note}   ◄ pinned here
+     ├ match_target   — {config, metric, value, scope, match_bar_kind}  ◄ coherent anchor pinned here
      ├ agent_task     — what the repro agent is told to do
      ├ verified_links, signals   (code / data / weights)
      └ h100_estimate  (compute cost)
@@ -92,34 +92,49 @@ STAGE 2 — POOL SELECTION  (audit/select_pool.py)                            �
         ▼
    audit_pool_extracted.jsonl  →  published as Mithilss/neurips-2025-audit-pool
    ◄══ THE LOCKFILE (~200 rows)
-   each row = claim + mre_config + match_bar + agent_task + tier + cost
+   each row = claim + mre_config + match_target + agent_task + tier + cost
 ```
 
-## I.2 The `match_bar` through-line
+## I.2 The `match_target` through-line
 
-The pinned success bar — "how close counts as a match" — is set once and reused,
-so every agent is judged against the same ruler instead of one the auditor
-re-infers each run.
+The pinned success bar is a **coherent anchor tuple** —
+`match_target = {config, metric, value, scope, match_bar_kind}` — set once and
+reused, so every agent is judged against the same ruler instead of one the auditor
+re-infers each run. The classifier pins a tuple where running `config` and
+measuring `metric` over `scope` can actually yield `value` (a string, so it
+tolerates `"2.37x"`, `"76.5%"`, `"8.56 kB"`, or a range). The **coherence
+invariant** (config↔value, config↔scope) is enforced at classification time
+(commit `327d497`): four earlier runs failed at an *incoherent anchor*, not the
+tolerance — MagCache pinned `K=1` against a `2.37×` value `K=1` can't reach; AIPW
+pinned an ImageNet-only `config` against a 19-benchmark-average `value`. Deriving
+the bar later only relocated the incoherent claim, so it is now pinned — and
+audited — upstream.
 
 ```
-Stage 1 classifier PINS it  →  lockfile CARRIES it  →  Auditor APPLIES it verbatim
+Stage 1 classifier PINS the tuple  →  lockfile CARRIES it
+   →  Auditor + Phase-5 harness ADOPT it verbatim, filling only op/tolerance from match_bar_kind
 ```
 
-| `kind` | what counts as a match | example fields |
+Only `match_bar_kind` is pinned; **`op` and `tolerance` are not**. The two
+consumers fill them from one shared kind→default mapping (`rubric_audit.md` C1), so
+the auditor's structured verdict and the harness-written `result.json` apply the
+same ruler by construction:
+
+| `match_bar_kind` | what counts as a match | op / tolerance (DERIVED from the kind, not pinned) |
 |---|---|---|
-| `point_estimate` | land near a value | `op=abs_rel_within, ref=25.76, tol=0.05` |
-| `threshold` | clear a floor/ceiling | `op=">=", ref=85, tol=null` |
-| `direction` | beat a baseline (no tolerance band) | `op="measured_method > measured_baseline", ref=null, tol=null` |
-| `magnitude` | the *size* of a delta is the target | `op="delta within tol", ref=+5, tol=0.05` |
-| `none` | no checkable scalar/relation (theory/position) | all null |
+| `point_estimate` | land near `value` | `op=abs_rel_within`, tolerance = rubric default (±5 %) |
+| `threshold` | clear a floor/ceiling | `op=">="` / `"<="`, tolerance null |
+| `direction` | beat a baseline (no tolerance band) | `op="measured_method > measured_baseline"`, tolerance null |
+| `magnitude` | the *size* of a delta is the target | tolerance applies to the delta |
+| `none` | no checkable scalar/relation (theory/position) | no scalar comparison |
 
-Rows that predate the field (or `kind = none`) fall back to the rubric defaults in
-`rubric_audit.md` C1: ±5 % for a point estimate, direction-only for a comparative.
+Legacy rows that predate the tuple (no `match_target`) fall back to the auditor
+*deriving* the bar from the claim + reported numbers, per the same rubric C1.
 
-> The reproduction prompt does **not** render `match_bar` as a separate field
-> (commit `d7fc29d`): the row's `mre_config` already states the expected value(s)
-> and tolerance inline, and the agent is told to adopt them verbatim. The
-> *auditor* still applies the structured `match_bar` from the lockfile row.
+> The reproduction prompt does **not** render `match_target` as a separate field:
+> the row's `mre_config` already states the expected value(s) inline, and the agent
+> is told to adopt them verbatim. The *auditor* and the *Phase-5 harness* are the
+> two consumers that key off the structured `match_target` from the lockfile row.
 
 ---
 
@@ -220,7 +235,7 @@ reproduction agent's forked loop adds a fifth exit reason, `budget_exhausted`
 | Input | `{PAPER_TEXT}` (bundle LaTeX + supplement) | `{CENTRAL_CLAIM}` + `{RUBRIC}` + run-dir manifest |
 | Tools | GitHub/HF MCP, `fetch_url`, bundle reader | `list_run_files`, `read_run_file`, `bash`, `python` 🚧 |
 | Tool scope | Open web / MCP, read-only evidence | Read-only, path-confined to `<runs-dir>/<arxiv_id>` |
-| Final schema | `FINAL_RESPONSE_FORMAT` (signals, match_bar, h100) | `AUDIT_RESPONSE_FORMAT` (0–5 score, cheat_flags, citations) |
+| Final schema | `FINAL_RESPONSE_FORMAT` (signals, match_target, h100) | `AUDIT_RESPONSE_FORMAT` (0–5 score, cheat_flags, citations) |
 | Code decides | tier, web_verification rollup, h100 audit | anti-cheat cap (high flag → 0), verdict, run-health |
 
 The reproduction agent (Part III) is the third role, but **not** a mode of this
@@ -243,7 +258,7 @@ each item finishes under `OUTPUT_WRITE_LOCK`.
 
 The missing consumer is now under construction in its own package
 (`src/reprocli_repro/`). Given **one lockfile row** (`agent_task`, `central_claim`,
-`mre_config`, `match_bar`, `tier`, `selection_band`, `audited_h100_hours`), it is an
+`mre_config`, `match_target`, `tier`, `selection_band`, `audited_h100_hours`), it is an
 agent that *actually runs the experiment* on the cluster under a metered
 H100-hour budget and emits the run bundle the auditor grades. It is the same
 `run_tool_loop` skeleton, **forked** into its own driver, whose toolset executes
@@ -305,7 +320,7 @@ plain-subprocess fallback that could never reproduce anything.
 
 ```
                     LOCKFILE ROW  (one paper × budget cell)
-   agent_task · central_claim · mre_config · match_bar · tier · selection_band · audited_h100_hours
+   agent_task · central_claim · mre_config · match_target · tier · selection_band · audited_h100_hours
             (source: Mithilss/neurips-2025-audit-pool — HF dataset, hf:// file, or local .jsonl)
                               │  inputs.prepare_episodes → render prompt + resolve run dir
                               ▼
@@ -340,9 +355,11 @@ plain-subprocess fallback that could never reproduce anything.
                               ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
  │ HARNESS RE-EXECUTION  (Phase 5 🚧 — the verdict the agent CANNOT write)            │
- │  one final JIT step re-runs repro.yaml's scoring entrypoint FRESH → parse metric    │
- │  apply match_bar → result.json {status, measured, within_tolerance,                │
- │                                 budget_at_first_pass, integrity.flags}             │
+ │  one final JIT step re-runs repro.yaml's scoring entrypoint FRESH, realizing the │
+ │  pinned match_target.config → parse `metric` over `scope`, compare to `value`    │
+ │  op/tolerance DERIVED from match_bar_kind (NOT pinned — same auditor table)      │
+ │  → result.json {status, measured, reference, match_bar_kind, op, tolerance,      │
+ │     scope, within_tolerance, budget_at_first_pass, integrity.flags}              │
  └──────────────────────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -364,7 +381,7 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 | `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | ✅ built | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit, inspect — anything that does not need a GPU. Every command is appended to `evidence/commands.log` |
 | `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | ✅ built | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
 | `run_gpu` | one JIT `salloc … srun` per call | 🚧 Phase 4 | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget |
-| `write_repro_yaml` + `submit` | orchestrator | 🚧 Phase 5 | the submission contract: the scoring entrypoint command + where the metric lands. `submit` ends the episode |
+| `write_repro_yaml` + `submit` | orchestrator | 🚧 Phase 5 | the submission contract: the scoring entrypoint command + where the metric lands. The entrypoint must realize the pinned `match_target.config` so the harness re-run measures the same anchor `metric` over the same `scope`. `submit` ends the episode |
 
 The CPU tools (`workspace_bash`, file tools) and the JIT substrate (`slurm.py`,
 `budget.py`, `cluster.py`) are built and unit-tested; **Phase 4** is what assembles
@@ -420,20 +437,42 @@ hard context-budget cutoff.
 ## III.6 The verdict is harness-written, not agent-written (Phase 5 🚧)
 
 The agent's last act is `repro.yaml` (the submission contract) — it never writes
-`result.json`. The harness then **re-executes the scoring entrypoint fresh** in a
-final JIT step, parses the metric, applies the lockfile's `match_bar`, and writes
-`result.json`:
+`result.json`. Phase 5 then **re-executes the scoring entrypoint fresh** in a final
+JIT step and grades it against the lockfile's pinned `match_target` (§I.2), not
+against anything the agent reports. The coherent anchor makes that re-execution
+target unambiguous — re-run **exactly** `config`, parse `metric`, assert it was
+measured over `scope`, compare to `value`:
+
+```
+repro.yaml scoring entrypoint  ──fresh JIT step──►  raw `metric` measured over `scope`
+   grade against match_target:
+     measured  = parse(metric output)            # the re-run's number
+     reference = parse(value)                     # "2.37x" / "76.5%" / range → number | interval
+     (op, tol) = KIND_DEFAULT[match_bar_kind]     # NOT pinned — derived, the table the auditor uses
+     within    = compare(measured, reference, op, tol)
+   → result.json {status, measured, reference, match_bar_kind, op, tolerance,
+                  scope, within_tolerance, budget_at_first_pass, integrity.flags}
+```
+
+Because `op`/`tolerance` are not pinned (§I.2), the harness derives them from
+`match_bar_kind` through the **same** kind→default table the auditor uses — so the
+harness verdict and the auditor's grade apply one ruler by construction. The
+resolved `(match_bar_kind, op, tolerance, metric, value, scope)` it actually
+applied is written into `result.json`, so the verdict is reconstructable.
 
 | `status` | meaning | counts in the success curve as |
 |---|---|---|
-| `reproduced` | ≥1 in-tolerance measurement within budget | success |
-| `out_of_tolerance` | a measurement exists; best is outside tolerance | failure (measured) |
-| `no_result` | no valid measurement before budget/termination | failure (unmeasured) |
+| `reproduced` | ≥1 in-tolerance measurement of `metric` over `scope`, within budget | success |
+| `out_of_tolerance` | a measurement exists; best is outside the kind's bar | failure (measured) |
+| `no_result` | no valid measurement before budget/termination (incl. `match_bar_kind=none`) | failure (unmeasured) |
 | `invalid_run` | harness/infra fault | excluded, rerun |
 
-An agent claim that contradicts the harness measurement is recorded as an
-`integrity.flag`, not silently resolved — the same trust-but-verify posture as
-Parts I–II, applied to execution.
+Two trust-but-verify checks carry the Part I–II posture into execution: an agent
+claim that contradicts the harness measurement is recorded as an `integrity.flag`,
+and — new with the coherent anchor — a re-run whose realized config/scope drifts
+from the pinned `config`/`scope` is flagged the same way rather than silently
+scored. The coherence the classifier pinned upstream is re-checked at grade time,
+not assumed.
 
 ## III.7 Module layout (`src/reprocli_repro/`)
 
@@ -460,6 +499,7 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
     files.py                        # read_file / write_file / apply_patch ✅
     run_gpu.py                      # the JIT-dispatching metered GPU tool 🚧 Phase 4
   report/                           # 🚧 Phase 5: schema/validate/reexecute → result.json
+                                    #   (grades the fresh re-run against the pinned match_target)
 ```
 
 Keeping repro in its own package (rather than a third `--mode`) leaves
