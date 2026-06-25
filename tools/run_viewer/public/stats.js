@@ -3,9 +3,11 @@
    model's *real* token usage onto repro_runs, so we show that and nothing
    estimated. Runs from before usage logging show "—".
 
-   Columns: rounds + tool calls, then prompt / completion / total / cached tokens
-   (summed over the run's rounds — i.e. the actual billed context, which in an
-   agent loop re-sends the transcript each round), and H100·h compute. */
+   Columns: rounds + tool calls, then prompt / completion / total / cached /
+   uncached tokens (summed over the run's rounds — i.e. the actual billed
+   context, which in an agent loop re-sends the transcript each round, so cached
+   counts the re-sent context and uncached = prompt − cached is the fresh input
+   actually processed), and H100·h compute. */
 "use strict";
 
 (function () {
@@ -32,7 +34,8 @@
     { key: "prompt", label: "prompt tok", num: true, tip: "real input tokens, summed over rounds (the agent re-sends the transcript each round)" },
     { key: "completion", label: "completion tok", num: true, tip: "real output tokens the model generated" },
     { key: "total", label: "total tok", num: true, tip: "prompt + completion" },
-    { key: "cached", label: "cached tok", num: true, tip: "prompt tokens served from cache" },
+    { key: "cached", label: "cached tok", num: true, tip: "prompt tokens served from cache (re-sent context)" },
+    { key: "uncached", label: "uncached tok", num: true, tip: "fresh input actually processed: prompt − cached (excludes re-sent context served from cache)" },
     { key: "spent", label: "H100·h", num: true, tip: "compute spent" },
     { key: "status", label: "status" },
   ];
@@ -42,11 +45,13 @@
     const prompt = num(run.prompt_tokens), completion = num(run.completion_tokens);
     let total = num(run.total_tokens);
     if (total == null && (prompt != null || completion != null)) total = (prompt || 0) + (completion || 0);
+    const cached = num(run.cached_tokens);
+    const uncached = prompt == null ? null : prompt - (cached || 0);
     return {
       run_id: run.run_id, arxiv_id: run.arxiv_id || "?", model: run.model || "—",
       cls: si.cls, statusLabel: si.label, status: si.label,
       rounds: num(run.tool_rounds_used), tool_calls: num(run.tool_calls),
-      prompt, completion, total, cached: num(run.cached_tokens),
+      prompt, completion, total, cached, uncached,
       spent: num(run.spent_h100),
       stats_url: run.stats_url || run.full_log_url || null,
       hasTokens: total != null,
@@ -106,6 +111,7 @@
       const sum = (k) => { let any = false, t = 0; for (const r of rows) if (r[k] != null) { any = true; t += r[k]; } return any ? t : null; };
       const dead = rows.filter((r) => r.cls === "dead").length;
       const prompt = sum("prompt"), cached = sum("cached"), rate = pct(cached, prompt);
+      const uncached = sum("uncached"), urate = pct(uncached, prompt);
       const cards = [
         ["runs", String(rows.length), ""],
         ["dead", String(dead), `no update ${DEAD_H}h+`],
@@ -114,6 +120,7 @@
         ["completion", fmtK(sum("completion")), "tokens"],
         ["total", fmtK(sum("total")), "tokens"],
         ["cached", fmtK(cached), rate != null ? `${rate}% of prompt` : "tokens"],
+        ["uncached", fmtK(uncached), urate != null ? `${urate}% of prompt` : "tokens"],
         ["compute", fmtH(sum("spent")), "H100·h"],
       ];
       return `<div class="stat-cards">${cards.map(([l, v, s]) =>
@@ -122,6 +129,7 @@
 
     rowHtml(r) {
       const cacheSub = r.cached != null && r.prompt ? ` <span class="s-sub">${pct(r.cached, r.prompt)}%</span>` : "";
+      const uncSub = r.uncached != null && r.prompt ? ` <span class="s-sub">${pct(r.uncached, r.prompt)}%</span>` : "";
       const link = r.stats_url ? ` <a class="link" href="${esc(r.stats_url)}" target="_blank" rel="noopener" title="download detailed stats / full log">⬇</a>` : "";
       return `<tr>
         <td class="s-run"><span class="dot ${r.cls}"></span><span class="s-arx">${esc(r.arxiv_id)}</span>${link}<div class="s-rid">${esc(r.run_id)}</div></td>
@@ -132,6 +140,7 @@
         <td class="num">${fmt(r.completion)}</td>
         <td class="num">${fmt(r.total)}</td>
         <td class="num">${fmt(r.cached)}${cacheSub}</td>
+        <td class="num">${fmt(r.uncached)}${uncSub}</td>
         <td class="num">${r.spent == null ? "—" : fmtH(r.spent)}</td>
         <td><span class="badge ${R.statusBadgeClass(r.cls)}">${esc(r.statusLabel)}</span></td>
       </tr>`;
