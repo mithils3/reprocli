@@ -4,7 +4,12 @@
 # pinned `match_target` tuple, then publish the updated splits to Hugging Face.
 # Same serve paradigm as paper_classification.sbatch (step 1 stands up the vLLM
 # server, step 2 attaches the runner by URL), scoped to the frozen ids via
-# --paper-ids-file. Steps 3-4 merge the re-pinned claim fields onto the frozen
+# --paper-ids-file. The M2 server runs fp8 KV cache (~2x the KV pool vs bf16) and
+# offloads evicted KV blocks to Grace LPDDR5X over NVLink-C2C (~900 GB/s), so the
+# 32 concurrent agentic conversations survive eviction during off-GPU tool steps
+# instead of recomputing their multi-ten-k-token prefixes (KV_OFFLOAD_GB=0 opts
+# out; KV_CACHE_DTYPE=auto reverts to bf16 KV). Steps 3-4 merge the re-pinned
+# claim fields onto the frozen
 # splits (preserving all selection metadata) and upload eval_100.jsonl /
 # dev_split.jsonl to Mithilss/reprobench-splits.
 #
@@ -21,7 +26,9 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
-#SBATCH --mem=256G
+# --mem holds the CPU KV-offload pool too: offloaded blocks live in Grace LPDDR5X
+# (4x Grace = ~1.9TB/node) and must fit the Slurm cgroup, so size above KV_OFFLOAD_GB.
+#SBATCH --mem=900G
 #SBATCH --time=08:00:00
 #SBATCH -o slurm-%j.out
 #SBATCH -e slurm-%j.err
@@ -38,6 +45,11 @@ ENDPOINT_FILE="${ENDPOINT_FILE:-${SLURM_TMPDIR:-/tmp}/minimax_endpoint_${SLURM_J
 IDS_FILE="${IDS_FILE:-outputs/v6/eval_dev_115_ids.txt}"
 SPLITS_REPO="${SPLITS_REPO:-Mithilss/reprobench-splits}"
 DO_UPLOAD="${DO_UPLOAD:-1}"
+# fp8 KV cache halves the KV footprint -> ~2x the on-GPU KV pool (more concurrent
+# conversations resident before eviction); KV_CACHE_DTYPE=auto reverts to bf16.
+# KV_OFFLOAD_GB sizes the CPU offload pool (per GPU); set 0 to serve fp8-only.
+KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8}"
+KV_OFFLOAD_GB="${KV_OFFLOAD_GB:-64}"
 
 export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
 export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
@@ -82,6 +94,17 @@ fi
 echo "host=$(hostname)  endpoint_file=${ENDPOINT_FILE}  ids=$(wc -l < "${IDS_FILE}")"
 nvidia-smi topo -m || true
 
+# CPU KV-offload onto Grace LPDDR5X (NVLink-C2C ~900 GB/s, ~7x PCIe Gen5): the
+# native connector keeps evicted KV blocks in Grace memory instead of recomputing
+# them when the 32 concurrent workers contend during off-GPU tool steps. fp8 KV is
+# usually pinned per conversation (APC), so this just extends that residency past
+# the on-GPU pool. Flag form is vLLM 0.23.0 (--kv-offloading-* landed in 0.14).
+SERVE_TAIL=()
+if [[ "${KV_OFFLOAD_GB}" != "0" ]]; then
+  SERVE_TAIL=(-- --kv-offloading-backend native --kv-offloading-size "${KV_OFFLOAD_GB}")
+fi
+echo "kv_cache_dtype=${KV_CACHE_DTYPE} offload_args=(${SERVE_TAIL[*]:-none})"
+
 # --- Step 1: central server (background) -------------------------------------
 PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-} python -m reprocli_serve \
   --model "${MODEL}" \
@@ -91,7 +114,9 @@ PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-} python -m reprocli_serve \
   --max-model-len 196608 \
   --distributed-executor-backend mp \
   --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
-  --endpoint-file "${ENDPOINT_FILE}" &
+  --kv-cache-dtype "${KV_CACHE_DTYPE}" \
+  --endpoint-file "${ENDPOINT_FILE}" \
+  "${SERVE_TAIL[@]}" &
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 
