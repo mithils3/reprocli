@@ -108,11 +108,11 @@ releases it:
 
 Each `run_gpu` step is metered as `gpus × elapsed_h × hw_multiplier` (actual
 elapsed; queue wait is not charged) against the row's `budget_h100_hours`; when
-the remaining budget hits zero, `run_gpu` refuses and the agent is forced toward
-`write_repro_yaml`/`submit`. The model sets `gpus`/`minutes` per call; the
+the remaining budget hits zero, `run_gpu` refuses and the agent is forced to finish
+and write its report. The model sets `gpus`/`minutes` per call; the
 account/partition/node come from the cluster profile it's entitled to. See
-[the reproduction mode](../modes/reproduction.md) for the budget meter and the
-harness re-execution verdict.
+[the reproduction mode](../modes/reproduction.md) for the budget meter and how the
+agent reports while the auditor renders the verdict.
 
 ---
 

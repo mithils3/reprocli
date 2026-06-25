@@ -6,14 +6,14 @@ workspace/reference/evidence, and the budget meter + JIT-SLURM substrate. Phase 
 closes the loop: each prepared episode becomes an ``ExecutionContext`` (workspace +
 budget + cluster + evidence), and ``run_reproduce_loop`` drives the model through
 the execution toolset (``workspace_bash`` / file ops / the metered ``run_gpu``)
-until it submits or the compute budget is spent.
+until it finishes or the compute budget is spent.
 
 The brain is an already-served vLLM endpoint (``--vllm-server-url`` /
 ``$REPROCLI_SERVER_URL`` / ``$REPROCLI_ENDPOINT_FILE``); this agent never
 self-hosts a model. With no endpoint configured the command falls back to a dry
 run -- it still prepares every episode's bundle and prints the rendered prompt, so
-the inputs can be inspected offline. Phase 5 adds the post-loop re-execution that
-writes the graded ``result.json`` the loop deliberately does not.
+the inputs can be inspected offline. Phase 5 finalizes the agent's ``report.json``
+bundle; the *verdict* over that bundle is the auditor's, not written here.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ import sys
 
 from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 
-from reprocli_repro import gpu_session, supabase_sink
+from reprocli_repro import gpu_session, sandbox, supabase_sink
 from reprocli_repro.cli_args import parse_args
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.inputs import EpisodeInput, band_of, build_context, prepare_episodes
@@ -54,11 +54,18 @@ def main(argv: list[str] | None = None) -> int:
         print(_setup_summary(result), file=sys.stderr)
         ctx = build_context(ep)
         ctx.cluster = args.cluster_profile
+        # Mandatory bwrap write-confinement for every shell step this episode runs
+        # (workspace_bash / run_gpu) — the rw binds mirror the file tools' roots.
+        ctx.sandbox = sandbox.from_run_paths(ep.run_paths)
         contexts.append(ctx)
 
     server_url = resolve_server_url(args.vllm_server_url)
     if server_url is None:
         return _dry_run(args, episodes)
+
+    # Refuse to run a single agent step unconfined: abort here if bwrap can't sandbox.
+    sandbox.require_bwrap()
+    print(f"sandbox: {contexts[0].sandbox.status()}" if contexts else "sandbox: bwrap", file=sys.stderr)
 
     model_id = resolve_served_model(server_url, args.served_model_name)
     print(
@@ -83,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
             sink.close()
     print(
         f"\nReproduce loop finished {len(episodes)} episode(s); responses in "
-        f"{args.output}. Phase 5 re-executes each repro.yaml to write result.json.",
+        f"{args.output}. Phase 5 finalizes each report.json bundle for the auditor to grade.",
         file=sys.stderr,
     )
     return 0

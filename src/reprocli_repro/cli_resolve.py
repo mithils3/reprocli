@@ -54,6 +54,11 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--gpus-per-node must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
+    if getattr(args, "apptainer_image", None):
+        parser.error(
+            "--apptainer-image (or $REPRO_APPTAINER_SIF) is incompatible with the "
+            "mandatory bwrap sandbox; unset it to run agent steps under bwrap."
+        )
 
 
 def apply_defaults(args: argparse.Namespace) -> None:
@@ -67,8 +72,8 @@ def apply_defaults(args: argparse.Namespace) -> None:
     # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
     # per-node size, so the model picks a valid GPU count for this substrate. The
-    # structured submission contract (response_format) lands in Phase 5; until then
-    # the final tools-off turn falls back to the classifier's default format.
+    # structured report (response_format) lands in Phase 5; until then the final
+    # tools-off turn falls back to the classifier's default format.
     args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)

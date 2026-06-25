@@ -35,8 +35,13 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from typing import TYPE_CHECKING
+
 from reprocli_repro import env
 from reprocli_repro.cluster import Cluster
+
+if TYPE_CHECKING:
+    from reprocli_repro.sandbox import Sandbox
 
 # salloc prints "... allocation <jobid>" (Pending then Granted share the number).
 _JOBID_RE = re.compile(r"allocation (\d+)")
@@ -102,13 +107,25 @@ def build_acquire(
     ]
 
 
-def build_srun(cluster: Cluster, workspace: Path | str, cmd: str, *, jobid: str) -> list[str]:
-    """Argv that runs ``cmd`` into the already-held allocation ``jobid``."""
+def build_srun(
+    cluster: Cluster,
+    workspace: Path | str,
+    cmd: str,
+    *,
+    jobid: str,
+    sandbox: "Sandbox | None" = None,
+) -> list[str]:
+    """Argv that runs ``cmd`` into the already-held allocation ``jobid``.
+
+    ``sandbox`` (when active) bwrap-wraps the payload, so the untrusted GPU step is
+    write-confined to the episode's dirs on the compute node. ``srun`` itself — the
+    trusted launcher — stays outside the wrap.
+    """
     return [
         "srun",
         f"--jobid={jobid}",
         "--ntasks=1",
-        *env.exec_argv(cluster, workspace, cmd, on_gpu=True),
+        *env.exec_argv(cluster, workspace, cmd, on_gpu=True, sandbox=sandbox),
     ]
 
 
@@ -148,9 +165,10 @@ def run_in_session(
     *,
     jobid: str,
     timeout: float | None = None,
+    sandbox: "Sandbox | None" = None,
 ) -> StepResult:
     """Run one command into the held allocation and time it (queue wait already paid)."""
-    argv = build_srun(cluster, workspace, cmd, jobid=jobid)
+    argv = build_srun(cluster, workspace, cmd, jobid=jobid, sandbox=sandbox)
     start = time.monotonic()
     try:
         proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)

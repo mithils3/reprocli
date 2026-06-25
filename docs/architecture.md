@@ -42,7 +42,7 @@ flowchart TD
   LOCK["THE LOCKFILE — Mithilss/neurips-2025-audit-pool (~200 rows)<br/>central_claim · mre_config · match_target · agent_task · tier · band · budget"]:::lock
   RA["② REPRODUCTION agent 🛠 building<br/>own package (reprocli_repro), forked loop<br/>orchestrator (CPU) + run_gpu → JIT salloc per step"]:::llm
   GPU["fresh salloc per step (DeltaAI ghx4 / Delta gpuH200x8)<br/>released the instant the step exits"]:::gpu
-  BUN["run bundle  outputs/repro/agent_runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/<br/>workspace/ · reference/ · evidence/ · (result.json 🚧)"]
+  BUN["run bundle  outputs/repro/agent_runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/<br/>workspace/ · reference/ · evidence/ · (report.json 🚧)"]
   AU["③ AUDITOR agent ✅<br/>run_tool_loop · read-only run-dir tools<br/>grade 0–5 + cheat_flags"]:::llm
   POST2["finalize_audit_row · anti-cheat cap → verdict"]
 
@@ -57,8 +57,10 @@ flowchart TD
 ```
 
 Through-line for all three roles: **the model reports evidence, the code computes
-every consequential label** (tier, score, verdict, run-health, and the
-reproduction verdict). No agent ever grades itself.
+every consequential label** (tier at classification; score, verdict, run-health at
+audit). No agent ever grades itself — the reproduction agent runs the experiment and
+**reports** what it measured; the *auditor* is the role that renders the
+reproduction verdict.
 
 ---
 
@@ -112,13 +114,12 @@ audited — upstream.
 
 ```
 Stage 1 classifier PINS the tuple  →  lockfile CARRIES it
-   →  Auditor + Phase-5 harness ADOPT it verbatim, filling only op/tolerance from match_bar_kind
+   →  Auditor ADOPTS it verbatim, filling only op/tolerance from match_bar_kind
 ```
 
-Only `match_bar_kind` is pinned; **`op` and `tolerance` are not**. The two
-consumers fill them from one shared kind→default mapping (`rubric_audit.md` C1), so
-the auditor's structured verdict and the harness-written `result.json` apply the
-same ruler by construction:
+Only `match_bar_kind` is pinned; **`op` and `tolerance` are not**. The auditor fills
+them from one shared kind→default mapping (`rubric_audit.md` C1), so every run's
+verdict applies the same ruler by construction:
 
 | `match_bar_kind` | what counts as a match | op / tolerance (DERIVED from the kind, not pinned) |
 |---|---|---|
@@ -133,8 +134,8 @@ Legacy rows that predate the tuple (no `match_target`) fall back to the auditor
 
 > The reproduction prompt does **not** render `match_target` as a separate field:
 > the row's `mre_config` already states the expected value(s) inline, and the agent
-> is told to adopt them verbatim. The *auditor* and the *Phase-5 harness* are the
-> two consumers that key off the structured `match_target` from the lockfile row.
+> is told to adopt them verbatim. The *auditor* is the consumer that keys off the
+> structured `match_target` from the lockfile row.
 
 ---
 
@@ -275,9 +276,10 @@ workspace-confined CPU tools (`tools/workspace_bash.py`, `tools/files.py`).
 
 **What remains:** **Phase 4** assembles those tools plus the metered `run_gpu`
 tool into `REPRO_TOOLS` and wires them through `dispatch.execute_repro_tool_call`
-(today a stub) for the first end-to-end one-paper run; **Phase 5** adds the
-submission contract (`write_repro_yaml` / `submit`) and the post-loop harness
-re-execution that writes `result.json`. See
+(today a stub) for the first end-to-end one-paper run; **Phase 5** finalizes the run bundle — the agent's structured
+`report.json` (what it ran + measured, cited into `evidence/`) written for the
+auditor to grade. There is **no** harness re-execution and **no** agent-written
+verdict; the auditor owns the verdict. See
 [`reproduction-agent-plan.md`](reproduction-agent-plan.md) for the full phase plan
 (M1 one paper end-to-end on the cluster → M2 auditor-graded → M3 scaled out).
 
@@ -340,7 +342,6 @@ plain-subprocess fallback that could never reproduce anything.
  │   read_file / write_file / apply_patch  (read: workspace+reference+evidence;       │
  │                                          write: workspace+evidence only)            │
  │   run_gpu        → one JIT salloc per step ─────────────────────────────┐  🚧      │
- │   write_repro_yaml / submit  → the agent's submission contract          │  🚧      │
  └──────────────────────────────────────────────────────────────────────────│────────┘
         no pre-held allocation — a fresh salloc opens here, per step          │
                               │                                               ▼  salloc … srun
@@ -351,15 +352,13 @@ plain-subprocess fallback that could never reproduce anything.
  │  per-paper workspace · per-paper uv venv · --time is the budget pre-authorization   │
  │  every step: capture stdout/stderr/exit + elapsed×gpus → meter + trajectory.jsonl   │
  └──────────────────────────────────────────────────────────────────────────────────┘
-                              │ budget exhausted OR agent writes repro.yaml → stops
+                              │ budget exhausted OR agent finishes → forced final pass
                               ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
- │ HARNESS RE-EXECUTION  (Phase 5 🚧 — the verdict the agent CANNOT write)            │
- │  one final JIT step re-runs repro.yaml's scoring entrypoint FRESH, realizing the │
- │  pinned match_target.config → parse `metric` over `scope`, compare to `value`    │
- │  op/tolerance DERIVED from match_bar_kind (NOT pinned — same auditor table)      │
- │  → result.json {status, measured, reference, match_bar_kind, op, tolerance,      │
- │     scope, within_tolerance, budget_at_first_pass, integrity.flags}              │
+ │ FINAL REPORT  (Phase 5 🚧 — the agent's own account, NOT a verdict)               │
+ │  forced final pass (tools off) emits report.json: what was run, the metric       │
+ │  value(s) observed, and citations into evidence/. The agent never grades itself —│
+ │  it states what it measured; the AUDITOR decides whether it reproduced.          │
  └──────────────────────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -382,7 +381,6 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 | `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | ✅ built | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
 | `list_partitions` | orchestrator (`sinfo`, read-only) | ✅ built | enumerates the cluster's partitions (node pools) — idle/total nodes, walltime, GPU gres — plus the built-in default for each known cluster, so the model can pick a `partition` for `run_gpu` instead of the profile's hardcoded default |
 | `run_gpu` | one JIT `salloc … srun` per call | 🚧 Phase 4 | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget. Optional `partition` (from `list_partitions`) overrides the profile default for that allocation; the cluster profile pins only the default |
-| `write_repro_yaml` + `submit` | orchestrator | 🚧 Phase 5 | the submission contract: the scoring entrypoint command + where the metric lands. The entrypoint must realize the pinned `match_target.config` so the harness re-run measures the same anchor `metric` over the same `scope`. `submit` ends the episode |
 
 The CPU tools (`workspace_bash`, file tools) and the JIT substrate (`slurm.py`,
 `budget.py`, `cluster.py`) are built and unit-tested; **Phase 4** is what assembles
@@ -409,7 +407,7 @@ reproduction agent's hard guardrail bounds *compute* (`budget.py` +
 cost(step)  = gpus × elapsed_hours × hw_multiplier[hw]          # charged on ACTUAL elapsed
 worst(step) = gpus × (minutes / 60) × hw_multiplier[hw]         # pre-authorization (the --time cap)
 affordable  = not budget.exhausted() AND worst ≤ budget.remaining()
-if not affordable:  run_gpu refuses BEFORE launching → forces write_repro_yaml/submit
+if not affordable:  run_gpu refuses BEFORE launching → forces the agent to finish + report
 ```
 
 SLURM bills only the run, never the queue wait, so the meter is fed elapsed *run*
@@ -435,45 +433,36 @@ store**: every metric, working command, and artifact path is written to
 the conversation is *still* over after compaction does the loop fall back to the
 hard context-budget cutoff.
 
-## III.6 The verdict is harness-written, not agent-written (Phase 5 🚧)
+## III.6 The agent reports; the auditor renders the verdict (Phase 5 🚧)
 
-The agent's last act is `repro.yaml` (the submission contract) — it never writes
-`result.json`. Phase 5 then **re-executes the scoring entrypoint fresh** in a final
-JIT step and grades it against the lockfile's pinned `match_target` (§I.2), not
-against anything the agent reports. The coherent anchor makes that re-execution
-target unambiguous — re-run **exactly** `config`, parse `metric`, assert it was
-measured over `scope`, compare to `value`:
+The reproduction agent's last act is its **report** — a structured account of what
+it ran, the metric value(s) it observed, and citations into `evidence/`. It writes
+**no verdict**: there is no `repro.yaml` submission contract and **no post-loop
+harness re-execution**. Everything after the report belongs to the **auditor**
+(Part II, S7), the separate LLM-as-a-judge that already reads the run bundle and
+grades it. This keeps the "no agent grades itself" through-line intact — the
+report's author and its grader are different roles — while removing a deterministic
+re-run that only duplicated what the auditor already does.
 
-```
-repro.yaml scoring entrypoint  ──fresh JIT step──►  raw `metric` measured over `scope`
-   grade against match_target:
-     measured  = parse(metric output)            # the re-run's number
-     reference = parse(value)                     # "2.37x" / "76.5%" / range → number | interval
-     (op, tol) = KIND_DEFAULT[match_bar_kind]     # NOT pinned — derived, the table the auditor uses
-     within    = compare(measured, reference, op, tol)
-   → result.json {status, measured, reference, match_bar_kind, op, tolerance,
-                  scope, within_tolerance, budget_at_first_pass, integrity.flags}
-```
+What the auditor owns, once the report + evidence land:
 
-Because `op`/`tolerance` are not pinned (§I.2), the harness derives them from
-`match_bar_kind` through the **same** kind→default table the auditor uses — so the
-harness verdict and the auditor's grade apply one ruler by construction. The
-resolved `(match_bar_kind, op, tolerance, metric, value, scope)` it actually
-applied is written into `result.json`, so the verdict is reconstructable.
+- **Re-execution, if it wants it.** The auditor can recompute a metric from a saved
+  artifact by `write_run_file`-ing a scoring script and running it under `bash`
+  (`run_dir_tools.py`) — so a fresh measurement is the *judge's* call against the
+  evidence, not a step the harness forces on every run.
+- **The pinned ruler.** It adopts the lockfile's `match_target` verbatim (§I.2) and
+  fills `op`/`tolerance` from the one shared `match_bar_kind`→default table
+  (`rubric_audit.md` C1).
+- **The verdict.** The 0–5 score → `reproduced` / `partial` / `not_reproduced` /
+  `unverifiable`, with the deterministic anti-cheat cap, exactly as in
+  [the auditor](modes/auditor.md). There is no second, harness-authored verdict to
+  reconcile.
 
-| `status` | meaning | counts in the success curve as |
-|---|---|---|
-| `reproduced` | ≥1 in-tolerance measurement of `metric` over `scope`, within budget | success |
-| `out_of_tolerance` | a measurement exists; best is outside the kind's bar | failure (measured) |
-| `no_result` | no valid measurement before budget/termination (incl. `match_bar_kind=none`) | failure (unmeasured) |
-| `invalid_run` | harness/infra fault | excluded, rerun |
-
-Two trust-but-verify checks carry the Part I–II posture into execution: an agent
-claim that contradicts the harness measurement is recorded as an `integrity.flag`,
-and — new with the coherent anchor — a re-run whose realized config/scope drifts
-from the pinned `config`/`scope` is flagged the same way rather than silently
-scored. The coherence the classifier pinned upstream is re-checked at grade time,
-not assumed.
+Trust-but-verify is unchanged, only relocated: a claim in the report that
+contradicts the evidence the auditor recomputes becomes a `cheat_flag`, and a run
+whose realized config/scope drifts from the pinned `config`/`scope` is graded down
+rather than taken on faith. The repro agent states what it measured; the auditor
+decides whether it reproduced.
 
 ## III.7 Module layout (`src/reprocli_repro/`)
 
@@ -501,8 +490,8 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
     fetch.py                        # read-only fetch_url ✅
     partitions.py                   # list_partitions — sinfo pools + known-cluster defaults ✅
     run_gpu.py                      # the JIT-dispatching metered GPU tool 🚧 Phase 4
-  report/                           # 🚧 Phase 5: schema/validate/reexecute → result.json
-                                    #   (grades the fresh re-run against the pinned match_target)
+  report/                           # 🚧 Phase 5: report schema + bundle writer → report.json
+                                    #   (the agent's cited account of the run; the auditor grades it)
 ```
 
 Keeping repro in its own package (rather than a third `--mode`) leaves
@@ -575,15 +564,15 @@ its own long-lived allocation — never one metered against the paper's H100 bud
 |---|---|---|
 | S1 | Classifier agent → MRE records | ✅ live |
 | S5 | `audit/select_pool.py` → lockfile (~200 rows, HF dataset) | ✅ live |
-| S6 | **Reproduction agent (JIT srun) → run bundle** | 🛠 **building** — Phases 0–3 done; Phase 4 (toolset wiring + `run_gpu`) + Phase 5 (`result.json`) remain |
+| S6 | **Reproduction agent (JIT srun) → run bundle** | 🛠 **building** — Phases 0–3 done; Phase 4 (toolset wiring + `run_gpu`) + Phase 5 (`report.json` bundle) remain |
 | S7 | Auditor agent (`--mode audit`) + anti-cheat cap | ✅ live |
 
 The open edge is now narrow: the package, forked loop, budget meter, JIT SLURM
 substrate, evidence store, and confined CPU tools all exist. **Phase 4** assembles
 them with the `run_gpu` tool for the first end-to-end one-paper run on the cluster
 (Milestone M1 — every GPU step JIT-`salloc`s on the `deltaai` profile); **Phase 5**
-adds the submission contract + harness re-execution into `result.json`; M2 runs the
-existing auditor over that bundle and M3 scales past the first hand-checked paper.
+finalizes the `report.json` bundle the agent emits; M2 runs the existing auditor
+over that bundle and M3 scales past the first hand-checked paper.
 
 ### Known caveats carried forward
 

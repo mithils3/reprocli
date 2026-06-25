@@ -57,15 +57,15 @@ flowchart TD
   classDef gpu fill:#dcfce7,stroke:#15803d,color:#000;
 
   LOCK["LOCKFILE ROW<br/>agent_task · central_claim · mre_config<br/>match_bar · tier · band · budget_h100"]
-  ORCH["ORCHESTRATOR (login / CPU — NO GPU)<br/>run_tool_loop core · budget meter · evidence<br/>tools: workspace_bash · run_gpu · read/write/apply_patch · write_repro_yaml/submit"]:::cpu
+  ORCH["ORCHESTRATOR (login / CPU — NO GPU)<br/>run_tool_loop core · budget meter · evidence<br/>tools: workspace_bash · run_gpu · read/write/apply_patch"]:::cpu
   GPU["GPU ALLOCATION (held for the budget window)<br/>srun --jobid=$ALLOC bash -lc 'cd workspace && cmd'<br/>per-paper NVMe workspace · per-paper uv venv"]:::gpu
-  HAR["HARNESS RE-EXECUTION<br/>final srun runs repro.yaml's scoring entrypoint FRESH<br/>apply match_bar → result.json"]
-  AU["AUDITOR (--mode audit)"]
+  REP["FINAL REPORT<br/>forced final pass emits report.json<br/>what ran + metric value(s) + evidence/ citations"]
+  AU["AUDITOR (--mode audit)<br/>re-scores if it wants · applies match_bar · renders verdict"]
 
   LOCK -->|agent_task| ORCH
   ORCH <-->|"run_gpu = srun --jobid=$ALLOC …"| GPU
-  ORCH -->|"budget exhausted OR agent writes repro.yaml"| HAR
-  HAR -->|"run bundle runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/"| AU
+  ORCH -->|"budget exhausted OR agent finishes"| REP
+  REP -->|"run bundle runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/"| AU
 ```
 
 ## Tools the reproduction agent gets
@@ -79,7 +79,10 @@ finalization, and trace capture are unchanged from Part II.
 | `workspace_bash` | orchestrator / CPU `srun` step | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit files, inspect data — anything that does not need a GPU |
 | `run_gpu` | `srun --jobid=$ALLOC` into the GPU allocation | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × wallclock × hw_multiplier`, enforces a per-step timeout and the **remaining** budget |
 | `read_file` / `write_file` / `apply_patch` | orchestrator (workspace-confined) | structured edits; `apply_patch` feeds `patches/author_code.diff` (R11 integrity) |
-| `write_repro_yaml` + `submit` | orchestrator | the submission contract: the scoring entrypoint command + where the metric lands. `submit` ends the episode |
+
+The episode ends the same way the other modes do — a round/budget guard or a natural
+stop triggers a **forced final pass** (tools off) that emits the agent's `report.json`.
+There is no `submit` tool and no `repro.yaml` submission contract.
 
 !!! note "The brain is provider-agnostic"
     The agent's reasoning runs on **any OpenAI-compatible `/v1/chat/completions`
@@ -99,7 +102,7 @@ toward submission:
 
 ```text
 remaining = budget_h100_hours − Σ(step.gpus × step.wallclock_h × hw_multiplier)
-if remaining ≤ 0:  run_gpu refuses → forces the agent toward write_repro_yaml/submit
+if remaining ≤ 0:  run_gpu refuses → forces the agent to finish and write its report
 ```
 
 `hw_multiplier` comes from the H100-equivalence table (report-format R9), so a
@@ -108,35 +111,36 @@ GH200 step and an H200 step are both charged in **H100-equivalent hours** — se
 `trajectory.jsonl` row (`{t, h100_hours_consumed, measured, note}`) so
 `budget_at_first_pass` is reconstructable.
 
-## The verdict is harness-written, not agent-written
+## The agent reports; the auditor renders the verdict
 
-The agent's last act is `repro.yaml` (the submission contract) — **it never writes
-`result.json`.** The harness then re-executes the scoring entrypoint *fresh* in a
-final `srun` step (CORE-Bench style), parses the metric, applies the lockfile's
-`match_bar`, and writes `result.json`:
+The agent's last act is its **report** — a structured account of what it ran, the
+metric value(s) it observed, and citations into `evidence/`. It writes **no
+verdict**: there is no `repro.yaml` submission contract and **no post-loop harness
+re-execution**. Everything after the report is the [auditor](auditor.md)'s job — the
+separate LLM-as-a-judge that already reads the run bundle:
 
-| `status` | meaning | counts in the success curve as |
-|---|---|---|
-| `reproduced` | ≥1 in-tolerance measurement within budget | success |
-| `out_of_tolerance` | a measurement exists; best is outside tolerance | failure (measured) |
-| `no_result` | no valid measurement before budget/termination | failure (unmeasured) |
-| `invalid_run` | harness/infra fault | excluded, rerun |
+- it **re-scores if it wants** — recompute a metric from a saved artifact by
+  `write_run_file`-ing a script and running it under `bash` (`run_dir_tools.py`);
+- it adopts the lockfile's `match_bar` **verbatim** (`match_target`, §I.2 of the
+  architecture);
+- it renders the verdict — the 0–5 score → `reproduced` / `partial` /
+  `not_reproduced` / `unverifiable`, with the deterministic anti-cheat cap.
 
-An agent claim that contradicts the harness measurement is recorded as an
-`integrity.flag`, **not silently resolved** — the same trust-but-verify posture as
-the other modes, applied to execution. The full bundle layout (`report.json`,
-checklist R1–R12, failure taxonomy E1–E8, `evidence/`) is the report-format spec;
-this page pins only the execution architecture around it. The bundle lands at
-`runs/<paper_id>/<budget>h/<run_id>/` for the [auditor](auditor.md) to grade.
+"No agent grades itself" still holds: the report's author and its grader are
+different roles, and a report claim that contradicts the evidence the auditor
+recomputes becomes a `cheat_flag` — the same trust-but-verify posture as the other
+modes, applied to execution. The bundle lands at `runs/<paper_id>/<budget>h/<run_id>/`
+for the auditor to grade.
 
 !!! example "The run bundle the auditor reads"
     ```text
     runs/<paper_id>/<budget>h/<run_id>/
-      result.json     # harness-written verdict (status/measured/within_tolerance/…)
-      report.json     # report-format spec (R1–R12 checklist, E1–E8 taxonomy)
-      repro.yaml      # the agent's submission contract (scoring entrypoint)
+      report.json     # the agent's cited account of the run (what ran + measured)
       evidence/       # commands.log · trajectory.jsonl · env.lock · patches/
+      workspace/      # the editable clone + per-paper uv venv
+      reference/      # ro paper LaTeX + supplement (the agent's reference copy)
     ```
+    The verdict is **not** in the bundle — it is the auditor's output.
 
 ## Proposed module layout 🚧
 
@@ -156,9 +160,8 @@ src/reprocli_repro/                 # the S6 execution agent (mode = reproduce)
   tools/
     workspace_bash.py
     run_gpu.py       # the srun-dispatching tool
-src/reprocli/report/                # the bundle layer (also feeds the auditor)
-  schema.py · validate.py · render.py   # report.json/result.json schema + report.md
-  reexecute.py       # harness re-runs repro.yaml → result.json (CORE-Bench style)
+src/reprocli/report/                # the bundle layer (feeds the auditor)
+  schema.py · validate.py · render.py   # report.json schema + report.md (the agent's account)
 ```
 
 !!! warning "Sandboxing is a prerequisite at scale"

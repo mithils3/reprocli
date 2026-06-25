@@ -13,8 +13,8 @@ the loop body:
 
 Conversation shaping and output writing live in ``transcript.py``; the tool seam
 lives in ``dispatch.py``; the between-round budget + context guardrails live in
-``guardrails.py``. Phase 5's post-loop re-execution writes the graded
-``result.json`` this loop deliberately does not.
+``guardrails.py``. The loop emits the agent's ``report.json`` (Phase 5) but writes
+**no verdict** — the auditor grades the run bundle.
 """
 
 from __future__ import annotations

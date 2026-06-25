@@ -128,7 +128,7 @@ Bands keep the pool from collapsing onto the cheapest papers: selection draws ac
 
 ## run bundle 🚧
 
-The evidence directory one reproduction run emits, at `<runs-dir>/<arxiv_id>`, that the auditor reads. The reproduction agent is **designed but not yet wired** (S6), so this is the one open edge of the system. The planned bundle holds `result.json` (the harness-written verdict the agent cannot author), `report.json`, `repro.yaml` (the agent's submission contract), and an `evidence/` tree. The auditor consumes it read-only via `run_dir_manifest` (`tools/run_dir_tools.py`).
+The evidence directory one reproduction run emits, at `<runs-dir>/<arxiv_id>`, that the auditor reads. The reproduction agent is **designed but not yet wired** (S6), so this is the one open edge of the system. The planned bundle holds `report.json` (the agent's cited account of what it ran and measured — **not** a verdict) and an `evidence/` tree, alongside `workspace/` and `reference/`. There is no harness-written `result.json` and no `repro.yaml`: the auditor authors the verdict. The auditor consumes the bundle read-only via `run_dir_manifest` (`tools/run_dir_tools.py`).
 
 → Deep dive: [Bundle schema](../dataset/bundle-schema.md) and [Reproduction mode](../modes/reproduction.md).
 

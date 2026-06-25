@@ -132,8 +132,8 @@ src/reprocli_repro/        🚧 the S6 execution agent (mode = reproduce)
     workspace_bash.py      CPU steps
     run_gpu.py             the srun-dispatching tool
 
-src/reprocli/report/       🚧 the bundle layer (also feeds the auditor)
-  schema.py · validate.py · render.py · reexecute.py
+src/reprocli/report/       🚧 the bundle layer (feeds the auditor)
+  schema.py · validate.py · render.py   # report.json (the agent's account); no reexecute
 ```
 
 !!! note "Why a separate package, not more files in `reprocli_vllm`"

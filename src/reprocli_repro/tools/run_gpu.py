@@ -93,7 +93,8 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         note = _reuse_note(arguments, session) or note
 
     step = slurm.run_in_session(
-        ctx.cluster, ctx.workspace, command, jobid=session.jobid, timeout=session.minutes * 60 + 600
+        ctx.cluster, ctx.workspace, command, jobid=session.jobid,
+        timeout=session.minutes * 60 + 600, sandbox=ctx.sandbox,
     )
     if slurm.session_lost(step):
         gpu_session.drop_lost(ctx)

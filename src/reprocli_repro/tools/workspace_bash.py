@@ -43,7 +43,7 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
     start = time.time()
     try:
         proc = subprocess.run(
-            env.exec_argv(ctx.cluster, workspace, command),
+            env.exec_argv(ctx.cluster, workspace, command, sandbox=ctx.sandbox),
             cwd=str(workspace),
             capture_output=True,
             text=True,

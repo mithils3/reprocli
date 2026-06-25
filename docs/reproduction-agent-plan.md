@@ -40,7 +40,8 @@ grades.
 - The **budget guardrail** (bounds *compute*, not tokens/rounds).
 - **Context management** — a `microcompact` tier (elide stale tool results, no
   model call) ahead of the existing hard context-budget cutoff; see Phase 0.
-- The **post-loop re-execution** that writes the verdict the agent cannot.
+- The **report bundle** the agent emits (`report.json` + `evidence/`) — its own
+  account of the run, **not a verdict**. The verdict is the auditor's (Phase 5).
 
 ---
 
@@ -217,22 +218,28 @@ force-finals at zero.
 drives the chosen paper: clone → edit → "run GPU" → spend budget → stop, with a
 populated evidence dir.
 
-### Phase 5 — Submission contract + harness re-execution → `result.json`
-- `write_repro_yaml` + `submit` tools (final structured output is the *contract*,
-  not a verdict).
-- `report/reexecute.py`: after the loop, one fresh JIT GPU step (`salloc`, same
-  substrate) or local step runs `repro.yaml`'s scoring entrypoint clean, parses
-  the metric, applies the
-  lockfile `match_bar`, writes `result.json {status, measured, within_tolerance,
-  budget_at_first_pass, integrity.flags}`. Orchestrated in `__main__`, **after**
-  the loop — the loop stays verdict-free.
+### Phase 5 — Report bundle → the S6→S7 contract
+- `report/schema.py` + `report/validate.py`: the agent's terminal output is a
+  structured **`report.json`** — what it ran, the metric value(s) it observed, and
+  citations into `evidence/`. It is the agent's *account* of the run, **not a
+  verdict** and **not a submission contract** to re-run.
+- The episode ends like the other modes: a budget/round guard or a natural stop
+  triggers the **forced final pass** (tools off) that emits `report.json`. No
+  `write_repro_yaml`, no `submit` tool, no post-loop re-execution.
+- **The verdict is the auditor's, not the harness's.** The auditor (S7) reads
+  `report.json` + `evidence/`, re-scores from the saved artifacts if it chooses
+  (`write_run_file` a script + `bash`), adopts the lockfile `match_bar` verbatim,
+  and renders `reproduced / partial / not_reproduced / unverifiable`. Removing the
+  deterministic harness re-execution drops a step that only duplicated the judge.
 
-**Gate:** the four statuses produce correct `result.json` on a fake scoring
-script; an agent claim contradicting the measurement becomes an `integrity.flag`.
+**Gate:** the forced final pass writes a schema-valid `report.json` (with the
+measured value(s) cited into `evidence/`); the existing auditor grades that bundle
+unchanged (Phase 6).
 
 ### Phase 6 — Bundle → **Milestone M2: auditor grades the 1-paper bundle**
-- `report/schema.py` + `report/validate.py`; write `result.json · report.json ·
-  repro.yaml · evidence/` to `<runs-dir>/<arxiv_id>`.
+- Write the bundle (`report.json · evidence/`, alongside `workspace/` ·
+  `reference/`) to `<runs-dir>/<arxiv_id>` — the S6→S7 contract the existing
+  auditor walks. No `result.json`, no `repro.yaml`: the auditor authors the verdict.
 
 **Gate / M2:** run the **existing** `reprocli_vllm` auditor (`--mode audit
 --runs-dir <same root>`) over the one paper's bundle — grades with zero changes.
@@ -344,7 +351,7 @@ src/reprocli_repro/
   __init__.py · __main__.py · cli_args.py
   loop.py · context.py · compaction.py · inputs.py · budget.py · slurm.py · cluster.py · workspace.py · reference.py · evidence.py
   tools/__init__.py · tools/workspace_bash.py · tools/run_gpu.py · tools/files.py
-  report/schema.py · report/validate.py · report/reexecute.py
+  report/schema.py · report/validate.py
 prompts/prompt_reproduce.txt · scripts/paper_reproduce.sbatch
 ```
 

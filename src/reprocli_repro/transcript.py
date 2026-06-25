@@ -3,8 +3,8 @@
 Split out of ``loop.py`` to keep the driver focused. These are forked analogs of
 the classifier's final-message and output helpers, minus the classifier-specific
 extracted/audit rows: repro writes the raw response JSONL (and an optional round
-trace); the graded ``result.json`` is produced by post-loop re-execution
-(Phase 5), not here.
+trace). The agent's terminal output is its ``report.json`` (Phase 5) — an account
+of what it ran and measured; the *verdict* is the auditor's, not written here.
 """
 
 from __future__ import annotations

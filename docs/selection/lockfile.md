@@ -84,8 +84,8 @@ flowchart LR
 ```
 
 - **Classifier (`✅`)** sets `match_bar` while emitting the MRE record. It is the only writer.
-- **Reproduction agent (`🚧` designed, not built)** reads it to know the target the experiment must hit, and the harness applies it to the fresh re-execution's metric to write `result.json`.
-- **Auditor (`✅`)** adopts it verbatim when grading, so the score reflects the pinned bar, not one the auditor re-derived.
+- **Reproduction agent (`🚧` designed, not built)** reads it to know the target the experiment must hit; it reports what it measured but renders **no verdict**.
+- **Auditor (`✅`)** adopts it verbatim when grading the run bundle, so the score reflects the pinned bar, not one the auditor re-derived. The auditor is the **only** consumer that turns the bar into a verdict.
 
 ## How a row gets into the pool
 

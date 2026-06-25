@@ -31,7 +31,7 @@
 
 set -euo pipefail
 
-MODEL="${MODEL:-/work/nvme/bfvr/msalunkhe/MiniMax-M2.7}"
+MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SLURM_TMPDIR:-/tmp}/minimax_endpoint_${SLURM_JOB_ID}.json}"
@@ -41,7 +41,7 @@ DO_UPLOAD="${DO_UPLOAD:-1}"
 
 export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
 export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
-export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/MiniMax-M2.7/vllm_cache
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm_cache
 export SAFETENSORS_FAST_GPU=1
 export CUDA_MODULE_LOADING=LAZY
 export CUDA_DEVICE_ORDER=PCI_BUS_ID

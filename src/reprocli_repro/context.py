@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from reprocli_repro.cluster import Cluster
+    from reprocli_repro.sandbox import Sandbox
 
 
 @dataclass
@@ -85,5 +86,6 @@ class ExecutionContext:
     session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
     cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on
+    sandbox: "Sandbox | None" = None     # bwrap write-confinement applied to shell steps
     summary: str | None = None           # last summarize-compaction summary (iterative context)
     modified_files: list[str] = field(default_factory=list)  # cumulative across compactions

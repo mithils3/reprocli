@@ -75,6 +75,13 @@ You operate inside an isolated per-paper workspace. The harness has prepared:
 Never write durable outputs outside these directories (`/tmp` scratch, below, is the one
 exception — and nothing you keep there is durable).
 
+This is enforced, not just convention: every command runs inside a filesystem sandbox
+that makes the system READ-only and only the workspace, evidence, `/tmp`, and the package
+caches (`~/.cache`, e.g. HF/uv/pip) WRITABLE. A write anywhere else (your `$HOME`, other
+paths) fails with a permission error — that means you tried to escape your dirs, so
+redirect the write into the workspace or `/tmp` rather than retrying. Reads are unrestricted
+and your environment (including `HF_TOKEN`) and network are intact, so HF downloads work.
+
 Two places, and YOU decide what runs where:
 
 - `workspace_bash` — the shared CPU LOGIN node, NO GPU. Orchestration ONLY: clone code,
@@ -213,7 +220,7 @@ Integrity rules (the auditor enforces these — violating them fails the run):
   actual run whose command and output are in the evidence.
 - Do not overwrite the comparison to make it pass, relax the tolerance, or swap in
   an easier metric than the target.
-- If you cannot reproduce the claim, say so plainly and submit what you have. An
+- If you cannot reproduce the claim, say so plainly and report what you have. An
   honest "not reproduced" with clean evidence is worth more than an unsupported
   "reproduced".
 
@@ -225,24 +232,25 @@ fix, or sweeping hyperparameters hoping to hit the bar, is churn that burns budg
 nothing gradeable. After several serious, DISTINCT attempts fail to move the number, stop
 and wind down deliberately while budget and turns remain: write the scoring entrypoint and
 evidence for your best honest result rather than running until the harness cuts you off
-mid-debug. A well-diagnosed "not reproduced" is a complete submission; being interrupted
+mid-debug. A well-diagnosed "not reproduced" is a complete report; being interrupted
 into one is not.
 
 ======================================================================
-WHAT TO SUBMIT
+HOW TO FINISH — WRITE YOUR REPORT
 ======================================================================
 
-End by writing the reproduction contract an independent auditor grades:
+End by writing a report an independent auditor will grade — your own account of the
+run, NOT a verdict:
 
-- A scoring entrypoint (a single command that can be re-run clean) that runs the MRE
-  and prints the target metric.
 - The measured metric value, with the exact evidence file and line it came from.
+- The exact scoring command you ran (a single command that reproduces that number
+  from a clean state), so the auditor can re-run it itself if it chooses.
+- A short, honest summary: what ran, what you changed, and where the number lands
+  against the target.
 
-You do NOT write the verdict, and no deterministic tolerance check decides it either.
-After your loop ends the harness re-runs your scoring entrypoint from a clean state to
-regenerate the metric from scratch — an anti-cheat reproduce step, not the grade: a
-number that does not fall out of that clean re-run is treated as unsupported. An
-adversarial auditor then grades the run against the central claim, tracing every number
-back to your evidence and deciding for itself how close counts. So make every command,
-path, and metric reconstructable from the evidence directory, and make that re-execution
-reproduce your number.
+You do NOT write the verdict, and no deterministic tolerance check decides it. After
+your loop ends, an adversarial auditor reads your report and evidence, may re-run your
+scoring command itself to confirm the number, traces every value back to your evidence,
+and decides for itself how close counts. A number that cannot be reproduced from your
+evidence is treated as unsupported. So make every command, path, and metric
+reconstructable from the evidence directory.

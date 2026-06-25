@@ -41,6 +41,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from reprocli_repro.cluster import Cluster
+    from reprocli_repro.sandbox import Sandbox
 
 
 def _apptainer_prefix(cluster: "Cluster", workspace: Path | str) -> str:
@@ -98,12 +99,25 @@ def env_inner(
 
 
 def exec_argv(
-    cluster: "Cluster | None", workspace: Path | str, command: str, *, on_gpu: bool = False
+    cluster: "Cluster | None",
+    workspace: Path | str,
+    command: str,
+    *,
+    on_gpu: bool = False,
+    sandbox: "Sandbox | None" = None,
 ) -> list[str]:
     """Argv that runs ``command`` in the episode's environment.
 
     ``on_gpu`` selects the GPU-step wrap (CUDA ``module load``); the default
     CPU-setup wrap is a clean shell. Pass directly to ``subprocess.run`` for
     orchestrator-side tools, or splice in after ``srun ...`` for a GPU step.
+
+    When ``sandbox`` is supplied the ``bash -lc`` body is wrapped in bubblewrap
+    (``sandbox.py``) so the step can only *write* the episode's own dirs. Every agent
+    step passes one (the sandbox is mandatory); the pure builders keep it optional so
+    argv-shape tests stay free of the wrap.
     """
-    return ["bash", "-lc", env_inner(cluster, workspace, command, on_gpu=on_gpu)]
+    body = env_inner(cluster, workspace, command, on_gpu=on_gpu)
+    if sandbox is not None:
+        return sandbox.wrap_argv(body)
+    return ["bash", "-lc", body]

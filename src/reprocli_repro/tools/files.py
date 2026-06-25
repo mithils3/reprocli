@@ -7,10 +7,18 @@ context), so this module ships only the mutating ops: ``write_file`` and
 
 Adapted from ``run_dir_tools._resolve_within``: every path the agent writes must
 resolve inside one of the episode's writable roots -- ``workspace`` (the editable
-clone) and ``evidence``; the ``reference/`` copy is never writable. Relative paths
-resolve against the workspace (the same cwd ``workspace_bash`` runs in); absolute
-paths must still fall within an allowed root, so traversal and writes outside the
-bundle are rejected before any I/O happens.
+clone) and ``evidence``; the ``reference/`` copy is never writable. These are a
+subset of the roots the bwrap sandbox (``sandbox.py``) binds read-write — the file
+tools stay tight to durable source/evidence, while bulk ``/tmp`` scratch is
+shell-driven, not a file-tool path — so the tool-layer check is a strict inner
+boundary nested inside the OS sandbox.
+
+Relative paths resolve against the workspace (the same cwd ``workspace_bash`` runs
+in); absolute paths must still fall within an allowed root. ``..`` segments and NUL
+bytes are rejected outright, and ``resolve()`` canonicalizes symlinks before the
+containment check, so traversal, symlink escapes, and writes outside the bundle are
+all rejected before any I/O happens. ``apply_patch`` additionally confines every
+rename/copy target, not just the diff's ``+++``/``---`` headers.
 """
 
 from __future__ import annotations
@@ -78,8 +86,10 @@ def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, An
     text = str(raw or "").strip()
     if not text:
         return {"ok": False, "error": "Missing path."}
-    if "\\" in text:
-        return {"ok": False, "error": f"Unsafe path: {text}"}
+    if "\\" in text or "\x00" in text:
+        return {"ok": False, "error": f"Unsafe path: {text!r}"}
+    if ".." in Path(text).parts:
+        return {"ok": False, "error": f"Path contains a '..' segment: {text}"}
     roots = _roots(ctx, writable=writable)
     if not roots:
         return {"ok": False, "error": "Episode has no workspace directory set."}
@@ -97,19 +107,29 @@ def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, An
 
 
 def _roots(ctx: ExecutionContext, *, writable: bool) -> list[Path]:
-    # ``writable=False`` (reference readable too) is retained for callers that only
-    # inspect paths; the live write tools always pass ``writable=True``.
+    # ``write_file``/``apply_patch`` only ever write durable source/evidence, so they
+    # stay tight to workspace + evidence (a subset of the sandbox's rw binds; bulk
+    # /tmp scratch is shell-driven, not a file-tool path). ``writable=False``
+    # (reference readable too) is retained for callers that only inspect paths.
     candidates = [ctx.workspace, ctx.evidence] if writable else [ctx.workspace, ctx.reference, ctx.evidence]
     return [Path(p) for p in candidates if p is not None]
+
+
+# ``git diff`` rename/copy metadata can move a file to a path the ``+++``/``---``
+# headers never name (a pure rename has no content hunk), so we confine these too.
+_MOVE_PREFIXES = ("rename from ", "rename to ", "copy from ", "copy to ")
 
 
 def _patch_targets(diff: str) -> tuple[list[str], int]:
     targets: list[str] = []
     strip = 0
     for line in diff.splitlines():
-        if not (line.startswith("+++ ") or line.startswith("--- ")):
+        if line.startswith("+++ ") or line.startswith("--- "):
+            token = line[4:].strip().split("\t")[0]
+        elif any(line.startswith(p) for p in _MOVE_PREFIXES):
+            token = line.split(" ", 2)[2].strip()
+        else:
             continue
-        token = line[4:].strip().split("\t")[0]
         if token in ("/dev/null", ""):
             continue
         if token[:2] in ("a/", "b/"):
