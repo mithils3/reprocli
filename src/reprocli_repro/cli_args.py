@@ -113,9 +113,9 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
         "--build-venv",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Build the per-paper uv venv (with --system-site-packages, inside the "
-        "container) at setup (default: off — the agent builds it as its first step so "
-        "it inherits the image's CUDA torch).",
+        help="Build the empty per-paper uv venv (inside the container) at setup "
+        "(default: off — the agent builds it as its first step and installs the CUDA "
+        "torch family into it itself).",
     )
     group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
 
@@ -148,10 +148,10 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="NGC base .sif that backs the MANDATORY Apptainer sandbox — every agent "
-        "step runs inside this read-only image and inherits its CUDA PyTorch. Defaults "
-        "to the cluster profile's image (deltaai pins one); overrides it / "
-        "$REPRO_APPTAINER_SIF. Profiles with no pinned image require this flag.",
+        help="Base .sif that backs the MANDATORY Apptainer sandbox — every agent step "
+        "runs inside this read-only image. Defaults to the cluster profile's image "
+        "(deltaai pins a raw CUDA image; the agent installs torch itself); overrides it "
+        "/ $REPRO_APPTAINER_SIF. Profiles with no pinned image require this flag.",
     )
     group.add_argument(
         "--modules",

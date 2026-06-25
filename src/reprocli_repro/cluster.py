@@ -23,14 +23,15 @@ from reprocli_repro.budget import HW_MULTIPLIER
 
 DEFAULT_CLUSTER = "deltaai"
 
-# DeltaAI's mandatory-sandbox image: a shared NGC PyTorch .sif. We pin an OLDER release
-# (24.09 — torch 2.5 / CUDA 12.6, the exact image in NCSA's own DeltaAI containers docs)
-# so the prebuilt torch is contemporary with the current NeurIPS-2025 reproduction targets
-# rather than running their code on a much newer torch; CUDA forward-compat on DeltaAI runs
-# 12.6 on the GH200 driver fine. Every agent step runs inside this read-only container (see
-# sandbox.py); swap per-run / per-paper with --apptainer-image / $REPRO_APPTAINER_SIF
-# (24.07/24.08/25.06/25.08/26.01 are also staged under /sw/user/NGC_containers/).
-DEFAULT_APPTAINER_SIF = "/sw/user/NGC_containers/pytorch_24.09-py3.sif"
+# DeltaAI's mandatory-sandbox image. We default to a raw NVIDIA CUDA image (12.9 + cuDNN,
+# the ``devel`` flavor so ``nvcc`` and the host compilers are present) rather than an NGC
+# PyTorch image: torch is NOT prebuilt here, so the agent installs the matched torch family
+# itself from the aarch64 CUDA wheel index (see prompts/prompt_reproduce.txt). This sidesteps
+# the NGC ``+nv`` torch ABI wall — no stock ``torchaudio``/``torchvision`` wheel matches an
+# NGC ``+nv`` torch, and NGC PyTorch images don't ship torchaudio at all. Every agent step
+# runs inside this read-only container (see sandbox.py); swap per-run / per-paper with
+# --apptainer-image / $REPRO_APPTAINER_SIF.
+DEFAULT_APPTAINER_SIF = "/work/nvme/bfvr/msalunkhe/cuda1290-cudnn-devel.sif"
 
 
 @dataclass(frozen=True)
@@ -51,11 +52,11 @@ class Cluster:
 # (docs/slurm/clusters.md). Every profile is a real SLURM target — GPU steps
 # always run through a JIT salloc, so an account/partition is mandatory.
 _PROFILES: dict[str, Cluster] = {
-    # Every step runs inside the mandatory Apptainer sandbox (sandbox.py): the NGC
-    # PyTorch .sif is the read-only root, so the agent's toolchain — git, Python, the
-    # CUDA stack, and a prebuilt GH200 ``torch`` — comes from the image. No host
-    # ``module load`` (it would not exist inside the --cleanenv container), which also
-    # sidesteps the aarch64 CPU-torch trap: the image's torch is already CUDA-built.
+    # Every step runs inside the mandatory Apptainer sandbox (sandbox.py): the CUDA
+    # .sif is the read-only root, so the agent's CUDA toolchain — ``nvcc``, cuDNN, the
+    # CUDA libraries — comes from the image. No host ``module load`` (it would not exist
+    # inside the --cleanenv container). torch is NOT in the image; the agent installs a
+    # GH200 (aarch64) CUDA torch from the PyTorch wheel index as its first setup step.
     "deltaai": Cluster(
         name="deltaai",
         hw="gh200",

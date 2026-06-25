@@ -9,9 +9,10 @@ inspecting command strings. This module wraps each step in an **Apptainer** cont
 inside a read-only image and can only *write* the episode's own dirs.
 
 Apptainer confines differently from bubblewrap. There is no ``--ro-bind / /``: the
-container **image** is the read-only root (``/``), so the agent's toolchain — git,
-Python, the CUDA stack, and a prebuilt GPU ``torch`` — comes from the image (an NGC
-PyTorch ``.sif`` on DeltaAI) rather than the host, and host ``module load`` is gone.
+container **image** is the read-only root (``/``), so the agent's CUDA toolchain — the
+CUDA stack and ``nvcc`` — comes from the image (a raw NVIDIA CUDA ``.sif`` on DeltaAI;
+``torch`` is NOT prebuilt, the agent installs it) rather than the host, and host
+``module load`` is gone.
 Only the paths we *bind* are visible at all:
 
 * **read-write** binds over the episode's ``workspace``/``evidence``, the node-local
@@ -191,7 +192,8 @@ class Sandbox:
             argv.append("--nv")
         for bind in self.binds:
             argv += ["--bind", bind.arg()]
-        # NGC images ship `pip` but not `uv`, and the prompt installs with `uv pip`;
+        # The CUDA image is minimal (no `uv`, and possibly no `pip`/`python`); the prompt
+        # builds the venv and installs with `uv` (which provisions its own CPython), so
         # bind the host `uv` (aarch64, runs fine in the container) onto the default PATH.
         uv = shutil.which("uv")
         if uv:

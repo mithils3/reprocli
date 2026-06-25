@@ -7,8 +7,9 @@ substrate (``slurm.py``) splices it in after ``srun``.
 
 Every step body is just ``cd <ws> && <cmd>`` — the agent's cwd pinned to the episode's
 workspace. There is no host ``module load`` and no CPU/GPU split in the body any more:
-the CUDA toolkit, Python, and a prebuilt GPU ``torch`` come from the **Apptainer image**
-the step runs inside (``sandbox.py``), not from the bare host. ``on_gpu`` no longer
+the CUDA toolkit and ``nvcc`` come from the **Apptainer image** the step runs inside
+(``sandbox.py``), not from the bare host; ``torch`` is not prebuilt — the agent installs
+an aarch64 CUDA build into its venv (see the prompt). ``on_gpu`` no longer
 changes the body; it only tells the sandbox to add ``--nv`` so a GPU step sees the
 device, while a CPU-setup step on the login node does not.
 
