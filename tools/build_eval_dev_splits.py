@@ -8,8 +8,10 @@ verify-app Supabase ``verifications`` table; papers a reviewer marked
 Splits (disjoint partition):
   * eval-100  -- the frozen benchmark: tier-balanced, band-stratified,
                  cheapest-first (the documented ``select_pool --total 100``).
-  * dev-15    -- 5 Easy / 5 Medium / 5 Hard, cheapest-first, drawn ONLY from
+  * dev-14    -- 5 Easy / 4 Medium / 5 Hard, cheapest-first, drawn ONLY from
                  papers NOT in the eval-100, so dev never contaminates eval.
+                 Originally 5/5/5; one Medium (``POLICY_EXCLUDED`` below) is
+                 dropped post-selection without backfill, so dev is 14.
 
 Usage::
 
@@ -53,6 +55,13 @@ SIGNAL_FIELDS = (
 )
 EVAL_TOTAL = 100
 DEV_PER_TIER = 5
+# Papers dropped from dev for a *policy* reason (not a human signal disagreement):
+# the MRE depends on a closed API we can't call in the harness, so the paper is
+# unreproducible. Removed AFTER the cheapest-5-per-tier pick (no backfill), so a
+# policy-excluded slot shrinks dev rather than pulling in a replacement.
+POLICY_EXCLUDED = {
+    "2506.21924",  # SPAZER: zero-shot 3DVG pipeline requires the GPT-4o API
+}
 # Known human-rejected ids (any reviewer 'disagree' on an artifact signal), used
 # as a fallback when SUPABASE_SERVICE_KEY is unset so the build stays reproducible.
 FALLBACK_REJECTED = {
@@ -155,16 +164,21 @@ def main() -> None:
     eval_selection = select_pool(kept, EVAL_TOTAL)
     eval_rows = [r for tier in EVAL_TIERS for r in eval_selection[tier]]
     eval_ids = {r["custom_id"] for r in eval_rows}
-    dev_rows = pick_dev(kept, eval_ids)
+    selected_dev = pick_dev(kept, eval_ids)
+    policy_dropped = sorted({r["custom_id"] for r in selected_dev} & POLICY_EXCLUDED)
+    dev_rows = [r for r in selected_dev if r["custom_id"] not in POLICY_EXCLUDED]
     dev_ids = {r["custom_id"] for r in dev_rows}
+    if policy_dropped:
+        print(f"policy-excluded from dev (closed-API/unreproducible): {policy_dropped}")
 
     overlap = eval_ids & dev_ids
     if overlap:
         raise SystemExit(f"eval/dev overlap: {sorted(overlap)}")
     if len(eval_rows) != EVAL_TOTAL:
         raise SystemExit(f"eval has {len(eval_rows)} rows, expected {EVAL_TOTAL}")
-    if len(dev_rows) != DEV_PER_TIER * len(EVAL_TIERS):
-        raise SystemExit(f"dev has {len(dev_rows)} rows, expected {DEV_PER_TIER * len(EVAL_TIERS)}")
+    expected_dev = DEV_PER_TIER * len(EVAL_TIERS) - len(policy_dropped)
+    if len(dev_rows) != expected_dev:
+        raise SystemExit(f"dev has {len(dev_rows)} rows, expected {expected_dev}")
 
     write_jsonl(EVAL_OUT, eval_rows, "eval")
     write_jsonl(DEV_OUT, dev_rows, "dev")
@@ -173,6 +187,7 @@ def main() -> None:
             {
                 "source_pool": str(POOL.relative_to(ROOT)),
                 "human_rejected_dropped": dropped,
+                "policy_excluded_dropped": policy_dropped,
                 "eval100": composition(eval_rows),
                 "dev15": composition(dev_rows),
                 "dev_ids": sorted(dev_ids),
@@ -184,7 +199,7 @@ def main() -> None:
     )
     print(f"Wrote {SUMMARY_OUT}")
     print_composition("EVAL-100", eval_rows)
-    print_composition("DEV-15", dev_rows)
+    print_composition("DEV-14", dev_rows)
     print(f"\ndev ids: {sorted(dev_ids)}")
 
 

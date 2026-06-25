@@ -74,7 +74,7 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
         default=DEFAULT_LOCKFILE_SPLIT,
         help=(
             "Which published split of the lockfile dataset to load: 'test' (the "
-            "100-paper frozen benchmark, default) or 'validation' (the dev-15 split); "
+            "100-paper frozen benchmark, default) or 'validation' (the 14-paper dev split); "
             "aliases 'eval'/'dev' are accepted. Ignored for a local .jsonl / hf:// file."
         ),
     )

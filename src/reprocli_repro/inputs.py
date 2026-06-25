@@ -6,7 +6,7 @@ forked tool loop needs: the opening prompt and the per-episode run directory.
 Source of truth is a **Hugging Face dataset** (default
 ``Mithilss/reprobench-splits``), not a local JSON file. That dataset publishes two
 named splits: ``test`` (the 100-paper frozen benchmark, ``split="eval"`` in-row)
-and ``validation`` (the disjoint 15-paper ``dev`` split); there is no ``train``
+and ``validation`` (the disjoint 14-paper ``dev`` split); there is no ``train``
 split, so the loader defaults to ``test`` and accepts the friendly aliases
 ``eval``/``dev``. ``load_lockfile_rows`` accepts, in priority order:
 
@@ -42,7 +42,7 @@ from reprocli_repro.reference import safe_component
 
 DEFAULT_LOCKFILE_DATASET = "Mithilss/reprobench-splits"
 # The reproduction agent reproduces the frozen benchmark by default; "validation"
-# (dev-15) is for development. "train" does not exist in this dataset.
+# (the 14-paper dev split) is for development. "train" does not exist here.
 DEFAULT_LOCKFILE_SPLIT = "test"
 _SPLIT_ALIASES = {"eval": "test", "eval100": "test", "dev": "validation", "dev15": "validation"}
 
