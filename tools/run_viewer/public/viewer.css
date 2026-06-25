@@ -70,6 +70,52 @@
 .drop .hint { font-size: 13px; }
 .drop .hint code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; font-family: var(--mono); font-size: 12px; }
 
+/* ---- dead runs (status 'running' but silent past the threshold) ---------- */
+.dot.dead { background: var(--no); animation: none; }
+.badge.dead, .schip.dead { background: var(--no-tint); color: var(--no-deep); border-color: var(--no); }
+.plitem.dead { opacity: .72; }
+.plitem.dead:hover { opacity: 1; }
+
+/* ---- Stats tab ----------------------------------------------------------- */
+#view-stats .detail > .stats-wrap { max-width: 1240px; }
+.stats-head { display: flex; align-items: baseline; gap: 14px; }
+.stats-head h2 { margin: 0; font-family: var(--serif); font-size: 22px; color: var(--txt); }
+.stats-controls { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.s-note { color: var(--muted); font-size: 12px; margin: 4px 0 16px; }
+.s-note b { color: var(--txt); font-weight: 600; }
+
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(116px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; box-shadow: var(--shadow); }
+.stat-card.warn { border-color: var(--no); background: var(--no-tint); }
+.sc-v { font-size: 21px; font-weight: 700; color: var(--txt); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sc-l { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-top: 4px; }
+.sc-s { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.stats-table th, .stats-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.stats-table thead th { position: sticky; top: 0; background: var(--bg); cursor: pointer; user-select: none;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600;
+  text-align: left; white-space: nowrap; }
+.stats-table thead th:hover { color: var(--txt); }
+.stats-table thead th.sorted { color: var(--accent-strong); }
+.stats-table th.num, .stats-table td.num { text-align: right; font-variant-numeric: tabular-nums;
+  font-family: var(--mono); }
+.stats-table tbody tr:hover { background: var(--panel2); }
+.s-model { font-family: var(--mono); font-size: 12px; color: var(--txt); white-space: nowrap; }
+.s-run summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 12px; color: var(--txt); }
+.s-run summary::-webkit-details-marker { display: none; }
+.s-run summary::before { content: "▸"; color: var(--muted); font-size: 10px; }
+.s-run details[open] summary::before { content: "▾"; }
+.s-run .dot { margin-top: 0; }
+.s-rid { font-family: var(--mono); font-size: 10px; color: var(--muted); margin: 5px 0 2px 17px; }
+.s-break { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0 2px 17px; }
+.s-chip { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+  padding: 2px 8px; white-space: nowrap; }
+.s-chip b { color: var(--txt); font-variant-numeric: tabular-nums; }
+.s-chip.warn { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
+
 /* raw json tree (tool-call args) — borrowed from verify_app json_view.js styling */
 .jraw { font-family: var(--mono); font-size: 12px; line-height: 1.7; padding: 2px; overflow-x: auto; }
 .jchildren { padding-left: 1.25em; border-left: 1px solid var(--line); margin-left: .4em; }

@@ -29,6 +29,7 @@
       <div class="brand">Repro Run Viewer</div>
       <nav class="tabs">
         <button class="tab active" data-view="live">Live runs</button>
+        <button class="tab" data-view="stats">Stats</button>
         <button class="tab" data-view="local">Local file</button>
       </nav>
       <div class="who">
@@ -46,6 +47,13 @@
       </aside>
       <section id="live-detail" class="detail">
         <div class="empty">Pick a run from the list to watch it stream in.</div>
+      </section>
+    </main>
+
+    <!-- STATS: token / turn tallies across all runs -->
+    <main id="view-stats" class="view hidden">
+      <section class="detail">
+        <div id="stats-root" class="stats-wrap"></div>
       </section>
     </main>
 
@@ -70,6 +78,8 @@
   <script src="parser.js"></script>
   <script src="render.js"></script>
   <script src="supabase-data.js"></script>
+  <script src="tokens.js"></script>
+  <script src="stats.js"></script>
   <script src="app.js"></script>
   <script>
     /* theme toggle: flip data-theme, persist, keep icon + browser UI colour in sync */

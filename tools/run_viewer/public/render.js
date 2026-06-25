@@ -45,8 +45,23 @@ function nodeHtml(value, key, isLast) {
 
 // ---- status / meters -------------------------------------------------------
 const GOOD_EXIT = (e) => e === "natural" || e === "completed";
+const DEAD_AFTER_HOURS = (window.APP_CONFIG && window.APP_CONFIG.DEAD_AFTER_HOURS) || 12;
+function ageHours(t) {
+  if (!t) return Infinity;
+  const ms = new Date(t).getTime();
+  return isNaN(ms) ? Infinity : (Date.now() - ms) / 3.6e6;
+}
+// A run still 'running' but silent past the threshold is treated as dead. Only
+// remote runs have updated_at, so local (partial/finished) runs are never dead.
+function isDead(run) {
+  return run.status === "running" && !!run.updated_at && ageHours(run.updated_at) > DEAD_AFTER_HOURS;
+}
+const effectiveStatus = (run) => (isDead(run) ? "dead" : run.status || "running");
+const statusBadgeClass = (cls) =>
+  cls === "finished" ? "yes" : cls === "error" ? "no" : cls === "dead" ? "dead" : "accent";
 function statusInfo(run) {
-  const s = run.status || "running";
+  const s = effectiveStatus(run);
+  if (s === "dead") return { cls: "dead", label: "dead" };
   if (s === "finished") return { cls: "finished", label: "done" };
   if (s === "error") return { cls: "error", label: "error" };
   if (s === "partial") return { cls: "running", label: "partial" };
@@ -70,13 +85,15 @@ function costMeterHtml(run) {
 // ---- run header ------------------------------------------------------------
 function runHeaderHtml(run) {
   const si = statusInfo(run);
+  const dead = si.cls === "dead";
+  const deadTip = dead ? ` title="no update in ${Math.floor(ageHours(run.updated_at))}h (threshold ${DEAD_AFTER_HOURS}h)"` : "";
   const exit = run.exit_reason ? `<span class="badge ${GOOD_EXIT(run.exit_reason) ? "yes" : "unk"}">exit: ${esc(run.exit_reason)}</span>` : "";
   const dl = run.full_log_url ? `<a class="link" href="${esc(run.full_log_url)}" target="_blank" rel="noopener">⬇ full log</a>` : "";
   const times = (run.started_at || run.updated_at)
     ? `<div class="muted" style="font-size:12px;margin-top:6px">started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}${run.host ? " · " + esc(run.host) : ""}</div>` : "";
   return `<div class="dhead"><div class="dhead-top">
     <span class="pid big">${esc(run.arxiv_id || "?")}</span>
-    <span class="badge ${si.cls === "finished" ? "yes" : si.cls === "error" ? "no" : "accent"}">${si.label}</span>
+    <span class="badge ${statusBadgeClass(si.cls)}"${deadTip}>${si.label}</span>
     ${run.model ? `<span class="badge">${esc(run.model)}</span>` : ""}
     ${run.budget != null ? `<span class="schip">${esc(run.budget)}h budget</span>` : ""}
     ${exit}${dl}
@@ -141,14 +158,16 @@ function appendRound(roundsEl, round, arxiv) {
   if (ex) ex.outerHTML = html; else roundsEl.insertAdjacentHTML("beforeend", html);
 }
 
-window.RENDER = { esc, el, fmtTime, statusInfo, renderRun, renderRunListItem, appendRound, topHtml };
+window.RENDER = { esc, el, fmtTime, statusInfo, statusBadgeClass, isDead, effectiveStatus, ageHours,
+  renderRun, renderRunListItem, appendRound, topHtml };
 function renderRunListItem(run) {
   const si = statusInfo(run);
-  return el(`<button class="plitem" data-run="${esc(run.run_id)}">
+  const live = effectiveStatus(run) === "running";
+  return el(`<button class="plitem ${si.cls === "dead" ? "dead" : ""}" data-run="${esc(run.run_id)}">
     <span class="dot ${si.cls}"></span>
     <span class="pmeta"><span class="pid">${esc(run.arxiv_id)}</span>
       <span class="ptitle">${esc(run.model || "—")}</span>
       <span class="prow2"><span class="schip">${esc(run.budget ?? "?")}h</span>
-        ${run.status === "running" ? '<span class="live-tag">● live</span>' : `<span class="schip">${si.label}</span>`}
+        ${live ? '<span class="live-tag">● live</span>' : `<span class="schip ${si.cls === "dead" ? "dead" : ""}">${si.label}</span>`}
         <span class="schip">${fmtTime(run.updated_at)}</span></span></span></button>`);
 }

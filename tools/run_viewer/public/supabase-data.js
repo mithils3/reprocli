@@ -23,6 +23,25 @@ const RemoteSource = {
     return data || [];
   },
 
+  // Every event's text-bearing columns, across all runs, paged. Used by the
+  // Stats tab to tokenize the full transcript. Heavy stdout is capped by the sink.
+  async fetchAllEvents(onProgress) {
+    const cols = "run_id,round_index,seq,kind,tool_name,reasoning,content,command,args,stdout,stderr,error,path,truncated";
+    const page = 1000;
+    let from = 0, all = [];
+    for (;;) {
+      const { data, error } = await this.client.from("repro_events")
+        .select(cols).order("run_id", { ascending: true }).order("seq", { ascending: true })
+        .range(from, from + page - 1);
+      if (error) throw error;
+      all = all.concat(data || []);
+      if (onProgress) onProgress(all.length);
+      if (!data || data.length < page) break;
+      from += page;
+    }
+    return all;
+  },
+
   async loadRun(runId) {
     const [runRes, evRes] = await Promise.all([
       this.client.from("repro_runs").select("*").eq("run_id", runId).limit(1),

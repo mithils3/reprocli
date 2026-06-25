@@ -15,12 +15,14 @@ const liveDetail = () => $("#live-detail");
 function setView(v) {
   state.view = v;
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === v));
-  $("#view-live").classList.toggle("hidden", v !== "live");
-  $("#view-local").classList.toggle("hidden", v !== "local");
+  document.querySelectorAll(".view").forEach((m) => m.classList.add("hidden"));
+  const el = $("#view-" + v);
+  if (el) el.classList.remove("hidden");
+  if (v === "stats" && window.Stats) window.Stats.open();
 }
 
 // ---- run list (Live) -------------------------------------------------------
-const FILTERS = [["all", "All"], ["running", "Running"], ["finished", "Finished"], ["error", "Error"]];
+const FILTERS = [["all", "All"], ["running", "Running"], ["dead", "Dead"], ["finished", "Finished"], ["error", "Error"]];
 function renderFilters() {
   $("#filters").innerHTML = FILTERS.map(([k, l]) =>
     `<button class="filt ${state.filter === k ? "active" : ""}" data-f="${k}">${l}</button>`).join("");
@@ -30,7 +32,7 @@ function renderFilters() {
 function visibleRuns() {
   const q = state.search.toLowerCase();
   return state.runs.filter((r) =>
-    (state.filter === "all" || r.status === state.filter) &&
+    (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id}`).toLowerCase().includes(q)));
 }
 function renderList() {
