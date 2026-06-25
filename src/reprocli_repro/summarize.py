@@ -240,16 +240,24 @@ def summarize_compact(
 ) -> dict[str, Any]:
     """Summarize the old span into one message and splice it in; keep the recent tail.
 
-    Mutates ``messages`` in place to ``[system, summary, *tail]`` on success and
-    returns a stats dict. On any failure (nothing old enough, summary call errored,
-    empty summary) it leaves ``messages`` untouched and returns ``compacted=False``
-    with a ``reason`` — the caller keeps going and retries next round, falling back
-    to the hard context guard only if it ever crosses the real ceiling.
+    Mutates ``messages`` in place to ``[system, task, summary, *tail]`` on success
+    and returns a stats dict. On any failure (nothing old enough, summary call
+    errored, empty summary) it leaves ``messages`` untouched and returns
+    ``compacted=False`` with a ``reason`` — the caller keeps going and retries next
+    round, falling back to the hard context guard only if it ever crosses the real
+    ceiling.
+
+    The task prompt at ``messages[1]`` is pinned verbatim and never summarized, so the
+    definition-of-done (anchor metric, tolerance, MRE target, step-by-step task) can
+    never evaporate into a lossy summary and leave the agent finalizing prematurely.
     """
     cut = choose_cut(messages, keep_recent_tokens)
-    if cut <= 1:
+    # Span starts at index 2: messages[0] is the system message and messages[1] is the
+    # pinned task prompt, both kept verbatim. A cut of <= 2 means there is nothing old
+    # enough behind the pinned head to summarize.
+    if cut <= 2:
         return {"compacted": False, "reason": "nothing-old-enough"}
-    span = messages[1:cut]
+    span = messages[2:cut]
     tail = messages[cut:]
     chars_before = conversation_chars(messages)
     modified = accumulate_files(span, previous_modified or [])
@@ -261,7 +269,7 @@ def summarize_compact(
     if not summary_text.strip():
         return {"compacted": False, "reason": "empty-summary"}
     summary_message = {"role": "user", "content": _summary_block(summary_text, modified)}
-    messages[:] = [messages[0], summary_message, *tail]
+    messages[:] = [messages[0], messages[1], summary_message, *tail]
     return {
         "compacted": True,
         "summary": summary_text.strip(),

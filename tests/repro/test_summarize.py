@@ -106,7 +106,7 @@ class AccumulateFilesTests(unittest.TestCase):
 
 
 class SummarizeCompactTests(unittest.TestCase):
-    def test_rewrites_head_and_keeps_tail(self):
+    def test_pins_task_prompt_rewrites_head_and_keeps_tail(self):
         messages = _conversation()
         original = [dict(m) for m in messages]
         summarize.post_chat_completion_row = _fake_summary("## Goal\nrun it")
@@ -120,12 +120,27 @@ class SummarizeCompactTests(unittest.TestCase):
         )
         self.assertTrue(stats["compacted"])
         self.assertEqual(messages[0], original[0])  # system preserved
-        self.assertEqual(messages[1]["role"], "user")  # summary injected as user message
-        self.assertIn("run it", messages[1]["content"])
-        self.assertIn("b.py", messages[1]["content"])  # modified-files block
+        self.assertEqual(messages[1], original[1])  # task prompt pinned verbatim
+        self.assertEqual(messages[2]["role"], "user")  # summary injected as user message
+        self.assertIn("run it", messages[2]["content"])
+        self.assertIn("b.py", messages[2]["content"])  # modified-files block
         self.assertEqual(messages[-1], original[-1])  # recent tail preserved verbatim
-        self.assertNotEqual(messages[2]["role"], "tool")  # tail starts at a safe boundary
+        self.assertNotEqual(messages[3]["role"], "tool")  # tail starts at a safe boundary
         self.assertEqual(stats["modified_files"], ["b.py"])
+
+    def test_task_prompt_survives_compaction_verbatim(self):
+        # The definition-of-done (anchor metric + tolerance) lives in the task prompt;
+        # it must be kept verbatim, never folded into the lossy summary — otherwise the
+        # agent can lose it and finalize prematurely with no measured result.
+        messages = _conversation()
+        messages[1] = {"role": "user", "content": "TASK: reproduce FID=90.68 ±3 anchor"}
+        summarize.post_chat_completion_row = _fake_summary("## Goal\nrun it")
+        stats = summarize_compact(
+            messages, server_url="http://x", model="m", args=_args(),
+            custom_id="2401.1", keep_recent_tokens=10,
+        )
+        self.assertTrue(stats["compacted"])
+        self.assertEqual(messages[1]["content"], "TASK: reproduce FID=90.68 ±3 anchor")
 
     def test_cumulative_modified_files(self):
         messages = _conversation()
