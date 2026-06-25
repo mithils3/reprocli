@@ -54,7 +54,7 @@ From: ${BASE_SIF}
         espeak-ng libespeak-ng1
     git lfs install --system || true
 
-    # --- Python 3.12 toolchain: interpreter + dev headers + venv/ensurepip ---
+    # --- Python 3.12 toolchain: interpreter + dev headers + venv + pip ---
     # If the base distro doesn't carry python3.12 (e.g. Ubuntu 22.04), pull it from
     # deadsnakes so the version matches the prompt's \`--python 3.12\` and torch's cu129
     # aarch64 wheels.
@@ -64,10 +64,11 @@ From: ${BASE_SIF}
         apt-get update
     fi
     apt-get install -y --no-install-recommends \
-        python3.12 python3.12-dev python3.12-venv
-    # Bootstrap pip for 3.12 (uv is the primary installer; pip is a fallback). ensurepip
-    # ships in python3.12-venv; skip the global \`pip install -U pip\` to avoid PEP-668.
-    python3.12 -m ensurepip --upgrade
+        python3.12 python3.12-dev python3.12-venv python3-pip
+    # NOTE: Debian/Ubuntu DISABLE \`python3.12 -m ensurepip\` for the system interpreter
+    # (it exits non-zero with "ensurepip is disabled"), so pip comes from the python3-pip
+    # apt package instead — usable as \`python3.12 -m pip\`. uv is the primary installer;
+    # pip is just a fallback, and the agent installs into venvs (no PEP-668 friction).
     # Expose python3/python on PATH via /usr/local/bin (precedes /usr/bin) WITHOUT
     # repointing the distro's own /usr/bin/python3 — apt's tooling depends on that one.
     ln -sf /usr/bin/python3.12 /usr/local/bin/python3
