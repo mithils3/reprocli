@@ -96,6 +96,13 @@ class ForwardEnvTests(unittest.TestCase):
             # forwarded via APPTAINERENV_* so --cleanenv keeps it (no token on argv)
             self.assertEqual(os.environ["APPTAINERENV_HF_TOKEN"], "secret")
 
+    def test_uv_prefers_the_images_system_python(self):
+        # So `uv venv --python 3.12` uses the bundled /usr/bin/python3.12 (headers at
+        # /usr/include) rather than a managed download whose headers gcc can't find.
+        with mock.patch.dict(os.environ, {}, clear=True):
+            forward_env()
+            self.assertEqual(os.environ["APPTAINERENV_UV_PYTHON_PREFERENCE"], "system")
+
     def test_home_writing_tool_dirs_redirect_into_bound_cache(self):
         # Under --no-home the container's $HOME is read-only, so uv's managed-Python
         # download dir is pointed at the rw-bound ~/.cache instead.

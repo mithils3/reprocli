@@ -84,8 +84,12 @@ Every command you run — on BOTH tools — executes INSIDE a read-only Apptaine
 (an NVIDIA CUDA image: the CUDA toolkit, cuDNN, and `nvcc` are installed, but `torch` is
 NOT — you install it yourself, see environment setup below). The CUDA libraries and `nvcc`
 come from the image, so you do NOT `module load` anything and you do NOT install the CUDA
-toolkit yourself. The image is minimal — `uv` is on PATH (use it for Python and venvs), but
-`git`/`curl`/`python3` may be absent. The image's `/` is READ-ONLY; only these are
+toolkit yourself. The image bundles the toolchain you need: `python3` (3.12) WITH its dev
+headers (`Python.h`), `uv`, `git`/`git-lfs`, `curl`/`wget`, a C/C++ build chain (`gcc`,
+`make`, `cmake`, `ninja`, `pkg-config`), and audio libs (`ffmpeg`, `libsndfile`,
+`espeak-ng`) — so C/Cython extensions (e.g. VITS `monotonic_align`) compile in place
+against the bundled headers. Only `torch` is absent (you install it, below). The image's
+`/` is READ-ONLY; only these are
 writable: the workspace, evidence, `/tmp`, and the package caches (`~/.cache`, e.g.
 HF/uv/pip). Reference is mounted read-only. Everything else on the host — your `$HOME` and
 its files, other paths — is NOT mounted at all: a write there fails and those paths simply
@@ -147,9 +151,10 @@ Build the environment yourself. The CUDA image gives you `nvcc`, cuDNN, and the 
 libraries, but NOT `torch` — installing the torch stack is your first setup job. Always
 run Python through the venv and install with `uv` (never bare `pip`).
 
-Create the venv (uv provisions its own CPython, so the image needs no system Python), then
-install the torch family from the PyTorch CUDA wheel index:
-  `uv venv {WORKSPACE_DIR}/.venv --python 3.12`
+Create the venv against the image's bundled Python (so compiled extensions find `Python.h`
+at the conventional `/usr/include/python3.12/`), then install the torch family from the
+PyTorch CUDA wheel index:
+  `uv venv {WORKSPACE_DIR}/.venv --python 3.12`  (resolves to the image's system 3.12)
   `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python --index-url https://download.pytorch.org/whl/cu129 torch torchvision torchaudio`
 The venv lives on disk, so it persists across a release/re-acquire.
 

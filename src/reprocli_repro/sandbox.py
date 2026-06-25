@@ -122,17 +122,21 @@ def forward_env() -> None:
     auth and cache/proxy settings without exposing a token via ``ps``. Idempotent — an
     explicit ``APPTAINERENV_*`` already in the environment wins.
 
-    It also redirects the tool dirs that default to ``$HOME`` into the rw-bound
-    ``~/.cache``: under ``--no-home`` the container's home is read-only, so e.g.
-    ``uv venv --python X`` (which downloads a managed CPython to
-    ``~/.local/share/uv/python`` when the raw CUDA image has no Python) otherwise dies
-    with ``Read-only file system``. Pointing ``UV_PYTHON_INSTALL_DIR`` + the XDG dirs at
-    the bound cache makes setup work *and* persist the download across papers.
+    It also pins ``UV_PYTHON_PREFERENCE=system`` so ``uv venv --python 3.12`` resolves to
+    the image's bundled ``/usr/bin/python3.12`` (whose dev headers sit at the conventional
+    ``/usr/include/python3.12/``) instead of downloading a managed standalone CPython —
+    that download lands outside ``/usr/include`` and agents reliably fail to point gcc at
+    it, so C/Cython extension builds die with ``Python.h: No such file``. ``system``
+    prefers the bundled interpreter but still falls back to a managed download if 3.12 is
+    somehow absent. The ``UV_PYTHON_INSTALL_DIR`` + XDG redirects below keep that fallback
+    (and any other tool dir that defaults to the read-only ``--no-home`` ``$HOME``) on the
+    rw-bound ``~/.cache`` so it works *and* persists across papers.
     """
     for var in FORWARD_ENV:
         value = os.environ.get(var)
         if value is not None:
             os.environ.setdefault(f"APPTAINERENV_{var}", value)
+    os.environ.setdefault("APPTAINERENV_UV_PYTHON_PREFERENCE", "system")
     cache = Path.home() / ".cache"
     home_write_defaults = {
         "UV_PYTHON_INSTALL_DIR": cache / "uv" / "python",
@@ -208,9 +212,9 @@ class Sandbox:
             argv.append("--nv")
         for bind in self.binds:
             argv += ["--bind", bind.arg()]
-        # The CUDA image is minimal (no `uv`, and possibly no `pip`/`python`); the prompt
-        # builds the venv and installs with `uv` (which provisions its own CPython), so
-        # bind the host `uv` (aarch64, runs fine in the container) onto the default PATH.
+        # The agent image bundles its own `uv` + `python3.12`, so this bind is just an
+        # override: when the host has a (newer) `uv`, mount it over the image's copy
+        # (aarch64, runs fine in the container); otherwise the baked-in `uv` is used.
         uv = shutil.which("uv")
         if uv:
             argv += ["--bind", f"{uv}:/usr/local/bin/uv"]
