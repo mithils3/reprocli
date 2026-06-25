@@ -22,7 +22,7 @@ from reprocli_repro.sandbox import (
 )
 from reprocli_repro.workspace import create_layout
 
-IMAGE = "/sw/user/NGC_containers/pytorch_25.08-py3.sif"
+IMAGE = "/sw/user/NGC_containers/pytorch_24.09-py3.sif"
 # A real .sif to run the functional confinement test against; absent in most CI.
 TEST_SIF = os.environ.get("REPRO_TEST_SIF")
 

@@ -76,7 +76,7 @@ Never write durable outputs outside these directories (`/tmp` scratch, below, is
 exception — and nothing you keep there is durable).
 
 Every command you run — on BOTH tools — executes INSIDE a read-only Apptainer container
-(an NGC PyTorch image: a recent CUDA stack and a GPU-ready `torch` are already installed).
+(an NGC PyTorch image: its CUDA stack and a GPU-ready `torch` are already installed).
 This is your operating system: `git`, `python3`, `pip`, `nvcc`, and the CUDA libraries all
 come from the image, so you do NOT `module load` anything and you do NOT install CUDA or
 torch yourself (see environment setup below). The image's `/` is READ-ONLY; only these are

@@ -23,10 +23,14 @@ from reprocli_repro.budget import HW_MULTIPLIER
 
 DEFAULT_CLUSTER = "deltaai"
 
-# DeltaAI's mandatory-sandbox image: a shared NGC PyTorch .sif (torch ~2.8 / CUDA 13.0,
-# matching the node's CUDA 13.1 toolkit). Every agent step runs inside this read-only
-# container (see sandbox.py); swap per-run with --apptainer-image / $REPRO_APPTAINER_SIF.
-DEFAULT_APPTAINER_SIF = "/sw/user/NGC_containers/pytorch_25.08-py3.sif"
+# DeltaAI's mandatory-sandbox image: a shared NGC PyTorch .sif. We pin an OLDER release
+# (24.09 — torch 2.5 / CUDA 12.6, the exact image in NCSA's own DeltaAI containers docs)
+# so the prebuilt torch is contemporary with the current NeurIPS-2025 reproduction targets
+# rather than running their code on a much newer torch; CUDA forward-compat on DeltaAI runs
+# 12.6 on the GH200 driver fine. Every agent step runs inside this read-only container (see
+# sandbox.py); swap per-run / per-paper with --apptainer-image / $REPRO_APPTAINER_SIF
+# (24.07/24.08/25.06/25.08/26.01 are also staged under /sw/user/NGC_containers/).
+DEFAULT_APPTAINER_SIF = "/sw/user/NGC_containers/pytorch_24.09-py3.sif"
 
 
 @dataclass(frozen=True)
