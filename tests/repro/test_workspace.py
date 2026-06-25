@@ -40,7 +40,9 @@ class PrepareWorkspaceTests(unittest.TestCase):
     def test_full_offline_setup(self):
         with tempfile.TemporaryDirectory() as d:
             paths = resolve_run_paths(Path(d) / "runs", "2505.11483", 8.0, run_id="RID")
-            result = prepare_workspace(paths, arxiv_id="2505.11483", reference_row=ROW)
+            # make_venv defaults off (the agent builds it in the container); opt in here
+            # to exercise the upfront path (no sandbox -> runs bare on the test host).
+            result = prepare_workspace(paths, arxiv_id="2505.11483", make_venv=True, reference_row=ROW)
             # layout + evidence sinks
             self.assertTrue(paths.workspace.is_dir())
             self.assertTrue((paths.evidence / "commands.log").is_file())
@@ -49,7 +51,7 @@ class PrepareWorkspaceTests(unittest.TestCase):
             self.assertTrue(result.reference["ok"])
             self.assertTrue((paths.reference / "supplement" / "code" / "run.py").is_file())
             self.assertTrue((paths.reference / "MANIFEST.txt").is_file())
-            # empty per-paper venv built, never the shared .venv
+            # per-paper venv built, never the shared .venv
             self.assertTrue(result.venv["ok"], result.venv)
             self.assertTrue((paths.workspace / ".venv").is_dir())
 

@@ -61,17 +61,29 @@ class BuildAcquireTests(unittest.TestCase):
 
 
 class BuildSrunTests(unittest.TestCase):
-    def test_runs_into_held_jobid_with_on_gpu_modules(self):
+    def test_runs_into_held_jobid_bare_without_sandbox(self):
         argv = build_srun(resolve_cluster("deltaai"), "/ws", "python train.py", jobid="2542640")
         self.assertEqual(argv[0], "srun")
         self.assertIn("--jobid=2542640", argv)
         self.assertIn("--ntasks=1", argv)
         inner = argv[-1]
-        # No container by default; the CUDA toolkit comes from `module load` on-GPU.
+        # No sandbox passed -> bare body; CUDA comes from the image at runtime, not a
+        # host `module load`, so the payload carries neither.
         self.assertNotIn("apptainer", inner)
-        self.assertIn("module load python/3.11.9 cuda cudnn nccl", inner)
-        self.assertIn("cd /ws", inner)
-        self.assertIn("python train.py", inner)
+        self.assertNotIn("module load", inner)
+        self.assertEqual(inner, "cd /ws && python train.py")
+
+    def test_sandbox_splices_apptainer_after_srun(self):
+        from reprocli_repro.sandbox import Sandbox
+
+        sb = Sandbox(image="/img.sif", writable=(Path("/ws"),))
+        argv = build_srun(resolve_cluster("deltaai"), "/ws", "python train.py", jobid="42", sandbox=sb)
+        # srun (the trusted launcher) stays outside; the apptainer wrap is spliced after.
+        self.assertEqual(argv[0], "srun")
+        self.assertIn("--jobid=42", argv)
+        self.assertIn("apptainer", argv)
+        self.assertIn("--nv", argv)  # GPU step
+        self.assertEqual(argv[-3:], ["bash", "-lc", "cd /ws && python train.py"])
 
 
 class AcquireSessionTests(unittest.TestCase):

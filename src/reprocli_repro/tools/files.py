@@ -8,7 +8,7 @@ context), so this module ships only the mutating ops: ``write_file`` and
 Adapted from ``run_dir_tools._resolve_within``: every path the agent writes must
 resolve inside one of the episode's writable roots -- ``workspace`` (the editable
 clone) and ``evidence``; the ``reference/`` copy is never writable. These are a
-subset of the roots the bwrap sandbox (``sandbox.py``) binds read-write — the file
+subset of the roots the Apptainer sandbox (``sandbox.py``) binds read-write — the file
 tools stay tight to durable source/evidence, while bulk ``/tmp`` scratch is
 shell-driven, not a file-tool path — so the tool-layer check is a strict inner
 boundary nested inside the OS sandbox.

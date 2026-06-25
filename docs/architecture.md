@@ -348,7 +348,7 @@ plain-subprocess fallback that could never reproduce anything.
  ┌──────────────────────────────────────────────────────────────────────────────────┐
  │ JIT GPU STEP  (slurm.py — released the instant the command exits)                  │
  │  salloc -A <acct> -p <part> --nodes=1 --gpus=<k> --time=<min> \                     │
- │    srun --ntasks=1 bash -lc 'cd <workspace> && module load … && <cmd>'              │
+ │    srun --ntasks=1 apptainer exec --nv … <sif> bash -lc 'cd <workspace> && <cmd>'   │
  │  per-paper workspace · per-paper uv venv · --time is the budget pre-authorization   │
  │  every step: capture stdout/stderr/exit + elapsed×gpus → meter + trajectory.jsonl   │
  └──────────────────────────────────────────────────────────────────────────────────┘
@@ -530,8 +530,10 @@ salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus-per-node=1 --time=<window>
 srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 bash -lc 'cd <ws> && <command>'
 
 # B. Reproduction agent — JIT allocation (a fresh salloc PER run_gpu step, then released):
+#    every step runs inside the mandatory Apptainer sandbox (sandbox.py); CUDA/torch come
+#    from the NGC .sif, so there is no host `module load`.
 salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus=<k> --time=<minutes> \
-       srun --ntasks=1 bash -lc 'cd <workspace> && module load python/3.11.9 && <command>'
+       srun --ntasks=1 apptainer exec --nv --cleanenv --no-home <sif> bash -lc 'cd <workspace> && <command>'
 ```
 
 Pattern A is the live classifier/auditor shape (`scripts/**/*.sbatch`,
@@ -540,11 +542,15 @@ container and every unit of work runs as an `srun --jobid=$SLURM_JOB_ID` step
 inside it. Pattern B is the reproduction agent's `slurm.py`: the agent owns and
 releases each allocation, so it holds no GPU while reasoning or installing.
 
-Each step inherits the env block the sbatch scripts standardize (caches under
-`/work/nvme/bfvr/msalunkhe/.cache/{vllm,triton,torchinductor}`, NCCL / `TORCH_NCCL_*`
-tuning, `module load python/3.11.9`). The reproduction agent layers a **per-paper
-`uv` venv** on top — never the shared `.venv` — so one paper's dependency install
-can never poison another's.
+Pattern A (classifier/auditor) inherits the env block the sbatch scripts standardize
+(caches under `/work/nvme/bfvr/msalunkhe/.cache/{vllm,triton,torchinductor}`, NCCL /
+`TORCH_NCCL_*` tuning, `module load python/3.11.9`). Pattern B (the reproduction agent)
+instead runs every step inside the **mandatory Apptainer sandbox** (`sandbox.py`): the NGC
+PyTorch `.sif` is the read-only root, so CUDA + a GPU-ready `torch` come from the image
+(no host `module load`), and writes are confined to the per-paper workspace/evidence,
+`/tmp`, and the package caches. The agent layers a **per-paper `uv` venv** (with
+`--system-site-packages`, to reuse the image's torch) on top — never the shared `.venv` —
+so one paper's dependency install can never poison another's.
 
 ## IV.3 Why this maps cleanly onto the agent core
 

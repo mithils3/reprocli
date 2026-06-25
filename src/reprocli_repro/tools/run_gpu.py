@@ -243,8 +243,8 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
     """Build the ``run_gpu`` schema, advertising this cluster's per-node GPU cap."""
     return function_tool(
         "run_gpu",
-        "Run ONE command on a real GPU (training, evaluation, scoring, installing a "
-        "CUDA-enabled torch, nvidia-smi). The GPU allocation is HELD across calls: the "
+        "Run ONE command on a real GPU (training, evaluation, scoring, verifying the "
+        "container's torch.cuda, nvidia-smi). The GPU allocation is HELD across calls: the "
         "first run_gpu acquires it (you may wait in the queue once) and every later "
         "run_gpu runs on the SAME node with NO new queue wait, so install → verify → "
         "run as successive calls. You are billed WALL-CLOCK for the whole time the "

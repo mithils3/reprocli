@@ -2,14 +2,14 @@
 
 The agent does its CPU-side work here: ``git clone`` the released code, inspect and
 edit files, build the venv, install pure-Python deps. This runs on the
-orchestrator/login node, which has **no GPU** — the metered ``run_gpu`` tool is
-where the GPU, the CUDA toolkit, and the CUDA-torch install + experiment run live.
-The shell's cwd is pinned to ``ctx.workspace`` (the same root the file tools
-confine to) and every command is appended to ``evidence/commands.log`` so the
-auditor can re-trace exactly what ran. Commands run through the env seam
-(``env.exec_argv`` with ``on_gpu=False``): a plain ``cd <ws> && <cmd>``, a *clean*
-shell with no ``module load`` — loading the CUDA modules here would shadow the
-system ``git``'s libcurl and break ``git clone``, and CPU setup needs no CUDA libs.
+orchestrator/login node, which has **no GPU** — the metered ``run_gpu`` tool is where
+the GPU and the experiment run live. The shell's cwd is pinned to ``ctx.workspace``
+(the same root the file tools confine to) and every command is appended to
+``evidence/commands.log`` so the auditor can re-trace exactly what ran. Commands run
+through the env seam (``env.exec_argv`` with ``on_gpu=False``): a plain
+``cd <ws> && <cmd>`` body wrapped in the episode's Apptainer container
+(``ctx.sandbox``) — without ``--nv``, since the login node has no GPU to pass through.
+The container supplies git/Python/CUDA, so there is no host ``module load``.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
     start = time.time()
     try:
         proc = subprocess.run(
-            env.exec_argv(ctx.cluster, workspace, command, sandbox=ctx.sandbox),
+            env.exec_argv(workspace, command, sandbox=ctx.sandbox),
             cwd=str(workspace),
             capture_output=True,
             text=True,

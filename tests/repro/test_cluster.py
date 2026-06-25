@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.cluster import (
+    DEFAULT_APPTAINER_SIF,
     DEFAULT_CLUSTER,
     cluster_defaults,
     cluster_names,
@@ -24,17 +25,20 @@ class ResolveClusterTests(unittest.TestCase):
         self.assertEqual(c.partition, "ghx4")
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.gpus_per_node, 4)
-        self.assertIn("python/3.11.9", c.modules)
-        # Apptainer is opt-in and off by default now: the agent installs a CUDA
-        # torch into the venv instead of inheriting a container's.
-        self.assertIsNone(c.apptainer_image)
+        # Host modules are inert under the container sandbox (the image is the toolchain).
+        self.assertEqual(c.modules, ())
+        # The mandatory Apptainer sandbox is backed by the NGC PyTorch .sif by default.
+        self.assertEqual(c.apptainer_image, DEFAULT_APPTAINER_SIF)
 
-    def test_delta_h200_profile(self):
+    def test_delta_h200_has_no_default_sandbox_image(self):
+        # x86 H200 pins no image: --apptainer-image is required (require_apptainer fails
+        # otherwise), so the sandbox is still mandatory, just not pre-pinned.
         c = resolve_cluster("delta-h200")
         self.assertEqual(c.account, "bfvr-delta-gpu")
         self.assertEqual(c.partition, "gpuH200x8-interactive")
         self.assertEqual(c.hw, "h200")
         self.assertEqual(c.gpus_per_node, 8)
+        self.assertIsNone(c.apptainer_image)
 
     def test_per_field_overrides_win(self):
         c = resolve_cluster(

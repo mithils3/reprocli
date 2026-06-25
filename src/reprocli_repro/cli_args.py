@@ -112,8 +112,10 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--build-venv",
         action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Build the empty per-paper uv venv at setup (default: on).",
+        default=False,
+        help="Build the per-paper uv venv (with --system-site-packages, inside the "
+        "container) at setup (default: off — the agent builds it as its first step so "
+        "it inherits the image's CUDA torch).",
     )
     group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
 
@@ -146,16 +148,16 @@ def _add_cluster(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Opt-in NGC base .sif every step runs inside (apptainer exec --nv); the "
-        "venv inherits its CUDA PyTorch. Off by default — the agent installs a CUDA "
-        "torch into the venv instead. Set this (or $REPRO_APPTAINER_SIF) to use the "
-        "container path.",
+        help="NGC base .sif that backs the MANDATORY Apptainer sandbox — every agent "
+        "step runs inside this read-only image and inherits its CUDA PyTorch. Defaults "
+        "to the cluster profile's image (deltaai pins one); overrides it / "
+        "$REPRO_APPTAINER_SIF. Profiles with no pinned image require this flag.",
     )
     group.add_argument(
         "--modules",
         default="",
-        help="Space-separated `module load` names prepended to each JIT GPU step; "
-        "overrides the profile's modules.",
+        help="Legacy host `module load` names; inert under the container sandbox (the "
+        "image provides the toolchain). Kept for non-container profiles.",
     )
 
 

@@ -7,24 +7,25 @@ run:
 
     # acquire once (returns the instant the alloc is granted, then stays up):
     salloc --no-shell -A <account> -p <partition> --nodes=1 --gpus=<k> --time=<min>
-    # run each step into the held jobid (no new queue wait):
-    srun --jobid=<jobid> --ntasks=1 bash -lc 'cd <ws> && module load ... && <cmd>'
+    # run each step into the held jobid (no new queue wait), inside the sandbox image:
+    srun --jobid=<jobid> --ntasks=1 apptainer exec --nv ... <sif> bash -lc 'cd <ws> && <cmd>'
     # release when the agent is done (or at teardown):
     scancel <jobid>
 
-``<account>/<partition>``/modules come from the cluster profile (``cluster.py``);
+``<account>/<partition>`` come from the cluster profile (``cluster.py``);
 ``<k>``/``<min>`` come from the model's ``run_gpu`` arguments on the call that
 *starts* the session. ``--time`` is the hold's hard lifetime (SLURM kills it at the
 wall limit) and the budget pre-authorization. Queue wait is naturally excluded from
 billing: ``acquire_session`` blocks during the wait and the meter only starts the
 clock once the allocation is granted (see ``gpu_session``).
 
-The ``srun`` payload (the ``cd`` + on-GPU ``module load``) is built by
-``env.exec_argv(..., on_gpu=True)`` — so a GPU step gets the CUDA toolkit the
-CPU-side ``workspace_bash`` deliberately omits. ``build_acquire``/``build_srun`` are
-pure (the tests assert the exact argv); the ``*_session`` helpers execute them.
-``salloc --no-shell`` is the one cluster-specific seam — some sites need a held
-``salloc ... sleep`` or ``SallocDefaultCommand`` instead.
+The ``srun`` payload (the Apptainer wrap + ``cd`` + ``<cmd>``) is built by
+``env.exec_argv(..., on_gpu=True, sandbox=...)`` — ``on_gpu`` adds ``--nv`` so the GPU
+step sees the device + CUDA driver; the CUDA toolkit itself comes from the image, not a
+host ``module load``. ``build_acquire``/``build_srun`` are pure (the tests assert the
+exact argv); the ``*_session`` helpers execute them. ``salloc --no-shell`` is the one
+cluster-specific seam — some sites need a held ``salloc ... sleep`` or
+``SallocDefaultCommand`` instead.
 """
 
 from __future__ import annotations
@@ -117,15 +118,16 @@ def build_srun(
 ) -> list[str]:
     """Argv that runs ``cmd`` into the already-held allocation ``jobid``.
 
-    ``sandbox`` (when active) bwrap-wraps the payload, so the untrusted GPU step is
-    write-confined to the episode's dirs on the compute node. ``srun`` itself — the
+    ``sandbox`` (always active for agent steps) wraps the payload in the episode's
+    Apptainer container, so the untrusted GPU step runs inside the read-only image and
+    is write-confined to the episode's dirs on the compute node. ``srun`` itself — the
     trusted launcher — stays outside the wrap.
     """
     return [
         "srun",
         f"--jobid={jobid}",
         "--ntasks=1",
-        *env.exec_argv(cluster, workspace, cmd, on_gpu=True, sandbox=sandbox),
+        *env.exec_argv(workspace, cmd, on_gpu=True, sandbox=sandbox),
     ]
 
 

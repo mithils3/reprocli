@@ -33,6 +33,16 @@ from reprocli_repro.workspace import WorkspaceResult, prepare_workspace
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     episodes = prepare_episodes(args)
+    image = args.cluster_profile.apptainer_image
+    server_url = resolve_server_url(args.vllm_server_url)
+    live = server_url is not None
+    if live:
+        # Refuse to run a single agent step unconfined: abort here if Apptainer can't
+        # sandbox the image. Then forward HF auth/cache + proxy env into the --cleanenv
+        # container (so gated HF downloads keep working) before any step runs.
+        sandbox.require_apptainer(image)
+        sandbox.forward_env()
+
     contexts: list[ExecutionContext] = []
     for ep in episodes:
         print(_summary(ep), file=sys.stderr)
@@ -42,30 +52,30 @@ def main(argv: list[str] | None = None) -> int:
                 "(first run downloads + caches the paper bundle)...",
                 file=sys.stderr,
             )
+        # Mandatory Apptainer write-confinement for every shell step this episode runs
+        # (workspace_bash / run_gpu): the read-only image is /, with rw binds for the
+        # workspace/evidence/caches and a ro bind for reference. Built only for a live
+        # run; a dry run renders prompts without a sandbox.
+        sb = sandbox.from_run_paths(ep.run_paths, image=image) if live else None
         result = prepare_workspace(
             ep.run_paths,
             arxiv_id=ep.arxiv_id,
             bundle_dataset=args.bundle_dataset,
-            make_venv=args.build_venv,
+            make_venv=args.build_venv and live,
             materialize_ref=args.reference,
-            cluster=args.cluster_profile,
+            sandbox=sb,
             venv_python=args.venv_python,
         )
         print(_setup_summary(result), file=sys.stderr)
         ctx = build_context(ep)
         ctx.cluster = args.cluster_profile
-        # Mandatory bwrap write-confinement for every shell step this episode runs
-        # (workspace_bash / run_gpu) — the rw binds mirror the file tools' roots.
-        ctx.sandbox = sandbox.from_run_paths(ep.run_paths)
+        ctx.sandbox = sb
         contexts.append(ctx)
 
-    server_url = resolve_server_url(args.vllm_server_url)
-    if server_url is None:
+    if not live:
         return _dry_run(args, episodes)
 
-    # Refuse to run a single agent step unconfined: abort here if bwrap can't sandbox.
-    sandbox.require_bwrap()
-    print(f"sandbox: {contexts[0].sandbox.status()}" if contexts else "sandbox: bwrap", file=sys.stderr)
+    print(f"sandbox: {contexts[0].sandbox.status()}" if contexts else "sandbox: apptainer", file=sys.stderr)
 
     model_id = resolve_served_model(server_url, args.served_model_name)
     print(

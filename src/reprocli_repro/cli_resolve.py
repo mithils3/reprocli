@@ -54,11 +54,6 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--gpus-per-node must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
-    if getattr(args, "apptainer_image", None):
-        parser.error(
-            "--apptainer-image (or $REPRO_APPTAINER_SIF) is incompatible with the "
-            "mandatory bwrap sandbox; unset it to run agent steps under bwrap."
-        )
 
 
 def apply_defaults(args: argparse.Namespace) -> None:

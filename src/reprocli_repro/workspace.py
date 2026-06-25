@@ -6,17 +6,18 @@ fresh time+random ``run_id`` so re-runs of the same paper never collide) and
 materializes everything the agent needs *before* the loop starts:
 
   - the directory layout (``workspace/`` rw, ``reference/`` ro, ``evidence/``),
-  - an **empty per-paper** ``uv`` venv at ``workspace/.venv`` -- the
-    reproducibility-isolation boundary; never the repo's shared ``.venv``,
   - the read-only ``reference/`` copy (paper LaTeX + every supplement file),
-  - the durable ``evidence/`` sinks.
+  - the durable ``evidence/`` sinks,
+  - optionally (``--build-venv``) a per-paper ``uv`` venv at ``workspace/.venv``.
 
 It deliberately does **not** clone the paper's code or install its dependencies:
-that is the agent's job. It clones via ``workspace_bash`` and installs into this
-venv — including a CUDA-enabled torch — inside a ``run_gpu`` step (see
-``prompts/prompt_reproduce.txt``). The venv is created **clean** (no
-``--system-site-packages``) so nothing from the host/login site-packages leaks
-onto ``sys.path`` and shadows what the agent installs.
+that is the agent's job. By default the agent also builds the venv as its first
+setup step, inside the Apptainer container (see ``prompts/prompt_reproduce.txt``), so
+it inherits the image's prebuilt CUDA ``torch``. When ``--build-venv`` is set the
+optional upfront :func:`build_venv` does the same through the sandbox seam: the venv
+is created **with** ``--system-site-packages`` so it sees the container's torch, which
+is safe here because ``--no-home`` keeps any host ``~/.local`` user-site off
+``sys.path``.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ from reprocli_repro.evidence import EvidencePaths
 from reprocli_repro.inputs import RunPaths, resolve_run_paths
 
 if TYPE_CHECKING:
-    from reprocli_repro.cluster import Cluster
+    from reprocli_repro.sandbox import Sandbox
 
 
 @dataclass
@@ -56,20 +57,21 @@ def create_layout(run_paths: RunPaths) -> None:
 def build_venv(
     workspace: Path,
     *,
-    cluster: "Cluster | None" = None,
-    system_site_packages: bool = False,
+    sandbox: "Sandbox | None" = None,
+    system_site_packages: bool = True,
     python: str | None = None,
     seed: bool = True,
     uv_bin: str = "uv",
 ) -> dict:
-    """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
+    """Create a per-paper ``uv`` venv at ``workspace/.venv``, inside the container.
 
-    Built through the env seam (``env.exec_argv``) on the CPU-setup path. ``--system-
-    site-packages`` is **off**: inheriting the host/login site-packages is exactly
-    how a CPU ``torch`` (or the user's ``~/.local`` packages) leaks onto ``sys.path``
-    and shadows what the agent installs. The venv starts empty and the agent installs
-    everything it needs — including a CUDA-enabled torch from the matching PyTorch
-    index, inside a ``run_gpu`` step (see ``prompts/prompt_reproduce.txt``).
+    Built through the env seam (``env.exec_argv``) wrapped in the episode's Apptainer
+    ``sandbox``, so ``uv`` runs against the *container's* Python and the venv's base
+    interpreter is ABI-compatible with the image. ``--system-site-packages`` is **on**
+    so the venv inherits the image's prebuilt CUDA ``torch``; that is safe here because
+    ``--no-home`` keeps the host ``~/.local`` user-site out of the sandbox, so nothing
+    from the login node can leak onto ``sys.path``. The agent installs the paper's
+    remaining deps into this venv.
 
     ``--seed`` is **on by default** so the venv ships with ``pip``/``setuptools``/
     ``wheel`` already present: agents (and build backends that shell out to pip)
@@ -84,7 +86,7 @@ def build_venv(
         parts.append("--seed")
     if python:
         parts += ["--python", shlex.quote(python)]
-    argv = env.exec_argv(cluster, workspace, " ".join(parts))
+    argv = env.exec_argv(workspace, " ".join(parts), sandbox=sandbox)
     try:
         proc = subprocess.run(argv, cwd=str(workspace), capture_output=True, text=True, timeout=600)
     except (OSError, subprocess.SubprocessError) as exc:
@@ -102,15 +104,19 @@ def prepare_workspace(
     *,
     arxiv_id: str,
     bundle_dataset: str = reference_mod.DEFAULT_DATASET,
-    make_venv: bool = True,
+    make_venv: bool = False,
     materialize_ref: bool = True,
-    cluster: "Cluster | None" = None,
-    system_site_packages: bool = False,
+    sandbox: "Sandbox | None" = None,
+    system_site_packages: bool = True,
     venv_python: str | None = None,
     overwrite_reference: bool = False,
     reference_row: dict | None = None,
 ) -> WorkspaceResult:
-    """Lay down one episode's bundle: dirs, evidence sinks, reference, venv."""
+    """Lay down one episode's bundle: dirs, evidence sinks, reference, optional venv.
+
+    The optional upfront venv (``make_venv``) is built inside ``sandbox`` (the episode's
+    Apptainer container); otherwise the agent builds it itself as its first step.
+    """
     create_layout(run_paths)
     evidence = evidence_mod.init_evidence(run_paths.evidence)
     reference = None
@@ -126,7 +132,7 @@ def prepare_workspace(
     if make_venv:
         venv = build_venv(
             run_paths.workspace,
-            cluster=cluster,
+            sandbox=sandbox,
             system_site_packages=system_site_packages,
             python=venv_python,
         )

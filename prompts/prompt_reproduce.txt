@@ -75,12 +75,17 @@ You operate inside an isolated per-paper workspace. The harness has prepared:
 Never write durable outputs outside these directories (`/tmp` scratch, below, is the one
 exception — and nothing you keep there is durable).
 
-This is enforced, not just convention: every command runs inside a filesystem sandbox
-that makes the system READ-only and only the workspace, evidence, `/tmp`, and the package
-caches (`~/.cache`, e.g. HF/uv/pip) WRITABLE. A write anywhere else (your `$HOME`, other
-paths) fails with a permission error — that means you tried to escape your dirs, so
-redirect the write into the workspace or `/tmp` rather than retrying. Reads are unrestricted
-and your environment (including `HF_TOKEN`) and network are intact, so HF downloads work.
+Every command you run — on BOTH tools — executes INSIDE a read-only Apptainer container
+(an NGC PyTorch image: a recent CUDA stack and a GPU-ready `torch` are already installed).
+This is your operating system: `git`, `python3`, `pip`, `nvcc`, and the CUDA libraries all
+come from the image, so you do NOT `module load` anything and you do NOT install CUDA or
+torch yourself (see environment setup below). The image's `/` is READ-ONLY; only these are
+writable: the workspace, evidence, `/tmp`, and the package caches (`~/.cache`, e.g.
+HF/uv/pip). Reference is mounted read-only. Everything else on the host — your `$HOME` and
+its files, other paths — is NOT mounted at all: a write there fails and those paths simply
+aren't visible, which means you tried to escape your dirs, so redirect into the workspace
+or `/tmp`. Your `HF_TOKEN` and the network ARE available, so Hugging Face downloads
+(including gated repos you have access to) work.
 
 Two places, and YOU decide what runs where:
 
@@ -132,32 +137,39 @@ Delta specifics decide *where* the data must live and for *how long*:
   only; anything re-downloadable belongs on `/tmp`. Delta's network is fast, so fetching
   inside `run_gpu` is quick and the GPU wall-clock it costs is minor — just download there.
 
-Build the environment yourself; a clean per-paper venv exists at {WORKSPACE_DIR}/.venv.
-Install EVERYTHING with `uv`, never bare `pip`:
-`uv pip install --python {WORKSPACE_DIR}/.venv/bin/python <pkgs>`, and always run Python
-through that venv python. The venv lives on disk, so packages persist across a
-release/re-acquire.
+Build the environment yourself. The container already ships a GPU-ready `torch` (built
+against its CUDA) in its system Python — your job is to make a venv that REUSES that torch
+and adds the paper's OTHER dependencies. You never install or build torch.
 
-YOUR VERY FIRST ACTION — before reading the paper, planning, or cloning — open a small
-`run_gpu` allocation and stand up CUDA PyTorch in the venv:
-  `uv pip install --python {WORKSPACE_DIR}/.venv/bin/python torch --torch-backend=auto`
-Run it inside `run_gpu` so uv detects the card and picks the right CUDA build, then
-confirm `torch.cuda.is_available()` is True. Nothing else matters until it is. (Bare
-`pip install torch` on this aarch64/Grace node silently pulls a CPU-only wheel and your
-run never sees the GPU.)
+Create the per-paper venv so it inherits the container's torch, then always run Python
+through it (install with `uv`, never bare `pip`):
+  `uv venv {WORKSPACE_DIR}/.venv --system-site-packages`
+`--system-site-packages` is what lets the venv see the container's prebuilt CUDA torch
+(safe here — your `$HOME` isn't mounted, so no host site-packages can leak in). The venv
+lives on disk, so it persists across a release/re-acquire.
 
-Once True, torch is FROZEN: never reinstall, upgrade, or re-pin it, and ignore any torch
-pin in the repo's requirements.txt / setup.py / environment.yml — the paper's pin usually
-has no CUDA wheel on aarch64, so forcing it just reinstalls the CPU trap. The downgrade is
+YOUR VERY FIRST ACTION — before reading the paper, planning, or cloning — create that venv
+and, in a small `run_gpu` allocation, confirm the container's torch sees the GPU:
+  `uv venv {WORKSPACE_DIR}/.venv --system-site-packages`
+  `{WORKSPACE_DIR}/.venv/bin/python -c "import torch; print(torch.__version__, torch.cuda.is_available())"`
+Run the check inside `run_gpu` (the login node has no GPU) and confirm `torch.cuda.is_available()`
+is True. Nothing else matters until it is.
+
+torch is FROZEN: never `pip install`, reinstall, upgrade, or re-pin it, and IGNORE any
+torch pin in the repo's requirements.txt / setup.py / environment.yml. The container's
+build is the only torch that works on this aarch64/Grace node — a fresh `pip install torch`
+pulls a CPU-only PyPI wheel that shadows it (your run then never sees the GPU), and the
+paper's pin almost never has a matching aarch64 CUDA wheel anyway. The downgrade is
 transitive: a bare `uv pip install -e .` or `-r requirements.txt` re-resolves that pin
 (it's in setup.py/pyproject too, so stripping requirements.txt alone won't stop it) and
-swaps your CUDA torch for a CPU wheel.
+can drop a CPU torch into your venv on top of the container's.
 
-So once torch is up, install everything else with FULL dependency resolution — do NOT
-reach for `--no-deps` to protect torch. `--no-deps` is command-global: on a line that
-also lists packages like transformers/datasets it suppresses THEIR transitive deps too,
-and you'll chase a `ModuleNotFoundError` import-by-import across a dozen installs. Protect
-torch by not re-resolving it, not by starving the resolver. Two commands, kept separate:
+So install everything else with FULL dependency resolution but keep torch OUT of the
+resolve — do NOT reach for `--no-deps` to protect torch. `--no-deps` is command-global: on
+a line that also lists packages like transformers/datasets it suppresses THEIR transitive
+deps too, and you'll chase a `ModuleNotFoundError` import-by-import across a dozen installs.
+Protect torch by not re-resolving it, not by starving the resolver. Two commands, kept
+separate:
 
   # 1) the repo's other requirements — torch line stripped, resolver ON:
   grep -viE '^[[:space:]]*torch([[:space:]=<>~!]|$)' requirements.txt > req.notorch.txt
@@ -168,13 +180,12 @@ torch by not re-resolving it, not by starving the resolver. Two commands, kept s
   uv pip install --python {WORKSPACE_DIR}/.venv/bin/python -e . --no-deps
 
 `--no-deps` goes ONLY on the bare `-e .`/repo install, run as its own command — never on
-a line that also lists PyPI packages. If a dependency itself drags in torch (an explicit
-pin you can't strip), add `--torch-backend=auto` to that install and run it inside
-`run_gpu` so uv resolves torch to the CUDA wheel instead of the CPU trap.
+a line that also lists PyPI packages.
 
-Re-check `torch.cuda.is_available()` after every install. If it flipped to False, a plain
-reinstall won't fix it (uv sees the CPU wheel as already satisfying `torch` and no-ops):
-`uv pip uninstall -y torch`, then re-bootstrap on a GPU.
+Re-check `torch.cuda.is_available()` after installs. If it flipped to False, an install
+dropped a CPU torch into your venv on top of the container's: `uv pip uninstall -y torch`
+from the venv (`--python {WORKSPACE_DIR}/.venv/bin/python`) so the container's torch shows
+through again — do NOT `pip install` a replacement — then re-check.
 
 ======================================================================
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
@@ -192,8 +203,9 @@ HOW TO WORK
 
 You work entirely through the tools provided. A typical episode:
 
-1. Bootstrap compute FIRST (above): GPU allocation → CUDA torch → confirm
-   `torch.cuda.is_available()` before investing in anything else.
+1. Bootstrap compute FIRST (above): create the venv (`--system-site-packages`) → small
+   GPU allocation → confirm the container's `torch.cuda.is_available()` before investing
+   in anything else.
 2. Read the reference LaTeX (and supplement) for the method and the MRE's exact setting,
    verify the target's provenance (above), then write a concrete step-by-step plan.
 3. Set up the workspace: clone the released code (pin the commit when you can), install
