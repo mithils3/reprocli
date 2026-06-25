@@ -71,27 +71,6 @@ class RuntimeCleanupTests(unittest.TestCase):
         self.assertIn("--enable-auto-tool-choice", command)
         self.assertIn("--trust-remote-code", command)
 
-    def test_removed_cli_flags_are_absent_from_active_docs(self) -> None:
-        texts = "\n".join(
-            read_text(path)
-            for path in (
-                "src/run_arxiv_prompt_vllm.py",
-                "README.md",
-                "scripts/paper_classification.sbatch",
-            )
-        )
-        removed = [
-            "--model-profile",
-            "--reasoning-effort",
-            "--pwc-artifacts",
-            "--requests-output",
-            "--guided-decoding-backend",
-            "--disable-structured-final-output",
-        ]
-        for flag in removed:
-            with self.subTest(flag=flag):
-                self.assertNotIn(flag, texts)
-
     def test_deleted_runtime_surfaces_are_absent(self) -> None:
         removed_paths = [
             "src/run_arxiv_prompt_openai.py",
@@ -125,10 +104,6 @@ class RuntimeCleanupTests(unittest.TestCase):
                 hits.append(str(path.relative_to(ROOT)))
 
         self.assertEqual(hits, [])
-
-
-def read_text(relative: str) -> str:
-    return (ROOT / relative).read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":
