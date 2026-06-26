@@ -98,7 +98,7 @@ exact path with `--runs-dir`.
 What each flag does:
 
 - `--paper-id` / `--split dev` — load this one row from the lockfile dataset
-  `Mithilss/reprobench-splits`. `--split dev` is the 15-paper `validation`
+  `Mithilss/reprobench-splits`. `--split dev` is the 14-paper `validation`
   (development) split; `--split eval` is the frozen 100-paper `test` benchmark —
   reserve it for final scoring so development never contaminates it.
 - `--cluster deltaai` — the JIT GPU substrate `run_gpu` allocates on: account
