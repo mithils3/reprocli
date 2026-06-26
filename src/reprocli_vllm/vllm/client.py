@@ -6,6 +6,7 @@ import urllib.request
 from typing import Any
 
 from reprocli_vllm.vllm.endpoint import auth_headers
+from reprocli_vllm.vllm.retry import with_retries
 
 
 def post_chat_completion_row(
@@ -32,18 +33,22 @@ def response_row(custom_id: str, body: Any) -> dict[str, Any]:
 
 def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: float) -> Any:
     data = json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(
-        f"{base_url}/v1/chat/completions",
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            **auth_headers(),
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return json.loads(response.read().decode("utf-8"))
+
+    def _do() -> Any:
+        request = urllib.request.Request(
+            f"{base_url}/v1/chat/completions",
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                **auth_headers(),
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    return with_retries(_do, what=f"chat.completions POST {base_url}")
 
 
 def stream_chat_completion(base_url: str, row: dict[str, Any], timeout: float) -> Any:
@@ -62,27 +67,31 @@ def post_streaming_chat_completion(
     timeout: float,
 ) -> Any:
     data = json.dumps(body).encode("utf-8")
-    request = urllib.request.Request(
-        f"{base_url}/v1/chat/completions",
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "text/event-stream",
-            **auth_headers(),
-        },
-        method="POST",
-    )
-    builder = StreamedResponseBuilder(body["model"])
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        for raw_line in response:
-            line = raw_line.decode("utf-8", errors="replace").strip()
-            if not line or line.startswith(":") or not line.startswith("data:"):
-                continue
-            payload = line[5:].strip()
-            if payload == "[DONE]":
-                break
-            builder.add_chunk(json.loads(payload))
-    return builder.response()
+
+    def _do() -> Any:
+        request = urllib.request.Request(
+            f"{base_url}/v1/chat/completions",
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+                **auth_headers(),
+            },
+            method="POST",
+        )
+        builder = StreamedResponseBuilder(body["model"])
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            for raw_line in response:
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line or line.startswith(":") or not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if payload == "[DONE]":
+                    break
+                builder.add_chunk(json.loads(payload))
+        return builder.response()
+
+    return with_retries(_do, what=f"chat.completions stream {base_url}")
 
 
 class StreamedResponseBuilder:
