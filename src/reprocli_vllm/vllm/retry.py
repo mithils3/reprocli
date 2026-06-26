@@ -9,7 +9,12 @@ bounded exponential backoff + jitter, retrying ONLY errors that are plausibly
 transient -- caller errors (400/401/403/404/422, bad JSON) re-raise immediately
 so we never burn budget spinning on something that can't succeed.
 
-Tunable via env: ``REPROCLI_HTTP_MAX_ATTEMPTS`` (default 6).
+The defaults give a ~2 minute tolerance window (8 attempts, backoff capped at
+60s) -- a single ``urlopen`` raising ``gaierror`` only costs the backoff sleep
+since DNS resolution fails fast, so a wide window rides out a multi-second outage
+cheaply while a genuinely-down brain still bails in ~2 minutes.
+
+Tunable via env: ``REPROCLI_HTTP_MAX_ATTEMPTS`` (default 8).
 """
 
 from __future__ import annotations
@@ -27,9 +32,9 @@ T = TypeVar("T")
 # Transient/server-side or rate-limit statuses worth retrying. Everything else in
 # the 4xx range is a caller error that a retry cannot fix.
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})
-DEFAULT_MAX_ATTEMPTS = 6
+DEFAULT_MAX_ATTEMPTS = 8
 DEFAULT_BASE_DELAY = 1.0
-DEFAULT_MAX_DELAY = 30.0
+DEFAULT_MAX_DELAY = 60.0
 
 
 def _max_attempts() -> int:

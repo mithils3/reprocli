@@ -27,6 +27,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from reprocli_vllm.vllm.retry import with_retries
+
 ENV_SERVER_URL = "REPROCLI_SERVER_URL"
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
@@ -89,10 +91,14 @@ def resolve_server_url(cli_value: str | None) -> str | None:
 def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
     """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
-    request = urllib.request.Request(url, headers=auth_headers(), method="GET")
-    try:
+
+    def _do() -> dict:
+        request = urllib.request.Request(url, headers=auth_headers(), method="GET")
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            data = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
+
+    try:
+        data = with_retries(_do, what=f"GET {url}")
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"could not list models at {url}: {exc}") from exc
     entries = data.get("data") if isinstance(data, dict) else None
