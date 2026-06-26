@@ -137,6 +137,18 @@ class ReleaseAndLostTests(unittest.TestCase):
         self.assertTrue(session_lost(lost))
         self.assertFalse(session_lost(ok))
 
+    def test_session_lost_detects_time_wall_expiry(self):
+        # A held allocation that hit its --time wall drains COMPLETING -> EXPIRED; each
+        # stage produces a distinct srun message and every one must drop the session so
+        # the next run_gpu re-acquires instead of hammering the dead jobid.
+        for stderr in (
+            "srun: error: Unable to create step for job 2564702: Job/step already completing or completed",
+            "srun: error: Slurm job 2564702 has expired",
+            "srun: Check SLURM_JOB_ID environment variable. Expired or invalid job 2564702",
+        ):
+            step = StepResult(ok=False, returncode=1, stdout="", stderr=stderr, elapsed_s=0.1, command=["srun"])
+            self.assertTrue(session_lost(step), stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

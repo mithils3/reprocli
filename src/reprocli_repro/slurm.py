@@ -48,7 +48,17 @@ if TYPE_CHECKING:
 _JOBID_RE = re.compile(r"allocation (\d+)")
 # srun into a dead/expired allocation fails with one of these — the held session is
 # gone (hit --time or was cancelled), so the caller should drop it and re-acquire.
-_LOST_MARKERS = ("invalid job id", "unable to confirm allocation", "job allocation has been revoked")
+# The first three are the scancel/revoke path; the last three are the --time-expiry
+# path (a held job drains COMPLETING -> EXPIRED, each with its own srun wording), which
+# is the common one for short held sessions and must drop the session just the same.
+_LOST_MARKERS = (
+    "invalid job id",
+    "unable to confirm allocation",
+    "job allocation has been revoked",
+    "already completing or completed",  # "Unable to create step ... Job/step already completing or completed"
+    "has expired",                      # "Slurm job N has expired"
+    "expired or invalid job",           # "Check SLURM_JOB_ID environment variable. Expired or invalid job N"
+)
 
 
 @dataclass
