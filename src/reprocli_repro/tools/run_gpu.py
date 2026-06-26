@@ -47,6 +47,9 @@ MAX_MINUTES = 24 * 60
 # Bound an acquire that never returns (wedged in queue) without killing a legitimate
 # long queue wait: wait the hold's own wall cap plus this grace before giving up.
 QUEUE_GRACE_SECONDS = 4 * 3600
+# Warn the model when the held allocation is within this many seconds of its --time
+# wall: past it SLURM reclaims the node mid-step and any unsaved state is lost.
+SESSION_WARN_SECONDS = 120
 
 
 def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -110,6 +113,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
 
     cost = gpu_session.charge_accrued(ctx)
     held = gpu_session.held_seconds(session)
+    session_remaining = max(0.0, session.minutes * 60 - held)
     _record(ctx, command, session.gpus, session.minutes, session.hw, step=step, cost=cost, held=held)
     if release_after:
         gpu_session.release(ctx, "agent")
@@ -125,6 +129,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         "returncode": step.returncode,
         "run_seconds": round(step.elapsed_s, 1),
         "held_seconds": round(held, 1),
+        "session_remaining_seconds": 0.0 if release_after else round(session_remaining, 1),
         "cost_h100_hours": round(cost, 4),
         "remaining_h100_hours": round(ctx.budget.remaining(), 4),
         "budget_exhausted": ctx.budget.exhausted(),
@@ -134,6 +139,9 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         "stderr": step.stderr[:RUN_FILE_DEFAULT_CHARS],
         "truncated": len(step.stdout) > RUN_FILE_DEFAULT_CHARS or len(step.stderr) > RUN_FILE_DEFAULT_CHARS,
     }
+    warning = None if release_after else _expiry_warning(session, session_remaining)
+    if warning:
+        result["session_expiry_warning"] = warning
     if note:
         result["note"] = note
     return result
@@ -221,6 +229,23 @@ def _clamp_note(requested: Any, effective: int, cap: int) -> str | None:
     return None
 
 
+def _expiry_warning(session: Any, remaining_seconds: float) -> str | None:
+    """Loud heads-up when the held allocation is about to hit its --time wall.
+
+    Past the wall SLURM reclaims the node mid-step, so anything not written to disk
+    (training state, in-memory results) is gone. Surfaced so the model checkpoints and
+    re-acquires a fresh/longer hold *before* it loses the node, not after.
+    """
+    if remaining_seconds > SESSION_WARN_SECONDS:
+        return None
+    return (
+        f"SESSION ENDING: ~{remaining_seconds / 60:.1f} min left on this {session.minutes}-min "
+        f"allocation (jobid {session.jobid}) before SLURM reclaims the node and loses any unsaved "
+        "state. Save results/checkpoints to disk now. Long work left? release=true and start a "
+        "fresh session with a larger minutes= (or finish what fits in the time remaining)."
+    )
+
+
 def _reuse_note(arguments: dict[str, Any], session: Any) -> str | None:
     """Warn when gpus/minutes are passed to a call that reuses a live session."""
     asked_gpus = arguments.get("gpus")
@@ -252,7 +277,10 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
         "install between commands — so set release=true the moment you are done with "
         "the GPU to stop the meter (re-acquire later if you need it again). The command "
         "runs with the workspace as its cwd; cost and remaining budget are returned and "
-        "recorded to evidence/.",
+        "recorded to evidence/. Each result also reports session_remaining_seconds — the "
+        "wall left before this allocation hits its `minutes` (--time) cap and SLURM reclaims "
+        "the node (losing any unsaved state); when it runs low a session_expiry_warning tells "
+        "you to checkpoint to disk and, if you need more time, release and re-acquire.",
         {
             "command": {
                 "type": "string",
