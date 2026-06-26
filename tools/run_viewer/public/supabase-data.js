@@ -52,6 +52,31 @@ const RemoteSource = {
 
   unsubscribe(ch) { if (ch && this.client) this.client.removeChannel(ch); },
 
+  // ---- user-authored run tags (repro_tags: anon read + write) --------------
+  async listTags() {
+    if (!this.client) return [];
+    const { data, error } = await this.client.from("repro_tags").select("run_id,tags");
+    if (error) throw error;
+    return data || [];
+  },
+  async setTags(runId, tags) {
+    if (!this.client) throw new Error("offline");
+    if (!tags.length) {
+      const { error } = await this.client.from("repro_tags").delete().eq("run_id", runId);
+      if (error) throw error;
+      return;
+    }
+    const { error } = await this.client.from("repro_tags")
+      .upsert({ run_id: runId, tags }, { onConflict: "run_id" });
+    if (error) throw error;
+  },
+  subscribeTags(onChange) {
+    return this.client.channel("tags")
+      .on("postgres_changes", { event: "*", schema: "public", table: "repro_tags" },
+        (p) => onChange(p.new || p.old, p.eventType))
+      .subscribe();
+  },
+
   // event key → which Round a row belongs to (mirrors render.js's data-key)
   roundKey(e) { return (e.kind === "final" ? "final:" : "round:") + e.round_index; },
 

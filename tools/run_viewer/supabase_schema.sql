@@ -127,5 +127,38 @@ insert into storage.buckets (id, name, public)
   values ('repro-logs', 'repro-logs', true)
   on conflict (id) do update set public = true;
 
+-- ---------------------------------------------------------------------------
+-- repro_tags  (user-authored run labels). Unlike repro_runs/repro_events, the
+-- browser writes these directly, so anon is READ + WRITE here — same trust model
+-- as verify_app, where reviewers type into the app. One row per run_id holds the
+-- whole tag array; the viewer upserts it (and deletes the row when it empties).
+-- ---------------------------------------------------------------------------
+create table if not exists public.repro_tags (
+  run_id     text primary key,             -- joins repro_runs.run_id (no FK on purpose)
+  tags       text[] not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists repro_tags_touch on public.repro_tags;
+create trigger repro_tags_touch before update on public.repro_tags
+  for each row execute function public.touch_updated_at();
+
+alter table public.repro_tags enable row level security;
+drop policy if exists repro_tags_read   on public.repro_tags;
+create policy repro_tags_read   on public.repro_tags for select to anon, authenticated using (true);
+drop policy if exists repro_tags_insert on public.repro_tags;
+create policy repro_tags_insert on public.repro_tags for insert to anon, authenticated with check (true);
+drop policy if exists repro_tags_update on public.repro_tags;
+create policy repro_tags_update on public.repro_tags for update to anon, authenticated using (true) with check (true);
+drop policy if exists repro_tags_delete on public.repro_tags;
+create policy repro_tags_delete on public.repro_tags for delete to anon, authenticated using (true);
+
+do $$ begin
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='repro_tags') then
+    alter publication supabase_realtime add table public.repro_tags;
+  end if;
+end $$;
+
 -- tell PostgREST to pick up the new columns immediately (Supabase also auto-reloads)
 notify pgrst, 'reload schema';

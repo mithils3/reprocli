@@ -5,7 +5,7 @@
 
 const R = window.RENDER;
 const state = {
-  view: "live", runs: [], byId: {}, filter: "all", search: "",
+  view: "live", runs: [], byId: {}, filter: "all", search: "", tagFilter: null,
   currentRunId: null, liveRun: null, liveEvents: [], seenSeq: new Set(), runChannel: null, remote: false,
 };
 const $ = (s) => document.querySelector(s);
@@ -33,7 +33,22 @@ function visibleRuns() {
   const q = state.search.toLowerCase();
   return state.runs.filter((r) =>
     (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
+    (!state.tagFilter || (window.Tags && Tags.has(r.run_id, state.tagFilter))) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id}`).toLowerCase().includes(q)));
+}
+// tag filter chips (sidebar) — union of all tags; click to filter, click to clear
+function renderTagFilters() {
+  const host = $("#tag-filters");
+  if (!host) return;
+  const tags = window.Tags ? Tags.all() : [];
+  if (state.tagFilter && !tags.includes(state.tagFilter)) state.tagFilter = null;
+  if (!tags.length) { host.innerHTML = ""; return; }
+  host.innerHTML = tags.map((t) =>
+    `<button class="tag-flt ${state.tagFilter === t ? "active" : ""}" data-t="${R.esc(t)}">${R.esc(t)}</button>`).join("");
+  host.querySelectorAll(".tag-flt").forEach((b) => b.addEventListener("click", () => {
+    state.tagFilter = state.tagFilter === b.dataset.t ? null : b.dataset.t;
+    renderTagFilters(); renderList();
+  }));
 }
 function renderList() {
   const list = $("#run-list");
@@ -60,6 +75,22 @@ async function loadRunList() {
   } catch (e) { state.remote = false; setConn(); renderList(); }
 }
 
+// tags changed (local edit or realtime from another browser): refresh the views
+function onTagsChange() {
+  renderTagFilters();
+  if (state.view === "live") {
+    renderList();
+    const top = state.currentRunId && liveDetail().querySelector(".run-top");
+    if (top) {
+      const refocus = document.activeElement && document.activeElement.classList.contains("tag-input");
+      Tags.mount(top);
+      if (refocus) { const i = top.querySelector(".tag-input"); if (i) i.focus(); }
+    }
+  } else if (state.view === "stats" && window.Stats && window.Stats.onTags) {
+    window.Stats.onTags();
+  }
+}
+
 // ---- open + stream one run -------------------------------------------------
 async function openRun(runId) {
   state.currentRunId = runId;
@@ -72,6 +103,7 @@ async function openRun(runId) {
   state.liveRun = data.run; state.liveEvents = data.events;
   state.seenSeq = new Set(data.events.map((e) => e.seq));
   R.renderRun(liveDetail(), data.run, data.rounds);
+  if (window.Tags) Tags.mount(liveDetail());
   state.runChannel = window.RemoteSource.subscribeRun(runId, onLiveEvent, onRunPatch);
 }
 function onLiveEvent(e) {
@@ -92,7 +124,7 @@ function onRunPatch(patch) {
   if (!patch || patch.run_id !== state.currentRunId) return;
   Object.assign(state.liveRun, patch);
   const top = liveDetail().querySelector(".run-top");
-  if (top) top.innerHTML = R.topHtml(state.liveRun);
+  if (top) { top.innerHTML = R.topHtml(state.liveRun); if (window.Tags) Tags.mount(top); }
   upsertRun(state.liveRun); renderList();
 }
 
@@ -154,6 +186,11 @@ function boot() {
   loadRunList();
   if (state.remote) {
     window.RemoteSource.subscribeRunList((run) => { upsertRun(run); if (state.view === "live") renderList(); });
+    if (window.Tags) {
+      Tags.onChange(onTagsChange);
+      Tags.load().catch(() => {});
+      window.RemoteSource.subscribeTags((row, evt) => Tags.applyRow(row, evt));
+    }
   } else {
     liveDetail().innerHTML = `<div class="empty">Supabase isn't configured/reachable. Switch to <b>Local file</b> to view a transcript, or set the keys in <code>config.js</code>.</div>`;
   }

@@ -91,13 +91,15 @@ function runHeaderHtml(run) {
   const dl = run.full_log_url ? `<a class="link" href="${esc(run.full_log_url)}" target="_blank" rel="noopener">⬇ full log</a>` : "";
   const times = (run.started_at || run.updated_at)
     ? `<div class="muted" style="font-size:12px;margin-top:6px">started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}${run.host ? " · " + esc(run.host) : ""}</div>` : "";
+  // editable tag bar — Tags.mount() fills it after render (needs a real run_id)
+  const tagbar = (window.Tags && run.run_id) ? `<div class="tagbar" data-run="${esc(run.run_id)}"></div>` : "";
   return `<div class="dhead"><div class="dhead-top">
     <span class="pid big">${esc(run.arxiv_id || "?")}</span>
     <span class="badge ${statusBadgeClass(si.cls)}"${deadTip}>${si.label}</span>
     ${run.model ? `<span class="badge">${esc(run.model)}</span>` : ""}
     ${run.budget != null ? `<span class="schip">${esc(run.budget)}h budget</span>` : ""}
     ${exit}${dl}
-  </div><h2>${esc(run.run_id || run.arxiv_id || "transcript")}</h2>${times}</div>`;
+  </div><h2>${esc(run.run_id || run.arxiv_id || "transcript")}</h2>${times}${tagbar}</div>`;
 }
 
 // ---- calls / rounds --------------------------------------------------------
@@ -169,5 +171,6 @@ function renderRunListItem(run) {
       <span class="ptitle">${esc(run.model || "—")}</span>
       <span class="prow2"><span class="schip">${esc(run.budget ?? "?")}h</span>
         ${live ? '<span class="live-tag">● live</span>' : `<span class="schip ${si.cls === "dead" ? "dead" : ""}">${si.label}</span>`}
-        <span class="schip">${fmtTime(run.updated_at)}</span></span></span></button>`);
+        <span class="schip">${fmtTime(run.updated_at)}</span></span>
+      ${window.Tags ? window.Tags.chipsHtml(run.run_id) : ""}</span></button>`);
 }

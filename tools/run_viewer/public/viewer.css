@@ -117,6 +117,68 @@
 .s-rid { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
 .s-sub { color: var(--muted); font-size: 11px; }
 
+/* ---- run tags (repro_tags) ---------------------------------------------- */
+.tag-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; vertical-align: middle; }
+.tag-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600;
+  color: var(--accent-strong); background: var(--accent-tint); border: 1px solid var(--accent);
+  border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+
+.tagbar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tagbar .tag-lead { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  font-weight: 600; }
+.tagbar .tag-chip.edit { font-size: 11px; padding: 2px 4px 2px 9px; }
+.tag-x { background: none; border: 0; color: var(--accent-strong); font-size: 14px; line-height: 1;
+  padding: 0 2px; border-radius: 50%; opacity: .6; }
+.tag-x:hover { opacity: 1; color: var(--no-deep); }
+.tag-input { font: inherit; font-size: 11px; padding: 2px 9px; border: 1px dashed var(--line-strong);
+  border-radius: 999px; background: var(--panel); color: var(--txt); width: 92px; }
+.tag-input:focus { outline: none; border-color: var(--accent); border-style: solid;
+  box-shadow: 0 0 0 3px var(--accent-tint); }
+.tag-off { font-size: 10px; color: var(--muted); font-style: italic; }
+
+/* tag filter chips (sidebar + stats) */
+.tag-filters, .stats-tagfilters { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.tag-filters { padding: 0 12px 10px; }
+.stats-tagfilters { margin: -6px 0 16px; }
+.stats-tagfilters:empty, .tag-filters:empty { display: none; }
+.tag-flt-lead { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  font-weight: 600; margin-right: 2px; }
+.tag-flt { background: var(--accent-tint); border: 1px solid var(--accent); color: var(--accent-strong);
+  padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; transition: all .12s; }
+.tag-flt:hover { filter: brightness(.97); }
+.tag-flt.active { background: var(--accent); color: #fff; }
+
+/* stats: tags cell + exclude-dead toggle */
+.s-tags { max-width: 220px; white-space: normal; }
+.s-tags .tag-chips { margin: 0; }
+.excl-dead { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted);
+  cursor: pointer; margin-left: 4px; user-select: none; }
+.excl-dead input { accent-color: var(--accent); cursor: pointer; }
+
+/* ---- charts (Stats tab) -------------------------------------------------- */
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;
+  margin-bottom: 22px; }
+.chart-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; box-shadow: var(--shadow); }
+.chart-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.chart-t { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--txt); }
+.chart-s { font-size: 11px; color: var(--muted); }
+.chart-legend { display: flex; gap: 14px; margin: 6px 0 10px; font-size: 11px; color: var(--muted); }
+.chart-legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.bars { display: grid; gap: 8px; margin-top: 6px; }
+.bar-row { display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 10px; }
+.bar-label { font-family: var(--mono); font-size: 11px; color: var(--txt); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 14px; background: var(--panel2); border-radius: 5px; overflow: hidden; display: flex; }
+.seg { height: 100%; display: block; }
+.seg-prompt, .sw.seg-prompt { background: var(--accent); }
+.seg-compl, .sw.seg-compl { background: var(--yes); }
+.seg-compute, .sw.seg-compute { background: var(--unk); }
+.bar-val { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+  min-width: 48px; text-align: right; }
+.chart-empty { font-size: 12px; color: var(--muted); padding: 14px 0; text-align: center; }
+
 /* raw json tree (tool-call args) — borrowed from verify_app json_view.js styling */
 .jraw { font-family: var(--mono); font-size: 12px; line-height: 1.7; padding: 2px; overflow-x: auto; }
 .jchildren { padding-left: 1.25em; border-left: 1px solid var(--line); margin-left: .4em; }

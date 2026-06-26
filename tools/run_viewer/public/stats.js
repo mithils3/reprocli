@@ -37,6 +37,7 @@
     { key: "cached", label: "cached tok", num: true, tip: "prompt tokens served from cache (re-sent context)" },
     { key: "uncached", label: "uncached tok", num: true, tip: "fresh input actually processed: prompt − cached (excludes re-sent context served from cache)" },
     { key: "spent", label: "H100·h", num: true, tip: "compute spent" },
+    { key: "tags", label: "tags" },
     { key: "status", label: "status" },
   ];
 
@@ -60,6 +61,7 @@
 
   const Stats = {
     rows: null, sortKey: "total", sortDir: -1, filter: "all", search: "", busy: false, msg: "",
+    tagFilter: null, excludeDead: false,
 
     root() { return document.querySelector("#stats-root"); },
 
@@ -87,14 +89,18 @@
     },
 
     visible() {
-      const q = this.search.trim().toLowerCase();
+      const q = this.search.trim().toLowerCase(), T = window.Tags;
       return (this.rows || []).filter((r) =>
         (this.filter === "all" || r.cls === this.filter) &&
+        (!this.tagFilter || (T && T.has(r.run_id, this.tagFilter))) &&
         (!q || (`${r.arxiv_id} ${r.model} ${r.run_id}`).toLowerCase().includes(q)));
     },
     sortRows(rows) {
-      const c = COLS.find((x) => x.key === this.sortKey) || COLS[0], dir = this.sortDir;
+      const c = COLS.find((x) => x.key === this.sortKey) || COLS[0], dir = this.sortDir, T = window.Tags;
       return [...rows].sort((a, b) => {
+        if (c.key === "tags") {
+          return ((T ? T.get(a.run_id) : []).join(",")).localeCompare((T ? T.get(b.run_id) : []).join(",")) * dir;
+        }
         let x = a[c.key], y = b[c.key];
         if (c.num) { x = x == null ? -Infinity : x; y = y == null ? -Infinity : y; return (x - y) * dir; }
         return String(x).localeCompare(String(y)) * dir;
@@ -107,14 +113,13 @@
       this.renderBody();
     },
 
-    summaryHtml(rows) {
-      const sum = (k) => { let any = false, t = 0; for (const r of rows) if (r[k] != null) { any = true; t += r[k]; } return any ? t : null; };
-      const dead = rows.filter((r) => r.cls === "dead").length;
+    summaryHtml(active, deadCount, excluded) {
+      const sum = (k) => { let any = false, t = 0; for (const r of active) if (r[k] != null) { any = true; t += r[k]; } return any ? t : null; };
       const prompt = sum("prompt"), cached = sum("cached"), rate = pct(cached, prompt);
       const uncached = sum("uncached"), urate = pct(uncached, prompt);
       const cards = [
-        ["runs", String(rows.length), ""],
-        ["dead", String(dead), `no update ${DEAD_H}h+`],
+        ["runs", String(active.length), excluded && deadCount ? `${deadCount} dead hidden` : ""],
+        ["dead", String(deadCount), excluded ? "excluded" : `no update ${DEAD_H}h+`],
         ["rounds", fmt(sum("rounds")), ""],
         ["prompt", fmtK(prompt), "tokens"],
         ["completion", fmtK(sum("completion")), "tokens"],
@@ -124,7 +129,7 @@
         ["compute", fmtH(sum("spent")), "H100·h"],
       ];
       return `<div class="stat-cards">${cards.map(([l, v, s]) =>
-        `<div class="stat-card ${l === "dead" && dead ? "warn" : ""}"><div class="sc-v">${v}</div><div class="sc-l">${esc(l)}</div>${s ? `<div class="sc-s">${esc(s)}</div>` : ""}</div>`).join("")}</div>`;
+        `<div class="stat-card ${l === "dead" && deadCount && !excluded ? "warn" : ""}"><div class="sc-v">${v}</div><div class="sc-l">${esc(l)}</div>${s ? `<div class="sc-s">${esc(s)}</div>` : ""}</div>`).join("")}</div>`;
     },
 
     rowHtml(r) {
@@ -142,6 +147,7 @@
         <td class="num">${fmt(r.cached)}${cacheSub}</td>
         <td class="num">${fmt(r.uncached)}${uncSub}</td>
         <td class="num">${r.spent == null ? "—" : fmtH(r.spent)}</td>
+        <td class="s-tags">${window.Tags ? window.Tags.chipsHtml(r.run_id) : ""}</td>
         <td><span class="badge ${R.statusBadgeClass(r.cls)}">${esc(r.statusLabel)}</span></td>
       </tr>`;
     },
@@ -171,9 +177,13 @@
         <div class="s-note">${note}</div>
         <div class="stats-filters">
           <div class="filters-row">${FILTERS.map(([k, l]) =>
-            `<button class="filt ${this.filter === k ? "active" : ""}" data-f="${k}">${l}</button>`).join("")}</div>
+            `<button class="filt ${this.filter === k ? "active" : ""}" data-f="${k}">${l}</button>`).join("")}
+            <label class="excl-dead" title="drop dead runs from the cards, graphs and table">
+              <input type="checkbox" id="excl-dead" ${this.excludeDead ? "checked" : ""} /> exclude dead</label>
+          </div>
           <input id="stats-search" class="s-search" type="search" placeholder="filter by arxiv id, model, or run id…" value="${esc(this.search)}" />
         </div>
+        <div class="stats-tagfilters" id="stats-tagfilters"></div>
         <div id="stats-body"></div>`;
       const rc = document.querySelector("#stats-recompute");
       if (rc) rc.addEventListener("click", () => this.load(true));
@@ -182,10 +192,32 @@
         el.querySelectorAll(".stats-filters .filt").forEach((x) => x.classList.toggle("active", x.dataset.f === this.filter));
         this.renderBody();
       }));
+      const ex = document.querySelector("#excl-dead");
+      if (ex) ex.addEventListener("change", () => { this.excludeDead = ex.checked; this.renderBody(); });
       const s = document.querySelector("#stats-search");
       if (s) s.addEventListener("input", () => { this.search = s.value; this.renderBody(); });
+      this.renderTagFilters();
       this.renderBody();
     },
+
+    // tag filter chips (stats) — union of all tags; click to filter, click to clear
+    renderTagFilters() {
+      const host = document.querySelector("#stats-tagfilters");
+      if (!host) return;
+      const tags = window.Tags ? window.Tags.all() : [];
+      if (this.tagFilter && !tags.includes(this.tagFilter)) this.tagFilter = null;
+      host.innerHTML = tags.length
+        ? `<span class="tag-flt-lead">tag</span>` + tags.map((t) =>
+            `<button class="tag-flt ${this.tagFilter === t ? "active" : ""}" data-t="${esc(t)}">${esc(t)}</button>`).join("")
+        : "";
+      host.querySelectorAll(".tag-flt").forEach((b) => b.addEventListener("click", () => {
+        this.tagFilter = this.tagFilter === b.dataset.t ? null : b.dataset.t;
+        this.renderTagFilters(); this.renderBody();
+      }));
+    },
+
+    // tags changed elsewhere while the Stats tab is open
+    onTags() { if (this.root()) { this.renderTagFilters(); this.renderBody(); } },
 
     renderBody() {
       const body = document.querySelector("#stats-body");
@@ -194,7 +226,10 @@
       if (!this.rows.length) { body.innerHTML = `<div class="empty">No runs found.</div>`; return; }
       const rows = this.visible();
       if (!rows.length) { body.innerHTML = `<div class="empty">No runs match this filter.</div>`; return; }
-      body.innerHTML = this.summaryHtml(rows) + this.tableHtml(rows);
+      const deadCount = rows.filter((r) => r.cls === "dead").length;
+      const active = this.excludeDead ? rows.filter((r) => r.cls !== "dead") : rows;
+      const charts = window.Charts ? window.Charts.render(active) : "";
+      body.innerHTML = this.summaryHtml(active, deadCount, this.excludeDead) + charts + this.tableHtml(active);
       body.querySelectorAll(".stats-table th").forEach((th) =>
         th.addEventListener("click", () => this.setSort(th.dataset.k)));
     },

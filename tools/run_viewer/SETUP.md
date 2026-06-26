@@ -18,10 +18,12 @@ tools/run_viewer/
     config.js          # SUPABASE_URL / anon key (read-only) / FULL_LOG_BASE_URL
     parser.js          # transcript text -> normalized rounds[]
     render.js          # rounds[] -> round cards (shared by local + live)
-    supabase-data.js   # Supabase read + Realtime -> rounds[]
+    supabase-data.js   # Supabase read + Realtime -> rounds[]; tag read/write
+    tags.js            # user-authored run tags (repro_tags) store + editor
+    charts.js          # Stats-tab bar charts (tokens / compute by model)
     app.js             # boot, tabs, drag/drop, run list, live append
     styles.css viewer.css theme.css
-  supabase_schema.sql  # the two tables + RLS + Realtime + Storage bucket
+  supabase_schema.sql  # the three tables + RLS + Realtime + Storage bucket
   setup_db.py          # create the tables for you (Management API / psql)
   SETUP.md
 ```
@@ -57,8 +59,11 @@ python3 tools/run_viewer/setup_db.py      # needs psycopg installed
 **Option C — manual:** open Supabase → SQL Editor → paste all of
 `supabase_schema.sql` → Run.
 
-This creates `repro_runs`, `repro_events` (anon read-only; Realtime on), the
-`updated_at` trigger, and the public `repro-logs` Storage bucket.
+This creates `repro_runs`, `repro_events` (anon read-only; Realtime on),
+`repro_tags` (anon read **and write**, so the browser can label runs directly —
+same trust model as verify_app), the `updated_at` trigger, and the public
+`repro-logs` Storage bucket. Re-running it is safe; it adds `repro_tags` to an
+existing deployment without touching the other tables.
 
 ## 3. Configure `public/config.js`
 
@@ -108,7 +113,9 @@ exactly what lands in `agent.log`.
 ## Notes / limits
 
 - **Trust model:** the service-role key can write/delete anything — keep it in the
-  cluster env only. The browser uses the anon read-only key.
+  cluster env only. The browser uses the anon key: read-only on `repro_runs` /
+  `repro_events`, read+write on `repro_tags` only (so anyone with the URL can edit
+  tags — fine for a personal tool; tighten the RLS if that ever changes).
 - **Truncation:** per-event stdout/stderr is capped (full text in `agent.full.log`,
   optionally uploaded to Storage). The viewer flags truncated output.
 - **Realtime volume:** the viewer subscribes to one open run at a time; the run

@@ -43,6 +43,7 @@
       <aside class="sidebar">
         <input id="search" type="search" placeholder="Search arxiv id or model…" />
         <div class="filters" id="filters"></div>
+        <div class="tag-filters" id="tag-filters"></div>
         <div id="run-list" class="paper-list"></div>
       </aside>
       <section id="live-detail" class="detail">
@@ -73,11 +74,16 @@
     </main>
   </div>
 
+  <!-- shared autocomplete for tag inputs (filled from existing tags) -->
+  <datalist id="tag-suggest"></datalist>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="parser.js"></script>
   <script src="render.js"></script>
   <script src="supabase-data.js"></script>
+  <script src="tags.js"></script>
+  <script src="charts.js"></script>
   <script src="stats.js"></script>
   <script src="app.js"></script>
   <script>
