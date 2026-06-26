@@ -26,6 +26,13 @@ ROW = {
     "claim_evidence": "Table 4 shows 8.56 kB vs 63 kB.",
     "mre_config": "Run analysis_optimization.py; peak_mem within 5%.",
     "agent_task": "Clone repo, install numpy, run the optimizer.",
+    "match_target": {
+        "config": "MBV2-w0.35, P1 unconstrained",
+        "metric": "Peak RAM usage",
+        "value": "8.56 kB",
+        "scope": "MBV2-w0.35 model",
+        "match_bar_kind": "point_estimate",
+    },
     "paper_kind": "empirical",
     "tier": "Easy",
     "selection_band": "0-8",
@@ -112,6 +119,24 @@ class RenderTests(unittest.TestCase):
         self.assertIn("2505.11483", prompt)
         self.assertIn("8 H100-equivalent hours", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
+
+    def test_match_target_tuple_is_rendered(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        self.assertIn("Pinned success bar", prompt)
+        self.assertIn("Peak RAM usage", prompt)
+        self.assertIn("8.56 kB", prompt)
+        self.assertIn("MBV2-w0.35 model", prompt)
+        self.assertIn("reproduce a value close to the target", prompt)  # point_estimate
+
+    def test_match_target_falls_back_when_unpinned(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "x", 8.0, run_id="RID")
+        row = {k: v for k, v in ROW.items() if k != "match_target"}
+        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
+        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
+        self.assertIn("No success-bar tuple pinned", prompt)
 
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):

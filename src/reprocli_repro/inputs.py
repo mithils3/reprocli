@@ -218,6 +218,7 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{BUDGET_H100_HOURS}": format_hours(budget),
         "{CENTRAL_CLAIM}": _text_or(row.get("central_claim"), "(no central claim recorded)"),
         "{CLAIM_EVIDENCE}": _text_or(row.get("claim_evidence"), "(no reported numbers recorded)"),
+        "{MATCH_TARGET}": _match_target_block(row),
         "{MRE_CONFIG}": _text_or(row.get("mre_config"), "(no MRE configuration recorded)"),
         "{AGENT_TASK}": _text_or(row.get("agent_task"), "(no step-by-step task recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
@@ -233,6 +234,47 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
 def _text_or(value: object, fallback: str) -> str:
     text = str(value).strip() if value is not None else ""
     return text or fallback
+
+
+# Plain-language reading of each pinned match_bar_kind. The agent is shown the SHAPE of
+# the bar so it knows how it will be judged; `op`/`tolerance` stay auditor-side (the
+# auditor derives them per rubric C1, and "how close counts" is not the agent's to set).
+_MATCH_BAR_GUIDANCE = {
+    "point_estimate": "reproduce a value close to the target",
+    "threshold": "meet or beat the target as a floor/ceiling",
+    "direction": "beat the stated baseline in the given direction",
+    "magnitude": "reproduce a delta of the stated size",
+    "none": "qualitative claim — no single scalar to hit",
+}
+
+
+def _match_target_block(row: dict) -> str:
+    """Render the pinned success-bar tuple the Stage-7 auditor scores against.
+
+    Surfacing the same structured anchor (config, metric, value, scope, match_bar_kind)
+    the auditor adopts verbatim keeps the agent and the auditor aiming at one identical
+    target. `op`/`tolerance` are deliberately omitted — the auditor sets those.
+    """
+    target = row.get("match_target")
+    if not isinstance(target, dict) or not any(
+        str(target.get(k, "")).strip() for k in ("metric", "value")
+    ):
+        return (
+            "(No success-bar tuple pinned for this paper — fix the exact config, metric, "
+            "value, and scope yourself from the reported numbers above and the reference "
+            "LaTeX, and do not loosen them.)"
+        )
+    fields = (
+        ("Config (what to run)", target.get("config")),
+        ("Metric", target.get("metric")),
+        ("Target value", target.get("value")),
+        ("Scope (what to measure over)", target.get("scope")),
+    )
+    lines = [f"  {label}: {str(v).strip()}" for label, v in fields if str(v or "").strip()]
+    guidance = _MATCH_BAR_GUIDANCE.get(str(target.get("match_bar_kind") or "").strip().lower())
+    if guidance:
+        lines.append(f"  How it's judged: {guidance}")
+    return "\n".join(lines)
 
 
 def _verified_links_block(row: dict) -> str:

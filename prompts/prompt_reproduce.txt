@@ -28,10 +28,15 @@ THE REPRODUCTION TARGET (the MRE you must run)
 ======================================================================
 
 This is the single cheapest experiment that tests the central claim. Reproduce THIS,
-not the whole paper. The expected values and tolerance below are your success bar —
-adopt them verbatim, do not re-infer a looser one. Confirm them against the paper
-first: the expected value should trace to a specific table/row in the reference LaTeX.
-Grounding the target is not licence to move it.
+not the whole paper. The pinned success bar below is the EXACT target an independent
+auditor scores you against — adopt its config, metric, value, and scope verbatim; do
+not re-infer a looser bar or swap in an easier metric. Confirm the value against the
+paper first: it should trace to a specific table/row in the reference LaTeX. Grounding
+the target is not licence to move it.
+
+Pinned success bar (the auditor adopts this exact tuple; only "how close counts" is
+left to its judgement, not you):
+{MATCH_TARGET}
 
 Minimal reproduction example:
 {MRE_CONFIG}

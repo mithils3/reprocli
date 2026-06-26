@@ -47,7 +47,7 @@ flowchart TD
   POST2["finalize_audit_row · anti-cheat cap → verdict"]
 
   A --> CL --> POST1 --> SEL --> LOCK
-  LOCK -->|"agent_task"| RA
+  LOCK -->|"agent_task · match_target"| RA
   RA <-->|"run_gpu = one JIT salloc … srun (no pre-held alloc)"| GPU
   RA --> BUN
   LOCK -->|"central_claim · match_target (verbatim)"| AU
@@ -132,10 +132,13 @@ verdict applies the same ruler by construction:
 Legacy rows that predate the tuple (no `match_target`) fall back to the auditor
 *deriving* the bar from the claim + reported numbers, per the same rubric C1.
 
-> The reproduction prompt does **not** render `match_target` as a separate field:
-> the row's `mre_config` already states the expected value(s) inline, and the agent
-> is told to adopt them verbatim. The *auditor* is the consumer that keys off the
-> structured `match_target` from the lockfile row.
+> The reproduction prompt renders `match_target` as an explicit **Pinned success bar**
+> block (`config · metric · value · scope`, plus a plain-language reading of
+> `match_bar_kind`), so the agent aims at the same structured anchor the auditor scores
+> against. `op`/`tolerance` stay auditor-side — the agent is shown the *shape* of the bar
+> ("reproduce a value close to the target", "beat the baseline", …), never a numeric
+> tolerance it could game. The `mre_config`/`agent_task` prose still restate the value
+> inline as before; the auditor keys off the same structured tuple verbatim.
 
 ---
 
