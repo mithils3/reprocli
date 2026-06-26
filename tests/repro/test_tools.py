@@ -87,7 +87,7 @@ class ApplyPatchTests(unittest.TestCase):
             self.assertTrue(res["ok"], res)
             self.assertEqual((ctx.workspace / "a.txt").read_text(), "a\nB\nc\n")
             self.assertEqual(len(list((ctx.evidence / "patches").glob("*.diff"))), 1)
-            self.assertIn("git apply", (ctx.evidence / "commands.log").read_text())
+            self.assertIn("apply_patch", (ctx.evidence / "commands.log").read_text())
 
     def test_patch_escaping_workspace_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
@@ -96,6 +96,64 @@ class ApplyPatchTests(unittest.TestCase):
             res = apply_patch({"diff": evil}, ctx)
             self.assertFalse(res["ok"])
             self.assertIn("confined", res["error"])
+
+    def test_workspace_prefixed_path_is_recovered(self):
+        """The round-36 failure: agent bakes 'repro/workspace/' into the header."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "pkg").mkdir()
+            (ctx.workspace / "pkg" / "m.py").write_text("a\nb\nc\n")
+            diff = (
+                "--- a/repro/workspace/pkg/m.py\n"
+                "+++ b/repro/workspace/pkg/m.py\n"
+                "@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n"
+            )
+            res = apply_patch({"diff": diff}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "pkg" / "m.py").read_text(), "a\nB\nc\n")
+
+    def test_v4a_update_with_fuzzy_context(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            # trailing whitespace in the file the patch's context omits
+            (ctx.workspace / "f.py").write_text("def x():\n    return 1   \n")
+            patch = (
+                "*** Begin Patch\n"
+                "*** Update File: f.py\n"
+                "@@ def x():\n"
+                "-    return 1\n"
+                "+    return 2\n"
+                "*** End Patch\n"
+            )
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "f.py").read_text(), "def x():\n    return 2\n")
+
+    def test_v4a_add_and_delete_and_rename(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "old.txt").write_text("keep\n")
+            add = "*** Begin Patch\n*** Add File: sub/new.txt\n+hello\n+world\n*** End Patch\n"
+            self.assertTrue(apply_patch({"diff": add}, ctx)["ok"])
+            self.assertEqual((ctx.workspace / "sub" / "new.txt").read_text(), "hello\nworld\n")
+
+            rename = "*** Begin Patch\n*** Update File: old.txt\n*** Move to: renamed.txt\n@@\n-keep\n+kept\n*** End Patch\n"
+            self.assertTrue(apply_patch({"diff": rename}, ctx)["ok"])
+            self.assertFalse((ctx.workspace / "old.txt").exists())
+            self.assertEqual((ctx.workspace / "renamed.txt").read_text(), "kept\n")
+
+            delete = "*** Begin Patch\n*** Delete File: sub/new.txt\n*** End Patch\n"
+            self.assertTrue(apply_patch({"diff": delete}, ctx)["ok"])
+            self.assertFalse((ctx.workspace / "sub" / "new.txt").exists())
+
+    def test_missing_context_fails_without_touching_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "f.txt").write_text("a\nb\nc\n")
+            patch = "*** Begin Patch\n*** Update File: f.txt\n@@\n-nonexistent\n+x\n*** End Patch\n"
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertEqual((ctx.workspace / "f.txt").read_text(), "a\nb\nc\n")
 
 
 class WorkspaceBashTests(unittest.TestCase):

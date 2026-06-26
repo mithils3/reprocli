@@ -20,13 +20,16 @@ paths then resolve against the workspace (the same cwd ``workspace_bash`` runs i
 host-absolute paths must still fall within an allowed root. ``..`` segments and NUL
 bytes are rejected outright, and ``resolve()`` canonicalizes symlinks before the
 containment check, so traversal, symlink escapes, and writes outside the bundle are
-all rejected before any I/O happens. ``apply_patch`` additionally confines every
-rename/copy target, not just the diff's ``+++``/``---`` headers.
+all rejected before any I/O happens.
+
+``apply_patch`` delegates parsing/application to :mod:`reprocli_repro.tools.patch`
+(a port of Codex's context-matching engine) and hands it ``_resolve`` as the
+confinement callback, so every file the patch touches -- including rename targets --
+passes the same boundary check before any write.
 """
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +38,7 @@ from reprocli_vllm.config.config import RUN_FILE_WRITE_MAX_CHARS, function_tool
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
 from reprocli_repro.sandbox import CONTAINER_RUN
+from reprocli_repro.tools.patch import apply_patch_text, peek_paths
 
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -63,23 +67,21 @@ def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, A
         return {"ok": False, "error": "No workspace directory for this episode."}
     diff = arguments.get("diff") or arguments.get("patch")
     if not isinstance(diff, str) or not diff.strip():
-        return {"ok": False, "error": "Missing unified-diff 'diff' string to apply."}
-    targets, strip = _patch_targets(diff)
-    if not targets:
-        return {"ok": False, "error": "Could not find any '+++'/'---' file headers in the diff."}
-    for rel in targets:
-        confined = _resolve(ctx, rel, writable=True)
-        if not confined["ok"]:
-            return {"ok": False, "error": f"Patch touches a confined path: {confined.get('error')}"}
-    saved = evidence.save_patch(ctx.evidence, diff, name=Path(targets[0]).name) if ctx.evidence else None
-    result = _git_apply(diff, Path(workspace), strip)
+        return {"ok": False, "error": "Missing patch 'diff' string to apply."}
+
+    peeked = peek_paths(diff)
+    name = Path(peeked[0]).name if peeked else "patch.diff"
+    saved = evidence.save_patch(ctx.evidence, diff, name=name) if ctx.evidence else None
+
+    result = apply_patch_text(diff, confine=lambda p: _resolve(ctx, p, writable=True))
     if ctx.evidence is not None:
         evidence.log_command(
-            ctx.evidence, f"git apply (-p{strip}) {', '.join(targets)}",
-            returncode=result.get("returncode"), cwd=workspace,
+            ctx.evidence,
+            f"apply_patch {', '.join(result.get('files') or peeked)}",
+            returncode=0 if result.get("ok") else 1,
+            cwd=workspace,
         )
     result["patch_file"] = str(saved) if saved else None
-    result["files"] = targets
     return result
 
 
@@ -137,50 +139,6 @@ def _roots(ctx: ExecutionContext, *, writable: bool) -> list[Path]:
     return [Path(p) for p in candidates if p is not None]
 
 
-# ``git diff`` rename/copy metadata can move a file to a path the ``+++``/``---``
-# headers never name (a pure rename has no content hunk), so we confine these too.
-_MOVE_PREFIXES = ("rename from ", "rename to ", "copy from ", "copy to ")
-
-
-def _patch_targets(diff: str) -> tuple[list[str], int]:
-    targets: list[str] = []
-    strip = 0
-    for line in diff.splitlines():
-        if line.startswith("+++ ") or line.startswith("--- "):
-            token = line[4:].strip().split("\t")[0]
-        elif any(line.startswith(p) for p in _MOVE_PREFIXES):
-            token = line.split(" ", 2)[2].strip()
-        else:
-            continue
-        if token in ("/dev/null", ""):
-            continue
-        if token[:2] in ("a/", "b/"):
-            strip = 1
-            token = token[2:]
-        if token not in targets:
-            targets.append(token)
-    return targets, strip
-
-
-def _git_apply(diff: str, workspace: Path, strip: int) -> dict[str, Any]:
-    try:
-        proc = subprocess.run(
-            ["git", "apply", f"-p{strip}", "-"],
-            input=diff if diff.endswith("\n") else diff + "\n",
-            cwd=str(workspace),
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-    return {
-        "ok": proc.returncode == 0,
-        "returncode": proc.returncode,
-        "stderr": proc.stderr,
-    }
-
-
 FILE_TOOLS = [
     function_tool(
         "write_file",
@@ -194,11 +152,25 @@ FILE_TOOLS = [
     ),
     function_tool(
         "apply_patch",
-        "Apply a unified diff to file(s) in the workspace with `git apply`. The diff "
-        "is saved verbatim under evidence/patches/. Every file the diff touches must "
-        "stay inside the workspace.",
+        "Edit file(s) in the workspace by applying a patch. Hunks are located by "
+        "matching their context (not line numbers) and tolerate minor whitespace "
+        "drift, so you do not need exact line numbers. Two formats are accepted:\n"
+        "(1) V4A (preferred):\n"
+        "*** Begin Patch\n"
+        "*** Update File: path/to/file.py\n"
+        "@@ optional_anchor_line\n"
+        " unchanged context line\n"
+        "-removed line\n"
+        "+added line\n"
+        "*** End Patch\n"
+        "(use '*** Add File: p' then '+'-prefixed lines to create, '*** Delete File: p' "
+        "to delete, '*** Move to: p' right after an Update header to rename);\n"
+        "(2) a standard unified diff (--- / +++ / @@).\n"
+        "Paths are relative to the workspace root (e.g. 'pkg/mod.py'); a leading "
+        "'/repro/workspace/', 'a/' or 'b/' is tolerated. Every file touched must stay "
+        "inside the workspace. The patch is saved verbatim under evidence/patches/.",
         {
-            "diff": {"type": "string", "description": "A unified diff (git or plain). File headers must point inside the workspace."},
+            "diff": {"type": "string", "description": "The patch text: a V4A '*** Begin Patch' block or a unified diff."},
         },
         ["diff"],
     ),
