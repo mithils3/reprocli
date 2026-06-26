@@ -89,3 +89,4 @@ class ExecutionContext:
     sandbox: "Sandbox | None" = None     # Apptainer container write-confinement applied to shell steps
     summary: str | None = None           # last summarize-compaction summary (iterative context)
     modified_files: list[str] = field(default_factory=list)  # cumulative across compactions
+    plan: list[dict[str, str]] = field(default_factory=list)  # latest update_plan checklist (survives compaction)

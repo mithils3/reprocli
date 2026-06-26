@@ -221,7 +221,7 @@ class DispatchTests(unittest.TestCase):
         names = {t["function"]["name"] for t in REPRO_TOOLS}
         self.assertEqual(
             names,
-            {"workspace_bash", "write_file", "apply_patch", "fetch_url", "list_partitions", "run_gpu"},
+            {"workspace_bash", "write_file", "apply_patch", "update_plan", "fetch_url", "list_partitions", "run_gpu"},
         )
 
     def test_execute_routes_run_gpu_through_context(self):

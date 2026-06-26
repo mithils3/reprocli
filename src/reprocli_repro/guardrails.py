@@ -95,6 +95,7 @@ def summarize_compaction(
         keep_recent_tokens=args.summarize_keep_tokens,
         previous_summary=ctx.summary,
         previous_modified=ctx.modified_files,
+        plan=ctx.plan,
     )
     if stats["compacted"]:
         ctx.summary = stats["summary"]

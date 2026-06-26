@@ -95,6 +95,16 @@ def save_patch(evidence_dir: Path, diff: str, *, name: str | None = None) -> Pat
     return target
 
 
+def save_plan(evidence_dir: Path, rendered: str) -> Path:
+    """Snapshot the agent's current plan to ``plan.md`` (overwritten each update)."""
+    paths = evidence_paths(evidence_dir)
+    paths.root.mkdir(parents=True, exist_ok=True)
+    target = paths.root / "plan.md"
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    target.write_text(f"# Plan (updated {stamp})\n\n{rendered}\n", encoding="utf-8")
+    return target
+
+
 def write_env_lock(
     evidence_dir: Path, *, venv: Path | None = None, uv_bin: str = "uv"
 ) -> dict:

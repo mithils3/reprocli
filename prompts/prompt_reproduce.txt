@@ -126,6 +126,11 @@ Two places, and YOU decide what runs where:
   with their idle/total node counts, walltime limits, and GPU type, plus the default for
   each known cluster. Call it once before a long run to pick the best `partition` for
   `run_gpu` instead of blindly taking the default.
+- `update_plan` — record your plan as a short checklist (the auditor sees it). Each item is
+  `{step, status}` with status `pending`/`in_progress`/`completed`; keep AT MOST ONE step
+  `in_progress`, and resend the whole list each call (it replaces the previous plan). Call
+  it once after you scope the task, then update statuses as you go — don't re-plan from
+  scratch every turn. Keep it to a few concrete steps (~5-7), not a turn-by-turn log.
 
 Bulk inputs go on `/tmp`, not the workspace. `/tmp` is node-local SSD scratch — fast, no
 quota, and you can count on at least a few hundred GB free (budget on ~500 GB). Download
@@ -207,7 +212,8 @@ You work entirely through the tools provided. A typical episode:
    small GPU allocation → confirm `torch.cuda.is_available()` before investing in
    anything else.
 2. Read the reference LaTeX (and supplement) for the method and the MRE's exact setting,
-   verify the target's provenance (above), then write a concrete step-by-step plan.
+   verify the target's provenance (above), then lay out a concrete step-by-step plan with
+   `update_plan` and keep its statuses current as you work.
 3. Set up the workspace: clone the released code (pin the commit when you can), install
    its dependencies (above), fetch only the data/weights the MRE needs.
 4. Get the experiment running cheaply, then run the real metered experiment that produces

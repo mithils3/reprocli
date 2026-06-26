@@ -196,12 +196,24 @@ def _summary_prompt(transcript: str, previous_summary: str | None) -> str:
     return "\n\n".join(parts)
 
 
-def _summary_block(summary_text: str, modified: list[str]) -> str:
+_PLAN_MARKS = {"pending": "[ ]", "in_progress": "[~]", "completed": "[x]"}
+
+
+def _render_plan(plan: list[dict[str, str]] | None) -> str:
+    if not plan:
+        return ""
+    return "\n".join(f"{_PLAN_MARKS.get(i.get('status', ''), '[ ]')} {i.get('step', '')}" for i in plan)
+
+
+def _summary_block(summary_text: str, modified: list[str], plan: list[dict[str, str]] | None = None) -> str:
     block = (
         "[Context compacted — earlier turns were summarized to free context. The "
         "evidence on disk under evidence/ is the source of truth; continue from here.]"
         "\n\n" + summary_text.strip()
     )
+    plan_text = _render_plan(plan)
+    if plan_text:
+        block += "\n\n<plan>\n" + plan_text + "\n</plan>"
     if modified:
         block += "\n\n<modified-files>\n" + "\n".join(modified) + "\n</modified-files>"
     return block
@@ -237,6 +249,7 @@ def summarize_compact(
     keep_recent_tokens: int,
     previous_summary: str | None = None,
     previous_modified: list[str] | None = None,
+    plan: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Summarize the old span into one message and splice it in; keep the recent tail.
 
@@ -268,7 +281,7 @@ def summarize_compact(
         return {"compacted": False, "reason": f"summary-error: {type(exc).__name__}"}
     if not summary_text.strip():
         return {"compacted": False, "reason": "empty-summary"}
-    summary_message = {"role": "user", "content": _summary_block(summary_text, modified)}
+    summary_message = {"role": "user", "content": _summary_block(summary_text, modified, plan)}
     messages[:] = [messages[0], messages[1], summary_message, *tail]
     return {
         "compacted": True,

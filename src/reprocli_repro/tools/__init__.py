@@ -6,6 +6,9 @@ The reproduction agent acts on its episode through these tools:
   **and all file reading** via ``grep``/``sed``/``cat`` -- there is no read_file
   tool: targeted shell reads are far cheaper than dumping whole files to context),
 * ``write_file`` / ``apply_patch`` -- path-confined file writes/edits,
+* ``update_plan`` -- a short, steerable checklist (Codex-style): harness state the
+  model resends each call, pinned onto the ``ExecutionContext`` and mirrored to
+  ``evidence/plan.md`` for the auditor,
 * ``fetch_url`` -- read-only fetch of a public http(s) URL (docs, wheel index, raw
   repo files); there is no general web search, so it fetches URLs the agent knows,
 * ``list_partitions`` -- read-only ``sinfo`` of the cluster's partitions (node pools)
@@ -38,6 +41,7 @@ from reprocli_repro.context import ExecutionContext
 from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
 from reprocli_repro.tools.partitions import LIST_PARTITIONS_HANDLERS, LIST_PARTITIONS_TOOLS
+from reprocli_repro.tools.plan import UPDATE_PLAN_HANDLERS, UPDATE_PLAN_TOOLS
 from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
@@ -52,6 +56,7 @@ def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]
     return [
         WORKSPACE_BASH_TOOL,
         *FILE_TOOLS,
+        *UPDATE_PLAN_TOOLS,
         *FETCH_TOOLS,
         *LIST_PARTITIONS_TOOLS,
         run_gpu_tool(gpus_per_node),
@@ -63,6 +68,7 @@ REPRO_TOOLS: list[dict] = build_repro_tools()
 REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
     **FILE_TOOL_HANDLERS,
+    **UPDATE_PLAN_HANDLERS,
     **FETCH_TOOL_HANDLERS,
     **LIST_PARTITIONS_HANDLERS,
     **RUN_GPU_HANDLERS,

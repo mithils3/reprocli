@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_repro import evidence
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.tools.files import apply_patch, write_file
+from reprocli_repro.tools.plan import update_plan
 from reprocli_repro.tools.workspace_bash import workspace_bash
 
 
@@ -154,6 +155,53 @@ class ApplyPatchTests(unittest.TestCase):
             res = apply_patch({"diff": patch}, ctx)
             self.assertFalse(res["ok"])
             self.assertEqual((ctx.workspace / "f.txt").read_text(), "a\nb\nc\n")
+
+
+class UpdatePlanTests(unittest.TestCase):
+    PLAN = [
+        {"step": "Install torch + verify GPU", "status": "completed"},
+        {"step": "Clone repo and install deps", "status": "in_progress"},
+        {"step": "Run the MRE and score", "status": "pending"},
+    ]
+
+    def test_records_plan_on_context_and_evidence(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            res = update_plan({"plan": self.PLAN, "explanation": "deps next"}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual(ctx.plan, self.PLAN)
+            self.assertEqual(res["explanation"], "deps next")
+            rendered = (ctx.evidence / "plan.md").read_text()
+            self.assertIn("[x] Install torch + verify GPU", rendered)
+            self.assertIn("[~] Clone repo and install deps", rendered)
+            self.assertIn("[ ] Run the MRE and score", rendered)
+
+    def test_replaces_previous_plan(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            update_plan({"plan": self.PLAN}, ctx)
+            newer = [{"step": "Write report", "status": "in_progress"}]
+            update_plan({"plan": newer}, ctx)
+            self.assertEqual(ctx.plan, newer)
+
+    def test_rejects_two_in_progress(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            bad = [
+                {"step": "a", "status": "in_progress"},
+                {"step": "b", "status": "in_progress"},
+            ]
+            res = update_plan({"plan": bad}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("in_progress", res["error"])
+            self.assertEqual(ctx.plan, [])
+
+    def test_rejects_bad_status_and_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            self.assertFalse(update_plan({"plan": []}, ctx)["ok"])
+            self.assertFalse(update_plan({"plan": [{"step": "x", "status": "doing"}]}, ctx)["ok"])
+            self.assertFalse(update_plan({"plan": [{"step": "", "status": "pending"}]}, ctx)["ok"])
 
 
 class WorkspaceBashTests(unittest.TestCase):
