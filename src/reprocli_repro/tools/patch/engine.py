@@ -92,6 +92,13 @@ def seek_sequence(
     return None
 
 
+def _miss(lines: list[str], pattern: list[str], path: str, start: int) -> str:
+    """A recovery-oriented match-failure message (lazy import breaks the cycle)."""
+    from reprocli_repro.tools.patch.diagnose import describe_miss
+
+    return describe_miss(lines, pattern, path, start, seek=seek_sequence)
+
+
 def compute_replacements(
     original_lines: list[str], path: str, chunks: list[UpdateChunk]
 ) -> list[tuple[int, int, list[str]]]:
@@ -107,7 +114,7 @@ def compute_replacements(
         if chunk.change_context is not None:
             idx = seek_sequence(original_lines, [chunk.change_context], line_index, False)
             if idx is None:
-                raise PatchError(f"Failed to find context '{chunk.change_context}' in {path}")
+                raise PatchError(_miss(original_lines, [chunk.change_context], path, line_index))
             line_index = idx + 1
 
         if not chunk.old_lines:
@@ -128,9 +135,7 @@ def compute_replacements(
                 new_slice = new_slice[:-1]
             found = seek_sequence(original_lines, pattern, line_index, chunk.is_end_of_file)
         if found is None:
-            raise PatchError(
-                f"Failed to find expected lines in {path}:\n" + "\n".join(chunk.old_lines)
-            )
+            raise PatchError(_miss(original_lines, chunk.old_lines, path, line_index))
         replacements.append((found, len(pattern), list(new_slice)))
         line_index = found + len(pattern)
 
@@ -153,12 +158,21 @@ def apply_replacements(
 
 
 def derive_new_contents(original: str, path: str, chunks: list[UpdateChunk]) -> str:
-    """Return the new file text after applying ``chunks`` to ``original``."""
-    lines = original.split("\n")
+    """Return the new file text after applying ``chunks`` to ``original``.
+
+    Patch context lines never carry a ``\\r``, so a uniformly-CRLF file is
+    normalised to ``\\n`` for matching and restored to ``\\r\\n`` on the way out;
+    without this the ``split('\\n')`` round-trip left a stray ``\\r`` on every
+    untouched line and dropped it from edited ones, silently mangling endings.
+    """
+    crlf = "\r\n" in original and "\n" not in original.replace("\r\n", "")
+    work = original.replace("\r\n", "\n") if crlf else original
+    lines = work.split("\n")
     if lines and lines[-1] == "":
         lines.pop()
     replacements = compute_replacements(lines, path, chunks)
     new_lines = apply_replacements(lines, replacements)
     if not (new_lines and new_lines[-1] == ""):
         new_lines.append("")
-    return "\n".join(new_lines)
+    result = "\n".join(new_lines)
+    return result.replace("\n", "\r\n") if crlf else result

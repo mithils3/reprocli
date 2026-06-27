@@ -105,7 +105,10 @@ def apply_patch_text(text: str, *, confine: Confine) -> dict[str, Any]:
             original = cache.get(target)
             if original is None:
                 try:
-                    original = target.read_text(encoding="utf-8")
+                    # newline="" keeps \r\n intact so derive_new_contents can detect
+                    # and restore the file's line endings (read_text would collapse them).
+                    with open(target, encoding="utf-8", newline="") as fh:
+                        original = fh.read()
                 except OSError as exc:
                     return {"ok": False, "error": f"Failed to read {op.path}: {type(exc).__name__}: {exc}"}
             try:
@@ -139,7 +142,9 @@ def _commit(plan: dict[Path, tuple[str, str | None]]) -> dict[str, Any]:
         for path, (action, content) in plan.items():
             if action == "write":
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content or "", encoding="utf-8")
+                # newline="" so a restored \r\n is written through untranslated.
+                with open(path, "w", encoding="utf-8", newline="") as fh:
+                    fh.write(content or "")
             elif path.exists() or path.is_symlink():
                 path.unlink()
     except OSError as exc:

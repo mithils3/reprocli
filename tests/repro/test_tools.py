@@ -156,6 +156,77 @@ class ApplyPatchTests(unittest.TestCase):
             self.assertFalse(res["ok"])
             self.assertEqual((ctx.workspace / "f.txt").read_text(), "a\nb\nc\n")
 
+    def test_miss_error_quotes_nearby_file_text(self):
+        """A near-miss should show the agent the file's real text, not a dead end."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "f.py").write_text("def f():\n    return 41\n    # tail\n")
+            # context drifted: model thinks the body is 'return 99'
+            patch = (
+                "*** Begin Patch\n*** Update File: f.py\n@@ def f():\n"
+                "-    return 99\n+    return 0\n*** End Patch\n"
+            )
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("Closest match", res["error"])
+            self.assertIn("return 41", res["error"])  # quotes the real line
+
+    def test_out_of_order_hunks_get_an_actionable_error(self):
+        """Second hunk targets a line the first hunk's cursor already passed."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "f.txt").write_text("one\ntwo\nthree\nfour\n")
+            patch = (
+                "*** Begin Patch\n*** Update File: f.txt\n"
+                "@@\n-three\n+THREE\n"   # hunk A (lower in file) first
+                "@@\n-one\n+ONE\n"       # hunk B (higher in file) second
+                "*** End Patch\n"
+            )
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("earlier hunk", res["error"])
+            self.assertEqual((ctx.workspace / "f.txt").read_text(), "one\ntwo\nthree\nfour\n")
+
+    def test_unprefixed_context_line_is_tolerated(self):
+        """A flush-left context line that lost its leading space must not abort the patch."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "m.py").write_text("import os\nx = 1\n")
+            patch = (
+                "*** Begin Patch\n*** Update File: m.py\n@@\n"
+                "import os\n"          # <- no leading space; should be read as context
+                "-x = 1\n+x = 2\n*** End Patch\n"
+            )
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "m.py").read_text(), "import os\nx = 2\n")
+
+    def test_crlf_file_keeps_its_line_endings(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "w.txt").write_bytes(b"a\r\nb\r\nc\r\n")
+            patch = "*** Begin Patch\n*** Update File: w.txt\n@@\n-b\n+B\n*** End Patch\n"
+            res = apply_patch({"diff": patch}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "w.txt").read_bytes(), b"a\r\nB\r\nc\r\n")
+
+    def test_json_escaped_patch_is_recovered(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            (ctx.workspace / "a.txt").write_text("a\nb\nc\n")
+            escaped = self.DIFF.replace("\n", "\\n")  # arrives as one physical line
+            res = apply_patch({"diff": escaped}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "a.txt").read_text(), "a\nB\nc\n")
+
+    def test_arg_aliases(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            self.assertTrue(write_file({"file_path": "p.txt", "text": "hi\n"}, ctx)["ok"])
+            self.assertEqual((ctx.workspace / "p.txt").read_text(), "hi\n")
+            (ctx.workspace / "a.txt").write_text("a\nb\nc\n")
+            self.assertTrue(apply_patch({"patch": self.DIFF}, ctx)["ok"])
+
 
 class UpdatePlanTests(unittest.TestCase):
     PLAN = [

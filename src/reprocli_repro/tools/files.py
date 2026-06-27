@@ -42,17 +42,25 @@ from reprocli_repro.tools.patch import apply_patch_text, peek_paths
 
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
-    resolved = _resolve(ctx, arguments.get("path"), writable=True)
+    raw_path = _first(arguments, "path", "file_path", "filename", "file")
+    resolved = _resolve(ctx, raw_path, writable=True)
     if not resolved["ok"]:
         return resolved
     target: Path = resolved["path"]
     if target.is_dir():
-        return {"ok": False, "error": f"Path is a directory: {arguments.get('path')}"}
-    content = arguments.get("content")
+        return {"ok": False, "error": f"Path is a directory: {raw_path}"}
+    content = _first(arguments, "content", "text", "contents", "data")
     if not isinstance(content, str):
         return {"ok": False, "error": "Missing 'content' string to write."}
     if len(content) > RUN_FILE_WRITE_MAX_CHARS:
-        return {"ok": False, "error": f"Content exceeds {RUN_FILE_WRITE_MAX_CHARS} chars."}
+        return {
+            "ok": False,
+            "error": (
+                f"Content is {len(content)} chars, over the {RUN_FILE_WRITE_MAX_CHARS} limit. "
+                "Write the file in pieces (apply_patch to append) or generate it with a "
+                "workspace_bash heredoc instead."
+            ),
+        }
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
@@ -65,9 +73,10 @@ def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, A
     workspace = ctx.workspace
     if workspace is None or not Path(workspace).is_dir():
         return {"ok": False, "error": "No workspace directory for this episode."}
-    diff = arguments.get("diff") or arguments.get("patch")
+    diff = _first(arguments, "diff", "patch", "patch_text", "input", "content")
     if not isinstance(diff, str) or not diff.strip():
         return {"ok": False, "error": "Missing patch 'diff' string to apply."}
+    diff = _unescape_patch(diff)
 
     peeked = peek_paths(diff)
     name = Path(peeked[0]).name if peeked else "patch.diff"
@@ -88,6 +97,25 @@ def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, A
 # --------------------------------------------------------------------------- #
 # Helpers                                                                      #
 # --------------------------------------------------------------------------- #
+def _first(arguments: dict[str, Any], *keys: str) -> Any:
+    """First present, non-empty value among ``keys`` -- absorbs models that name
+    the argument ``file_path``/``text``/``patch`` instead of the schema's name."""
+    for key in keys:
+        val = arguments.get(key)
+        if val not in (None, ""):
+            return val
+    return None
+
+
+def _unescape_patch(text: str) -> str:
+    """Recover a patch that arrived JSON-escaped: one physical line whose newlines
+    are literal ``\\n``. Only fires when there are no real newlines, so a genuine
+    multi-line patch is never touched."""
+    if "\n" not in text and "\\n" in text:
+        return text.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+    return text
+
+
 def _to_host(ctx: ExecutionContext, text: str) -> str:
     """Map an in-container ``/repro/...`` path back to the host run dir for host-side I/O.
 
@@ -168,7 +196,10 @@ FILE_TOOLS = [
         "(2) a standard unified diff (--- / +++ / @@).\n"
         "Paths are relative to the workspace root (e.g. 'pkg/mod.py'); a leading "
         "'/repro/workspace/', 'a/' or 'b/' is tolerated. Every file touched must stay "
-        "inside the workspace. The patch is saved verbatim under evidence/patches/.",
+        "inside the workspace. The patch is saved verbatim under evidence/patches/.\n"
+        "If a hunk fails to match, the error quotes the file's actual text near the "
+        "closest line -- copy that text into your context lines instead of resending "
+        "the same patch.",
         {
             "diff": {"type": "string", "description": "The patch text: a V4A '*** Begin Patch' block or a unified diff."},
         },

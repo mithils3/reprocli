@@ -113,10 +113,12 @@ def _append_body(chunk: UpdateChunk, ln: str) -> None:
         chunk.old_lines.append("")
         chunk.new_lines.append("")
     else:
-        raise PatchError(
-            f"Unexpected line in update hunk: {ln!r}. Every line must start with "
-            "' ' (context), '+' (added), or '-' (removed)."
-        )
+        # A body line that lost its leading marker. Models routinely drop the
+        # space on a flush-left context line; treat it as context (the safe
+        # reading -- it only ever widens what must already be in the file)
+        # rather than aborting an otherwise-valid multi-file patch.
+        chunk.old_lines.append(ln)
+        chunk.new_lines.append(ln)
 
 
 # --------------------------------------------------------------------------- #
