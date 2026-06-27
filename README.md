@@ -36,6 +36,13 @@ set) — so swapping the model is a URL change. The classifier job
 `scripts/minimax_m2/paper_classification.sbatch` uses this serve paradigm on a single node;
 see [docs/slurm/serve.md](docs/slurm/serve.md).
 
+When the base URL is OpenRouter, set `$REPROCLI_OPENROUTER_PROVIDER` to a provider
+slug (e.g. `deepseek`) to pin every request to that upstream with fallbacks off, so
+a cache-read-dominated run is billed at that provider's own cache pricing instead of
+being silently routed to a pricier host. A comma-separated list sets a preference
+order (still no fallback beyond the list). Unset → OpenRouter's default routing, and
+a no-op against a local vLLM (which ignores the field).
+
 ## Documentation
 
 Full project documentation lives in [`docs/`](docs/) and is published with

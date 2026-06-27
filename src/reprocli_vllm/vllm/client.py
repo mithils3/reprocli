@@ -5,8 +5,20 @@ import sys
 import urllib.request
 from typing import Any
 
-from reprocli_vllm.vllm.endpoint import auth_headers
+from reprocli_vllm.vllm.endpoint import auth_headers, openrouter_provider_routing
 from reprocli_vllm.vllm.retry import with_retries
+
+
+def apply_provider_routing(body: dict[str, Any]) -> None:
+    """Pin the OpenRouter upstream provider in-place when one is configured.
+
+    Single chokepoint for every chat-completion path (repro loop, classifier/auditor
+    tool loop, summarize-compaction), so the pin applies uniformly. No-op when unset,
+    and never clobbers a ``provider`` block a caller already placed on the body.
+    """
+    provider = openrouter_provider_routing()
+    if provider is not None:
+        body.setdefault("provider", provider)
 
 
 def post_chat_completion_row(
@@ -16,6 +28,7 @@ def post_chat_completion_row(
     *,
     stream: bool = False,
 ) -> Any:
+    apply_provider_routing(row["body"])
     if stream:
         return stream_chat_completion(base_url, row, timeout)
     return post_vllm_chat_completion(base_url, row["body"], timeout)

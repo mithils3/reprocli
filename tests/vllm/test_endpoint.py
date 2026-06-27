@@ -12,10 +12,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
     ENV_ENDPOINT_FILE,
+    ENV_OPENROUTER_PROVIDER,
     ENV_SERVED_MODEL,
     ENV_SERVER_URL,
     auth_headers,
     normalize_server_url,
+    openrouter_provider_routing,
     resolve_api_key,
     resolve_served_model,
     resolve_server_url,
@@ -123,6 +125,32 @@ class AuthHeaderTests(unittest.TestCase):
         with patch.dict("os.environ", {"OPENAI_API_KEY": "sk-openai"}, clear=True):
             self.assertIsNone(resolve_api_key())
             self.assertEqual(auth_headers(), {})
+
+
+class ProviderRoutingTests(unittest.TestCase):
+    def test_none_when_unset(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(openrouter_provider_routing())
+
+    def test_blank_is_treated_as_unset(self) -> None:
+        with patch.dict("os.environ", {ENV_OPENROUTER_PROVIDER: "  ,  "}, clear=True):
+            self.assertIsNone(openrouter_provider_routing())
+
+    def test_single_provider_pins_with_no_fallback(self) -> None:
+        with patch.dict("os.environ", {ENV_OPENROUTER_PROVIDER: "deepseek"}, clear=True):
+            self.assertEqual(
+                openrouter_provider_routing(),
+                {"order": ["deepseek"], "allow_fallbacks": False},
+            )
+
+    def test_comma_list_keeps_order(self) -> None:
+        with patch.dict(
+            "os.environ", {ENV_OPENROUTER_PROVIDER: "deepseek, novita"}, clear=True
+        ):
+            self.assertEqual(
+                openrouter_provider_routing(),
+                {"order": ["deepseek", "novita"], "allow_fallbacks": False},
+            )
 
 
 if __name__ == "__main__":

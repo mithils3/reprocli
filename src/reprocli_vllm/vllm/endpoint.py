@@ -26,6 +26,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from reprocli_vllm.vllm.retry import with_retries
 
@@ -33,6 +34,7 @@ ENV_SERVER_URL = "REPROCLI_SERVER_URL"
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
+ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -53,6 +55,24 @@ def auth_headers(cli_value: str | None = None) -> dict[str, str]:
     """``Authorization: Bearer`` header when a key is configured, else ``{}``."""
     key = resolve_api_key(cli_value)
     return {"Authorization": f"Bearer {key}"} if key else {}
+
+
+def openrouter_provider_routing() -> dict[str, Any] | None:
+    """OpenRouter ``provider`` routing block that pins one or more upstream providers.
+
+    Set ``REPROCLI_OPENROUTER_PROVIDER`` to an OpenRouter provider slug (e.g.
+    ``deepseek``) to force every request to that provider with fallbacks off — so a
+    cache-read-dominated run is billed at that provider's own cache pricing and can't
+    be silently rerouted to a pricier host. A comma-separated list sets a preference
+    order (first available wins, still no fallback beyond the list). Unset/empty ->
+    ``None`` and no ``provider`` field is sent: OpenRouter keeps its default routing,
+    and a local vLLM (which ignores the field) is unaffected either way.
+    """
+    raw = (os.environ.get(ENV_OPENROUTER_PROVIDER) or "").strip()
+    providers = [slug.strip() for slug in raw.split(",") if slug.strip()]
+    if not providers:
+        return None
+    return {"order": providers, "allow_fallbacks": False}
 
 
 def normalize_server_url(value: str) -> str:
