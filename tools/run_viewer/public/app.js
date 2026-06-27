@@ -5,7 +5,7 @@
 
 const R = window.RENDER;
 const state = {
-  view: "live", runs: [], byId: {}, filter: "all", search: "", tagFilter: null,
+  view: "live", runs: [], byId: {}, filter: "all", excludeDead: false, search: "", tagFilter: null,
   currentRunId: null, liveRun: null, liveEvents: [], seenSeq: new Set(), runChannel: null, remote: false,
 };
 const $ = (s) => document.querySelector(s);
@@ -19,20 +19,27 @@ function setView(v) {
   const el = $("#view-" + v);
   if (el) el.classList.remove("hidden");
   if (v === "stats" && window.Stats) window.Stats.open();
+  if (v === "report" && window.Report) window.Report.open();
 }
 
 // ---- run list (Live) -------------------------------------------------------
 const FILTERS = [["all", "All"], ["running", "Running"], ["dead", "Dead"], ["finished", "Finished"], ["error", "Error"]];
 function renderFilters() {
-  $("#filters").innerHTML = FILTERS.map(([k, l]) =>
+  const chips = FILTERS.map(([k, l]) =>
     `<button class="filt ${state.filter === k ? "active" : ""}" data-f="${k}">${l}</button>`).join("");
-  document.querySelectorAll("#filters .filt").forEach((b) =>
+  // orthogonal toggle: hides dead runs regardless of the selected status chip
+  const toggle = `<button class="filt excl-toggle ${state.excludeDead ? "active" : ""}" id="excl-dead-filt"
+    title="hide runs with no update in ${R.DEAD_AFTER_HOURS}h">${state.excludeDead ? "Dead hidden" : "Exclude dead"}</button>`;
+  $("#filters").innerHTML = chips + toggle;
+  document.querySelectorAll("#filters .filt[data-f]").forEach((b) =>
     b.addEventListener("click", () => { state.filter = b.dataset.f; renderFilters(); renderList(); }));
+  $("#excl-dead-filt").addEventListener("click", () => { state.excludeDead = !state.excludeDead; renderFilters(); renderList(); });
 }
 function visibleRuns() {
   const q = state.search.toLowerCase();
   return state.runs.filter((r) =>
     (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
+    (!state.excludeDead || R.effectiveStatus(r) !== "dead") &&
     (!state.tagFilter || (window.Tags && Tags.has(r.run_id, state.tagFilter))) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id}`).toLowerCase().includes(q)));
 }
@@ -88,6 +95,8 @@ function onTagsChange() {
     }
   } else if (state.view === "stats" && window.Stats && window.Stats.onTags) {
     window.Stats.onTags();
+  } else if (state.view === "report" && window.Report && window.Report.onTags) {
+    window.Report.onTags();
   }
 }
 
@@ -193,6 +202,11 @@ function boot() {
     }
   } else {
     liveDetail().innerHTML = `<div class="empty">Supabase isn't configured/reachable. Switch to <b>Local file</b> to view a transcript, or set the keys in <code>config.js</code>.</div>`;
+  }
+  // predicted-H100 estimates come from the lockfile dataset (HF, independent of Supabase)
+  if (window.Estimates) {
+    window.Estimates.onChange(() => { if (state.view === "report" && window.Report) window.Report.onTags(); });
+    window.Estimates.load();
   }
   setView("live");
 }

@@ -41,7 +41,7 @@ set -euo pipefail
 # --- Config (override from the environment) ---------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL="${MODEL:-/work/nvme/bfvr/msalunkhe/MiniMax-M2.7}"   # local mirror; HF id also works
+MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"   # local mirror; HF id also works
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-dev}"                    # dev -> HF 'validation' (the dev-15 split)

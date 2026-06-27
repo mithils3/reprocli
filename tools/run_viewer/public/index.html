@@ -30,6 +30,7 @@
       <nav class="tabs">
         <button class="tab active" data-view="live">Live runs</button>
         <button class="tab" data-view="stats">Stats</button>
+        <button class="tab" data-view="report">Reproduced</button>
         <button class="tab" data-view="local">Local file</button>
       </nav>
       <div class="who">
@@ -55,6 +56,13 @@
     <main id="view-stats" class="view hidden">
       <section class="detail">
         <div id="stats-root" class="stats-wrap"></div>
+      </section>
+    </main>
+
+    <!-- REPORT: per-paper reproduction status (success tag) + took vs predicted -->
+    <main id="view-report" class="view hidden">
+      <section class="detail">
+        <div id="report-root" class="stats-wrap"></div>
       </section>
     </main>
 
@@ -85,6 +93,8 @@
   <script src="tags.js"></script>
   <script src="charts.js"></script>
   <script src="stats.js"></script>
+  <script src="estimates.js"></script>
+  <script src="report.js"></script>
   <script src="app.js"></script>
   <script>
     /* theme toggle: flip data-theme, persist, keep icon + browser UI colour in sync */

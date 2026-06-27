@@ -161,7 +161,7 @@ function appendRound(roundsEl, round, arxiv) {
 }
 
 window.RENDER = { esc, el, fmtTime, statusInfo, statusBadgeClass, isDead, effectiveStatus, ageHours,
-  renderRun, renderRunListItem, appendRound, topHtml };
+  renderRun, renderRunListItem, appendRound, topHtml, DEAD_AFTER_HOURS };
 function renderRunListItem(run) {
   const si = statusInfo(run);
   const live = effectiveStatus(run) === "running";
