@@ -57,6 +57,8 @@ function isDead(run) {
   return run.status === "running" && !!run.updated_at && ageHours(run.updated_at) > DEAD_AFTER_HOURS;
 }
 const effectiveStatus = (run) => (isDead(run) ? "dead" : run.status || "running");
+// A run that exhausted its tool-round budget exits 'finished' but with this reason.
+const isRoundLimit = (run) => run.exit_reason === "round_limit";
 const statusBadgeClass = (cls) =>
   cls === "finished" ? "yes" : cls === "error" ? "no" : cls === "dead" ? "dead" : "accent";
 function statusInfo(run) {
@@ -160,7 +162,7 @@ function appendRound(roundsEl, round, arxiv) {
   if (ex) ex.outerHTML = html; else roundsEl.insertAdjacentHTML("beforeend", html);
 }
 
-window.RENDER = { esc, el, fmtTime, statusInfo, statusBadgeClass, isDead, effectiveStatus, ageHours,
+window.RENDER = { esc, el, fmtTime, statusInfo, statusBadgeClass, isDead, isRoundLimit, effectiveStatus, ageHours,
   renderRun, renderRunListItem, appendRound, topHtml, DEAD_AFTER_HOURS };
 function renderRunListItem(run) {
   const si = statusInfo(run);

@@ -5,7 +5,7 @@
 
 const R = window.RENDER;
 const state = {
-  view: "live", runs: [], byId: {}, filter: "all", excludeDead: false, search: "", tagFilter: null,
+  view: "live", runs: [], byId: {}, filter: "all", excludeDead: false, excludeRoundLimit: false, search: "", tagFilter: null,
   currentRunId: null, liveRun: null, liveEvents: [], seenSeq: new Set(), runChannel: null, remote: false,
 };
 const $ = (s) => document.querySelector(s);
@@ -27,19 +27,23 @@ const FILTERS = [["all", "All"], ["running", "Running"], ["dead", "Dead"], ["fin
 function renderFilters() {
   const chips = FILTERS.map(([k, l]) =>
     `<button class="filt ${state.filter === k ? "active" : ""}" data-f="${k}">${l}</button>`).join("");
-  // orthogonal toggle: hides dead runs regardless of the selected status chip
+  // orthogonal toggles: hide dead / round-limit runs regardless of the selected status chip
   const toggle = `<button class="filt excl-toggle ${state.excludeDead ? "active" : ""}" id="excl-dead-filt"
     title="hide runs with no update in ${R.DEAD_AFTER_HOURS}h">${state.excludeDead ? "Dead hidden" : "Exclude dead"}</button>`;
-  $("#filters").innerHTML = chips + toggle;
+  const rlToggle = `<button class="filt excl-toggle ${state.excludeRoundLimit ? "active" : ""}" id="excl-rl-filt"
+    title="hide runs that exited by hitting the tool-round limit">${state.excludeRoundLimit ? "Round-limit hidden" : "Exclude round-limit"}</button>`;
+  $("#filters").innerHTML = chips + toggle + rlToggle;
   document.querySelectorAll("#filters .filt[data-f]").forEach((b) =>
     b.addEventListener("click", () => { state.filter = b.dataset.f; renderFilters(); renderList(); }));
   $("#excl-dead-filt").addEventListener("click", () => { state.excludeDead = !state.excludeDead; renderFilters(); renderList(); });
+  $("#excl-rl-filt").addEventListener("click", () => { state.excludeRoundLimit = !state.excludeRoundLimit; renderFilters(); renderList(); });
 }
 function visibleRuns() {
   const q = state.search.toLowerCase();
   return state.runs.filter((r) =>
     (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
     (!state.excludeDead || R.effectiveStatus(r) !== "dead") &&
+    (!state.excludeRoundLimit || !R.isRoundLimit(r)) &&
     (!state.tagFilter || (window.Tags && Tags.has(r.run_id, state.tagFilter))) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id}`).toLowerCase().includes(q)));
 }

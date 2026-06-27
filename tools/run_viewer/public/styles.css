@@ -80,8 +80,10 @@ h1, h2, h3 { font-family: var(--serif); letter-spacing: -.01em; }
   padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; transition: all .15s; }
 .filt:hover { border-color: var(--txt); color: var(--txt); }
 .filt.active { background: var(--txt); color: var(--bg); border-color: var(--txt); }
-/* orthogonal toggle — separated from the single-select status chips, red when on */
+/* orthogonal toggles — separated from the single-select status chips, red when on.
+   Only the first absorbs the gap so multiple toggles stay grouped on the right. */
 .filt.excl-toggle { margin-left: auto; }
+.filt.excl-toggle ~ .filt.excl-toggle { margin-left: 5px; }
 .filt.excl-toggle.active { background: var(--no-tint); color: var(--no-deep); border-color: var(--no); }
 .filt.excl-toggle.active:hover { color: var(--no-deep); }
 
