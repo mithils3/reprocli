@@ -37,6 +37,11 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         "--reasoning-parser",
         args.reasoning_parser or profile.reasoning_parser,
         "--enable-auto-tool-choice",
+        # Without this, vLLM omits usage.prompt_tokens_details entirely, so every
+        # response reports cached_tokens=0 even when prefix caching is hitting. The
+        # KV reuse happens regardless (enable_prefix_caching defaults to True); this
+        # flag is purely what makes the cache-hit count observable downstream.
+        "--enable-prompt-tokens-details",
     ]
     if args.trust_remote_code or profile.trust_remote_code:
         command.append("--trust-remote-code")

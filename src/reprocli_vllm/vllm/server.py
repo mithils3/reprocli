@@ -45,6 +45,9 @@ class VllmServer:
             "--tool-call-parser",
             self.args.tool_call_parser,
             "--enable-auto-tool-choice",
+            # Surface prefix-cache hits in usage.prompt_tokens_details.cached_tokens;
+            # vLLM omits that block (so cached_tokens reads 0) unless this is set.
+            "--enable-prompt-tokens-details",
             "--max-model-len",
             str(self.args.max_model_len),
             "--gpu-memory-utilization",
