@@ -22,7 +22,7 @@ import sys
 
 from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 
-from reprocli_repro import gpu_session, sandbox, supabase_sink
+from reprocli_repro import env, gpu_session, sandbox, supabase_sink
 from reprocli_repro.cli_args import parse_args
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.inputs import EpisodeInput, band_of, build_context, prepare_episodes
@@ -32,6 +32,9 @@ from reprocli_repro.workspace import WorkspaceResult, prepare_workspace
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    # Default HF downloads (paper bundle + the agent's in-container pulls) to node-local
+    # /tmp so they stay off the home quota; forward_env mirrors this into the sandbox.
+    env.set_default_hf_home()
     episodes = prepare_episodes(args)
     image = args.cluster_profile.apptainer_image
     server_url = resolve_server_url(args.vllm_server_url)

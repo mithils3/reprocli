@@ -116,10 +116,13 @@ class ForwardEnvTests(unittest.TestCase):
 
 class FromRunPathsTests(unittest.TestCase):
     def test_remaps_episode_dirs_and_binds_caches(self):
-        with tempfile.TemporaryDirectory() as d:
+        # cache lives outside /tmp (under $HOME) so it gets its own rw bind — a cache
+        # under /tmp is subsumed by the /tmp bind (see the next test).
+        with tempfile.TemporaryDirectory() as d, \
+                tempfile.TemporaryDirectory(dir=Path.home()) as cache_root:
             paths = resolve_run_paths(Path(d) / "runs", "2505.11483", 8.0, run_id="RID")
             create_layout(paths)
-            cache = Path(d) / "cache"
+            cache = Path(cache_root) / "cache"
             sb = from_run_paths(paths, image=IMAGE, caches=[cache])
             self.assertEqual(sb.image, IMAGE)
             self.assertEqual(sb.workdir, CONTAINER_WORKSPACE)
@@ -133,6 +136,39 @@ class FromRunPathsTests(unittest.TestCase):
             # /tmp + the cache are bound at their own paths (rw)
             self.assertIn("/tmp", by_dst)
             self.assertEqual(by_dst[str(cache.resolve())].src, str(cache.resolve()))
+
+    def test_cache_under_tmp_is_subsumed_by_the_tmp_bind(self):
+        # HF_HOME defaults to /tmp/hf_cache; /tmp is already identity-bound, so the cache
+        # must NOT get its own bind (binding a /tmp subpath would hard-fail on a compute
+        # node where the source dir doesn't exist yet).
+        with tempfile.TemporaryDirectory() as d:
+            paths = resolve_run_paths(Path(d) / "runs", "2505.11483", 8.0, run_id="RID")
+            create_layout(paths)
+            tmp_cache = Path(tempfile.mkdtemp(dir="/tmp")) / "hf_cache"
+            sb = from_run_paths(paths, image=IMAGE, caches=[tmp_cache])
+            by_dst = {b.dst: b for b in sb.binds}
+            self.assertIn("/tmp", by_dst)                        # node-local /tmp is bound
+            self.assertNotIn(str(tmp_cache.resolve()), by_dst)    # the subpath is not re-bound
+
+
+class HfHomeDefaultTests(unittest.TestCase):
+    def test_defaults_hf_home_to_node_local_tmp(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            env.set_default_hf_home()
+            self.assertEqual(os.environ["HF_HOME"], env.DEFAULT_HF_HOME)
+            self.assertTrue(os.environ["HF_HOME"].startswith("/tmp/"))
+
+    def test_explicit_hf_home_is_not_overridden(self):
+        with mock.patch.dict(os.environ, {"HF_HOME": "/work/nvme/hf"}, clear=True):
+            env.set_default_hf_home()
+            self.assertEqual(os.environ["HF_HOME"], "/work/nvme/hf")
+
+    def test_default_hf_home_is_forwarded_into_the_container(self):
+        # set the default, then forward_env mirrors it as APPTAINERENV_HF_HOME for --cleanenv
+        with mock.patch.dict(os.environ, {}, clear=True):
+            env.set_default_hf_home()
+            forward_env()
+            self.assertEqual(os.environ["APPTAINERENV_HF_HOME"], env.DEFAULT_HF_HOME)
 
 
 @unittest.skipUnless(

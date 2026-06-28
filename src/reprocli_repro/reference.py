@@ -56,8 +56,8 @@ def load_bundle(dataset: str):
 
     Unlike streaming, this shows HF download progress (no silent per-run scan) and,
     once cached, lookups are local memory-mapped reads — so the second run is fast.
-    Point ``HF_HOME``/``HF_HUB_CACHE`` at the NVMe work filesystem, not ``$HOME``,
-    since the full bundle is large.
+    ``HF_HOME`` defaults to node-local ``/tmp/hf_cache`` (set at reproduce startup), keeping
+    the large bundle off the ``$HOME`` quota; override it if ``/tmp`` is too tight here.
     """
     from datasets import load_dataset
 

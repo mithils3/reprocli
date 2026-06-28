@@ -20,11 +20,30 @@ the container wrap.
 
 from __future__ import annotations
 
+import os
 import shlex
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
+
+# Where Hugging Face downloads land by default for a reproduce run. ``/tmp`` is the
+# node-local SSD scratch that the sandbox always binds rw (hundreds of GB free), so
+# model/dataset pulls stay off the size-capped ``$HOME`` quota that otherwise sinks
+# large reproductions.
+DEFAULT_HF_HOME = "/tmp/hf_cache"
+
+
+def set_default_hf_home() -> None:
+    """Point ``HF_HOME`` at the node-local ``/tmp`` by default, unless the caller set it.
+
+    Called once at reproduce-command startup. It covers both the orchestrator's own HF
+    downloads (the paper bundle) and — once ``sandbox.forward_env`` mirrors ``HF_HOME``
+    into the ``--cleanenv`` container — the agent's in-container pulls. Idempotent and
+    overridable: an explicit ``HF_HOME`` in the environment, or a per-command
+    ``HF_HOME=/tmp/<name> <cmd>`` the agent runs, wins.
+    """
+    os.environ.setdefault("HF_HOME", DEFAULT_HF_HOME)
 
 
 def env_inner(workdir, command: str) -> str:
