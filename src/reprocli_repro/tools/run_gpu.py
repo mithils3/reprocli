@@ -292,9 +292,9 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
                 "minimum": 1,
                 "maximum": gpus_per_node,
                 "description": (
-                    f"GPUs to hold for the session (1-{gpus_per_node}, one node). Takes effect "
-                    "only on the call that STARTS the session; ignored while one is held. More "
-                    "GPUs finish faster but cost proportionally more wall-clock budget."
+                    f"GPUs to hold (1-{gpus_per_node}, one node); set only on the call that STARTS "
+                    "the session. Default 1 is for smoke tests — take more to fit a model/batch too "
+                    "big for one GPU or to finish sooner; throughput scales with gpus (wall budget ~same)."
                 ),
             },
             "minutes": {

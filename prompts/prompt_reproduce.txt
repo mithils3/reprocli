@@ -27,22 +27,33 @@ Reported numbers / experiment context (the paper's own evidence for the claim):
 THE REPRODUCTION TARGET (the MRE you must run)
 ======================================================================
 
-This is the single cheapest experiment that tests the central claim. Reproduce THIS,
-not the whole paper. The pinned success bar below is the EXACT target an independent
-auditor scores you against — adopt its config, metric, value, and scope verbatim; do
-not re-infer a looser bar or swap in an easier metric. Confirm the value against the
-paper first: it should trace to a specific table/row in the reference LaTeX. Grounding
-the target is not licence to move it.
+Reproduce the central claim with the MINIMAL-EFFORT experiment that still establishes
+it — not the whole paper, and not the most expensive instance of it. Papers usually
+demonstrate a claim across several model sizes, datasets, or settings; pick the SMALLEST
+/ cheapest configuration that still proves the central claim and run only that. If a
+method is shown on ViT-S, ViT-M, and ViT-L and ViT-S already establishes the claim, run
+ViT-S — you are settling whether the claim holds for the least compute, not matching the
+largest result.
+
+Minimal-effort is about WHICH experiment, not how thoroughly you run it. Once you pick
+the cheapest variant that tests the claim, run THAT one FOR REAL and IN FULL — the entire
+eval set (not a handful of samples), the paper's actual metric, trained/evaluated to
+completion. Do NOT shrink it into a toy to dodge work: no quietly swapping the eval for a
+small subset, no synthetic stand-in for the real data, no skipping the metric, no
+"limited compute" self-talk. A number from a half-run experiment is not comparable to the
+paper's and does not count — picking a small variant and then running it properly is the
+whole job.
+
+The pinned success bar below is the EXACT target an independent auditor scores you
+against — adopt its metric, value, and scope verbatim; do not re-infer a looser bar or
+swap in an easier metric. It deliberately does NOT pin the configuration: which model
+size / variant / setting you run to clear the bar is the minimal-effort choice above, and
+yours to make. Confirm the value against the paper first: it should trace to a specific
+table/row in the reference LaTeX. Grounding the target is not licence to move it.
 
 Pinned success bar (the auditor adopts this exact tuple; only "how close counts" is
 left to its judgement, not you):
 {MATCH_TARGET}
-
-Minimal reproduction example:
-{MRE_CONFIG}
-
-Step-by-step task:
-{AGENT_TASK}
 
 Released artifacts (prefer running these over re-implementing the method):
 {VERIFIED_LINKS}
@@ -118,10 +129,16 @@ Two places, and YOU decide what runs where:
   scratch — so release only when the GPU will sit idle 30 min+ (a long external CPU-side
   command), never for your own reasoning/editing, which takes seconds. Like a human on a
   shared cluster: grab a small allocation (1 GPU, 30 min — granted fastest) to install
-  deps and smoke-test, then request what the real run needs. `gpus`/`minutes` are fixed
-  for a session until you release it. By default the allocation lands on this cluster's
-  default partition; pass `partition` to hold it on a different node pool (also fixed for
-  the session) — fastest-queueing pool first if you are just smoke-testing.
+  deps and smoke-test, then request what the real run needs. The default of 1 GPU is for
+  that smoke-test ONLY — the real run gets the GPUs the experiment actually needs. A node
+  here has several GPUs (call `list_partitions` to see how many per node, and ask for up
+  to that many in one allocation): use multiple when the model or batch will not fit in
+  one GPU's memory (shard it — tensor/pipeline/FSDP parallel), or to finish a big run in
+  the wall-clock you have. Don't default to 1 GPU and then call the paper's setting "too
+  big" — scale up to fit it. `gpus`/`minutes` are fixed for a session until you release
+  it. By default the allocation lands on this cluster's default partition; pass
+  `partition` to hold it on a different node pool (also fixed for the session) —
+  fastest-queueing pool first if you are just smoke-testing.
 - `list_partitions` — read-only: lists the partitions (node pools) this cluster exposes
   with their idle/total node counts, walltime limits, and GPU type, plus the default for
   each known cluster. Call it once before a long run to pick the best `partition` for
@@ -196,11 +213,18 @@ a source tarball with the venv's Python (`urllib.request.urlretrieve` on the Git
 COMPUTE BUDGET (a hard ceiling, metered in H100-equivalent hours)
 ======================================================================
 
-You have {BUDGET_H100_HOURS} H100-equivalent hours, metered on held time (above). Debug
-on the cheapest path first — tiny slice, fewest gpus — before the full run, and reserve
-enough to run the scoring experiment to completion. When the budget is exhausted the
-harness forces your final submission, result or not, and a half-finished run produces no
-gradeable number.
+You have {BUDGET_H100_HOURS} H100-equivalent hours, metered on held time (above). The
+meter is gpus × wall-clock-hours held × hardware-factor: holding 4 GPUs for 1 hour costs
+4 H100-hours (at hw≈1) — more GPUs cost more per hour but finish the work in proportionally
+less wall-clock, so the spend is about the same and you get the answer sooner. Debug on the
+cheapest path first — tiny slice, fewest gpus — then run the real scoring experiment to
+completion, leaving room to write it up. When the budget is exhausted the harness forces
+your final submission, and a half-finished run produces no gradeable number.
+
+The budget is there to be spent on the real run, so don't ration it or treat the paper's
+setting as "too expensive": if the experiment needs more memory take more GPUs, if it needs
+the full dataset run the full dataset. Finishing on a tiny fraction of the budget usually
+means the job was under-run, not that you were efficient.
 
 ======================================================================
 HOW TO WORK

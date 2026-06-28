@@ -219,8 +219,6 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{CENTRAL_CLAIM}": _text_or(row.get("central_claim"), "(no central claim recorded)"),
         "{CLAIM_EVIDENCE}": _text_or(row.get("claim_evidence"), "(no reported numbers recorded)"),
         "{MATCH_TARGET}": _match_target_block(row),
-        "{MRE_CONFIG}": _text_or(row.get("mre_config"), "(no MRE configuration recorded)"),
-        "{AGENT_TASK}": _text_or(row.get("agent_task"), "(no step-by-step task recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
         # Short, stable in-container paths the agent actually sees (sandbox.py remaps the
         # long per-run host dirs onto these), so the prompt never hands it the long path.
@@ -249,23 +247,23 @@ _MATCH_BAR_GUIDANCE = {
 
 
 def _match_target_block(row: dict) -> str:
-    """Render the pinned success-bar tuple the Stage-7 auditor scores against.
+    """Render the pinned success-bar the Stage-7 auditor scores against.
 
-    Surfacing the same structured anchor (config, metric, value, scope, match_bar_kind)
-    the auditor adopts verbatim keeps the agent and the auditor aiming at one identical
-    target. `op`/`tolerance` are deliberately omitted — the auditor sets those.
+    Surfacing the metric/value/scope anchor the auditor adopts verbatim keeps the agent
+    and the auditor aiming at one identical bar. `config` is deliberately WITHHELD — which
+    model size / variant / setting the agent runs to clear the bar is its own minimal-effort
+    choice (see the prompt). `op`/`tolerance` are likewise omitted — the auditor sets those.
     """
     target = row.get("match_target")
     if not isinstance(target, dict) or not any(
         str(target.get(k, "")).strip() for k in ("metric", "value")
     ):
         return (
-            "(No success-bar tuple pinned for this paper — fix the exact config, metric, "
-            "value, and scope yourself from the reported numbers above and the reference "
-            "LaTeX, and do not loosen them.)"
+            "(No success-bar pinned for this paper — fix the exact metric, value, and "
+            "scope yourself from the reported numbers above and the reference LaTeX, and "
+            "do not loosen them.)"
         )
     fields = (
-        ("Config (what to run)", target.get("config")),
         ("Metric", target.get("metric")),
         ("Target value", target.get("value")),
         ("Scope (what to measure over)", target.get("scope")),

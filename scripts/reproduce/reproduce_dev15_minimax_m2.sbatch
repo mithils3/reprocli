@@ -47,7 +47,7 @@ PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-dev}"                    # dev -> HF 'validation' (the dev-15 split)
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-8}"
-TOOL_ROUNDS="${TOOL_ROUNDS:-40}"
+TOOL_ROUNDS="${TOOL_ROUNDS:-300}"
 MAX_PARALLEL="${MAX_PARALLEL:-5}"        # papers in flight at once; each adds 1 JIT ghx4 node
 
 # Keep the agent's heavy I/O (bundles, per-paper uv venvs, run bundles) off $HOME.
@@ -168,16 +168,21 @@ run_one() {
 }
 
 set +e   # one bad paper must not abort the sweep
+# Track ONLY the per-paper PIDs. The brain server (SERVER_PID) is also a background
+# job, so a bare `wait` blocks on it forever and the sbatch never exits even after
+# all papers are done — wait on the paper jobs explicitly instead.
+run_pids=()
 inflight=0
 for pid in "${PAPER_IDS[@]}"; do
   run_one "${pid}" &
+  run_pids+=("$!")
   inflight=$((inflight + 1))
   if (( inflight >= MAX_PARALLEL )); then
-    wait -n
+    wait -n   # next paper to finish (the server never exits, so it's never this)
     inflight=$((inflight - 1))
   fi
 done
-wait
+wait "${run_pids[@]}" 2>/dev/null || true   # only the papers, not the brain
 
 # --- Summary ----------------------------------------------------------------
 echo "===== dev-15 sweep complete (job ${OUTER_JOB}) ====="

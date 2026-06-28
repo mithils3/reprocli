@@ -127,8 +127,13 @@ class RenderTests(unittest.TestCase):
         self.assertIn("Pinned success bar", prompt)
         self.assertIn("Peak RAM usage", prompt)
         self.assertIn("8.56 kB", prompt)
-        self.assertIn("MBV2-w0.35 model", prompt)
+        self.assertIn("MBV2-w0.35 model", prompt)  # scope, still rendered
         self.assertIn("reproduce a value close to the target", prompt)  # point_estimate
+        # config / spoon-fed recipe are intentionally withheld so the agent picks the
+        # minimal-effort variant itself; none of these should leak into the prompt.
+        self.assertNotIn("P1 unconstrained", prompt)  # match_target['config']
+        self.assertNotIn("analysis_optimization.py", prompt)  # mre_config
+        self.assertNotIn("install numpy", prompt)  # agent_task
 
     def test_match_target_falls_back_when_unpinned(self):
         template = PROMPT_FILE.read_text(encoding="utf-8")
@@ -136,7 +141,7 @@ class RenderTests(unittest.TestCase):
         row = {k: v for k, v in ROW.items() if k != "match_target"}
         prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
         self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
-        self.assertIn("No success-bar tuple pinned", prompt)
+        self.assertIn("No success-bar pinned", prompt)
 
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):
