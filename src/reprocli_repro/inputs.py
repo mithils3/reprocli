@@ -219,6 +219,7 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{CENTRAL_CLAIM}": _text_or(row.get("central_claim"), "(no central claim recorded)"),
         "{CLAIM_EVIDENCE}": _text_or(row.get("claim_evidence"), "(no reported numbers recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
+        "{SIGNALS}": _signals_block(row),
         # Short, stable in-container paths the agent actually sees (sandbox.py remaps the
         # long per-run host dirs onto these), so the prompt never hands it the long path.
         "{WORKSPACE_DIR}": sandbox.CONTAINER_WORKSPACE,
@@ -251,6 +252,42 @@ def _verified_links_block(row: dict) -> str:
         return (
             "(No released artifacts for this paper — locate the code yourself or "
             "re-implement the method from the paper.)"
+        )
+    return "\n".join(lines)
+
+
+def _signals_block(row: dict) -> str:
+    """Render the classifier's pre-assessed artifact availability for the prompt.
+
+    The lockfile carries the classifier's ``signals`` (code / dataset / weights /
+    dataset-is-standard + a verification level and evidence). Surfacing it spares the
+    agent the rounds it otherwise burns rediscovering, e.g., that a repo is a release
+    stub — while the prompt still tells it to verify against its exact MRE. Degrades to
+    a clear fallback when a row predates signals.
+    """
+    signals = row.get("signals") or {}
+    labels = (
+        ("Code", "code_available"),
+        ("Dataset", "dataset_available"),
+        ("Weights / checkpoints", "weights_available"),
+        ("Dataset is a standard benchmark", "dataset_is_standard"),
+    )
+    lines: list[str] = []
+    for label, key in labels:
+        sig = signals.get(key)
+        if not isinstance(sig, dict) or "value" not in sig:
+            continue
+        value = "yes" if sig.get("value") else "no"
+        verification = _text_or(sig.get("verification"), "unverified")
+        line = f"  - {label}: {value} (classifier verification: {verification})"
+        evidence = _text_or(sig.get("evidence"), "")
+        if evidence:
+            line += f" — {evidence}"
+        lines.append(line)
+    if not lines:
+        return (
+            "(No pre-assessed availability recorded — determine code/dataset/weights "
+            "availability yourself.)"
         )
     return "\n".join(lines)
 

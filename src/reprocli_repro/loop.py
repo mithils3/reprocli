@@ -45,6 +45,7 @@ from reprocli_repro.transcript import (
     conversation_for_round,
     noop,
     prepare_incremental_outputs,
+    round_status_message,
 )
 
 # Exit reasons that prepend the budget note to the final tools-off turn.
@@ -90,6 +91,10 @@ def run_reproduce_loop(
                 budget_note=exit_reasons.get(custom_id) in EARLY_EXIT_REASONS,
                 final_message=args.final_no_tools_message,
             )
+            if include_tools:
+                # Ephemeral, request-only: append the turn-budget counter without
+                # persisting it into the stored conversation (no stale copies pile up).
+                messages = [*messages, round_status_message(round_index, args.tool_rounds)]
             request = build_chat_completion_request(
                 request_model,
                 custom_id,

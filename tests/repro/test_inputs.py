@@ -138,6 +138,48 @@ class RenderTests(unittest.TestCase):
         # And the agent is told to derive the target from the paper.
         self.assertIn("WORK IT OUT FROM THE PAPER", prompt)
 
+    def test_signals_block_renders_when_present(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        row = dict(
+            ROW,
+            signals={
+                "code_available": {
+                    "value": False,
+                    "verification": "tool_verified",
+                    "evidence": "Repo is a release-pending TODO stub.",
+                },
+                "dataset_available": {
+                    "value": True,
+                    "verification": "paper_text_only",
+                    "evidence": "D-NeRF is public.",
+                },
+                "weights_available": {
+                    "value": False,
+                    "verification": "not_applicable",
+                    "evidence": "No checkpoints released.",
+                },
+                "dataset_is_standard": {
+                    "value": True,
+                    "verification": "paper_text_only",
+                    "evidence": "Standard benchmark.",
+                },
+            },
+        )
+        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
+        self.assertIn("Code: no (classifier verification: tool_verified)", prompt)
+        self.assertIn("Repo is a release-pending TODO stub.", prompt)
+        self.assertIn("Dataset: yes", prompt)
+        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
+
+    def test_signals_block_falls_back_when_absent(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        # ROW carries no `signals` (a pre-signals lockfile row); the block must still fill.
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        self.assertIn("No pre-assessed availability recorded", prompt)
+        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
+
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):
             render_reproduce_prompt(

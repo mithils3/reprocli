@@ -222,8 +222,9 @@ def _add_context_management(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--microcompact-threshold",
         type=float,
-        default=0.8,
-        help="Soft threshold as a fraction of --max-input-tokens (default: 0.8).",
+        default=0.5,
+        help="Soft threshold as a fraction of --max-input-tokens (default: 0.5). Kept "
+        "below --summarize-threshold so the cheap elide tier reclaims room first.",
     )
     group.add_argument(
         "--summarize-compact",
@@ -241,9 +242,9 @@ def _add_context_management(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--summarize-threshold",
         type=float,
-        default=0.9,
+        default=0.6,
         help="Fraction of --max-input-tokens that triggers summarize-compaction; "
-        "fires after microcompact (default: 0.9).",
+        "fires after microcompact (default: 0.6).",
     )
 
 

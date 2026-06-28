@@ -54,6 +54,18 @@ def final_user_message(budget_note: bool, final_message: str) -> dict[str, Any]:
     return {"role": "user", "content": content}
 
 
+def round_status_message(round_index: int, max_rounds: int) -> dict[str, Any]:
+    """Ephemeral per-request line telling the model which tool round it is on.
+
+    Built fresh for each request and never stored in the conversation, so stale
+    counters don't accumulate. Surfaces the turn budget — capped independently of the
+    H100-hour budget — which the model otherwise has no way to see.
+    """
+    used = round_index + 1
+    left = max(0, max_rounds - used)
+    return {"role": "user", "content": f"Tool round {used}/{max_rounds} · {left} left"}
+
+
 def conversation_for_round(
     messages: list[dict],
     include_tools: bool,

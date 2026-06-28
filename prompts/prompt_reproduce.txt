@@ -79,6 +79,12 @@ paper and grades you, so reconstruct the claim's real test, not a convenient pro
 Released artifacts (prefer running these over re-implementing the method):
 {VERIFIED_LINKS}
 
+Pre-assessed artifact availability (a fast first-pass triage from the lockfile, NOT ground
+truth). Use it to time-box your search — don't burn rounds hunting code a "no" already
+flagged as absent — but VERIFY it against YOUR exact MRE, since "available" is about the
+method in general, not necessarily your model/variant/config; treat any mismatch as a finding:
+{SIGNALS}
+
 When the headline is an eval of a released checkpoint, prefer evaluating that checkpoint
 over re-running the training pipeline that produced it — the cheaper, faithful path is to
 score the weights the authors shipped, not to retrain.
