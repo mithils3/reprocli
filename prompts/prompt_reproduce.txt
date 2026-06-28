@@ -187,9 +187,8 @@ quota, and you can count on at least a few hundred GB free (budget on ~500 GB). 
 datasets, checkpoints, and other large inputs there without rationing: at that size or
 under, don't deliberate over whether a fetch is "too big" — just pull what the MRE needs.
 Prefer the HF Hub (fastest on Delta): pull weights/datasets to an explicit `--local-dir`
-under `/tmp` and point things at that path. `HF_HOME` already defaults to `/tmp/hf_cache`,
-so a script that downloads internally from a repo id also lands on `/tmp` (never your home
-quota); set `HF_HOME=/tmp/<name> <cmd>` per-command only to isolate a particular cache.
+under `/tmp` and point things at that path — or, if a script downloads internally from a
+repo id, scope its cache with `HF_HOME=/tmp/<name> <cmd>` (per-command, doesn't leak).
 If a repo id is gated (a license click-through, or a 401/403 on download) and you lack
 access, don't stall on it — popular gated weights/datasets are almost always re-uploaded
 elsewhere. Search the Hub (`hf` CLI or the hub API) for a public mirror under another

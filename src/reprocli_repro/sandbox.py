@@ -267,24 +267,10 @@ def from_run_paths(
         binds.append(Bind(str(reference), CONTAINER_REFERENCE, ro=True))
     seen: set[str] = set()
     for cache in (caches if caches is not None else default_cache_dirs()):
-        if cache is None:
-            continue
-        resolved = Path(cache).expanduser().resolve()
-        key = str(resolved)
-        if key in seen:
-            continue
-        # A cache already inside an identity bind (notably node-local /tmp, where HF_HOME
-        # now defaults) is reachable at the same path in the container, so it needs no
-        # bind of its own — and binding a /tmp subpath would make `apptainer --bind`
-        # hard-fail on a compute node, where that source dir doesn't exist yet.
-        if any(b.src == b.dst and (resolved == Path(b.src) or resolved.is_relative_to(b.src))
-               for b in binds):
-            seen.add(key)
-            continue
-        if _ensure_dir(resolved) is None:
-            continue
-        seen.add(key)
-        binds.append(Bind(key, key))
+        resolved = _ensure_dir(cache)
+        if resolved is not None and str(resolved) not in seen:
+            seen.add(str(resolved))
+            binds.append(Bind(str(resolved), str(resolved)))
     return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE)
 
 
