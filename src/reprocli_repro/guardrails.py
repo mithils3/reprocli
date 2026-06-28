@@ -19,8 +19,6 @@ import argparse
 import sys
 from typing import Any
 
-from reprocli_vllm.runtime.loop_guards import BUDGET_CHARS_PER_TOKEN, context_budget_exceeded
-
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import gpu_session, summarize
 from reprocli_repro.compaction import microcompact
@@ -57,19 +55,24 @@ def apply_guardrails(
         exit_reasons[custom_id] = "budget_exhausted"
         print(f"Stopping reproduce loop for {custom_id}: compute budget exhausted", file=sys.stderr)
         return False
-    if args.microcompact:
+    # The context tiers gate on the model's own usage.prompt_tokens from the last
+    # response (exact, free, backend-agnostic) — no chars-per-token estimate. That count
+    # lags by this round's just-appended tool results, which is fine for a soft trigger:
+    # the next round's real count catches up. When no usage has been recorded yet we skip
+    # rather than estimate.
+    if args.microcompact and _over(ctx, args, args.microcompact_threshold):
+        # soft_limit_chars=0 → always elide once the token gate above has fired.
         stats = microcompact(
-            messages,
-            keep_recent_tool_results=args.microcompact_keep,
-            soft_limit_chars=microcompact_soft_limit(args),
+            messages, keep_recent_tool_results=args.microcompact_keep, soft_limit_chars=0
         )
         if stats["compacted"]:
             print(
                 f"microcompact {custom_id}: elided {stats['elided_messages']} stale tool "
-                f"result(s), {stats['chars_before']}->{stats['chars_after']} chars",
+                f"result(s) at {ctx.last_prompt_tokens} prompt tokens, "
+                f"{stats['chars_before']}->{stats['chars_after']} chars",
                 file=sys.stderr,
             )
-    if args.summarize_compact and _over_summarize_mark(messages, args):
+    if args.summarize_compact and _over(ctx, args, args.summarize_threshold):
         summarize_compaction(custom_id, ctx, messages, args, exit_reasons, server_url, model)
         if exit_reasons.get(custom_id) == "context_budget":
             return False
@@ -118,9 +121,9 @@ def summarize_compaction(
             )
         return
     # Summarization could not reduce the prompt. Keep going (retry next round) unless
-    # we are already past the hard ceiling, in which case end gracefully rather than
-    # let vLLM silently front-truncate the system prompt + summary head away.
-    if context_budget_exceeded(messages, args.max_input_tokens):
+    # the last real prompt-token count is already past the hard ceiling, in which case
+    # end gracefully rather than let vLLM front-truncate the system prompt + summary head.
+    if _over(ctx, args, 1.0):
         gpu_session.release(ctx, "context_overflow")
         exit_reasons[custom_id] = "context_budget"
         print(
@@ -130,10 +133,12 @@ def summarize_compaction(
         )
 
 
-def microcompact_soft_limit(args: argparse.Namespace) -> int:
-    return int(args.microcompact_threshold * args.max_input_tokens * BUDGET_CHARS_PER_TOKEN)
+def _over(ctx: ExecutionContext, args: argparse.Namespace, threshold: float) -> bool:
+    """True once the last measured prompt_tokens crosses ``threshold`` of the input budget.
 
-
-def _over_summarize_mark(messages: list[dict[str, Any]], args: argparse.Namespace) -> bool:
-    """True once the conversation crosses ``summarize_threshold`` of the input budget."""
-    return context_budget_exceeded(messages, int(args.summarize_threshold * args.max_input_tokens))
+    Uses the model's own ``usage.prompt_tokens`` (exact) — no chars-per-token estimate.
+    Returns False when no usage has been recorded yet, so the caller skips compaction that
+    round rather than guessing.
+    """
+    tokens = ctx.last_prompt_tokens
+    return tokens is not None and tokens >= threshold * args.max_input_tokens

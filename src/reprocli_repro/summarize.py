@@ -87,11 +87,6 @@ SUMMARY_TEMPLATE = """## Goal
 - [Anchor metric + tolerance, metric values seen, evidence/ artifact paths, held GPU jobid / budget left]"""
 
 
-def soft_limit_chars(max_input_tokens: int, threshold: float) -> int:
-    """Char count at which summarize-compaction should fire (``threshold`` of budget)."""
-    return int(threshold * max_input_tokens * BUDGET_CHARS_PER_TOKEN)
-
-
 def _message_chars(message: dict[str, Any]) -> int:
     chars = len(str(message.get("content") or ""))
     for call in message.get("tool_calls") or []:

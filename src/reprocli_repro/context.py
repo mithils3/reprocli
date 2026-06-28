@@ -90,3 +90,4 @@ class ExecutionContext:
     summary: str | None = None           # last summarize-compaction summary (iterative context)
     modified_files: list[str] = field(default_factory=list)  # cumulative across compactions
     plan: list[dict[str, str]] = field(default_factory=list)  # latest update_plan checklist (survives compaction)
+    last_prompt_tokens: int | None = None  # usage.prompt_tokens from the most recent response; drives the context tiers
