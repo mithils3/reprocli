@@ -5,7 +5,7 @@
 
 const R = window.RENDER;
 const state = {
-  view: "live", runs: [], byId: {}, filter: "all", excludeDead: false, excludeRoundLimit: false, search: "", tagFilter: null,
+  view: "live", runs: [], byId: {}, filter: "all", excludeDead: false, excludeRoundLimit: false, search: "", tagFilter: window.TagFilter.create(),
   currentRunId: null, liveRun: null, liveEvents: [], seenSeq: new Set(), runChannel: null, remote: false,
 };
 const $ = (s) => document.querySelector(s);
@@ -44,22 +44,15 @@ function visibleRuns() {
     (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
     (!state.excludeDead || R.effectiveStatus(r) !== "dead") &&
     (!state.excludeRoundLimit || !R.isRoundLimit(r)) &&
-    (!state.tagFilter || (window.Tags && Tags.has(r.run_id, state.tagFilter))) &&
+    state.tagFilter.pass(r.run_id, window.Tags) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id}`).toLowerCase().includes(q)));
 }
-// tag filter chips (sidebar) — union of all tags; click to filter, click to clear
+// tag filter chips (sidebar) — tri-state per tag: click to include-only, again to exclude
 function renderTagFilters() {
   const host = $("#tag-filters");
   if (!host) return;
   const tags = window.Tags ? Tags.all() : [];
-  if (state.tagFilter && !tags.includes(state.tagFilter)) state.tagFilter = null;
-  if (!tags.length) { host.innerHTML = ""; return; }
-  host.innerHTML = tags.map((t) =>
-    `<button class="tag-flt ${state.tagFilter === t ? "active" : ""}" data-t="${R.esc(t)}">${R.esc(t)}</button>`).join("");
-  host.querySelectorAll(".tag-flt").forEach((b) => b.addEventListener("click", () => {
-    state.tagFilter = state.tagFilter === b.dataset.t ? null : b.dataset.t;
-    renderTagFilters(); renderList();
-  }));
+  state.tagFilter.render(host, tags, () => { renderTagFilters(); renderList(); });
 }
 function renderList() {
   const list = $("#run-list");

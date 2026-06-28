@@ -61,7 +61,7 @@
 
   const Stats = {
     rows: null, sortKey: "total", sortDir: -1, filter: "all", search: "", busy: false, msg: "",
-    tagFilter: null, excludeDead: false,
+    tagFilter: window.TagFilter.create(), excludeDead: false,
 
     root() { return document.querySelector("#stats-root"); },
 
@@ -92,7 +92,7 @@
       const q = this.search.trim().toLowerCase(), T = window.Tags;
       return (this.rows || []).filter((r) =>
         (this.filter === "all" || r.cls === this.filter) &&
-        (!this.tagFilter || (T && T.has(r.run_id, this.tagFilter))) &&
+        this.tagFilter.pass(r.run_id, T) &&
         (!q || (`${r.arxiv_id} ${r.model} ${r.run_id}`).toLowerCase().includes(q)));
     },
     sortRows(rows) {
@@ -200,20 +200,12 @@
       this.renderBody();
     },
 
-    // tag filter chips (stats) — union of all tags; click to filter, click to clear
+    // tag filter chips (stats) — tri-state per tag: click to include-only, again to exclude
     renderTagFilters() {
       const host = document.querySelector("#stats-tagfilters");
       if (!host) return;
       const tags = window.Tags ? window.Tags.all() : [];
-      if (this.tagFilter && !tags.includes(this.tagFilter)) this.tagFilter = null;
-      host.innerHTML = tags.length
-        ? `<span class="tag-flt-lead">tag</span>` + tags.map((t) =>
-            `<button class="tag-flt ${this.tagFilter === t ? "active" : ""}" data-t="${esc(t)}">${esc(t)}</button>`).join("")
-        : "";
-      host.querySelectorAll(".tag-flt").forEach((b) => b.addEventListener("click", () => {
-        this.tagFilter = this.tagFilter === b.dataset.t ? null : b.dataset.t;
-        this.renderTagFilters(); this.renderBody();
-      }));
+      this.tagFilter.render(host, tags, () => { this.renderTagFilters(); this.renderBody(); }, "tags");
     },
 
     // tags changed elsewhere while the Stats tab is open
