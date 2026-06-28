@@ -37,17 +37,10 @@ part of your job. The target above is your anchor; the config and protocol you d
 the reference LaTeX and its appendices. Cross-check the given value against the paper's
 EXACT table row and column before trusting it, and treat a mismatch as a finding.
 
-Reproduce the claim with the MINIMAL-EFFORT experiment that still establishes it — not the
-whole paper, and not the most expensive instance of it. Papers usually demonstrate a claim
-across several model sizes, datasets, or settings; pick the SMALLEST / cheapest one that
-still proves the central claim and run that. But pick a variant THAT HAS ITS OWN REPORTED
-NUMBER you can match, or one the paper explicitly says the claim holds across — NEVER
-substitute a different-size model for the one whose value you are matching (a ViT-S will
-not reproduce a ViT-L number). If a method is shown on ViT-S/M/L and ViT-S has its own
-reported result that carries the claim, run ViT-S; if only the large variant has the
-headline number, reproduce that one. Before any GPU spend, cross-check your target against
-the EXACT table row AND column (multi-column tables list several model sizes — don't read
-across to the wrong one).
+The given scope pins WHICH experiment carries that number; your job is the minimal-effort
+CONFIG that produces it — not the whole paper, and not a bigger or more expensive instance.
+Match your config to that scope exactly: NEVER substitute a different-size model or setting
+for the one whose value you are matching (a ViT-S will not reproduce a ViT-L number).
 
 Minimal-effort is about WHICH experiment, not how thoroughly you run it. Once you pick the
 variant, run THAT one FOR REAL and IN FULL — the entire eval set (not a handful of
