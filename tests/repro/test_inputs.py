@@ -120,23 +120,23 @@ class RenderTests(unittest.TestCase):
         self.assertIn("8 H100-equivalent hours", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
 
-    def test_pinned_target_and_recipe_are_not_rendered(self):
-        # The agent works the target out from the paper itself: no pinned success bar,
-        # no spoon-fed config/value/scope, no MRE recipe or step-by-step task. Every
-        # cell-defining field below must stay OUT of the prompt.
+    def test_target_seeded_but_config_and_recipe_withheld(self):
+        # Policy: the anchor target (metric / value / scope / bar shape) IS seeded; the
+        # run CONFIG, the MRE recipe, and the step-by-step task stay OUT — the agent
+        # derives those from the paper.
         template = PROMPT_FILE.read_text(encoding="utf-8")
         paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
         prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
-        self.assertNotIn("Pinned success bar", prompt)
-        self.assertNotIn("reproduce a value close to the target", prompt)  # match_bar guidance
-        self.assertNotIn("Peak RAM usage", prompt)  # match_target['metric']
-        self.assertNotIn("P1 unconstrained", prompt)  # match_target['config']
+        # Target fields ARE now rendered.
+        self.assertIn("Peak RAM usage", prompt)     # match_target['metric']
+        self.assertIn("MBV2-w0.35 model", prompt)   # match_target['scope']
+        self.assertIn("point_estimate", prompt)     # match_target['match_bar_kind']
+        # Config / recipe / task stay OUT.
+        self.assertNotIn("P1 unconstrained", prompt)         # match_target['config']
         self.assertNotIn("analysis_optimization.py", prompt)  # mre_config
-        self.assertNotIn("install numpy", prompt)  # agent_task
-        # The central claim IS the anchor and still renders.
+        self.assertNotIn("install numpy", prompt)            # agent_task
+        # The central claim is still the anchor.
         self.assertIn("msf-CNN uses 50% less RAM", prompt)
-        # And the agent is told to derive the target from the paper.
-        self.assertIn("WORK IT OUT FROM THE PAPER", prompt)
 
     def test_signals_block_renders_when_present(self):
         template = PROMPT_FILE.read_text(encoding="utf-8")

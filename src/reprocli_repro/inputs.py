@@ -220,6 +220,7 @@ def _replacements(row: dict, budget: float, run_paths: RunPaths) -> dict[str, st
         "{CLAIM_EVIDENCE}": _text_or(row.get("claim_evidence"), "(no reported numbers recorded)"),
         "{VERIFIED_LINKS}": _verified_links_block(row),
         "{SIGNALS}": _signals_block(row),
+        "{MATCH_TARGET}": _match_target_block(row),
         # Short, stable in-container paths the agent actually sees (sandbox.py remaps the
         # long per-run host dirs onto these), so the prompt never hands it the long path.
         "{WORKSPACE_DIR}": sandbox.CONTAINER_WORKSPACE,
@@ -252,6 +253,34 @@ def _verified_links_block(row: dict) -> str:
         return (
             "(No released artifacts for this paper — locate the code yourself or "
             "re-implement the method from the paper.)"
+        )
+    return "\n".join(lines)
+
+
+def _match_target_block(row: dict) -> str:
+    """Render the classifier's anchor target MINUS its ``config``.
+
+    Hands the agent the success bar to match — metric, reported value, scope, and bar
+    shape — while still withholding ``match_target['config']`` (the exact runnable
+    configuration), which the agent must derive from the paper. Degrades to a clear
+    fallback when no target is recorded.
+    """
+    target = row.get("match_target") or {}
+    fields = (
+        ("Metric", "metric"),
+        ("Target value", "value"),
+        ("Scope", "scope"),
+        ("Bar shape", "match_bar_kind"),
+    )
+    lines: list[str] = []
+    for label, key in fields:
+        text = _text_or(target.get(key), "")
+        if text:
+            lines.append(f"  - {label}: {text}")
+    if not lines:
+        return (
+            "(No anchor target recorded — derive the metric, value, and scope from the "
+            "paper yourself.)"
         )
     return "\n".join(lines)
 

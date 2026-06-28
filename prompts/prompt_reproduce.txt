@@ -24,13 +24,18 @@ Reported numbers / experiment context (the paper's own evidence for the claim):
 {CLAIM_EVIDENCE}
 
 ======================================================================
-THE REPRODUCTION TARGET — WORK IT OUT FROM THE PAPER
+THE REPRODUCTION TARGET — CONFIG IS YOURS TO DERIVE
 ======================================================================
 
-You are NOT handed a pinned config, metric, or target number. Reading the paper and
-deciding what experiment tests the central claim — and what counts as reproducing it — is
-part of your job. The central claim above is your anchor; everything else you derive from
-the reference LaTeX and its appendices.
+The anchor TARGET you must match — metric, reported value, scope, and bar shape — is given:
+
+{MATCH_TARGET}
+
+What you are NOT handed is the exact run CONFIG that produces that value: deciding which
+experiment/variant tests the central claim, and the protocol that backs the number, is
+part of your job. The target above is your anchor; the config and protocol you derive from
+the reference LaTeX and its appendices. Cross-check the given value against the paper's
+EXACT table row and column before trusting it, and treat a mismatch as a finding.
 
 Reproduce the claim with the MINIMAL-EFFORT experiment that still establishes it — not the
 whole paper, and not the most expensive instance of it. Papers usually demonstrate a claim
