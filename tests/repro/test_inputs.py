@@ -120,28 +120,23 @@ class RenderTests(unittest.TestCase):
         self.assertIn("8 H100-equivalent hours", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
 
-    def test_match_target_tuple_is_rendered(self):
+    def test_pinned_target_and_recipe_are_not_rendered(self):
+        # The agent works the target out from the paper itself: no pinned success bar,
+        # no spoon-fed config/value/scope, no MRE recipe or step-by-step task. Every
+        # cell-defining field below must stay OUT of the prompt.
         template = PROMPT_FILE.read_text(encoding="utf-8")
         paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
         prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
-        self.assertIn("Pinned success bar", prompt)
-        self.assertIn("Peak RAM usage", prompt)
-        self.assertIn("8.56 kB", prompt)
-        self.assertIn("MBV2-w0.35 model", prompt)  # scope, still rendered
-        self.assertIn("reproduce a value close to the target", prompt)  # point_estimate
-        # config / spoon-fed recipe are intentionally withheld so the agent picks the
-        # minimal-effort variant itself; none of these should leak into the prompt.
+        self.assertNotIn("Pinned success bar", prompt)
+        self.assertNotIn("reproduce a value close to the target", prompt)  # match_bar guidance
+        self.assertNotIn("Peak RAM usage", prompt)  # match_target['metric']
         self.assertNotIn("P1 unconstrained", prompt)  # match_target['config']
         self.assertNotIn("analysis_optimization.py", prompt)  # mre_config
         self.assertNotIn("install numpy", prompt)  # agent_task
-
-    def test_match_target_falls_back_when_unpinned(self):
-        template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "x", 8.0, run_id="RID")
-        row = {k: v for k, v in ROW.items() if k != "match_target"}
-        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
-        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
-        self.assertIn("No success-bar pinned", prompt)
+        # The central claim IS the anchor and still renders.
+        self.assertIn("msf-CNN uses 50% less RAM", prompt)
+        # And the agent is told to derive the target from the paper.
+        self.assertIn("WORK IT OUT FROM THE PAPER", prompt)
 
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):

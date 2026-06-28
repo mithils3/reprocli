@@ -31,7 +31,7 @@ from __future__ import annotations
 import shlex
 from typing import Any
 
-from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
+from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS
 
 from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
@@ -264,63 +264,7 @@ def _safe_int(value: Any) -> int | None:
         return None
 
 
-def run_gpu_tool(gpus_per_node: int) -> dict:
-    """Build the ``run_gpu`` schema, advertising this cluster's per-node GPU cap."""
-    return function_tool(
-        "run_gpu",
-        "Run ONE command on a real GPU (training, evaluation, scoring, verifying the "
-        "container's torch.cuda, nvidia-smi). The GPU allocation is HELD across calls: the "
-        "first run_gpu acquires it (you may wait in the queue once) and every later "
-        "run_gpu runs on the SAME node with NO new queue wait, so install → verify → "
-        "run as successive calls. You are billed WALL-CLOCK for the whole time the "
-        "allocation is held — gpus x held-time x hw, including while you reason or "
-        "install between commands — so set release=true the moment you are done with "
-        "the GPU to stop the meter (re-acquire later if you need it again). The command "
-        "runs with the workspace as its cwd; cost and remaining budget are returned and "
-        "recorded to evidence/. Each result also reports session_remaining_seconds — the "
-        "wall left before this allocation hits its `minutes` (--time) cap and SLURM reclaims "
-        "the node (losing any unsaved state); when it runs low a session_expiry_warning tells "
-        "you to checkpoint to disk and, if you need more time, release and re-acquire.",
-        {
-            "command": {
-                "type": "string",
-                "description": "The GPU command to run (e.g. `python train.py ...`). Omit only with release=true to just free the session.",
-            },
-            "gpus": {
-                "type": "integer",
-                "default": DEFAULT_GPUS,
-                "minimum": 1,
-                "maximum": gpus_per_node,
-                "description": (
-                    f"GPUs to hold (1-{gpus_per_node}, one node); set only on the call that STARTS "
-                    "the session. Default 1 is for smoke tests — take more to fit a model/batch too "
-                    "big for one GPU or to finish sooner; throughput scales with gpus (wall budget ~same)."
-                ),
-            },
-            "minutes": {
-                "type": "integer",
-                "default": DEFAULT_MINUTES,
-                "minimum": 1,
-                "maximum": MAX_MINUTES,
-                "description": "Max lifetime of the held allocation (SLURM --time) and the budget "
-                "pre-authorization; set on the call that starts the session. Pick ~ how long you will hold it.",
-            },
-            "release": {
-                "type": "boolean",
-                "default": False,
-                "description": "Set true when you are done with the GPU: frees the allocation after "
-                "this command (or immediately if no command) so wall-clock billing stops.",
-            },
-            "partition": {
-                "type": "string",
-                "description": "SLURM partition (node pool) to allocate on. Omit to use this "
-                "cluster's default; call list_partitions to see the alternatives (e.g. a "
-                "faster-queueing interactive pool). Takes effect only on the call that STARTS "
-                "the session; fixed until you release it.",
-            },
-        },
-        [],  # command is enforced by the handler (it is optional only with release=true)
-    )
-
-
 RUN_GPU_HANDLERS = {"run_gpu": run_gpu}
+
+# The ``run_gpu`` JSON schema (``run_gpu_tool``) lives in ``run_gpu_schema.py`` to keep
+# this module focused on the handler; it imports the DEFAULT_*/MAX_* knobs from here.

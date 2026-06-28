@@ -42,7 +42,8 @@ from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
 from reprocli_repro.tools.partitions import LIST_PARTITIONS_HANDLERS, LIST_PARTITIONS_TOOLS
 from reprocli_repro.tools.plan import UPDATE_PLAN_HANDLERS, UPDATE_PLAN_TOOLS
-from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
+from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS
+from reprocli_repro.tools.run_gpu_schema import run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
 # The per-node GPU cap baked into run_gpu's schema is cluster-specific; cli_args
