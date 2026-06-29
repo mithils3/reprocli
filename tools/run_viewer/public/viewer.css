@@ -214,3 +214,13 @@ a.rep-jump:hover { color: var(--accent-strong); text-decoration: underline; }
 .jstr, .jnum { color: var(--txt); }
 .jbool { color: var(--unk-deep); font-weight: 600; }
 .jnull { color: var(--muted); font-style: italic; }
+
+/* floating jump-to-bottom button — only visible on long, scrolled transcripts */
+.jump-bottom { position: fixed; right: 26px; bottom: 26px; z-index: 6;
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--bg); color: var(--txt); border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18); font-size: 19px; line-height: 1; cursor: pointer;
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity .18s, transform .18s, background .15s, border-color .15s; }
+.jump-bottom.show { opacity: 1; transform: none; pointer-events: auto; }
+.jump-bottom:hover { background: var(--panel2); border-color: var(--accent); }

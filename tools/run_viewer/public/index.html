@@ -80,6 +80,9 @@
         </div>
       </section>
     </main>
+
+    <!-- floating control: jump the active detail pane to its end -->
+    <button id="jump-bottom" class="jump-bottom" title="Jump to bottom" aria-label="Jump to bottom">↓</button>
   </div>
 
   <!-- shared autocomplete for tag inputs (filled from existing tags) -->
@@ -117,6 +120,42 @@
         sync();
       });
       sync();
+    })();
+  </script>
+  <script>
+    /* floating jump-to-bottom: scrolls the visible detail pane to its end.
+       Shows only while that pane is scrollable and not already near the bottom. */
+    (function () {
+      var btn = document.getElementById('jump-bottom');
+      if (!btn) return;
+      function activeDetail() {
+        var views = document.querySelectorAll('main.view');
+        for (var i = 0; i < views.length; i++)
+          if (!views[i].classList.contains('hidden')) return views[i].querySelector('.detail');
+        return null;
+      }
+      var scheduled = false;
+      function update() {
+        scheduled = false;
+        var d = activeDetail();
+        var room = d ? d.scrollHeight - d.clientHeight : 0;
+        var atBottom = d ? (room - d.scrollTop < 120) : true;
+        btn.classList.toggle('show', !!d && room > 240 && !atBottom);
+      }
+      function schedule() { if (!scheduled) { scheduled = true; requestAnimationFrame(update); } }
+      btn.addEventListener('click', function () {
+        var d = activeDetail();
+        if (d) d.scrollTo({ top: d.scrollHeight, behavior: 'smooth' });
+      });
+      document.querySelectorAll('.detail').forEach(function (d) {
+        d.addEventListener('scroll', schedule, { passive: true });
+        new MutationObserver(schedule).observe(d, { childList: true, subtree: true });
+      });
+      document.querySelectorAll('.tab, #sidebar-toggle').forEach(function (t) {
+        t.addEventListener('click', function () { setTimeout(update, 60); });
+      });
+      window.addEventListener('resize', schedule);
+      update();
     })();
   </script>
 </body>
