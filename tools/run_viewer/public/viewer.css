@@ -127,6 +127,10 @@
 .rep-under { color: var(--yes-deep); font-weight: 600; } /* came in under predicted */
 a.rep-jump { color: var(--txt); }
 a.rep-jump:hover { color: var(--accent-strong); text-decoration: underline; }
+.tier-breakdown { display: flex; align-items: center; flex-wrap: wrap; gap: 16px;
+  margin: -8px 0 20px; font-size: 13px; }
+.tier-stat { display: inline-flex; align-items: center; gap: 6px; }
+.tier-stat b { font-variant-numeric: tabular-nums; color: var(--txt); }
 
 /* ---- run tags (repro_tags) ---------------------------------------------- */
 .tag-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; vertical-align: middle; }

@@ -17,6 +17,11 @@
   const pct = (a, b) => (a == null || !b ? null : Math.round((a / b) * 100));
   const DEFAULT_SUCCESS = "success";
 
+  // lockfile difficulty tiers — colour + ordering (Easy < Medium < Hard)
+  const TIER_CLASS = { Easy: "yes", Medium: "unk", Hard: "no" };
+  const TIER_RANK = { Easy: 1, Medium: 2, Hard: 3 };
+  const TIER_ORDER = ["Easy", "Medium", "Hard"];
+
   const budgetOf = (run) => num(run.budget) ?? num(run.total_h100);
   function tookOf(run) {
     let s = num(run.spent_h100);
@@ -37,6 +42,7 @@
     { key: "reproduced", label: "reproduced", num: true, tip: "has a run tagged with the success tag" },
     { key: "successCount", label: "runs ✓ / n", num: true, tip: "successful runs / total runs for this paper" },
     { key: "model", label: "model" },
+    { key: "tier", label: "tier", tip: "lockfile difficulty tier (Easy / Medium / Hard), set from the audited H100·h band" },
     { key: "predicted", label: "predicted H100·h", num: true, tip: "lockfile h100_hours_estimate (Mithilss/reprobench-splits); falls back to the run budget" },
     { key: "took", label: "took H100·h", num: true, tip: "compute the successful run actually spent" },
     { key: "delta", label: "Δ vs predicted", num: true, tip: "took − predicted (negative = came in under budget)" },
@@ -90,12 +96,14 @@
           : null;
         const models = [...new Set(runs.map((r) => r.model).filter(Boolean))];
         // predicted = lockfile h100_hours_estimate; fall back to the run budget
-        const fromDataset = window.Estimates ? window.Estimates.get(arxiv_id) : null;
+        const estRow = window.Estimates ? window.Estimates.row(arxiv_id) : null;
+        const fromDataset = estRow ? estRow.estimate : null;
         const predicted = fromDataset != null ? fromDataset : (chosen ? budgetOf(chosen) : maxOf(runs, budgetOf));
         const took = chosen ? tookOf(chosen) : null;
         papers.push({
           arxiv_id, reproduced, successCount: successRuns.length, totalRuns: runs.length,
           model: chosen ? (chosen.model || "—") : (models.join(", ") || "—"),
+          tier: estRow ? estRow.tier : null, band: estRow ? estRow.band : null,
           predicted, predictedFromDataset: fromDataset != null, took,
           delta: (took != null && predicted != null) ? round(took - predicted) : null,
           run_id: chosen ? chosen.run_id : null,
@@ -115,6 +123,7 @@
       return [...rows].sort((a, b) => {
         let x = a[c.key], y = b[c.key];
         if (c.key === "reproduced") { x = a.reproduced ? 1 : 0; y = b.reproduced ? 1 : 0; }
+        if (c.key === "tier") { x = TIER_RANK[a.tier] || Infinity; y = TIER_RANK[b.tier] || Infinity; return (x - y) * dir; }
         if (c.num) { x = x == null ? -Infinity : x; y = y == null ? -Infinity : y; return (x - y) * dir; }
         return String(x).localeCompare(String(y)) * dir;
       });
@@ -128,10 +137,10 @@
 
     // ---- CSV -----------------------------------------------------------------
     csv() {
-      const head = ["arxiv_id", "reproduced", "success_runs", "total_runs", "model",
+      const head = ["arxiv_id", "reproduced", "success_runs", "total_runs", "model", "tier", "h100_band",
         "predicted_h100", "took_h100", "delta_h100", "ratio_pct", "success_run_id"];
       const body = this.sortPapers(this.visible()).map((p) => [
-        p.arxiv_id, p.reproduced ? "yes" : "no", p.successCount, p.totalRuns, p.model,
+        p.arxiv_id, p.reproduced ? "yes" : "no", p.successCount, p.totalRuns, p.model, p.tier ?? "", p.band ?? "",
         p.predicted ?? "", p.took ?? "", p.delta ?? "", pct(p.took, p.predicted) ?? "", p.run_id ?? "",
       ]);
       return [head, ...body].map((r) => r.map(csvCell).join(",")).join("\n");
@@ -170,6 +179,24 @@
         `<div class="stat-card"><div class="sc-v">${esc(v)}</div><div class="sc-l">${esc(l)}</div>${s ? `<div class="sc-s">${esc(s)}</div>` : ""}</div>`).join("")}</div>`;
     },
 
+    // reproduced / total split by difficulty tier — answers "how hard were these?"
+    tierBreakdownHtml(papers) {
+      const stats = {};
+      for (const p of papers) {
+        const t = p.tier || "untiered";
+        (stats[t] || (stats[t] = { total: 0, repro: 0 })).total++;
+        if (p.reproduced) stats[t].repro++;
+      }
+      const keys = TIER_ORDER.filter((k) => stats[k]).concat(Object.keys(stats).filter((k) => !TIER_ORDER.includes(k)));
+      if (!keys.length || (keys.length === 1 && keys[0] === "untiered")) return "";
+      const chips = keys.map((k) => {
+        const s = stats[k], cls = k === "untiered" ? "unk" : (TIER_CLASS[k] || "accent");
+        return `<span class="tier-stat"><span class="badge ${cls}">${esc(k)}</span>
+          <b>${s.repro}</b><span class="s-sub">/${s.total} reproduced</span></span>`;
+      }).join("");
+      return `<div class="tier-breakdown"><span class="s-sub">by difficulty:</span>${chips}</div>`;
+    },
+
     rowHtml(p) {
       const ratio = pct(p.took, p.predicted);
       const reproCell = p.reproduced
@@ -181,11 +208,15 @@
       const arx = p.run_id
         ? `<a class="s-arx rep-jump" href="#" data-run="${esc(p.run_id)}" title="open this run in the Live tab">${esc(p.arxiv_id)}</a>`
         : `<span class="s-arx">${esc(p.arxiv_id)}</span>`;
+      const tierCell = p.tier
+        ? `<span class="badge ${TIER_CLASS[p.tier] || "accent"}"${p.band ? ` title="${esc(p.band)} H100·h band"` : ""}>${esc(p.tier)}</span>`
+        : `<span class="s-sub">—</span>`;
       return `<tr>
         <td class="s-run">${arx}${p.run_id ? `<div class="s-rid">${esc(p.run_id)}</div>` : ""}</td>
         <td>${reproCell}</td>
         <td class="num">${runs}</td>
         <td class="s-model">${esc(p.model)}</td>
+        <td>${tierCell}</td>
         <td class="num">${fmtH(p.predicted)}${p.predicted != null && !p.predictedFromDataset ? ` <span class="s-sub" title="not in the lockfile dataset — using the run budget">budget</span>` : ""}</td>
         <td class="num">${p.took == null ? "—" : fmtH(p.took)}</td>
         <td class="num">${deltaCell}</td>
@@ -241,7 +272,7 @@
       this.buildPapers();
       const rows = this.visible();
       if (!rows.length) { body.innerHTML = `<div class="empty">No papers match this filter.</div>`; return; }
-      body.innerHTML = this.summaryHtml(rows) + this.tableHtml(rows);
+      body.innerHTML = this.summaryHtml(rows) + this.tierBreakdownHtml(rows) + this.tableHtml(rows);
       body.querySelectorAll(".stats-table th").forEach((th) =>
         th.addEventListener("click", () => this.setSort(th.dataset.k)));
       body.querySelectorAll(".rep-jump").forEach((a) => a.addEventListener("click", (e) => {
