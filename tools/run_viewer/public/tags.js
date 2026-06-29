@@ -65,7 +65,8 @@
     chipsHtml(runId) {
       const ts = this.get(runId);
       if (!ts.length) return "";
-      return `<span class="tag-chips">${ts.map((t) => `<span class="tag-chip">${esc(t)}</span>`).join("")}</span>`;
+      const fam = (t) => window.Verdict ? window.Verdict.tagFamily(t) : null;
+      return `<span class="tag-chips">${ts.map((t) => `<span class="tag-chip ${fam(t) ? "fam-" + fam(t) : ""}">${esc(t)}</span>`).join("")}</span>`;
     },
 
     // editable tag bar: fills every <div class="tagbar" data-run="…"> in scope
@@ -77,8 +78,9 @@
     _fill(bar) {
       const runId = bar.getAttribute("data-run");
       const offline = !(window.RemoteSource && window.RemoteSource.client);
+      const fam = (t) => window.Verdict ? window.Verdict.tagFamily(t) : null;
       const chips = this.get(runId).map((t) =>
-        `<span class="tag-chip edit">${esc(t)}<button class="tag-x" data-tag="${esc(t)}" title="remove tag" aria-label="remove ${esc(t)}">×</button></span>`).join("");
+        `<span class="tag-chip edit ${fam(t) ? "fam-" + fam(t) : ""}">${esc(t)}<button class="tag-x" data-tag="${esc(t)}" title="remove tag" aria-label="remove ${esc(t)}">×</button></span>`).join("");
       bar.innerHTML = `<span class="tag-lead">tags</span>${chips}` +
         (offline ? `<span class="tag-off">offline</span>`
                  : `<input class="tag-input" list="tag-suggest" placeholder="+ add" aria-label="add tag" />`);

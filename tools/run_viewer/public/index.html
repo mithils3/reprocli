@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Repro Run Viewer</title>
-  <meta name="theme-color" content="#FAF9F5" />
-  <!-- set the theme before first paint so there's no light-mode flash -->
+  <title>trace.paper — repro run viewer</title>
+  <meta name="theme-color" content="#E8EDF3" />
+  <!-- set the theme before first paint so there's no flash -->
   <script>
     (function () {
       try {
@@ -17,114 +17,128 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="overview.css" />
   <link rel="stylesheet" href="viewer.css" />
   <link rel="stylesheet" href="theme.css" />
 </head>
 <body>
   <div id="app" class="app">
     <header class="topbar">
-      <button id="sidebar-toggle" class="sidebar-toggle" title="Hide the run list" aria-label="Toggle run list">☰</button>
-      <div class="brand">Repro Run Viewer</div>
+      <button id="sidebar-toggle" class="icon-btn" title="Toggle run list" aria-label="Toggle run list" style="display:none">☰</button>
+      <div class="brand" title="trace.paper">
+        <svg class="b-mark" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+          <line x1="1" y1="5" x2="21" y2="5" style="stroke:var(--predicted);opacity:.8" stroke-width="1" stroke-dasharray="2 2"/>
+          <polyline points="1,15 6,12 10,11 14,6 18,3" style="stroke:var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="18" cy="3" r="2" style="fill:var(--yes)"/>
+        </svg>
+        <span><b>trace</b><span>.paper</span></span>
+        <span class="b-count" id="brand-count"></span>
+      </div>
       <nav class="tabs">
-        <button class="tab active" data-view="live">Live runs</button>
+        <button class="tab active" data-view="overview">Overview</button>
+        <button class="tab" data-view="papers">Papers</button>
+        <button class="tab" data-view="live">Live</button>
         <button class="tab" data-view="stats">Stats</button>
-        <button class="tab" data-view="report">Reproduced</button>
-        <button class="tab" data-view="local">Local file</button>
+        <button class="tab" data-view="local">Local</button>
       </nav>
       <div class="who">
         <span id="conn" class="pill"></span>
-        <button id="theme-toggle" class="theme-toggle" title="Switch theme" aria-label="Switch theme">☾</button>
+        <button id="theme-toggle" class="icon-btn" title="Switch theme" aria-label="Switch theme">☾</button>
       </div>
     </header>
 
-    <!-- LIVE: runs streamed to Supabase -->
-    <main id="view-live" class="view layout">
+    <!-- OVERVIEW: the worksheet — benchmark thesis + paper small-multiples -->
+    <main id="view-overview" class="view">
+      <section class="detail"><div id="overview-root"></div></section>
+    </main>
+
+    <!-- PAPERS: list of papers by claim → a paper's specimen page (runs) -->
+    <main id="view-papers" class="view hidden">
+      <section class="detail"><div id="papers-root"></div></section>
+    </main>
+
+    <!-- LIVE: run list streamed from Supabase + the transcript strip-chart -->
+    <main id="view-live" class="view hidden layout">
       <aside class="sidebar">
-        <input id="search" type="search" placeholder="Search arxiv id or model…" />
+        <input id="search" type="search" placeholder="search claim, arxiv id or model…" />
         <div class="filters" id="filters"></div>
         <div class="tag-filters" id="tag-filters"></div>
         <div id="run-list" class="paper-list"></div>
       </aside>
       <section id="live-detail" class="detail">
-        <div class="empty">Pick a run from the list to watch it stream in.</div>
+        <div class="empty">Pick a run to watch its compute-burn trace stream in.</div>
       </section>
     </main>
 
-    <!-- STATS: token / turn tallies across all runs -->
+    <!-- STATS: token / compute tallies across all runs -->
     <main id="view-stats" class="view hidden">
-      <section class="detail">
-        <div id="stats-root" class="stats-wrap"></div>
-      </section>
-    </main>
-
-    <!-- REPORT: per-paper reproduction status (success tag) + took vs predicted -->
-    <main id="view-report" class="view hidden">
-      <section class="detail">
-        <div id="report-root" class="stats-wrap"></div>
-      </section>
+      <section class="detail"><div id="stats-root" class="stats-wrap"></div></section>
     </main>
 
     <!-- LOCAL: drop an agent.log / agent.full.log / first_try.log -->
     <main id="view-local" class="view hidden">
       <section id="local-detail" class="detail">
         <div id="drop" class="drop">
-          <h2>Drop an agent log here</h2>
+          <h2>Drop an agent log</h2>
           <div class="hint">
             Drag in an <code>agent.log</code>, <code>agent.full.log</code>, or
             <code>first_try.log</code> — or click to choose a file.<br />
-            Everything is parsed locally in your browser; nothing is uploaded.
+            Parsed locally in your browser; nothing is uploaded.
           </div>
           <input id="file" type="file" class="hidden" accept=".log,.txt" />
         </div>
       </section>
     </main>
 
-    <!-- floating control: jump the active detail pane to its end -->
     <button id="jump-bottom" class="jump-bottom" title="Jump to bottom" aria-label="Jump to bottom">↓</button>
   </div>
 
-  <!-- shared autocomplete for tag inputs (filled from existing tags) -->
   <datalist id="tag-suggest"></datalist>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="parser.js"></script>
   <script src="render.js"></script>
+  <script src="render_round.js"></script>
+  <script src="verdict.js"></script>
+  <script src="trace.js"></script>
+  <script src="charts.js"></script>
   <script src="tagfilter.js"></script>
   <script src="supabase-data.js"></script>
   <script src="tags.js"></script>
-  <script src="charts.js"></script>
-  <script src="stats.js"></script>
   <script src="estimates.js"></script>
+  <script src="stats.js"></script>
   <script src="report.js"></script>
+  <script src="strip.js"></script>
+  <script src="overview.js"></script>
+  <script src="papers.js"></script>
   <script src="app.js"></script>
   <script>
     /* theme toggle: flip data-theme, persist, keep icon + browser UI colour in sync */
     (function () {
-      var root = document.documentElement;
-      var btn = document.getElementById('theme-toggle');
+      var root = document.documentElement, btn = document.getElementById('theme-toggle');
       if (!btn) return;
       var meta = document.querySelector('meta[name="theme-color"]');
       function sync() {
         var dark = root.getAttribute('data-theme') === 'dark';
         btn.textContent = dark ? '☀' : '☾';
         btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-        if (meta) meta.setAttribute('content', dark ? '#0c0b0a' : '#FAF9F5');
+        if (meta) meta.setAttribute('content', dark ? '#0B1622' : '#E8EDF3');
       }
       btn.addEventListener('click', function () {
         var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         root.setAttribute('data-theme', next);
         try { localStorage.setItem('theme', next); } catch (e) {}
         sync();
+        if (window.onThemeChange) window.onThemeChange();
       });
       sync();
     })();
   </script>
   <script>
-    /* floating jump-to-bottom: scrolls the visible detail pane to its end.
-       Shows only while that pane is scrollable and not already near the bottom. */
+    /* floating jump-to-bottom: scrolls the visible detail pane to its end. */
     (function () {
       var btn = document.getElementById('jump-bottom');
       if (!btn) return;
@@ -143,6 +157,7 @@
         btn.classList.toggle('show', !!d && room > 240 && !atBottom);
       }
       function schedule() { if (!scheduled) { scheduled = true; requestAnimationFrame(update); } }
+      window.scheduleJumpUpdate = schedule;
       btn.addEventListener('click', function () {
         var d = activeDetail();
         if (d) d.scrollTo({ top: d.scrollHeight, behavior: 'smooth' });

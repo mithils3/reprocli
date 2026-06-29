@@ -50,11 +50,12 @@
         const chip = (t) => {
           const m = this.modeOf(t);
           const cls = m === "include" ? "inc" : m === "exclude" ? "exc" : "";
+          const fam = (!cls && window.Verdict) ? window.Verdict.tagFamily(t) : null;
           const mark = m === "include" ? "✓ " : m === "exclude" ? "✕ " : "";
           const title = m === "include" ? `showing only runs tagged "${t}" — click to exclude`
             : m === "exclude" ? `hiding runs tagged "${t}" — click to clear`
             : `click to show only "${t}" · again to hide it`;
-          return `<button class="tag-flt ${cls}" data-t="${esc(t)}" title="${esc(title)}">${mark}${esc(t)}</button>`;
+          return `<button class="tag-flt ${cls} ${fam ? "fam-" + fam : ""}" data-t="${esc(t)}" title="${esc(title)}">${mark}${esc(t)}</button>`;
         };
         const clearBtn = this.active()
           ? `<button class="tag-flt tag-flt-clear" data-clear="1" title="clear all tag filters">clear</button>` : "";

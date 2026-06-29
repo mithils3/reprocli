@@ -126,7 +126,7 @@
         ["total", fmtK(sum("total")), "tokens"],
         ["cached", fmtK(cached), rate != null ? `${rate}% of prompt` : "tokens"],
         ["uncached", fmtK(uncached), urate != null ? `${urate}% of prompt` : "tokens"],
-        ["compute", fmtH(sum("spent")), "H100·h"],
+        ["compute", R.fmtHM(sum("spent")), "H100·h"],
       ];
       return `<div class="stat-cards">${cards.map(([l, v, s]) =>
         `<div class="stat-card ${l === "dead" && deadCount && !excluded ? "warn" : ""}"><div class="sc-v">${v}</div><div class="sc-l">${esc(l)}</div>${s ? `<div class="sc-s">${esc(s)}</div>` : ""}</div>`).join("")}</div>`;
@@ -146,7 +146,7 @@
         <td class="num">${fmt(r.total)}</td>
         <td class="num">${fmt(r.cached)}${cacheSub}</td>
         <td class="num">${fmt(r.uncached)}${uncSub}</td>
-        <td class="num">${r.spent == null ? "—" : fmtH(r.spent)}</td>
+        <td class="num" title="${r.spent == null ? "" : r.spent + " H100·h"}">${r.spent == null ? "—" : R.fmtHM(r.spent)}</td>
         <td class="s-tags">${window.Tags ? window.Tags.chipsHtml(r.run_id) : ""}</td>
         <td><span class="badge ${R.statusBadgeClass(r.cls)}">${esc(r.statusLabel)}</span></td>
       </tr>`;
@@ -220,7 +220,7 @@
       if (!rows.length) { body.innerHTML = `<div class="empty">No runs match this filter.</div>`; return; }
       const deadCount = rows.filter((r) => r.cls === "dead").length;
       const active = this.excludeDead ? rows.filter((r) => r.cls !== "dead") : rows;
-      const charts = window.Charts ? window.Charts.render(active) : "";
+      const charts = window.Charts ? window.Charts.statsCharts(active) : "";
       body.innerHTML = this.summaryHtml(active, deadCount, this.excludeDead) + charts + this.tableHtml(active);
       body.querySelectorAll(".stats-table th").forEach((th) =>
         th.addEventListener("click", () => this.setSort(th.dataset.k)));
