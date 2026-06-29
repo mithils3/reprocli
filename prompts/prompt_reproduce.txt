@@ -151,8 +151,8 @@ You act through these tools — two run commands, the rest orchestration:
   don't re-plan from scratch each turn.
 - write_file / apply_patch — create or edit files in the workspace/evidence (confined there;
   reference is read-only). Prefer these over `echo >` or `sed -i` heredocs.
-- fetch_url — read-only http(s) fetch (HTML→text), for reading a page. There is no general web
-  search, and no read_file tool — read local files with workspace_bash (sed/grep/cat).
+- fetch_url — read-only http(s) fetch (HTML→text), for reading a web page; there is no general
+  web search.
 
 When several reads or checks are independent, issue them in ONE turn rather than serially; a
 turn is a round (below), so batching conserves rounds. Use tools only to do work — do not run
