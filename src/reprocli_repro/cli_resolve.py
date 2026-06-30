@@ -13,6 +13,7 @@ import argparse
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.cluster import from_args as resolve_cluster
+from reprocli_repro.report import REPORT_RESPONSE_FORMAT
 from reprocli_repro.tools import build_repro_tools
 
 REPRO_SYSTEM_MESSAGE = (
@@ -24,8 +25,12 @@ REPRO_SYSTEM_MESSAGE = (
     "land in later phases.)"
 )
 REPRO_FINAL_NO_TOOLS_MESSAGE = (
-    "The tool phase is finished. Produce the final structured submission now "
-    "from the evidence gathered above. Return only the requested object."
+    "The tool phase is over. Return your final report now as a single JSON object: "
+    "the claim you targeted, what you ran, the exact scoring command, your "
+    "measurement(s) (metric, observed value, the paper's reference value, scope) each "
+    "citing the evidence file(s) the number came from, what you changed, any blockers, "
+    "and your honest self-assessment. This is your account of the run, not the verdict "
+    "-- the auditor grades it. Return only the JSON object."
 )
 
 
@@ -60,15 +65,16 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
-    args.response_format = None
+    # Phase 5: the forced final pass (tools off) is schema-constrained to the agent's
+    # report.json -- its account of the run, which the loop persists to the bundle for
+    # the auditor to grade. build_chat_completion_request sends tools XOR this format.
+    args.response_format = REPORT_RESPONSE_FORMAT
     # Resolve the JIT-allocation substrate once: the named profile merged with any
     # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
     args.cluster_profile = resolve_cluster(args)
     # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
-    # per-node size, so the model picks a valid GPU count for this substrate. The
-    # structured report (response_format) lands in Phase 5; until then the final
-    # tools-off turn falls back to the classifier's default format.
+    # per-node size, so the model picks a valid GPU count for this substrate.
     args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)

@@ -357,6 +357,7 @@ def build_context(ep: EpisodeInput, *, allocation: str | None = None) -> Executi
         workspace=ep.run_paths.workspace,
         reference=ep.run_paths.reference,
         evidence=ep.run_paths.evidence,
+        run_dir=ep.run_paths.run_dir,
         budget=Budget(total_h100_hours=ep.budget),
         allocation=allocation,
     )

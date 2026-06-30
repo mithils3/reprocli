@@ -117,7 +117,7 @@ class RenderTests(unittest.TestCase):
         prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
         self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
         self.assertIn("2505.11483", prompt)
-        self.assertIn("8 H100-equivalent hours", prompt)
+        self.assertIn("8 H100-hours total", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
 
     def test_target_seeded_but_config_and_recipe_withheld(self):

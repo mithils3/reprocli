@@ -85,6 +85,7 @@ class ExecutionContext:
     allocation: str | None = None        # jobid of the held GPU allocation (mirrors session.jobid)
     session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
     evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
+    run_dir: Path | None = None          # Phase 5: bundle root where report.json is written for the auditor
     cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on
     sandbox: "Sandbox | None" = None     # Apptainer container write-confinement applied to shell steps
     summary: str | None = None           # last summarize-compaction summary (iterative context)

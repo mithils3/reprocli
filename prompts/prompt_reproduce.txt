@@ -344,3 +344,10 @@ ends, an adversarial auditor reads your report and evidence, may re-run your sco
 confirm the number, traces every value back to your evidence, and decides for itself how close
 counts. A number it cannot reproduce from your evidence is treated as unsupported. So make every
 command, path, and metric reconstructable from the evidence directory.
+
+Your very last turn then asks for that report as a single structured JSON object (the tools are
+gone, so you cannot run anything more): the claim, what ran, the exact scoring command, your
+measurement(s) — metric, observed value, the paper's reference value, scope — each citing the
+evidence file the number came from, what you changed, blockers, and your honest self-assessment.
+It is built only from what you write in that turn, so the REPORT.md and evidence you leave on disk
+are what make it citable. It is your account, not the verdict.

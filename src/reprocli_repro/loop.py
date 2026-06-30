@@ -35,7 +35,7 @@ from reprocli_vllm.vllm.io import (
     response_message,
 )
 
-from reprocli_repro import gpu_session, live_log
+from reprocli_repro import gpu_session, live_log, report
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
 from reprocli_repro.guardrails import apply_guardrails
@@ -223,4 +223,11 @@ def handle_request_done(
     live_log.log_final(
         contexts_by_id[custom_id], message, round_index=round_index, exit_reason=exit_reason
     )
+    # Phase 5: the tools-off final pass returned the schema-constrained report; persist
+    # it to the bundle as report.json (the agent's account) for the auditor to grade.
+    report_path = report.write_episode_report(
+        contexts_by_id[custom_id], message.get("content") or "", exit_reason
+    )
+    if report_path is not None:
+        print(f"report {custom_id}: wrote {report_path}", file=sys.stderr)
     append_completed_outputs(custom_id, row, conversations[custom_id], args)

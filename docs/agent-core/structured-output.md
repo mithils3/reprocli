@@ -72,9 +72,10 @@ The active `response_format` is chosen once at startup by mode in `config/cli_ar
 |---|---|---|---|
 | Classifier (default) | `None` → fallback | `FINAL_RESPONSE_FORMAT` (`schema/output.py`) | `repro_artifact_classification` |
 | Auditor (`--mode audit`) | `AUDIT_RESPONSE_FORMAT` | `AUDIT_RESPONSE_FORMAT` (`schema/audit.py`) | `audit_verdict` |
+| Reproduction agent (`reprocli_repro`) | `REPORT_RESPONSE_FORMAT` | `REPORT_RESPONSE_FORMAT` (`reprocli_repro/report/schema.py`) | `reproduction_report` |
 
-!!! note "🚧 Reproduction mode"
-    Only the classifier and auditor send a `response_format`. The [reproduction agent](../modes/reproduction.md) is not yet wired into this loop.
+!!! note "Reproduction mode ✅"
+    The [reproduction agent](../modes/reproduction.md) runs its own forked loop (`reprocli_repro/loop.py`), but reuses this same forced-final-pass seam: `cli_resolve.apply_defaults` sets `args.response_format = REPORT_RESPONSE_FORMAT`, so the tools-off final pass returns the agent's `report.json` — its **account** of the run (what it ran, the metric value(s) it measured, citations into `evidence/`), not a verdict. `report/validate.py` validates that object and `loop.py` persists it to `<run_dir>/report.json` for the Stage-7 auditor to grade. See the `REPORT_RESPONSE_FORMAT` subsection below.
 
 ### `FINAL_RESPONSE_FORMAT` — classifier ✅
 
@@ -111,6 +112,22 @@ Defined in `schema/audit.py`. Same envelope, different payload:
 The schema (`AUDIT_JSON_SCHEMA`, assembled with the `_obj` helper) is the structured reproduction verdict: the restated target (`target_metric`, `reference_value`, `op`, `tolerance`), execution proof (`execution_verified`, `execution_evidence`), the measured value and its citation, an array of `cheat_flags` (each `kind` ∈ `FLAG_KINDS`, `severity` ∈ `low`/`med`/`high`), comparison and methodology notes, and a granular integer `score` constrained to `0–5` via `minimum`/`maximum`. As with the classifier, the final verdict is derived downstream from the model's `score` plus anti-cheat caps, not emitted whole.
 
 Full field semantics are in the [auditor mode](../modes/auditor.md) page and the [schemas reference](../tools/schemas.md).
+
+### `REPORT_RESPONSE_FORMAT` — reproduction agent ✅
+
+Defined in `reprocli_repro/report/schema.py`. Same envelope, a third payload:
+
+```json
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "reproduction_report",
+    "schema": { "...": "strict object built from REPORT_JSON_SCHEMA" }
+  }
+}
+```
+
+The schema (`REPORT_JSON_SCHEMA`) is a strict object (`additionalProperties: false`) capturing the agent's **account** of its run — `claim`, `what_ran`, the single `scoring_command` that reproduces the number from a clean state, an array of `measurements` (each `metric` · `observed_value` · the paper's `reference_value` · `scope` · an `evidence` array of citations into `evidence/`), the agent's own `agent_assessment` (`reproduced` / `partial` / `not_reproduced` / `could_not_run` — its honest read, explicitly **not** the verdict), `changes_made`, `blockers`, and an `evidence_files` index. Unlike the classifier/auditor, no score is derived from it: it is not a verdict and not a re-run contract. `reprocli_repro/report/validate.py` structurally validates the returned object (the repo carries no `jsonschema` dependency), wraps it in a thin `report_status` + `exit_reason` envelope, and writes it to `<run_dir>/report.json`; a malformed final pass still yields a `degraded` report (raw excerpt + validation errors) rather than a missing file. The Stage-7 auditor's [run-dir manifest](../modes/auditor.md) then surfaces `report.json` alongside `evidence/` and grades it — the verdict stays the auditor's.
 
 ## What you get back
 
