@@ -200,8 +200,11 @@ def _add_sampling(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--budget-h100-hours",
         type=float,
-        default=8.0,
-        help="Per-episode compute ceiling in H100-equiv hours the loop guardrail enforces.",
+        default=None,
+        help="Flat per-episode compute ceiling in H100-equiv hours, applied to every "
+        "paper. Omit to use the default: each paper's ceiling is derived from its "
+        "selection_band upper edge (0-8 -> 8h, 8-32 -> 32h, 32-96 -> 96h, "
+        "96-192 -> 192h), falling back to 8h for unbanded rows.",
     )
 
 

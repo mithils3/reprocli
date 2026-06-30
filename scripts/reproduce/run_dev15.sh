@@ -26,7 +26,7 @@ VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 SPLIT="${SPLIT:-dev}"
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
-BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-8}"
+BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-40}"
 MAX_PARALLEL="${MAX_PARALLEL:-5}"
 SUBMIT_SERVE="${SUBMIT_SERVE:-0}"
@@ -44,7 +44,16 @@ cd "${REPROCLI}"
 STAMP="$(date '+%Y%m%d_%H%M%S')"
 SWEEP_DIR="${REPRO_WORK_ROOT}/dev15_sweeps/login_${STAMP}"
 mkdir -p "${SWEEP_DIR}"
-echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  budget=${BUDGET_H100_HOURS}h  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
+# Pass --budget-h100-hours only when a flat budget is set; otherwise the CLI
+# derives each paper's ceiling from its selection band.
+if [[ -n "${BUDGET_H100_HOURS}" ]]; then
+  BUDGET_ARG=(--budget-h100-hours "${BUDGET_H100_HOURS}")
+  BUDGET_LABEL="${BUDGET_H100_HOURS}h (flat)"
+else
+  BUDGET_ARG=()
+  BUDGET_LABEL="per-band"
+fi
+echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  budget=${BUDGET_LABEL}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
 
 endpoint_healthy() {
   [[ -f "${ENDPOINT_FILE}" ]] || return 1
@@ -92,7 +101,7 @@ run_one() {
     --split "${SPLIT}" \
     --lockfile "${LOCKFILE}" \
     --cluster deltaai \
-    --budget-h100-hours "${BUDGET_H100_HOURS}" \
+    "${BUDGET_ARG[@]}" \
     --tool-rounds "${TOOL_ROUNDS}" \
     --served-model-name "${SERVED_NAME}" \
     --output "${SWEEP_DIR}/reproduce_${pid}.jsonl" \
@@ -121,4 +130,4 @@ ok=$(awk -F'\t' '$2==0' "${STATUS_FILE}" | wc -l)
 total=$(wc -l < "${STATUS_FILE}")
 echo "papers ok: ${ok}/${total}  (per-paper rc in ${STATUS_FILE})"
 sort "${STATUS_FILE}"
-echo "run bundles: ${REPRO_WORK_ROOT}/agent_runs/<arxiv_id>/${BUDGET_H100_HOURS}h/<run_id>/"
+echo "run bundles: ${REPRO_WORK_ROOT}/agent_runs/<arxiv_id>/<budget>h/<run_id>/"

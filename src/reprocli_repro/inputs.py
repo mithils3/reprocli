@@ -47,6 +47,10 @@ DEFAULT_LOCKFILE_DATASET = "Mithilss/reprobench-splits"
 DEFAULT_LOCKFILE_SPLIT = "test"
 _SPLIT_ALIASES = {"eval": "test", "eval100": "test", "dev": "validation", "dev15": "validation"}
 
+# Compute ceiling for a row whose selection_band is missing/unparseable, used when
+# the budget is derived per-paper from the band (the default) rather than pinned flat.
+DEFAULT_UNBANDED_BUDGET_H100_HOURS = 8.0
+
 
 def normalize_split(name: str | None) -> str:
     """Map friendly split aliases (eval/dev) to the dataset's real split names."""
@@ -194,6 +198,15 @@ def band_of(row: dict) -> str:
     return "(unspecified)"
 
 
+def band_max_hours(row: dict) -> float | None:
+    """Upper edge of the row's compute band in H100-h (e.g. ``'96-192'`` -> 192.0,
+    ``'0-8'`` -> 8.0). Returns ``None`` when the band is unspecified/unparseable."""
+    try:
+        return float(band_of(row).split("-")[-1])
+    except (ValueError, IndexError):
+        return None
+
+
 # --------------------------------------------------------------------------- #
 # Prompt rendering                                                             #
 # --------------------------------------------------------------------------- #
@@ -336,11 +349,18 @@ def prepare_episodes(args: argparse.Namespace) -> list[EpisodeInput]:
         num_prompts=args.num_prompts,
         seed=getattr(args, "seed", 0),
     )
-    budget = float(args.budget_h100_hours)
+    # Default: derive each paper's ceiling from its selection_band. A flat
+    # --budget-h100-hours, when given, overrides the band for every paper.
+    flat_override = getattr(args, "budget_h100_hours", None)
     pinned_run_id = getattr(args, "run_id", None)
     episodes: list[EpisodeInput] = []
     for row in selected:
         arxiv_id = arxiv_id_of(row)
+        if flat_override is not None:
+            budget = float(flat_override)
+        else:
+            band_budget = band_max_hours(row)
+            budget = band_budget if band_budget is not None else DEFAULT_UNBANDED_BUDGET_H100_HOURS
         run_paths = resolve_run_paths(args.runs_dir, arxiv_id, budget, pinned_run_id)
         prompt = render_reproduce_prompt(template, row, budget=budget, run_paths=run_paths)
         episodes.append(
