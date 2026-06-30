@@ -218,7 +218,7 @@ force-finals at zero.
 drives the chosen paper: clone → edit → "run GPU" → spend budget → stop, with a
 populated evidence dir.
 
-### Phase 5 — Report bundle → the S6→S7 contract
+### Phase 5 — Report bundle → the S6→S7 contract ✅
 - `report/schema.py` + `report/validate.py`: the agent's terminal output is a
   structured **`report.json`** — what it ran, the metric value(s) it observed, and
   citations into `evidence/`. It is the agent's *account* of the run, **not a
@@ -236,13 +236,28 @@ populated evidence dir.
 measured value(s) cited into `evidence/`); the existing auditor grades that bundle
 unchanged (Phase 6).
 
-### Phase 6 — Bundle → **Milestone M2: auditor grades the 1-paper bundle**
+### Phase 6 — Bundle → **Milestone M2: auditor grades the 1-paper bundle** ✅
 - Write the bundle (`report.json · evidence/`, alongside `workspace/` ·
   `reference/`) to `<runs-dir>/<arxiv_id>` — the S6→S7 contract the existing
   auditor walks. No `result.json`, no `repro.yaml`: the auditor authors the verdict.
+  Already laid down by Phases 1/2/5: `resolve_run_paths` nests the run at
+  `<runs-dir>/<arxiv_id>/<budget>h/<run_id>/`, and the auditor maps `paper_id →
+  <runs-dir>/<arxiv_id>` (`run_arxiv_prompt_vllm.run_dir_for`) and walks it
+  recursively, so the nested run bundle is what it grades.
 
-**Gate / M2:** run the **existing** `reprocli_vllm` auditor (`--mode audit
---runs-dir <same root>`) over the one paper's bundle — grades with zero changes.
+**Gate / M2 ✅:** the **existing** `reprocli_vllm` auditor (`--mode audit
+--runs-dir <same root>`) grades the bundle with **zero changes**.
+`tests/repro/test_audit_bundle.py` drives the unchanged audit entry seam over a
+bundle built through the real S6 writers (`resolve_run_paths` · `init_evidence` ·
+the Phase-5 `write_episode_report`): `build_audit_prompt` seeds from the run-dir
+manifest, the read-only run-dir tools (`list_run_files` / `read_run_file` / `bash`)
+trace every cited number back to `evidence/` and `workspace/`, and a sample verdict
+finalizes through `finalize_audit_row` to `reproduced`. The report stays an
+*account* (an `agent_assessment`, no `score`/`verdict`); the verdict is the
+auditor's. Carried to Phase 8: a *bulky* `reference/` can push `report.json` past
+the 200-entry **seed** manifest, but the audit tools still reach it (recursive
+list / `find` / read), so grading holds — tightening the seed ordering is
+hardening, not a contract change.
 
 ### Phase 7 — **Milestone M3: same paper on real GPU (`--executor slurm`)**
 - `scripts/paper_reproduce.sbatch` (+ DeltaAI variant): run the **orchestrator**
