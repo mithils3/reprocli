@@ -22,8 +22,19 @@
   const Report = {
     successTag: DEFAULT_SUCCESS,
 
+    // A run is graded once the Stage-7 auditor has written its verdict
+    // (repro_runs.audit_*, via reprocli_repro.audit_upload). It counts as a success
+    // when the auditor reproduced it OR — for ungraded runs — it carries the
+    // hand-applied success tag. Shared by papers() and modelTier() so every surface
+    // agrees. (window.Tags is the fallback source; pass the active tag.)
+    graded(r) { return r.audit_verdict != null || r.audit_score != null || r.audit_reproduced != null; },
+    isSuccess(r, tag) {
+      const T = window.Tags;
+      return r.audit_reproduced === true || (T && T.has(r.run_id, tag || this.successTag));
+    },
+
     papers(runs, successTag) {
-      const T = window.Tags, V = window.Verdict, E = window.Estimates;
+      const V = window.Verdict, E = window.Estimates;
       const tag = successTag || this.successTag;
       const groups = new Map();
       for (const run of (runs || [])) {
@@ -33,8 +44,9 @@
       }
       const out = [];
       for (const [arxiv_id, rs] of groups) {
-        const successRuns = rs.filter((r) => T && T.has(r.run_id, tag));
+        const successRuns = rs.filter((r) => this.isSuccess(r, tag));
         const reproduced = successRuns.length > 0;
+        const auditedRun = rs.find((r) => this.graded(r)) || null;
         const chosen = reproduced
           ? successRuns.slice().sort((a, b) => (tookOf(a) ?? Infinity) - (tookOf(b) ?? Infinity))[0]
           : rs.slice().sort((a, b) => (tookOf(b) ?? -1) - (tookOf(a) ?? -1))[0];
@@ -49,6 +61,11 @@
           chosen, run_id: chosen ? chosen.run_id : null,
           model: chosen ? (chosen.model || "—") : (models.join(", ") || "—"), models,
           claim: estRow ? estRow.claim : null, links: estRow ? estRow.links : null, kind: estRow ? estRow.kind : null,
+          audited: !!auditedRun,
+          auditScore: auditedRun ? auditedRun.audit_score : null,
+          auditReportedScore: auditedRun ? auditedRun.audit_reported_score : null,
+          auditVerdict: auditedRun ? auditedRun.audit_verdict : null,
+          auditFlag: auditedRun ? !!auditedRun.audit_has_high_cheat_flag : false,
           inDataset: !!estRow, set: estRow ? estRow.set : null,
           tier: estRow ? estRow.tier : null, band: estRow ? estRow.band : null,
           predicted, predictedFromDataset: fromDataset != null, took,
@@ -83,7 +100,7 @@
 
     // model × tier matrix: per cell, reproduced / attempted papers
     modelTier(runs, successTag) {
-      const T = window.Tags, E = window.Estimates, tag = successTag || this.successTag;
+      const E = window.Estimates, tag = successTag || this.successTag;
       const M = new Map();
       for (const run of (runs || [])) {
         const model = run.model || "—";
@@ -92,7 +109,7 @@
         const row = M.get(model);
         const cell = row[tier] || (row[tier] = { papers: new Set(), repro: new Set() });
         cell.papers.add(run.arxiv_id);
-        if (T && T.has(run.run_id, tag)) cell.repro.add(run.arxiv_id);
+        if (this.isSuccess(run, tag)) cell.repro.add(run.arxiv_id);
       }
       const tiers = TIER_ORDER.filter((t) => [...M.values()].some((r) => r[t]))
         .concat([...new Set([...M.values()].flatMap((r) => Object.keys(r)))].filter((t) => !TIER_ORDER.includes(t)));
@@ -103,9 +120,10 @@
     csv(papers) {
       const pct = (a, b) => (a == null || !b ? "" : Math.round((a / b) * 100));
       const cell = (v) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-      const head = ["arxiv_id", "claim", "reproduced", "success_runs", "total_runs", "model", "tier", "h100_band",
-        "predicted_h100", "took_h100", "delta_h100", "ratio_pct", "success_run_id"];
-      const body = papers.map((p) => [p.arxiv_id, p.claim || "", p.reproduced ? "yes" : "no", p.successCount, p.totalRuns,
+      const head = ["arxiv_id", "claim", "reproduced", "audit_score", "audit_verdict", "success_runs", "total_runs",
+        "model", "tier", "h100_band", "predicted_h100", "took_h100", "delta_h100", "ratio_pct", "success_run_id"];
+      const body = papers.map((p) => [p.arxiv_id, p.claim || "", p.reproduced ? "yes" : "no",
+        p.auditScore ?? "", p.auditVerdict ?? "", p.successCount, p.totalRuns,
         p.model, p.tier ?? "", p.band ?? "", p.predicted ?? "", p.took ?? "", p.delta ?? "", pct(p.took, p.predicted), p.run_id ?? ""]);
       return [head, ...body].map((r) => r.map(cell).join(",")).join("\n");
     },

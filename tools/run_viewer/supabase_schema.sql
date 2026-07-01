@@ -49,6 +49,21 @@ alter table public.repro_runs add column if not exists reasoning_tokens  bigint;
 alter table public.repro_runs add column if not exists tool_calls        int;
 alter table public.repro_runs add column if not exists stats_url         text;
 
+-- Stage-7 auditor verdict for this run's bundle, pushed by
+-- `python -m reprocli_repro.audit_upload` after `reprocli_vllm --mode audit`.
+-- audit_verdict / audit_reproduced drive the viewer's reproduced status; the
+-- hand-applied `success` tag is the fallback for runs that were never graded.
+-- Safe to run twice.
+alter table public.repro_runs add column if not exists audit_score               int;
+alter table public.repro_runs add column if not exists audit_reported_score      int;   -- pre-cap score when a high cheat flag zeroed it
+alter table public.repro_runs add column if not exists audit_verdict             text;  -- reproduced|partial|not_reproduced|unverifiable
+alter table public.repro_runs add column if not exists audit_reproduced          boolean;
+alter table public.repro_runs add column if not exists audit_has_high_cheat_flag boolean;
+alter table public.repro_runs add column if not exists audit_flags               jsonb; -- cheat_flags[]: {kind,severity,evidence}
+alter table public.repro_runs add column if not exists audit_rationale           text;
+alter table public.repro_runs add column if not exists audit_model               text;  -- grader model id
+alter table public.repro_runs add column if not exists audited_at                timestamptz;
+
 -- ---------------------------------------------------------------------------
 -- repro_events  (append-only; grouped into rounds client-side by round_index)
 -- ---------------------------------------------------------------------------

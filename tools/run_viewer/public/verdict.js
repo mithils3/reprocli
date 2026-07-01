@@ -35,13 +35,31 @@
     return null;
   }
 
+  // Stage-7 auditor verdict -> family. Authoritative when a run has been graded
+  // (repro_runs.audit_*, set by reprocli_repro.audit_upload); tags are the fallback.
+  const AUDIT_FAMILY = {
+    reproduced: "reproduced", partial: "miss",
+    not_reproduced: "fault", unverifiable: "fault",
+  };
+  function familyFromAudit(run) {
+    if (!run) return null;
+    if (run.audit_verdict) return AUDIT_FAMILY[String(run.audit_verdict).toLowerCase().trim()] || null;
+    if (run.audit_reproduced === true) return "reproduced";
+    if (run.audit_reproduced === false) return "fault";
+    return null;
+  }
+
   const Verdict = {
     FAMILY,
     tagFamily(tag) { return TAG_FAMILY[String(tag).toLowerCase().trim()] || null; },
 
-    // a single run -> family key, using its tags first, then status/exit_reason
+    auditFamily(run) { return familyFromAudit(run); },
+
+    // a single run -> family key: the auditor verdict wins, then tags, then status
     ofRun(run) {
       if (!run) return "idle";
+      const byAudit = familyFromAudit(run);
+      if (byAudit) return byAudit;
       const tags = window.Tags ? window.Tags.get(run.run_id) : [];
       const byTag = familyFromTags(tags);
       if (byTag) return byTag;
@@ -70,9 +88,10 @@
       return `<span class="vd ${fam}"><span class="vg">${m.glyph}</span>${esc(w)}</span>`;
     },
 
-    // the most specific human word for a run (a known tag wins over the family default)
+    // the most specific human word for a run (auditor verdict wins, then a known tag)
     word(run) {
       const fam = this.ofRun(run);
+      if (run && run.audit_verdict && familyFromAudit(run) === fam) return run.audit_verdict;
       const tags = window.Tags ? window.Tags.get(run.run_id) : [];
       const specific = tags.find((t) => TAG_FAMILY[String(t).toLowerCase().trim()] === fam);
       if (specific) return specific;

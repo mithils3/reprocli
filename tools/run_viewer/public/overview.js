@@ -104,6 +104,7 @@
         <div class="pcd-top"><span class="vg vd ${p.verdict}" title="${esc(m.word)}">${m.glyph}</span>
           ${p.tier ? `<span class="badge ${TIER_CLS[p.tier] || "slate"}">${esc(p.tier)}</span>` : ""}
           ${p.set ? `<span class="set-badge ${p.set}">${esc(p.set)}</span>` : ""}
+          ${p.auditScore != null ? `<span class="badge ${p.verdict === "reproduced" ? "yes" : p.verdict === "miss" ? "over" : "no"}" title="Stage-7 auditor${p.auditReportedScore != null ? ` — capped from ${p.auditReportedScore}/5` : ""}${p.auditVerdict ? ` · ${esc(p.auditVerdict)}` : ""}">${p.auditScore}/5${p.auditFlag ? " ⚑" : ""}</span>` : ""}
           <span class="pcd-runs">${p.successCount}/${p.totalRuns}</span></div>
         <div class="pcd-claim">${esc(p.claim || "(" + p.arxiv_id + ")")}</div>
         <div class="pcd-foot">${Tr().ledger(p.took, p.predicted, { pct: p.reproduced })}
