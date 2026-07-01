@@ -103,10 +103,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--paper-ids-file",
         type=argparse_path,
-        help=(
-            "Run only the arXiv ids listed in this file (one per line), e.g. "
-            "the output of `python -m reprocli_vllm.rerun select`."
-        ),
+        help="Run only the arXiv ids listed in this file (one per line).",
     )
     parser.add_argument(
         "--hf-repo",

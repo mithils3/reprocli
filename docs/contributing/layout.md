@@ -59,7 +59,7 @@ One core (`run_tool_loop`, `runtime/tool_loop.py`) drives both the classifier (`
 |---|---|---|
 | `config/` | CLI args, defaults, mode resolution, placeholders | `cli_args.py`, `config.py`, `minimax_defaults.py` |
 | `papers/` | Load arXiv LaTeX bundles + OpenReview supplements into `Paper` | `papers.py`, `bundles.py`, `supplements.py` |
-| `runtime/` | The tool loop, guardrails, run-health, MRE records, trace I/O | `tool_loop.py`, `loop_guards.py`, `run_health.py`, `mre_records.py`, `rerun.py`, `trace_io.py` |
+| `runtime/` | The tool loop, guardrails, run-health, MRE records, trace I/O | `tool_loop.py`, `loop_guards.py`, `run_health.py`, `mre_records.py`, `trace_io.py` |
 | `tools/` | Tool layer: web/MCP tools (classify) + run-dir tools (audit) | `web_tools.py`, `run_dir_tools.py`, `github_mcp.py`, `huggingface_mcp.py`, `mcp_client.py`, `paper_bundle.py` |
 | `schema/` | Structured-output schemas for each mode | `output.py` (classifier), `audit.py` (auditor) |
 | `audit/` | Auditor post-processing + pool selection (the lockfile) | `audit.py`, `select_pool.py`, `h100.py`, `inputs.py` |
