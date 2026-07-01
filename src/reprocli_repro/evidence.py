@@ -16,7 +16,6 @@ precisely because the ground truth lives here, not in the model's context.
 
 from __future__ import annotations
 
-import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -116,23 +115,6 @@ def save_plan(evidence_dir: Path, rendered: str) -> Path:
     stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     target.write_text(f"# Plan (updated {stamp})\n\n{rendered}\n", encoding="utf-8")
     return target
-
-
-def write_env_lock(
-    evidence_dir: Path, *, venv: Path | None = None, uv_bin: str = "uv"
-) -> dict:
-    """Freeze the resolved environment into ``env.lock`` via ``uv pip freeze``."""
-    paths = evidence_paths(evidence_dir)
-    cmd = [uv_bin, "pip", "freeze"]
-    if venv is not None:
-        cmd += ["--python", str(Path(venv) / "bin" / "python")]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    except (OSError, subprocess.SubprocessError) as exc:
-        paths.env_lock.write_text("", encoding="utf-8")
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}", "path": str(paths.env_lock)}
-    paths.env_lock.write_text(proc.stdout, encoding="utf-8")
-    return {"ok": proc.returncode == 0, "path": str(paths.env_lock), "stderr": proc.stderr}
 
 
 def _slug(name: str) -> str:
