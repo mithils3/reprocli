@@ -42,9 +42,15 @@ def _resolve_records_path(source) -> Path:
 
 
 def _parse_hf_spec(spec: str) -> tuple[str, str] | None:
-    if not spec.startswith("hf://"):
+    # A Path() round-trip (argparse type=Path on --claims) collapses the "hf://"
+    # double slash to "hf:/", so accept both forms. Check "hf://" first: it also
+    # starts with "hf:/", and matching the longer prefix keeps `rest` correct.
+    for prefix in ("hf://", "hf:/"):
+        if spec.startswith(prefix):
+            rest = spec[len(prefix) :]
+            break
+    else:
         return None
-    rest = spec[len("hf://") :]
     if rest.startswith("datasets/"):
         rest = rest[len("datasets/") :]
     segments = [segment for segment in rest.split("/") if segment]
