@@ -28,11 +28,6 @@ from typing import Any
 from reprocli_vllm.runtime import audit_rows as rows
 from reprocli_vllm.runtime import live_events
 
-try:  # already importable transitively; urllib is the fallback
-    import requests
-except ImportError:  # pragma: no cover
-    requests = None
-
 QUEUE_MAX = 4000
 BATCH_MAX = 50
 HTTP_TIMEOUT = 8.0
@@ -180,13 +175,9 @@ class AuditSink:
         url = self.cfg.url + path
         data = json.dumps(body).encode()
         try:
-            if requests is not None:
-                r = requests.request(method, url, headers=self._headers(prefer), data=data, timeout=HTTP_TIMEOUT)
-                code = r.status_code
-            else:
-                req = urllib.request.Request(url, data=data, headers=self._headers(prefer), method=method)
-                with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-                    code = resp.status
+            req = urllib.request.Request(url, data=data, headers=self._headers(prefer), method=method)
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+                code = resp.status
             if code >= 300:
                 self.failed += 1
         except Exception:  # noqa: BLE001 — best-effort; never propagate

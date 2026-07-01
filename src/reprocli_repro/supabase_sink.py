@@ -30,10 +30,6 @@ from reprocli_repro import live_log, supabase_rows as rows
 from reprocli_repro.run_stats import RunStats
 from reprocli_repro.supabase_rows import budget_of, run_id_of
 
-try:  # already importable transitively (datasets/hf_hub); urllib is the fallback
-    import requests
-except ImportError:  # pragma: no cover
-    requests = None
 import urllib.request
 
 QUEUE_MAX = 4000           # events; beyond this we drop rather than block the loop
@@ -236,14 +232,9 @@ class SupabaseSink:
         url = self.cfg.url + path
         data = raw if raw is not None else json.dumps(body).encode()
         try:
-            if requests is not None:
-                r = requests.request(method, url, headers=self._headers(prefer, content),
-                                     data=data, timeout=HTTP_TIMEOUT)
-                code = r.status_code
-            else:
-                req = urllib.request.Request(url, data=data, headers=self._headers(prefer, content), method=method)
-                with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-                    code = resp.status
+            req = urllib.request.Request(url, data=data, headers=self._headers(prefer, content), method=method)
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+                code = resp.status
             if code >= 300:
                 self.failed += 1
         except Exception:  # noqa: BLE001 — best-effort; never propagate
