@@ -6,8 +6,12 @@ results verbatim. It is:
 
 * **pure** — mutates the messages list in place and returns a stats dict, with
   no model call and no I/O;
-* **idempotent** — a second pass never re-touches an already-elided message, and
-  it is a no-op while the conversation is under the soft size threshold.
+* **idempotent** — a second pass never re-touches an already-elided message, so
+  it is a no-op once every eligible tool result is already elided.
+
+The caller (``guardrails.py``) decides *when* to compact — gated on a token
+threshold, not on conversation size here — so this module always elides on
+every call; it is not itself a no-op below any size threshold.
 
 Safe because evidence is the durable store (Phase 2): anything that matters —
 metric values, the command that worked, artifact paths — is written to
@@ -15,8 +19,8 @@ metric values, the command that worked, artifact paths — is written to
 
 vLLM prefix-cache caveat: the loop is otherwise append-only (APC hits every
 round); eliding rewrites the head and invalidates the KV cache from the first
-edited message. Mitigated by compacting rarely (soft threshold, bulk elision)
-and keeping elided messages stable thereafter — the cache rebuilds once.
+edited message. Mitigated by compacting rarely (bulk elision) and keeping
+elided messages stable thereafter — the cache rebuilds once.
 """
 
 from __future__ import annotations
@@ -38,21 +42,16 @@ def microcompact(
     messages: list[dict[str, Any]],
     *,
     keep_recent_tool_results: int,
-    soft_limit_chars: int,
 ) -> dict[str, Any]:
     """Elide stale tool-result content in place; return a stats dict.
 
-    No-op (``compacted=False``) while ``conversation_chars(messages)`` is under
-    ``soft_limit_chars``. Otherwise the content of every ``role:"tool"`` message
-    except the most recent ``keep_recent_tool_results`` is replaced by an
-    ``[elided N chars]`` placeholder. Already-elided messages are skipped, so
-    repeated passes converge and the kept-recent window stays verbatim.
+    The content of every ``role:"tool"`` message except the most recent
+    ``keep_recent_tool_results`` is replaced by an ``[elided N chars]``
+    placeholder. Already-elided messages are skipped, so repeated passes
+    converge and the kept-recent window stays verbatim.
     """
     keep = max(0, keep_recent_tool_results)
     chars_before = conversation_chars(messages)
-    if chars_before < soft_limit_chars:
-        return _stats(False, 0, 0, keep, chars_before, chars_before)
-
     tool_indices = [i for i, message in enumerate(messages) if message.get("role") == "tool"]
     # Slicing with ``[:-0]`` would drop everything, so special-case keep == 0.
     stale = tool_indices if keep == 0 else tool_indices[:-keep]

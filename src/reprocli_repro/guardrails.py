@@ -61,10 +61,8 @@ def apply_guardrails(
     # the next round's real count catches up. When no usage has been recorded yet we skip
     # rather than estimate.
     if args.microcompact and _over(ctx, args, args.microcompact_threshold):
-        # soft_limit_chars=0 → always elide once the token gate above has fired.
-        stats = microcompact(
-            messages, keep_recent_tool_results=args.microcompact_keep, soft_limit_chars=0
-        )
+        # Always elide once the token gate above has fired.
+        stats = microcompact(messages, keep_recent_tool_results=args.microcompact_keep)
         if stats["compacted"]:
             print(
                 f"microcompact {custom_id}: elided {stats['elided_messages']} stale tool "

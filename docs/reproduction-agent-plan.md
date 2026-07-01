@@ -58,12 +58,13 @@ grades.
   allocation, evidence}` — per-episode state keyed by `custom_id`, replacing
   `paper=paper`.
 - `compaction.py`: **microcompact** — the cheapest context-management tier, no
-  model call. `microcompact(messages, *, keep_recent_tool_results,
-  soft_limit_chars) -> stats` elides the *content* of stale `role:"tool"`
-  messages (each replaced by a short `[elided N chars]` placeholder) while
-  keeping the most recent K tool results verbatim. Pure and **idempotent** —
-  a second pass never re-touches an already-elided message. Reuses
-  `loop_guards.conversation_chars` for the size check. Wired into `loop.py` at
+  model call. `microcompact(messages, *, keep_recent_tool_results) -> stats`
+  elides the *content* of stale `role:"tool"` messages (each replaced by a
+  short `[elided N chars]` placeholder) while keeping the most recent K tool
+  results verbatim. Pure and **idempotent** — a second pass never re-touches
+  an already-elided message. `guardrails.py` gates *when* to call it (via
+  `loop_guards.conversation_chars`), not the function itself. Wired into
+  `loop.py` at
   the same seam as the context-budget check (the `tool_loop.py:122` analog):
   when the conversation crosses a *soft* threshold (a fraction of
   `max_input_tokens`), microcompact runs first; only if it is still over does

@@ -26,18 +26,9 @@ def tool_contents(messages: list[dict]) -> list[str]:
 
 
 class MicrocompactTests(unittest.TestCase):
-    def test_noop_under_threshold(self):
-        messages = conversation(5)
-        snapshot = [dict(m) for m in messages]
-        stats = microcompact(messages, keep_recent_tool_results=2, soft_limit_chars=10**9)
-        self.assertFalse(stats["compacted"])
-        self.assertEqual(stats["elided_messages"], 0)
-        self.assertEqual(stats["chars_before"], stats["chars_after"])
-        self.assertEqual(messages, snapshot)
-
     def test_elides_old_keeps_recent_k(self):
         messages = conversation(5, body_chars=200)
-        stats = microcompact(messages, keep_recent_tool_results=2, soft_limit_chars=100)
+        stats = microcompact(messages, keep_recent_tool_results=2)
         self.assertTrue(stats["compacted"])
         self.assertEqual(stats["elided_messages"], 3)
         contents = tool_contents(messages)
@@ -51,23 +42,22 @@ class MicrocompactTests(unittest.TestCase):
 
     def test_keep_zero_elides_every_tool_result(self):
         messages = conversation(3, body_chars=200)
-        stats = microcompact(messages, keep_recent_tool_results=0, soft_limit_chars=100)
+        stats = microcompact(messages, keep_recent_tool_results=0)
         self.assertEqual(stats["elided_messages"], 3)
         self.assertTrue(all(is_elided(c) for c in tool_contents(messages)))
 
     def test_idempotent_second_pass(self):
         messages = conversation(5, body_chars=200)
-        # soft_limit 1 forces the elision branch on every pass.
-        microcompact(messages, keep_recent_tool_results=2, soft_limit_chars=1)
+        microcompact(messages, keep_recent_tool_results=2)
         snapshot = [dict(m) for m in messages]
-        stats = microcompact(messages, keep_recent_tool_results=2, soft_limit_chars=1)
+        stats = microcompact(messages, keep_recent_tool_results=2)
         self.assertFalse(stats["compacted"])
         self.assertEqual(stats["elided_messages"], 0)
         self.assertEqual(messages, snapshot)
 
     def test_keep_exceeds_available_is_noop(self):
         messages = conversation(2, body_chars=200)
-        stats = microcompact(messages, keep_recent_tool_results=5, soft_limit_chars=1)
+        stats = microcompact(messages, keep_recent_tool_results=5)
         self.assertEqual(stats["elided_messages"], 0)
         self.assertFalse(any(is_elided(c) for c in tool_contents(messages)))
 
