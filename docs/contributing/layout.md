@@ -21,8 +21,7 @@ reprocli/
 │   ├── run_arxiv_prompt_vllm.py     ✅ entry point — main() for classify & audit
 │   ├── reprocli_vllm/               ✅ the agent core (classifier + auditor)
 │   ├── reprocli_data/               ✅ dataset build/publish pipeline
-│   ├── reprocli_openai/             ✅ gpt-5.5 recheck of Hard no-code rows
-│   └── data/get_premade.py          ✅ Paper Digest "with code" scraper (one-off)
+│   └── reprocli_openai/             ✅ gpt-5.5 recheck of Hard no-code rows
 ├── tools/                           ✅ review apps + analysis scripts (not importable pkg)
 │   ├── verify_app/                  ✅ classifier-output review app
 │   ├── v3_viewer/                   ✅ run/quality viewer
