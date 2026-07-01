@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import socket
 import urllib.error
 
@@ -78,3 +79,21 @@ def test_non_network_error_not_retried() -> None:
     with pytest.raises(ValueError):
         with_retries(thunk, max_attempts=5, **NODELAY)
     assert calls["n"] == 1
+
+
+def _http_error(code: int, body: bytes) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError("u", code, "Bad Request", {}, io.BytesIO(body))
+
+
+def test_http_error_body_is_folded_into_message() -> None:
+    body = b'{"error":{"message":"This response_format type is unavailable now"}}'
+
+    def thunk() -> str:
+        raise _http_error(400, body)
+
+    with pytest.raises(urllib.error.HTTPError) as caught:
+        with_retries(thunk, max_attempts=1, **NODELAY)
+    # the opaque "HTTP Error 400: Bad Request" now names the real cause,
+    # and the raw body is stashed for callers that branch on it
+    assert "response_format type is unavailable" in str(caught.value)
+    assert "unavailable now" in caught.value.reprocli_body

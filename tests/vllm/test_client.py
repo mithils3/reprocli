@@ -1,14 +1,21 @@
 from __future__ import annotations
 
+import io
 import sys
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm import client
-from reprocli_vllm.vllm.endpoint import ENV_OPENROUTER_PROVIDER
+from reprocli_vllm.vllm.endpoint import ENV_API_KEY, ENV_OPENROUTER_PROVIDER
+
+JSON_SCHEMA_RF = {
+    "type": "json_schema",
+    "json_schema": {"name": "v", "schema": {"type": "object"}},
+}
 
 
 class ApplyProviderRoutingTests(unittest.TestCase):
@@ -47,6 +54,70 @@ class PostRowInjectsProviderTests(unittest.TestCase):
         self.assertEqual(
             seen["body"]["provider"], {"order": ["deepseek"], "allow_fallbacks": False}
         )
+
+
+def _http_error(code: int, body: bytes) -> urllib.error.HTTPError:
+    exc = urllib.error.HTTPError("u", code, "err", {}, io.BytesIO(body))
+    exc.reprocli_body = body.decode()  # what retry.annotate_http_error stashes
+    return exc
+
+
+class PrepareStructuredOutputTests(unittest.TestCase):
+    def test_marks_strict_and_requires_parameters_with_key(self) -> None:
+        body = {"response_format": JSON_SCHEMA_RF}
+        with patch.dict("os.environ", {ENV_API_KEY: "sk-test"}, clear=True):
+            client.prepare_structured_output(body)
+        self.assertTrue(body["response_format"]["json_schema"]["strict"])
+        self.assertTrue(body["provider"]["require_parameters"])
+        # the shared response_format constant must not be mutated in place
+        self.assertNotIn("strict", JSON_SCHEMA_RF["json_schema"])
+
+    def test_noop_without_api_key(self) -> None:
+        body = {"response_format": JSON_SCHEMA_RF}
+        with patch.dict("os.environ", {}, clear=True):
+            client.prepare_structured_output(body)
+        self.assertNotIn("provider", body)
+        self.assertNotIn("strict", body["response_format"]["json_schema"])
+
+    def test_noop_for_non_json_schema(self) -> None:
+        body = {"response_format": {"type": "json_object"}}
+        with patch.dict("os.environ", {ENV_API_KEY: "sk-test"}, clear=True):
+            client.prepare_structured_output(body)
+        self.assertNotIn("provider", body)
+
+
+class DowngradeResponseFormatTests(unittest.TestCase):
+    def test_downgrades_on_provider_reject_400(self) -> None:
+        body = {"response_format": JSON_SCHEMA_RF, "provider": {"require_parameters": True}}
+        exc = _http_error(400, b'{"error":{"message":"This response_format type is unavailable now"}}')
+        out = client.downgrade_response_format_on_reject(body, exc)
+        self.assertEqual(out["response_format"], {"type": "json_object"})
+        self.assertNotIn("provider", out)  # require_parameters dropped, block emptied
+
+    def test_downgrades_on_no_capable_provider_404(self) -> None:
+        body = {"response_format": JSON_SCHEMA_RF, "provider": {"require_parameters": True}}
+        exc = _http_error(404, b'{"error":{"message":"No endpoints found that can handle the requested parameters"}}')
+        out = client.downgrade_response_format_on_reject(body, exc)
+        self.assertEqual(out["response_format"], {"type": "json_object"})
+
+    def test_keeps_pinned_provider_order_on_downgrade(self) -> None:
+        body = {
+            "response_format": JSON_SCHEMA_RF,
+            "provider": {"order": ["deepseek"], "require_parameters": True},
+        }
+        exc = _http_error(404, b"No allowed providers are available")
+        out = client.downgrade_response_format_on_reject(body, exc)
+        self.assertEqual(out["provider"], {"order": ["deepseek"]})
+
+    def test_no_downgrade_for_unrelated_400(self) -> None:
+        body = {"response_format": JSON_SCHEMA_RF}
+        exc = _http_error(400, b'{"error":{"message":"context length exceeded"}}')
+        self.assertIsNone(client.downgrade_response_format_on_reject(body, exc))
+
+    def test_no_downgrade_when_no_json_schema(self) -> None:
+        body = {"response_format": {"type": "json_object"}}
+        exc = _http_error(400, b"This response_format type is unavailable now")
+        self.assertIsNone(client.downgrade_response_format_on_reject(body, exc))
 
 
 if __name__ == "__main__":

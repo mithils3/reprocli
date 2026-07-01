@@ -60,6 +60,31 @@ def _retry_after_seconds(exc: BaseException) -> float | None:
     return None
 
 
+def annotate_http_error(exc: urllib.error.HTTPError) -> str:
+    """Fold an HTTPError's response body into its message; return the body text.
+
+    ``str(HTTPError)`` renders as just ``HTTP Error 400: Bad Request`` -- the
+    provider's JSON explanation of *why* the request was rejected (e.g.
+    ``"This response_format type is unavailable now"``) sits unread in the
+    response body. Read it once, stash it on the exception as ``reprocli_body``
+    (so callers can branch on the cause without re-reading a consumed stream),
+    and append it to ``msg`` so the surfaced error names the real problem instead
+    of an opaque status line. Idempotent per exception and best-effort: a body
+    that can't be read leaves the error unchanged.
+    """
+    body = getattr(exc, "reprocli_body", None)
+    if body is not None:
+        return body
+    try:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+    except Exception:  # noqa: BLE001 -- the body is a diagnostic nicety, never fatal
+        body = ""
+    exc.reprocli_body = body
+    if body:
+        exc.msg = f"{exc.msg}: {body[:2000]}"
+    return body
+
+
 def with_retries(
     thunk: Callable[[], T],
     *,
@@ -74,6 +99,8 @@ def with_retries(
         try:
             return thunk()
         except Exception as exc:  # noqa: BLE001 -- re-raised below unless transient
+            if isinstance(exc, urllib.error.HTTPError):
+                annotate_http_error(exc)  # in-place; enriches the message we raise/log
             if attempt >= attempts or not _is_retryable(exc):
                 raise
             delay = _retry_after_seconds(exc)
