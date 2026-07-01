@@ -151,6 +151,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                    help="Root of the agent run bundles; <runs-dir>/<arxiv_id>/stats.json names the run_id.")
     p.add_argument("--supabase-url", default=os.environ.get("SUPABASE_URL"),
                    help="Supabase project URL (default: $SUPABASE_URL).")
+    p.add_argument("--run-id",
+                   help="Patch this exact run_id for every verdict row (single-paper use). "
+                        "Skips the stats.json / latest-row lookup — pass it when the caller "
+                        "already knows which run was graded.")
     p.add_argument("--audit-model", help="Grader model id to record on the row (audit_model).")
     p.add_argument("--dry-run", action="store_true", help="Resolve run_ids and print, but don't PATCH.")
     return p.parse_args(argv)
@@ -179,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {pid}: audit produced no verdict (degraded output) -- skipped", file=sys.stderr)
             skipped += 1
             continue
-        run_id = run_id_from_stats(args.runs_dir, pid)
+        run_id = args.run_id or run_id_from_stats(args.runs_dir, pid)
         if not run_id and not args.dry_run:
             run_id = run_id_from_db(base, key, pid)
         if not run_id:
