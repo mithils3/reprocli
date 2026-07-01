@@ -31,7 +31,7 @@ from reprocli_repro import env
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import reference as reference_mod
 from reprocli_repro.evidence import EvidencePaths
-from reprocli_repro.inputs import RunPaths, resolve_run_paths
+from reprocli_repro.inputs import RunPaths
 
 if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
@@ -137,16 +137,3 @@ def prepare_workspace(
             python=venv_python,
         )
     return WorkspaceResult(run_paths=run_paths, evidence=evidence, venv=venv, reference=reference)
-
-
-def resolve_and_prepare(
-    runs_dir: Path,
-    arxiv_id: str,
-    budget: float,
-    *,
-    run_id: str | None = None,
-    **kwargs,
-) -> WorkspaceResult:
-    """Convenience: resolve the run layout (the directory maker), then prepare it."""
-    run_paths = resolve_run_paths(runs_dir, arxiv_id, budget, run_id)
-    return prepare_workspace(run_paths, arxiv_id=arxiv_id, **kwargs)
