@@ -120,6 +120,14 @@ def audit_fields(row: dict[str, Any], model: str | None) -> dict[str, Any]:
     return fields
 
 
+def paper_of(row: dict[str, Any]) -> str | None:
+    """The extracted audit rows are keyed by custom_id (io.py always sets it);
+    paper_id only appears when the model emits it in schema-valid JSON. Mirror
+    load_mre_records' key resolution so a graded row is never dropped."""
+    pid = row.get("custom_id") or row.get("paper_id") or row.get("arxiv_id")
+    return str(pid) if pid else None
+
+
 def load_verdicts(path: Path) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for line in Path(path).read_text().splitlines():
@@ -130,7 +138,7 @@ def load_verdicts(path: Path) -> list[dict[str, Any]]:
             obj = json.loads(line)
         except ValueError:
             continue
-        if obj.get("paper_id"):
+        if paper_of(obj):
             out.append(obj)
     return out
 
@@ -164,7 +172,13 @@ def main(argv: list[str] | None = None) -> int:
 
     patched = skipped = failed = 0
     for row in verdicts:
-        pid = row["paper_id"]
+        pid = paper_of(row)
+        # A degraded audit row (unparseable model output) carries no score/verdict —
+        # nothing to grade with, so flag it rather than silently patching nulls.
+        if row.get("score") is None and not row.get("verdict"):
+            print(f"  {pid}: audit produced no verdict (degraded output) -- skipped", file=sys.stderr)
+            skipped += 1
+            continue
         run_id = run_id_from_stats(args.runs_dir, pid)
         if not run_id and not args.dry_run:
             run_id = run_id_from_db(base, key, pid)
