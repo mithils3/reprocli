@@ -43,7 +43,7 @@ from reprocli_repro.tools.patch import apply_patch_text, peek_paths
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
     raw_path = _first(arguments, "path", "file_path", "filename", "file")
-    resolved = _resolve(ctx, raw_path, writable=True)
+    resolved = _resolve(ctx, raw_path)
     if not resolved["ok"]:
         return resolved
     target: Path = resolved["path"]
@@ -82,7 +82,7 @@ def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, A
     name = Path(peeked[0]).name if peeked else "patch.diff"
     saved = evidence.save_patch(ctx.evidence, diff, name=name) if ctx.evidence else None
 
-    result = apply_patch_text(diff, confine=lambda p: _resolve(ctx, p, writable=True))
+    result = apply_patch_text(diff, confine=lambda p: _resolve(ctx, p))
     if ctx.evidence is not None:
         evidence.log_command(
             ctx.evidence,
@@ -133,7 +133,7 @@ def _to_host(ctx: ExecutionContext, text: str) -> str:
     return text
 
 
-def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, Any]:
+def _resolve(ctx: ExecutionContext, raw: Any) -> dict[str, Any]:
     text = str(raw or "").strip()
     if not text:
         return {"ok": False, "error": "Missing path."}
@@ -142,7 +142,7 @@ def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, An
     text = _to_host(ctx, text)
     if ".." in Path(text).parts:
         return {"ok": False, "error": f"Path contains a '..' segment: {text}"}
-    roots = _roots(ctx, writable=writable)
+    roots = _roots(ctx)
     if not roots:
         return {"ok": False, "error": "Episode has no workspace directory set."}
     base = Path(text) if text.startswith("/") else Path(ctx.workspace or roots[0]) / text
@@ -154,16 +154,14 @@ def _resolve(ctx: ExecutionContext, raw: Any, *, writable: bool) -> dict[str, An
         rootr = root.resolve()
         if resolved == rootr or rootr in resolved.parents:
             return {"ok": True, "path": resolved, "root": str(rootr)}
-    where = "writable" if writable else "readable"
-    return {"ok": False, "error": f"Path escapes the episode's {where} roots: {text}"}
+    return {"ok": False, "error": f"Path escapes the episode's writable roots: {text}"}
 
 
-def _roots(ctx: ExecutionContext, *, writable: bool) -> list[Path]:
+def _roots(ctx: ExecutionContext) -> list[Path]:
     # ``write_file``/``apply_patch`` only ever write durable source/evidence, so they
     # stay tight to workspace + evidence (a subset of the sandbox's rw binds; bulk
-    # /tmp scratch is shell-driven, not a file-tool path). ``writable=False``
-    # (reference readable too) is retained for callers that only inspect paths.
-    candidates = [ctx.workspace, ctx.evidence] if writable else [ctx.workspace, ctx.reference, ctx.evidence]
+    # /tmp scratch is shell-driven, not a file-tool path).
+    candidates = [ctx.workspace, ctx.evidence]
     return [Path(p) for p in candidates if p is not None]
 
 
