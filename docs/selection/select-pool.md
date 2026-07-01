@@ -168,17 +168,16 @@ A per-tier line is also printed to the console, e.g.
 
 ## Inspecting the pool
 
-Two helper tools read the same artifacts to check composition before the pool is
+A helper tool reads the same artifacts to check composition before the pool is
 frozen into the lockfile:
 
 | Tool | What it does |
 | --- | --- |
-| `tools/tier_composition.py` ✅ | Tier-composition analysis over the **verified** classifier rows: joins paper titles (bundle parquet + PapersWithCode + cached arXiv API), buckets papers into topic keywords, and prints tier crosstabs, per-tier H100-hour stats (median / p25 / p75 / count over 192h), median hours by topic×tier, and artifact-signal rates (code / data / weights). Run with `python tools/tier_composition.py`. |
 | `tools/plot_audit_pool.py` ✅ | Reads `<out>_extracted.jsonl` and renders two panels: **(a)** pool composition — papers per `selection_band` grouped by tier; **(b)** a compute-feasibility ECDF — the share of MREs per tier whose audited compute fits under each agent budget, with the `4 / 16 / 64 / 192` H100-hour budgets marked. Run `python3 tools/plot_audit_pool.py [--pool ... --out ...]`. |
 
-!!! note "Topic and feasibility framing are analysis-only"
-    Neither helper changes the selection; they consume its output (or the upstream
-    verified rows) to sanity-check tier balance and budget feasibility. The
+!!! note "Feasibility framing is analysis-only"
+    The helper doesn't change the selection; it consumes its output (or the upstream
+    verified rows) to sanity-check budget feasibility. The
     `4 / 16 / 64 / 192` budgets in `plot_audit_pool.py` are the reproduction agent's
     [H100 budgets](h100-budget.md), not the four selection bands.
 
