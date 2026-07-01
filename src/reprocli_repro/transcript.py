@@ -26,6 +26,9 @@ CONTEXT_BUDGET_NOTE = (
 # Serializes incremental output writes across the tool-pool threads.
 OUTPUT_WRITE_LOCK = threading.Lock()
 
+# Exit reasons that prepend the budget note to the final tools-off turn.
+EARLY_EXIT_REASONS = ("context_budget", "budget_exhausted")
+
 
 def prepare_incremental_outputs(args: argparse.Namespace) -> None:
     truncate_output_file(args.output)

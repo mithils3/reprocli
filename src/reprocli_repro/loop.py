@@ -13,8 +13,9 @@ the loop body:
 
 Conversation shaping and output writing live in ``transcript.py``; the tool seam
 lives in ``dispatch.py``; the between-round budget + context guardrails live in
-``guardrails.py``. The loop emits the agent's ``report.json`` (Phase 5) but writes
-**no verdict** — the auditor grades the run bundle.
+``guardrails.py``; the end-of-episode seam (release GPU, emit ``report.json``, flip
+the run terminal) lives in ``finalize.py``. The loop emits the agent's ``report.json``
+(Phase 5) but writes **no verdict** — the auditor grades the run bundle.
 """
 
 from __future__ import annotations
@@ -25,7 +26,6 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
 
 from reprocli_vllm.config.config import REQUEST_TIMEOUT
-from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.runtime.trace_io import assistant_message
 from reprocli_vllm.vllm.client import post_chat_completion_row, response_row
 from reprocli_vllm.vllm.io import (
@@ -35,21 +35,18 @@ from reprocli_vllm.vllm.io import (
     response_message,
 )
 
-from reprocli_repro import gpu_session, live_log, report
+from reprocli_repro import live_log
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dispatch import append_tool_results
+from reprocli_repro.finalize import finalize_episode
 from reprocli_repro.guardrails import apply_guardrails
 from reprocli_repro.transcript import (
-    append_completed_outputs,
-    append_final_message,
+    EARLY_EXIT_REASONS,
     conversation_for_round,
     noop,
     prepare_incremental_outputs,
     round_status_message,
 )
-
-# Exit reasons that prepend the budget note to the final tools-off turn.
-EARLY_EXIT_REASONS = ("context_budget", "budget_exhausted")
 
 
 def run_reproduce_loop(
@@ -167,7 +164,33 @@ def handle_request_done(
     state = request_futures.pop(future)
     custom_id = str(state["custom_id"])
     round_index = int(state["round_index"])
-    row = response_row(custom_id, future.result())
+    try:
+        result = future.result()
+    except Exception as exc:  # noqa: BLE001 — a failed model call must not strand the run
+        # The round's model call failed after the retry budget (a non-retryable 4xx, or a
+        # hang that exhausted timeout+retries). Letting it propagate unwinds the whole loop
+        # and leaves this run's row stuck at status="running" with no report.json. Finalize
+        # just this episode as an error terminal instead: it reaches a terminal status and
+        # still gets a (degraded) report for the auditor, and sibling episodes keep running.
+        print(
+            f"request {custom_id}: model call failed at round {round_index}: {exc}",
+            file=sys.stderr,
+        )
+        finalize_episode(
+            custom_id,
+            {"custom_id": custom_id, "response": {"status_code": 0, "body": None, "error": str(exc)}},
+            {},
+            [],
+            round_index,
+            "error",
+            conversations,
+            final_rows,
+            tool_rounds_used,
+            contexts_by_id,
+            args,
+        )
+        return
+    row = response_row(custom_id, result)
     message = response_message(row)
     # Capture the model's real token usage for this response (every round, the
     # intermediate force-final pass, and the final turn each pass through here once).
@@ -201,33 +224,16 @@ def handle_request_done(
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}
         return
     exit_reason = exit_reasons.get(custom_id, "natural")
-    # Free any GPU allocation still held at the end of the episode (the model is told
-    # to release itself, but never leak a node if it didn't).
-    gpu_session.release(contexts_by_id[custom_id], exit_reason)
-    row["tool_loop"] = {
-        "tool_rounds_used": tool_rounds_used[custom_id],
-        "max_tool_rounds": args.tool_rounds,
-        "hit_tool_round_limit": exit_reason == "round_limit",
-        "exit_reason": exit_reason,
-        "telemetry": loop_telemetry(conversations[custom_id], args.max_input_tokens),
-    }
-    append_final_message(
-        conversations[custom_id],
+    finalize_episode(
+        custom_id,
+        row,
         message,
         tool_calls,
-        bool(state["include_tools"]),
-        budget_note=exit_reason in EARLY_EXIT_REASONS,
-        final_message=args.final_no_tools_message,
+        round_index,
+        exit_reason,
+        conversations,
+        final_rows,
+        tool_rounds_used,
+        contexts_by_id,
+        args,
     )
-    final_rows[custom_id] = row
-    live_log.log_final(
-        contexts_by_id[custom_id], message, round_index=round_index, exit_reason=exit_reason
-    )
-    # Phase 5: the tools-off final pass returned the schema-constrained report; persist
-    # it to the bundle as report.json (the agent's account) for the auditor to grade.
-    report_path = report.write_episode_report(
-        contexts_by_id[custom_id], message.get("content") or "", exit_reason
-    )
-    if report_path is not None:
-        print(f"report {custom_id}: wrote {report_path}", file=sys.stderr)
-    append_completed_outputs(custom_id, row, conversations[custom_id], args)
