@@ -24,7 +24,6 @@ reprocli/
 │   └── reprocli_openai/             ✅ gpt-5.5 recheck of Hard no-code rows
 ├── tools/                           ✅ review apps + analysis scripts (not importable pkg)
 │   ├── verify_app/                  ✅ classifier-output review app
-│   ├── v3_viewer/                   ✅ run/quality viewer
 │   ├── plot_audit_pool.py · upload_audit_pool_hf.py
 ├── scripts/                         ✅ SLURM sbatch + interactive notes
 ├── tests/                           ✅ pytest, mirrors reprocli_vllm subpackages
@@ -46,7 +45,7 @@ reprocli/
 | `src/reprocli_vllm/` | The agent core: classifier + auditor modes of one tool loop | [agent core](../agent-core/index.md) |
 | `src/reprocli_data/` | Build & publish the NeurIPS-2025 paper bundle dataset | [build-dataset CLI](../cli/build-dataset.md), [dataset](../dataset/index.md) |
 | `src/reprocli_openai/` | Re-check Hard-tier no-code rows on gpt-5.5 (Responses API) | [classifier](../modes/classifier.md) |
-| `tools/verify_app/`, `tools/v3_viewer/` | Browser apps to review classifier output & runs | [verify app](../apps/verify-app.md), [v3 viewer](../apps/v3-viewer.md) |
+| `tools/verify_app/` | Browser app to review classifier output | [verify app](../apps/verify-app.md) |
 | `tools/*.py` | Pool plots, HF upload of the lockfile | [select-pool](../selection/select-pool.md) |
 | `scripts/**/*.sbatch`, `*.md` | SLURM launch + interactive multi-node notes | [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md) |
 | `tests/` | pytest suite, one subpackage per `reprocli_vllm` subpackage | [testing](testing.md) |
@@ -106,7 +105,6 @@ Details on each stage and the emitted schema live in [dataset stages](../dataset
 `tools/` is **not** an importable package — it holds standalone review apps and analysis scripts:
 
 - `verify_app/` — review classifier output (see [verify app](../apps/verify-app.md)).
-- `v3_viewer/` — view runs / quality (see [v3 viewer](../apps/v3-viewer.md)).
 - `plot_audit_pool.py`, `upload_audit_pool_hf.py` — pool analysis + publishing the [lockfile](../selection/lockfile.md).
 
 `scripts/` holds the SLURM substrate, grouped into folders: `serve/` (the `serve_*.sbatch` central-server launchers), per-model folders `minimax_m2/`, `kimi_k2_6/`, and `minimax_m3/` (each with a `paper_classification*.sbatch`; Kimi and M3 also ship a multi-node interactive runbook). See [clusters](../slurm/clusters.md), [sbatch](../slurm/sbatch.md), and [serving](../slurm/serve.md).

@@ -154,5 +154,4 @@ window.APP_CONFIG = {
 - [Classifier mode](../modes/classifier.md) — produces the verdicts, scores, and tiers being verified.
 - [`audit/select_pool.py`](../selection/select-pool.md) — band-stratified selection that builds the v5 audit pool.
 - [The H100 budget model](../selection/h100-budget.md) — why compute bands are adjudicated in code, not by reviewers.
-- [The v3 viewer](v3-viewer.md) — the sibling read-only output browser.
 - [Architecture overview](../architecture.md) — where the classifier sits in the end-to-end pipeline.

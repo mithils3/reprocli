@@ -138,7 +138,6 @@ nav:
       - build_dataset: cli/build-dataset.md
   - Review apps:
       - Verification app: apps/verify-app.md
-      - v3 viewer: apps/v3-viewer.md
   - Contributing:
       - Repo layout & conventions: contributing/layout.md
       - Testing: contributing/testing.md
