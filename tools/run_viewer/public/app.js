@@ -25,6 +25,7 @@ function setView(v) {
   const tog = $("#sidebar-toggle"); if (tog) tog.style.display = v === "live" ? "" : "none";
   if (v === "overview" && window.Overview) window.Overview.open();
   if (v === "papers" && window.Papers) window.Papers.open();
+  if (v === "audits" && window.Audits) window.Audits.open();
   if (v === "stats" && window.Stats) window.Stats.open();
 }
 window.setView = setView;

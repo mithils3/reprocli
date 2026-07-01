@@ -143,6 +143,82 @@ insert into storage.buckets (id, name, public)
   on conflict (id) do update set public = true;
 
 -- ---------------------------------------------------------------------------
+-- audit_runs / audit_events  (the S7 auditor streamed live, mirroring repro_*).
+-- One audit_runs row per graded paper; audit_events is the same shape as
+-- repro_events so the viewer's rowsToRounds/render render an audit like a run.
+-- graded_run_id links back to the repro_runs row it graded. Anon READ ONLY;
+-- writes come from reprocli_vllm.runtime.audit_sink with the service_role key.
+-- ---------------------------------------------------------------------------
+create table if not exists public.audit_runs (
+  audit_run_id      text primary key,             -- <graded_run_id>-<arxiv>-audit
+  graded_run_id     text,                          -- joins repro_runs.run_id (no FK on purpose)
+  arxiv_id          text not null,
+  model             text,                          -- grader model id
+  status            text not null default 'running',  -- 'running' | 'finished' | 'error'
+  exit_reason       text,
+  score             int,                           -- 0-5 (capped)
+  verdict           text,                          -- reproduced|partial|not_reproduced|unverifiable
+  reproduced        boolean,
+  has_high_cheat_flag boolean,
+  tool_rounds_used  int default 0,
+  host              text,
+  started_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  finished_at       timestamptz
+);
+create index if not exists audit_runs_updated_idx on public.audit_runs (updated_at desc);
+create index if not exists audit_runs_graded_idx  on public.audit_runs (graded_run_id);
+
+create table if not exists public.audit_events (
+  id             bigint generated always as identity primary key,
+  audit_run_id   text not null,                  -- joins audit_runs.audit_run_id (no FK on purpose)
+  round_index    int,
+  seq            int  not null,
+  kind           text not null,                  -- 'round_open'|'call_start'|'call_result'|'final'
+  role           text,
+  reasoning      text,
+  content        text,
+  exit_reason    text,
+  tool_name      text,
+  command        text,
+  detail_kind    text,                           -- 'command'|'path'|'json'
+  args           jsonb,
+  ok             boolean,
+  rc             int,
+  duration_s     numeric,
+  error          text,
+  path           text,
+  stdout         text,
+  stderr         text,
+  truncated      boolean default false,
+  created_at     timestamptz not null default now(),
+  unique (audit_run_id, seq)
+);
+create index if not exists audit_events_run_idx on public.audit_events (audit_run_id, seq);
+
+drop trigger if exists audit_runs_touch on public.audit_runs;
+create trigger audit_runs_touch before update on public.audit_runs
+  for each row execute function public.touch_updated_at();
+
+alter table public.audit_runs   enable row level security;
+alter table public.audit_events enable row level security;
+drop policy if exists audit_runs_read   on public.audit_runs;
+create policy audit_runs_read   on public.audit_runs   for select to anon, authenticated using (true);
+drop policy if exists audit_events_read on public.audit_events;
+create policy audit_events_read on public.audit_events for select to anon, authenticated using (true);
+
+do $$ begin
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='audit_runs') then
+    alter publication supabase_realtime add table public.audit_runs;
+  end if;
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='audit_events') then
+    alter publication supabase_realtime add table public.audit_events;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- repro_tags  (user-authored run labels). Unlike repro_runs/repro_events, the
 -- browser writes these directly, so anon is READ + WRITE here — same trust model
 -- as verify_app, where reviewers type into the app. One row per run_id holds the

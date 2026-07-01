@@ -52,6 +52,46 @@ const RemoteSource = {
 
   unsubscribe(ch) { if (ch && this.client) this.client.removeChannel(ch); },
 
+  // ---- S7 auditor runs (audit_runs / audit_events) -------------------------
+  // audit_events share repro_events' shape, so rowsToRounds/render just work. We
+  // alias audit_run_id -> run_id and verdict -> audit_verdict so the run renderer
+  // and Verdict.ofRun (which reads audit_verdict) light up unchanged.
+  _auditRun(r) {
+    if (!r) return r;
+    return { ...r, run_id: r.audit_run_id, audit_verdict: r.verdict,
+      audit_reproduced: r.reproduced, audit_score: r.score };
+  },
+  async listAudits() {
+    const { data, error } = await this.client.from("audit_runs")
+      .select("*").order("updated_at", { ascending: false }).limit(300);
+    if (error) throw error;
+    return (data || []).map((r) => this._auditRun(r));
+  },
+  async loadAudit(auditRunId) {
+    const [runRes, evRes] = await Promise.all([
+      this.client.from("audit_runs").select("*").eq("audit_run_id", auditRunId).limit(1),
+      this.client.from("audit_events").select("*").eq("audit_run_id", auditRunId).order("seq", { ascending: true }),
+    ]);
+    if (evRes.error) throw evRes.error;
+    const run = this._auditRun((runRes.data && runRes.data[0]) || { audit_run_id: auditRunId, arxiv_id: "" });
+    const events = evRes.data || [];
+    return { run, events, rounds: this.rowsToRounds(events) };
+  },
+  subscribeAudit(auditRunId, onEvent, onRunPatch) {
+    return this.client.channel("audit:" + auditRunId)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_events",
+        filter: `audit_run_id=eq.${auditRunId}` }, (p) => onEvent(p.new))
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_runs",
+        filter: `audit_run_id=eq.${auditRunId}` }, (p) => onRunPatch(this._auditRun(p.new)))
+      .subscribe();
+  },
+  subscribeAuditList(onChange) {
+    return this.client.channel("audits")
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_runs" },
+        (p) => onChange(this._auditRun(p.new || p.old), p.eventType))
+      .subscribe();
+  },
+
   // ---- user-authored run tags (repro_tags: anon read + write) --------------
   async listTags() {
     if (!this.client) return [];

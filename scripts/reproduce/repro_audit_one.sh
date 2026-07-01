@@ -76,6 +76,8 @@ echo ">>> reproduced bundle: $RUN_DIR"
 ln -s "$RUN_DIR" "$GRADE_ROOT/$PAPER_ID"
 
 echo ">>> [2/3] audit $PAPER_ID (grader=$AUDIT_MODEL, tool-rounds=$TOOL_ROUNDS)"
+# Stream the auditor to the app's Audits page, linked to the run it grades.
+export REPROCLI_GRADED_RUN_ID="$RID"
 PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
   --mode audit \
   --vllm-server-url "$ENDPOINT" \

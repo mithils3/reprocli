@@ -11,6 +11,7 @@ from reprocli_vllm.audit.inputs import build_audit_prompt, load_audit_rubric
 from reprocli_vllm.config.cli_args import parse_args
 from reprocli_vllm.hf_upload import hf_run_uploader
 from reprocli_vllm.runtime.mre_records import load_mre_records
+from reprocli_vllm.runtime.audit_sink import SinkConfig as AuditSinkConfig, install as install_audit_sink
 from reprocli_vllm.papers.bundles import load_bundle_papers
 from reprocli_vllm.papers.papers import Paper
 from reprocli_vllm.runtime.tool_loop import run_tool_loop
@@ -54,17 +55,28 @@ def main() -> int:
         file=sys.stderr,
     )
     server_url = resolve_server_url(args.vllm_server_url)
+    # Audit mode streams each round to Supabase's Audits page (opt-in: no-op unless
+    # SUPABASE_URL + SUPABASE_SERVICE_KEY are set), exactly like a reproduce run.
+    audit_sink = None
     with hf_run_uploader(args):
-        if server_url:
-            model_id = resolve_served_model(server_url, args.served_model_name)
-            print(
-                f"Using existing vLLM server at {server_url} (model={model_id})",
-                file=sys.stderr,
-            )
-            run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
-        else:
-            with VllmServer(args) as server_url:
-                run_tool_loop(args, papers_to_run, prompts, server_url)
+        try:
+            if server_url:
+                model_id = resolve_served_model(server_url, args.served_model_name)
+                print(
+                    f"Using existing vLLM server at {server_url} (model={model_id})",
+                    file=sys.stderr,
+                )
+                if args.mode == "audit":
+                    audit_sink = install_audit_sink(AuditSinkConfig.from_env(model_id))
+                run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
+            else:
+                with VllmServer(args) as server_url:
+                    if args.mode == "audit":
+                        audit_sink = install_audit_sink(AuditSinkConfig.from_env(args.model))
+                    run_tool_loop(args, papers_to_run, prompts, server_url)
+        finally:
+            if audit_sink:
+                audit_sink.close()
 
     print(f"Finished writing {len(prompts)} responses to {args.output}", file=sys.stderr)
     print(f"Finished writing extracted JSONL to {args.extracted_output}", file=sys.stderr)

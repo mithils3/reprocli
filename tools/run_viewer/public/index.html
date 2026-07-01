@@ -40,6 +40,7 @@
         <button class="tab active" data-view="overview">Overview</button>
         <button class="tab" data-view="papers">Papers</button>
         <button class="tab" data-view="live">Live</button>
+        <button class="tab" data-view="audits">Audits</button>
         <button class="tab" data-view="stats">Stats</button>
         <button class="tab" data-view="local">Local</button>
       </nav>
@@ -69,6 +70,16 @@
       </aside>
       <section id="live-detail" class="detail">
         <div class="empty">Pick a run to watch its compute-burn trace stream in.</div>
+      </section>
+    </main>
+
+    <!-- AUDITS: S7 auditor runs streamed live (same transcript view as Live) -->
+    <main id="view-audits" class="view hidden layout">
+      <aside class="sidebar">
+        <div id="audit-list" class="paper-list"></div>
+      </aside>
+      <section id="audit-detail" class="detail">
+        <div class="empty">Pick an audit to watch the S7 auditor grade a run in real time.</div>
       </section>
     </main>
 
@@ -114,6 +125,7 @@
   <script src="strip.js"></script>
   <script src="overview.js"></script>
   <script src="papers.js"></script>
+  <script src="audits.js"></script>
   <script src="app.js"></script>
   <script>
     /* theme toggle: flip data-theme, persist, keep icon + browser UI colour in sync */
