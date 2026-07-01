@@ -1,9 +1,12 @@
 #!/bin/bash
 # One self-contained DeltaAI job: serve the brain (MiniMax-M2.7 on 4xGH200) and,
-# once /health is green, (1) drive EVERY tier-Easy paper of the benchmark through
-# the S6 reproduction agent (`reprocli_repro`), then (2) grade all of those run
-# bundles with the EXISTING S7 auditor (`run_arxiv_prompt_vllm.py --mode audit`)
-# against the same brain — no auditor changes, same S6->S7 contract as the M2 gate.
+# once /health is green, drive EVERY tier-Easy paper of the benchmark through a
+# PAIRED reproduce+audit — each paper is reproduced by the S6 agent (`reprocli_repro`,
+# with a pinned run id) and THAT EXACT bundle is then graded by the S7 auditor
+# (`run_arxiv_prompt_vllm.py --mode audit`) against the same brain. There is no
+# separate batch grading phase over <runs-dir>/<id> (which mixes every past attempt
+# for a paper and can grade the wrong — or an empty — bundle). Same S6->S7 contract
+# as the M2 gate; no auditor changes. Mirrors scripts/reproduce/repro_audit_one.sh.
 #
 #   sbatch scripts/reproduce/reproduce_easy_minimax_m2.sbatch
 #
@@ -11,14 +14,14 @@
 #   * SPLIT=eval and TIER=Easy -> the 34 Easy papers of the frozen 100-paper
 #     benchmark (not the whole dev split);
 #   * MAX_PARALLEL=10 papers in flight (each adds one JIT ghx4 node);
-#   * a Phase-2 grading pass runs the auditor over the produced bundles.
+#   * reproduce and audit are one fused per-paper step, not two sweep phases.
 # Everything else (brain serve, SLURM_* scrub, JIT ghx4 per run_gpu step) is
 # identical — see scripts/reproduce/run_reproduce_minimax_m2.md for the topology.
 #
-# WALL-TIME NOTE: 34 Easy reproductions at 10 in flight can exceed the ghx4 48h
-# partition cap. If it does, the reproduction bundles are already on disk under
-# ${REPRO_WORK_ROOT}/agent_runs; re-submit with SKIP_REPRODUCE=1 to run ONLY the
-# grading pass over them (or run the login-node driver for the no-wall-cap path).
+# WALL-TIME NOTE: 34 Easy paired reproductions at 10 in flight can exceed the ghx4
+# 48h partition cap. Each paper writes its verdict as soon as it finishes, so a
+# re-submit resumes: with RESUME=1 (default) papers that already have a verdict on
+# disk are skipped and only the unfinished ones run.
 #
 #SBATCH -J repro_easy_minimax
 #SBATCH -A betw-dtai-gh
@@ -43,6 +46,7 @@ REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
 MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"   # local mirror; HF id also works
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
+AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-eval}"                    # eval -> HF 'test' (the frozen 100-paper benchmark)
 TIER="${TIER:-Easy}"                      # only reproduce+grade rows of this tier
@@ -51,8 +55,16 @@ BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from th
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
-SKIP_REPRODUCE="${SKIP_REPRODUCE:-0}"    # 1 -> grade existing bundles only
-SKIP_GRADE="${SKIP_GRADE:-0}"            # 1 -> reproduce only, no grading pass
+RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
+
+# The auditor grades against each paper's central claim + pinned success bar from the
+# canonical lockfile (the SAME source the agent read its target from) — pick the split
+# file that matches the run, mirroring repro_audit_one.sh.
+case "${SPLIT}" in
+  dev|validation) CLAIMS_FILE="dev_split.jsonl" ;;
+  *)              CLAIMS_FILE="eval_100.jsonl" ;;
+esac
+CLAIMS="${CLAIMS:-hf://datasets/${LOCKFILE}/${CLAIMS_FILE}}"
 
 # Keep the agent's heavy I/O (bundles, per-paper uv venvs, run bundles) off $HOME.
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
@@ -107,7 +119,8 @@ else
   BUDGET_LABEL="per-band"
 fi
 echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  budget=${BUDGET_LABEL}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
-echo "runs_dir=${RUNS_DIR}  skip_reproduce=${SKIP_REPRODUCE}  skip_grade=${SKIP_GRADE}"
+echo "runs_dir=${RUNS_DIR}  resume=${RESUME}  audit_model=${AUDIT_MODEL}  audit_rounds=${AUDIT_TOOL_ROUNDS}"
+echo "claims=${CLAIMS}"
 nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
@@ -165,18 +178,38 @@ echo "ids -> ${IDS_FILE}"
 for v in $(compgen -v | grep -E '^SLURM_' || true); do unset "$v"; done
 export SLURM_EXPORT_ENV=ALL
 
-# --- Step 4: reproduce every Easy paper (skippable) -------------------------
+# --- Step 4: reproduce + audit every Easy paper, PAIRED on one bundle --------
+# Per paper: (1) reproduce with a pinned run id; (2) find the exact bundle that run
+# wrote; (3) bind a clean grade root (<tmp>/<id> -> that bundle) so the auditor's
+# <runs-dir>/<id> contract points at THIS run and nothing else; (4) grade it against
+# the canonical-lockfile claim on the same served brain. A run that writes no bundle
+# is not audited (grading an empty dir is meaningless). This is the sweep form of
+# scripts/reproduce/repro_audit_one.sh — no separate batch grading phase.
 STATUS_FILE="${SWEEP_DIR}/status.tsv"
 
 run_one() {
   local pid="$1"
   local log="${SWEEP_DIR}/repro_${pid}.log"
-  echo ">>> [$(date '+%F %T')] start ${pid}"
+  local verdicts="${SWEEP_DIR}/audit_${pid}_extracted.jsonl"
+
+  # Resume: a paper that already produced a verdict on disk is done — skip it so a
+  # re-submit after the 48h cap only runs the unfinished papers.
+  if [[ "${RESUME}" == "1" && -s "${verdicts}" ]]; then
+    printf '%s\t%s\t%s\t%s\n' "${pid}" "-" "resume-skip" "-" >> "${STATUS_FILE}"
+    echo "=== [$(date '+%F %T')] ${pid} already graded -> skip (${verdicts})"
+    return 0
+  fi
+
+  local rid="${OUTER_JOB}-${pid}-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')"
+  echo ">>> [$(date '+%F %T')] start ${pid} (run_id=${rid})"
+
+  # (1) reproduce THIS paper; the brain URL auto-discovers from REPROCLI_ENDPOINT_FILE.
   python -m reprocli_repro \
     --paper-id "${pid}" \
     --split "${SPLIT}" \
     --lockfile "${LOCKFILE}" \
     --cluster deltaai \
+    --run-id "${rid}" \
     "${BUDGET_ARG[@]}" \
     --tool-rounds "${TOOL_ROUNDS}" \
     --served-model-name "${SERVED_NAME}" \
@@ -184,68 +217,78 @@ run_one() {
     --save-round-jsonl \
     >"${log}" 2>&1
   local rc=$?
-  printf '%s\t%s\n' "${pid}" "${rc}" >> "${STATUS_FILE}"
-  echo "<<< [$(date '+%F %T')] done  ${pid} rc=${rc} (log: ${log})"
-  return 0
-}
 
-if [[ "${SKIP_REPRODUCE}" == "0" ]]; then
-  : > "${STATUS_FILE}"
-  set +e   # one bad paper must not abort the sweep
-  # Track ONLY the per-paper PIDs. The brain server (SERVER_PID) is also a background
-  # job, so a bare `wait` blocks on it forever and the sbatch never exits even after
-  # all papers are done — wait on the paper jobs explicitly instead.
-  run_pids=()
-  inflight=0
-  for pid in "${PAPER_IDS[@]}"; do
-    run_one "${pid}" &
-    run_pids+=("$!")
-    inflight=$((inflight + 1))
-    if (( inflight >= MAX_PARALLEL )); then
-      wait -n   # next paper to finish (the server never exits, so it's never this)
-      inflight=$((inflight - 1))
-    fi
-  done
-  wait "${run_pids[@]}" 2>/dev/null || true   # only the papers, not the brain
-  set -e
-  echo "===== ${TIER} reproduction complete (job ${OUTER_JOB}) ====="
-  ok=$(awk -F'\t' '$2==0' "${STATUS_FILE}" | wc -l)
-  total=$(wc -l < "${STATUS_FILE}")
-  echo "papers ok: ${ok}/${total}  (per-paper rc in ${STATUS_FILE})"
-  sort "${STATUS_FILE}"
-else
-  echo "SKIP_REPRODUCE=1 -> grading existing bundles under ${RUNS_DIR}"
-fi
+  # (2) locate the exact bundle this run wrote (unique by run id, any budget dir).
+  local run_dir
+  run_dir="$(find "${RUNS_DIR}/${pid}" -type d -name "${rid}" -print -quit 2>/dev/null || true)"
+  if [[ -z "${run_dir}" ]]; then
+    printf '%s\t%s\t%s\t%s\n' "${pid}" "${rc}" "no-bundle" "${rid}" >> "${STATUS_FILE}"
+    echo "<<< [$(date '+%F %T')] ${pid} repro_rc=${rc} wrote NO bundle -> skip audit (log: ${log})"
+    return 0
+  fi
 
-# --- Step 5: grade every produced bundle with the S7 auditor (skippable) ----
-# The auditor enumerates its claim pool (--claims, default outputs/v5/audit_pool
-# _extracted.jsonl, which covers all benchmark papers), filters to --paper-ids-file
-# (our Easy ids), and reads each run bundle at <runs-dir>/<arxiv_id>. A paper whose
-# reproduction failed/produced no bundle grades as unverifiable score 0 — correct.
-if [[ "${SKIP_GRADE}" == "0" ]]; then
-  echo ">>> [$(date '+%F %T')] grading ${#PAPER_IDS[@]} ${TIER} bundles"
+  # (3) bind a clean grade root that maps <pid> -> THIS bundle only.
+  local grade_root ids_file
+  grade_root="$(mktemp -d "${SWEEP_DIR}/grade_${pid}.XXXXXX")"
+  ln -s "${run_dir}" "${grade_root}/${pid}"
+  ids_file="${grade_root}/ids.txt"
+  printf '%s\n' "${pid}" > "${ids_file}"
+
+  # (4) grade exactly this bundle; REPROCLI_GRADED_RUN_ID links it to the run on the app.
+  REPROCLI_GRADED_RUN_ID="${rid}" \
   python3 src/run_arxiv_prompt_vllm.py \
     --mode audit \
     --vllm-server-url "${BASE_URL}" \
-    --served-model-name "${SERVED_NAME}" \
-    --model "${SERVED_NAME}" \
-    --runs-dir "${RUNS_DIR}" \
-    --paper-ids-file "${IDS_FILE}" \
+    --served-model-name "${AUDIT_MODEL}" \
+    --model "${AUDIT_MODEL}" \
+    --runs-dir "${grade_root}" \
+    --claims "${CLAIMS}" \
+    --paper-ids-file "${ids_file}" \
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 128000 \
     --max-tokens 8192 \
-    --request-workers "${MAX_PARALLEL}" \
     --max-model-len 196608 \
-    --output "${SWEEP_DIR}/audit_${TIER,,}.jsonl" \
-    --extracted-output "${SWEEP_DIR}/audit_${TIER,,}_extracted.jsonl" \
-    --save-round-jsonl 2>&1 | tee "${SWEEP_DIR}/audit.log"
-  echo "<<< [$(date '+%F %T')] grading done"
-else
-  echo "SKIP_GRADE=1 -> reproduction only, no auditor pass"
-fi
+    --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
+    --extracted-output "${verdicts}" \
+    --trace-output "${SWEEP_DIR}/audit_${pid}_trace.jsonl" \
+    --save-round-jsonl \
+    >>"${log}" 2>&1
+  local arc=$?
+  rm -rf "${grade_root}"
+
+  printf '%s\t%s\t%s\t%s\n' "${pid}" "${rc}" "${arc}" "${rid}" >> "${STATUS_FILE}"
+  echo "<<< [$(date '+%F %T')] done ${pid} repro_rc=${rc} audit_rc=${arc} (bundle: ${run_dir})"
+  return 0
+}
+
+: > "${STATUS_FILE}"
+set +e   # one bad paper must not abort the sweep
+# Track ONLY the per-paper PIDs. The brain server (SERVER_PID) is also a background
+# job, so a bare `wait` blocks on it forever and the sbatch never exits even after
+# all papers are done — wait on the paper jobs explicitly instead.
+run_pids=()
+inflight=0
+for pid in "${PAPER_IDS[@]}"; do
+  run_one "${pid}" &
+  run_pids+=("$!")
+  inflight=$((inflight + 1))
+  if (( inflight >= MAX_PARALLEL )); then
+    wait -n   # next paper to finish (the server never exits, so it's never this)
+    inflight=$((inflight - 1))
+  fi
+done
+wait "${run_pids[@]}" 2>/dev/null || true   # only the papers, not the brain
+set -e
+echo "===== ${TIER} paired reproduce+audit complete (job ${OUTER_JOB}) ====="
+repro_ok=$(awk -F'\t' '$2==0' "${STATUS_FILE}" | wc -l)
+audit_ok=$(awk -F'\t' '$3==0' "${STATUS_FILE}" | wc -l)
+total=$(wc -l < "${STATUS_FILE}")
+echo "reproduced ok: ${repro_ok}/${total}   audited ok: ${audit_ok}/${total}   (per-paper rc in ${STATUS_FILE})"
+sort "${STATUS_FILE}"
 
 # --- Summary ----------------------------------------------------------------
 echo "===== ${TIER} sweep complete (job ${OUTER_JOB}) ====="
 echo "run bundles : ${RUNS_DIR}/<arxiv_id>/<budget>h/<run_id>/"
 echo "reproduce   : ${SWEEP_DIR}/reproduce_<arxiv_id>.jsonl  (status: ${STATUS_FILE})"
-echo "grades      : ${SWEEP_DIR}/audit_${TIER,,}_extracted.jsonl  (score/verdict/reproduced per paper)"
+echo "grades      : ${SWEEP_DIR}/audit_<arxiv_id>_extracted.jsonl  (score/verdict/reproduced per paper)"
+echo "audit trace : ${SWEEP_DIR}/audit_<arxiv_id>_trace.jsonl"
