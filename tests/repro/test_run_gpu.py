@@ -13,7 +13,7 @@ from reprocli_repro import evidence
 from reprocli_repro.cluster import resolve_cluster
 from reprocli_repro.context import Budget, ExecutionContext, GpuSession
 from reprocli_repro.slurm import SessionHandle, StepResult
-from reprocli_repro.tools import REPRO_TOOLS, build_repro_tools, execute_repro_tool_call
+from reprocli_repro.tools import build_repro_tools, execute_repro_tool_call
 from reprocli_repro.tools.run_gpu import run_gpu
 from reprocli_repro.tools.run_gpu_schema import run_gpu_tool
 
@@ -312,7 +312,7 @@ class GpuChoiceTests(unittest.TestCase):
 
 class DispatchTests(unittest.TestCase):
     def test_run_gpu_is_advertised_and_routed(self):
-        names = {t["function"]["name"] for t in REPRO_TOOLS}
+        names = {t["function"]["name"] for t in build_repro_tools(4)}
         self.assertEqual(
             names,
             {"workspace_bash", "write_file", "apply_patch", "update_plan", "fetch_url", "list_partitions", "run_gpu"},

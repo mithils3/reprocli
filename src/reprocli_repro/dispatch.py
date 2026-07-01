@@ -5,8 +5,8 @@ loop runs ``execute_repro_tool_call(call, ctx)`` so each call acts on this
 episode's ``ExecutionContext`` (workspace, budget meter, allocation, evidence)
 rather than a read-only ``Paper``.
 
-The handler routing itself lives in ``tools/__init__.py`` (``REPRO_TOOLS`` — the
-workspace shell, file read/write/patch, and the metered ``run_gpu`` tool); this
+The handler routing itself lives in ``tools/__init__.py`` (``build_repro_tools`` —
+the workspace shell, file read/write/patch, and the metered ``run_gpu`` tool); this
 module owns only the conversation-shaping seam that records each call's result
 into the running transcript.
 """

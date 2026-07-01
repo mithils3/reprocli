@@ -18,8 +18,8 @@ The reproduction agent acts on its episode through these tools:
   calls (``srun --jobid`` per step, released on ``release=true``/teardown), billed by
   wall clock (``gpu_session``); ``partition`` (optional) selects the pool to hold.
 
-``REPRO_TOOLS`` is the schema list advertised to the model (wired onto
-``args.tools`` in ``cli_args``); ``REPRO_TOOL_HANDLERS`` maps each name to its
+``build_repro_tools`` returns the schema list advertised to the model (wired onto
+``args.tools`` in ``cli_resolve``); ``REPRO_TOOL_HANDLERS`` maps each name to its
 ``(arguments, ctx)`` handler. ``execute_repro_tool_call`` is the single entry the
 loop dispatches through (``dispatch.append_tool_results``): it parses arguments,
 routes to the handler against this episode's ``ExecutionContext``, retries a
@@ -64,8 +64,6 @@ def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]
     ]
 
 
-REPRO_TOOLS: list[dict] = build_repro_tools()
-
 REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
     **FILE_TOOL_HANDLERS,
@@ -102,4 +100,4 @@ def _run_tool_call(call: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any
         return {"ok": False, "tool": name, "error": f"{type(exc).__name__}: {exc}"}
 
 
-__all__ = ["REPRO_TOOLS", "REPRO_TOOL_HANDLERS", "build_repro_tools", "execute_repro_tool_call"]
+__all__ = ["REPRO_TOOL_HANDLERS", "build_repro_tools", "execute_repro_tool_call"]

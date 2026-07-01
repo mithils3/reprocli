@@ -277,7 +277,7 @@ the H100-equivalent budget meter (`budget.py`), the cluster-profile table
 (`cluster.py`), the JIT `salloc`/`srun` step builder (`slurm.py`), and the
 workspace-confined CPU tools (`tools/workspace_bash.py`, `tools/files.py`).
 
-**Built since (Phases 4–6 ✅):** the metered `run_gpu` tool + `REPRO_TOOLS` wired
+**Built since (Phases 4–6 ✅):** the metered `run_gpu` tool + `build_repro_tools()` wired
 through `dispatch.execute_repro_tool_call` for the first end-to-end one-paper run
 (Milestone M1, local); the structured `report.json` bundle — what the agent ran +
 measured, cited into `evidence/` (Phase 5); and the M2 gate confirming the
@@ -389,7 +389,7 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 
 The CPU tools (`workspace_bash`, file tools) and the JIT substrate (`slurm.py`,
 `budget.py`, `cluster.py`) are built and unit-tested; **Phase 4** assembled them
-with the `run_gpu` tool into `REPRO_TOOLS` and replaced the
+with the `run_gpu` tool into `build_repro_tools()` and replaced the
 `dispatch.execute_repro_tool_call` stub, so the loop runs a one-paper episode
 end-to-end on the local executor (M1). The loop body, guardrails, microcompact,
 structured-output finalization, and trace capture are all in place.
@@ -488,7 +488,7 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
   slurm.py                          # JIT salloc/srun GPU-step builder + runner
   compaction.py                     # microcompact context tier (no model call)
   transcript.py                     # conversation shaping + incremental JSONL output
-  dispatch.py                       # execute_repro_tool_call seam — routes REPRO_TOOLS ✅
+  dispatch.py                       # execute_repro_tool_call seam — routes build_repro_tools() ✅
   tools/
     workspace_bash.py               # cwd-confined shell ✅
     files.py                        # read_file / write_file / apply_patch ✅
@@ -592,7 +592,7 @@ hardening before scaling past hand-checked papers.
 
 - The reproduction loop runs end-to-end **on the local executor** (M1/M2):
   `__main__` prepares each episode, `dispatch.execute_repro_tool_call` routes
-  `REPRO_TOOLS` against the per-episode `ExecutionContext`, and the forced final
+  `build_repro_tools()` against the per-episode `ExecutionContext`, and the forced final
   pass writes `report.json`. What's unproven is **M3** — the same loop against a
   real GPU `salloc` on the cluster.
 - The auditor re-scores artifacts (recompute a metric from a saved output) via

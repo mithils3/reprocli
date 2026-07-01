@@ -212,7 +212,7 @@ force-finals at zero.
 - `tools/run_gpu.py`: wraps `slurm`/local, meters `gpus × wallclock ×
   hw_multiplier`, per-step timeout + remaining-budget enforcement, appends
   trajectory row.
-- `tools/__init__.py`: `REPRO_TOOLS` + handler dispatch wired into `loop.py`.
+- `tools/__init__.py`: `build_repro_tools()` + handler dispatch wired into `loop.py`.
 
 **Gate / M1:** `python -m reprocli_repro --paper-id <id> --executor local`
 drives the chosen paper: clone → edit → "run GPU" → spend budget → stop, with a
