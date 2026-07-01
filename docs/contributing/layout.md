@@ -94,7 +94,6 @@ Builds the one-row-per-paper bundle that the classifier reads. `build_dataset.py
 | `pipeline/supplements.py`, `attachments.py` | OpenReview supplementary material |
 | `pipeline/bundle.py` | Assemble the Parquet bundle |
 | `pipeline/output.py`, `common.py` | Shared paths, filenames, writers |
-| `publish_bundle.py` | Push the bundle folder to the Hugging Face Hub |
 
 Details on each stage and the emitted schema live in [dataset stages](../dataset/stages.md) and the [bundle schema](../dataset/bundle-schema.md).
 

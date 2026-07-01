@@ -1,6 +1,9 @@
-# Building the dataset — `build_dataset` & `publish_bundle`
+# Building the dataset — `build_dataset`
 
-Two command-line entrypoints drive dataset construction (stage S1 in the [architecture overview](../architecture.md)). `python -m reprocli_data.build_dataset` runs the full five-stage pipeline — index → sources → supplements → bundle → upload — while `python -m reprocli_data.publish_bundle` is a shortcut that rebuilds the Parquet bundle from already-downloaded files and pushes it to the Hugging Face Hub. Both are thin argparse wrappers over `pipeline/*` stage functions; the heavy lifting lives in `reprocli_data/pipeline/`.
+One command-line entrypoint drives dataset construction (stage S1 in the [architecture overview](../architecture.md)). `python -m reprocli_data.build_dataset` runs the full five-stage pipeline — index → sources → supplements → bundle → upload. It's a thin argparse wrapper over `pipeline/*` stage functions; the heavy lifting lives in `reprocli_data/pipeline/`.
+
+!!! note "Rebuild + push shortcut"
+    The former `reprocli_data.publish_bundle` one-shot rebuild-and-push was removed (dead code — no callers). Use `python -m reprocli_data.build_dataset --stages bundle,upload --force` instead: it re-runs only the `bundle` and `upload` stages, reading the existing index/sources/supplements from disk and force-replacing the bundle output.
 
 !!! note "Where the stages are documented"
     This page is the exhaustive **flag reference**. For what each stage *does* to the data, see [Dataset stages](../dataset/stages.md); for the Parquet row layout the bundle stage emits, see the [Bundle schema](../dataset/bundle-schema.md).
@@ -96,45 +99,9 @@ Every flag, its default, and its meaning, exactly as registered in `parse_args()
 
 ---
 
-## `python -m reprocli_data.publish_bundle`
-
-Source: `reprocli_data/publish_bundle.py`. A one-step **rebuild + push**: it covers only the last two pipeline stages (`bundle`, then `upload`). It reads the existing `neurips2025_index.csv`, calls `stage_bundle(..., force=True)` to **always replace** the existing `paper_bundle_dataset/` output (no `--force` needed), writes fresh shards plus the dataset card and `dataset_stats.json`, then pushes the folder to the Hub.
-
-!!! warning "Inputs must already be downloaded"
-    `publish_bundle` does **not** download anything. The index CSV, `arxiv_sources/`, and `openreview_supplements/` must already exist under `--data-dir`; run `reprocli_data.build_dataset` for the download stages first. A missing index CSV aborts via `read_index_csv()`'s `SystemExit`.
-
-### Flag reference
-
-| Flag | Default | Meaning |
-| --- | --- | --- |
-| `--data-dir` | `data` | Root for all pipeline artifacts (must already contain the index CSV and downloaded sources/supplements). |
-| `--limit` | _(none)_ | Bundle at most this many papers (`records[:limit]`). |
-| `--shard-size-mb` | `512` | Target logical size per Parquet shard. |
-| `--batch-size-mb` | `64` | Flush threshold in logical MB. Coerced to `max(1, value)`. |
-| `--batch-rows` | `64` | Flush threshold in rows. Coerced to `max(1, value)`. |
-| `--compression` | `zstd` | Parquet compression codec. |
-| `--repo-id` | `Mithilss/neurips-2025-paper-bundles` | Hugging Face dataset repo to upload to. |
-| `--private` | `False` | Create/keep the Hub repo private. |
-| `--commit-message` | `Upload NeurIPS 2025 paper bundle dataset` | Commit message for the Hub upload. |
-| `--skip-upload` | `False` | Only rebuild the bundle; do not push to the Hub. |
-
-`publish_bundle` has **no** `--force`, `--stages`, `--upload`, download, or failure-handling flags — those concepts do not apply to a rebuild-and-push step. It always returns `0`.
-
-!!! example "Rebuild and push"
-    ```bash
-    python -m reprocli_data.publish_bundle --data-dir data
-    ```
-
-!!! example "Rebuild locally without pushing"
-    ```bash
-    python -m reprocli_data.publish_bundle --skip-upload
-    ```
-
----
-
 ## Upload behavior ✅
 
-Both commands route uploads through `stage_upload()` in `pipeline/output.py`:
+`build_dataset` routes uploads through `stage_upload()` in `pipeline/output.py`:
 
 1. `validate_dataset_folder()` checks the folder exists, contains `README.md` (the dataset card), and has at least one `data/*.parquet` shard — otherwise `SystemExit`.
 2. `HfApi().create_repo(repo_id, repo_type="dataset", exist_ok=True, private=…)` then `upload_folder(...)` with the chosen commit message.
