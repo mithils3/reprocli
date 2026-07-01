@@ -111,14 +111,51 @@ class AcquireSessionTests(unittest.TestCase):
 
 
 class RunInSessionTests(unittest.TestCase):
-    def test_runs_srun_into_session_and_populates_result(self):
-        fake = subprocess.CompletedProcess(args=[], returncode=0, stdout="hello-step\n", stderr="")
-        with mock.patch("reprocli_repro.slurm.subprocess.run", return_value=fake) as run:
-            result = run_in_session(resolve_cluster("deltaai"), "/ws", "echo hello-step", jobid="9")
+    """The srun argv is faked to plain bash so the *streaming* path runs for real."""
+
+    def _run(self, script: str, **kwargs):
+        with mock.patch(
+            "reprocli_repro.slurm.build_srun", return_value=["bash", "-c", script]
+        ) as build:
+            result = run_in_session(resolve_cluster("deltaai"), "/ws", script, jobid="9", **kwargs)
+        self.assertEqual(build.call_args.kwargs["jobid"], "9")
+        return result
+
+    def test_runs_step_and_populates_result(self):
+        result = self._run("echo hello-step; echo err-line >&2")
         self.assertTrue(result.ok, result.stderr)
         self.assertIn("hello-step", result.stdout)
+        self.assertIn("err-line", result.stderr)
         self.assertGreaterEqual(result.elapsed_s, 0.0)
-        self.assertEqual(run.call_args.args[0][0], "srun")
+
+    def test_output_is_teed_to_the_log_as_it_streams(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            log = Path(d) / "gpu_step_0000.log"
+            result = self._run("echo one; echo two >&2", log_path=log)
+            self.assertTrue(result.ok)
+            blob = log.read_text()
+            self.assertIn("one", blob)
+            self.assertIn("two", blob)  # both streams share the log, arrival order
+
+    def test_timeout_kills_but_returns_partial_output_and_keeps_the_log(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            log = Path(d) / "gpu_step_0000.log"
+            # Prints progress, then would print the "result" after a long sleep;
+            # the kill must still return everything printed before it.
+            result = self._run("echo before-kill; sleep 30; echo after", timeout=1.0, log_path=log)
+            self.assertFalse(result.ok)
+            self.assertEqual(result.returncode, 124)
+            self.assertIn("before-kill", result.stdout)
+            self.assertIn("exceeded timeout", result.stderr)
+            self.assertIn("before-kill", log.read_text())  # survived the kill on disk
+
+    def test_srun_argv_is_unbuffered(self):
+        argv = build_srun(resolve_cluster("deltaai"), "/ws", "python t.py", jobid="9")
+        self.assertIn("--unbuffered", argv)
 
 
 class ReleaseAndLostTests(unittest.TestCase):

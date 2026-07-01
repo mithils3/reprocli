@@ -9,6 +9,12 @@ successive ``run_gpu`` calls on one allocation instead of re-queueing each time.
 The agent frees it with ``release=true`` the moment it is done; ``gpu_session``
 also releases it at episode teardown.
 
+Every step's output is *streamed* to ``evidence/gpu_step_<n>.log`` as it arrives
+(``slurm.run_in_session`` tees it), so a step killed at the --time wall or our
+timeout still leaves everything it printed on disk — and this tool returns the
+tail instead of nothing. Blind re-runs of killed jobs were the single biggest
+compute sink in the 06-29 batch.
+
 The tool is the budget meter's enforcement point. The held node is billed by
 **wall clock** — ``gpus x (held seconds) x hw`` — because the GPU is reserved across
 the agent's reasoning/install gaps, not only while a command runs:
@@ -16,6 +22,9 @@ the agent's reasoning/install gaps, not only while a command runs:
 * **before acquiring** -- ``budget.affordable`` refuses to start a session whose
   worst case (``gpus x minutes x hw``, the ``--time`` pre-authorization) would
   overspend the remaining H100-hour budget;
+* **before reusing** -- a launch onto a held session with under
+  ``STALE_LAUNCH_SECONDS`` of --time left is refused outright (the command could
+  only be killed);
 * **after each step / on release** -- ``gpu_session.charge_accrued`` bills the wall
   held since the last charge (the loop guardrail charges it between rounds too, so a
   long reasoning gap on a held node still depletes the budget);
@@ -29,6 +38,7 @@ and force-finals the episode on the next round (``loop.apply_guardrails``).
 from __future__ import annotations
 
 import shlex
+from pathlib import Path
 from typing import Any
 
 from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS
@@ -37,6 +47,16 @@ from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import gpu_session, slurm
 from reprocli_repro.context import ExecutionContext
+from reprocli_repro.sandbox import CONTAINER_EVIDENCE
+from reprocli_repro.tools import output as output_mod
+from reprocli_repro.tools.run_gpu_notes import (
+    STALE_LAUNCH_SECONDS,
+    bounded,
+    clamp_note,
+    expiry_warning,
+    reuse_note,
+    stale_refusal,
+)
 
 # Defaults/bounds for the model-set knobs, applied on the call that *starts* a
 # session. ``gpus`` is capped to the node by ``slurm.build_acquire``; ``minutes`` is
@@ -47,9 +67,9 @@ MAX_MINUTES = 24 * 60
 # Bound an acquire that never returns (wedged in queue) without killing a legitimate
 # long queue wait: wait the hold's own wall cap plus this grace before giving up.
 QUEUE_GRACE_SECONDS = 4 * 3600
-# Warn the model when the held allocation is within this many seconds of its --time
-# wall: past it SLURM reclaims the node mid-step and any unsaved state is lost.
-SESSION_WARN_SECONDS = 120
+# Chars of streamed output returned when the step was killed (wall/timeout): the
+# tail is where the last checkpoint line / progress state / traceback is.
+KILL_TAIL_CHARS = 4000
 
 
 def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -66,22 +86,16 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         return {"ok": False, "tool": "run_gpu", "error": "Missing GPU command to run."}
 
     cap = ctx.cluster.gpus_per_node
-    gpus = _bounded(arguments.get("gpus"), DEFAULT_GPUS, cap)
-    minutes = _bounded(arguments.get("minutes"), DEFAULT_MINUTES, MAX_MINUTES)
-    note = _clamp_note(arguments.get("gpus"), gpus, cap)
+    gpus = bounded(arguments.get("gpus"), DEFAULT_GPUS, cap)
+    minutes = bounded(arguments.get("minutes"), DEFAULT_MINUTES, MAX_MINUTES)
+    note = clamp_note(arguments.get("gpus"), gpus, cap)
 
     # Acquire the session if none is held; pre-authorize its worst-case hold first.
     if ctx.session is None:
         affordable, reason = budget_mod.affordable(ctx.budget, gpus, minutes, ctx.cluster.hw)
         if not affordable:
             _record(ctx, command, gpus, minutes, ctx.cluster.hw, step=None, cost=0.0, refused=reason)
-            return {
-                "ok": False,
-                "tool": "run_gpu",
-                "command": command,
-                "error": f"run_gpu refused: {reason}",
-                "remaining_h100_hours": round(ctx.budget.remaining(), 4),
-            }
+            return _refused(ctx, command, reason)
         # partition picks the pool for THIS allocation (default = the cluster profile's);
         # discover the choices with list_partitions. Fixed until the session is released.
         partition = str(arguments.get("partition") or "").strip() or None
@@ -93,12 +107,22 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
             return {"ok": False, "tool": "run_gpu", "command": command, "error": f"could not acquire GPU allocation: {err}"}
     else:
         session = ctx.session
-        note = _reuse_note(arguments, session) or note
+        # Deterministic pre-launch staleness guard: a command started this close to
+        # the --time wall can only be killed, so refuse instead of wasting it.
+        stale_remaining = session.minutes * 60 - gpu_session.held_seconds(session)
+        if stale_remaining < STALE_LAUNCH_SECONDS:
+            cost = gpu_session.charge_accrued(ctx)
+            reason = stale_refusal(session, max(0.0, stale_remaining))
+            _record(ctx, command, session.gpus, session.minutes, session.hw, step=None, cost=cost, refused=reason)
+            return _refused(ctx, command, reason)
+        note = reuse_note(arguments, session) or note
 
+    log_path = evidence_mod.next_gpu_log(ctx.evidence) if ctx.evidence is not None else None
     step = slurm.run_in_session(
         ctx.cluster, ctx.workspace, command, jobid=session.jobid,
-        timeout=session.minutes * 60 + 600, sandbox=ctx.sandbox,
+        timeout=session.minutes * 60 + 600, sandbox=ctx.sandbox, log_path=log_path,
     )
+    log_ref = _log_ref(ctx, log_path)
     if slurm.session_lost(step):
         gpu_session.drop_lost(ctx)
         return {
@@ -107,7 +131,9 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
             "command": command,
             "error": "GPU session expired or was cancelled (hit --time or scancel); "
             "the next run_gpu call will start a fresh allocation.",
-            "stderr": step.stderr[:RUN_FILE_DEFAULT_CHARS],
+            "output_log": log_ref,
+            "stdout_tail": output_mod.tail(step.stdout, KILL_TAIL_CHARS),
+            "stderr": output_mod.tail(step.stderr, KILL_TAIL_CHARS),
             "remaining_h100_hours": round(ctx.budget.remaining(), 4),
         }
 
@@ -118,6 +144,9 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
     if release_after:
         gpu_session.release(ctx, "agent")
 
+    elide_note = f" — full output in {log_ref}" if log_ref else ""
+    stdout, t_out = output_mod.shape(step.stdout, RUN_FILE_DEFAULT_CHARS, note=elide_note)
+    stderr, t_err = output_mod.shape(step.stderr, RUN_FILE_DEFAULT_CHARS, note=elide_note)
     result = {
         "ok": step.ok,
         "tool": "run_gpu",
@@ -135,11 +164,12 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         "budget_exhausted": ctx.budget.exhausted(),
         "session_released": release_after,
         "session_jobid": None if release_after else session.jobid,
-        "stdout": step.stdout[:RUN_FILE_DEFAULT_CHARS],
-        "stderr": step.stderr[:RUN_FILE_DEFAULT_CHARS],
-        "truncated": len(step.stdout) > RUN_FILE_DEFAULT_CHARS or len(step.stderr) > RUN_FILE_DEFAULT_CHARS,
+        "output_log": log_ref,
+        "stdout": stdout,
+        "stderr": stderr,
+        "truncated": t_out or t_err,
     }
-    warning = None if release_after else _expiry_warning(session, session_remaining)
+    warning = None if release_after else expiry_warning(session, session_remaining)
     if warning:
         result["session_expiry_warning"] = warning
     if note:
@@ -150,6 +180,25 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Helpers                                                                      #
 # --------------------------------------------------------------------------- #
+def _refused(ctx: ExecutionContext, command: str, reason: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "tool": "run_gpu",
+        "command": command,
+        "error": f"run_gpu refused: {reason}",
+        "remaining_h100_hours": round(ctx.budget.remaining(), 4),
+    }
+
+
+def _log_ref(ctx: ExecutionContext, log_path: Path | None) -> str | None:
+    """The step log's path *as the agent can reach it* (container path when sandboxed)."""
+    if log_path is None:
+        return None
+    if ctx.sandbox is not None:
+        return f"{CONTAINER_EVIDENCE}/{log_path.name}"
+    return str(log_path)
+
+
 def _release_only(ctx: ExecutionContext) -> dict[str, Any]:
     """Honor ``release=true`` with no command: free the held allocation, if any."""
     record = gpu_session.release(ctx, "agent")
@@ -207,64 +256,7 @@ def _record(
     )
 
 
-def _bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default
-
-
-def _clamp_note(requested: Any, effective: int, cap: int) -> str | None:
-    """Tell the agent when its requested GPU count was clamped to the node cap."""
-    if requested in (None, ""):
-        return None
-    try:
-        asked = int(requested)
-    except (TypeError, ValueError):
-        return None
-    if asked != effective:
-        return f"requested gpus={asked} clamped to {effective} (node capacity is {cap})."
-    return None
-
-
-def _expiry_warning(session: Any, remaining_seconds: float) -> str | None:
-    """Loud heads-up when the held allocation is about to hit its --time wall.
-
-    Past the wall SLURM reclaims the node mid-step, so anything not written to disk
-    (training state, in-memory results) is gone. Surfaced so the model checkpoints and
-    re-acquires a fresh/longer hold *before* it loses the node, not after.
-    """
-    if remaining_seconds > SESSION_WARN_SECONDS:
-        return None
-    return (
-        f"SESSION ENDING: ~{remaining_seconds / 60:.1f} min left on this {session.minutes}-min "
-        f"allocation (jobid {session.jobid}) before SLURM reclaims the node and loses any unsaved "
-        "state. Save results/checkpoints to disk now. Long work left? release=true and start a "
-        "fresh session with a larger minutes= (or finish what fits in the time remaining)."
-    )
-
-
-def _reuse_note(arguments: dict[str, Any], session: Any) -> str | None:
-    """Warn when gpus/minutes are passed to a call that reuses a live session."""
-    asked_gpus = arguments.get("gpus")
-    if asked_gpus not in (None, "") and _safe_int(asked_gpus) not in (None, session.gpus):
-        return (
-            f"a GPU session is already held ({session.gpus} gpu, jobid {session.jobid}); "
-            "gpus/minutes are fixed until you release it (run_gpu release=true) and start a new one."
-        )
-    return None
-
-
-def _safe_int(value: Any) -> int | None:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
 RUN_GPU_HANDLERS = {"run_gpu": run_gpu}
 
-# The ``run_gpu`` JSON schema (``run_gpu_tool``) lives in ``run_gpu_schema.py`` to keep
-# this module focused on the handler; it imports the DEFAULT_*/MAX_* knobs from here.
+# The ``run_gpu`` JSON schema (``run_gpu_tool``) lives in ``run_gpu_schema.py``; the
+# model-facing notes/warnings/refusal strings live in ``run_gpu_notes.py``.

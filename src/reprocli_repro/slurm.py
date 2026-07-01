@@ -30,13 +30,16 @@ cluster-specific seam — some sites need a held ``salloc ... sleep`` or
 
 from __future__ import annotations
 
+import os
 import re
+import signal
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, IO
 
 from reprocli_repro import env
 from reprocli_repro.cluster import Cluster
@@ -133,10 +136,14 @@ def build_srun(
     is write-confined to the episode's dirs on the compute node. ``srun`` itself — the
     trusted launcher — stays outside the wrap.
     """
+    # --unbuffered: forward step output as it arrives instead of line-buffering it in
+    # slurmstepd, so the streamed evidence log (run_in_session's log_path) holds
+    # everything the step printed even when SLURM kills it at the --time wall.
     return [
         "srun",
         f"--jobid={jobid}",
         "--ntasks=1",
+        "--unbuffered",
         *env.exec_argv(workspace, cmd, on_gpu=True, sandbox=sandbox),
     ]
 
@@ -178,29 +185,97 @@ def run_in_session(
     jobid: str,
     timeout: float | None = None,
     sandbox: "Sandbox | None" = None,
+    log_path: Path | str | None = None,
 ) -> StepResult:
-    """Run one command into the held allocation and time it (queue wait already paid)."""
+    """Run one command into the held allocation and time it (queue wait already paid).
+
+    Output is *streamed*, not just captured: each chunk is teed to ``log_path`` (the
+    episode's ``evidence/gpu_step_<n>.log``) as it arrives, so when the step dies —
+    our timeout, the --time wall, scancel — everything printed up to the kill is on
+    disk and in the returned (partial) ``StepResult`` instead of dying in a pipe
+    buffer with the process.
+    """
     argv = build_srun(cluster, workspace, cmd, jobid=jobid, sandbox=sandbox)
     start = time.monotonic()
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
-    except subprocess.TimeoutExpired as exc:
-        return StepResult(
-            ok=False,
-            returncode=124,
-            stdout=exc.stdout or "",
-            stderr=(exc.stderr or "") + "\n[step exceeded timeout]",
-            elapsed_s=time.monotonic() - start,
-            command=argv,
+        # Own process group: a timeout kill must take out srun's whole tree, or an
+        # orphan keeps the pipes open and the pumps block long past the kill.
+        proc = subprocess.Popen(
+            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True
         )
+    except OSError as exc:
+        return StepResult(
+            ok=False, returncode=127, stdout="", stderr=f"{type(exc).__name__}: {exc}",
+            elapsed_s=time.monotonic() - start, command=argv,
+        )
+    log = open(log_path, "ab", buffering=0) if log_path else None
+    try:
+        out_buf: list[bytes] = []
+        err_buf: list[bytes] = []
+        pumps = [
+            threading.Thread(target=_pump, args=(proc.stdout, out_buf, log), daemon=True),
+            threading.Thread(target=_pump, args=(proc.stderr, err_buf, log), daemon=True),
+        ]
+        for t in pumps:
+            t.start()
+        timed_out = False
+        try:
+            proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            _kill_tree(proc)
+            proc.wait()
+        for t in pumps:
+            t.join(timeout=10)
+    finally:
+        if log is not None:
+            log.close()
+    stdout = b"".join(out_buf).decode("utf-8", errors="replace")
+    stderr = b"".join(err_buf).decode("utf-8", errors="replace")
+    if timed_out:
+        stderr += "\n[step exceeded timeout]"
     return StepResult(
-        ok=proc.returncode == 0,
-        returncode=proc.returncode,
-        stdout=proc.stdout,
-        stderr=proc.stderr,
+        ok=proc.returncode == 0 and not timed_out,
+        returncode=124 if timed_out else proc.returncode,
+        stdout=stdout,
+        stderr=stderr,
         elapsed_s=time.monotonic() - start,
         command=argv,
     )
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Kill the step's whole process group (falling back to just the leader)."""
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        proc.kill()
+
+
+def _pump(pipe: IO[bytes] | None, buf: list[bytes], log: IO[bytes] | None) -> None:
+    """Drain one pipe: collect chunks in memory and tee them to the evidence log.
+
+    The log write happens per-chunk (unbuffered handle), so the on-disk file is
+    current the moment the process is killed; both streams share one log in arrival
+    order — the interleaving a terminal would have shown.
+    """
+    if pipe is None:
+        return
+    try:
+        for chunk in iter(lambda: pipe.read1(65536), b""):
+            buf.append(chunk)
+            if log is not None:
+                try:
+                    log.write(chunk)
+                except OSError:
+                    log = None  # keep collecting for the result even if the disk sink dies
+    except (OSError, ValueError):
+        pass
+    finally:
+        try:
+            pipe.close()
+        except OSError:
+            pass
 
 
 def release_session(jobid: str) -> None:

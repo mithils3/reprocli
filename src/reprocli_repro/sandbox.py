@@ -209,7 +209,12 @@ class Sandbox:
         # it and the agent never types the long host path.
         argv = ["apptainer", "exec", "--cleanenv", "--no-home", "--pwd", self.workdir]
         if nv:
-            argv.append("--nv")
+            # GPU steps stream into a teed evidence log (slurm.run_in_session); a
+            # block-buffered python would hold its last ~8KB in the pipe and lose it
+            # when SLURM kills the step at the --time wall, so force write-through.
+            # (`stdbuf` can't do this here: its LD_PRELOAD does not survive into the
+            # container.) --nv passes the device + CUDA driver through.
+            argv += ["--nv", "--env", "PYTHONUNBUFFERED=1"]
         for bind in self.binds:
             argv += ["--bind", bind.arg()]
         # The agent image bundles its own `uv` + `python3.12`, so this bind is just an

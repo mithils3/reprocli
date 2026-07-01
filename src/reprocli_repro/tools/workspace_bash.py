@@ -24,6 +24,7 @@ from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
 from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
+from reprocli_repro.tools import output as output_mod
 
 # Setup steps (clone, dependency installs) routinely run for minutes, so the
 # default is far longer than the auditor's 60s; metered GPU steps get their own
@@ -41,30 +42,49 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
         return {"ok": False, "error": "Missing bash command."}
     timeout = _bounded(arguments.get("timeout"), WORKSPACE_BASH_TIMEOUT, WORKSPACE_BASH_MAX_TIMEOUT)
     start = time.time()
+    # Binary capture, decoded by hand: text mode's universal newlines turn every \r
+    # of a progress-bar redraw into its own line, which defeats the spam stripper.
     try:
         proc = subprocess.run(
             env.exec_argv(workspace, command, sandbox=ctx.sandbox),
             cwd=str(workspace),
             capture_output=True,
-            text=True,
             timeout=timeout,
         )
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         _log(ctx, command, None, workspace, time.time() - start)
-        return {"ok": False, "command": command, "error": f"bash timed out after {timeout}s"}
+        out, _ = output_mod.shape(_decode(exc.stdout), RUN_FILE_DEFAULT_CHARS)
+        err, _ = output_mod.shape(_decode(exc.stderr), RUN_FILE_DEFAULT_CHARS)
+        return {
+            "ok": False,
+            "command": command,
+            "error": f"bash timed out after {timeout}s",
+            "stdout": out,
+            "stderr": err,
+        }
     except OSError as exc:
         return {"ok": False, "command": command, "error": f"{type(exc).__name__}: {exc}"}
     duration = time.time() - start
     _log(ctx, command, proc.returncode, workspace, duration)
+    stdout, t_out = output_mod.shape(_decode(proc.stdout), RUN_FILE_DEFAULT_CHARS)
+    stderr, t_err = output_mod.shape(_decode(proc.stderr), RUN_FILE_DEFAULT_CHARS)
     return {
         "ok": proc.returncode == 0,
         "command": command,
         "returncode": proc.returncode,
         "duration_s": round(duration, 1),
-        "stdout": proc.stdout[:RUN_FILE_DEFAULT_CHARS],
-        "stderr": proc.stderr[:RUN_FILE_DEFAULT_CHARS],
-        "truncated": len(proc.stdout) > RUN_FILE_DEFAULT_CHARS or len(proc.stderr) > RUN_FILE_DEFAULT_CHARS,
+        "stdout": stdout,
+        "stderr": stderr,
+        "truncated": t_out or t_err,
     }
+
+
+def _decode(blob: bytes | str | None) -> str:
+    if blob is None:
+        return ""
+    if isinstance(blob, str):
+        return blob
+    return blob.decode("utf-8", errors="replace")
 
 
 def _log(ctx: ExecutionContext, command: str, rc: int | None, cwd: Path, duration: float) -> None:

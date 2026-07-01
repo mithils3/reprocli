@@ -95,6 +95,19 @@ def save_patch(evidence_dir: Path, diff: str, *, name: str | None = None) -> Pat
     return target
 
 
+def next_gpu_log(evidence_dir: Path) -> Path:
+    """Allocate the next ``gpu_step_<n>.log`` path (the streamed output of one GPU step).
+
+    ``run_gpu`` tees each step's stdout/stderr here as it arrives, so a step SLURM
+    kills at the --time wall still leaves its output on disk — for the agent (the
+    file is visible in the container at ``/repro/evidence``) and for the auditor.
+    """
+    paths = evidence_paths(evidence_dir)
+    paths.root.mkdir(parents=True, exist_ok=True)
+    seq = sum(1 for _ in paths.root.glob("gpu_step_*.log"))
+    return paths.root / f"gpu_step_{seq:04d}.log"
+
+
 def save_plan(evidence_dir: Path, rendered: str) -> Path:
     """Snapshot the agent's current plan to ``plan.md`` (overwritten each update)."""
     paths = evidence_paths(evidence_dir)

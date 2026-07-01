@@ -27,7 +27,10 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
         "install between commands — so set release=true the moment you are done with "
         "the GPU to stop the meter (re-acquire later if you need it again). The command "
         "runs with the workspace as its cwd; cost and remaining budget are returned and "
-        "recorded to evidence/. Each result also reports session_remaining_seconds — the "
+        "recorded to evidence/. Each step's FULL stdout/stderr is streamed to the file named "
+        "in the result's output_log (under /repro/evidence/) as it runs — it survives even if "
+        "the step is killed, so read/grep that file instead of re-running a job just to see "
+        "its output. Each result also reports session_remaining_seconds — the "
         "wall left before this allocation hits its `minutes` (--time) cap and SLURM reclaims "
         "the node (losing any unsaved state); when it runs low a session_expiry_warning tells "
         "you to checkpoint to disk and, if you need more time, release and re-acquire.",
@@ -55,7 +58,9 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
                 "minimum": 1,
                 "maximum": MAX_MINUTES,
                 "description": "Max lifetime of the held allocation (SLURM --time) and the budget "
-                "pre-authorization; set on the call that starts the session. Pick ~ how long you will hold it.",
+                "pre-authorization; set on the call that STARTS the session. Pick ~ how long you "
+                "will hold it. IGNORED on a reuse call — it cannot extend a held session; to get "
+                "more time, release=true and re-acquire with a larger value.",
             },
             "release": {
                 "type": "boolean",

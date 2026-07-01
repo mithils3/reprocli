@@ -59,6 +59,14 @@ class WrapArgvTests(unittest.TestCase):
         self.assertNotIn("--nv", self._sandbox().wrap_argv("echo hi"))  # CPU step
         self.assertIn("--nv", self._sandbox().wrap_argv("echo hi", nv=True))  # GPU step
 
+    def test_gpu_steps_force_unbuffered_python(self):
+        # GPU output streams to a teed evidence log; a block-buffered python would
+        # lose its last chunk when SLURM kills the step at the --time wall.
+        gpu = self._sandbox().wrap_argv("python t.py", nv=True)
+        self.assertIn("PYTHONUNBUFFERED=1", gpu)
+        self.assertEqual(gpu[gpu.index("PYTHONUNBUFFERED=1") - 1], "--env")
+        self.assertNotIn("PYTHONUNBUFFERED=1", self._sandbox().wrap_argv("python t.py"))
+
 
 class ExecArgvIntegrationTests(unittest.TestCase):
     def test_exec_argv_wraps_only_when_sandbox_passed(self):

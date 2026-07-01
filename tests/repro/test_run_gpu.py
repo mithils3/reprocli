@@ -136,6 +136,99 @@ class SessionLifecycleTests(unittest.TestCase):
             self.assertIsNone(ctx.session)  # dropped so the next call re-acquires
 
 
+class StalenessGuardTests(unittest.TestCase):
+    def _held_ctx(self, d: Path, *, minutes: int, held_seconds: float) -> ExecutionContext:
+        ctx = _ctx(d)
+        now = time.monotonic()
+        ctx.session = GpuSession(
+            jobid="555", gpus=1, minutes=minutes, hw="h100",
+            started=now - held_seconds, last_charged=now, partition="ghx4",
+        )
+        ctx.allocation = "555"
+        return ctx
+
+    def test_refuses_launch_on_nearly_expired_session(self):
+        with tempfile.TemporaryDirectory() as d:
+            # 30-min hold with ~29.5 min already held -> ~30s left, under the guard.
+            ctx = self._held_ctx(Path(d), minutes=30, held_seconds=30 * 60 - 30)
+            acq, run, rel = _patch()
+            with acq, run as r, rel:
+                res = run_gpu({"command": "python train.py", "minutes": 120}, ctx)
+            r.assert_not_called()  # refused before srun
+            self.assertFalse(res["ok"])
+            self.assertIn("refused", res["error"])
+            # The refusal spells out the reuse semantics and the recovery action.
+            self.assertIn("does NOT extend", res["error"])
+            self.assertIn("release=true", res["error"])
+            self.assertIn('"refused"', (ctx.evidence / "trajectory.jsonl").read_text())
+            self.assertIsNotNone(ctx.session)  # the agent decides to release, not us
+
+    def test_fresh_session_still_runs(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = self._held_ctx(Path(d), minutes=30, held_seconds=10.0)
+            acq, run, rel = _patch()
+            with acq, run as r, rel:
+                res = run_gpu({"command": "python train.py"}, ctx)
+            self.assertTrue(res["ok"], res)
+            r.assert_called_once()
+
+    def test_bare_release_still_works_on_a_stale_session(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = self._held_ctx(Path(d), minutes=30, held_seconds=30 * 60 - 30)
+            acq, run, rel = _patch()
+            with acq, run, rel as scancel:
+                res = run_gpu({"release": True}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertTrue(res["session_released"])
+            scancel.assert_called_once_with("555")
+
+
+class OutputPersistenceTests(unittest.TestCase):
+    def test_step_log_path_is_allocated_and_passed_to_srun(self):
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch()
+            with acq, run as r, rel:
+                res = run_gpu({"command": "python a.py"}, ctx)
+                first = r.call_args_list[0].kwargs["log_path"]
+                self.assertEqual(first.name, "gpu_step_0000.log")
+                self.assertEqual(first.parent, ctx.evidence)
+                # once a step's log exists on disk, the next step gets the next seq
+                first.write_text("out")
+                run_gpu({"command": "python b.py"}, ctx)
+                second = r.call_args_list[1].kwargs["log_path"]
+                self.assertEqual(second.name, "gpu_step_0001.log")
+            # no sandbox in tests -> the agent-facing ref is the host path
+            self.assertEqual(res["output_log"], str(first))
+
+    def test_lost_session_returns_the_streamed_tail(self):
+        lost = _step(
+            stdout="epoch 1\n" * 500 + "last checkpoint saved: ckpt_9.pt\n",
+            stderr="srun: error: Slurm job 555 has expired",
+            rc=1,
+        )
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(run=lost)
+            with acq, run, rel:
+                res = run_gpu({"command": "python train.py"}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("ckpt_9.pt", res["stdout_tail"])  # the tail survives the kill
+            self.assertIn("output_log", res)
+
+    def test_progress_spam_is_stripped_and_result_line_kept(self):
+        spam = "".join(f"\r {p}%|██| {p}/100" for p in range(100))
+        noisy = _step(stdout=f"start\n{spam}\nfinal accuracy: 0.913\n")
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch(run=noisy)
+            with acq, run, rel:
+                res = run_gpu({"command": "python eval.py"}, ctx)
+            self.assertIn("final accuracy: 0.913", res["stdout"])
+            self.assertNotIn("1%", res["stdout"])  # intermediate frames collapsed
+            self.assertFalse(res["truncated"])
+
+
 class RunGpuGuardrailTests(unittest.TestCase):
     def test_refuses_to_start_a_session_that_overspends_and_does_not_acquire(self):
         with tempfile.TemporaryDirectory() as d:
