@@ -29,6 +29,7 @@ from reprocli_vllm.config.config import (
     WEB_TOOLS,
 )
 from reprocli_vllm.schema.audit import AUDIT_RESPONSE_FORMAT
+from reprocli_vllm.schema.output import FINAL_RESPONSE_FORMAT
 from reprocli_vllm.tools.run_dir_tools import AUDIT_TOOLS
 from reprocli_vllm.config.minimax_defaults import apply_model_defaults
 from reprocli_vllm.runtime.trace_io import trace_output_path
@@ -208,7 +209,10 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     args.prompt_file = args.prompt_file or argparse_path("prompts/prompt.txt")
     args.output = args.output or DEFAULT_OUTPUT
     args.extracted_output = args.extracted_output or DEFAULT_EXTRACTED_OUTPUT
-    args.response_format = None
+    # The classifier's forced final (no-tools) turn requests this structured schema;
+    # io.build_chat_completion_request reads args.response_format directly (no
+    # fallback), so this must be the real schema, not a None placeholder.
+    args.response_format = FINAL_RESPONSE_FORMAT
     args.system_message = WEB_SYSTEM_MESSAGE
     args.final_no_tools_message = FINAL_NO_TOOLS_MESSAGE
     args.tools = WEB_TOOLS

@@ -18,6 +18,10 @@ def args(**overrides):
         "top_k": 40,
         "max_tokens": 8192,
         "max_input_tokens": 128000,
+        # build_chat_completion_request reads these directly (no fallback): every
+        # real arg namespace (repro cli_resolve, vllm cli_args) always sets them.
+        "tools": [{"type": "function", "function": {"name": "dummy_tool"}}],
+        "response_format": FINAL_RESPONSE_FORMAT,
     }
     defaults.update(overrides)
     return argparse.Namespace(**defaults)

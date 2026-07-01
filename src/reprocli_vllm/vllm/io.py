@@ -6,8 +6,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config.config import WEB_SYSTEM_MESSAGE, WEB_TOOLS
-from reprocli_vllm.schema.output import FINAL_RESPONSE_FORMAT
+from reprocli_vllm.config.config import WEB_SYSTEM_MESSAGE
 from reprocli_vllm.audit.audit import finalize_audit_row
 from reprocli_vllm.runtime.run_health import degraded_row, finalize_extracted_row
 
@@ -39,10 +38,10 @@ def build_chat_completion_request(
     if args.top_k is not None:
         body["top_k"] = args.top_k
     if include_tools:
-        body["tools"] = getattr(args, "tools", None) or WEB_TOOLS
+        body["tools"] = args.tools
         body["tool_choice"] = tool_choice
     else:
-        body["response_format"] = getattr(args, "response_format", None) or FINAL_RESPONSE_FORMAT
+        body["response_format"] = args.response_format
     return {
         "custom_id": custom_id,
         "method": "POST",
