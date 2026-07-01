@@ -14,7 +14,7 @@
 #   nohup scripts/reproduce/repro_audit_one.sh 2505.18513 dev > repro_audit_2505.18513.log 2>&1 &
 #
 # Env overrides (all optional):
-#   MODEL ENDPOINT CLUSTER RUNS_DIR TOOL_ROUNDS BUDGET SUPABASE_URL
+#   MODEL ENDPOINT CLUSTER RUNS_DIR TOOL_ROUNDS BUDGET CLAIMS SUPABASE_URL
 
 set -euo pipefail
 
@@ -27,6 +27,10 @@ CLUSTER="${CLUSTER:-deltaai}"
 RUNS_DIR="${RUNS_DIR:-${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}/agent_runs}"
 TOOL_ROUNDS="${TOOL_ROUNDS:-25}"
 BUDGET="${BUDGET:-}"   # empty = auto (derive the ceiling from the paper's selection band)
+# The auditor grades against each paper's pinned central claim, read from the audit
+# pool. Default to the Hub copy so a fresh cluster checkout works without the
+# gitignored outputs/ tree; override CLAIMS with a local path if you have one.
+CLAIMS="${CLAIMS:-hf://datasets/Mithilss/neurips-2025-audit-pool/audit_pool_extracted.jsonl}"
 export SUPABASE_URL="${SUPABASE_URL:-https://rjnkpoxwdslkgxjliakq.supabase.co}"
 
 # Resolve the repo root (two levels up) so src/ and outputs/ resolve wherever this runs.
@@ -56,6 +60,7 @@ PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py \
   --served-model-name "$MODEL" \
   --model "$MODEL" \
   --runs-dir "$RUNS_DIR" \
+  --claims "$CLAIMS" \
   --paper-ids-file "$IDS_FILE" \
   --tool-rounds "$TOOL_ROUNDS" \
   --output "audit_${PAPER_ID}.jsonl" \

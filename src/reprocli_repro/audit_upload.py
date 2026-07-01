@@ -70,13 +70,22 @@ def _request(method: str, url: str, key: str, body: Any = None) -> tuple[int, st
 
 
 def run_id_from_stats(runs_dir: Path, paper_id: str) -> str | None:
-    """The sink writes <runs-dir>/<arxiv_id>/stats.json carrying the run_id."""
+    """The sink drops stats.json (carrying run_id) into each run's bundle root, at
+    <runs-dir>/<arxiv_id>/<budget>h/<run_id>/stats.json. Grade the newest (the run
+    the auditor just walked); '**' also matches a flat <arxiv_id>/stats.json."""
+    paper_dir = Path(runs_dir) / paper_id
     try:
-        doc = json.loads((Path(runs_dir) / paper_id / "stats.json").read_text())
-    except (OSError, ValueError):
+        found = sorted(paper_dir.glob("**/stats.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
         return None
-    rid = doc.get("run_id")
-    return rid or None
+    for stats in found:
+        try:
+            rid = json.loads(stats.read_text()).get("run_id")
+        except (OSError, ValueError):
+            continue
+        if rid:
+            return rid
+    return None
 
 
 def run_id_from_db(base: str, key: str, arxiv_id: str) -> str | None:
