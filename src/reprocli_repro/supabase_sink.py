@@ -40,7 +40,6 @@ QUEUE_MAX = 4000           # events; beyond this we drop rather than block the l
 BATCH_MAX = 50
 HTTP_TIMEOUT = 8.0
 BUCKET = "repro-logs"
-GOOD_EXIT = {"natural", "completed"}
 
 
 def _now_iso() -> str:
