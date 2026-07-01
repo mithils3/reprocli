@@ -28,15 +28,15 @@ standalone form of Part IV of the [architecture overview](../architecture.md).
     (`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §1). Pick the interactive
     variant when your allocation policy requires it.
 
-These three account/partition triples are not hypothetical — they are the exact
-strings the live scripts pass:
+The DeltaAI triple is not hypothetical — it is the exact string the live scripts
+pass:
 
 - `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` → `#SBATCH -A betw-dtai-gh`,
   `#SBATCH -p ghx4` (single node, `--gpus-per-node=8`, `--gpu-bind=none`).
-- `scripts/cluster/delta_scripts.sh` line 1 → `srun -A bfvr-delta-cpu -p cpu-interactive
-  …` to grab a CPU shell for an `hf download`.
-- `scripts/cluster/delta_scripts.sh` line 4 → `srun -A bfvr-delta-gpu -p
-  gpuH200x8-interactive --gpus-per-node=6 …` for an interactive H200 shell.
+
+The Delta account/partition rows above are not backed by a runnable script in
+this repo (the paste-buffer `scripts/cluster/delta_scripts.sh` snippets were
+removed as dead — sequential `--pty` `srun`s aren't a script anyone runs).
 
 ---
 
