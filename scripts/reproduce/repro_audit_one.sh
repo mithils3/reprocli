@@ -21,7 +21,7 @@ set -euo pipefail
 PAPER_ID="${1:?usage: repro_audit_one.sh <paper-id> [split]}"
 SPLIT="${2:-dev}"
 
-MODEL="${MODEL:-deepseek/deepseek-v4-pro}"
+MODEL="${MODEL:-minimax/minimax-m3}"
 ENDPOINT="${ENDPOINT:-https://openrouter.ai/api/v1}"
 CLUSTER="${CLUSTER:-deltaai}"
 RUNS_DIR="${RUNS_DIR:-${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}/agent_runs}"
