@@ -76,7 +76,7 @@ function runHeaderHtml(run) {
   return `<div class="rt-head">${V() ? V().inline(fam, word) : ""}
       ${run.model ? `<span class="schip">${esc(run.model)}</span>` : ""}${exit}${lk}${dl}</div>
     <h2 class="rt-claim">${esc(claim || run.run_id || run.arxiv_id || "transcript")}</h2>
-    <div class="rt-meta"><span class="pid">${esc(run.arxiv_id || "")}</span>${run.run_id && claim ? ` · <span class="s-rid">${esc(run.run_id)}</span>` : ""}${run.started_at || run.updated_at ? ` · started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}` : ""}${run.host ? ` · ${esc(run.host)}` : ""}</div>
+    <div class="rt-meta"><span class="pid">${esc(run.arxiv_id || "")}</span>${run.run_id && claim ? ` · <span class="s-rid">${esc(run.run_id)}</span>` : ""}${run.started_at || run.updated_at ? ` · started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}` : ""}${run.host ? ` · ${esc(run.host)}` : ""}${run.batch_id ? ` · <span class="s-rid" title="batch ${esc(run.batch_id)}">⛁ ${esc(run.batch_label || run.batch_id)}</span>` : ""}</div>
     ${tagbar}${fuelGaugeHtml(run)}`;
 }
 const topHtml = (run) => runHeaderHtml(run);

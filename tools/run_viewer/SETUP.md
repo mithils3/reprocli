@@ -94,6 +94,8 @@ unchanged. The `service_role` key (Settings → API) bypasses RLS and must live
 export SUPABASE_URL="https://rjnkpoxwdslkgxjliakq.supabase.co"
 export SUPABASE_SERVICE_KEY="<service-role-key>"
 export REPRO_UPLOAD_FULL_LOG=1            # optional: upload agent.full.log at run end
+export REPRO_BATCH_ID="slurm-123456"     # optional: group one sbatch launch's runs (auto-falls back to SLURM_JOB_ID)
+export REPRO_BATCH_LABEL="dev15 #123456" # optional: human-readable label for that batch in the viewer
 python -m reprocli_repro --vllm-server-url ... --paper-id 2506.09045 --budget-h100-hours 8
 ```
 

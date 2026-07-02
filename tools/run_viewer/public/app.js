@@ -49,7 +49,7 @@ function visibleRuns() {
     (!state.excludeDead || R.effectiveStatus(r) !== "dead") &&
     (!state.excludeRoundLimit || !R.isRoundLimit(r)) &&
     state.tagFilter.pass(r.run_id, window.Tags) &&
-    (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id} ${R.claimOf(r) || ""}`).toLowerCase().includes(q)));
+    (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id} ${r.batch_id || ""} ${r.batch_label || ""} ${R.claimOf(r) || ""}`).toLowerCase().includes(q)));
 }
 function renderTagFilters() {
   const host = $("#tag-filters"); if (!host) return;
@@ -59,12 +59,7 @@ function renderList() {
   const list = $("#run-list"), rows = visibleRuns();
   list.innerHTML = "";
   if (!rows.length) { list.innerHTML = `<div class="empty small">${state.remote ? "No runs match." : "Supabase not reachable — use the Local tab."}</div>`; return; }
-  for (const run of rows) {
-    const item = R.renderRunListItem(run);
-    if (run.run_id === state.currentRunId) item.classList.add("active");
-    item.addEventListener("click", () => openRun(run.run_id));
-    list.appendChild(item);
-  }
+  window.Batches.render(list, rows, { currentRunId: state.currentRunId, onOpen: openRun, rerender: renderList });
 }
 function upsertRun(run) {
   if (!run || !run.run_id) return;

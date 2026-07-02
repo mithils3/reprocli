@@ -46,6 +46,8 @@ class SinkConfig:
     host: str
     upload_full_log: bool
     upload_stats: bool
+    batch_id: str | None
+    batch_label: str | None
 
     @classmethod
     def from_env(cls) -> "SinkConfig | None":
@@ -57,8 +59,17 @@ class SinkConfig:
         # stats.json is tiny and the whole point of enabling the sink, so it's on
         # by default whenever the sink is active; set REPRO_UPLOAD_STATS=0 to skip.
         stats = os.environ.get("REPRO_UPLOAD_STATS", "1").lower() not in ("0", "false", "no")
+        # One sbatch sweep launches many `python -m reprocli_repro` processes; they
+        # share REPRO_BATCH_ID (falling back to the SLURM job id) so the viewer can
+        # show the whole sweep as a group. Empty strings count as unset.
+        batch_id = os.environ.get("REPRO_BATCH_ID") or None
+        if not batch_id:
+            slurm_job = os.environ.get("SLURM_JOB_ID") or None
+            batch_id = f"slurm-{slurm_job}" if slurm_job else None
+        batch_label = os.environ.get("REPRO_BATCH_LABEL") or None
         return cls(url=url.rstrip("/"), service_key=key, host=socket.gethostname(),
-                   upload_full_log=full, upload_stats=stats)
+                   upload_full_log=full, upload_stats=stats,
+                   batch_id=batch_id, batch_label=batch_label)
 
 
 class SupabaseSink:
@@ -111,6 +122,7 @@ class SupabaseSink:
             "status": status, "host": self.cfg.host, "budget": total,
             "total_h100": total, "remaining_h100": remaining, "spent_h100": 0,
             "tool_rounds_used": 0, "started_at": _now_iso(), "updated_at": _now_iso(),
+            "batch_id": self.cfg.batch_id, "batch_label": self.cfg.batch_label,
         })
 
     def on_event(self, kind: str, ctx, payload: dict[str, Any]) -> None:

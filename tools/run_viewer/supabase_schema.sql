@@ -64,6 +64,13 @@ alter table public.repro_runs add column if not exists audit_rationale          
 alter table public.repro_runs add column if not exists audit_model               text;  -- grader model id
 alter table public.repro_runs add column if not exists audited_at                timestamptz;
 
+-- Sweep grouping: set by the harness from REPRO_BATCH_ID/REPRO_BATCH_LABEL
+-- (falling back to the sbatch job id) so one sweep's runs group in the viewer.
+-- Safe to run twice.
+alter table public.repro_runs add column if not exists batch_id    text;
+alter table public.repro_runs add column if not exists batch_label text;
+create index if not exists repro_runs_batch_idx on public.repro_runs (batch_id);
+
 -- ---------------------------------------------------------------------------
 -- repro_events  (append-only; grouped into rounds client-side by round_index)
 -- ---------------------------------------------------------------------------

@@ -66,6 +66,10 @@ if [[ -z "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
 fi
 
 OUTER_JOB="${SLURM_JOB_ID:-local}"
+# One batch id per sbatch launch groups this sweep's runs in the viewer; the
+# REPRO_* vars survive the SLURM_* env scrub below (override to join an old batch).
+export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
+export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
 SWEEP_DIR="${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
 IDS_FILE="${SWEEP_DIR}/easy_ids.txt"

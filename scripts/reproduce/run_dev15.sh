@@ -44,6 +44,9 @@ cd "${REPROCLI}"
 STAMP="$(date '+%Y%m%d_%H%M%S')"
 SWEEP_DIR="${REPRO_WORK_ROOT}/dev15_sweeps/login_${STAMP}"
 mkdir -p "${SWEEP_DIR}"
+# Group this login-node sweep's runs in the run viewer (no SLURM job id here).
+export REPRO_BATCH_ID="${REPRO_BATCH_ID:-login-${STAMP}}"
+export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-dev15 login sweep ${STAMP}}"
 # Pass --budget-h100-hours only when a flat budget is set; otherwise the CLI
 # derives each paper's ceiling from its selection band.
 if [[ -n "${BUDGET_H100_HOURS}" ]]; then
