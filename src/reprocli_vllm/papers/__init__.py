@@ -1,1 +1,1 @@
-"""Paper records, bundle loading, and supplement extraction."""
+"""Paper records for the auditor (one Paper per graded run directory)."""
