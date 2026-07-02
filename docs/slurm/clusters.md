@@ -1,86 +1,77 @@
 # Clusters & the allocation→step pattern
 
-How GPU work is actually managed in this repo today — the SLURM substrate the
-reproduction agent builds on. Two NCSA clusters are in play (DeltaAI and Delta),
-and every GPU run follows one shape: an **allocation holds the GPUs** (the budget
-container) and **`srun` steps run each unit of work inside it**. This page is the
-standalone form of Part IV of the [architecture overview](../architecture.md).
-
-!!! info "Status legend"
-    ✅ live · 🚧 designed, not yet wired — consistent with the architecture doc.
-    The classifier/auditor sbatch jobs are ✅ live; the reproduction agent's
-    `salloc`/`run_gpu`→`srun` loop is 🚧 designed (see
-    [the reproduction mode](../modes/reproduction.md)).
+How GPU work is actually managed in this repo — the SLURM substrate the
+reproduction agent builds on. Two NCSA clusters are in play (DeltaAI and Delta).
+The reproduction agent provisions GPUs **just-in-time**: it holds nothing while
+it reasons, then opens a fresh allocation per GPU step and releases it the moment
+the step exits. This page is the standalone form of Part IV of the
+[architecture overview](../architecture.md).
 
 ---
 
-## Clusters & accounts ✅
+## Clusters & accounts
 
 | cluster | account / partition | hardware | used for |
 |---|---|---|---|
-| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | the classifier/auditor sbatch jobs (`scripts/**/*.sbatch`) |
+| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | the reproduction agent's `deltaai` profile (the only profile); model serving |
 | **Delta** (NCSA) | `-A bfvr-delta-cpu -p cpu-interactive` | CPU | model downloads, CPU orchestration |
 | **Delta** (NCSA) | `-A bfvr-delta-gpu -p gpuH200x8-interactive` | H200 ×8/node | interactive + multi-node model serving |
 
+`deltaai` is the single built-in reproduction-agent profile
+(`src/reprocli_repro/cluster.py`): it pins the account, the default partition
+(`ghx4`), the node hardware (`gh200`), and the per-node GPU count. Two per-run
+overrides exist — `--partition` (pick a different queue, e.g. the
+faster-turnaround `ghx4-interactive`) and `--apptainer-image` (swap the base
+`.sif`). There is no account / hardware / gpus-per-node override, and no second
+cluster profile.
+
 !!! note "Interactive partitions"
-    For interactive allocations on DeltaAI, the runbook uses
-    `-p ghx4-interactive` instead of `ghx4`
-    (`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §1). Pick the interactive
-    variant when your allocation policy requires it.
-
-The DeltaAI triple is not hypothetical — it is the exact string the live scripts
-pass:
-
-- `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` → `#SBATCH -A betw-dtai-gh`,
-  `#SBATCH -p ghx4` (single node, `--gpus-per-node=8`, `--gpu-bind=none`).
-
-The Delta account/partition rows above are not backed by a runnable script in
-this repo (the paste-buffer `scripts/cluster/delta_scripts.sh` snippets were
-removed as dead — sequential `--pty` `srun`s aren't a script anyone runs).
+    For interactive allocations on DeltaAI, use `-p ghx4-interactive` instead of
+    `ghx4`. Pass `--partition ghx4-interactive` (or let the agent pick it per
+    `run_gpu` step via the `list_partitions` tool) when your allocation policy
+    requires it.
 
 ---
 
-## The allocation → step pattern ✅ (the load-bearing idea)
+## The JIT allocation → step pattern (the load-bearing idea)
 
-The repo's split is **allocation = budget container, `srun` step = one unit of
-work.** `salloc` (or `sbatch`) reserves the nodes for a time window; every
-discrete piece of GPU work runs as an `srun` step *inside* that allocation,
-pinned to it with `--jobid=$SLURM_JOB_ID`.
+The reproduction agent's split is **orchestrator = cheap CPU, GPU step =
+just-in-time allocation.** The agent loop, budget meter, evidence capture, and
+**all** CPU work (clone, `uv venv`, install, edit, inspect) run on a long-lived
+CPU/login process that **never holds a GPU**. Each GPU step opens **one fresh
+`salloc`** sized for that step and **releases it the instant the command exits** —
+nothing is pre-held, so idle GPU time is never charged.
 
 ```bash
-# 1. Hold GPUs for the budget window (the budget container)
-salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus-per-node=1 \
-       --cpus-per-task=16 --mem=64G --time=<budget-derived>
-
-# 2. Orchestrator (CPU, this shell) drives the agent loop and fires steps:
-srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 \
-     bash -lc 'cd <workspace> && <agent command>'
+# Orchestrator (CPU, this shell) drives the agent loop; each run_gpu step opens
+# and releases its own allocation, running inside the mandatory Apptainer sandbox:
+salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus=<k> --time=<minutes> \
+  srun --ntasks=1 apptainer exec --nv --cleanenv --no-home <sif> \
+       bash -lc 'cd <per-paper-workspace> && <experiment command>'
 ```
-
-This is the same shape the multi-node runbook uses for *every* in-allocation
-command — interface discovery, head-IP probing, and the `vllm serve` launch all
-go through `srun --jobid=$SLURM_JOB_ID … bash -lc '…'`
-(`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md` §3–§5).
 
 ```mermaid
 flowchart TD
   classDef alloc fill:#dcfce7,stroke:#15803d,color:#000;
   classDef cpu fill:#dbeafe,stroke:#1d4ed8,color:#000;
 
-  SALLOC["salloc / sbatch — reserves N GPUs for a time window<br/>= the budget container ($SLURM_JOB_ID)"]:::alloc
-  ORCH["orchestrator shell (CPU)<br/>drives the agent loop, meters budget"]:::cpu
-  S1["srun --jobid=$SLURM_JOB_ID … bash -lc '…'<br/>step 1 (one unit of work)"]
-  S2["srun --jobid=$SLURM_JOB_ID … bash -lc '…'<br/>step 2 (one unit of work)"]
-  SN["srun --jobid=$SLURM_JOB_ID … bash -lc '…'<br/>step N"]
+  ORCH["orchestrator shell (CPU / login)<br/>drives the agent loop, meters budget, NEVER holds a GPU"]:::cpu
+  S1["run_gpu → fresh salloc … srun (step 1), released on exit"]:::alloc
+  S2["run_gpu → fresh salloc … srun (step 2), released on exit"]:::alloc
+  SN["run_gpu → fresh salloc … srun (step N), released on exit"]:::alloc
 
-  SALLOC --> ORCH
   ORCH --> S1
   ORCH --> S2
   ORCH --> SN
-  S1 -. inherits env, GPUs from allocation .-> SALLOC
-  S2 -. inherits env, GPUs from allocation .-> SALLOC
-  SN -. inherits env, GPUs from allocation .-> SALLOC
 ```
+
+Each `run_gpu` step is metered as `gpus × elapsed_h × hw_multiplier` (actual
+elapsed; queue wait is not charged) against the row's `budget_h100_hours`; when
+the remaining budget hits zero, `run_gpu` refuses and the agent is forced to
+finish and write its report. The model sets `gpus`/`minutes` per call; the
+account/partition/node come from the `deltaai` profile. See
+[the reproduction mode](../modes/reproduction.md) for the budget meter and how the
+agent reports while the auditor renders the verdict.
 
 !!! tip "Why this maps onto the agent core"
     The vLLM server is a stateless chat-completions endpoint (all conversation
@@ -90,38 +81,20 @@ flowchart TD
     OpenAI-compatible endpoint by base URL and spends **zero** GPU budget on
     reasoning; the metered GPU allocation is touched only by `run_gpu`→`srun`
     steps that do real experiment work. Orchestration and GPU are therefore
-    physically different allocations, exactly as the design requires.
+    physically different allocations.
 
-### Designed extension: orchestrator vs. GPU steps 🚧
-
-The reproduction agent (Part III, [reproduction mode](../modes/reproduction.md))
-keeps the same allocation→step *shape* but flips *who holds the allocation and
-when*. The classifier/auditor pre-hold one sbatch allocation for a whole job; the
-reproduction agent instead provisions GPUs **just-in-time** — it holds nothing
-until a GPU command runs, then `salloc`s a fresh allocation for that one step and
-releases it:
-
-| concern | where it lives | why |
-|---|---|---|
-| agent loop, budget meter, evidence, bundle writer, **and all CPU work** (clone / venv / install / edit) | **login / CPU allocation** — long-lived, cheap, **never holds a GPU** | LLM reasoning + file edits + installs are cheap CPU work; holding a GPU across the whole episode would burn the H100 budget on idle time |
-| the experiment (train / eval / score) | **agent-owned, just-in-time `salloc` per `run_gpu` call** — provisioned only while the command runs, then released | only the experiment itself needs a GPU; the agent allocates GPUs *only when it needs them*, so idle GPU time is never charged |
-
-Each `run_gpu` step is metered as `gpus × elapsed_h × hw_multiplier` (actual
-elapsed; queue wait is not charged) against the row's `budget_h100_hours`; when
-the remaining budget hits zero, `run_gpu` refuses and the agent is forced to finish
-and write its report. The model sets `gpus`/`minutes` per call; the
-account/partition/node come from the cluster profile it's entitled to. See
-[the reproduction mode](../modes/reproduction.md) for the budget meter and how the
-agent reports while the auditor renders the verdict.
+The same `salloc … srun … bash -lc '…'` shape is what a **multi-node serve** uses
+for every in-allocation command — interface discovery, head-IP probing, and the
+`vllm serve` launch (see the [serving page](serve.md)). There the allocation is
+long-lived because a served model must stay up; the reproduction agent's GPU
+allocations, by contrast, live only for one step.
 
 ---
 
-## The standardized env block ✅
+## The standardized env block
 
 Every `srun` step inherits the environment the sbatch scripts already
-standardize. The block below is shared across
-`scripts/minimax_m2/paper_classification.sbatch`,
-`scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch`, the `serve_*.sbatch` servers, and
+standardize. The block below is shared across the `serve_*.sbatch` servers and
 the interactive runbook's §2
 (`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`). The one divergence: the single-node
 sbatch scripts additionally pin loopback rendezvous
@@ -173,7 +146,7 @@ ulimit -s unlimited || true
 
 ```bash
 module load python/3.11.9
-source /u/msalunkhe/reprocli/.venv/bin/activate   # the shared classifier/auditor venv
+source /u/msalunkhe/reprocli/.venv/bin/activate   # the shared repo venv (serve + auditor)
 cd /u/msalunkhe/reprocli
 export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
 ```
@@ -188,13 +161,14 @@ export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
     rendezvous (the worker node times out with `4/8 clients joined`). The runbook
     now fails fast on an empty or loopback `HEAD_IP`.
 
-### Per-paper `uv` venv (the reproduction agent's isolation) 🚧
+### Per-paper `uv` venv (the reproduction agent's isolation)
 
-The shared `.venv` above is the **classifier/auditor** environment. The
+The shared `.venv` above is the repo's serving/auditor environment. The
 reproduction agent intentionally does **not** reuse it: each paper gets its own
-**per-paper `uv` venv** built from the paper's pinned commit, so one paper's
-dependency install can never poison another's. This is the decouple-and-isolate
-intent from the architecture (Part IV.2 / III.6 `workspace.py`).
+**per-paper `uv` venv** (`--system-site-packages` over the Apptainer image's
+torch) built from the paper's pinned commit, so one paper's dependency install
+can never poison another's. This is the decouple-and-isolate intent from the
+architecture (Part IV `workspace.py`).
 
 !!! example "Shape of a per-paper workspace step"
     ```bash
@@ -206,28 +180,29 @@ intent from the architecture (Part IV.2 / III.6 `workspace.py`).
       <experiment command>               # this is what run_gpu wraps
     '
     ```
-    The exact `uv`/clone wrappers are the 🚧 designed `src/reprocli_repro/`
-    modules (`workspace.py`, `slurm.py`); the shape above mirrors the live
-    `srun … bash -lc '…'` steps in the runbook.
+    The exact `uv`/clone wrappers live in the `src/reprocli_repro/` modules
+    (`workspace.py`, `slurm.py`); the shape above mirrors the JIT
+    `salloc … srun … bash -lc '…'` step the agent's `run_gpu` tool builds.
 
 ---
 
-## Worked example: attach a classifier to a live multi-node server ✅
+## Worked example: attach a consumer to a live multi-node server
 
-The runbook's §7 shows the end-to-end pattern — `salloc` holds 2× GH200 nodes,
-`srun` launches `vllm serve` across them, and the classifier attaches by URL with
-**no** vLLM launch flags (the server is already up):
+Once `salloc` holds 2× GH200 nodes and `srun` launches `vllm serve` across them,
+a consumer attaches by URL with **no** vLLM launch flags (the server is already
+up). The auditor:
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
+  --mode audit \
   --vllm-server-url "http://${HEAD_IP}:8000" \
   --model moonshotai/Kimi-K2.6 \
-  --num-prompts 2 \
   --tool-rounds 12 \
   --request-workers 2 \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --output outputs/neurips_2025_kimi_k2_6_multinode_smoke.jsonl \
-  --extracted-output outputs/neurips_2025_kimi_k2_6_multinode_smoke_extracted.jsonl
+  --claims hf://datasets/Mithilss/neurips-2025-audit-pool/audit_pool_extracted.jsonl \
+  --runs-dir <runs-dir> \
+  --output outputs/audit_smoke.jsonl \
+  --extracted-output outputs/audit_smoke_extracted.jsonl
 ```
 
 This is the same `--vllm-server-url` seam the reproduction agent's
@@ -239,10 +214,10 @@ provider-specific code in the harness.
 ## Where to go next
 
 - [Serving (reprocli_serve)](serve.md) — the standalone central vLLM server other
-  nodes attach to by URL, and the endpoint contract that decouples it from the runner.
-- [Sbatch jobs](sbatch.md) — the batch (`#SBATCH`) form of the classifier/auditor
-  runs that pin this env block.
-- [Reproduction mode](../modes/reproduction.md) — the 🚧 `salloc` +
+  nodes attach to by URL, and the endpoint contract that decouples it from consumers.
+- [Sbatch jobs](sbatch.md) — the batch (`#SBATCH`) form of a serve-then-attach run
+  that pins this env block.
+- [Reproduction mode](../modes/reproduction.md) — the `salloc` +
   `run_gpu`→`srun` execution agent and its H100-hour budget meter.
 - [Architecture overview](../architecture.md) — Part IV in context with the full
-  classifier → lockfile → reproduction → auditor pipeline.
+  lockfile → reproduction → auditor pipeline.

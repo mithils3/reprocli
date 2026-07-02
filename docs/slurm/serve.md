@@ -2,8 +2,8 @@
 
 reprocli splits into two halves that couple only through a published URL:
 
-- the **CC half** — the provider-agnostic agent brains (classifier, auditor,
-  reproduction). Like Codex, Claude Code, or opencode, they run no model
+- the **client half** — the provider-agnostic agent brains (the auditor and the
+  reproduction agent). Like Codex, Claude Code, or opencode, they run no model
   themselves; they only POST chat-completions to a base URL (see
   [the reproduction agent's note](../modes/reproduction.md#tools-the-reproduction-agent-gets)
   and [the agent core](../architecture.md#part-ii-the-single-agent-core)).
@@ -36,8 +36,8 @@ green, and removes it on exit:
 
 ## Attach a consumer (three equivalent ways)
 
-The runner resolves its endpoint in this order, falling back to the **embedded**
-local server if none is set (so default behavior is unchanged):
+A consumer (the auditor or the reproduction agent) resolves its endpoint in this
+order and errors out if none is set — it never self-hosts a model:
 
 | how | what to set |
 |---|---|
@@ -47,6 +47,7 @@ local server if none is set (so default behavior is unchanged):
 
 ```bash
 python3 src/run_arxiv_prompt_vllm.py \
+  --mode audit \
   --vllm-server-url "$(jq -r .base_url /work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.json)" \
   --model MiniMaxAI/MiniMax-M2.7 --num-prompts 2
 ```
@@ -55,13 +56,14 @@ The resolver lives in `reprocli_vllm/vllm/endpoint.py` (CC half); the publish si
 is `reprocli_serve/endpoint.py` (serving half). The two halves couple **only**
 through this JSON contract — neither imports the other.
 
-## Dataset production with the serve paradigm
+## The serve paradigm in a batch job
 
-`scripts/minimax_m2/paper_classification.sbatch` runs the stage-1 classifier on a single node
-this way: step 1 starts the central server, step 2 attaches the runner by URL.
-The dataset outputs are unchanged from the older embedded-server form; the only
-difference is that the model is now a swappable service rather than a process
-bolted into the runner (so changing providers is a server-step / URL change).
+A batch job runs this same shape on a single node: step 1 starts the central
+server in the background and waits for it to publish its endpoint JSON; step 2
+attaches a consumer (the auditor runner, or the reproduction agent's brain) by
+that URL. The model is a swappable service rather than a process bolted into the
+consumer, so changing providers is a server-step / URL change with no consumer
+edits — the two halves couple only through the published endpoint.
 
 ## DeltaAI networking notes
 
