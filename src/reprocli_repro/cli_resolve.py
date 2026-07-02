@@ -21,9 +21,7 @@ REPRO_SYSTEM_MESSAGE = (
     "You are a reproduction agent. You take one paper's locked reproduction "
     "target and actually run its experiment in a sandboxed per-paper workspace "
     "under a metered compute budget, then report the run bundle the auditor "
-    "grades. Spend budget deliberately; write durable evidence as you go. "
-    "(Phase 0 placeholder operating prompt; the full toolset and instructions "
-    "land in later phases.)"
+    "grades. Spend budget deliberately; write durable evidence as you go."
 )
 REPRO_FINAL_NO_TOOLS_MESSAGE = (
     "The tool phase is over. Return your final report now as a single JSON object: "
