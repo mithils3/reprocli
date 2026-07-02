@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
@@ -17,7 +18,6 @@ from reprocli_vllm.vllm.io import (
     tool_result_message,
 )
 from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
-from reprocli_vllm.hf_upload import OUTPUT_WRITE_LOCK
 from reprocli_vllm.runtime.loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
 from reprocli_vllm.runtime import live_events
 from reprocli_vllm.papers.papers import Paper
@@ -25,6 +25,9 @@ from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.tools.web_tools import execute_tool_call
 from reprocli_vllm.runtime.trace_io import append_trace_row, assistant_message
 from reprocli_vllm.vllm.client import post_chat_completion_row, response_row
+
+# Serializes output appends so concurrent workers never interleave half-written lines.
+OUTPUT_WRITE_LOCK = threading.Lock()
 
 
 def run_tool_loop(

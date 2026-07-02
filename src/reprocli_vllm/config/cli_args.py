@@ -90,29 +90,6 @@ def parse_args() -> argparse.Namespace:
         type=argparse_path,
         help="Run only the arXiv ids listed in this file (one per line).",
     )
-    parser.add_argument(
-        "--hf-repo",
-        help=(
-            "Hugging Face dataset repo id (e.g. Mithilss/neurips-2025-results). "
-            "When set, run outputs are pushed there incrementally and at the end."
-        ),
-    )
-    parser.add_argument(
-        "--hf-path-in-repo",
-        default="",
-        help="Optional subfolder inside the HF repo for the uploaded files.",
-    )
-    parser.add_argument(
-        "--hf-upload-every",
-        type=float,
-        default=10.0,
-        help="Minutes between incremental HF uploads (default: 10).",
-    )
-    parser.add_argument(
-        "--hf-private",
-        action="store_true",
-        help="Create the HF repo as private when it does not exist yet.",
-    )
     parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
@@ -161,8 +138,6 @@ def parse_args() -> argparse.Namespace:
         parser.error("--max-repeated-tool-calls must be >= 1")
     if args.max_input_tokens < 1:
         parser.error("--max-input-tokens must be >= 1")
-    if args.hf_upload_every <= 0:
-        parser.error("--hf-upload-every must be > 0")
     if args.top_k is not None and args.top_k < 1:
         parser.error("--top-k must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
