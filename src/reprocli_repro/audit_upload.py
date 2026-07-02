@@ -29,16 +29,11 @@ import json
 import os
 import sys
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
 from typing import Any
 
-try:  # already importable transitively (datasets/hf_hub); urllib is the fallback
-    import requests
-except ImportError:  # pragma: no cover
-    requests = None
+from reprocli_repro import postgrest
 
 HTTP_TIMEOUT = 15.0
 
@@ -52,21 +47,9 @@ def _service_key() -> str | None:
 
 
 def _request(method: str, url: str, key: str, body: Any = None) -> tuple[int, str]:
-    data = json.dumps(body).encode() if body is not None else None
-    headers = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-    if method == "PATCH":
-        headers["Prefer"] = "return=minimal"
-    if requests is not None:
-        r = requests.request(method, url, headers=headers, data=data, timeout=HTTP_TIMEOUT)
-        return r.status_code, r.text
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-            return resp.status, resp.read().decode()
-    except urllib.error.HTTPError as e:  # 4xx/5xx carry a useful body
-        return e.code, e.read().decode()
-    except OSError as e:  # DNS/connection — treat as a soft failure
-        return 0, str(e)
+    prefer = "return=minimal" if method == "PATCH" else None
+    return postgrest.request(url, service_key=key, method=method, body=body,
+                             prefer=prefer, timeout=HTTP_TIMEOUT)
 
 
 def run_id_from_stats(runs_dir: Path, paper_id: str) -> str | None:

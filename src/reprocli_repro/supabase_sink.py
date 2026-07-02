@@ -16,7 +16,6 @@ Pure row construction lives in ``supabase_rows``; per-run token bookkeeping in
 
 from __future__ import annotations
 
-import json
 import os
 import queue
 import socket
@@ -26,11 +25,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from reprocli_repro import live_log, supabase_rows as rows
+from reprocli_repro import live_log, postgrest, supabase_rows as rows
 from reprocli_repro.run_stats import RunStats
 from reprocli_repro.supabase_rows import budget_of, run_id_of
-
-import urllib.request
 
 QUEUE_MAX = 4000           # events; beyond this we drop rather than block the loop
 BATCH_MAX = 50
@@ -222,22 +219,15 @@ class SupabaseSink:
             ks = set().union(*(e.keys() for e in events))
             self._post("POST", "/rest/v1/repro_events", [{k: e.get(k) for k in ks} for e in events], prefer="return=minimal")
 
-    def _headers(self, prefer=None, content="application/json"):
-        h = {"apikey": self.cfg.service_key, "Authorization": f"Bearer {self.cfg.service_key}", "Content-Type": content}
-        if prefer:
-            h["Prefer"] = prefer
-        return h
-
     def _post(self, method, path, body, *, prefer=None, raw=None, content="application/json"):
-        url = self.cfg.url + path
-        data = raw if raw is not None else json.dumps(body).encode()
         try:
-            req = urllib.request.Request(url, data=data, headers=self._headers(prefer, content), method=method)
-            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-                code = resp.status
-            if code >= 300:
-                self.failed += 1
+            code, _ = postgrest.request(
+                self.cfg.url + path, service_key=self.cfg.service_key, method=method,
+                body=body, raw=raw, prefer=prefer, content=content, timeout=HTTP_TIMEOUT)
         except Exception:  # noqa: BLE001 — best-effort; never propagate
+            self.failed += 1
+            return
+        if not code or code >= 300:
             self.failed += 1
 
     def _upsert_run(self, row):

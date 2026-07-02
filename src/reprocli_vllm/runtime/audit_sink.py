@@ -15,16 +15,15 @@ set by the pipeline), so the app can pair the audit with its run.
 
 from __future__ import annotations
 
-import json
 import os
 import queue
 import socket
 import threading
 import time
-import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
+from reprocli_repro import postgrest  # shared PostgREST transport (repro pkg on PYTHONPATH)
 from reprocli_vllm.runtime import audit_rows as rows
 from reprocli_vllm.runtime import live_events
 
@@ -164,23 +163,15 @@ class AuditSink:
             self._post("POST", "/rest/v1/audit_events", [{k: e.get(k) for k in ks} for e in events],
                        prefer="return=minimal")
 
-    def _headers(self, prefer: str | None) -> dict[str, str]:
-        h = {"apikey": self.cfg.service_key, "Authorization": f"Bearer {self.cfg.service_key}",
-             "Content-Type": "application/json"}
-        if prefer:
-            h["Prefer"] = prefer
-        return h
-
     def _post(self, method: str, path: str, body: Any, *, prefer: str | None = None) -> None:
-        url = self.cfg.url + path
-        data = json.dumps(body).encode()
         try:
-            req = urllib.request.Request(url, data=data, headers=self._headers(prefer), method=method)
-            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-                code = resp.status
-            if code >= 300:
-                self.failed += 1
+            code, _ = postgrest.request(
+                self.cfg.url + path, service_key=self.cfg.service_key, method=method,
+                body=body, prefer=prefer, timeout=HTTP_TIMEOUT)
         except Exception:  # noqa: BLE001 — best-effort; never propagate
+            self.failed += 1
+            return
+        if not code or code >= 300:
             self.failed += 1
 
     def close(self, timeout: float = 12.0) -> None:
