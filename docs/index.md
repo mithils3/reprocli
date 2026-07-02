@@ -1,10 +1,12 @@
 # ReproBench
 
-**A benchmark for reproducing ML-paper claims.** ReproBench turns a stream of
-NeurIPS 2025 papers into a graded reproducibility benchmark using **one lockfile**
-(a band-selected audit pool of ~200 papers) and **three LLM agent roles** arranged
-around it — all three sharing a single tool-calling agent core. Only their tools,
-prompt, and output schema differ.
+**A benchmark for reproducing ML-paper claims.** ReproBench grades whether an LLM
+agent can reproduce a paper's central result. It turns on **one lockfile** (a
+band-selected audit pool of ~200 NeurIPS 2025 papers, built by an upstream
+classifier pass and published as a frozen input) plus two live agent surfaces that
+consume it: a **reproduction agent** that actually runs each paper's experiment and
+an **auditor** that grades the run. Both agents attach their reasoning to a vLLM
+server you stand up; only their tools, prompt, and output schema differ.
 
 ```mermaid
 flowchart LR
@@ -12,24 +14,23 @@ flowchart LR
   classDef llm  fill:#dbeafe,stroke:#1d4ed8,color:#000;
   classDef gpu  fill:#dcfce7,stroke:#15803d,color:#000;
 
-  A["NeurIPS 2025<br/>paper bundles"]
-  CL["① CLASSIFIER ✅<br/>build the dataset"]:::llm
-  LOCK["THE LOCKFILE<br/>audit_pool_extracted.jsonl<br/>~200 rows"]:::lock
-  RA["② REPRODUCTION 🚧<br/>actually run the MRE"]:::llm
-  GPU["SLURM GPU<br/>(srun)"]:::gpu
-  BUN["run bundle<br/>result · evidence"]
-  AU["③ AUDITOR ✅<br/>grade 0–5"]:::llm
+  LOCK["THE LOCKFILE<br/>audit pool ~200 rows<br/>(pre-built input)"]:::lock
+  RA["REPRODUCTION (S6) ✅<br/>python -m reprocli_repro<br/>actually run the MRE"]:::llm
+  GPU["DeltaAI GH200<br/>JIT salloc per step"]:::gpu
+  BUN["run bundle<br/>report.json · evidence/"]
+  AU["AUDITOR (S7) ✅<br/>--mode audit<br/>grade 0–5"]:::llm
+  UP["verdicts<br/>uploaded"]
 
-  A --> CL --> LOCK
   LOCK -->|agent_task| RA <-->|run_gpu| GPU
   RA --> BUN
   LOCK -->|central_claim · match_bar| AU
-  BUN --> AU
+  BUN --> AU --> UP
 ```
 
-The through-line for all three roles: **the model reports evidence, deterministic
-code computes every consequential label** (tier, score, verdict, run-health). No
-agent ever grades itself.
+The through-line: **the model reports evidence, deterministic code computes every
+consequential label** (score, verdict, run-health). The reproduction agent runs the
+experiment and reports what it measured; the auditor — a different role — renders
+the verdict. No agent ever grades itself.
 
 ## What's here
 
@@ -37,8 +38,8 @@ agent ever grades itself.
 
 -   :material-rocket-launch: **[Getting started](getting-started/installation.md)**
 
-    Install the environment, run your first classification, and learn the core
-    vocabulary — lockfile, MRE record, `match_bar`, tiers, and the H100 budget.
+    Install the environment, run your first reproduction and audit, and learn the
+    core vocabulary — lockfile, MRE record, `match_bar`, tiers, and the H100 budget.
 
 -   :material-sitemap: **[System architecture](architecture.md)**
 
@@ -47,8 +48,8 @@ agent ever grades itself.
 
 -   :material-cog: **[The agent core](agent-core/index.md)**
 
-    One `run_tool_loop`, two live modes. The ReAct-style loop, its guardrails,
-    and the forced structured-output finalization.
+    One `run_tool_loop` behind the auditor, forked into the reproduction agent. The
+    ReAct-style loop, its guardrails, and the forced structured-output finalization.
 
 -   :material-database: **[Dataset pipeline](dataset/index.md)**
 
@@ -62,41 +63,45 @@ agent ever grades itself.
 
 -   :material-console: **[CLI reference](cli/run-arxiv.md)**
 
-    Every flag for `run_arxiv_prompt_vllm.py` and `reprocli_data.build_dataset`.
+    Every flag for the auditor (`run_arxiv_prompt_vllm.py --mode audit`) and
+    `reprocli_data.build_dataset`.
 
 </div>
 
-## The three roles at a glance
+## The live surfaces at a glance
 
-| | Job | Input | Status |
-|---|---|---|---|
-| **① Classifier** (`--mode classification`) | Read a paper, verify artifacts, emit one MRE record | Paper bundle LaTeX + supplement | :material-check-circle:{ .live } live |
-| **② Reproduction** (`--mode reproduce`) | Actually run the minimal experiment under an H100-hour budget | One lockfile row | :material-wrench-clock: designed |
-| **③ Auditor** (`--mode audit`) | Grade one reproduction run against the rubric (0–5) | Central claim + rubric + run-dir | :material-check-circle:{ .live } live |
+| Surface | Command | Job |
+|---|---|---|
+| **Reproduction (S6)** | `python -m reprocli_repro` | Actually run one lockfile paper's minimal experiment on DeltaAI under a metered H100-hour budget, emitting the run bundle |
+| **Auditor (S7)** | `python3 src/run_arxiv_prompt_vllm.py --mode audit` | Grade one reproduction run bundle against the rubric (0–5) and cheat-flag it |
+| **Serving** | `python -m reprocli_serve` | Stand up the vLLM chat-completions server both agents attach to by URL |
 
-See **[Agent modes](modes/classifier.md)** for the full breakdown of each role.
+Both agents are URL-only brains: they resolve their endpoint from
+`--vllm-server-url` / `$REPROCLI_SERVER_URL` / `$REPROCLI_ENDPOINT_FILE` (published
+by `reprocli_serve`) and never self-host a model. See **[Agent modes](modes/auditor.md)**
+for the full breakdown of the auditor and reproduction roles.
 
 ## Quickstart
 
-Run the classifier over a handful of papers (attaching to an already-running
-vLLM server):
+With the lockfile already published, the product is **reproduce → audit → upload**.
+First stand up a brain, then reproduce one paper against it:
 
 ```bash
-python3 src/run_arxiv_prompt_vllm.py \
-  --vllm-server-url "http://${HEAD_IP}:8000" \
-  --model moonshotai/Kimi-K2.6 \
-  --num-prompts 5 \
-  --tool-rounds 12 \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --output outputs/smoke.jsonl \
-  --extracted-output outputs/smoke_extracted.jsonl \
-  --save-round-jsonl
+# 1. serve the brain (on a GPU node)
+python -m reprocli_serve --model MiniMaxAI/MiniMax-M2.7
+
+# 2. reproduce one lockfile paper (orchestrator on CPU/login; run_gpu JIT-allocs GH200)
+python -m reprocli_repro \
+  --paper-id 2110.03155 \
+  --vllm-server-url "http://${HEAD_IP}:8000"
 ```
 
-Build the paper-bundle dataset from scratch:
+Then grade the run bundle it wrote:
 
 ```bash
-PYTHONPATH=src python3 -m reprocli_data.build_dataset --data-dir data --workers 8
+python3 src/run_arxiv_prompt_vllm.py --mode audit \
+  --runs-dir /work/nvme/bfvr/msalunkhe/reprocli/agent_runs \
+  --vllm-server-url "http://${HEAD_IP}:8000"
 ```
 
 Full commands, flags, and cluster recipes live in

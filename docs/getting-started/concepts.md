@@ -1,20 +1,20 @@
 # Core concepts
 
-The mental model for ReproBench in one page. The whole benchmark turns on **one lockfile** (a band-stratified audit pool) and **three LLM agent roles** arranged around it. Read this first; every term below links to its deep page. Status legend follows the [architecture overview](../architecture.md): ✅ live · 🚧 designed, not yet wired.
+The mental model for ReproBench in one page. The whole benchmark turns on **one lockfile** (a band-stratified audit pool). An upstream **classifier** pass built that lockfile and published it as a frozen input; two live agent roles then consume it — a **reproduction** agent and an **auditor**. Read this first; every term below links to its deep page.
 
 ```mermaid
 flowchart LR
   classDef lock fill:#fde68a,stroke:#b45309,color:#000;
   classDef llm fill:#dbeafe,stroke:#1d4ed8,color:#000;
-  CL["① CLASSIFIER ✅"]:::llm --> L["LOCKFILE<br/>~200 rows"]:::lock
-  L --> RA["② REPRODUCTION 🚧"]:::llm
+  CL["classifier pass<br/>(built the lockfile)"]:::llm --> L["LOCKFILE<br/>~200 rows<br/>(pre-built input)"]:::lock
+  L --> RA["REPRODUCTION ✅"]:::llm
   RA --> B["run bundle"]
-  L --> AU["③ AUDITOR ✅"]:::llm
+  L --> AU["AUDITOR ✅"]:::llm
   B --> AU
 ```
 
 !!! tip "The through-line"
-    The model reports **evidence**; deterministic code computes **every consequential label** (tier, score, verdict, run-health, band). No agent grades itself. Keep this in mind and the rest of the system falls into place.
+    The model reports **evidence**; deterministic code computes **every consequential label** (score, verdict, run-health, and — at lockfile construction — tier and band). No agent grades itself. Keep this in mind and the rest of the system falls into place.
 
 ## Glossary
 
@@ -28,7 +28,7 @@ flowchart LR
 | **band** | H100-hour cost bucket used to stratify selection (`0-8` / `8-32` / `32-96` / `96-192`). | [H100 budget](../selection/h100-budget.md) |
 | **H100 budget / `h100_estimate`** | The compute cost of one MRE in H100-equivalent hours; caps and budgets the reproduction run. | [H100 budget](../selection/h100-budget.md) |
 | **run bundle** | The evidence directory a reproduction run emits at `<runs-dir>/<arxiv_id>` for the auditor to grade. | [Bundle schema](../dataset/bundle-schema.md) |
-| **classifier role** | Agent that reads a paper and emits one MRE record. | [Classifier mode](../modes/classifier.md) |
+| **classifier pass** | The upstream agent pass that read each paper and emitted one MRE record, building the lockfile (provenance — not a runnable mode today). | [Architecture](../architecture.md) |
 | **reproduction role** | Agent that actually runs the experiment under a metered budget. | [Reproduction mode](../modes/reproduction.md) |
 | **auditor role** | Agent that grades one run bundle 0–5 against the rubric. | [Auditor mode](../modes/auditor.md) |
 
@@ -126,35 +126,35 @@ Bands keep the pool from collapsing onto the cheapest papers: selection draws ac
 
 → Deep dive: [H100 budget](../selection/h100-budget.md).
 
-## run bundle 🚧
+## run bundle ✅
 
-The evidence directory one reproduction run emits, at `<runs-dir>/<arxiv_id>`, that the auditor reads. The reproduction agent is **designed but not yet wired** (S6), so this is the one open edge of the system. The planned bundle holds `report.json` (the agent's cited account of what it ran and measured — **not** a verdict) and an `evidence/` tree, alongside `workspace/` and `reference/`. There is no harness-written `result.json` and no `repro.yaml`: the auditor authors the verdict. The auditor consumes the bundle read-only via `run_dir_manifest` (`tools/run_dir_tools.py`).
+The directory one reproduction run emits, at `<runs-dir>/<arxiv_id>/<budget>h/<run_id>/`, that the auditor reads. The bundle holds `report.json` (the agent's cited account of what it ran and measured — **not** a verdict) and an `evidence/` tree, alongside `workspace/` and a read-only `reference/`. There is no harness-written `result.json` and no `repro.yaml`: the auditor authors the verdict. The auditor consumes the bundle via `run_dir_manifest` and the path-confined run-dir tools (`tools/run_dir_tools.py`).
 
 → Deep dive: [Bundle schema](../dataset/bundle-schema.md) and [Reproduction mode](../modes/reproduction.md).
 
-## The three agent roles
+## The agent roles
 
-All three reuse **one tool-calling agent core** (`run_tool_loop`, `runtime/tool_loop.py`); only the prompt, toolset, and output schema differ. See [Agent core](../agent-core/index.md) for the shared loop.
+The auditor is a mode of **one tool-calling agent core** (`run_tool_loop`, `runtime/tool_loop.py`); the reproduction agent forks that same skeleton into its own package. See [Agent core](../agent-core/index.md) for the shared loop.
 
 ```mermaid
 flowchart LR
-  CL["① classifier"] -->|MRE record| L[(lockfile)]
-  L -->|agent_task| RA["② reproduction"]
-  RA -->|run bundle| AU["③ auditor"]
+  CL["classifier pass"] -->|MRE record| L[(lockfile)]
+  L -->|agent_task| RA["reproduction"]
+  RA -->|run bundle| AU["auditor"]
   L -->|central_claim · match_bar| AU
 ```
 
-### ① Classifier ✅
+### Classifier pass (upstream, provenance)
 
-Reads a paper bundle, **verifies** code/data/weights artifacts with web + MCP tools, and emits one MRE record (`FINAL_RESPONSE_FORMAT`). Run via `--mode classification`. → [Classifier mode](../modes/classifier.md).
+The lockfile rows were emitted by an upstream classifier pass that read each paper and produced one MRE record (`FINAL_RESPONSE_FORMAT`, `schema/output.py`). It is how the frozen lockfile was constructed, not a mode you invoke today. → [Architecture](../architecture.md).
 
-### ② Reproduction 🚧
+### Reproduction ✅
 
-Given one lockfile row, **actually runs the experiment** on the cluster under a metered H100-hour budget and writes the run bundle. Same loop skeleton, with an execution toolset (`workspace_bash`, `run_gpu` → `srun`) bolted on; designed but not yet built. → [Reproduction mode](../modes/reproduction.md).
+Given one lockfile row, **actually runs the experiment** on DeltaAI under a metered H100-hour budget and writes the run bundle. It forks the shared loop skeleton and adds an execution toolset (`workspace_bash`, file tools, and `run_gpu` → a JIT `salloc` per step). Run via `python -m reprocli_repro`. → [Reproduction mode](../modes/reproduction.md).
 
-### ③ Auditor ✅
+### Auditor ✅
 
-Reads the `central_claim` + `match_bar` + one run bundle and **grades it 0–5** with `cheat_flags` (`AUDIT_RESPONSE_FORMAT`, `schema/audit.py`). Deterministic post-processing (`finalize_audit_row`, `audit/audit.py`) enforces the anti-cheat rule in code: **any high-severity cheat flag caps the score at 0**, then derives the coarse `verdict`. Run via `--mode audit`. → [Auditor mode](../modes/auditor.md).
+Reads the `central_claim` + `match_bar` + one run bundle and **grades it 0–5** with `cheat_flags` (`AUDIT_RESPONSE_FORMAT`, `schema/audit.py`). Deterministic post-processing (`finalize_audit_row`, `audit/audit.py`) enforces the anti-cheat rule in code: **any high-severity cheat flag caps the score at 0**, then derives the coarse `verdict`. Run via `--mode audit` (the runner's only mode). → [Auditor mode](../modes/auditor.md).
 
 !!! warning "The auditor never trusts its own arithmetic"
     The 0–5 `score` is the model's; the `verdict`, the high-flag cap, and run-health are computed downstream in `audit/audit.py`. The model proposes; the code decides.
@@ -163,6 +163,6 @@ Reads the `central_claim` + `match_bar` + one run bundle and **grades it 0–5**
 
 ## Where to go next
 
-- [Quickstart](quickstart.md) — run the classifier and auditor end to end.
+- [Quickstart](quickstart.md) — reproduce a paper and audit the run end to end.
 - [Architecture overview](../architecture.md) — the full S1–S7 pipeline and the SLURM substrate.
-- [Agent core](../agent-core/index.md) — the one `run_tool_loop` all three roles share.
+- [Agent core](../agent-core/index.md) — the `run_tool_loop` the auditor runs and the reproduction agent forks.

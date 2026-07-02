@@ -1,20 +1,17 @@
 # reprocli
 
-Tooling for the NeurIPS paper-bundle reproduction benchmark: a classifier/auditor
-agent core that runs over paper bundles on vLLM (MiniMax M2 or Kimi K2.6), the
-dataset pipeline that builds the bundles, and the reproduction-agent tooling.
+Tooling for the NeurIPS paper-bundle reproduction benchmark: the S6 reproduction
+agent that runs a paper's experiment on the cluster (`reprocli_repro`), the S7
+auditor that grades the run against the lockfile (`run_arxiv_prompt_vllm.py --mode
+audit`), a shared vLLM serving layer both attach to by URL (`reprocli_serve`), and
+the dataset pipeline that builds the paper bundles.
 
 ## Commands
 
 Copy-paste command references live in [`commands/`](commands/), one file per task:
 
-- [commands/classification.md](commands/classification.md) — run the
-  classifier/auditor over paper bundles on vLLM (MiniMax M2, Kimi K2.6, or
-  attaching to an already-running server), plus the tool surface and credentials.
 - [commands/dataset.md](commands/dataset.md) — build, stage, and publish the
   paper-bundle dataset.
-- [commands/reference.md](commands/reference.md) — materialize a paper +
-  supplement into local `latex/` and `supplement/` directories.
 - [commands/docs.md](commands/docs.md) — build, serve, and publish the docs site.
 
 ## CC and serving
@@ -50,7 +47,6 @@ a no-op against a local vLLM (which ignores the field).
 Full project documentation lives in [`docs/`](docs/) and is published with
 [MkDocs Material](https://squidfunk.github.io/mkdocs-material/):
 **<https://mithils3.github.io/reprocli/>** (live once GitHub Pages is enabled).
-It covers the architecture, the three agent roles, the dataset pipeline, the
-lockfile/selection, the tool & schema reference, SLURM recipes, and a complete
-CLI flag reference. The reproduction-agent (S6) implementation plan is in
-[docs/reproduction-agent-plan.md](docs/reproduction-agent-plan.md).
+It covers the architecture, the reproduction and auditor agents, the dataset
+pipeline, the lockfile/selection, the tool & schema reference, SLURM recipes, and a
+complete CLI flag reference.

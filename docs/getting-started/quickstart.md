@@ -1,133 +1,118 @@
 # Quickstart
 
-The fastest paths to a first ReproBench result. Each path below is copy-pasteable
-and runs the same entry point — `src/run_arxiv_prompt_vllm.py` — which loads the
-paper-bundle dataset, drives the tool-calling agent core (`runtime/tool_loop.py`),
-and appends raw + extracted JSONL rows as papers finish. Pick a path by whether a
-vLLM server already exists, whether you want the runner to launch its own, or
-whether you just need a tiny dataset to point it at.
-
-!!! note "Prerequisites"
-    Install the package and its deps first — see
-    [Installation](installation.md). Run all commands from the repo root. The
-    classifier defaults to model `MiniMaxAI/MiniMax-M2.7` and dataset
-    `Mithilss/neurips-2025-paper-bundles`; both are overridable per command.
+The fastest paths to a first ReproBench result. The lockfile (the ~200-paper
+audit pool) is already published, so the product loop is **serve a brain →
+reproduce a paper → audit the run → upload the verdict**. Each command below is
+copy-pasteable; run them from the repo root with `PYTHONPATH=src` (or activate the
+project `.venv`).
 
 ```mermaid
 flowchart LR
-  A["pick a path"] --> B["① attach to a<br/>running server<br/>--vllm-server-url"]
-  A --> C["② embedded<br/>vLLM server<br/>(launches its own)"]
-  A --> D["③ 5-paper<br/>smoke dataset<br/>build_dataset --limit 5"]
-  B --> E["raw + extracted<br/>JSONL rows"]
-  C --> E
-  D --> C
+  S["reprocli_serve<br/>stand up a brain"] --> R["reprocli_repro<br/>reproduce one paper"]
+  R --> B["run bundle<br/>report.json · evidence/"]
+  B --> A["--mode audit<br/>grade 0–5"]
+  A --> U["audit_upload<br/>push verdicts"]
+```
+
+Both agents are **URL-only brains**: they attach to the server by base URL and
+never launch a model themselves. Set the endpoint once and every step reuses it:
+
+```bash
+export REPROCLI_SERVER_URL="http://${HEAD_IP}:8000"
 ```
 
 ---
 
-## Path 1 — Attach to a running vLLM server ✅
+## Step 1 — Serve a brain ✅
 
-If an OpenAI-compatible vLLM server is already up (e.g. a multi-node Kimi serve on
-the cluster), pass its base URL with `--vllm-server-url`. The runner skips
-launching its own embedded server and just streams chat completions to that
-endpoint — conversation memory lives in the orchestrator, so attaching to an
-external server and embedding one are the same code path (`main()` in
-`run_arxiv_prompt_vllm.py`).
+Stand up the vLLM chat-completions server the two agents attach to. It must run on
+a GPU allocation; `reprocli_serve` picks the model's profile
+(`reprocli_serve/profiles.py`) and publishes an endpoint JSON consumers can read.
 
 ```bash
-python3 src/run_arxiv_prompt_vllm.py \
+python -m reprocli_serve --model MiniMaxAI/MiniMax-M2.7
+```
+
+For Kimi K2.6, pass its id and any profile overrides (e.g. `--tensor-parallel-size 8`).
+The full flag set is on the [serving page](../slurm/serve.md).
+
+!!! tip "Attach by endpoint file"
+    `reprocli_serve` writes an endpoint JSON (default under `$REPROCLI_ENDPOINT_FILE`).
+    Point the agents at it with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
+    `$REPROCLI_ENDPOINT_FILE` — all three resolve the same way.
+
+---
+
+## Step 2 — Reproduce one paper ✅
+
+Run one lockfile paper's minimal experiment. The orchestrator loop runs on cheap
+CPU/login; only the experiment steps touch a GPU, via the `run_gpu` tool that
+JIT-allocates a fresh DeltaAI GH200 `salloc` per step and releases it the instant
+the step exits.
+
+```bash
+python -m reprocli_repro \
+  --paper-id 2110.03155 \
+  --vllm-server-url "http://${HEAD_IP}:8000"
+```
+
+| flag | effect |
+|---|---|
+| `--paper-id 2110.03155` | the single arXiv id to reproduce |
+| `--lockfile` | lockfile source (default `Mithilss/reprobench-splits`) |
+| `--split` | published split: `test` (100-paper benchmark, default) or `validation` (dev); `eval`/`dev` aliases accepted |
+| `--budget-h100-hours` | flat per-episode compute ceiling; omit to derive it from the paper's `selection_band` |
+| `--partition` | override the `deltaai` profile's default partition (`ghx4`) for `run_gpu` allocations |
+| `--apptainer-image` | base `.sif` backing the mandatory Apptainer sandbox |
+
+The run bundle lands at `<runs-dir>/<arxiv_id>/<budget>h/<run_id>/` (default
+runs-dir `$REPRO_WORK_ROOT/agent_runs`) with `report.json` (the agent's cited
+account of what it ran and measured — **not** a verdict), an `evidence/` tree,
+`workspace/`, and a read-only `reference/`. This directory is the S6→S7 contract
+the auditor reads.
+
+---
+
+## Step 3 — Audit the run ✅
+
+Grade the run bundle against the rubric. The auditor is `run_arxiv_prompt_vllm.py`
+in its only mode, `--mode audit`; it explores each `<runs-dir>/<arxiv_id>` with the
+path-confined run-dir tools (`list_run_files` / `read_run_file` / `bash` /
+`write_run_file`) and emits a 0–5 score plus cheat flags.
+
+```bash
+python3 src/run_arxiv_prompt_vllm.py --mode audit \
+  --runs-dir "$REPRO_WORK_ROOT/agent_runs" \
   --vllm-server-url "http://${HEAD_IP}:8000" \
-  --model moonshotai/Kimi-K2.6 \
-  --num-prompts 2 \
-  --tool-rounds 12 \
-  --max-input-tokens 128000 \
-  --max-tokens 8192 \
-  --request-workers 2 \
-  --stream-first-response \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --output outputs/neurips_2025_kimi_k2_6_multinode_smoke.jsonl \
-  --extracted-output outputs/neurips_2025_kimi_k2_6_multinode_smoke_extracted.jsonl \
-  --save-round-jsonl \
-  --max-model-len 196608
+  --output outputs/audit_verdicts.jsonl
 ```
 
-!!! tip "Match `--model` to the served alias"
-    A trailing `/v1` on the URL is stripped automatically
-    (`normalized_server_url`). If the server was launched without a served-model
-    alias, set `--model` to the exact name vLLM printed at startup (e.g. a local
-    path like `/work/hdd/bfvr/msalunkhe/models/`), or requests will 404.
-
-This is the cheapest first result: two papers against an already-warm server, no
-model load time. Drop `--num-prompts` and raise `--request-workers` once you trust
-the wiring.
+The final verdict is derived downstream from the model's score plus the
+deterministic anti-cheat cap (`finalize_audit_row`) — the model proposes, the code
+decides. With no endpoint resolvable, the auditor exits with an error; it never
+self-hosts.
 
 ---
 
-## Path 2 — Launch an embedded vLLM server ✅
+## Step 4 — Upload verdicts (optional) ✅
 
-Omit `--vllm-server-url` and the runner starts one local vLLM server itself
-(`VllmServer`, `vllm/server.py`) inside a `with` block, runs the tool loop against
-it, and tears it down on exit. This is the production path the sbatch scripts use.
-Below is the canonical MiniMax M2 command from the README, trimmed to a small
-sample for a first run.
+Push the audit verdicts and run stats to Supabase for the run viewer:
 
 ```bash
-python3 src/run_arxiv_prompt_vllm.py \
-  --num-prompts 5 \
-  --tool-rounds 12 \
-  --max-input-tokens 128000 \
-  --max-tokens 8192 \
-  --request-workers 16 \
-  --stream-first-response \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/MiniMax-M2.7/vllm_cache \
-  --distributed-executor-backend mp \
-  --output outputs/neurips_2025_minimax_m2_trial.jsonl \
-  --extracted-output outputs/neurips_2025_minimax_m2_trial_extracted.jsonl \
-  --save-round-jsonl \
-  --max-model-len 196608 \
-  --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
+python3 -m reprocli_repro.audit_upload --verdicts outputs/audit_verdicts.jsonl
 ```
 
-To try Kimi K2.6 instead, add its model id and parser flags (8-way tensor
-parallelism, `kimi_k2` tool/reasoning parsers):
-
-```bash
-python3 src/run_arxiv_prompt_vllm.py \
-  --model moonshotai/Kimi-K2.6 \
-  --num-prompts 5 \
-  --tool-rounds 12 \
-  --max-input-tokens 128000 \
-  --max-tokens 8192 \
-  --request-workers 16 \
-  --stream-first-response \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --vllm-cache-dir /work/nvme/bfvr/msalunkhe/Kimi-K2.6/vllm_cache \
-  --distributed-executor-backend mp \
-  --output outputs/neurips_2025_kimi_k2_6_trial.jsonl \
-  --extracted-output outputs/neurips_2025_kimi_k2_6_trial_extracted.jsonl \
-  --save-round-jsonl \
-  --max-model-len 196608 \
-  --tensor-parallel-size 8 \
-  --tool-call-parser kimi_k2 \
-  --reasoning-parser kimi_k2 \
-  --mm-encoder-tp-mode data
-```
-
-!!! warning "This needs GPUs"
-    An embedded run loads the full model — run it inside a GPU allocation, not on
-    a login node. On the cluster, submit
-    `scripts/minimax_m2/paper_classification.sbatch` (MiniMax, 4×GH200) or
-    `scripts/kimi_k2_6/paper_classification_kimi_k2_6.sbatch` (Kimi, 8 GPU) rather than
-    invoking Python by hand. See the [SLURM scripts](../slurm/sbatch.md) page.
+Needs `SUPABASE_URL` (or `--supabase-url`) and `SUPABASE_SERVICE_KEY`; it is
+best-effort and no-ops if those are unset.
 
 ---
 
-## Path 3 — Build a 5-paper smoke dataset ✅
+## Building a smoke dataset (optional)
 
-No dataset locally? Build a tiny one first. The pipeline pulls pre-matched arXiv
-ids from `ai-conferences/NeurIPS2025`, downloads arXiv e-print sources and
-OpenReview supplements, and writes a one-row-per-paper Parquet bundle
+The lockfile is pre-built, but if you want to reconstruct the paper-bundle corpus
+it was drawn from, the dataset builder pulls pre-matched arXiv ids from
+`ai-conferences/NeurIPS2025`, downloads arXiv e-print sources and OpenReview
+supplements, and writes a one-row-per-paper Parquet bundle
 (`reprocli_data.build_dataset`).
 
 ```bash
@@ -143,54 +128,15 @@ PYTHONPATH=src python3 -m reprocli_data.build_dataset \
 | `--allow-failures` | keep going if a paper fails to download |
 
 Stages run in order `index,sources,supplements,bundle[,upload]` and are
-resume-friendly. Point the classifier at the local bundle by passing the built
-output to `--dataset`. For the full end-to-end build, stage subsets, `--force`,
-and Hub upload, see [build-dataset](../cli/build-dataset.md) and the
-[dataset pipeline](../dataset/stages.md).
-
----
-
-## `--num-prompts` sampling
-
-`--num-prompts N` selects **N papers at random** (`random.sample` in
-`select_papers`, `run_arxiv_prompt_vllm.py`) — it is not the first N rows. Omit
-the flag entirely to process the **full dataset**. In classification mode, only
-papers that have LaTeX (`tex_files`) are eligible before sampling.
-
-```bash
-# random 5 papers
---num-prompts 5
-# whole dataset (no flag)
-```
-
-!!! tip "Pin specific papers instead of sampling"
-    To run an exact set of arXiv ids, write them one-per-line to a file and pass
-    `--paper-ids-file ids.txt` — it filters the dataset to those ids (and warns on
-    any not found) before `--num-prompts` sampling applies.
-
----
-
-## Where results land
-
-| output | flag | contents |
-|---|---|---|
-| raw rows | `--output` | full per-paper response (one JSONL row per paper) |
-| extracted rows | `--extracted-output` | parsed MRE record / structured fields |
-| per-round trace | `--save-round-jsonl` | optional tool-loop trace JSONL |
-| Hub upload | `--hf-repo` | optional incremental push to a HF dataset repo |
-
-Rows are appended as each paper finishes, so you can `tail -f` the output mid-run.
+resume-friendly. For the full build, stage subsets, `--force`, and Hub upload, see
+[build-dataset](../cli/build-dataset.md) and the [dataset pipeline](../dataset/stages.md).
 
 ---
 
 ## Next steps
 
-- [Concepts](concepts.md) — the lockfile, the three agent roles, `match_bar`.
-- [CLI reference: `run_arxiv_prompt_vllm.py`](../cli/run-arxiv.md) — every flag in
-  full, with per-mode defaults.
-- [Classifier mode](../modes/classifier.md) — what the classification pass
-  actually produces.
-- [SLURM clusters](../slurm/clusters.md) and [sbatch scripts](../slurm/sbatch.md)
-  — running at scale on DeltaAI / Delta.
-- [Architecture overview](../architecture.md) — how dataset, reproduction, and
-  audit fit together.
+- [Concepts](concepts.md) — the lockfile, the agent roles, `match_bar`.
+- [CLI reference: `run_arxiv_prompt_vllm.py`](../cli/run-arxiv.md) — every audit flag in full.
+- [Reproduction mode](../modes/reproduction.md) — what the reproduction agent does per paper.
+- [Serving (reprocli_serve)](../slurm/serve.md) and [sbatch scripts](../slurm/sbatch.md) — running at scale on DeltaAI.
+- [Architecture overview](../architecture.md) — how the lockfile, reproduction, and audit fit together.

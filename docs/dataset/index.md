@@ -3,10 +3,10 @@
 The dataset pipeline turns the NeurIPS 2025 paper list into a single
 one-row-per-paper Parquet dataset of **paper bundles**: each row groups a
 paper's decoded arXiv `.tex` sources with its matched OpenReview supplementary
-material. It is the first step of the whole system — its output is the
-[corpus the classifier reads](../architecture.md) when building the lockfile.
-The entry point is `reprocli_data/build_dataset.py`, which drives five focused
-stage modules under `reprocli_data/pipeline/`.
+material. It is the first step of the whole system — its output was the
+[corpus the upstream classifier pass read](../architecture.md) when building the
+lockfile. The entry point is `reprocli_data/build_dataset.py`, which drives five
+focused stage modules under `reprocli_data/pipeline/`.
 
 !!! note "What this section covers"
     This page is the section landing: it explains the build command, the
