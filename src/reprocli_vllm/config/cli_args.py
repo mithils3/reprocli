@@ -26,7 +26,6 @@ from reprocli_vllm.schema.audit import AUDIT_RESPONSE_FORMAT
 from reprocli_vllm.tools.run_dir_tools import AUDIT_TOOLS
 from reprocli_vllm.config.minimax_defaults import apply_model_defaults
 from reprocli_vllm.runtime.trace_io import trace_output_path
-from reprocli_vllm.vllm.cache import default_cache_dir
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,11 +64,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--vllm-server-url",
         help=(
-            "Existing vLLM chat-completions server base URL. When set, the "
-            "runner skips launching its embedded local server. If omitted, the "
-            "runner also checks $REPROCLI_SERVER_URL and the base_url in the file "
-            "named by $REPROCLI_ENDPOINT_FILE (published by reprocli_serve) before "
-            "falling back to the embedded server."
+            "Served vLLM chat-completions base URL. If omitted, the runner also "
+            "checks $REPROCLI_SERVER_URL and the base_url in the file named by "
+            "$REPROCLI_ENDPOINT_FILE (published by reprocli_serve). With no endpoint "
+            "the auditor exits with an error — it does not self-host a model."
         ),
     )
     parser.add_argument(
@@ -77,8 +75,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Model id to send in requests when attached to an existing server. "
             "Defaults to the single model the server advertises at /v1/models "
-            "(also reads $REPROCLI_SERVED_MODEL). Ignored when the runner launches "
-            "its own embedded server, which uses --model."
+            "(also reads $REPROCLI_SERVED_MODEL)."
         ),
     )
     parser.add_argument(
@@ -86,7 +83,6 @@ def parse_args() -> argparse.Namespace:
         type=argparse_path,
         help="Run only the arXiv ids listed in this file (one per line).",
     )
-    parser.add_argument("--vllm-cache-dir", type=argparse_path)
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--tool-rounds", type=int, default=10)
@@ -124,8 +120,6 @@ def parse_args() -> argparse.Namespace:
         parser.error("--top-k must be >= 1")
     if args.max_input_tokens + args.max_tokens > args.max_model_len:
         parser.error("--max-input-tokens + --max-tokens must fit within model context")
-    if args.vllm_cache_dir is None:
-        args.vllm_cache_dir = default_cache_dir(args.model)
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)
     return args

@@ -10,8 +10,9 @@ priority order:
 3. an endpoint file named by ``REPROCLI_ENDPOINT_FILE`` (the JSON that
    reprocli_serve publishes; we read its ``base_url`` field).
 
-If none is set, the resolver returns ``None`` and the runner falls back to its
-embedded local server exactly as before — so default behavior is unchanged.
+If none is set, the resolver returns ``None``: there is no embedded server, so the
+repro harness renders prompts as a dry run and the auditor runner exits with an
+error pointing at ``reprocli_serve``.
 
 Which model id to send in each request is resolved the same way: ask the server
 what it serves (``GET /v1/models``) and use the single advertised model, unless an
@@ -94,7 +95,7 @@ def base_url_from_endpoint_file(path: Path) -> str | None:
 
 
 def resolve_server_url(cli_value: str | None) -> str | None:
-    """Return the normalized base URL to attach to, or None for the embedded server."""
+    """Return the normalized base URL to attach to, or None if none is configured."""
     if cli_value:
         return normalize_server_url(cli_value)
     env_url = os.environ.get(ENV_SERVER_URL)

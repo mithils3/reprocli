@@ -14,7 +14,6 @@ from reprocli_vllm.runtime.audit_sink import SinkConfig as AuditSinkConfig, inst
 from reprocli_vllm.papers.papers import Paper
 from reprocli_vllm.runtime.tool_loop import run_tool_loop
 from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
-from reprocli_vllm.vllm.server import VllmServer
 
 
 def main() -> int:
@@ -52,22 +51,24 @@ def main() -> int:
         file=sys.stderr,
     )
     server_url = resolve_server_url(args.vllm_server_url)
+    if not server_url:
+        raise SystemExit(
+            "No brain endpoint configured. The auditor is a URL-only client and does "
+            "not self-host a model: serve one with reprocli_serve (python -m "
+            "reprocli_serve ...) and pass --vllm-server-url, or set $REPROCLI_SERVER_URL "
+            "/ $REPROCLI_ENDPOINT_FILE."
+        )
+    model_id = resolve_served_model(server_url, args.served_model_name)
+    print(
+        f"Using vLLM server at {server_url} (model={model_id})",
+        file=sys.stderr,
+    )
     # The auditor streams each round to Supabase's Audits page (opt-in: no-op unless
     # SUPABASE_URL + SUPABASE_SERVICE_KEY are set), exactly like a reproduce run.
     audit_sink = None
     try:
-        if server_url:
-            model_id = resolve_served_model(server_url, args.served_model_name)
-            print(
-                f"Using existing vLLM server at {server_url} (model={model_id})",
-                file=sys.stderr,
-            )
-            audit_sink = install_audit_sink(AuditSinkConfig.from_env(model_id))
-            run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
-        else:
-            with VllmServer(args) as server_url:
-                audit_sink = install_audit_sink(AuditSinkConfig.from_env(args.model))
-                run_tool_loop(args, papers_to_run, prompts, server_url)
+        audit_sink = install_audit_sink(AuditSinkConfig.from_env(model_id))
+        run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
     finally:
         if audit_sink:
             audit_sink.close()

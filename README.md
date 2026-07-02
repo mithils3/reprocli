@@ -21,20 +21,22 @@ Copy-paste command references live in [`commands/`](commands/), one file per tas
 
 The repo splits into two decoupled halves that talk only over a published URL:
 
-- **CC (the agent half)** — `reprocli_vllm` (classifier/auditor core),
-  `reprocli_repro` (reproduction agent), and `run_arxiv_prompt_vllm.py`. These are
-  **provider-agnostic brains**: like Codex / Claude Code / opencode they run no
-  model, they only make chat-completions requests to a base URL.
+- **CC (the agent half)** — `reprocli_vllm` (auditor core), `reprocli_repro`
+  (reproduction agent), and `run_arxiv_prompt_vllm.py`. These are
+  **URL-only, provider-agnostic brains**: like Codex / Claude Code / opencode they
+  host no model, they only make chat-completions requests to a base URL. There is
+  no embedded in-process server.
 - **Serving** — `src/reprocli_serve/` boots a vLLM server on a GPU node (e.g.
   4×GH200, TP=4), binds `0.0.0.0`, and publishes its URL for any other
   Delta/DeltaAI node to attach to (`scripts/serve/serve_gh200.sbatch`,
-  `scripts/serve/serve_multinode.sbatch`).
+  `scripts/serve/serve_multinode.sbatch`). It owns the per-model serve profiles
+  (`reprocli_serve/profiles.py`) — the single source of vLLM launch flags.
 
 Point the runner at a server with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
-`$REPROCLI_ENDPOINT_FILE` (falling back to the embedded local server when none is
-set) — so swapping the model is a URL change. The classifier job
-`scripts/minimax_m2/paper_classification.sbatch` uses this serve paradigm on a single node;
-see [docs/slurm/serve.md](docs/slurm/serve.md).
+`$REPROCLI_ENDPOINT_FILE` — so swapping the model is a URL change. With no endpoint
+configured the reproduction agent renders prompts as a dry run and the auditor
+runner exits with an error; neither self-hosts a model. See
+[docs/slurm/serve.md](docs/slurm/serve.md).
 
 When the base URL is OpenRouter, set `$REPROCLI_OPENROUTER_PROVIDER` to a provider
 slug (e.g. `deepseek`) to pin every request to that upstream with fallbacks off, so

@@ -15,7 +15,6 @@ TOOL_RESULT_MAX_CHARS = 40_000
 # (read off the args namespace by runtime/tool_loop.py).
 MAX_REPEATED_TOOL_CALLS = 2
 REQUEST_TIMEOUT = 1800.0
-SERVER_STARTUP_TIMEOUT = 1800.0
 FINAL_NO_TOOLS_MESSAGE = (
     "The tool phase is finished. Write the final JSON now from the paper text "
     "and the tool results above. Fill each signal's verification field with "
