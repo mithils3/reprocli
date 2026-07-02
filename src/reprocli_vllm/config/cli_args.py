@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
         type=argparse_path,
         help=(
             "Root directory of agent reproduction runs; the auditor reads one "
-            "run dir per paper at <runs-dir>/<arxiv_id> via the read-only "
+            "run dir per paper at <runs-dir>/<arxiv_id> via the path-confined "
             f"run-dir tools (default: {AUDIT_RUNS_DIR_DEFAULT})."
         ),
     )
@@ -88,12 +88,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tool-rounds", type=int, default=10)
     parser.add_argument("--request-workers", type=int, default=8)
     parser.add_argument("--max-model-len", type=int)
-    parser.add_argument("--gpu-memory-utilization", type=float)
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
     parser.add_argument("--top-k", type=int)
-    parser.add_argument("--tool-call-parser")
-    parser.add_argument("--reasoning-parser")
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
     args = parser.parse_args()
