@@ -52,9 +52,14 @@ def ensure_session(
         return ctx.session, None
     if ctx.cluster is None:
         return None, "no cluster profile bound for this episode"
-    handle = slurm.acquire_session(
-        ctx.cluster, gpus=gpus, minutes=minutes, timeout=timeout, partition=partition
-    )
+    try:
+        handle = slurm.acquire_session(
+            ctx.cluster, gpus=gpus, minutes=minutes, timeout=timeout, partition=partition
+        )
+    except slurm.SlurmConfigError as exc:
+        # Unusable substrate (no account/partition, bad gpu count): a clean acquire
+        # failure surfaced to the model, not a library-level process crash.
+        return None, str(exc)
     if not handle.ok or not handle.jobid:
         return None, _acquire_error(handle)
     now = time.monotonic()

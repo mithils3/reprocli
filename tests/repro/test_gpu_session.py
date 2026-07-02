@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_repro import evidence, gpu_session
 from reprocli_repro.cluster import resolve_cluster
 from reprocli_repro.context import Budget, ExecutionContext, GpuSession
-from reprocli_repro.slurm import SessionHandle
+from reprocli_repro.slurm import SessionHandle, SlurmConfigError
 
 
 def _ctx(root: Path, *, budget_hours: float = 8.0) -> ExecutionContext:
@@ -93,6 +93,19 @@ class EnsureAndReleaseTests(unittest.TestCase):
                 session, err = gpu_session.ensure_session(ctx, gpus=1, minutes=5)
             self.assertIsNone(session)
             self.assertIn("boom", err)
+
+    def test_ensure_turns_a_config_error_into_a_clean_failure(self):
+        # A SlurmConfigError from the argv builder must not crash the loop: it
+        # surfaces as an acquire failure carrying the same message.
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            with mock.patch(
+                "reprocli_repro.slurm.acquire_session",
+                side_effect=SlurmConfigError("cluster 'bare' has no account/partition"),
+            ):
+                session, err = gpu_session.ensure_session(ctx, gpus=1, minutes=5)
+            self.assertIsNone(session)
+            self.assertIn("no account/partition", err)
 
     def test_release_charges_scancels_clears_and_records(self):
         with tempfile.TemporaryDirectory() as d:

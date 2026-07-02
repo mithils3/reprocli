@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.cluster import Cluster, resolve_cluster
 from reprocli_repro.slurm import (
+    SlurmConfigError,
     StepResult,
     acquire_session,
     build_acquire,
@@ -52,11 +53,12 @@ class BuildAcquireTests(unittest.TestCase):
 
     def test_rejects_profile_without_account(self):
         bare = Cluster(name="bare", hw="h100", gpus_per_node=1)
-        with self.assertRaises(SystemExit):
+        # A domain error (not SystemExit): library code must not exit the process.
+        with self.assertRaises(SlurmConfigError):
             build_acquire(bare, gpus=1, minutes=1)
 
     def test_rejects_gpus_over_node_capacity(self):
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SlurmConfigError):
             build_acquire(resolve_cluster("deltaai"), gpus=8, minutes=1)
 
 

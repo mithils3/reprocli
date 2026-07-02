@@ -64,6 +64,16 @@ _LOST_MARKERS = (
 )
 
 
+class SlurmConfigError(Exception):
+    """The requested GPU allocation can't be built from the cluster profile.
+
+    Raised by the pure argv builders when the operator-set substrate is unusable
+    (no account/partition, or a gpu count outside the node). A domain error, not a
+    ``SystemExit`` — the caller (``gpu_session.ensure_session``) turns it into a
+    clean acquire failure instead of crashing the loop from inside library code.
+    """
+
+
 @dataclass
 class StepResult:
     """Outcome of one GPU step run into the held allocation."""
@@ -89,12 +99,12 @@ class SessionHandle:
 def _require_target(cluster: Cluster, gpus: int, partition: str | None) -> None:
     """Validate the operator-set substrate before building any allocation argv."""
     if not cluster.account or not partition:
-        raise SystemExit(
+        raise SlurmConfigError(
             f"cluster {cluster.name!r} has no account/partition for a GPU allocation "
             "(pass --account/--partition or pick a cluster profile that sets them)."
         )
     if gpus < 1 or gpus > cluster.gpus_per_node:
-        raise SystemExit(
+        raise SlurmConfigError(
             f"run_gpu gpus={gpus} out of range for {cluster.name!r} "
             f"(1..{cluster.gpus_per_node} per node)."
         )
