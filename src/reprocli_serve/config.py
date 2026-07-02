@@ -1,8 +1,7 @@
 """Serving defaults shared across the launcher modules.
 
-These mirror the values the reprocli runner already uses for the same models, so
-a server stood up here behaves identically to the runner's embedded fallback —
-only now it is a standalone, network-routable service.
+These are the defaults the standalone, network-routable ``vllm serve`` uses for
+each model; there is no in-process server left to mirror.
 """
 
 from __future__ import annotations

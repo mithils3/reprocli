@@ -1,8 +1,7 @@
 """Build and start the ``vllm serve`` subprocess.
 
-The command mirrors what the reprocli runner's embedded server passed, so the
-served model behaves the same; the difference is purely topological — this binds
-a routable host/port and (for multi-node) wires the rendezvous flags.
+The command is assembled from the model's serve profile and binds a routable
+host/port (and, for multi-node, wires the rendezvous flags).
 """
 
 from __future__ import annotations

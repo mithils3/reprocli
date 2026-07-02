@@ -1,13 +1,11 @@
-"""Per-model serving flags.
-
-The reprocli runner applies these same defaults to its embedded server
-(``reprocli_vllm/config/minimax_defaults.py``). Keeping them here, byte-for-byte,
-means a standalone server speaks to the agents exactly as the embedded one did —
-the only thing that changes is *where* the server runs.
+"""Per-model serving flags — the single source of truth for how a model is served.
 
 A profile is the set of ``vllm serve`` flags a model needs to expose tool calling
-and reasoning correctly. Sampling params (temperature/top_p/top_k) are NOT here:
-those are request-time fields the client sends, not server launch flags.
+and reasoning correctly. The auditor runner never holds these: it is a URL-only
+client of an already-served brain and carries only request-time sampling defaults
+(``reprocli_vllm/config/minimax_defaults.py``). Sampling params
+(temperature/top_p/top_k) are NOT here either: those are request-time fields the
+client sends, not server launch flags.
 """
 
 from __future__ import annotations
