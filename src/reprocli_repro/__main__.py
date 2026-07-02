@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
             sink.close()
     print(
         f"\nReproduce loop finished {len(episodes)} episode(s); responses in "
-        f"{args.output}. Phase 5 finalizes each report.json bundle for the auditor to grade.",
+        f"{args.output}. Each run bundle's report.json is written for the auditor to grade.",
         file=sys.stderr,
     )
     return 0

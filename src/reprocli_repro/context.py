@@ -1,8 +1,8 @@
 """Per-episode execution state for the reproduction agent.
 
-``ExecutionContext`` is the repro analog of the classifier's ``Paper``: one
+``ExecutionContext`` is the repro analog of the auditor's ``Paper``: one
 instance per paper/episode, keyed by ``custom_id`` (the arXiv id) in the tool
-loop. Where the classifier threads ``execute_tool_call(call, paper=paper)``, the
+loop. Where the auditor threads ``execute_tool_call(call, paper=paper)``, the
 repro loop threads ``execute_repro_tool_call(call, ctx)`` so every tool acts on
 *this* episode's mutable workspace, budget meter, allocation, and evidence dir.
 

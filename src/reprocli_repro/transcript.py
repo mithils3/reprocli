@@ -1,7 +1,7 @@
 """Conversation shaping and incremental output writing for the reproduce loop.
 
 Split out of ``loop.py`` to keep the driver focused. These are forked analogs of
-the classifier's final-message and output helpers, minus the classifier-specific
+the shared final-message and output helpers, minus the auditor-specific
 extracted/audit rows: repro writes the raw response JSONL (and an optional round
 trace). The agent's terminal output is its ``report.json`` (Phase 5) — an account
 of what it ran and measured; the *verdict* is the auditor's, not written here.
@@ -16,7 +16,7 @@ from typing import Any
 from reprocli_vllm.runtime.trace_io import append_trace_row, assistant_message
 from reprocli_vllm.vllm.io import append_jsonl_row, truncate_output_file
 
-# Repro-specific loop text; the classifier's strings stay in reprocli_vllm.
+# Repro-specific loop text; the shared strings stay in reprocli_vllm.
 CONTEXT_BUDGET_NOTE = (
     "The conversation hit its context budget, so the tool phase ended early. "
     "Finalize from the evidence already written to the run directory rather "

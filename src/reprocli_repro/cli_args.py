@@ -1,7 +1,7 @@
 """reprocli_repro CLI — its own argparse (deliberately not ``resolve_mode_settings``).
 
 The reproduction agent attaches to an already-served brain (the same vLLM
-endpoint the classifier/auditor use) and runs one paper's experiment under a
+endpoint the auditor uses) and runs one paper's experiment under a
 metered compute budget. ``parse_args`` returns a fully-resolved Namespace: repro
 defaults applied (system/final messages, tool + response-format seams) and all
 cross-argument validation enforced.

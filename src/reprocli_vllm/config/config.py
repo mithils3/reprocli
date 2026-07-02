@@ -32,7 +32,7 @@ CONTEXT_BUDGET_NOTE = (
 
 # --- Audit mode (LLM reproduction auditor) ---------------------------------
 # The auditor grades one agent reproduction attempt per paper against the rubric,
-# using the central_claim (from the classifier audit pool) plus read-only tools
+# using the central_claim (from the audit pool) plus path-confined run-dir tools
 # scoped to the agent's run directory. Replaces the deterministic
 # verification-target curator.
 CLAIM_PLACEHOLDER = "{CENTRAL_CLAIM}"
@@ -42,7 +42,7 @@ AUDIT_PROMPT_FILE = Path("prompts/prompt_audit.txt")
 AUDIT_RUBRIC_FILE = Path("rubric_audit.md")
 AUDIT_DEFAULT_OUTPUT = Path("outputs/v5/audit_pool_audit_verdicts.jsonl")
 AUDIT_DEFAULT_EXTRACTED = Path("outputs/v5/audit_pool_audit_verdicts_extracted.jsonl")
-# Source of per-paper central claims (the classifier audit pool).
+# Source of per-paper central claims (the audit pool).
 AUDIT_CLAIMS_DEFAULT = Path("outputs/v5/audit_pool_extracted.jsonl")
 # One agent reproduction run directory per paper, at AUDIT_RUNS_DIR_DEFAULT/<id>.
 AUDIT_RUNS_DIR_DEFAULT = Path("outputs/v5/agent_runs")

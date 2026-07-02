@@ -1,14 +1,15 @@
 """Forked tool loop for the reproduction agent.
 
-Mirrors the *structure* of ``reprocli_vllm.runtime.tool_loop.run_tool_loop``
-(two thread pools, ``wait(FIRST_COMPLETED)``, ``handle_request_done``) but swaps
-the loop body:
+A *diverged* fork of ``reprocli_vllm.runtime.tool_loop.run_tool_loop``: it began
+by mirroring that loop's structure (two thread pools, ``wait(FIRST_COMPLETED)``,
+``handle_request_done``) but the two have since drifted and are no longer kept in
+sync — this loop swaps the body for the reproduction seams:
 
 * tool calls dispatch through a per-episode ``ExecutionContext`` via
   ``dispatch.append_tool_results`` (workspace + budget + allocation + evidence)
   instead of ``execute_tool_call(call, paper=paper)``;
-* the post-round seam (the ``tool_loop.py:122`` analog) calls
-  ``guardrails.apply_guardrails`` — the compute-budget force-final plus the
+* the post-round seam (the analog of ``handle_request_done`` in ``tool_loop.py``)
+  calls ``guardrails.apply_guardrails`` — the compute-budget force-final plus the
   ``microcompact`` → ``summarize-compact`` context tiers that keep the loop going.
 
 Conversation shaping and output writing live in ``transcript.py``; the tool seam

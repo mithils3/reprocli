@@ -37,8 +37,8 @@ def run_tool_loop(
     server_url: str,
     model_id: str | None = None,
 ) -> None:
-    # Embedded server is addressed by --model (its weights path); an attached
-    # server is addressed by the id it advertises, resolved by the caller.
+    # The attached server is addressed by the id it advertises (resolved by the
+    # caller); fall back to --model when the caller didn't resolve one.
     request_model = model_id or args.model
     conversations = {
         paper.arxiv_id: initial_messages(prompt, args.system_message)

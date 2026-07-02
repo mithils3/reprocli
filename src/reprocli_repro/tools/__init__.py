@@ -24,7 +24,7 @@ The reproduction agent acts on its episode through these tools:
 loop dispatches through (``dispatch.append_tool_results``): it parses arguments,
 routes to the handler against this episode's ``ExecutionContext``, retries a
 transient failure once, and trims the result to the shared tool budget -- the same
-posture as the classifier's ``web_tools.execute_tool_call``, minus the read-only
+posture as the auditor's ``web_tools.execute_tool_call``, minus the read-only
 ``Paper``.
 """
 

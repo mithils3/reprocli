@@ -1,10 +1,11 @@
 """Audit-mode inputs: render the central claim and the agent run-directory manifest.
 
 The auditor grades one agent reproduction attempt per paper. Its inputs are:
-  - the paper's ``central_claim`` (from the classifier audit pool), and
+  - the paper's ``central_claim`` (from the audit pool), and
   - a manifest of the agent's run directory (its *.log files, output artifacts,
-    and any code it wrote), which the auditor then explores with the read-only
-    run-dir tools (list_run_files / read_run_file / bash).
+    and any code it wrote), which the auditor then explores with the
+    path-confined run-dir tools (list_run_files / read_run_file / write_run_file
+    / bash — the last two can write a re-scoring script into the run dir).
 """
 
 from __future__ import annotations

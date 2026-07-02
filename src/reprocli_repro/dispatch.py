@@ -1,6 +1,6 @@
-"""Tool-call dispatch for the reproduce loop — the key fork from the classifier.
+"""Tool-call dispatch for the reproduce loop — the key fork from the shared core.
 
-Where the classifier runs ``execute_tool_call(call, paper=paper)``, the repro
+Where the auditor runs ``execute_tool_call(call, paper=paper)``, the repro
 loop runs ``execute_repro_tool_call(call, ctx)`` so each call acts on this
 episode's ``ExecutionContext`` (workspace, budget meter, allocation, evidence)
 rather than a read-only ``Paper``.
