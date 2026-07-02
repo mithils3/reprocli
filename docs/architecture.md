@@ -2,30 +2,34 @@
 
 End to end: how the dataset is built, how papers are reproduced, and how those
 reproductions are graded. The whole system turns on **one lockfile** (the
-band-selected audit pool) and **three LLM agent roles** arranged around it. Two of
-those roles — the classifier and the auditor — are *modes* of one shared
-tool-calling core (`run_tool_loop`); the third — the reproduction agent — lives in
-its **own package** (`src/reprocli_repro/`) and *forks* that loop's structure,
-reusing only mode-agnostic primitives.
+band-selected audit pool) and **two live LLM agent roles** arranged around it — the
+**reproduction agent** (S6) and the **auditor** (S7) — with a shared **serving
+layer** both brains attach to by URL. The auditor is a *mode* of one shared
+tool-calling core (`run_tool_loop` in `reprocli_vllm`); the reproduction agent lives
+in its **own package** (`src/reprocli_repro/`) and *forks* that loop's structure,
+reusing only mode-agnostic primitives. The lockfile itself was built upstream by an
+earlier classifier pass (S1–S5) and is consumed as a published, frozen input.
 
 ```
-  CLASSIFIER agent ──► LOCKFILE ──► REPRODUCTION agent (JIT srun) ──► run bundle ──► AUDITOR agent
-   (build dataset)    (the data)      (actually run the MRE)          (evidence)     (grade 0–5)
-        S1                S5             S6 🛠 building                                   S7
+  LOCKFILE ──► REPRODUCTION agent (JIT srun) ──► run bundle ──► AUDITOR agent
+  (the data)      (actually run the MRE)          (evidence)     (grade 0–5)
+     S5                    S6 ✅                                      S7
 ```
 
-> Verified against: `reprocli_vllm/` (`run_arxiv_prompt_vllm.py`,
-> `runtime/tool_loop.py`, `runtime/loop_guards.py`, `vllm/io.py`, `vllm/server.py`,
-> `config/config.py`, `config/cli_args.py`, `schema/output.py`, `schema/audit.py`,
-> `tools/web_tools.py`, `tools/run_dir_tools.py`, `runtime/run_health.py`,
-> `audit/audit.py`, `audit/select_pool.py`), `reprocli_repro/` (`cli_args.py`,
-> `loop.py`, `context.py`, `inputs.py`, `workspace.py`, `reference.py`,
-> `evidence.py`, `budget.py`, `cluster.py`, `slurm.py`, `compaction.py`,
-> `transcript.py`, `dispatch.py`, `tools/workspace_bash.py`, `tools/files.py`),
-> `reprocli_serve/`, `prompts/prompt_reproduce.txt`, `scripts/**/*.sbatch`,
-> `scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`,
-> `docs/reproduction-agent-plan.md`.
-> Status legend: ✅ live · 🛠 partially built (phased) · 🚧 designed, not yet wired.
+Both brains reason on an already-served vLLM endpoint (`reprocli_serve`), resolved
+purely by base URL; neither self-hosts a model.
+
+> Verified against: `reprocli_repro/` (`cli_args.py`, `cli_resolve.py`, `loop.py`,
+> `context.py`, `inputs.py`, `dataset.py`, `prompt_render.py`, `workspace.py`,
+> `reference.py`, `evidence.py`, `budget.py`, `cluster.py`, `slurm.py`,
+> `sandbox.py`, `compaction.py`, `dispatch.py`, `postgrest.py`,
+> `tools/workspace_bash.py`, `tools/files.py`, `tools/run_gpu.py`),
+> `reprocli_vllm/` (`run_arxiv_prompt_vllm.py`, `config/cli_args.py`,
+> `config/config.py`, `runtime/tool_loop.py`, `runtime/loop_guards.py`,
+> `runtime/run_health.py`, `vllm/io.py`, `schema/output.py`, `schema/audit.py`,
+> `tools/run_dir_tools.py`, `tools/web_fetch.py`, `audit/audit.py`,
+> `audit/select_pool.py`), `reprocli_serve/`, `prompts/prompt_reproduce.txt`.
+> Status legend: ✅ live.
 
 ## 0. The whole system (Mermaid)
 
@@ -36,14 +40,14 @@ flowchart TD
   classDef gpu  fill:#dcfce7,stroke:#15803d,color:#000;
 
   A["NeurIPS 2025 arXiv LaTeX bundles + OpenReview supplements"]
-  CL["① CLASSIFIER agent ✅<br/>run_tool_loop · WEB_TOOLS (GitHub/HF MCP, fetch_url)<br/>verify artifacts → MRE record"]:::llm
+  CL["classifier pass (S1–S5, historical)<br/>verify artifacts → MRE record<br/>built the lockfile upstream"]:::llm
   POST1["normalize_score_and_tier · web_verification · h100 audit"]
   SEL["audit/select_pool.py · band-stratified, cheapest-first"]
-  LOCK["THE LOCKFILE — Mithilss/neurips-2025-audit-pool (~200 rows)<br/>central_claim · mre_config · match_target · agent_task · tier · band · budget"]:::lock
-  RA["② REPRODUCTION agent 🛠 building<br/>own package (reprocli_repro), forked loop<br/>orchestrator (CPU) + run_gpu → JIT salloc per step"]:::llm
-  GPU["fresh salloc per step (DeltaAI ghx4 / Delta gpuH200x8)<br/>released the instant the step exits"]:::gpu
-  BUN["run bundle  outputs/repro/agent_runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/<br/>workspace/ · reference/ · evidence/ · report.json ✅"]
-  AU["③ AUDITOR agent ✅<br/>run_tool_loop · read-only run-dir tools<br/>grade 0–5 + cheat_flags"]:::llm
+  LOCK["THE LOCKFILE — Mithilss/reprobench-splits (~100 rows)<br/>central_claim · mre_config · match_target · agent_task · tier · band · budget"]:::lock
+  RA["① REPRODUCTION agent ✅<br/>own package (reprocli_repro), forked loop<br/>URL brain (reprocli_serve) + run_gpu → JIT salloc per step"]:::llm
+  GPU["fresh salloc per step (DeltaAI ghx4 — the only profile)<br/>mandatory Apptainer sandbox · released the instant the step exits"]:::gpu
+  BUN["run bundle  agent_runs/&lt;paper&gt;/&lt;budget&gt;h/&lt;run&gt;/<br/>workspace/ · reference/ · evidence/ · report.json ✅"]
+  AU["② AUDITOR agent ✅<br/>run_tool_loop · run-dir tools (list/read/bash/write_run_file)<br/>grade 0–5 + cheat_flags"]:::llm
   POST2["finalize_audit_row · anti-cheat cap → verdict"]
 
   A --> CL --> POST1 --> SEL --> LOCK
@@ -64,18 +68,21 @@ reproduction verdict.
 
 ---
 
-# Part I — Dataset construction (S1–S5) ✅
+# Part I — Dataset construction (S1–S5, historical provenance)
 
-Two stages produce the lockfile that the other two consumers read.
+Two stages produced the lockfile that the two live consumers (reproduction, audit)
+read. The classifier pass that emitted the MRE records is **no longer a runnable
+mode** — the lockfile is now consumed as a published, frozen input — but the
+provenance below explains where each field came from.
 
 ## I.1 Pipeline (ASCII)
 
 ```
-STAGE 1 — DATASET CONSTRUCTION  (classifier pass, mode = classification)    ✅
+STAGE 1 — DATASET CONSTRUCTION  (classifier pass — how the lockfile was built)
    NeurIPS 2025 arXiv LaTeX bundles
         │  load_bundle_papers()  →  Paper(tex_files)
         ▼
-   prompts/prompt.txt {PAPER_TEXT} ──► vLLM + tool loop ──► web_tools (verify links)
+   paper bundle text ──► vLLM + tool loop ──► artifact / link verification
         ▼
    ONE MRE record per paper   (output_schema.FINAL_JSON_SCHEMA)
      ├ central_claim, claim_evidence, paper_kind
@@ -144,12 +151,14 @@ Legacy rows that predate the tuple (no `match_target`) fall back to the auditor
 
 # Part II — The single agent core
 
-There is **one agent core** (`run_tool_loop`, `reprocli_vllm/runtime/tool_loop.py`);
-the classifier and auditor are *modes* of it (`resolve_mode_settings`), differing
-only in prompt, toolset, and output schema. The reproduction agent (Part III) is a
-**separate package that forks this loop's structure** — same skeleton (two thread
-pools, `wait(FIRST_COMPLETED)`, `handle_request_done`), but its own driver,
-guardrails, and tool dispatch, importing only mode-agnostic primitives from
+There is **one agent core** (`run_tool_loop`, `reprocli_vllm/runtime/tool_loop.py`).
+The **auditor** is its one live mode (`resolve_mode_settings` fills the audit prompt,
+toolset, and output schema); `--mode` accepts only `audit`. (The classifier that
+built the lockfile was historically a second mode of this same core, which is why
+the runtime still generalizes over prompt/toolset/schema.) The reproduction agent
+(Part III) is a **separate package that forks this loop's structure** — same skeleton
+(two thread pools, `wait(FIRST_COMPLETED)`, `handle_request_done`), but its own
+driver, guardrails, and tool dispatch, importing only mode-agnostic primitives from
 `reprocli_vllm` (the vLLM client/io, `loop_guards`, `trace_io`, `function_tool`).
 
 - **Single agent, not multi-agent.** One model, one conversation per item, one
@@ -167,21 +176,21 @@ guardrails, and tool dispatch, importing only mode-agnostic primitives from
 
 ```
                           run_arxiv_prompt_vllm.main()
-                          parse_args → resolve_mode_settings (mode picks prompt/tools/schema)
+                          parse_args → resolve_mode_settings (audit prompt/tools/schema)
                                       │
         ┌─────────────────────────────┼──────────────────────────────────────────┐
         ▼                             ▼                                            ▼
  ┌──────────────┐          ┌──────────────────────┐                     ┌──────────────────┐
  │ INPUT LOADER │          │  MODEL SERVER (vLLM)  │                     │   OUTPUT SINKS    │
- │ papers +     │          │  OpenAI /v1/chat      │                     │  raw .jsonl       │
- │ prompts      │          │  completions          │                     │  extracted .jsonl │
- │ classify:    │          │  ┌─ embedded VllmServer│                    │  trace .jsonl opt │
- │  bundle text │          │  │   (subprocess, TP, │                     │  HF upload (opt)  │
- │ audit:       │          │  │   auto-tool-choice) │                    └────────▲─────────┘
- │  claim+run_dir│         │  └─ OR --vllm-server-url│                            │ OUTPUT_WRITE_LOCK
+ │ audit:       │          │  OpenAI /v1/chat      │                     │  raw .jsonl       │
+ │  claim +     │          │  completions          │                     │  extracted .jsonl │
+ │  run_dir     │          │  URL-ONLY:             │                    │  trace .jsonl opt │
+ │  manifest    │          │  --vllm-server-url /   │                    └────────▲─────────┘
+ │              │          │  $REPROCLI_ENDPOINT_…  │                             │ OUTPUT_WRITE_LOCK
+ │              │          │  (reprocli_serve)      │                             │
  └──────┬───────┘          └───────────▲───────────┘                             │
         │ initial_messages             │ HTTP (stateless completions)            │
-        │ [system, user]               │                                         │
+        │ [system, user]               │  no endpoint → hard error (never self-hosts)
         ▼                              │                                         │
  ┌───────────────────────────────────────────────────────────────────────────────────────┐
  │ ORCHESTRATOR — run_tool_loop  (runtime/tool_loop.py)                                    │
@@ -193,14 +202,13 @@ guardrails, and tool dispatch, importing only mode-agnostic primitives from
                  │ tool_calls present                                     │ tools OFF (final pass)
                  ▼                                                        ▼
  ┌─────────────────────────────────────┐                  ┌──────────────────────────────────┐
- │ TOOL EXECUTION LAYER (web_tools.py)  │                  │ STRUCTURED-OUTPUT FINALIZATION     │
+ │ TOOL EXECUTION LAYER (run_dir_tools) │                  │ STRUCTURED-OUTPUT FINALIZATION     │
  │  retry-once on transient + truncate  │                  │ response_format = json_schema      │
- │  classify: GitHub/HF MCP · fetch_url │                  │  classify → FINAL_RESPONSE_FORMAT  │
- │           · paper_bundle_file_…      │                  │  audit    → AUDIT_RESPONSE_FORMAT  │
- │  audit:   list/read/bash (run-dir)   │                  └────────────────┬─────────────────┘
- └─────────────────────────────────────┘                                   ▼
-        results appended → next round                     ┌──────────────────────────────────┐
-                                                          │ POST-PROCESSING (run_health/audit) │
+ │  audit run-dir tools, path-confined: │                  │  audit → AUDIT_RESPONSE_FORMAT     │
+ │  list_run_files · read_run_file ·    │                  └────────────────┬─────────────────┘
+ │  bash · write_run_file               │                                   ▼
+ └─────────────────────────────────────┘                  ┌──────────────────────────────────┐
+        results appended → next round                     │ POST-PROCESSING (run_health/audit) │
                                                           │  LLM proposes · CODE decides label │
                                                           └──────────────────────────────────┘
 ```
@@ -231,62 +239,64 @@ roll into `verification_status` (`verified · incomplete · degraded`). The
 reproduction agent's forked loop adds a fifth exit reason, `budget_exhausted`
 (Part III.4).
 
-## II.3 One core, two live modes
+## II.3 The one live mode: audit
 
-| | **Classifier** (`--mode classification`) ✅ | **Auditor** (`--mode audit`) ✅ |
+`--mode` accepts only `audit`. The table below contrasts the live auditor with the
+historical classifier that built the lockfile (kept for context — it is no longer a
+runnable mode).
+
+| | **Auditor** (`--mode audit`) ✅ live | **Classifier** (historical, built the lockfile) |
 |---|---|---|
-| Job | Read a paper, *verify* artifacts, emit one MRE record | Grade one agent's reproduction run against the rubric |
-| Input | `{PAPER_TEXT}` (bundle LaTeX + supplement) | `{CENTRAL_CLAIM}` + `{RUBRIC}` + run-dir manifest |
-| Tools | GitHub/HF MCP, `fetch_url`, bundle reader | `list_run_files`, `read_run_file`, `bash`, `python` 🚧 |
-| Tool scope | Open web / MCP, read-only evidence | Read-only, path-confined to `<runs-dir>/<arxiv_id>` |
-| Final schema | `FINAL_RESPONSE_FORMAT` (signals, match_target, h100) | `AUDIT_RESPONSE_FORMAT` (0–5 score, cheat_flags, citations) |
-| Code decides | tier, web_verification rollup, h100 audit | anti-cheat cap (high flag → 0), verdict, run-health |
+| Job | Grade one agent's reproduction run against the rubric | Read a paper, *verify* artifacts, emit one MRE record |
+| Input | `{CENTRAL_CLAIM}` + `{RUBRIC}` + run-dir manifest | `{PAPER_TEXT}` (bundle LaTeX + supplement) |
+| Tools | `list_run_files`, `read_run_file`, `bash`, `write_run_file` | web/artifact-verification tools |
+| Tool scope | Path-confined to `<runs-dir>/<arxiv_id>`; read-write (`write_run_file` lets it drop a scoring script and run it under `bash`) | open-web evidence |
+| Final schema | `AUDIT_RESPONSE_FORMAT` (0–5 score, cheat_flags, citations) | `FINAL_RESPONSE_FORMAT` (signals, match_target, h100) |
+| Code decides | anti-cheat cap (high flag → 0), verdict, run-health | tier, web_verification rollup, h100 audit |
 
-The reproduction agent (Part III) is the third role, but **not** a mode of this
+The reproduction agent (Part III) is the other live role, but **not** a mode of this
 core — it is its own package with a forked loop.
 
 ## II.4 Statelessness & concurrency
 
 The vLLM server is a pure completion endpoint — **all conversation memory is the
-orchestrator's `conversations` dict**. That's what makes "attach to an existing
-multi-node server" (`--vllm-server-url`) and embedded-server runs the same code
-path, and it is exactly the property Part III exploits: the reproduction agent's
-*brain* can be the same served model while its *hands* (`run_gpu`/`srun`) live
-elsewhere. Up to `--request-workers` episodes run at once; request and tool pools
+orchestrator's `conversations` dict**. The runner is **URL-only**: it attaches to an
+already-served endpoint (`--vllm-server-url` / `$REPROCLI_SERVER_URL` /
+`$REPROCLI_ENDPOINT_FILE`, published by `reprocli_serve`) and never self-hosts a
+model. That statelessness is exactly the property Part III exploits: the
+reproduction agent's *brain* is the same served model while its *hands*
+(`run_gpu`/`srun`) live elsewhere. Up to `--request-workers` episodes run at once; request and tool pools
 are separate so a slow tool never blocks a model response; rows are appended as
 each item finishes under `OUTPUT_WRITE_LOCK`.
 
 ---
 
-# Part III — The reproduction agent (S6) 🛠 building
+# Part III — The reproduction agent (S6) ✅
 
-The missing consumer is now under construction in its own package
-(`src/reprocli_repro/`). Given **one lockfile row** (`agent_task`, `central_claim`,
+The reproduction agent is live in its own package (`src/reprocli_repro/`), invoked as
+`python -m reprocli_repro`. Given **one lockfile row** (`agent_task`, `central_claim`,
 `mre_config`, `match_target`, `tier`, `selection_band`, `audited_h100_hours`), it is an
 agent that *actually runs the experiment* on the cluster under a metered
 H100-hour budget and emits the run bundle the auditor grades. It is the same
 `run_tool_loop` skeleton, **forked** into its own driver, whose toolset executes
-real commands — the heavy ones via a just-in-time `salloc`/`srun`.
+real commands — the heavy ones via a just-in-time `salloc`/`srun` inside a
+**mandatory Apptainer sandbox**.
 
-**What was built first (Phases 0–3 ✅):** the forked tool loop (`loop.py`), the
-per-episode `ExecutionContext` (`context.py`), the `microcompact` context tier
-(`compaction.py`), the input pipeline that turns one lockfile row into a rendered
-prompt + run directory (`inputs.py`), the per-paper workspace / read-only
-reference / durable evidence setup (`workspace.py`, `reference.py`, `evidence.py`),
-the H100-equivalent budget meter (`budget.py`), the cluster-profile table
-(`cluster.py`), the JIT `salloc`/`srun` step builder (`slurm.py`), and the
-workspace-confined CPU tools (`tools/workspace_bash.py`, `tools/files.py`).
-
-**Built since (Phases 4–6 ✅):** the metered `run_gpu` tool + `build_repro_tools()` wired
-through `dispatch.execute_repro_tool_call` for the first end-to-end one-paper run
-(Milestone M1, local); the structured `report.json` bundle — what the agent ran +
-measured, cited into `evidence/` (Phase 5); and the M2 gate confirming the
-**existing** auditor grades that bundle with **no** auditor changes
-(`tests/repro/test_audit_bundle.py`). There is **no** harness re-execution and
-**no** agent-written verdict; the auditor owns the verdict. **What remains: M3**
-(Phase 7 — the same paper on a real GPU allocation) + Phase 8 hardening. See
-[`reproduction-agent-plan.md`](reproduction-agent-plan.md) for the full phase plan
-(M1 one paper end-to-end on the cluster → M2 auditor-graded → M3 scaled out).
+What it comprises: the forked tool loop (`loop.py`), the per-episode
+`ExecutionContext` (`context.py`), the `microcompact` context tier (`compaction.py`),
+the input pipeline that turns one lockfile row into a rendered prompt + run directory
+(`inputs.py` + `dataset.py` + `prompt_render.py`), the per-paper workspace /
+read-only reference / durable evidence setup (`workspace.py`, `reference.py`,
+`evidence.py`), the H100-equivalent budget meter (`budget.py`), the DeltaAI cluster
+profile (`cluster.py`), the JIT `salloc`/`srun` step builder and Apptainer sandbox
+(`slurm.py`, `sandbox.py`), the workspace-confined CPU tools
+(`tools/workspace_bash.py`, `tools/files.py`), and the metered `run_gpu` tool
+(`tools/run_gpu.py`) wired through `dispatch.execute_repro_tool_call` by
+`build_repro_tools()`. The forced final pass writes a structured `report.json` — what
+the agent ran and measured, cited into `evidence/`. There is **no** harness
+re-execution and **no** agent-written verdict; the auditor owns the verdict. See
+[`reproduction-agent-plan.md`](reproduction-agent-plan.md) for the historical design
+record.
 
 ## III.1 The core design decision: decouple orchestration from GPU — via JIT allocation
 
@@ -308,9 +318,12 @@ window; the **built** design goes further — **just-in-time (JIT) allocation**:
 
 This splits two kinds of decision cleanly:
 
-- **Operator-set (the cluster profile — the agent's *entitlements*):** account,
-  partition, node hardware (`hw`), GPUs-per-node, modules. The agent can only
-  allocate on the account/partition you grant it.
+- **Operator-set (the DeltaAI cluster profile — the agent's *entitlements*):** the
+  account, default partition, node hardware (`hw`), and GPUs-per-node are pinned by
+  the single built-in `deltaai` profile (`cluster.py`). The only per-run overrides
+  are `--partition` (pick a different queue on the same account) and
+  `--apptainer-image` (swap the base `.sif`). The agent can only allocate on the
+  account the profile grants it.
 - **Model-set (per `run_gpu` call):** `gpus` and a wallclock cap `minutes`. These
   size the JIT allocation and are exactly what the meter charges.
 
@@ -328,7 +341,7 @@ plain-subprocess fallback that could never reproduce anything.
 ```
                     LOCKFILE ROW  (one paper × budget cell)
    agent_task · central_claim · mre_config · match_target · tier · selection_band · audited_h100_hours
-            (source: Mithilss/neurips-2025-audit-pool — HF dataset, hf:// file, or local .jsonl)
+            (source: Mithilss/reprobench-splits — HF dataset, hf:// file, or local .jsonl)
                               │  inputs.prepare_episodes → render prompt + resolve run dir
                               ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
@@ -342,10 +355,12 @@ plain-subprocess fallback that could never reproduce anything.
  │  context mgmt   microcompact (elide stale tool results) → hard context cutoff       │
  │  evidence rec.  → commands.log · trajectory.jsonl · env.lock · patches/             │
  │                                                                                    │
- │  TOOLS (workspace-confined CPU tools ✅ built; run_gpu + dispatch wiring ✅ Phase 4)│
+ │  TOOLS (workspace-confined CPU tools + the metered run_gpu, via build_repro_tools)│
  │   workspace_bash → cwd-confined shell  (git clone, uv venv, edit, inspect)         │
  │   read_file / write_file / apply_patch  (read: workspace+reference+evidence;       │
  │                                          write: workspace+evidence only)            │
+ │   fetch_url      → read-only fetch of a public http(s) URL                          │
+ │   list_partitions → read-only sinfo of the cluster's partitions                    │
  │   run_gpu        → one JIT salloc per step ─────────────────────────────┐  ✅      │
  └──────────────────────────────────────────────────────────────────────────│────────┘
         no pre-held allocation — a fresh salloc opens here, per step          │
@@ -360,7 +375,7 @@ plain-subprocess fallback that could never reproduce anything.
                               │ budget exhausted OR agent finishes → forced final pass
                               ▼
  ┌──────────────────────────────────────────────────────────────────────────────────┐
- │ FINAL REPORT  (Phase 5 ✅ — the agent's own account, NOT a verdict)               │
+ │ FINAL REPORT  (report.json — the agent's own account, NOT a verdict)              │
  │  forced final pass (tools off) emits report.json: what was run, the metric       │
  │  value(s) observed, and citations into evidence/. The agent never grades itself —│
  │  it states what it measured; the AUDITOR decides whether it reproduced.          │
@@ -380,19 +395,20 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 
 ## III.3 Tools the reproduction agent gets
 
-| tool | runs where | status | role |
-|---|---|---|---|
-| `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | ✅ built | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit, inspect — anything that does not need a GPU. Every command is appended to `evidence/commands.log` |
-| `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | ✅ built | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
-| `list_partitions` | orchestrator (`sinfo`, read-only) | ✅ built | enumerates the cluster's partitions (node pools) — idle/total nodes, walltime, GPU gres — plus the built-in default for each known cluster, so the model can pick a `partition` for `run_gpu` instead of the profile's hardcoded default |
-| `run_gpu` | one JIT `salloc … srun` per call | ✅ Phase 4 | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget. Optional `partition` (from `list_partitions`) overrides the profile default for that allocation; the cluster profile pins only the default |
+| tool | runs where | role |
+|---|---|---|
+| `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit, inspect — anything that does not need a GPU. Every command is appended to `evidence/commands.log` |
+| `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
+| `fetch_url` | orchestrator (`tools/fetch.py`, read-only) | fetch a public http(s) URL (docs, a wheel index, a raw file) as text — no write, no GPU |
+| `list_partitions` | orchestrator (`sinfo`, read-only) | enumerates the cluster's partitions (node pools) — idle/total nodes, walltime, GPU gres — plus the built-in default, so the model can pick a `partition` for `run_gpu` instead of the profile's default |
+| `run_gpu` | one JIT `salloc … srun` per call, inside the Apptainer sandbox | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget. Optional `partition` (from `list_partitions`) overrides the profile default for that allocation; the profile pins only the default |
 
-The CPU tools (`workspace_bash`, file tools) and the JIT substrate (`slurm.py`,
-`budget.py`, `cluster.py`) are built and unit-tested; **Phase 4** assembled them
-with the `run_gpu` tool into `build_repro_tools()` and replaced the
-`dispatch.execute_repro_tool_call` stub, so the loop runs a one-paper episode
-end-to-end on the local executor (M1). The loop body, guardrails, microcompact,
-structured-output finalization, and trace capture are all in place.
+`build_repro_tools()` assembles the CPU tools and the `run_gpu` tool and wires them
+through `dispatch.execute_repro_tool_call` against the per-episode
+`ExecutionContext`, so the loop runs a paper episode end-to-end: every GPU step
+JIT-`salloc`s on the `deltaai` profile inside the mandatory Apptainer sandbox. The
+loop body, guardrails, microcompact, structured-output finalization, and trace
+capture are all in place.
 
 **The brain is provider-agnostic.** The agent's reasoning runs on **any
 OpenAI-compatible `/v1/chat/completions` server, chosen purely by base URL**. The
@@ -438,7 +454,7 @@ store**: every metric, working command, and artifact path is written to
 the conversation is *still* over after compaction does the loop fall back to the
 hard context-budget cutoff.
 
-## III.6 The agent reports; the auditor renders the verdict (Phase 5 ✅)
+## III.6 The agent reports; the auditor renders the verdict
 
 The reproduction agent's last act is its **report** — a structured account of what
 it ran, the metric value(s) it observed, and citations into `evidence/`. It writes
@@ -473,66 +489,66 @@ decides whether it reproduced.
 
 ```
 src/reprocli_repro/                 # the S6 execution agent — its own package, forked loop
-  __init__.py · __main__.py         # entry point (prepares episodes + sets up bundle today;
-                                    #   drives the full loop once Phase 4 wires the toolset)
-  cli_args.py                       # its own argparse (NOT resolve_mode_settings): run selection,
-                                    #   workspace, cluster, brain endpoint, sampling, context mgmt
+  __init__.py · __main__.py         # entry point: prepares episodes + drives the full loop
+  cli_args.py · cli_resolve.py      # its own argparse (NOT resolve_mode_settings): run selection,
+                                    #   workspace, cluster (--partition/--apptainer-image), endpoint,
+                                    #   loop limits, outputs — plus default/validation resolution
   loop.py                           # run_reproduce_loop — forked run_tool_loop skeleton
   context.py                        # ExecutionContext + Budget (per-episode mutable state)
-  inputs.py                         # lockfile row → rendered prompt + RunPaths (S6→S7 contract)
+  inputs.py · dataset.py · prompt_render.py   # lockfile row → rendered prompt + RunPaths (S6→S7 contract)
   workspace.py                      # per-paper workspace + empty per-paper uv venv
-  reference.py                      # read-only reference/ from the HF paper-bundle dataset
+  reference.py                      # read-only reference/ from the HF paper-bundle dataset (library half)
   evidence.py                       # commands.log / trajectory.jsonl / env.lock / patches/
   budget.py                         # H100-equiv meter + hw_multiplier table
-  cluster.py                        # cluster profiles (deltaai / delta-h200) + per-field overrides
-  slurm.py                          # JIT salloc/srun GPU-step builder + runner
+  cluster.py                        # the single deltaai profile (+ --partition/--apptainer-image overrides)
+  slurm.py · sandbox.py             # JIT salloc/srun GPU-step builder + the mandatory Apptainer wrap
   compaction.py                     # microcompact context tier (no model call)
   transcript.py                     # conversation shaping + incremental JSONL output
-  dispatch.py                       # execute_repro_tool_call seam — routes build_repro_tools() ✅
+  postgrest.py                      # consolidated Supabase (PostgREST) transport
+  dispatch.py                       # execute_repro_tool_call seam — routes build_repro_tools()
   tools/
-    workspace_bash.py               # cwd-confined shell ✅
-    files.py                        # read_file / write_file / apply_patch ✅
-    fetch.py                        # read-only fetch_url ✅
-    partitions.py                   # list_partitions — sinfo pools + known-cluster defaults ✅
-    run_gpu.py                      # the JIT-dispatching metered GPU tool ✅ Phase 4
-  report/                           # ✅ Phase 5: report schema + bundle writer → report.json
+    workspace_bash.py               # cwd-confined shell
+    files.py                        # read_file / write_file / apply_patch
+    fetch.py                        # read-only fetch_url
+    partitions.py                   # list_partitions — sinfo pools + the profile default
+    run_gpu.py                      # the JIT-dispatching metered GPU tool
+  report/                           # report schema + bundle writer → report.json
                                     #   (the agent's cited account of the run; the auditor grades it)
 ```
 
-Keeping repro in its own package (rather than a third `--mode`) leaves
-`reprocli_vllm` untouched, holds the classifier/auditor stable, and keeps every
-module under the 300-line rule. The only thing repro borrows is import-level
-primitives.
+Keeping repro in its own package (rather than a third `--mode`) leaves the
+`reprocli_vllm` audit core untouched and keeps every module under the 300-line rule.
+The only thing repro borrows is import-level primitives.
 
 ---
 
 # Part IV — The SLURM execution substrate
 
 How GPU work is actually managed in this repo. Two distinct patterns coexist: the
-classifier/auditor **pre-hold** one sbatch allocation for a whole batch job; the
-reproduction agent allocates **just-in-time, per step** (Part III). Both build on
-the same `salloc`/`srun` primitives.
+**serving job** (`reprocli_serve`) pre-holds one GPU allocation for the whole batch
+job and serves a vLLM endpoint; the reproduction agent allocates **just-in-time, per
+step** (Part III). Both build on the same `salloc`/`srun` primitives, and the two
+brains (reproduction, audit) reach the serving job over its published URL.
 
 ## IV.1 Clusters & accounts
 
 | cluster | account / partition | hardware | used for |
 |---|---|---|---|
-| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | classifier/auditor sbatch jobs; the reproduction agent's default JIT profile (`deltaai`) |
-| **Delta** (NCSA) | `-A bfvr-delta-cpu -p cpu-interactive` | CPU | model downloads, CPU orchestration |
-| **Delta** (NCSA) | `-A bfvr-delta-gpu -p gpuH200x8-interactive` | H200 ×8/node | interactive + multi-node model serving; the `delta-h200` JIT profile |
+| **DeltaAI** (NCSA) | `-A betw-dtai-gh -p ghx4` | GH200, 4 GPU/node | the reproduction agent's JIT profile (`deltaai`, the only profile) and GPU serving jobs |
+| **Delta** (NCSA) | `-A bfvr-delta-cpu -p cpu-interactive` | CPU | model downloads, CPU orchestration (the reproduction agent's login/CPU host) |
+| **Delta** (NCSA) | `-A bfvr-delta-gpu -p gpuH200x8-interactive` | H200 ×8/node | interactive + multi-node model serving |
 
-The reproduction agent's `cluster.py` encodes these as built-in profiles
-(`deltaai` default, `delta-h200`), each carrying
-account/partition/`hw`/gpus-per-node/modules/scratch-root. Per-field CLI
-overrides (`--account / --partition / --gpus-per-node / --hw / --modules /
---apptainer-image / --scratch-root`) let it run on an arbitrary SLURM cluster.
+The reproduction agent's `cluster.py` encodes a **single** built-in profile,
+`deltaai`, carrying the account, default partition, `hw`, and GPUs-per-node. The only
+per-run overrides are `--partition` (a different queue on the same account) and
+`--apptainer-image` (the base `.sif`).
 
 ## IV.2 Two allocation patterns
 
 ```bash
-# A. Classifier / auditor — PRE-HELD allocation (one sbatch job holds the nodes):
-salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus-per-node=1 --time=<window>
-srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 bash -lc 'cd <ws> && <command>'
+# A. Serving job — PRE-HELD allocation (one sbatch job holds the nodes for the server's life):
+salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus-per-node=4 --time=<window>
+srun --jobid=$SLURM_JOB_ID --nodes=1 --ntasks=1 python -m reprocli_serve --model <id>  # publishes a URL
 
 # B. Reproduction agent — JIT allocation (a fresh salloc PER run_gpu step, then released):
 #    every step runs inside the mandatory Apptainer sandbox (sandbox.py); CUDA/torch come
@@ -541,16 +557,13 @@ salloc -A betw-dtai-gh -p ghx4 --nodes=1 --gpus=<k> --time=<minutes> \
        srun --ntasks=1 apptainer exec --nv --cleanenv --no-home <sif> bash -lc 'cd <workspace> && <command>'
 ```
 
-Pattern A is the live classifier/auditor shape (`scripts/**/*.sbatch`,
-`scripts/kimi_k2_6/kimi_k2_6_multinode_interactive.md`): the allocation is the budget
-container and every unit of work runs as an `srun --jobid=$SLURM_JOB_ID` step
-inside it. Pattern B is the reproduction agent's `slurm.py`: the agent owns and
-releases each allocation, so it holds no GPU while reasoning or installing.
+Pattern A is the serving shape (`reprocli_serve`): the allocation lives for the
+server's lifetime and other nodes attach to the published endpoint by URL. Pattern B
+is the reproduction agent's `slurm.py`: the agent owns and releases each allocation,
+so it holds no GPU while reasoning or installing.
 
-Pattern A (classifier/auditor) inherits the env block the sbatch scripts standardize
-(caches under `/work/nvme/bfvr/msalunkhe/.cache/{vllm,triton,torchinductor}`, NCCL /
-`TORCH_NCCL_*` tuning, `module load python/3.11.9`). Pattern B (the reproduction agent)
-instead runs every step inside the **mandatory Apptainer sandbox** (`sandbox.py`): the NGC
+Pattern B (the reproduction agent) runs every step inside the **mandatory Apptainer
+sandbox** (`sandbox.py`): the NGC
 PyTorch `.sif` is the read-only root, so CUDA + a GPU-ready `torch` come from the image
 (no host `module load`), and writes are confined to the per-paper workspace/evidence,
 `/tmp`, and the package caches. The agent layers a **per-paper `uv` venv** (with
@@ -569,41 +582,28 @@ its own long-lived allocation — never one metered against the paper's H100 bud
 
 ---
 
-# Part V — Status & the one remaining handoff
+# Part V — Status
 
 | stage | component | status |
 |---|---|---|
-| S1 | Classifier agent → MRE records | ✅ live |
-| S5 | `audit/select_pool.py` → lockfile (~200 rows, HF dataset) | ✅ live |
-| S6 | **Reproduction agent (JIT srun) → run bundle** | 🛠 **building** — Phases 0–6 done (forked loop, budget meter, JIT-SLURM substrate, evidence store, toolset + `run_gpu`, `report.json` bundle); **M1** (one paper through the loop, local) + **M2** (the existing auditor grades that bundle unchanged — `tests/repro/test_audit_bundle.py`) met. Remaining: **M3** (Phase 7, real GPU) + Phase 8 hardening |
+| S1–S5 | Classifier pass → MRE records → `audit/select_pool.py` → lockfile (HF dataset) | historical — built the lockfile now consumed as a frozen input |
+| S6 | **Reproduction agent (`python -m reprocli_repro`, JIT srun) → run bundle** | ✅ live — forked loop, budget meter, JIT-SLURM substrate + Apptainer sandbox, evidence store, toolset + `run_gpu`, `report.json` bundle. Every GPU step JIT-`salloc`s on the `deltaai` profile |
 | S7 | Auditor agent (`--mode audit`) + anti-cheat cap | ✅ live |
 
-The open edge is now narrow: the package, forked loop, budget meter, JIT SLURM
-substrate, evidence store, and confined CPU tools all exist. **Phase 4** assembled
-them with the `run_gpu` tool for the first end-to-end one-paper run (Milestone M1 —
-every GPU step JIT-`salloc`s on the `deltaai` profile) and **Phase 5** finalized the
-`report.json` bundle the agent emits; **Phase 6 (M2)** confirmed the existing
-auditor grades that bundle with **zero changes** (`--mode audit --runs-dir <same
-root>`; gated by `tests/repro/test_audit_bundle.py`). The open edge is now **M3**
-(Phase 7): the same paper reproduced on a real GPU allocation, then Phase 8
-hardening before scaling past hand-checked papers.
+The reproduction agent runs a paper end-to-end: `__main__` prepares each episode,
+`dispatch.execute_repro_tool_call` routes `build_repro_tools()` against the
+per-episode `ExecutionContext`, every `run_gpu` step JIT-`salloc`s on the `deltaai`
+profile inside the mandatory Apptainer sandbox, and the forced final pass writes
+`report.json`. The existing auditor grades that bundle with **zero changes**
+(`--mode audit --runs-dir <same root>`; gated by `tests/repro/test_audit_bundle.py`).
 
-### Known caveats carried forward
+### Notes
 
-- The reproduction loop runs end-to-end **on the local executor** (M1/M2):
-  `__main__` prepares each episode, `dispatch.execute_repro_tool_call` routes
-  `build_repro_tools()` against the per-episode `ExecutionContext`, and the forced final
-  pass writes `report.json`. What's unproven is **M3** — the same loop against a
-  real GPU `salloc` on the cluster.
-- The auditor re-scores artifacts (recompute a metric from a saved output) via
-  `bash` + `python3` (`run_dir_tools.py`); there is no dedicated interpreter tool.
-- `workspace_bash` is a cwd-confined shell (same posture as the auditor's `bash`)
-  — fine for our own agents over hand-checked papers. **Sandboxing untrusted paper
-  code is Phase 8**: a hardened Apptainer wrap (`--containall --cleanenv --no-home
-  --nv`) in `slurm.py`, a credential split so the GPU step runs with no keys, and
-  prefetch-then-run-offline for gated data/weights. The `--apptainer-image` /
-  `--modules` / `--scratch-root` profile fields are the seams for it.
-
-> Sibling pages [`modes/reproduction.md`](modes/reproduction.md) and
-> [`slurm/clusters.md`](slurm/clusters.md) still describe the pre-`reprocli_repro`
-> design in places; this overview is the current source of truth for S6.
+- The auditor re-scores artifacts (recompute a metric from a saved output) by
+  `write_run_file`-ing a scoring script and running it under `bash`
+  (`run_dir_tools.py`); there is no dedicated interpreter tool.
+- Every reproduction GPU step runs inside the **mandatory Apptainer sandbox**
+  (`sandbox.py`, `slurm.py`): the base `.sif` is a read-only root, writes are
+  confined to the per-paper workspace/evidence, and `--apptainer-image` swaps the
+  image. Tighter credential-split and offline-prefetch hardening for untrusted paper
+  code layers onto that same wrap.
