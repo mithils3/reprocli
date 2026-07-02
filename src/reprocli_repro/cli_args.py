@@ -21,7 +21,7 @@ from pathlib import Path
 from reprocli_vllm.config.config import DEFAULT_MODEL
 
 from reprocli_repro.cli_resolve import apply_defaults, validate
-from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
+from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
 # dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,

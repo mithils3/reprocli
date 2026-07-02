@@ -25,7 +25,8 @@ from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 from reprocli_repro import gpu_session, sandbox, supabase_sink
 from reprocli_repro.cli_args import parse_args
 from reprocli_repro.context import ExecutionContext
-from reprocli_repro.inputs import EpisodeInput, band_of, build_context, prepare_episodes
+from reprocli_repro.dataset import band_of
+from reprocli_repro.inputs import EpisodeInput, build_context, prepare_episodes
 from reprocli_repro.loop import run_reproduce_loop
 from reprocli_repro.workspace import WorkspaceResult, prepare_workspace
 
