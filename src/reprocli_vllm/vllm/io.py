@@ -6,12 +6,11 @@ import re
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config.config import WEB_SYSTEM_MESSAGE
 from reprocli_vllm.audit.audit import finalize_audit_row
 from reprocli_vllm.runtime.run_health import degraded_row, finalize_extracted_row
 
 
-def initial_messages(prompt: str, system_message: str = WEB_SYSTEM_MESSAGE) -> list[dict[str, Any]]:
+def initial_messages(prompt: str, system_message: str) -> list[dict[str, Any]]:
     return [
         {"role": "system", "content": system_message},
         {"role": "user", "content": prompt},

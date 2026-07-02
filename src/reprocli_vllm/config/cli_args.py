@@ -1,9 +1,9 @@
-"""Command-line argument definition, validation, and per-mode defaults.
+"""Command-line argument definition, validation, and audit-mode defaults.
 
 Split out of run_arxiv_prompt_vllm.py to keep that entry point focused on the
 run flow. ``parse_args`` returns a fully-resolved argparse Namespace: model
-profile defaults applied, mode (classification/audit) settings filled in, and
-all cross-argument validation enforced.
+profile defaults applied, audit-mode settings filled in, and all
+cross-argument validation enforced.
 """
 
 from __future__ import annotations
@@ -19,17 +19,9 @@ from reprocli_vllm.config.config import (
     AUDIT_RUBRIC_FILE,
     AUDIT_RUNS_DIR_DEFAULT,
     AUDIT_SYSTEM_MESSAGE,
-    DEFAULT_EXTRACTED_OUTPUT,
     DEFAULT_MODEL,
-    DEFAULT_OUTPUT,
-    DEFAULT_VLLM_DATASET,
-    FINAL_NO_TOOLS_MESSAGE,
-    PAPER_BUNDLE_DATASET_URL,
-    WEB_SYSTEM_MESSAGE,
-    WEB_TOOLS,
 )
 from reprocli_vllm.schema.audit import AUDIT_RESPONSE_FORMAT
-from reprocli_vllm.schema.output import FINAL_RESPONSE_FORMAT
 from reprocli_vllm.tools.run_dir_tools import AUDIT_TOOLS
 from reprocli_vllm.config.minimax_defaults import apply_model_defaults
 from reprocli_vllm.runtime.trace_io import trace_output_path
@@ -40,18 +32,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-prompts", type=int)
     parser.add_argument(
-        "--dataset",
-        default=DEFAULT_VLLM_DATASET,
-        help=(
-            "Paper-bundle dataset with LaTeX and OpenReview supplements. "
-            f"Default: {PAPER_BUNDLE_DATASET_URL}"
-        ),
-    )
-    parser.add_argument(
         "--mode",
-        choices=("classification", "audit"),
-        default="classification",
-        help="classification curates the artifact tier; audit grades an agent reproduction attempt against the rubric.",
+        choices=("audit",),
+        default="audit",
+        help="audit grades an agent reproduction attempt against the rubric (the only mode).",
     )
     parser.add_argument(
         "--claims",
@@ -191,31 +175,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve_mode_settings(args: argparse.Namespace) -> None:
-    """Fill prompt/output/schema/message defaults for the selected mode."""
-    if args.mode == "audit":
-        args.prompt_file = args.prompt_file or AUDIT_PROMPT_FILE
-        args.rubric_file = args.rubric_file or AUDIT_RUBRIC_FILE
-        args.output = args.output or AUDIT_DEFAULT_OUTPUT
-        args.extracted_output = args.extracted_output or AUDIT_DEFAULT_EXTRACTED
-        args.claims = args.claims or AUDIT_CLAIMS_DEFAULT
-        args.runs_dir = args.runs_dir or AUDIT_RUNS_DIR_DEFAULT
-        args.response_format = AUDIT_RESPONSE_FORMAT
-        args.system_message = AUDIT_SYSTEM_MESSAGE
-        args.final_no_tools_message = AUDIT_FINAL_NO_TOOLS_MESSAGE
-        # The auditor explores the agent's run directory with read-only tools.
-        args.tools = AUDIT_TOOLS
-        args.use_tools = True
-        return
-    args.prompt_file = args.prompt_file or argparse_path("prompts/prompt.txt")
-    args.output = args.output or DEFAULT_OUTPUT
-    args.extracted_output = args.extracted_output or DEFAULT_EXTRACTED_OUTPUT
-    # The classifier's forced final (no-tools) turn requests this structured schema;
-    # io.build_chat_completion_request reads args.response_format directly (no
-    # fallback), so this must be the real schema, not a None placeholder.
-    args.response_format = FINAL_RESPONSE_FORMAT
-    args.system_message = WEB_SYSTEM_MESSAGE
-    args.final_no_tools_message = FINAL_NO_TOOLS_MESSAGE
-    args.tools = WEB_TOOLS
+    """Fill prompt/output/schema/message defaults for the audit mode."""
+    args.prompt_file = args.prompt_file or AUDIT_PROMPT_FILE
+    args.rubric_file = args.rubric_file or AUDIT_RUBRIC_FILE
+    args.output = args.output or AUDIT_DEFAULT_OUTPUT
+    args.extracted_output = args.extracted_output or AUDIT_DEFAULT_EXTRACTED
+    args.claims = args.claims or AUDIT_CLAIMS_DEFAULT
+    args.runs_dir = args.runs_dir or AUDIT_RUNS_DIR_DEFAULT
+    args.response_format = AUDIT_RESPONSE_FORMAT
+    args.system_message = AUDIT_SYSTEM_MESSAGE
+    args.final_no_tools_message = AUDIT_FINAL_NO_TOOLS_MESSAGE
+    # The auditor explores the agent's run directory with the run-dir tools.
+    args.tools = AUDIT_TOOLS
     args.use_tools = True
 
 
