@@ -20,6 +20,7 @@ from reprocli_vllm.config.config import (
     AUDIT_RUNS_DIR_DEFAULT,
     AUDIT_SYSTEM_MESSAGE,
     DEFAULT_MODEL,
+    MAX_REPEATED_TOOL_CALLS,
 )
 from reprocli_vllm.schema.audit import AUDIT_RESPONSE_FORMAT
 from reprocli_vllm.tools.run_dir_tools import AUDIT_TOOLS
@@ -46,11 +47,6 @@ def parse_args() -> argparse.Namespace:
             "JSONL path or an hf://datasets/<owner>/<name>/<file> reference. "
             f"Default: {AUDIT_CLAIMS_DEFAULT}."
         ),
-    )
-    parser.add_argument(
-        "--rubric-file",
-        type=argparse_path,
-        help="Audit rubric markdown injected into the audit prompt (default: rubric_audit.md).",
     )
     parser.add_argument(
         "--runs-dir",
@@ -94,7 +90,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--tool-rounds", type=int, default=10)
-    parser.add_argument("--max-repeated-tool-calls", type=int, default=2)
     parser.add_argument("--request-workers", type=int, default=8)
     parser.add_argument("--tensor-parallel-size", type=int)
     parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
@@ -105,21 +100,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int)
     parser.add_argument("--tool-call-parser")
     parser.add_argument("--reasoning-parser")
-    parser.add_argument("--tokenizer-mode")
     parser.add_argument("--kv-cache-dtype")
-    parser.add_argument("--block-size", type=int)
     parser.add_argument("--mm-encoder-tp-mode")
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
-    parser.add_argument(
-        "--structured-outputs-backend",
-        default=None,
-        help=(
-            "Structured outputs backend for the embedded vLLM server, passed as "
-            "--structured-outputs-config.backend (e.g. xgrammar). Defaults to "
-            "the server's auto selection."
-        ),
-    )
     parser.add_argument(
         "--compilation-config",
         default=None,
@@ -134,8 +118,6 @@ def parse_args() -> argparse.Namespace:
         parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
-    if args.max_repeated_tool_calls < 1:
-        parser.error("--max-repeated-tool-calls must be >= 1")
     if args.max_input_tokens < 1:
         parser.error("--max-input-tokens must be >= 1")
     if args.top_k is not None and args.top_k < 1:
@@ -152,7 +134,8 @@ def parse_args() -> argparse.Namespace:
 def resolve_mode_settings(args: argparse.Namespace) -> None:
     """Fill prompt/output/schema/message defaults for the audit mode."""
     args.prompt_file = args.prompt_file or AUDIT_PROMPT_FILE
-    args.rubric_file = args.rubric_file or AUDIT_RUBRIC_FILE
+    # The audit rubric is fixed; run_arxiv_prompt_vllm reads this attribute.
+    args.rubric_file = AUDIT_RUBRIC_FILE
     args.output = args.output or AUDIT_DEFAULT_OUTPUT
     args.extracted_output = args.extracted_output or AUDIT_DEFAULT_EXTRACTED
     args.claims = args.claims or AUDIT_CLAIMS_DEFAULT
@@ -163,6 +146,8 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     # The auditor explores the agent's run directory with the run-dir tools.
     args.tools = AUDIT_TOOLS
     args.use_tools = True
+    # Fixed loop guard (was --max-repeated-tool-calls, never varied).
+    args.max_repeated_tool_calls = MAX_REPEATED_TOOL_CALLS
 
 
 def argparse_path(value: str):

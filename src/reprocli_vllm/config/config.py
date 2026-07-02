@@ -11,6 +11,9 @@ MAX_MODEL_LEN = 196608
 TOOL_TIMEOUT = 20.0
 TOOL_MAX_CHARS = 24_000
 TOOL_RESULT_MAX_CHARS = 40_000
+# Identical repeated tool calls before the loop forces the final turn
+# (read off the args namespace by runtime/tool_loop.py).
+MAX_REPEATED_TOOL_CALLS = 2
 REQUEST_TIMEOUT = 1800.0
 SERVER_STARTUP_TIMEOUT = 1800.0
 FINAL_NO_TOOLS_MESSAGE = (

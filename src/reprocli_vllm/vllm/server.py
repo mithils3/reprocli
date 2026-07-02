@@ -59,20 +59,12 @@ class VllmServer:
             )
         if self.args.compilation_config:
             command.extend(["--compilation-config", self.args.compilation_config])
-        if self.args.tokenizer_mode:
-            command.extend(["--tokenizer-mode", self.args.tokenizer_mode])
         if self.args.kv_cache_dtype:
             command.extend(["--kv-cache-dtype", self.args.kv_cache_dtype])
-        if self.args.block_size:
-            command.extend(["--block-size", str(self.args.block_size)])
         if self.args.mm_encoder_tp_mode:
             command.extend(["--mm-encoder-tp-mode", self.args.mm_encoder_tp_mode])
         if self.args.trust_remote_code:
             command.append("--trust-remote-code")
-        if getattr(self.args, "structured_outputs_backend", None):
-            command.extend(
-                ["--structured-outputs-config.backend", self.args.structured_outputs_backend]
-            )
         env = subprocess_env(self.args.vllm_cache_dir)
         if env:
             print(f"Using VLLM_CACHE_ROOT={self.args.vllm_cache_dir}", file=sys.stderr)
