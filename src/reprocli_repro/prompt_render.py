@@ -84,7 +84,7 @@ def _verified_links_block(row: dict) -> str:
 
 
 def _match_target_block(row: dict) -> str:
-    """Render the classifier's anchor target MINUS its ``config``.
+    """Render the lockfile row's anchor target MINUS its ``config``.
 
     Hands the agent the success bar to match — metric, reported value, scope, and bar
     shape — while still withholding ``match_target['config']`` (the exact runnable
@@ -112,9 +112,9 @@ def _match_target_block(row: dict) -> str:
 
 
 def _signals_block(row: dict) -> str:
-    """Render the classifier's pre-assessed artifact availability for the prompt.
+    """Render the lockfile row's pre-assessed artifact availability for the prompt.
 
-    The lockfile carries the classifier's ``signals`` (code / dataset / weights /
+    The lockfile carries per-paper ``signals`` (code / dataset / weights /
     dataset-is-standard + a verification level and evidence). Surfacing it spares the
     agent the rounds it otherwise burns rediscovering, e.g., that a repo is a release
     stub — while the prompt still tells it to verify against its exact MRE. Degrades to

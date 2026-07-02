@@ -47,7 +47,7 @@ def load_lockfile_rows(
     if _looks_like_dataset_repo(spec):
         return _index_rows(_iter_hf_dataset(spec, normalize_split(split)))
     # Local .jsonl path or hf://datasets/<owner>/<name>/<file> — reuse the tested
-    # file loader the classifier/auditor already share.
+    # MRE-record file loader the auditor already shares.
     return load_mre_records(spec)
 
 
