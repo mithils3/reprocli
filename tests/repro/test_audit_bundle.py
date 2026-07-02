@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.evidence import append_trajectory, init_evidence, log_command
-from reprocli_repro.inputs import format_hours, resolve_run_paths
+from reprocli_repro.inputs import resolve_run_paths
 from reprocli_repro.report import AGENT_ASSESSMENTS, REPORT_FILENAME, write_episode_report
 from reprocli_repro.workspace import create_layout
 
