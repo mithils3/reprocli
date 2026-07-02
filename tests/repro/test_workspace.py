@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.inputs import resolve_run_paths
-from reprocli_repro.workspace import build_venv, create_layout, prepare_workspace
+from reprocli_repro.workspace import create_layout, prepare_workspace
 
 ROW = {
     "arxiv_id": "2505.11483",
@@ -26,23 +26,13 @@ class CreateLayoutTests(unittest.TestCase):
                 self.assertTrue(sub.is_dir(), sub)
 
 
-class BuildVenvTests(unittest.TestCase):
-    def test_uv_builds_empty_venv(self):
-        with tempfile.TemporaryDirectory() as d:
-            ws = Path(d) / "workspace"
-            ws.mkdir()
-            res = build_venv(ws)
-            self.assertTrue(res["ok"], res)
-            self.assertTrue((ws / ".venv").is_dir())
-
-
 class PrepareWorkspaceTests(unittest.TestCase):
     def test_full_offline_setup(self):
         with tempfile.TemporaryDirectory() as d:
             paths = resolve_run_paths(Path(d) / "runs", "2505.11483", 8.0, run_id="RID")
-            # make_venv defaults off (the agent builds it in the container); opt in here
-            # to exercise the upfront path (no sandbox -> runs bare on the test host).
-            result = prepare_workspace(paths, arxiv_id="2505.11483", make_venv=True, reference_row=ROW)
+            # The agent builds its own venv in the container; setup only lays down the
+            # dir layout, evidence sinks, and the read-only reference copy.
+            result = prepare_workspace(paths, arxiv_id="2505.11483", reference_row=ROW)
             # layout + evidence sinks
             self.assertTrue(paths.workspace.is_dir())
             self.assertTrue((paths.evidence / "commands.log").is_file())
@@ -51,18 +41,13 @@ class PrepareWorkspaceTests(unittest.TestCase):
             self.assertTrue(result.reference["ok"])
             self.assertTrue((paths.reference / "supplement" / "code" / "run.py").is_file())
             self.assertTrue((paths.reference / "MANIFEST.txt").is_file())
-            # per-paper venv built, never the shared .venv
-            self.assertTrue(result.venv["ok"], result.venv)
-            self.assertTrue((paths.workspace / ".venv").is_dir())
 
-    def test_can_skip_venv_and_reference(self):
+    def test_can_skip_reference(self):
         with tempfile.TemporaryDirectory() as d:
             paths = resolve_run_paths(Path(d) / "runs", "x", 8.0, run_id="RID")
-            result = prepare_workspace(paths, arxiv_id="x", make_venv=False, materialize_ref=False)
-            self.assertIsNone(result.venv)
+            result = prepare_workspace(paths, arxiv_id="x", materialize_ref=False)
             self.assertIsNone(result.reference)
             self.assertTrue(paths.workspace.is_dir())
-            self.assertFalse((paths.workspace / ".venv").exists())
 
 
 if __name__ == "__main__":

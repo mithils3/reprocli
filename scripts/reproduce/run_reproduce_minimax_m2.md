@@ -170,7 +170,7 @@ rendered prompt, nothing more.
 ```bash
 unset REPROCLI_ENDPOINT_FILE REPROCLI_SERVER_URL
 python -m reprocli_repro --paper-id "$ARXIV_ID" --split dev \
-  --no-reference --no-build-venv --runs-dir /tmp/repro_dryrun
+  --no-reference --runs-dir /tmp/repro_dryrun
 ```
 
 You should see the `[<id>] tier=… band=… budget=8h run_dir=…` summary and the full

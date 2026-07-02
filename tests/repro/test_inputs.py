@@ -58,8 +58,6 @@ def _args(tmp: Path, **over) -> argparse.Namespace:
         lockfile=str(_write_jsonl(tmp, [ROW])),
         runs_dir=tmp / "runs",
         paper_id="2505.11483",
-        num_prompts=None,
-        seed=0,
         run_id="RID",
         budget_h100_hours=8.0,
     )
@@ -77,24 +75,17 @@ class LoadAndSelectTests(unittest.TestCase):
 
     def test_select_by_paper_id(self):
         rows = {"2505.11483": ROW, "2401.00002": dict(ROW, custom_id="2401.00002")}
-        picked = select_episode_rows(rows, paper_id="2505.11483", num_prompts=None)
+        picked = select_episode_rows(rows, paper_id="2505.11483")
         self.assertEqual(len(picked), 1)
         self.assertEqual(picked[0]["custom_id"], "2505.11483")
 
     def test_select_missing_paper_id_errors(self):
         with self.assertRaises(SystemExit):
-            select_episode_rows({"a": ROW}, paper_id="nope", num_prompts=None)
+            select_episode_rows({"a": ROW}, paper_id="nope")
 
-    def test_select_requires_a_mode(self):
+    def test_select_requires_a_paper_id(self):
         with self.assertRaises(SystemExit):
-            select_episode_rows({"a": ROW}, paper_id=None, num_prompts=None)
-
-    def test_num_prompts_sampling_is_seeded(self):
-        rows = {str(i): dict(ROW, custom_id=str(i)) for i in range(10)}
-        a = select_episode_rows(rows, paper_id=None, num_prompts=3, seed=7)
-        b = select_episode_rows(rows, paper_id=None, num_prompts=3, seed=7)
-        self.assertEqual([r["custom_id"] for r in a], [r["custom_id"] for r in b])
-        self.assertEqual(len(a), 3)
+            select_episode_rows({"a": ROW}, paper_id=None)
 
 
 class RunPathTests(unittest.TestCase):

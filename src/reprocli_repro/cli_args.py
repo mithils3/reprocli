@@ -7,9 +7,9 @@ defaults applied (system/final messages, tool + response-format seams) and all
 cross-argument validation enforced.
 
 Phase 0 ships the stable surface the forked tool loop and the context-management
-tiers need. Run-selection flags (``--paper-id`` / ``--lockfile`` / ``--runs-dir``
-/ ``--prompt-file`` / ``--num-prompts``) are accepted now so the CLI shape is
-stable; they are consumed by the input pipeline starting in Phase 1.
+tiers need. Run-selection flags (``--paper-id`` / ``--lockfile`` / ``--runs-dir``)
+are accepted now so the CLI shape is stable; they are consumed by the input
+pipeline starting in Phase 1.
 """
 
 from __future__ import annotations
@@ -24,7 +24,6 @@ from reprocli_repro.budget import HW_MULTIPLIER
 from reprocli_repro.cli_resolve import apply_defaults, validate
 from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names
 from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
-from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
 # dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
@@ -32,7 +31,6 @@ from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
 # repo asset.
 DEFAULT_WORK_ROOT = Path(os.environ.get("REPRO_WORK_ROOT", "/work/nvme/bfvr/msalunkhe/reprocli"))
 DEFAULT_OUTPUT = DEFAULT_WORK_ROOT / "reproduce.jsonl"
-DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 DEFAULT_RUNS_DIR = DEFAULT_WORK_ROOT / "agent_runs"
 
 
@@ -53,8 +51,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def _add_run_selection(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("run selection (consumed starting Phase 1)")
     group.add_argument("--paper-id", help="arXiv id of the single paper to reproduce.")
-    group.add_argument("--num-prompts", type=int, help="Reproduce a random N papers instead of one.")
-    group.add_argument("--seed", type=int, default=0, help="Sampling seed for --num-prompts (default: 0).")
     group.add_argument(
         "--run-id",
         help="Pin the run id (default: a fresh time+random id, so re-runs never collide).",
@@ -78,12 +74,6 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
         ),
     )
     group.add_argument(
-        "--prompt-file",
-        type=Path,
-        default=DEFAULT_PROMPT_FILE,
-        help=f"Reproduction prompt template (default: {DEFAULT_PROMPT_FILE}).",
-    )
-    group.add_argument(
         "--runs-dir",
         type=Path,
         default=DEFAULT_RUNS_DIR,
@@ -97,26 +87,11 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
 def _add_workspace(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("workspace + reference (Phase 2)")
     group.add_argument(
-        "--bundle-dataset",
-        default=DEFAULT_BUNDLE_DATASET,
-        help=f"Paper-bundle dataset the read-only reference/ is materialized from "
-        f"(default: {DEFAULT_BUNDLE_DATASET}).",
-    )
-    group.add_argument(
         "--reference",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Materialize the read-only reference/ copy at setup (default: on).",
     )
-    group.add_argument(
-        "--build-venv",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Build the empty per-paper uv venv (inside the container) at setup "
-        "(default: off — the agent builds it as its first step and installs the CUDA "
-        "torch family into it itself).",
-    )
-    group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:

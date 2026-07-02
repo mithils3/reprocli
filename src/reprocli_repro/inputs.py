@@ -126,27 +126,14 @@ def _index_rows(rows: Iterable[dict]) -> dict[str, dict]:
 # --------------------------------------------------------------------------- #
 # Selection                                                                    #
 # --------------------------------------------------------------------------- #
-def select_episode_rows(
-    rows: dict[str, dict],
-    *,
-    paper_id: str | None,
-    num_prompts: int | None,
-    seed: int = 0,
-) -> list[dict]:
-    if paper_id:
-        row = rows.get(paper_id) or rows.get(paper_id.split("v")[0])
-        if row is None:
-            sample = ", ".join(sorted(rows)[:8])
-            raise SystemExit(f"paper-id {paper_id!r} not in lockfile (e.g. {sample} ...).")
-        return [row]
-    ordered = list(rows.values())
-    if num_prompts is None:
-        raise SystemExit("Pass --paper-id <arxiv_id> or --num-prompts <N> to select episode(s).")
-    if num_prompts >= len(ordered):
-        return ordered
-    import random
-
-    return random.Random(seed).sample(ordered, num_prompts)
+def select_episode_rows(rows: dict[str, dict], *, paper_id: str | None) -> list[dict]:
+    if not paper_id:
+        raise SystemExit("Pass --paper-id <arxiv_id> to select the episode to reproduce.")
+    row = rows.get(paper_id) or rows.get(paper_id.split("v")[0])
+    if row is None:
+        sample = ", ".join(sorted(rows)[:8])
+        raise SystemExit(f"paper-id {paper_id!r} not in lockfile (e.g. {sample} ...).")
+    return [row]
 
 
 # --------------------------------------------------------------------------- #
@@ -343,12 +330,7 @@ def prepare_episodes(args: argparse.Namespace) -> list[EpisodeInput]:
         getattr(args, "lockfile", None),
         split=getattr(args, "split", DEFAULT_LOCKFILE_SPLIT),
     )
-    selected = select_episode_rows(
-        rows,
-        paper_id=args.paper_id,
-        num_prompts=args.num_prompts,
-        seed=getattr(args, "seed", 0),
-    )
+    selected = select_episode_rows(rows, paper_id=args.paper_id)
     # Default: derive each paper's ceiling from its selection_band. A flat
     # --budget-h100-hours, when given, overrides the band for every paper.
     flat_override = getattr(args, "budget_h100_hours", None)

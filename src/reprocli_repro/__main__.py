@@ -60,11 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         result = prepare_workspace(
             ep.run_paths,
             arxiv_id=ep.arxiv_id,
-            bundle_dataset=args.bundle_dataset,
-            make_venv=args.build_venv and live,
             materialize_ref=args.reference,
-            sandbox=sb,
-            venv_python=args.venv_python,
         )
         print(_setup_summary(result), file=sys.stderr)
         ctx = build_context(ep)
@@ -122,14 +118,12 @@ def _dry_run(args, episodes: list[EpisodeInput]) -> int:
 
 def _setup_summary(result: WorkspaceResult) -> str:
     ref = result.reference or {}
-    venv = result.venv or {}
     ref_note = (
         f"reference ok ({ref.get('latex_files', '?')} tex, {ref.get('supplement_files', '?')} supp)"
         if ref.get("ok")
         else f"reference: {ref.get('error') or ref.get('reason') or 'skipped'}"
     )
-    venv_note = "venv ok" if venv.get("ok") else f"venv: {venv.get('error') or venv.get('stderr') or 'skipped'}"
-    return f"  set up {result.run_paths.run_dir}: {ref_note}; {venv_note}"
+    return f"  set up {result.run_paths.run_dir}: {ref_note}"
 
 
 def _summary(ep: EpisodeInput) -> str:

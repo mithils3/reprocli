@@ -9,6 +9,7 @@ JIT-allocation cluster profile, the advertised toolset, the trace path).
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
@@ -52,12 +53,13 @@ SUMMARIZE_COMPACT = True
 SUMMARIZE_KEEP_TOKENS = 20000
 SUMMARIZE_THRESHOLD = 0.6
 
+# The reproduction prompt template is a fixed repo asset (was --prompt-file).
+DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
+
 
 def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
     if args.budget_h100_hours is not None and args.budget_h100_hours < 0:
         parser.error("--budget-h100-hours must be >= 0")
     if args.gpus_per_node is not None and args.gpus_per_node < 1:
@@ -68,6 +70,7 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
+    args.prompt_file = DEFAULT_PROMPT_FILE
     # Fixed sampling + loop knobs (were CLI flags). The shared request builder, the
     # summarize tier, guardrails and the loop read these straight off the namespace.
     args.temperature = TEMPERATURE
