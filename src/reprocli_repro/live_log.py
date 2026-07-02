@@ -93,7 +93,13 @@ def _head(text: str, prefix: str, *, full: bool = False) -> list[str]:
     return shown
 
 
-def _arguments(call: dict[str, Any]) -> dict[str, Any]:
+def call_arguments(call: dict[str, Any]) -> dict[str, Any]:
+    """Decode a tool call's ``function.arguments`` (JSON string or dict) to a dict.
+
+    Public so row builders (``supabase_rows``) share one parse of the call payload
+    instead of reaching into a private helper. A non-JSON string degrades to
+    ``{"_raw": <string>}``; anything non-dict-like becomes ``{}``.
+    """
     fn = call.get("function") or {}
     args = fn.get("arguments")
     if isinstance(args, str):
@@ -107,7 +113,7 @@ def _arguments(call: dict[str, Any]) -> dict[str, Any]:
 def _call_summary(call: dict[str, Any], *, full: bool = False) -> tuple[str, str]:
     """(tool name, the single most useful argument rendered for a human)."""
     name = str((call.get("function") or {}).get("name") or "?")
-    args = _arguments(call)
+    args = call_arguments(call)
     if "command" in args:
         detail = "$ " + str(args["command"])
     elif "diff" in args:

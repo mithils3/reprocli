@@ -47,7 +47,7 @@ def message_row(base: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]
 
 
 def call_row(base: dict[str, Any], call: dict[str, Any]) -> dict[str, Any]:
-    args = live_log._arguments(call)
+    args = live_log.call_arguments(call)
     name = str((call.get("function") or {}).get("name") or "?")
     base["tool_name"] = name
     if "command" in args:
