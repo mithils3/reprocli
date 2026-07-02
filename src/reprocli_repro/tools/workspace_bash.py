@@ -25,6 +25,7 @@ from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
 from reprocli_repro.tools import output as output_mod
+from reprocli_repro.tools.run_gpu_notes import bounded
 
 # Setup steps (clone, dependency installs) routinely run for minutes, so the
 # default is far longer than the auditor's 60s; metered GPU steps get their own
@@ -40,7 +41,7 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
     command = str(arguments.get("command") or "").strip()
     if not command:
         return {"ok": False, "error": "Missing bash command."}
-    timeout = _bounded(arguments.get("timeout"), WORKSPACE_BASH_TIMEOUT, WORKSPACE_BASH_MAX_TIMEOUT)
+    timeout = bounded(arguments.get("timeout"), WORKSPACE_BASH_TIMEOUT, WORKSPACE_BASH_MAX_TIMEOUT)
     start = time.time()
     # Binary capture, decoded by hand: text mode's universal newlines turn every \r
     # of a progress-bar redraw into its own line, which defeats the spam stripper.
@@ -90,15 +91,6 @@ def _decode(blob: bytes | str | None) -> str:
 def _log(ctx: ExecutionContext, command: str, rc: int | None, cwd: Path, duration: float) -> None:
     if ctx.evidence is not None:
         evidence.log_command(ctx.evidence, command, returncode=rc, cwd=cwd, duration_s=duration)
-
-
-def _bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default
 
 
 WORKSPACE_BASH_TOOL = function_tool(
