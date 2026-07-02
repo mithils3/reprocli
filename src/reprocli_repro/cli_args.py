@@ -18,7 +18,7 @@ import argparse
 import os
 from pathlib import Path
 
-from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
+from reprocli_vllm.config.config import DEFAULT_MODEL
 
 from reprocli_repro.budget import HW_MULTIPLIER
 from reprocli_repro.cli_resolve import apply_defaults, validate
@@ -42,8 +42,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     _add_workspace(parser)
     _add_cluster(parser)
     _add_endpoint(parser)
-    _add_sampling(parser)
-    _add_context_management(parser)
+    _add_loop_limits(parser)
     _add_outputs(parser)
     args = parser.parse_args(argv)
     validate(parser, args)
@@ -182,21 +181,14 @@ def _add_endpoint(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_sampling(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("sampling and loop limits")
-    group.add_argument("--max-tokens", type=int, default=8192)
-    group.add_argument("--max-input-tokens", type=int, default=128000)
-    group.add_argument("--max-model-len", type=int, default=MAX_MODEL_LEN)
-    group.add_argument("--temperature", type=float, default=1.0)
-    group.add_argument("--top-p", type=float, default=0.95)
-    group.add_argument("--top-k", type=int, default=40)
+def _add_loop_limits(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_argument_group("loop limits")
     group.add_argument(
         "--tool-rounds",
         type=int,
         default=300,
         help="Max model turns; the compute-budget guardrail is the real bound (default: 300).",
     )
-    group.add_argument("--request-workers", type=int, default=8)
     group.add_argument(
         "--budget-h100-hours",
         type=float,
@@ -208,51 +200,7 @@ def _add_sampling(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_context_management(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("context management")
-    group.add_argument(
-        "--microcompact",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Elide stale tool results once the soft threshold is crossed (default: on).",
-    )
-    group.add_argument(
-        "--microcompact-keep",
-        type=int,
-        default=3,
-        help="Number of most-recent tool results kept verbatim when compacting (default: 3).",
-    )
-    group.add_argument(
-        "--microcompact-threshold",
-        type=float,
-        default=0.5,
-        help="Soft threshold as a fraction of --max-input-tokens (default: 0.5). Kept "
-        "below --summarize-threshold so the cheap elide tier reclaims room first.",
-    )
-    group.add_argument(
-        "--summarize-compact",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="When microcompact can't keep up, summarize old turns with one brain "
-        "call and keep going instead of stopping (default: on).",
-    )
-    group.add_argument(
-        "--summarize-keep-tokens",
-        type=int,
-        default=20000,
-        help="Recent tokens kept verbatim when summarize-compacting (default: 20000).",
-    )
-    group.add_argument(
-        "--summarize-threshold",
-        type=float,
-        default=0.6,
-        help="Fraction of --max-input-tokens that triggers summarize-compaction; "
-        "fires after microcompact (default: 0.6).",
-    )
-
-
 def _add_outputs(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("outputs")
     group.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    group.add_argument("--trace-output", type=Path)
     group.add_argument("--save-round-jsonl", action="store_true")

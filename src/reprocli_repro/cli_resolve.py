@@ -33,38 +33,55 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
     "-- the auditor grades it. Return only the JSON object."
 )
 
+# Sampling + loop-limit knobs, formerly CLI flags (C7-approved: never varied non-default
+# on the repro path — the serve profiles own sampling). Set on the resolved namespace so
+# the shared build_chat_completion_request / summarize / loop read them straight off args.
+TEMPERATURE = 1.0
+TOP_P = 0.95
+TOP_K = 40
+MAX_TOKENS = 8192
+MAX_INPUT_TOKENS = 128000
+REQUEST_WORKERS = 8
+# Context-management tiers (guardrails.py): microcompact elides stale tool stdout once
+# MICROCOMPACT_THRESHOLD of MAX_INPUT_TOKENS is crossed; summarize-compact then rewrites
+# the head with one brain call, keeping SUMMARIZE_KEEP_TOKENS of recent turns verbatim.
+MICROCOMPACT = True
+MICROCOMPACT_KEEP = 3
+MICROCOMPACT_THRESHOLD = 0.5
+SUMMARIZE_COMPACT = True
+SUMMARIZE_KEEP_TOKENS = 20000
+SUMMARIZE_THRESHOLD = 0.6
+
 
 def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
     if args.num_prompts is not None and args.num_prompts < 1:
         parser.error("--num-prompts must be >= 1")
-    if args.request_workers < 1:
-        parser.error("--request-workers must be >= 1")
-    if args.max_input_tokens < 1:
-        parser.error("--max-input-tokens must be >= 1")
-    if args.top_k is not None and args.top_k < 1:
-        parser.error("--top-k must be >= 1")
-    if args.microcompact_keep < 0:
-        parser.error("--microcompact-keep must be >= 0")
-    if not 0 < args.microcompact_threshold <= 1:
-        parser.error("--microcompact-threshold must be in (0, 1]")
-    if args.summarize_keep_tokens < 1:
-        parser.error("--summarize-keep-tokens must be >= 1")
-    if not 0 < args.summarize_threshold <= 1:
-        parser.error("--summarize-threshold must be in (0, 1]")
     if args.budget_h100_hours is not None and args.budget_h100_hours < 0:
         parser.error("--budget-h100-hours must be >= 0")
     if args.gpus_per_node is not None and args.gpus_per_node < 1:
         parser.error("--gpus-per-node must be >= 1")
-    if args.max_input_tokens + args.max_tokens > args.max_model_len:
-        parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
 
 
 def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
+    # Fixed sampling + loop knobs (were CLI flags). The shared request builder, the
+    # summarize tier, guardrails and the loop read these straight off the namespace.
+    args.temperature = TEMPERATURE
+    args.top_p = TOP_P
+    args.top_k = TOP_K
+    args.max_tokens = MAX_TOKENS
+    args.max_input_tokens = MAX_INPUT_TOKENS
+    args.request_workers = REQUEST_WORKERS
+    args.microcompact = MICROCOMPACT
+    args.microcompact_keep = MICROCOMPACT_KEEP
+    args.microcompact_threshold = MICROCOMPACT_THRESHOLD
+    args.summarize_compact = SUMMARIZE_COMPACT
+    args.summarize_keep_tokens = SUMMARIZE_KEEP_TOKENS
+    args.summarize_threshold = SUMMARIZE_THRESHOLD
     # Phase 5: the forced final pass (tools off) is schema-constrained to the agent's
     # report.json -- its account of the run, which the loop persists to the bundle for
     # the auditor to grade. build_chat_completion_request sends tools XOR this format.
@@ -76,5 +93,4 @@ def apply_defaults(args: argparse.Namespace) -> None:
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
     # per-node size, so the model picks a valid GPU count for this substrate.
     args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
-    if args.trace_output is None:
-        args.trace_output = trace_output_path(args.output)
+    args.trace_output = trace_output_path(args.output)
