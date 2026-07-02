@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from reprocli_vllm.config.config import TOOL_MAX_CHARS, function_tool
-from reprocli_vllm.tools.web_tools import fetch_url_tool
+from reprocli_vllm.tools.web_fetch import fetch_url_tool
 
 from reprocli_repro.context import ExecutionContext
 

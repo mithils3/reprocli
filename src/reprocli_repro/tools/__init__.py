@@ -34,7 +34,7 @@ from typing import Any
 
 from reprocli_vllm.config.config import TOOL_RESULT_MAX_CHARS
 from reprocli_vllm.tools.result_limits import is_transient_error, truncate_tool_result
-from reprocli_vllm.tools.web_tools import parse_tool_arguments
+from reprocli_vllm.tools.web_fetch import parse_tool_arguments
 
 from reprocli_repro.cluster import DEFAULT_CLUSTER, resolve_cluster
 from reprocli_repro.context import ExecutionContext
