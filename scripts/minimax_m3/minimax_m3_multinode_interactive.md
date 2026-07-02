@@ -172,7 +172,7 @@ tail -f "logs/minimax-m3-multinode-${SLURM_JOB_ID}.log"   # wait for "vLLM serve
 > --enable-auto-tool-choice --mm-encoder-tp-mode data` (raw `vllm serve` does not
 > publish the endpoint file).
 
-## 5. Health Check and Sample Classification Prompts
+## 5. Health Check
 
 Once the log shows `vLLM server READY`:
 
@@ -180,33 +180,11 @@ Once the log shows `vLLM server READY`:
 curl -fsS "http://${HEAD_IP}:8000/health" && echo "  health: ok"
 ```
 
-Run a few real classification prompts through it — the same runner and flags as
-the batch job, capped with `--num-prompts` so it returns quickly:
-
-```bash
-cd /u/msalunkhe/reprocli
-export PYTHONPATH=/u/msalunkhe/reprocli/src:${PYTHONPATH:-}
-mkdir -p outputs
-python3 src/run_arxiv_prompt_vllm.py \
-  --vllm-server-url "http://${HEAD_IP}:8000" \
-  --model MiniMaxAI/MiniMax-M3 \
-  --num-prompts 2 \
-  --tool-rounds 12 \
-  --max-input-tokens 128000 \
-  --max-tokens 8192 \
-  --request-workers 2 \
-  --temperature 1.0 --top-p 0.95 --top-k 40 \
-  --stream-first-response \
-  --save-round-jsonl \
-  --max-model-len 196608 \
-  --dataset Mithilss/neurips-2025-paper-bundles \
-  --output outputs/neurips_2025_minimax_m3_smoke.jsonl \
-  --extracted-output outputs/neurips_2025_minimax_m3_smoke_extracted.jsonl
-```
-
-Raise `--num-prompts` / `--request-workers` once the smoke run looks right. To run
-the **whole** dataset and push results to Hugging Face, use the batch job
-(`scripts/minimax_m3/paper_classification_minimax_m3.sbatch`) instead.
+With `/health` green the server is ready for clients. Point a consumer at
+`http://${HEAD_IP}:8000` — e.g. the reproduction agent (`python -m reprocli_repro
+--vllm-server-url …`) or the auditor runner (`python3 src/run_arxiv_prompt_vllm.py
+--mode audit --vllm-server-url …`). See `scripts/reproduce/run_reproduce_minimax_m2.md`
+for a full end-to-end client walkthrough.
 
 ## 6. Stop
 

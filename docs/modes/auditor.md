@@ -11,8 +11,8 @@ The audit prompt is assembled by `audit/inputs.py::build_audit_prompt`, which fi
 
 | Placeholder | Filled from | Source |
 |---|---|---|
-| `{CENTRAL_CLAIM}` | the paper's claim record (`claim_block`) | classifier audit pool / lockfile (`--claims`) |
-| `{RUBRIC}` | `rubric_audit.md`, read verbatim (`load_audit_rubric`) | `--rubric-file` |
+| `{CENTRAL_CLAIM}` | the paper's claim record (`claim_block`) | audit pool / lockfile (`--claims`) |
+| `{RUBRIC}` | `rubric_audit.md`, read verbatim (`load_audit_rubric`) | fixed (`AUDIT_RUBRIC_FILE`; the `--rubric-file` flag was removed) |
 | `{RUN_BUNDLE}` | a text manifest of the run dir (`load_run_bundle` → `run_dir_manifest`) | `<runs-dir>/<arxiv_id>` |
 
 The driver (`run_arxiv_prompt_vllm.py`) builds one `Paper(arxiv_id, run_dir=run_dir_for(...))` per row, looks up the matching claim record by `arxiv_id`, and calls `build_audit_prompt`. Mode defaults (prompt, rubric, claims, runs‑dir, schema, tools) are wired in `config/cli_args.py::resolve_mode_settings`.

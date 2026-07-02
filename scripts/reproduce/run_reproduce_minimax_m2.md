@@ -180,13 +180,15 @@ reproduction prompt, ending with a "dry run: no brain attached" notice.
 
 ## 5. Status / caveats
 
-- **Built and exercised (Phases 0–4):** input pipeline, per-paper
+- **Built and exercised (Phases 0–5):** input pipeline, per-paper
   workspace/reference/evidence, the budget meter + JIT-SLURM substrate, the full
-  toolset, and the loop that drives one paper to a stop (natural, round limit, or
-  `budget_exhausted`).
-- **Not yet wired (Phases 5–6):** the post-loop harness re-execution that writes
-  the graded `result.json`, and the auditor bundle. For now a run leaves you the
-  evidence dir + the agent's final response — not a pass/fail verdict.
+  toolset, the loop that drives one paper to a stop (natural, round limit, or
+  `budget_exhausted`), and the terminal `report.json` each run writes — the
+  agent's cited account of what it ran and measured.
+- **The verdict is the auditor's, not the agent's.** A finished run leaves you the
+  evidence dir + `report.json` (an account, **not** a pass/fail). There is no
+  harness-written `result.json`; the score comes from running the auditor
+  (`--mode audit`) over the run directory.
 - **Executor:** SLURM only. `run_gpu` always goes through a JIT `salloc`, so the
   orchestrator must run somewhere it can submit jobs (a login node). There is no
   `--executor local`.

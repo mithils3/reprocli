@@ -114,7 +114,6 @@ nav:
       - Guardrails & termination: agent-core/guardrails.md
       - Structured output: agent-core/structured-output.md
   - Agent modes:
-      - Classifier: modes/classifier.md
       - Auditor: modes/auditor.md
       - Reproduction (designed): modes/reproduction.md
   - Dataset pipeline:
@@ -126,7 +125,6 @@ nav:
       - Pool selection: selection/select-pool.md
       - H100 budget & bands: selection/h100-budget.md
   - Tools & schemas:
-      - Web / MCP tools: tools/web-tools.md
       - Run-dir tools: tools/run-dir-tools.md
       - Output & audit schemas: tools/schemas.md
   - Running on SLURM:
