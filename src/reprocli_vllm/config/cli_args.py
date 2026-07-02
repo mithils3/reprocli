@@ -87,8 +87,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--tool-rounds", type=int, default=10)
     parser.add_argument("--request-workers", type=int, default=8)
-    parser.add_argument("--tensor-parallel-size", type=int)
-    parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
     parser.add_argument("--max-model-len", type=int)
     parser.add_argument("--gpu-memory-utilization", type=float)
     parser.add_argument("--temperature", type=float)
@@ -96,15 +94,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int)
     parser.add_argument("--tool-call-parser")
     parser.add_argument("--reasoning-parser")
-    parser.add_argument("--kv-cache-dtype")
-    parser.add_argument("--mm-encoder-tp-mode")
     parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
-    parser.add_argument(
-        "--compilation-config",
-        default=None,
-        help="Optional vLLM compilation JSON override.",
-    )
     args = parser.parse_args()
     apply_model_defaults(args)
     resolve_mode_settings(args)

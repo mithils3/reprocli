@@ -4,7 +4,6 @@ from pathlib import Path
 
 
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
-KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 DEFAULT_MODEL = MINIMAX_M2_MODEL
 PLACEHOLDER = "{PAPER_TEXT}"
 MAX_MODEL_LEN = 196608

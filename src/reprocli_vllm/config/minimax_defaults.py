@@ -1,55 +1,29 @@
+"""Client-side request defaults for the auditor runner.
+
+The auditor is a URL-only client: it only fills the request-time fields it POSTs
+to an already-served brain. The vLLM engine/serve-launch flags (tensor parallel,
+tool/reasoning parsers, compilation config, kv-cache dtype, ...) are NOT here —
+they live in ``reprocli_serve/profiles.py``, the single source of truth for how a
+model is served. They died out of this module with the embedded in-process server
+(C2).
+"""
+
 from __future__ import annotations
 
 import argparse
-import json
-from pathlib import Path
 
-from reprocli_vllm.config.config import KIMI_K2_6_MODEL, MAX_MODEL_LEN
+from reprocli_vllm.config.config import MAX_MODEL_LEN
 
-
-MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
+# Request-time sampling the auditor sends to the served brain (previously the
+# client half of the minimax serve profile).
+AUDIT_TEMPERATURE = 1.0
+AUDIT_TOP_P = 0.95
+AUDIT_TOP_K = 40
 
 
 def apply_model_defaults(args: argparse.Namespace) -> None:
-    if is_kimi_k2_6(args.model):
-        apply_kimi_defaults(args)
-        return
-    apply_minimax_profile(args)
-
-
-def apply_minimax_profile(args: argparse.Namespace) -> None:
-    args.tensor_parallel_size = args.tensor_parallel_size or 4
+    """Fill the request-time sampling/length defaults the auditor POSTs."""
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.95
-    args.tool_call_parser = args.tool_call_parser or "minimax_m2"
-    args.reasoning_parser = args.reasoning_parser or "minimax_m2"
-    args.trust_remote_code = True
-    args.temperature = 1.0 if args.temperature is None else args.temperature
-    args.top_p = 0.95 if args.top_p is None else args.top_p
-    args.top_k = 40 if args.top_k is None else args.top_k
-    if args.compilation_config is None:
-        args.compilation_config = json.dumps(MINIMAX_COMPILATION_CONFIG, separators=(",", ":"))
-
-
-def apply_kimi_defaults(args: argparse.Namespace) -> None:
-    args.tensor_parallel_size = args.tensor_parallel_size or 8
-    args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.gpu_memory_utilization = args.gpu_memory_utilization or 0.95
-    args.tool_call_parser = args.tool_call_parser or "kimi_k2"
-    args.reasoning_parser = args.reasoning_parser or "kimi_k2"
-    args.mm_encoder_tp_mode = args.mm_encoder_tp_mode or "data"
-    args.trust_remote_code = True
-
-
-def is_kimi_k2_6(model: str) -> bool:
-    if model == KIMI_K2_6_MODEL or model.rstrip("/").endswith("/Kimi-K2.6"):
-        return True
-    config_path = Path(model) / "config.json"
-    if not config_path.exists():
-        return False
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("KimiK25") for name in architectures)
+    args.temperature = AUDIT_TEMPERATURE if args.temperature is None else args.temperature
+    args.top_p = AUDIT_TOP_P if args.top_p is None else args.top_p
+    args.top_k = AUDIT_TOP_K if args.top_k is None else args.top_k
