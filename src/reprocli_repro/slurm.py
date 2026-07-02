@@ -65,13 +65,8 @@ _LOST_MARKERS = (
 
 
 class SlurmConfigError(Exception):
-    """The requested GPU allocation can't be built from the cluster profile.
-
-    Raised by the pure argv builders when the operator-set substrate is unusable
-    (no account/partition, or a gpu count outside the node). A domain error, not a
-    ``SystemExit`` — the caller (``gpu_session.ensure_session``) turns it into a
-    clean acquire failure instead of crashing the loop from inside library code.
-    """
+    """Unusable cluster substrate for a GPU allocation (no account/partition, or a
+    gpu count outside the node): a domain error, not a library-level SystemExit."""
 
 
 @dataclass
