@@ -18,16 +18,12 @@ from __future__ import annotations
 
 from reprocli_repro.context import Budget
 
-# H100-equivalent throughput per GPU-hour. Hopper-class parts (H100/H200/GH200)
-# share the GH100 compute die and differ mainly in HBM capacity/bandwidth, so they
-# start at ~1.0 — only a memory-bound step would justify a small uplift. Non-Hopper
-# entries are rough placeholders and MUST be calibrated empirically before use.
+# H100-equivalent throughput per GPU-hour. ``h100`` is the reference unit; DeltaAI's
+# GH200 shares the GH100 compute die and differs mainly in HBM capacity/bandwidth, so it
+# starts at ~1.0 — only a memory-bound step would justify a small uplift.
 HW_MULTIPLIER: dict[str, float] = {
     "h100": 1.0,
-    "h200": 1.0,
     "gh200": 1.0,
-    "a100": 0.5,   # approx ~half H100 (FP16 dense) — placeholder, calibrate
-    "b200": 2.2,   # approx Blackwell — placeholder, calibrate
 }
 
 

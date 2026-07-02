@@ -62,8 +62,6 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--tool-rounds must be >= 1")
     if args.budget_h100_hours is not None and args.budget_h100_hours < 0:
         parser.error("--budget-h100-hours must be >= 0")
-    if args.gpus_per_node is not None and args.gpus_per_node < 1:
-        parser.error("--gpus-per-node must be >= 1")
 
 
 def apply_defaults(args: argparse.Namespace) -> None:

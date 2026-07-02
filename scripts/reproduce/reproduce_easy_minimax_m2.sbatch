@@ -188,7 +188,6 @@ run_one() {
     --paper-id "${pid}" \
     --split "${SPLIT}" \
     --lockfile "${LOCKFILE}" \
-    --cluster deltaai \
     --run-id "${rid}" \
     "${BUDGET_ARG[@]}" \
     --tool-rounds "${TOOL_ROUNDS}" \

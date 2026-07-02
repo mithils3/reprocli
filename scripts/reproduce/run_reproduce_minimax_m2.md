@@ -86,7 +86,6 @@ export REPROCLI_ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.jso
 python -m reprocli_repro \
   --paper-id "$ARXIV_ID" \
   --split dev \
-  --cluster deltaai \
   --budget-h100-hours 8 \
   --tool-rounds 40
 ```
@@ -101,9 +100,10 @@ What each flag does:
   `Mithilss/reprobench-splits`. `--split dev` is the 14-paper `validation`
   (development) split; `--split eval` is the frozen 100-paper `test` benchmark —
   reserve it for final scoring so development never contaminates it.
-- `--cluster deltaai` — the JIT GPU substrate `run_gpu` allocates on: account
-  `betw-dtai-gh`, partition `ghx4`, `hw=gh200`, 4 GPU/node, `module load
-  python/3.11.9`. (Default, shown for clarity.)
+- The JIT GPU substrate `run_gpu` allocates on is the pinned deltaai profile:
+  account `betw-dtai-gh`, partition `ghx4` (override the pool with `--partition`),
+  `hw=gh200`, 4 GPU/node. Every step runs inside the mandatory Apptainer sandbox
+  (`--apptainer-image` / `$REPRO_APPTAINER_SIF`).
 - `--budget-h100-hours 8` — the compute ceiling, in H100-equivalent hours. GH200
   is Hopper-class (multiplier 1.0). `run_gpu` refuses a step whose worst case
   (`gpus × minutes × multiplier`) would overspend, and the loop force-finals when
@@ -139,7 +139,7 @@ The agent loops against the brain through its toolset:
   charged on the command's **run time** (queue wait excluded), released on exit.
   The **agent chooses K** (1–4 on deltaai, capped at the node's GPU count) and the
   wall cap per step; the operator only sets the entitlements (account / partition /
-  node type) via `--cluster`.
+  node type) via the pinned deltaai profile (partition overridable with `--partition`).
 
 Everything lands under the run bundle (the S6→S7 contract the auditor reads):
 

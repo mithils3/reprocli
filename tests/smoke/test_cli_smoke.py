@@ -13,8 +13,8 @@ test failure here instead of a 48h SLURM job dying at argv[0]. Every argv list
 below is lifted from a real script line above, with only inline dummy values
 substituted for paths/URLs/ids -- no flag absent from those scripts is used, and
 the kill-listed flags (--no-build-venv, --num-prompts, --seed, --temperature,
---top-p, --top-k, repro's --model, --hw, --account, --scratch-root, --modules)
-are deliberately absent.
+--top-p, --top-k, --cluster, --hw, --account, --gpus-per-node, --scratch-root,
+--modules) are deliberately absent.
 
 Offline: no network, no HF downloads. The only seam needed is patching
 sys.argv for reprocli_vllm's parse_args(), which reads it directly instead of
@@ -47,7 +47,6 @@ class ReproCliSmokeTests(unittest.TestCase):
             "--run-id", "20260701T000000Z-abc123",
             "--vllm-server-url", "http://localhost:8000/v1",
             "--served-model-name", "deepseek/deepseek-v4-pro",
-            "--cluster", "deltaai",
         ]
         args = parse_repro_args(argv)
         self.assertEqual(args.paper_id, "2505.18513")
@@ -61,7 +60,6 @@ class ReproCliSmokeTests(unittest.TestCase):
             "--paper-id", "2505.18513",
             "--split", "eval",
             "--lockfile", "Mithilss/reprobench-splits",
-            "--cluster", "deltaai",
             "--run-id", "12345-2505.18513-abc123",
             "--tool-rounds", "300",
             "--served-model-name", "MiniMaxAI/MiniMax-M2.7",

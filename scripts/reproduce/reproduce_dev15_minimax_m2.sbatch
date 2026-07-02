@@ -163,7 +163,6 @@ run_one() {
     --paper-id "${pid}" \
     --split "${SPLIT}" \
     --lockfile "${LOCKFILE}" \
-    --cluster deltaai \
     "${BUDGET_ARG[@]}" \
     --tool-rounds "${TOOL_ROUNDS}" \
     --served-model-name "${SERVED_NAME}" \

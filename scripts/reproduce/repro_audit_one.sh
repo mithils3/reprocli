@@ -16,7 +16,7 @@
 #   nohup scripts/reproduce/repro_audit_one.sh 2505.18513 dev > repro_audit_2505.18513.log 2>&1 &
 #
 # Env overrides (all optional):
-#   MODEL AUDIT_MODEL ENDPOINT CLUSTER RUNS_DIR TOOL_ROUNDS BUDGET CLAIMS RUN_ID SUPABASE_URL
+#   MODEL AUDIT_MODEL ENDPOINT RUNS_DIR TOOL_ROUNDS BUDGET CLAIMS RUN_ID SUPABASE_URL
 
 set -euo pipefail
 
@@ -26,7 +26,6 @@ SPLIT="${2:-dev}"
 MODEL="${MODEL:-deepseek/deepseek-v4-pro}"
 AUDIT_MODEL="${AUDIT_MODEL:-$MODEL}"   # grader; set a different model to keep it independent
 ENDPOINT="${ENDPOINT:-https://openrouter.ai/api/v1}"
-CLUSTER="${CLUSTER:-deltaai}"
 RUNS_DIR="${RUNS_DIR:-${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}/agent_runs}"
 TOOL_ROUNDS="${TOOL_ROUNDS:-25}"
 BUDGET="${BUDGET:-}"   # empty = auto (derive the ceiling from the paper's selection band)
@@ -59,7 +58,7 @@ trap 'rm -rf "$GRADE_ROOT" "$IDS_FILE"' EXIT
 
 echo ">>> [1/3] reproduce $PAPER_ID (run_id=$RID, split=$SPLIT, budget=${BUDGET:-auto}, model=$MODEL)"
 repro_args=(--paper-id "$PAPER_ID" --split "$SPLIT" --run-id "$RID"
-            --vllm-server-url "$ENDPOINT" --served-model-name "$MODEL" --cluster "$CLUSTER")
+            --vllm-server-url "$ENDPOINT" --served-model-name "$MODEL")
 [[ -n "$BUDGET" ]] && repro_args+=(--budget-h100-hours "$BUDGET")
 python -m reprocli_repro "${repro_args[@]}"
 

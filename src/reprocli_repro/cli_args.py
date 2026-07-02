@@ -20,9 +20,7 @@ from pathlib import Path
 
 from reprocli_vllm.config.config import DEFAULT_MODEL
 
-from reprocli_repro.budget import HW_MULTIPLIER
 from reprocli_repro.cli_resolve import apply_defaults, validate
-from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names
 from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
@@ -95,43 +93,17 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("cluster / JIT GPU substrate")
+    group = parser.add_argument_group("cluster / JIT GPU substrate (deltaai)")
     group.add_argument(
-        "--cluster",
-        choices=cluster_names(),
-        default=DEFAULT_CLUSTER,
-        help=f"Built-in cluster profile (account/partition/hw/modules) the agent's "
-        f"JIT salloc uses (default: {DEFAULT_CLUSTER}). Override individual fields below.",
-    )
-    group.add_argument("--account", help="SLURM account (salloc -A); overrides the profile.")
-    group.add_argument("--partition", help="SLURM partition (salloc -p); overrides the profile.")
-    group.add_argument(
-        "--gpus-per-node",
-        type=int,
-        help="Upper bound on a single step's --gpus; overrides the profile.",
-    )
-    group.add_argument(
-        "--hw",
-        choices=tuple(sorted(HW_MULTIPLIER)),
-        help="Node hardware keying the H100-equiv budget multiplier; overrides the profile.",
-    )
-    group.add_argument(
-        "--scratch-root",
-        help="NVMe root for per-paper workspaces (Phase 7); overrides the profile.",
+        "--partition",
+        help="SLURM partition (salloc -p); overrides the deltaai profile's default (ghx4).",
     )
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
         help="Base .sif that backs the MANDATORY Apptainer sandbox — every agent step "
-        "runs inside this read-only image. Defaults to the cluster profile's image "
-        "(deltaai pins a raw CUDA image; the agent installs torch itself); overrides it "
-        "/ $REPRO_APPTAINER_SIF. Profiles with no pinned image require this flag.",
-    )
-    group.add_argument(
-        "--modules",
-        default="",
-        help="Legacy host `module load` names; inert under the container sandbox (the "
-        "image provides the toolchain). Kept for non-container profiles.",
+        "runs inside this read-only image. Defaults to the deltaai profile's pinned "
+        "raw CUDA image (the agent installs torch itself); overrides it / $REPRO_APPTAINER_SIF.",
     )
 
 
