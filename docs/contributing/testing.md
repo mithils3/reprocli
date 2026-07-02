@@ -3,7 +3,7 @@
 The test suite lives under `tests/` and exercises the pure, deterministic logic of the agent core — scoring, schema constraints, loop guards, path-safety, and run-directory tools — without standing up a vLLM server or hitting the network. Tests are fast and hermetic: they import from `src/`, build fixtures in temp directories, and assert on plain dicts. New behavior ships with a test in the matching subpackage.
 
 !!! note "Verified against"
-    `tests/` (all modules), `tests/runtime/test_tool_loop_outputs.py`, `tests/audit/test_audit.py`, `tests/schema/test_output_schema.py`, `tests/tools/test_run_dir_tools.py`, `runtime/tool_loop.py`. Status legend: ✅ live · 🚧 designed, not yet wired.
+    `tests/` (all modules), `tests/runtime/test_tool_loop_outputs.py`, `tests/audit/test_audit.py`, `tests/schema/test_output_schema.py`, `tests/tools/test_run_dir_tools.py`, `tests/repro/test_audit_bundle.py`, `runtime/tool_loop.py`.
 
 ## Running the suite ✅
 
@@ -29,34 +29,40 @@ PYTHONPATH=src python3 -m pytest tests/audit/test_audit.py::test_score_5_is_repr
 
 ## Layout
 
-Tests mirror the `reprocli_vllm` subpackage they cover. Each directory is a Python package (`__init__.py` present) but holds no shared fixtures.
+Tests mirror the source subpackage they cover. Each directory is a Python package (`__init__.py` present) but holds no shared fixtures.
 
 ```mermaid
 flowchart LR
   A[tests/] --> AU[audit/]
-  A --> PA[papers/]
+  A --> RE[repro/]
   A --> RT[runtime/]
   A --> SC[schema/]
+  A --> SE[serve/]
+  A --> SM[smoke/]
   A --> TO[tools/]
   A --> VL[vllm/]
-  AU -. covers .-> au[audit/*]
-  PA -. covers .-> pa[papers/*]
-  RT -. covers .-> rt[runtime/*]
-  SC -. covers .-> sc[schema/*]
-  TO -. covers .-> to[tools/*]
-  VL -. covers .-> vl[vllm/*]
+  AU -. covers .-> au["reprocli_vllm/audit/*"]
+  RE -. covers .-> re["reprocli_repro/*"]
+  RT -. covers .-> rt["reprocli_vllm/runtime/*"]
+  SC -. covers .-> sc["reprocli_vllm/schema/*"]
+  SE -. covers .-> se["reprocli_serve/*"]
+  SM -. covers .-> sm["CLI entry points"]
+  TO -. covers .-> to["reprocli_vllm/tools/*"]
+  VL -. covers .-> vl["reprocli_vllm/vllm/*"]
 ```
 
 ## What each subpackage covers
 
-| Subpackage | Modules | Covers (source under `src/reprocli_vllm/`) |
+| Subpackage | Modules | Covers |
 | --- | --- | --- |
-| `tests/audit` | `test_audit.py`, `test_h100_audit.py` | The [auditor](../modes/auditor.md) finalizer and prompt builder (`audit/audit.py`, `audit/inputs.py`) and the [H100 compute-budget](../selection/h100-budget.md) banding/arithmetic checks (`audit/h100.py`). |
-| `tests/papers` | `test_supplements.py` | Supplement manifest rendering for prompts (`papers/supplements.py`). |
-| `tests/runtime` | `test_loop_guards.py`, `test_run_health.py`, `test_runtime_cleanup.py`, `test_tool_loop_outputs.py` | The [tool loop](../agent-core/tool-loop.md) [guardrails](../agent-core/guardrails.md) (`runtime/loop_guards.py`, `tools/result_limits.py`), health/telemetry finalization (`runtime/run_health.py`), CLI arg defaults & server wiring (`vllm/server.py`, `run_arxiv_prompt_vllm.py`), and incremental output writing (`runtime/tool_loop.py`). |
-| `tests/schema` | `test_output_schema.py` | The model-facing [structured-output](../agent-core/structured-output.md) JSON schema and deterministic [classifier](../modes/classifier.md) scoring (`schema/output.py`). |
-| `tests/tools` | `test_huggingface_tools.py`, `test_paper_bundle_tool.py`, `test_run_dir_tools.py` | [Web/MCP tools](../tools/web-tools.md) (`tools/huggingface_*`, `tools/paper_bundle.py`) and the [run-directory tools](../tools/run-dir-tools.md) with path-traversal safety (`tools/run_dir_tools.py`, dispatch via `tools/web_tools.py`). |
-| `tests/vllm` | `test_vllm_batch_io.py` | Chat-completion request construction and when `response_format` vs `tools` is attached (`vllm/io.py`, `schema/output.py`). |
+| `tests/audit` | `test_audit.py`, `test_h100_audit.py` | The [auditor](../modes/auditor.md) finalizer and prompt builder (`reprocli_vllm/audit/audit.py`, `audit/inputs.py`) and the [H100 compute-budget](../selection/h100-budget.md) banding/arithmetic checks (`audit/h100.py`). |
+| `tests/repro` | `test_budget.py`, `test_cluster.py`, `test_slurm.py`, `test_sandbox.py`, `test_run_gpu.py`, `test_workspace.py`, `test_reference.py`, `test_inputs.py`, `test_evidence.py`, `test_context.py`, `test_guardrails.py`, `test_compaction.py`, `test_report.py`, `test_audit_bundle.py`, `test_postgrest.py`, … | The [reproduction agent](../modes/reproduction.md) (`reprocli_repro/*`): the budget meter, JIT-SLURM/Apptainer step builder, workspace/reference/evidence setup, `run_gpu`, and the `report.json` bundle. `test_audit_bundle.py` drives the **unchanged** auditor over an S6 bundle. |
+| `tests/runtime` | `test_loop_guards.py`, `test_run_health.py`, `test_runtime_cleanup.py`, `test_tool_loop_outputs.py` | The [tool loop](../agent-core/tool-loop.md) [guardrails](../agent-core/guardrails.md) (`runtime/loop_guards.py`, `tools/result_limits.py`), health/telemetry finalization (`runtime/run_health.py`), CLI arg defaults (`run_arxiv_prompt_vllm.py`), and incremental output writing (`runtime/tool_loop.py`). |
+| `tests/schema` | `test_output_schema.py` | The model-facing [structured-output](../agent-core/structured-output.md) JSON schema and the deterministic dataset-construction scoring (`reprocli_vllm/schema/output.py`). |
+| `tests/serve` | `test_endpoint.py`, `test_launch.py`, `test_network_profiles.py`, `test_serve_env.py` | The [model server](../slurm/serve.md) (`reprocli_serve/*`): endpoint publish/read, the built `vllm serve` command, serve-profile resolution, and env wiring. |
+| `tests/smoke` | `test_cli_smoke.py` | The CLI entry points parse args and wire defaults without a server. |
+| `tests/tools` | `test_run_dir_tools.py` | The auditor's [run-directory tools](../tools/run-dir-tools.md) with path-traversal safety (`reprocli_vllm/tools/run_dir_tools.py`, dispatch via `tools/web_tools.py`). |
+| `tests/vllm` | `test_client.py`, `test_endpoint.py`, `test_retry.py`, `test_vllm_batch_io.py` | Chat-completion request construction, endpoint discovery, transient-error retry, and when `response_format` vs `tools` is attached (`reprocli_vllm/vllm/*`). |
 
 ### Representative cases
 
@@ -90,7 +96,7 @@ When writing a test:
 | Import path | Start with `sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))` (copy from any sibling test) so the module also runs standalone. |
 | Style | Either `unittest.TestCase` or bare pytest functions are fine — `pytest` collects both. Match the neighbors in the directory. |
 | Temp dirs | Use the pytest `tmp_path` fixture (pytest style) or `tempfile.TemporaryDirectory()` (unittest style). Never write into the repo or a real run dir. |
-| No network / no GPU | Build fixtures as plain dicts; mock external calls with `unittest.mock.patch` (see `tests/runtime/test_runtime_cleanup.py`, `tests/tools/test_huggingface_tools.py`). |
+| No network / no GPU | Build fixtures as plain dicts; mock external calls with `unittest.mock.patch` (see `tests/runtime/test_runtime_cleanup.py`, `tests/repro/test_run_gpu.py`). |
 | File size | The [300-line limit](layout.md) applies to test files too — split before crossing it. |
 
 ## Related pages

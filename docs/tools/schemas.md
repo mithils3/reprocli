@@ -20,9 +20,9 @@ pages link here rather than re-listing the fields.
 
 `schema/output.py` builds `FINAL_RESPONSE_FORMAT` (a `response_format` wrapper,
 `json_schema.name = "repro_artifact_classification"`) and exposes the bare schema
-as `FINAL_JSON_SCHEMA`. The classifier ([classifier mode](../modes/classifier.md))
-sends it as `response_format` in `vllm/io.py`; OpenAI re-checks reuse
-`FINAL_JSON_SCHEMA` in `reprocli_openai/recheck.py`.
+as `FINAL_JSON_SCHEMA`. This is the dataset-construction schema that produced the
+lockfile's MRE records; OpenAI re-checks reuse `FINAL_JSON_SCHEMA` in
+`reprocli_openai/recheck.py`.
 
 ### Top-level fields
 
@@ -69,8 +69,8 @@ required.
 
 ### The `verified_links` object
 
-Four arrays of strings, all required, each holding URLs a tool actually
-confirmed (see [web tools](web-tools.md)):
+Four arrays of strings, all required, each holding URLs the dataset-construction
+pass confirmed with a tool:
 
 | Field | Type | Holds |
 |---|---|---|
@@ -209,5 +209,5 @@ flowchart LR
 ## See also
 
 - [Structured output](../agent-core/structured-output.md) — how these schemas are enforced at decode time.
-- [Classifier mode](../modes/classifier.md) and [auditor mode](../modes/auditor.md) — the agents that emit them.
+- [Auditor mode](../modes/auditor.md) — the live agent that emits `AUDIT_RESPONSE_FORMAT`.
 - [Bundle schema](../dataset/bundle-schema.md) — the lockfile row built from `FINAL_JSON_SCHEMA`.

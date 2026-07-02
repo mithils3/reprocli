@@ -7,7 +7,7 @@ The bundle stage assembles a **one-row-per-paper** Parquet dataset from the extr
 
 ## Dataset name on the Hub ✅
 
-The bundle is published to the dataset repo **`Mithilss/neurips-2025-paper-bundles`** (`DEFAULT_REPO_ID` in `pipeline/output.py`). The agent runners load it via `--dataset Mithilss/neurips-2025-paper-bundles` (see the [run-arxiv CLI](../cli/run-arxiv.md)).
+The bundle is published to the dataset repo **`Mithilss/neurips-2025-paper-bundles`** (`DEFAULT_REPO_ID` in `pipeline/output.py`). The reproduction agent reads it per paper through `reprocli_repro/reference.py` (`find_bundle_row` / `materialize_reference`), which streams the dataset and writes one paper's LaTeX + supplements into a read-only `reference/` directory for a run.
 
 !!! warning "The intermediate file-level dataset is gone"
     The old per-file dataset (`Mithilss/neurips-2025-arxiv-latex-sources`) is **no longer produced**. Bundles are built directly from the extracted source directories under `<data-dir>/arxiv_sources/`. There is exactly one published artifact now: the bundle.
@@ -64,7 +64,7 @@ A `list` of structs, one per file in the matched OpenReview supplement archive, 
 | `content` | `binary` | Raw file bytes (always present). |
 
 !!! note "Which supplement files decode to text"
-    `text` is populated only when the extension is in the `TEXT_EXTENSIONS` set in `pipeline/bundle.py` **and** the bytes decode under UTF-8 or Latin-1. That set covers LaTeX/docs/config suffixes like `.tex`, `.bib`, `.cls`, `.csv`, `.json`, `.md`, `.txt`, `.yaml`, and `.yml`; notably `.py` is **not** in it, so Python supplement files keep `text = null` and are reachable only through `content`. The agent's `paper_bundle_file_contents` tool reads from the decoded `text` entries (see the [run-arxiv CLI](../cli/run-arxiv.md)).
+    `text` is populated only when the extension is in the `TEXT_EXTENSIONS` set in `pipeline/bundle.py` **and** the bytes decode under UTF-8 or Latin-1. That set covers LaTeX/docs/config suffixes like `.tex`, `.bib`, `.cls`, `.csv`, `.json`, `.md`, `.txt`, `.yaml`, and `.yml`; notably `.py` is **not** in it, so Python supplement files keep `text = null` and are reachable only through `content`. This is why the reproduction agent's `reference.py` materializer writes each supplement file from its raw `content` bytes (preserving `.py` and other binaries) and only falls back to `text` for LaTeX sources.
 
 ## Row construction flow
 
@@ -103,4 +103,4 @@ Papers whose source directory is missing or empty are counted in `papers_skipped
 
 - [Dataset Stages](stages.md) — the pipeline that fills this schema.
 - [build-dataset CLI](../cli/build-dataset.md) — flags for sharding, batching, and upload.
-- [run-arxiv CLI](../cli/run-arxiv.md) — how the agent runners consume the bundle dataset.
+- [The lockfile](../selection/lockfile.md) — the audited audit pool the bundle ultimately feeds.

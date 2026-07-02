@@ -255,6 +255,7 @@ and has at least one `data/*.parquet` shard (otherwise `SystemExit`). It then
 | `openreview_notes.json` | `NOTES_CACHE_FILENAME` | supplements |
 | `paper_bundle_dataset/` | `BUNDLE_DIRNAME` | bundle |
 
-This dataset is **Stage 1** input to the rest of the system; see
+This dataset is the upstream input to the rest of the system; see
 [the dataset overview](index.md) and [the architecture page](../architecture.md)
-for how the bundle feeds the classifier and the lockfile.
+for how the bundle feeds the audit pool / [lockfile](../selection/lockfile.md) and,
+downstream, the reproduction agent's per-paper `reference/` material.

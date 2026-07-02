@@ -115,7 +115,7 @@ flowchart LR
   BAND --> POOL["band-stratified pool ✅<br/>→ lockfile"]
 ```
 
-The same H100-equivalence idea reappears 🚧 in the (designed, not-yet-built) reproduction agent's **budget meter**, where `Σ gpus × wallclock × hw_multiplier` is metered live against `budget_h100_hours` to halt a run — see [the architecture overview](../architecture.md) Part III.4. The cost model here is what assigns each lockfile row the budget that meter enforces.
+The same H100-equivalence idea reappears in the reproduction agent's **budget meter** (`reprocli_repro/budget.py`), where `Σ gpus × wallclock × hw_multiplier` is metered live against `budget_h100_hours` to halt a run — see [the architecture overview](../architecture.md) Part III. The cost model here is what assigns each lockfile row the budget that meter enforces.
 
 ## Related pages
 

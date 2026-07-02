@@ -6,11 +6,11 @@ This page documents the three guards and the `exit_reason → verification_statu
 
 ## The three guards ✅
 
-All three are enforced in `runtime/tool_loop.py` (in `handle_request_done` and the dispatch path) using helpers from `runtime/loop_guards.py`. Each is configured by a CLI flag in `config/cli_args.py` and, when it fires, writes a string into the per-paper `exit_reasons` map.
+All three are enforced in `runtime/tool_loop.py` (in `handle_request_done` and the dispatch path) using helpers from `runtime/loop_guards.py`. Each is set by a CLI flag or a fixed constant in `config/config.py` and, when it fires, writes a string into the per-paper `exit_reasons` map.
 
-| Guard | Trigger | Flag (default) | `exit_reason` |
+| Guard | Trigger | Bound (default) | `exit_reason` |
 |-------|---------|----------------|---------------|
-| Repeated-call cutoff | Model re-issues a tool call whose `(name, args)` signature has already succeeded `max_repeats` times | `--max-repeated-tool-calls` (`2`) | `repeated_call_cutoff` |
+| Repeated-call cutoff | Model re-issues a tool call whose `(name, args)` signature has already succeeded `max_repeats` times | `MAX_REPEATED_TOOL_CALLS` constant (`2`) | `repeated_call_cutoff` |
 | Round limit | Loop reaches the last permitted tool round | `--tool-rounds` (`10`) | `round_limit` |
 | Context budget | Estimated prompt chars reach the `max_input_tokens` budget before the next round | `--max-input-tokens` (`128000`) | `context_budget` |
 

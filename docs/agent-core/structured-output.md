@@ -3,8 +3,8 @@
 After an agent finishes exploring with tools, the loop re-issues **one last request with the tools removed and a JSON-schema `response_format` attached**, so the final message comes back as a single schema-constrained JSON object that parses every time. This page documents that forced-final-pass mechanism and the two `response_format` objects it can send — `FINAL_RESPONSE_FORMAT` (classifier) and `AUDIT_RESPONSE_FORMAT` (auditor). For the full field-by-field breakdown of each schema, see [the schemas reference](../tools/schemas.md).
 
 > Verified against: `runtime/tool_loop.py`, `vllm/io.py`, `schema/output.py`,
-> `schema/audit.py`, `config/cli_args.py`, `config/config.py`.
-> Status legend: ✅ live · 🚧 designed, not yet wired.
+> `schema/audit.py`, `config/cli_args.py`, `config/config.py`,
+> `reprocli_repro/report/schema.py`.
 
 ## Why a separate final pass ✅
 
@@ -14,10 +14,10 @@ The loop avoids that entirely. `build_chat_completion_request` in `vllm/io.py` s
 
 ```python
 if include_tools:
-    body["tools"] = getattr(args, "tools", None) or WEB_TOOLS
+    body["tools"] = args.tools
     body["tool_choice"] = tool_choice
 else:
-    body["response_format"] = getattr(args, "response_format", None) or FINAL_RESPONSE_FORMAT
+    body["response_format"] = args.response_format
 ```
 
 So the *only* request that carries a `response_format` is the tools-off final pass. With tools gone the model cannot call a tool, and with `response_format: {"type": "json_schema", ...}` the server constrains decoding to the schema. The returned `content` is therefore valid JSON matching the schema — `parse_json_content` in `vllm/io.py` can `json.loads` it directly (it keeps fenced-block and outermost-brace fallbacks only as defense in depth).
@@ -66,13 +66,13 @@ See [the tool loop](tool-loop.md) for the round driver and [guardrails](guardrai
 
 ## Which schema is sent — set by mode
 
-The active `response_format` is chosen once at startup by mode in `config/cli_args.py` and stashed on `args.response_format`. `build_chat_completion_request` reads it back via `getattr(args, "response_format", None)`, falling back to `FINAL_RESPONSE_FORMAT` when unset.
+The active `response_format` is chosen once at startup in `config/cli_args.py` (`resolve_mode_settings`) and stashed on `args.response_format`; `build_chat_completion_request` reads it back directly. The audit mode is the live run of `run_arxiv_prompt_vllm.py`; the reproduction agent sets its own from its forked loop. The classifier schema below is the dataset-construction schema (`schema/output.py`) that produced the lockfile.
 
-| Mode | `args.response_format` | Object | Top-level schema name |
+| Role | `args.response_format` | Object | Top-level schema name |
 |---|---|---|---|
-| Classifier (default) | `None` → fallback | `FINAL_RESPONSE_FORMAT` (`schema/output.py`) | `repro_artifact_classification` |
 | Auditor (`--mode audit`) | `AUDIT_RESPONSE_FORMAT` | `AUDIT_RESPONSE_FORMAT` (`schema/audit.py`) | `audit_verdict` |
 | Reproduction agent (`reprocli_repro`) | `REPORT_RESPONSE_FORMAT` | `REPORT_RESPONSE_FORMAT` (`reprocli_repro/report/schema.py`) | `reproduction_report` |
+| Classifier (dataset construction) | — | `FINAL_RESPONSE_FORMAT` (`schema/output.py`) | `repro_artifact_classification` |
 
 !!! note "Reproduction mode ✅"
     The [reproduction agent](../modes/reproduction.md) runs its own forked loop (`reprocli_repro/loop.py`), but reuses this same forced-final-pass seam: `cli_resolve.apply_defaults` sets `args.response_format = REPORT_RESPONSE_FORMAT`, so the tools-off final pass returns the agent's `report.json` — its **account** of the run (what it ran, the metric value(s) it measured, citations into `evidence/`), not a verdict. `report/validate.py` validates that object and `loop.py` persists it to `<run_dir>/report.json` for the Stage-7 auditor to grade. See the `REPORT_RESPONSE_FORMAT` subsection below.
@@ -93,7 +93,7 @@ Defined in `schema/output.py`. The object sent is:
 
 The schema is a strict object (`additionalProperties: false`) requiring the artifact-classification fields — `central_claim`, `claim_evidence`, `paper_kind`, `mre_config`, `match_bar`, `verified_links`, `signals`, `agent_task`, and `h100_estimate`. Each `signals.*` entry uses `signal_schema()`; `match_bar` and `h100_estimate` are built by `match_bar_schema()` and `h100_estimate_schema()`. Note that `score`/`tier` are **not** in the schema — they are computed deterministically downstream by `normalize_score_and_tier` (`schema/output.py`), not produced by the model. `FINAL_JSON_SCHEMA` exposes the inner `schema` object for reuse.
 
-Full field semantics are in the [classifier mode](../modes/classifier.md) page and the [schemas reference](../tools/schemas.md).
+Full field semantics are in the [schemas reference](../tools/schemas.md).
 
 ### `AUDIT_RESPONSE_FORMAT` — auditor ✅
 

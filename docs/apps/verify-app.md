@@ -1,6 +1,6 @@
 # Artifact Verification app ✅
 
-A lightweight **static** web app (`tools/verify_app/`) that lets a human team manually verify the [classifier](../modes/classifier.md)'s artifact verdicts paper-by-paper on the **v5 200-paper audit pool** emitted by `audit/select_pool.py`. Each reviewer reads the model's verdict and evidence for an artifact, does their own Google / GitHub / Hugging Face search, and records *agree / disagree / unsure* plus a note. The frontend is plain HTML/CSS/JS (no build step) deployed to Vercel; the backend is a free Supabase Postgres that stores every verification and an append-only activity log feeding an admin dashboard.
+A lightweight **static** web app (`tools/verify_app/`) that lets a human team manually verify the dataset-construction classifier's artifact verdicts paper-by-paper on the **v5 200-paper audit pool** emitted by `audit/select_pool.py`. Each reviewer reads the model's verdict and evidence for an artifact, does their own Google / GitHub / Hugging Face search, and records *agree / disagree / unsure* plus a note. The frontend is plain HTML/CSS/JS (no build step) deployed to Vercel; the backend is a free Supabase Postgres that stores every verification and an append-only activity log feeding an admin dashboard.
 
 !!! note "What it audits, and what it doesn't"
     Reviewers confirm the four artifact signals — **code / dataset / weights / standard-dataset**. They do **not** re-confirm H100 compute bands by hand: `gpu_count × wallclock × multiplier` is recomputed and adjudicated in code at selection time (see [the H100 budget model](../selection/h100-budget.md)). The legacy band-review UI was removed; only its Supabase columns are kept for old rows.
@@ -51,7 +51,7 @@ flowchart LR
 4. **One primary button: "Save & next paper →".** It stays disabled (`Answer all 4 steps to continue (2/4)`) until every step is answered, then turns green and pulses. Trying to advance early shakes the unanswered step. De-emphasized links cover edge cases: **← previous** and **skip for now →** (logs the skip, keeps the draft). Switching papers **auto-saves** the draft; closing the tab with unsaved work warns first.
 
 !!! tip "Score formula"
-    The auto-computed score is `(no code +2) + (no dataset & non-standard +3) + (no weights +1)`, matching the classifier's scoring. See [the classifier mode](../modes/classifier.md) for how the model's score and tier are derived.
+    The auto-computed score is `(no code +2) + (no dataset & non-standard +3) + (no weights +1)`, matching the classifier's deterministic scoring (`normalize_score_and_tier` in `schema/output.py`). See [the architecture overview](../architecture.md) for how the model's score and tier are derived from its signals.
 
 !!! example "Keyboard shortcuts"
     `a` / `d` / `u` answer the current step · `n` = save & next · `p` = previous.
@@ -151,7 +151,7 @@ window.APP_CONFIG = {
 
 ## See also
 
-- [Classifier mode](../modes/classifier.md) — produces the verdicts, scores, and tiers being verified.
-- [`audit/select_pool.py`](../selection/select-pool.md) — band-stratified selection that builds the v5 audit pool.
+- [`audit/select_pool.py`](../selection/select-pool.md) — band-stratified selection that builds the v5 audit pool being verified.
+- [The lockfile](../selection/lockfile.md) — the frozen rows whose verdicts, scores, and tiers reviewers check.
 - [The H100 budget model](../selection/h100-budget.md) — why compute bands are adjudicated in code, not by reviewers.
-- [Architecture overview](../architecture.md) — where the classifier sits in the end-to-end pipeline.
+- [Architecture overview](../architecture.md) — where the audit pool sits in the end-to-end pipeline.

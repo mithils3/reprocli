@@ -22,7 +22,7 @@ The driver (`run_arxiv_prompt_vllm.py`) builds one `Paper(arxiv_id, run_dir=run_
 `claim_block` (`audit/inputs.py`) renders the `central_claim` text, then appends any `claim_evidence` / `mre_config` as "Reported numbers / experiment context", and finally the pinned `match_bar`:
 
 !!! warning "`match_bar` is applied verbatim, never re-inferred"
-    When the record carries a `match_bar`, the claim block injects it as the **frozen lockfile target** with explicit instructions to *adopt it verbatim as the C1 bar — do NOT re‑infer it*. The bar (`kind`, `op`, `reference_value`, `tolerance`) was pinned once by the classifier and carried through the lockfile, so every agent is judged against the same ruler. The auditor only re‑derives a bar (per `rubric_audit.md` C1 defaults) for older rows with no `match_bar` or `kind = "none"`. See the [`match_bar` through-line](../architecture.md#i2-the-match_bar-through-line).
+    When the record carries a `match_bar`, the claim block injects it as the **frozen lockfile target** with explicit instructions to *adopt it verbatim as the C1 bar — do NOT re‑infer it*. The bar (`kind`, `op`, `reference_value`, `tolerance`) was pinned once by the classifier and carried through the lockfile, so every agent is judged against the same ruler. The auditor only re‑derives a bar (per `rubric_audit.md` C1 defaults) for older rows with no `match_bar` or `kind = "none"`. See the [`match_target` through-line](../architecture.md#i2-the-match_target-through-line).
 
 ### The run-dir manifest
 
@@ -36,9 +36,9 @@ When there is no run to inspect, the manifest is explicit that **the only defens
 | Run dir does not exist | `(No run directory found at … score 0.)` |
 | Run dir empty | `(Run directory … is empty; verdict unverifiable, score 0.)` |
 
-## Tools — read-only, path-confined
+## Tools — path-confined to one run dir
 
-The auditor's toolset is `AUDIT_TOOLS` (`tools/run_dir_tools.py`), dispatched via `AUDIT_TOOL_HANDLERS`. Every tool is scoped to the single run directory by `_resolve_within`, which rejects absolute paths, `\\`, and any `..` segment, and re‑checks that the resolved path stays inside the run dir. See the [run-dir tools page](../tools/run-dir-tools.md) for the full reference.
+The auditor's toolset is `AUDIT_TOOLS` (`tools/run_dir_tools.py`), dispatched via `AUDIT_TOOL_HANDLERS`. It reads, writes *new* files, and runs shell commands, but every tool is scoped to the single run directory by `_resolve_within`, which rejects absolute paths, `\\`, and any `..` segment, and re‑checks that the resolved path stays inside the run dir. See the [run-dir tools page](../tools/run-dir-tools.md) for the full reference.
 
 | Tool | Effect | Key bounds (`config/config.py`) |
 |---|---|---|
@@ -48,7 +48,7 @@ The auditor's toolset is `AUDIT_TOOLS` (`tools/run_dir_tools.py`), dispatched vi
 | `write_run_file` | write a **new** file (e.g. a re-scoring script) | refuses to overwrite; ≤ 200k chars |
 
 !!! note "Re-scoring goes through the disk, not a hidden interpreter"
-    There is deliberately **no separate Python tool**. To recompute a metric from a saved artifact, the auditor `write_run_file`s a script and runs it with `bash` (`python3 …`), so every computation lands on disk and stays citable. `write_run_file` never clobbers an agent artifact — the run dir is the evidence under audit. A dedicated `python` tool is designed‑but‑not‑built 🚧.
+    There is deliberately **no separate Python tool**. To recompute a metric from a saved artifact, the auditor `write_run_file`s a script and runs it with `bash` (`python3 …`), so every computation lands on disk and stays citable. `write_run_file` never clobbers an agent artifact — the run dir is the evidence under audit.
 
 ```mermaid
 flowchart LR
@@ -130,9 +130,8 @@ The mode is selected with `--mode audit`; `resolve_mode_settings` then fills eve
 
 ## See also
 
-- [Run-dir tools](../tools/run-dir-tools.md) — the read-only, path-confined toolset in detail
+- [Run-dir tools](../tools/run-dir-tools.md) — the path-confined toolset in detail
 - [Schemas](../tools/schemas.md) — `AUDIT_RESPONSE_FORMAT` field-by-field
 - `rubric_audit.md` (repo root) — the audit rubric: criteria C1–C6 and the 0–5 anchors
-- [Classifier mode](classifier.md) — the role that pins `match_bar`
-- [Reproduction mode](reproduction.md) 🚧 — the upstream role that emits the run bundle
-- [Architecture overview](../architecture.md) — the whole system
+- [Reproduction mode](reproduction.md) — the upstream role that emits the run bundle
+- [Architecture overview](../architecture.md) — the whole system, including where the `match_bar` is pinned

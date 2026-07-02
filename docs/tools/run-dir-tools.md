@@ -17,7 +17,7 @@ The [auditor](../modes/auditor.md) is handed exactly **one** agent reproduction 
 | `write_run_file` ✅ | `write_run_file` | Write one **new** text file into the run dir |
 
 !!! warning "No dedicated Python interpreter tool"
-    There is **deliberately no separate `python` tool** — the `python` entry shown as 🚧 in the architecture mode table is not wired. Re-scoring an artifact (recompute a metric from a saved output) goes through `bash` running `python3 -c …`, or — for anything multi-line — `write_run_file` a script and then `bash` it. The point is to keep every consequential computation **on disk and citable** rather than hidden inside an interpreter call.
+    There is **deliberately no separate `python` tool**. Re-scoring an artifact (recompute a metric from a saved output) goes through `bash` running `python3 -c …`, or — for anything multi-line — `write_run_file` a script and then `bash` it. The point is to keep every consequential computation **on disk and citable** rather than hidden inside an interpreter call.
 
 ### `list_run_files`
 
@@ -107,12 +107,11 @@ The audit prompt is seeded with a text listing of the run directory by `run_dir_
 Carried forward from [the architecture overview](../architecture.md) (Known caveats):
 
 !!! warning "`bash` is a full shell — fine for our own runs, not yet for untrusted ones"
-    The audit `bash` is a **full login shell scoped (by cwd) to the run dir** — fine for grading **our own** agents' runs locally. Container/seccomp isolation is the **prerequisite before grading untrusted runs**. The same sandboxing treatment is required for the 🚧 [reproduction agent](../modes/reproduction.md)'s `run_gpu` / `workspace_bash` before it runs untrusted paper code at scale.
+    The audit `bash` is a **full login shell scoped (by cwd) to the run dir** — fine for grading **our own** agents' runs locally. Container/seccomp isolation is the **prerequisite before grading untrusted runs**. The same sandboxing treatment is required for the [reproduction agent](../modes/reproduction.md)'s `run_gpu` / `workspace_bash` before it runs untrusted paper code at scale.
 
 ## Related pages
 
 - [Auditor mode](../modes/auditor.md) — how these tools are used to grade 0–5 and apply the anti-cheat cap.
 - [The tool loop](../agent-core/tool-loop.md) — the shared agent core these tools plug into.
-- [Web tools](web-tools.md) — the classifier's read-only evidence toolset and the shared `execute_tool_call` dispatcher.
 - [Schemas](schemas.md) — the audit output schema (`AUDIT_RESPONSE_FORMAT`).
 - [Architecture overview](../architecture.md) — where the auditor sits in the end-to-end flow.

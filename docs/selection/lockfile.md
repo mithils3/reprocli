@@ -41,7 +41,7 @@ Each row is one paper (`custom_id` = arXiv id) carried through from the classifi
     The classifier *proposes* signals; `normalize_score_and_tier` in `schema/output.py` recomputes the rubric score and tier from those signals deterministically and overwrites the model's values (keeping the model's as `reported_score` / `reported_tier` when they differ). The lockfile carries the **code-decided** tier.
 
 !!! tip "`band` vs `budget`"
-    The architecture diagram labels these `band` and `budget`. In the actual row they are the literal keys **`selection_band`** (the bucket label) and **`audited_h100_hours`** (the numeric budget). The proposed S6 reproduction agent reads the same value under the name `budget_h100_hours`.
+    The architecture diagram labels these `band` and `budget`. In the actual row they are the literal keys **`selection_band`** (the bucket label) and **`audited_h100_hours`** (the numeric budget). The S6 reproduction agent reads the same value under the name `budget_h100_hours`.
 
 ## The `match_bar` through-line
 
@@ -77,14 +77,14 @@ Each row is one paper (`custom_id` = arXiv id) carried through from the classifi
 ```mermaid
 flowchart LR
   classDef lock fill:#fde68a,stroke:#b45309,color:#000;
-  CL["CLASSIFIER<br/>--mode classification"] -->|"writes match_bar"| L["LOCKFILE row"]:::lock
-  L -->|"match_bar, mre_config, agent_task"| RA["REPRODUCTION agent 🚧<br/>runs the MRE"]
+  CL["CLASSIFIER<br/>(dataset construction)"] -->|"writes match_bar"| L["LOCKFILE row"]:::lock
+  L -->|"match_bar, mre_config, agent_task"| RA["REPRODUCTION agent ✅<br/>runs the MRE"]
   L -->|"central_claim, match_bar (verbatim)"| AU["AUDITOR<br/>--mode audit"]
   RA -->|"run bundle"| AU
 ```
 
-- **Classifier (`✅`)** sets `match_bar` while emitting the MRE record. It is the only writer.
-- **Reproduction agent (`🚧` designed, not built)** reads it to know the target the experiment must hit; it reports what it measured but renders **no verdict**.
+- **Classifier** set `match_bar` while emitting the MRE record during dataset construction. It is the only writer.
+- **Reproduction agent (`✅`)** reads it to know the target the experiment must hit; it reports what it measured but renders **no verdict**.
 - **Auditor (`✅`)** adopts it verbatim when grading the run bundle, so the score reflects the pinned bar, not one the auditor re-derived. The auditor is the **only** consumer that turns the bar into a verdict.
 
 ## How a row gets into the pool
@@ -117,4 +117,4 @@ A representative run (`--total 200`) lands at 67 / 67 / 66 rows across Easy / Me
 
 - [Dataset stages](../dataset/stages.md) and the [bundle schema](../dataset/bundle-schema.md) — how the classifier produces the rows that feed selection.
 - [Auditor mode](../modes/auditor.md) — the consumer that applies `match_bar` verbatim.
-- [Reproduction mode](../modes/reproduction.md) — the `🚧` consumer that runs the MRE under `audited_h100_hours`.
+- [Reproduction mode](../modes/reproduction.md) — the consumer that runs the MRE under `audited_h100_hours`.

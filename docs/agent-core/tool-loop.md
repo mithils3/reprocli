@@ -1,9 +1,9 @@
 # The async tool loop
 
-The tool loop is the heart of the agent core: it drives every episode (one paper / claim) through a free **tool-exploration** phase and then one forced **structured-output** pass against a stateless vLLM server. All three agent roles — classifier, auditor, reproduction — share this exact runtime; only their tools, prompt, and output schema differ. The implementation lives in `runtime/tool_loop.py`, with request plumbing in `vllm/client.py` and message construction in `vllm/io.py`.
+The tool loop is the heart of the agent core: it drives every episode (one paper / claim) through a free **tool-exploration** phase and then one forced **structured-output** pass against a stateless vLLM server. The live **auditor** mode runs this exact runtime; the Stage-6 **reproduction agent** forks the same skeleton into its own package. The implementation lives in `runtime/tool_loop.py`, with request plumbing in `vllm/client.py` and message construction in `vllm/io.py`.
 
 !!! info "Where this fits"
-    See the [architecture overview](../architecture.md) for how the loop relates to the dataset, lockfile, and the three agent roles. The two phases below are paired with [guardrails](guardrails.md) (repeat/context limits) and the [structured-output](structured-output.md) final pass.
+    See the [architecture overview](../architecture.md) for how the loop relates to the dataset, lockfile, and the agent roles. The two phases below are paired with [guardrails](guardrails.md) (repeat/context limits) and the [structured-output](structured-output.md) final pass.
 
 ## The server is stateless; the client holds memory
 
@@ -98,13 +98,13 @@ The `noop`/`force_final` trick lets both "model stopped on its own" and "repeat 
 
 ### Phase 1 — free tool exploration ✅
 
-The first request is submitted with `include_tools=args.use_tools` (set `True` for every mode in `config/cli_args.py`). While tools are on, `build_chat_completion_request` (`vllm/io.py`) attaches `tools` (the per-mode `args.tools` — `WEB_TOOLS` for classification, `AUDIT_TOOLS` for audit, both set in `config/cli_args.py`) and `tool_choice="auto"`. The model freely calls tools; each round appends the assistant turn plus one `tool` message per call (`tool_result_message`). Real execution is `execute_tool_call` from `tools/web_tools.py`. The phase ends when one of these fires:
+The first request is submitted with `include_tools=args.use_tools` (`resolve_mode_settings` sets it `True`). While tools are on, `build_chat_completion_request` (`vllm/io.py`) attaches `tools` (`args.tools` — `AUDIT_TOOLS` for the audit mode) and `tool_choice="auto"`. The model freely calls tools; each round appends the assistant turn plus one `tool` message per call (`tool_result_message`). Real execution is `execute_tool_call` from `tools/web_tools.py`, which routes each call to the run-dir handlers (`AUDIT_TOOL_HANDLERS`). The phase ends when one of these fires:
 
 | Exit reason | Trigger |
 | --- | --- |
 | `natural` | Model emits no tool call (then routed to Phase 2) |
 | `round_limit` | `round_index + 1 >= args.tool_rounds` (`--tool-rounds`, default `10`) |
-| `repeated_call_cutoff` | Same tool+args signature hit `--max-repeated-tool-calls` times (default `2`) |
+| `repeated_call_cutoff` | Same tool+args signature hit the fixed `MAX_REPEATED_TOOL_CALLS` constant (`2`, `config/config.py`) |
 | `context_budget` | Estimated chars `>= max_input_tokens * 3` (`BUDGET_CHARS_PER_TOKEN`) |
 
 See [guardrails](guardrails.md) for the repeat-signature and context-budget logic.
@@ -144,15 +144,15 @@ with OUTPUT_WRITE_LOCK:
         append_trace_row(args.trace_output, custom_id, messages, row)
 ```
 
-`OUTPUT_WRITE_LOCK` is a module-level `threading.Lock` defined in `hf_upload.py` and reused as the Hugging Face upload scheduler's lock, so JSONL appends and the background uploader never interleave writes. Each episode emits one row to the raw `--output` and one parsed row to `--extracted-output` (via `extracted_response`); the full per-round trace goes to `--trace-output` only when `--save-round-jsonl` is set.
+`OUTPUT_WRITE_LOCK` is a module-level `threading.Lock` defined in `runtime/tool_loop.py`, so concurrent episodes never interleave their JSONL appends. Each episode emits one row to the raw `--output` and one parsed row to `--extracted-output` (via `extracted_response`); the full per-round trace goes to `--trace-output` only when `--save-round-jsonl` is set.
 
 !!! tip "Crash resilience"
     Because rows are flushed as episodes complete, a mid-run crash leaves a partial but valid JSONL of everything finished so far.
 
 ## Related pages
 
-- [Agent core overview](index.md) — how the three roles reuse this loop
+- [Agent core overview](index.md) — how the live modes reuse this loop
 - [Guardrails](guardrails.md) — repeat and context-budget cutoffs
 - [Structured output](structured-output.md) — the Phase 2 schema-constrained pass
-- [Web tools](../tools/web-tools.md) and [run-dir tools](../tools/run-dir-tools.md) — what Phase 1 calls
+- [Run-dir tools](../tools/run-dir-tools.md) — the audit toolset Phase 1 calls
 - [`run-arxiv` CLI](../cli/run-arxiv.md) — flags and entry point (`run_arxiv_prompt_vllm.py`)
