@@ -58,19 +58,22 @@ def expiry_warning(session: Any, remaining_seconds: float) -> str | None:
     )
 
 
-def stale_refusal(session: Any, remaining_seconds: float) -> str:
-    """Why a launch on a nearly-expired held session was refused, and the way out.
+def stale_rotation(session: Any, remaining_seconds: float, new_minutes: int) -> str:
+    """Explain that a spent held session was auto-released and a fresh one acquired.
 
-    States the reuse semantics explicitly: ``minutes`` is fixed at acquire, so passing
-    a bigger value on a reuse call cannot extend the hold — the fix is always
-    release + re-acquire.
+    A session within ``STALE_LAUNCH_SECONDS`` of (or past) its ``--time`` wall can only
+    run doomed commands, so ``run_gpu`` rotates it out — release + re-acquire in the
+    same call — instead of refusing every launch until the agent manually releases.
+    (Refuse-and-keep dead-ended: the spent session stayed bound, so once past its wall
+    it sat as a zombie blocking all re-acquisition.) States that ``minutes`` is fixed
+    per allocation so the agent sizes the next hold to the whole job.
     """
     return (
-        f"the held session (jobid {session.jobid}) has only ~{remaining_seconds:.0f}s of its "
-        f"{session.minutes}-min --time left; SLURM would kill this command almost immediately "
-        "and its work would be lost. Note that minutes= is fixed when a session is ACQUIRED — "
-        "passing minutes= on a reuse call does NOT extend the hold. Release this session "
-        "(run_gpu release=true) and start a fresh one with minutes= sized to the job."
+        f"prior session (jobid {session.jobid}) had only ~{remaining_seconds:.0f}s of its "
+        f"{session.minutes}-min --time left, so it was released and a fresh {new_minutes}-min "
+        "allocation was acquired for this command. minutes= is fixed per allocation — this new "
+        f"hold lasts {new_minutes} min from now; size minutes= to the whole job to avoid "
+        "mid-run rotations."
     )
 
 

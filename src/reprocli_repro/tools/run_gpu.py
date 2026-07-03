@@ -23,8 +23,9 @@ the agent's reasoning/install gaps, not only while a command runs:
   worst case (``gpus x minutes x hw``, the ``--time`` pre-authorization) would
   overspend the remaining H100-hour budget;
 * **before reusing** -- a launch onto a held session with under
-  ``STALE_LAUNCH_SECONDS`` of --time left is refused outright (the command could
-  only be killed);
+  ``STALE_LAUNCH_SECONDS`` of --time left rotates the session out (release +
+  re-acquire) so the command lands on a fresh full-length hold instead of a doomed
+  one — never a dead-end refusal that leaves the spent session bound;
 * **after each step / on release** -- ``gpu_session.charge_accrued`` bills the wall
   held since the last charge (the loop guardrail charges it between rounds too, so a
   long reasoning gap on a held node still depletes the budget);
@@ -55,7 +56,7 @@ from reprocli_repro.tools.run_gpu_notes import (
     clamp_note,
     expiry_warning,
     reuse_note,
-    stale_refusal,
+    stale_rotation,
 )
 
 # Defaults/bounds for the model-set knobs, applied on the call that *starts* a
@@ -90,7 +91,25 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
     minutes = bounded(arguments.get("minutes"), DEFAULT_MINUTES, MAX_MINUTES)
     note = clamp_note(arguments.get("gpus"), gpus, cap)
 
-    # Acquire the session if none is held; pre-authorize its worst-case hold first.
+    # Pre-launch staleness rotation: a held session within STALE_LAUNCH_SECONDS of (or
+    # past) its --time wall is spent — a command launched onto it can only be killed,
+    # and past the wall SLURM has already reclaimed the node. Rotate it out (release +
+    # re-acquire below) rather than refuse. The old refuse-and-keep path dead-ended:
+    # the spent session stayed bound, so every later call refused too, and once past
+    # the wall it never reached the lost-session detection in run_in_session — it sat
+    # as a zombie at "~0s left" blocking all re-acquisition (the 07-03 batch burned
+    # ~80 rounds on exactly this). Budget still gates the fresh acquire below.
+    rotate_note = None
+    if ctx.session is not None:
+        stale_remaining = ctx.session.minutes * 60 - gpu_session.held_seconds(ctx.session)
+        if stale_remaining < STALE_LAUNCH_SECONDS:
+            rotate_note = stale_rotation(ctx.session, max(0.0, stale_remaining), minutes)
+            gpu_session.release(ctx, "stale-rotate")  # bill final sliver + scancel + clear
+        else:
+            note = reuse_note(arguments, ctx.session) or note
+
+    # Acquire the session if none is held (or the spent one was just rotated out);
+    # pre-authorize its worst-case hold first.
     if ctx.session is None:
         affordable, reason = budget_mod.affordable(ctx.budget, gpus, minutes, ctx.cluster.hw)
         if not affordable:
@@ -105,17 +124,10 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         )
         if session is None:
             return {"ok": False, "tool": "run_gpu", "command": command, "error": f"could not acquire GPU allocation: {err}"}
+        if rotate_note:  # surface the rotation (plus any clamp note) on the fresh hold
+            note = f"{rotate_note} {note}" if note else rotate_note
     else:
         session = ctx.session
-        # Deterministic pre-launch staleness guard: a command started this close to
-        # the --time wall can only be killed, so refuse instead of wasting it.
-        stale_remaining = session.minutes * 60 - gpu_session.held_seconds(session)
-        if stale_remaining < STALE_LAUNCH_SECONDS:
-            cost = gpu_session.charge_accrued(ctx)
-            reason = stale_refusal(session, max(0.0, stale_remaining))
-            _record(ctx, command, session.gpus, session.minutes, session.hw, step=None, cost=cost, refused=reason)
-            return _refused(ctx, command, reason)
-        note = reuse_note(arguments, session) or note
 
     log_path = evidence_mod.next_gpu_log(ctx.evidence) if ctx.evidence is not None else None
     step = slurm.run_in_session(

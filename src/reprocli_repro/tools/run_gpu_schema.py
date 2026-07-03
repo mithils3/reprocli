@@ -33,7 +33,11 @@ def run_gpu_tool(gpus_per_node: int) -> dict:
         "its output. Each result also reports session_remaining_seconds — the "
         "wall left before this allocation hits its `minutes` (--time) cap and SLURM reclaims "
         "the node (losing any unsaved state); when it runs low a session_expiry_warning tells "
-        "you to checkpoint to disk and, if you need more time, release and re-acquire.",
+        "you to checkpoint to disk and, if you need more time, release and re-acquire. If you "
+        "launch a command onto a hold that is already within ~2 min of (or past) its --time "
+        "wall, run_gpu auto-rotates: it releases the spent allocation and acquires a fresh one "
+        "sized to this call's minutes=, then runs your command on it (reported in the result's "
+        "note) — so a spent session never blocks you.",
         {
             "command": {
                 "type": "string",

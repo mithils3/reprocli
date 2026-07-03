@@ -145,21 +145,38 @@ class StalenessGuardTests(unittest.TestCase):
         ctx.allocation = "555"
         return ctx
 
-    def test_refuses_launch_on_nearly_expired_session(self):
+    def test_rotates_out_a_nearly_expired_session(self):
         with tempfile.TemporaryDirectory() as d:
             # 30-min hold with ~29.5 min already held -> ~30s left, under the guard.
             ctx = self._held_ctx(Path(d), minutes=30, held_seconds=30 * 60 - 30)
-            acq, run, rel = _patch()
-            with acq, run as r, rel:
+            acq, run, rel = _patch(acquire=_handle("999"))
+            with acq as a, run as r, rel as scancel:
                 res = run_gpu({"command": "python train.py", "minutes": 120}, ctx)
-            r.assert_not_called()  # refused before srun
-            self.assertFalse(res["ok"])
-            self.assertIn("refused", res["error"])
-            # The refusal spells out the reuse semantics and the recovery action.
-            self.assertIn("does NOT extend", res["error"])
-            self.assertIn("release=true", res["error"])
-            self.assertIn('"refused"', (ctx.evidence / "trajectory.jsonl").read_text())
-            self.assertIsNotNone(ctx.session)  # the agent decides to release, not us
+            # The spent session is released and a fresh one acquired; the command runs
+            # on the new hold rather than dead-ending.
+            self.assertTrue(res["ok"], res)
+            scancel.assert_called_once_with("555")  # old hold torn down
+            a.assert_called_once()  # fresh allocation acquired
+            r.assert_called_once()  # command ran on the fresh hold
+            self.assertEqual(ctx.session.jobid, "999")
+            self.assertEqual(res["session_jobid"], "999")
+            self.assertEqual(res["minutes"], 120)  # sized to this call's minutes=
+            self.assertIn("released", res["note"])
+
+    def test_zombie_session_past_its_wall_is_rotated_not_deadlocked(self):
+        # Regression for the 07-03 deadlock: a 5-min hold held well past its --time
+        # wall (SLURM already reclaimed it) must not sit bound at "~0s left" refusing
+        # every call — it must rotate out and re-acquire so work can continue.
+        with tempfile.TemporaryDirectory() as d:
+            ctx = self._held_ctx(Path(d), minutes=5, held_seconds=30 * 60)
+            acq, run, rel = _patch(acquire=_handle("999"))
+            with acq as a, run as r, rel as scancel:
+                res = run_gpu({"command": "python eval.py", "minutes": 30}, ctx)
+            self.assertTrue(res["ok"], res)
+            scancel.assert_called_once_with("555")
+            a.assert_called_once()
+            r.assert_called_once()
+            self.assertEqual(ctx.session.jobid, "999")
 
     def test_fresh_session_still_runs(self):
         with tempfile.TemporaryDirectory() as d:
@@ -169,6 +186,23 @@ class StalenessGuardTests(unittest.TestCase):
                 res = run_gpu({"command": "python train.py"}, ctx)
             self.assertTrue(res["ok"], res)
             r.assert_called_once()
+
+    def test_rotate_that_cannot_afford_reacquire_clears_the_session(self):
+        # Even when the fresh acquire is unaffordable, the spent hold must be released
+        # (scancel + cleared), so the refusal is a clean budget stop — not a zombie
+        # left bound to deadlock the next call.
+        with tempfile.TemporaryDirectory() as d:
+            ctx = self._held_ctx(Path(d), minutes=30, held_seconds=30 * 60 - 30)
+            ctx.budget = Budget(total_h100_hours=0.01)  # cannot afford a fresh hold
+            acq, run, rel = _patch(acquire=_handle("999"))
+            with acq as a, run as r, rel as scancel:
+                res = run_gpu({"command": "python train.py", "minutes": 120}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("refused", res["error"])
+            scancel.assert_called_once_with("555")  # spent hold torn down
+            a.assert_not_called()  # never acquired (unaffordable)
+            r.assert_not_called()
+            self.assertIsNone(ctx.session)  # cleared -> next call retries cleanly
 
     def test_bare_release_still_works_on_a_stale_session(self):
         with tempfile.TemporaryDirectory() as d:
