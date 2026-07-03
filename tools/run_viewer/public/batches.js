@@ -29,8 +29,8 @@
     return out;
   }
 
-  // compact status summary using RENDER.effectiveStatus buckets, zero buckets omitted
-  function statusSummary(runs) {
+  // effectiveStatus buckets for a group of runs
+  function counts(runs) {
     const RE = R(), c = { running: 0, done: 0, dead: 0, error: 0 };
     for (const run of runs) {
       const s = RE.effectiveStatus(run);
@@ -39,23 +39,33 @@
       else if (s === "error") c.error++;
       else c.running++;
     }
+    return c;
+  }
+  // full-width proportional status segment bar (6px)
+  function segBar(c) {
+    const total = c.running + c.done + c.dead + c.error;
+    if (!total) return "";
+    const seg = (n, cls) => n ? `<i class="seg ${cls}" style="width:${(n / total * 100).toFixed(2)}%"></i>` : "";
+    return `<span class="bseg">${seg(c.running, "running")}${seg(c.done, "done")}${seg(c.dead, "dead")}${seg(c.error, "error")}</span>`;
+  }
+  // colored count words, zero buckets omitted
+  function countWords(c) {
     return [["running", "running"], ["done", "done"], ["dead", "dead"], ["error", "error"]]
-      .filter(([k]) => c[k]).map(([k, w]) => `${c[k]} ${w}`).join(" · ");
+      .filter(([k]) => c[k]).map(([k, w]) => `<span class="cw ${k}">${c[k]} ${w}</span>`).join(" · ");
   }
 
-  // group header row: chevron + label + count + status summary + total spent + latest update
+  // group header row: title line · status segment bar · count words + burn + recency
   function headerEl(entry, opts) {
     const RE = R(), isCol = collapsed.has(entry.id);
     const spent = entry.runs.reduce((a, r) => a + (Number(r.spent_h100) || 0), 0);
     const models = new Set(entry.runs.map((r) => r.model).filter(Boolean));
-    const modelChip = models.size === 1 ? `<span class="schip">${RE.esc([...models][0])}</span>` : "";
-    const summary = statusSummary(entry.runs);
+    const modelChip = models.size === 1 ? `<span class="schip">${RE.esc(RE.shortModel([...models][0]))}</span>` : "";
+    const c = counts(entry.runs), latest = entry.runs[0].updated_at;
     const btn = RE.el(`<button class="batch-head ${isCol ? "collapsed" : ""}" title="batch ${RE.esc(entry.id)}" aria-expanded="${!isCol}">
-      <span class="bh-chev">${isCol ? "▸" : "▾"}</span>
-      <span class="bh-body">
-        <span class="bh-title"><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span><span class="schip tnum">${entry.runs.length} runs</span>${modelChip}</span>
-        <span class="bh-sub">${summary ? `<span class="bh-status">${RE.esc(summary)}</span>` : ""}<span class="schip tnum" title="total compute spent">${RE.esc(RE.fmtHM(spent))}</span><span class="bh-time tnum">${RE.esc(RE.fmtTime(entry.runs[0].updated_at))}</span></span>
-      </span></button>`);
+      <span class="bh-title"><span class="bh-chev">${isCol ? "▸" : "▾"}</span><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span><span class="schip tnum">${entry.runs.length} runs</span>${modelChip}</span>
+      ${segBar(c)}
+      <span class="bh-sub"><span class="bh-counts">${countWords(c)}</span><span class="schip tnum" title="total compute spent">${RE.esc(RE.fmtHM(spent))}</span><span class="bh-time tnum" title="${RE.esc(RE.fmtTime(latest))}">${RE.esc(RE.fmtAgo(latest))}</span></span>
+      </button>`);
     btn.addEventListener("click", () => {
       if (collapsed.has(entry.id)) collapsed.delete(entry.id); else collapsed.add(entry.id);
       if (opts && opts.rerender) opts.rerender();

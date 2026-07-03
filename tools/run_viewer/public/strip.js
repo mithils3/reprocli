@@ -51,7 +51,7 @@
 
     scrollToRound(idx) {
       const card = this.rootEl.querySelector(`.rcard[data-round="${CSS.escape(String(idx))}"]`);
-      if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (card) { card.classList.remove("collapsed"); card.scrollIntoView({ behavior: "smooth", block: "center" }); }
     },
     scrollToVerdict() {
       const f = this.rootEl.querySelector(".rcard.final") || this.rootEl.querySelector(".rounds .rcard:last-child");

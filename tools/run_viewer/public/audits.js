@@ -87,7 +87,7 @@
       if (!patch || patch.audit_run_id !== this.currentId) return;
       Object.assign(this.live, patch);
       const top = this.detail().querySelector(".run-top");
-      if (top) top.innerHTML = R.topHtml(this.live);
+      if (top) top.innerHTML = R.topHtml(this.live, { rounds: this.detail().querySelectorAll(".rounds .rcard").length });
       this.upsert(this.live); this.renderList();
     },
   };

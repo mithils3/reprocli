@@ -1,0 +1,93 @@
+/* live.css — the Live redesign: sidebar telemetry cards, batch group header with
+   status segment bar, the Fleet board (empty detail pane), the run-detail
+   instrument tile strip + horizontal burn-trace panel, and the timeline round-card
+   controls. All colour goes through the styles.css / theme.css custom-property
+   tokens, so dark mode works for free. */
+
+/* ---- sidebar telemetry card (RENDER.renderRunListItem) -------------------- */
+.pl-l1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pl-l1 .vd { flex: none; }
+.pl-model { color: var(--muted); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pl-ago { margin-left: auto; flex: none; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.pl-ago.live { color: var(--accent-strong); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.mfuel { display: flex; align-items: center; gap: 9px; }
+.mfuel-bar { position: relative; flex: 1; min-width: 0; height: 6px; border-radius: 3px; background: var(--panel2); overflow: hidden; border: 1px solid var(--line); }
+.mfuel-fill { display: block; height: 100%; background: var(--accent); border-radius: 3px 0 0 3px; }
+.mfuel-fill.done { background: var(--yes); }
+.mfuel-fill.over { background: var(--over); }
+.mfuel-pred { position: absolute; top: -1px; bottom: -1px; width: 0; border-left: 1.5px dashed var(--predicted); }
+.mfuel-v { flex: none; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.pl-fuel:empty { display: none; }
+
+/* ---- batch group header (one sbatch launch) ------------------------------- */
+.batch-head { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left;
+  background: var(--panel2); border: 0; border-bottom: 1px solid var(--line-strong); color: var(--txt);
+  padding: 9px 14px; transition: background .12s; }
+.batch-head:hover { background: var(--panel); }
+.bh-title { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bh-chev { font-family: var(--mono); font-size: 11px; color: var(--muted); flex: none; }
+.batch-head:hover .bh-chev { color: var(--txt); }
+.bh-glyph { color: var(--accent-strong); font-size: 12px; flex: none; }
+.bh-label { flex: 1; min-width: 0; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--txt);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bseg { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.bseg .seg { display: block; height: 100%; }
+.bseg .seg.running { background: var(--accent); }
+.bseg .seg.done { background: var(--yes); }
+.bseg .seg.dead { background: var(--slate); }
+.bseg .seg.error { background: var(--no); }
+.bh-sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.bh-counts { display: inline-flex; align-items: center; gap: 4px; }
+.cw.running { color: var(--accent-strong); font-weight: 600; }
+.cw.done { color: var(--yes-deep); font-weight: 600; }
+.cw.dead { color: var(--muted); }
+.cw.error { color: var(--no-deep); font-weight: 600; }
+.bh-time { margin-left: auto; color: var(--muted); }
+
+/* ---- Fleet board (empty Live detail pane) --------------------------------- */
+.fleet-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+.fleet-head h2 { font-family: var(--display); font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+.fleet-count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.ftiles { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+.ftile { flex: 1 1 120px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); }
+.ft-l { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.ft-v { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1.1; margin-top: 4px; color: var(--txt); }
+.ftile.accent .ft-v { color: var(--accent-strong); }
+.ftile.yes .ft-v { color: var(--yes-deep); }
+.ftile.no .ft-v { color: var(--no-deep); }
+.ftile.slate .ft-v { color: var(--muted); }
+.fleet-sub { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.fs-title { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--txt); }
+.fs-note { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.fcard { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); color: var(--txt); transition: border-color .12s, background .12s; }
+.fcard:hover { border-color: var(--accent); }
+.fc-top { display: flex; align-items: center; gap: 8px; }
+.fc-ago { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.fc-ago.live { color: var(--accent-strong); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.fc-claim { font-family: var(--sans); font-size: 13px; font-weight: 500; line-height: 1.34; color: var(--txt);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fc-model { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.fc-fuel:empty { display: none; }
+
+/* ---- run-detail instrument tile strip ------------------------------------- */
+.itiles { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; }
+.itile { flex: 1 1 96px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; box-shadow: var(--shadow); }
+.it-l { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.it-v { font-family: var(--display); font-size: 18px; font-weight: 600; line-height: 1.15; margin-top: 3px; color: var(--txt); display: flex; align-items: center; gap: 6px; }
+.itile.big .it-v { font-size: 23px; font-weight: 700; }
+.itile.live .it-v { color: var(--accent-strong); }
+.it-sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.it-sub .balance { gap: 5px; }
+.it-sub .bal-d { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.it-sub .bal-w { font-size: 9.5px; }
+
+/* ---- horizontal burn-trace panel (sibling of .run-top) -------------------- */
+.run-trace { margin: 14px 0 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 8px 12px; }
+.run-trace .trace-h { width: 100%; height: auto; display: block; }
+
+/* ---- timeline round-card controls ----------------------------------------- */
+.rounds-ctl { display: flex; gap: 14px; justify-content: flex-end; margin-bottom: -4px; }
+.rounds-ctl .link { font-family: var(--mono); font-size: 11px; }

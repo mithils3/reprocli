@@ -27,6 +27,7 @@ function setView(v) {
   if (v === "papers" && window.Papers) window.Papers.open();
   if (v === "audits" && window.Audits) window.Audits.open();
   if (v === "stats" && window.Stats) window.Stats.open();
+  if (v === "live" && state.currentRunId == null) renderList(); // paint the Fleet board
 }
 window.setView = setView;
 window.openPaper = (arxiv) => { setView("papers"); if (window.Papers) window.Papers.openPaper(arxiv); };
@@ -58,8 +59,12 @@ function renderTagFilters() {
 function renderList() {
   const list = $("#run-list"), rows = visibleRuns();
   list.innerHTML = "";
-  if (!rows.length) { list.innerHTML = `<div class="empty small">${state.remote ? "No runs match." : "Supabase not reachable — use the Local tab."}</div>`; return; }
-  window.Batches.render(list, rows, { currentRunId: state.currentRunId, onOpen: openRun, rerender: renderList });
+  if (!rows.length) { list.innerHTML = `<div class="empty small">${state.remote ? "No runs match." : "Supabase not reachable — use the Local tab."}</div>`; }
+  else window.Batches.render(list, rows, { currentRunId: state.currentRunId, onOpen: openRun, rerender: renderList });
+  // no run open in Live → the detail pane is the Fleet board (live-updates with the list)
+  if (state.view === "live" && state.currentRunId == null && window.Fleet && (state.remote || rows.length)) {
+    window.Fleet.render(liveDetail(), rows);
+  }
 }
 function upsertRun(run) {
   if (!run || !run.run_id) return;
@@ -116,7 +121,7 @@ function onRunPatch(patch) {
   if (!patch || patch.run_id !== state.currentRunId) return;
   Object.assign(state.liveRun, patch);
   const top = liveDetail().querySelector(".run-top");
-  if (top) { top.innerHTML = R.topHtml(state.liveRun); if (window.Tags) Tags.mount(top); }
+  if (top) { const n = liveDetail().querySelectorAll(".rounds .rcard").length; top.innerHTML = R.topHtml(state.liveRun, { rounds: n }); if (window.Tags) Tags.mount(top); }
   upsertRun(state.liveRun); renderList();
 }
 

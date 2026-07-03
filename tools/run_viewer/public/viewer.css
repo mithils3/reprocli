@@ -42,16 +42,24 @@
 
 /* ---- round cards ---------------------------------------------------------- */
 .rounds { display: grid; gap: 13px; min-width: 0; }
-.rcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 17px; box-shadow: var(--shadow); }
+.rcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 6px; box-shadow: var(--shadow); }
 .rcard.final { border-color: var(--yes); box-shadow: inset 3px 0 0 var(--yes), var(--shadow); }
 .rcard.final.bad { border-color: var(--no); box-shadow: inset 3px 0 0 var(--no), var(--shadow); }
 .rcard.spike { border-color: var(--over); }
-.rcard-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 2px; }
+/* the always-visible one-line summary header IS the collapse toggle */
+.rcard-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; width: 100%; text-align: left;
+  background: none; border: 0; color: inherit; padding: 10px 11px; border-radius: 9px; transition: background .12s; }
+.rcard-h:hover { background: var(--panel2); }
+.rcard-h::before { content: "▾"; color: var(--muted); font-size: 11px; width: .9em; }
+.rcard.collapsed .rcard-h::before { content: "▸"; }
+.rcard-body { padding: 4px 11px 11px; }
+.rcard.collapsed .rcard-body { display: none; }
 .rcard-h .r-idx { font-family: var(--mono); font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .rcard.final .r-idx { color: var(--yes-deep); }
 .r-cost { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .rcard-h .ftime { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
-.r-cost ~ .ftime { margin-left: 8px; }
+.r-tally { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.r-fault { font-family: var(--mono); font-size: 10.5px; font-weight: 600; color: var(--no-deep); }
 
 .block { margin: 9px 0 0; }
 .block.flat { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; }
@@ -90,10 +98,6 @@
 .verdict-cap.fault { background: var(--no-tint); border-color: var(--no); }
 .verdict-cap.miss { background: var(--over-tint); border-color: var(--over); }
 .vc-bal { color: var(--muted); } .vc-bal b { color: var(--txt); }
-
-/* run-list verdict glyph */
-.pl-vg { display: grid; place-items: start center; padding-top: 2px; font-size: 14px; }
-.pl-vg.vd { gap: 0; }
 
 /* ---- run tags (repro_tags) ----------------------------------------------- */
 .tag-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; vertical-align: middle; }
