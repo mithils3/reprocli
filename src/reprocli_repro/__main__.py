@@ -1,7 +1,7 @@
 """Entry point: ``python -m reprocli_repro``.
 
 Phases 0-3 stood up the package: CLI, forked tool loop, ``ExecutionContext``,
-microcompact, the lockfile->episode input pipeline, the per-paper
+the lockfile->episode input pipeline, the per-paper
 workspace/reference/evidence, and the budget meter + JIT-SLURM substrate. Phase 4
 closes the loop: each prepared episode becomes an ``ExecutionContext`` (workspace +
 budget + cluster + evidence), and ``run_reproduce_loop`` drives the model through

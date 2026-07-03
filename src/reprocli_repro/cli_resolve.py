@@ -41,12 +41,11 @@ TOP_K = 40
 MAX_TOKENS = 8192
 MAX_INPUT_TOKENS = 128000
 REQUEST_WORKERS = 8
-# Context-management tiers (guardrails.py): microcompact elides stale tool stdout once
-# MICROCOMPACT_THRESHOLD of MAX_INPUT_TOKENS is crossed; summarize-compact then rewrites
-# the head with one brain call, keeping SUMMARIZE_KEEP_TOKENS of recent turns verbatim.
-MICROCOMPACT = True
-MICROCOMPACT_KEEP = 3
-MICROCOMPACT_THRESHOLD = 0.5
+# Context management (guardrails.py): tool stdout stays verbatim until summarize-compact
+# rewrites the head with one brain call once SUMMARIZE_THRESHOLD of MAX_INPUT_TOKENS is
+# crossed, keeping SUMMARIZE_KEEP_TOKENS of recent turns verbatim. (A microcompact tier
+# that elided stale tool stdout earlier was removed: agents re-ran discovery commands and
+# GPU evals because the results they needed had been elided.)
 SUMMARIZE_COMPACT = True
 SUMMARIZE_KEEP_TOKENS = 20000
 SUMMARIZE_THRESHOLD = 0.6
@@ -75,9 +74,6 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.max_tokens = MAX_TOKENS
     args.max_input_tokens = MAX_INPUT_TOKENS
     args.request_workers = REQUEST_WORKERS
-    args.microcompact = MICROCOMPACT
-    args.microcompact_keep = MICROCOMPACT_KEEP
-    args.microcompact_threshold = MICROCOMPACT_THRESHOLD
     args.summarize_compact = SUMMARIZE_COMPACT
     args.summarize_keep_tokens = SUMMARIZE_KEEP_TOKENS
     args.summarize_threshold = SUMMARIZE_THRESHOLD

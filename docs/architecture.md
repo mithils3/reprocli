@@ -22,7 +22,7 @@ purely by base URL; neither self-hosts a model.
 > Verified against: `reprocli_repro/` (`cli_args.py`, `cli_resolve.py`, `loop.py`,
 > `context.py`, `inputs.py`, `dataset.py`, `prompt_render.py`, `workspace.py`,
 > `reference.py`, `evidence.py`, `budget.py`, `cluster.py`, `slurm.py`,
-> `sandbox.py`, `compaction.py`, `dispatch.py`, `postgrest.py`,
+> `sandbox.py`, `dispatch.py`, `postgrest.py`,
 > `tools/workspace_bash.py`, `tools/files.py`, `tools/run_gpu.py`),
 > `reprocli_vllm/` (`run_arxiv_prompt_vllm.py`, `config/cli_args.py`,
 > `config/config.py`, `runtime/tool_loop.py`, `runtime/loop_guards.py`,
@@ -283,7 +283,7 @@ real commands — the heavy ones via a just-in-time `salloc`/`srun` inside a
 **mandatory Apptainer sandbox**.
 
 What it comprises: the forked tool loop (`loop.py`), the per-episode
-`ExecutionContext` (`context.py`), the `microcompact` context tier (`compaction.py`),
+`ExecutionContext` (`context.py`), the `summarize-compact` context tier (`summarize.py`),
 the input pipeline that turns one lockfile row into a rendered prompt + run directory
 (`inputs.py` + `dataset.py` + `prompt_render.py`), the per-paper workspace /
 read-only reference / durable evidence setup (`workspace.py`, `reference.py`,
@@ -352,7 +352,7 @@ plain-subprocess fallback that could never reproduce anything.
  │      (published by reprocli_serve). The repro agent never self-hosts a model.       │
  │                                                                                    │
  │  budget meter   H100-equiv = Σ gpus × elapsed_h × hw_multiplier[hw]  (budget.py)   │
- │  context mgmt   microcompact (elide stale tool results) → hard context cutoff       │
+ │  context mgmt   summarize-compact (brain-call summary) → hard context cutoff        │
  │  evidence rec.  → commands.log · trajectory.jsonl · env.lock · patches/             │
  │                                                                                    │
  │  TOOLS (workspace-confined CPU tools + the metered run_gpu, via build_repro_tools)│
@@ -407,7 +407,7 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 through `dispatch.execute_repro_tool_call` against the per-episode
 `ExecutionContext`, so the loop runs a paper episode end-to-end: every GPU step
 JIT-`salloc`s on the `deltaai` profile inside the mandatory Apptainer sandbox. The
-loop body, guardrails, microcompact, structured-output finalization, and trace
+loop body, guardrails, summarize-compact, structured-output finalization, and trace
 capture are all in place.
 
 **The brain is provider-agnostic.** The agent's reasoning runs on **any
@@ -441,18 +441,17 @@ appends a `trajectory.jsonl` row so `budget_at_first_pass` is reconstructable.
 Budget exhaustion sets `exit_reason="budget_exhausted"` and force-finals via the
 same mechanism as `repeated_call_cutoff`.
 
-## III.5 Context management — microcompact
+## III.5 Context management — summarize-compact
 
-The forked loop adds a context-management tier *ahead of* the hard tools-off
-cutoff (`compaction.py`). Once the conversation crosses a **soft** threshold (a
-fraction of `--max-input-tokens`), `microcompact` elides the *content* of stale
-`role:"tool"` messages — each replaced by a short `[elided N chars]` placeholder —
-while keeping the most recent K tool results verbatim. It is pure (no model call,
-no I/O) and idempotent. This is safe precisely because **evidence is the durable
-store**: every metric, working command, and artifact path is written to
-`evidence/`, so eliding tool stdout from the prompt loses no ground truth. Only if
-the conversation is *still* over after compaction does the loop fall back to the
-hard context-budget cutoff.
+Tool stdout stays **verbatim** in the conversation. Once the prompt crosses a soft
+threshold (a fraction of the input-token budget), `summarize.py` makes one brain
+call that rewrites the old span into a structured summary (keeping the recent turns
+verbatim) so the loop keeps going; only if summarization itself fails past the real
+ceiling does the loop fall back to the hard context-budget cutoff. A cheaper
+`microcompact` tier that replaced stale tool results with `[elided N chars]`
+placeholders was removed after the 07-03 batch: agents re-ran discovery commands
+and whole GPU evals because results they needed had been elided out from under
+them — the "evidence is the durable store" rationale did not hold in practice.
 
 ## III.6 The agent reports; the auditor renders the verdict
 
@@ -502,7 +501,6 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
   budget.py                         # H100-equiv meter + hw_multiplier table
   cluster.py                        # the single deltaai profile (+ --partition/--apptainer-image overrides)
   slurm.py · sandbox.py             # JIT salloc/srun GPU-step builder + the mandatory Apptainer wrap
-  compaction.py                     # microcompact context tier (no model call)
   transcript.py                     # conversation shaping + incremental JSONL output
   postgrest.py                      # consolidated Supabase (PostgREST) transport
   dispatch.py                       # execute_repro_tool_call seam — routes build_repro_tools()

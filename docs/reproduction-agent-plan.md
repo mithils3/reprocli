@@ -22,7 +22,7 @@ the auditor grades. The pieces that shipped:
   `$REPROCLI_SERVER_URL` / `$REPROCLI_ENDPOINT_FILE` (published by
   [`reprocli_serve`](slurm/serve.md)). It never self-hosts a model.
 - A **compute-budget meter** (`budget.py`) that bounds H100-equivalent hours, plus
-  **microcompact** context management (`compaction.py`).
+  **summarize-compact** context management (`summarize.py`).
 - **JIT SLURM GPU steps** (`slurm.py`): every `run_gpu` call opens one fresh
   `salloc`, runs the command inside a **mandatory Apptainer sandbox** (`sandbox.py`),
   and releases the allocation the instant the step exits. **DeltaAI is the only

@@ -1,12 +1,16 @@
-"""Between-round guardrails for the reproduce loop: compute budget + context tiers.
+"""Between-round guardrails for the reproduce loop: compute budget + context tier.
 
 Split out of ``loop.py`` to keep the driver focused. ``apply_guardrails`` runs once
 between tool rounds and decides whether the next request still offers tools:
 
 * force-final when the compute budget is spent;
-* ``microcompact`` — cheap, no model call: elide stale tool stdout;
 * ``summarize-compact`` — one brain call that summarizes the old span so the loop
   keeps going (the tier that *replaces* the old hard context stop).
+
+Tool stdout stays verbatim in context until summarize-compact fires: a microcompact
+tier that elided stale tool results to ``[elided N chars]`` placeholders was removed
+after the 07-03 batch showed agents re-running discovery commands and whole GPU
+evals because the results they needed had been elided out from under them.
 
 The hard context cutoff no longer ends episodes; it survives only as a degraded
 backstop for when summarization itself fails and we are already past the real
@@ -21,7 +25,6 @@ from typing import Any
 
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import gpu_session, summarize
-from reprocli_repro.compaction import microcompact
 from reprocli_repro.context import ExecutionContext
 
 
@@ -38,11 +41,11 @@ def apply_guardrails(
     """Budget guardrail + context management, run between tool rounds.
 
     Returns whether the next request should still offer tools. Force-finals first
-    when the compute budget is spent, then lets ``microcompact`` reclaim cheap room
-    and ``summarize-compact`` summarize the old span so the loop keeps going. The
-    hard context cutoff no longer ends episodes; it survives only as a degraded
-    backstop for when summarization itself fails and we are past the real ceiling
-    (so we never silently front-truncate the prompt).
+    when the compute budget is spent, then lets ``summarize-compact`` summarize the
+    old span so the loop keeps going. The hard context cutoff no longer ends
+    episodes; it survives only as a degraded backstop for when summarization itself
+    fails and we are past the real ceiling (so we never silently front-truncate the
+    prompt).
     """
     if not include_tools:
         gpu_session.release(ctx, "tools_off")
@@ -55,21 +58,11 @@ def apply_guardrails(
         exit_reasons[custom_id] = "budget_exhausted"
         print(f"Stopping reproduce loop for {custom_id}: compute budget exhausted", file=sys.stderr)
         return False
-    # The context tiers gate on the model's own usage.prompt_tokens from the last
+    # The context tier gates on the model's own usage.prompt_tokens from the last
     # response (exact, free, backend-agnostic) — no chars-per-token estimate. That count
     # lags by this round's just-appended tool results, which is fine for a soft trigger:
     # the next round's real count catches up. When no usage has been recorded yet we skip
     # rather than estimate.
-    if args.microcompact and _over(ctx, args, args.microcompact_threshold):
-        # Always elide once the token gate above has fired.
-        stats = microcompact(messages, keep_recent_tool_results=args.microcompact_keep)
-        if stats["compacted"]:
-            print(
-                f"microcompact {custom_id}: elided {stats['elided_messages']} stale tool "
-                f"result(s) at {ctx.last_prompt_tokens} prompt tokens, "
-                f"{stats['chars_before']}->{stats['chars_after']} chars",
-                file=sys.stderr,
-            )
     if args.summarize_compact and _over(ctx, args, args.summarize_threshold):
         summarize_compaction(custom_id, ctx, messages, args, exit_reasons, server_url, model)
         if exit_reasons.get(custom_id) == "context_budget":

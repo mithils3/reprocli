@@ -84,7 +84,7 @@ The S6 execution agent runs as `python -m reprocli_repro`. It is its **own packa
 | Area | Modules |
 |---|---|
 | Entry + CLI | `__main__.py`, `cli_args.py`, `cli_resolve.py` |
-| Loop + state | `loop.py`, `context.py`, `guardrails.py`, `compaction.py`, `transcript.py`, `dispatch.py`, `finalize.py` |
+| Loop + state | `loop.py`, `context.py`, `guardrails.py`, `transcript.py`, `dispatch.py`, `finalize.py` |
 | Inputs | `inputs.py`, `dataset.py`, `prompt_render.py`, `reference.py` |
 | Workspace + evidence | `workspace.py`, `evidence.py`, `env.py`, `live_log.py`, `run_stats.py`, `summarize.py` |
 | Budget + GPU substrate | `budget.py`, `cluster.py`, `slurm.py`, `sandbox.py`, `gpu_session.py` |

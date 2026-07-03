@@ -1,10 +1,9 @@
 """summarize-compaction — the context tier that *summarizes* and keeps the loop going.
 
-Where ``compaction.microcompact`` only elides stale tool *stdout* (cheap, no model
-call), this tier handles the case microcompact cannot: when even the elided
-conversation nears ``max_input_tokens``, a single brain call rewrites the old span
-into one compact structured summary so the agent can **keep working** instead of
-being forced to finalize. It replaces the old hard ``context_budget`` stop.
+The loop keeps every tool result verbatim in context; when the conversation nears
+``max_input_tokens``, a single brain call rewrites the old span into one compact
+structured summary so the agent can **keep working** instead of being forced to
+finalize. It replaces the old hard ``context_budget`` stop.
 
 Design adapted from Pi's compaction (Earendil Inc., MIT — https://pi.dev, docs:
 "Compaction & Branch Summarization"). We take the parts that fit a stateless,
@@ -24,14 +23,13 @@ in-memory ``list[dict]`` conversation:
   ``workspace_bash``), so Pi's read-files list does not apply.
 
 We deliberately skip Pi's branch / ``/tree`` summarization, its persisted entry-tree
-+ reload (we splice the in-memory list in place), its split-turn summarization (an
-oversized single turn is handled upstream by ``microcompact`` eliding its tool
-stdout, not here), and its extension hooks.
++ reload (we splice the in-memory list in place), its split-turn summarization, and
+its extension hooks.
 
-vLLM prefix-cache caveat (shared with ``microcompact``): rewriting the head
-invalidates the KV cache from the first changed message. We fire rarely — only once
-the conversation nears the ceiling, after microcompact — and keep the
-post-compaction tail stable so the cache rebuilds a single time.
+vLLM prefix-cache caveat: rewriting the head invalidates the KV cache from the
+first changed message. We fire rarely — only once the conversation nears the
+ceiling — and keep the post-compaction tail stable so the cache rebuilds a single
+time.
 """
 
 from __future__ import annotations

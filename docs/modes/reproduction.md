@@ -177,7 +177,7 @@ borrowing only import-level primitives from `reprocli_vllm`. The load-bearing mo
 src/reprocli_repro/
   __main__.py · cli_args.py · cli_resolve.py   # entry point + its own argparse/validation
   loop.py                                       # run_reproduce_loop — forked run_tool_loop skeleton
-  context.py · compaction.py                    # per-episode state + microcompact context tier
+  context.py                                    # per-episode state
   inputs.py · dataset.py · prompt_render.py     # lockfile row → rendered prompt + run paths
   workspace.py · reference.py · evidence.py     # per-paper workspace / ro reference / durable evidence
   budget.py · cluster.py · slurm.py · sandbox.py # H100 meter · deltaai profile · JIT salloc · Apptainer wrap
