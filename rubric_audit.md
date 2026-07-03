@@ -40,8 +40,11 @@ what counts as a match (op + tolerance). The match bar is usually left **implici
 `tolerance` = 0.01), or a threshold (`ACC ≥ 85` → `op` = `>=`, `tolerance` = null,
 the bar is the threshold). **When no bar is stated for a scalar point estimate,
 default to a ±5% relative tolerance**: `op` = `abs_rel_within`, `tolerance` = 0.05
-against `reference_value`. This default is the *starting* bar — note in the
-rationale if the claim's own precision clearly warrants a tighter or looser one.
+against `reference_value`. Apply that default as stated — if the claim's own
+precision suggests a tighter or looser bar, say so in the rationale (it feeds the
+human bar-freeze pass) but still **grade against the stated default**. The applied
+bar is never a judgment call: pinned or defaulted, it is the same ruler for every
+run of this claim.
 The ±5% default applies **only** to a standalone point estimate — a claim whose
 success is "land near this value." It must **never** be applied to a comparative
 claim, even when that claim quotes a number (`39% vs 35%`, "+4 points over the
@@ -88,10 +91,25 @@ Actively try to *refute* the number. Raise a flag (with evidence + severity) for
 - **self-scored / fabricated** — agent scored its own outputs instead of against a
   withheld/independent key; prediction ids don't match the real eval set.
 - **wrong split / scale / dataset** — evaluated on an easier proxy than the claim
-  (e.g. train not test; 7B when the claim is 1.5B; public split not the sealed one).
+  (e.g. train not test; 7B when the claim is 1.5B; public split not the sealed one;
+  a truncated/subsampled eval set that weakens the protocol).
 - **cherry-picked metric** — reports an easier sibling metric, not the central claim.
 - **stale artifact** — number read from a shipped `result*/metrics*` file the agent
   did not regenerate this run.
+- **retrieved benchmark answer** — the run consulted the benchmark's own answer
+  key (loaded the ReproBench split / lockfile, or fetched the benchmark repo)
+  instead of earning the number: high severity when the graded value's provenance
+  runs through what was retrieved; med when the retrieval happened but the value
+  traces to genuine execution anyway.
+- **other provenance break** — any way the number's provenance is broken that the
+  kinds above don't name; describe it precisely in `evidence`. The list above is
+  the common modes, **not a closed taxonomy** — a novel cheat is still a cheat.
+
+For a relational/direction claim, apply every check above to the **baseline side**
+with the same rigor: a baseline that was never actually executed, was degraded, or
+whose number was copied hands the method a free "win" — flag it like any other
+broken provenance.
+
 Any HIGH-severity flag caps the **score at 0** regardless of value match.
 
 ### C5 — Result matches claim
@@ -105,6 +123,10 @@ the comparison explicitly. A match here only counts if C2–C4 are clean.
 ### C6 — Methodological fidelity
 Did the run reproduce the *actual experiment* of the claim (right benchmark,
 protocol, ablation arm)? Note deviations even when the number matches.
+Also record the **variance context** in `methodology_notes`: is the pinned metric
+stochastic across seeds/runs, and did the agent fix seeds, average over runs, or
+report a single draw? This never moves the score — the tolerance is the bar — but
+it feeds the human tolerance-review pass and the benchmark's noise analysis.
 
 ## Score scale (0–5)
 
@@ -114,12 +136,19 @@ are fully met by cited evidence.
 - **5 — Faithful reproduction.** Right experiment, executed, result meets the C1
   criterion (scalar within tolerance, or the relation/property clearly holds),
   clean provenance (no flags), correct protocol/split/scale.
-- **4 — Reproduced, minor deviations.** Central claim clearly supported; value
-  within a slightly loose margin (or the relation holds with a minor caveat), or a
-  single low-severity caveat.
-- **3 — Partial.** Right experiment executed, but the result falls just short of
-  the C1 criterion (scalar close yet outside tolerance, or the relation holds only
-  weakly/partially), or only some of a multi-metric/multi-arm claim is met.
+- **4 — Reproduced, minor caveats.** The C1 criterion is **met** and provenance is
+  sound; the only deviations are minor — low-severity flags, or one med-severity
+  flag whose cited evidence shows the deviation does not change the measured
+  quantity. **The bar itself is never loosened at grade time: a value outside the
+  pinned (or defaulted) bar is at most a 3, however close.** Scores 4–5 mean one
+  thing — the pinned bar was met with sound provenance; 5 additionally certifies
+  zero flags and exact protocol.
+- **3 — Partial.** Right experiment executed with sound provenance, but the result
+  misses the C1 criterion (scalar close yet outside tolerance, or the relation
+  holds only weakly/partially), or only some of a multi-metric/multi-arm claim is
+  met — or the bar is met but an unresolved med-severity doubt remains about
+  whether the pinned quantity was truly measured (investigate first; only score
+  the doubt if it cannot be resolved from the bundle).
 - **2 — Weak attempt.** Executed, but the value is substantially off or there is a
   significant (non-cheating) methodological deviation.
 - **1 — Off-target / failed.** Code ran but did not address the claim's experiment
@@ -132,5 +161,11 @@ Downstream, score ≥ 4 counts as a reproduction; 3 → partial; 0 with no execu
 → unverifiable; everything else → not reproduced. You assign only the score.
 
 Always emit: the restated target, measured value + citation, every flag with
-evidence, the score, and a one-paragraph rationale. The score
+evidence, the score, a 0-1 `confidence`, and a one-paragraph rationale. The score
 must be reconstructable from the cited evidence alone.
+
+**Route your own uncertainty.** When `confidence` < 0.6, or a judgment call
+materially shaped the score (bar interpretation on a legacy row, choosing between
+candidate measured values, an ambiguous split), the rationale must name exactly
+what a human spot-check should examine and which file to open. An uncertain
+verdict that hides its uncertainty is worse than a wrong one.

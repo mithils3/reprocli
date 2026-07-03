@@ -33,6 +33,8 @@ FLAG_KINDS = (
     "wrong_split_scale_dataset",
     "cherry_picked_metric",
     "stale_artifact",
+    "retrieved_benchmark_answer",  # run consulted the benchmark split/lockfile answer key
+    "other_provenance_break",      # open-ended: novel cheats are still cheats (rubric C4)
 )
 SEVERITIES = ("low", "med", "high")
 
@@ -87,6 +89,8 @@ AUDIT_JSON_SCHEMA = _obj(
         "methodology_notes": _STR,
         # granular 0-5 reproduction score; verdict is derived from it downstream.
         "score": {"type": "integer", "minimum": SCORE_MIN, "maximum": SCORE_MAX},
+        # auditor's own 0-1 confidence; < 0.6 routes the verdict to human spot-audit.
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "rationale": _STR,
     },
     [
@@ -106,6 +110,7 @@ AUDIT_JSON_SCHEMA = _obj(
         "value_comparison",
         "methodology_notes",
         "score",
+        "confidence",
         "rationale",
     ],
 )
