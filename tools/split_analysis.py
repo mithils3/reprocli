@@ -1,9 +1,9 @@
-"""Trend analysis of the published eval-100 + dev-15 splits.
+"""Trend analysis of the published eval-100 + dev-14 splits.
 
 Reads the released HF dataset ``Mithilss/reprobench-splits`` (``eval_100.jsonl``
 + ``dev_split.jsonl``) directly, falling back to the byte-identical local
 builder output if offline. Prints the tables that back
-``notes/Analysis/Final Split Analysis (eval-100 + dev-15).md``: artifact-signal
+``notes/Analysis/Split Analysis (eval-100 + dev-14).md``: artifact-signal
 x tier, compute band x tier, the
 hand-curated domain x tier census, anchor-metric type, arXiv recency, GPU
 hardware, and compute concentration.
