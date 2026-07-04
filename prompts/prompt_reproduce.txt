@@ -138,8 +138,11 @@ same node and node-local /tmp persists until release. You are billed gpus × wal
 
 Params (set when a session STARTS; fixed until released):
 - gpus — default 1, and 1 is right for latency benchmarks, RL rollouts, small-model inference,
-  and CPU-bound work. Take more only when memory genuinely demands sharding or the wall
-  demands parallelism; match the paper's stated hardware.
+  and CPU-bound work. Take more when memory genuinely demands sharding, or when a MEASURED
+  single-GPU ETA exceeds ~8 hours and the job parallelizes (data-parallel eval/training):
+  scale gpus up to the partition's per-node max (read it from list_partitions). Billing is
+  gpus × wall, so a job that scales costs the same while finishing sooner — and stops a long
+  run from outliving the partition walltime. Match the paper's stated hardware otherwise.
 - minutes — default 30: the hold's lifetime AND budget pre-authorization, capped by the
   partition's walltime (read it from list_partitions). A step still running at the wall is
   KILLED and the session lost. IGNORED on calls that reuse a held session — the old wall
@@ -152,7 +155,8 @@ Params (set when a session STARTS; fixed until released):
 
 LONG-JOB PROTOCOL — blind wall-kills are where budgets die:
 - Size from a MEASURED ETA: probe throughput on a tiny slice, ETA = items × rate, fresh
-  session with minutes ≥ 2× ETA.
+  session with minutes ≥ 2× ETA. If that ETA tops ~8 hours and the work shards, take more
+  GPUs (up to the partition max) instead of a longer wall.
 - Make logs survive the kill: `PYTHONUNBUFFERED=1 TQDM_DISABLE=1 ... >> {EVIDENCE_DIR}/run_log.txt 2>&1`.
   A bare pipe or tee dies with the process and leaves NOTHING to diagnose; progress bars bury
   the result line.
