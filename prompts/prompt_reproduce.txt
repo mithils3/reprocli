@@ -172,11 +172,16 @@ WATCH BOTH BUDGETS (surfaced every turn):
 or skip a download to "save disk" — pull what the MRE needs, whole.
 - The GPU node's /tmp ≠ the login node's: fetch data INSIDE run_gpu; re-fetch after a release.
   Workspace/evidence (shared, quota'd) hold code and evidence only.
-- `.venv/bin/hf download <repo_id> --local-dir /tmp/<name>` (add `--repo-type dataset`; the
-  CLI comes from `huggingface_hub[cli]` — the image doesn't ship it) pulls files in parallel:
-  even multi-hundred-GB repos land in minutes. NEVER iterate
-  `load_dataset(..., streaming=True)` record-by-record over the network — orders of magnitude
-  slower. Scope a script's internal downloads with `HF_HOME=/tmp/<name> <cmd>`.
+- ANYTHING hosted on the HF Hub — datasets, checkpoints, a single huge tar — comes down via
+  `.venv/bin/hf download <repo_id> [files...] --local-dir /tmp/<name>` (add `--repo-type
+  dataset`; install `huggingface_hub[cli,hf_xet]` first — the image ships neither). hf_xet
+  fetches chunks in parallel even within ONE file: multi-hundred-GB artifacts land in minutes.
+  NEVER curl/wget/gdown a `.../resolve/...` URL for a large file — a single stream bursts fast
+  then throttles to ~2 MB/s, and the presigned redirect expires after 1 h, so a long curl is
+  doomed twice over; if a speed probe looks fast but the full pull crawls, that is this — switch
+  client, don't re-probe. NEVER iterate `load_dataset(..., streaming=True)` record-by-record
+  over the network — orders of magnitude slower. Scope a script's internal downloads with
+  `HF_HOME=/tmp/<name> <cmd>`.
 - Gated repo (401/403)? Don't stall: search the Hub for a public mirror, verify it matches the
   original (config, sizes/shas), prefer canonical, record which you used. Non-HF sources:
   wget/curl/git clone into /tmp.
