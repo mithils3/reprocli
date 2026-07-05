@@ -40,7 +40,7 @@ LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.
@@ -147,12 +147,19 @@ export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
 mapfile -t PAPER_IDS < <(
   python - "${LOCKFILE}" "${SPLIT}" "${TIER}" <<'PY'
 import sys
-from reprocli_repro.inputs import load_lockfile_rows
+from reprocli_repro.inputs import (
+    DEFAULT_UNBANDED_BUDGET_H100_HOURS,
+    band_max_hours,
+    load_lockfile_rows,
+)
 rows = load_lockfile_rows(sys.argv[1], split=sys.argv[2])
 want = sys.argv[3]
-for pid, row in rows.items():
-    if (row.get("tier") or "") == want:
-        print(pid)
+tier = [(pid, row) for pid, row in rows.items() if (row.get("tier") or "") == want]
+# Biggest compute ceiling first: long-budget papers must start early or they
+# can't finish inside the sweep's remaining wall clock.
+tier.sort(key=lambda pr: band_max_hours(pr[1]) or DEFAULT_UNBANDED_BUDGET_H100_HOURS, reverse=True)
+for pid, _ in tier:
+    print(pid)
 PY
 )
 if [[ "${#PAPER_IDS[@]}" -eq 0 ]]; then
