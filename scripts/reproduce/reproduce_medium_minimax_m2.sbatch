@@ -6,7 +6,7 @@
 #   sbatch scripts/reproduce/reproduce_medium_minimax_m2.sbatch
 #
 # Medium-tier sibling of reproduce_easy_minimax_m2.sbatch. Defaults to the eval
-# split's 33 Medium papers, MAX_PARALLEL=6, and RESUME=1 so re-submits after the
+# split's 33 Medium papers, MAX_PARALLEL=10, and RESUME=1 so re-submits after the
 # 48h cap skip papers that already wrote a verdict. Worst-case compute budget is
 # ~1200 H100-h (18x8 + 9x32 + 4x96 + 2x192); actual spend is typically well under
 # the per-paper band caps since the agent stops when it converges.
@@ -42,7 +42,7 @@ LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.
