@@ -60,7 +60,7 @@ python -m reprocli_repro \
 |---|---|
 | `--paper-id 2110.03155` | the single arXiv id to reproduce |
 | `--lockfile` | lockfile source (default `Mithilss/reprobench-splits`) |
-| `--split` | published split: `test` (100-paper benchmark, default) or `validation` (dev); `eval`/`dev` aliases accepted |
+| `--split` | published split: `test` (94-paper benchmark, default) or `validation` (dev); `eval`/`dev` aliases accepted |
 | `--budget-h100-hours` | flat per-episode compute ceiling; omit to derive it from the paper's `selection_band` |
 | `--partition` | override the `deltaai` profile's default partition (`ghx4`) for `run_gpu` allocations |
 | `--apptainer-image` | base `.sif` backing the mandatory Apptainer sandbox |
