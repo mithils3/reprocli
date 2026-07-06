@@ -92,6 +92,37 @@ const RemoteSource = {
       .subscribe();
   },
 
+  // ---- cluster telemetry (host_status / host_metrics; anon read-only) ------
+  // The tables may not exist yet — callers (hosts.js / hoststrip.js) catch and
+  // degrade silently. gpus is jsonb: [{i,util,mem,mem_total,power,temp}, ...].
+  async listHosts() {
+    const { data, error } = await this.client.from("host_status")
+      .select("*").order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  subscribeHosts(cb) {
+    return this.client.channel("hosts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "host_status" }, (p) => cb(p.new))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "host_status" }, (p) => cb(p.new))
+      .subscribe();
+  },
+  async loadHostMetrics({ host, run_id, sinceMinutes = 45 } = {}) {
+    let q = this.client.from("host_metrics").select("*")
+      .gte("created_at", new Date(Date.now() - sinceMinutes * 60e3).toISOString());
+    if (host) q = q.eq("host", host);
+    if (run_id) q = q.eq("run_id", run_id);
+    const { data, error } = await q.order("created_at", { ascending: true }).limit(200);
+    if (error) throw error;
+    return data || [];
+  },
+  subscribeMetrics(cb) {
+    // one channel for all hosts/runs — callers filter rows by host / run_id
+    return this.client.channel("host-metrics")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "host_metrics" }, (p) => cb(p.new))
+      .subscribe();
+  },
+
   // ---- user-authored run tags (repro_tags: anon read + write) --------------
   async listTags() {
     if (!this.client) return [];

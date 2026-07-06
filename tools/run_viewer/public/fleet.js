@@ -51,11 +51,13 @@
       <div class="ftiles">
         ${tile("RUNNING", c.running, "accent")}${tile("DONE", c.done, "yes")}${tile("DEAD", c.dead, "slate")}${tile("ERROR", c.error, "no")}${tile("TOTAL BURN", RE.fmtHM(burn), "")}
       </div>
+      <div class="cluster-slot"></div>
       <div class="fleet-sub"><span class="fs-title">${gridTitle}</span>${note ? `<span class="fs-note">${note}</span>` : ""}</div>
       <div class="fgrid"></div></div>`;
     const grid = rootEl.querySelector(".fgrid");
     if (!cards.length) grid.innerHTML = `<div class="empty small">No runs to show yet.</div>`;
     else cards.forEach((r) => grid.appendChild(fcard(r)));
+    if (window.Hosts) window.Hosts.mountCluster(rootEl.querySelector(".cluster-slot")); // Cluster telemetry (hosts.js)
   }
 
   window.Fleet = { render };

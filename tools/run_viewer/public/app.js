@@ -17,6 +17,7 @@ const liveDetail = () => $("#live-detail");
 
 // ---- view switching --------------------------------------------------------
 function setView(v) {
+  const was = state.view;
   state.view = v;
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === v));
   document.querySelectorAll(".view").forEach((m) => m.classList.add("hidden"));
@@ -27,7 +28,10 @@ function setView(v) {
   if (v === "papers" && window.Papers) window.Papers.open();
   if (v === "audits" && window.Audits) window.Audits.open();
   if (v === "stats" && window.Stats) window.Stats.open();
-  if (v === "live" && state.currentRunId == null) renderList(); // paint the Fleet board
+  if (v === "live") {
+    if (was === "live" && state.currentRunId != null) closeRun(); // tab re-click → back to the board
+    else if (state.currentRunId == null) renderList(); // paint the Fleet board
+  }
 }
 window.setView = setView;
 window.openPaper = (arxiv) => { setView("papers"); if (window.Papers) window.Papers.openPaper(arxiv); };
@@ -94,6 +98,7 @@ async function openRun(runId) {
   state.currentRunId = runId; renderList();
   liveDetail().innerHTML = `<div class="empty">Loading ${R.esc(runId)}…</div>`;
   if (state.runChannel) { window.RemoteSource.unsubscribe(state.runChannel); state.runChannel = null; }
+  if (window.HostStrip) window.HostStrip.unmount();
   let data;
   try { data = await window.RemoteSource.loadRun(runId); }
   catch (e) { liveDetail().innerHTML = `<div class="empty">Could not load run: ${R.esc(e.message || e)}</div>`; return; }
@@ -101,10 +106,23 @@ async function openRun(runId) {
   state.seenSeq = new Set(data.events.map((e) => e.seq));
   R.renderRun(liveDetail(), data.run, data.rounds);
   if (window.Tags) Tags.mount(liveDetail());
+  const crumb = R.el(`<button class="crumb">‹ fleet</button>`);
+  crumb.addEventListener("click", closeRun);
+  liveDetail().querySelector(".run-detail").prepend(crumb);
+  if (window.HostStrip) window.HostStrip.mount(liveDetail(), runId);
   state.runChannel = window.RemoteSource.subscribeRun(runId, onLiveEvent, onRunPatch);
   if (window.scheduleJumpUpdate) window.scheduleJumpUpdate();
 }
 window.openRun = openRun;
+
+// close the open run → back to the Fleet board (crumb, Live tab re-click)
+function closeRun() {
+  if (state.runChannel) { window.RemoteSource.unsubscribe(state.runChannel); state.runChannel = null; }
+  if (window.HostStrip) window.HostStrip.unmount();
+  state.currentRunId = null; state.liveRun = null;
+  renderList(); // with no run open, renderList repaints the Fleet board into #live-detail
+}
+window.closeRun = closeRun;
 
 function onLiveEvent(e) {
   if (e.run_id !== state.currentRunId || state.seenSeq.has(e.seq)) return;
@@ -170,6 +188,7 @@ function boot() {
   if (state.remote) {
     window.RemoteSource.subscribeRunList((run) => { upsertRun(run); if (state.view === "live") renderList(); });
     if (window.Tags) { Tags.onChange(onTagsChange); Tags.load().catch(() => {}); window.RemoteSource.subscribeTags((row, evt) => Tags.applyRow(row, evt)); }
+    if (window.Hosts) window.Hosts.init(); // cluster telemetry (no-ops if the tables don't exist yet)
   } else {
     liveDetail().innerHTML = `<div class="empty">Supabase isn't reachable. Open <b>Local</b> to read a saved transcript, or set the keys in <code>config.js</code>.</div>`;
   }
