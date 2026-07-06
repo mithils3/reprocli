@@ -104,6 +104,30 @@ open the Vercel app's **Live runs** tab to watch. If the cluster can't reach
 Supabase, the run is unaffected — `agent.full.log` on disk stays the complete
 record, and you can always view it via the **Local file** tab.
 
+### Host telemetry (optional)
+
+Two more tables (created by the same `supabase_schema.sql` / `setup_db.py` run)
+feed a live host panel: `host_metrics` — append-only samples (cpu / mem / load /
+per-GPU util, one row per beacon cycle) — and `host_status` — one upserted row
+per host with the latest snapshot plus the master's slurm/vLLM log tail. The
+beacons are enabled by the **same** `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` env
+vars as the run uploader (unset means off; never an error). The reproduce sbatch
+scripts start the master beacon on the brain node once `/health` is green:
+
+```bash
+python -m reprocli_repro.metrics_beacon --role master --log-file slurm-<job>.out --interval 15 &
+```
+
+and each held GPU allocation gets a per-run beacon spawned **automatically** by
+the harness (`gpu_session` → `run_beacon`) inside the allocation:
+
+```bash
+srun --jobid=<jobid> --overlap ... python -m reprocli_repro.metrics_beacon --role run --run-id <run_id> --interval 20
+```
+
+A host counts as live while `host_status.updated_at` is under 10 minutes old;
+the master beacon prunes its own `host_metrics` rows older than 24 h.
+
 ## How it works (one shape, two sources)
 
 `parser.js` (local text) and `supabase-data.js` (`rowsToRounds` over `repro_events`)

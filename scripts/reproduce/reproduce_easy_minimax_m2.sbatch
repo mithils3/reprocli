@@ -140,6 +140,17 @@ done
 BASE_URL="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["base_url"])' "${ENDPOINT_FILE}")"
 curl -fsS "${BASE_URL}/health" >/dev/null && echo "brain up at ${BASE_URL}"
 
+# Host telemetry (optional; same opt-in as the agent-logs upload): one master
+# beacon samples this node + tails this job's .out into host_status.log_tail.
+# Per-run beacons ride each JIT allocation (spawned by gpu_session).
+BEACON_PID=""
+if [[ -n "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+  LOGFILE="$(scontrol show job "${OUTER_JOB}" 2>/dev/null | sed -n 's/.*StdOut=\([^ ]*\).*/\1/p' | head -1)"
+  python -m reprocli_repro.metrics_beacon --role master --log-file "${LOGFILE:-/dev/null}" --interval 15 &
+  BEACON_PID=$!
+fi
+trap 'kill "${SERVER_PID}" ${BEACON_PID:+"${BEACON_PID}"} 2>/dev/null || true' EXIT
+
 # The orchestrator + auditor auto-discover the URL + served model from this file.
 export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
 

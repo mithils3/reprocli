@@ -258,5 +258,66 @@ do $$ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- host_metrics / host_status  (host telemetry from reprocli_repro.metrics_beacon).
+-- host_metrics is an append-only time series: one row per beacon cycle, per
+-- host. host_status is one upserted row per host — the latest snapshot plus the
+-- master's slurm/vLLM log tail. Anon READ ONLY; writes come from the beacons
+-- with the service_role key. run_id joins repro_runs.run_id (no FK on purpose:
+-- the beacon streams best-effort). The master beacon self-prunes its own
+-- host_metrics rows older than 24 h, so the table stays a rolling window.
+-- ---------------------------------------------------------------------------
+create table if not exists public.host_metrics (
+  id           bigint generated always as identity primary key,
+  host         text not null,          -- short hostname
+  role         text not null,          -- 'master' (brain/vLLM node) | 'run' (JIT GPU node)
+  batch_id     text,                   -- REPRO_BATCH_ID (groups a sweep)
+  run_id       text,                   -- set when role='run'; joins repro_runs.run_id (no FK)
+  cpu_pct      numeric,                -- whole-node cpu busy %, 0-100
+  mem_used_gb  numeric,
+  mem_total_gb numeric,
+  load1        numeric,                -- 1-min loadavg
+  gpus         jsonb,                  -- [{"i":0,"util":93,"mem":72.1,"mem_total":97.8,"power":610,"temp":52}, ...] or null
+  created_at   timestamptz not null default now()
+);
+create index if not exists host_metrics_run_idx  on public.host_metrics (run_id, created_at desc);
+create index if not exists host_metrics_host_idx on public.host_metrics (host, created_at desc);
+
+create table if not exists public.host_status (
+  host         text primary key,
+  role         text not null,
+  batch_id     text,
+  run_id       text,
+  cpu_pct      numeric,
+  mem_used_gb  numeric,
+  mem_total_gb numeric,
+  load1        numeric,
+  gpus         jsonb,                  -- same shape as host_metrics.gpus
+  log_tail     text,                   -- last ~120 lines of the master's slurm/vLLM log, <=16 KB
+  updated_at   timestamptz not null default now()
+);
+
+drop trigger if exists host_status_touch on public.host_status;
+create trigger host_status_touch before update on public.host_status
+  for each row execute function public.touch_updated_at();
+
+alter table public.host_metrics enable row level security;
+alter table public.host_status  enable row level security;
+drop policy if exists host_metrics_read on public.host_metrics;
+create policy host_metrics_read on public.host_metrics for select to anon, authenticated using (true);
+drop policy if exists host_status_read on public.host_status;
+create policy host_status_read on public.host_status for select to anon, authenticated using (true);
+
+do $$ begin
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='host_metrics') then
+    alter publication supabase_realtime add table public.host_metrics;
+  end if;
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='host_status') then
+    alter publication supabase_realtime add table public.host_status;
+  end if;
+end $$;
+
 -- tell PostgREST to pick up the new columns immediately (Supabase also auto-reloads)
 notify pgrst, 'reload schema';

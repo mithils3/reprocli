@@ -29,7 +29,7 @@ from typing import Iterable
 
 from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
-from reprocli_repro import slurm
+from reprocli_repro import run_beacon, slurm
 from reprocli_repro.context import ExecutionContext, GpuSession
 
 
@@ -74,6 +74,8 @@ def ensure_session(
     )
     ctx.session = session
     ctx.allocation = handle.jobid
+    # Telemetry sidecar into the fresh allocation; no-op unless SUPABASE env is set.
+    run_beacon.start(ctx, handle.jobid)
     return session, None
 
 
@@ -102,6 +104,8 @@ def charge_accrued(ctx: ExecutionContext) -> float:
 def drop_lost(ctx: ExecutionContext) -> None:
     """Clear a session whose allocation is already gone (expired/cancelled) — no scancel."""
     charge_accrued(ctx)
+    if ctx.session is not None:
+        run_beacon.stop(ctx.session.jobid)  # the step died with the allocation; drop the client
     ctx.session = None
     ctx.allocation = None
 
@@ -113,6 +117,7 @@ def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
         return None
     final_charge = charge_accrued(ctx)
     slurm.release_session(session.jobid)
+    run_beacon.stop(session.jobid)  # scancel killed the step; don't leave the srun client
     record = {
         "jobid": session.jobid,
         "gpus": session.gpus,
