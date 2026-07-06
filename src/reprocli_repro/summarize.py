@@ -19,7 +19,7 @@ in-memory ``list[dict]`` conversation:
 * **serialize-then-truncate** the span (tool results + call args capped) so the
   summary request itself stays small, and **cumulative file tracking** across
   repeated compactions — for our toolset that means modified files only
-  (``write_file`` / ``apply_patch``); there is no read tool (reads go through
+  (``write_file`` / ``edit_file``); there is no read tool (reads go through
   ``workspace_bash``), so Pi's read-files list does not apply.
 
 We deliberately skip Pi's branch / ``/tree`` summarization, its persisted entry-tree
@@ -44,9 +44,9 @@ from reprocli_vllm.vllm.io import response_message
 
 # Tools whose ``path`` argument names a file the agent changed. There is no read
 # tool (reads go through ``workspace_bash``), so we track modified files only.
-_WRITE_TOOLS = {"write_file", "apply_patch"}
+_WRITE_TOOLS = {"write_file", "edit_file"}
 _TOOL_RESULT_CAP = 2000  # Pi caps serialized tool results so the summary call stays small.
-_CALL_ARG_CAP = 600      # write_file/apply_patch args carry whole-file content; cap them too.
+_CALL_ARG_CAP = 600      # write_file/edit_file args carry whole-file content; cap them too.
 _SUMMARY_MAX_TOKENS = 1500
 _SUMMARY_TEMPERATURE = 0.3
 

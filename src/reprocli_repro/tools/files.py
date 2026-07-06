@@ -3,7 +3,7 @@
 The agent *reads* files through ``workspace_bash`` (``grep -n`` / ``sed -n`` /
 ``cat`` -- targeted, line-numbered, and far cheaper than dumping whole files into
 context), so this module ships only the mutating ops: ``write_file`` and
-``apply_patch``.
+``edit_file``.
 
 Adapted from ``run_dir_tools._resolve_within``: every path the agent writes must
 resolve inside one of the episode's writable roots -- ``workspace`` (the editable
@@ -22,14 +22,22 @@ bytes are rejected outright, and ``resolve()`` canonicalizes symlinks before the
 containment check, so traversal, symlink escapes, and writes outside the bundle are
 all rejected before any I/O happens.
 
-``apply_patch`` delegates parsing/application to :mod:`reprocli_repro.tools.patch`
-(a port of Codex's context-matching engine) and hands it ``_resolve`` as the
-confinement callback, so every file the patch touches -- including rename targets --
-passes the same boundary check before any write.
+``edit_file`` replaces the old diff-application tool (a ported Codex
+context-matching patch engine): across sweeps it errored on 68% of its 66
+calls -- agents pass repo-relative paths from inside the cloned repo, hunks
+mis-locate, and models learned to route around it via whole-file ``write_file``
+rewrites instead. ``edit_file`` trades diff hunks for one exact-string
+replacement: no context matching to fuzz, and when the path itself is wrong (the
+paper's repo cloned into ``workspace/<repo>/...`` but the model addresses it by a
+bare repo-relative path) it suffix-searches the workspace tree for an unambiguous
+match instead of failing outright. Ambiguity and no-match failures still get a
+recovery hint (``tools/edit_helpers.py``), same spirit as the old engine's
+context-miss diagnostics.
 """
 
 from __future__ import annotations
 
+import difflib
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +46,7 @@ from reprocli_vllm.config.config import RUN_FILE_WRITE_MAX_CHARS, function_tool
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
 from reprocli_repro.sandbox import CONTAINER_RUN
-from reprocli_repro.tools.patch import apply_patch_text, peek_paths
+from reprocli_repro.tools.edit_helpers import mismatch_hint, resolve_by_suffix
 
 
 def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -57,8 +65,7 @@ def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, An
             "ok": False,
             "error": (
                 f"Content is {len(content)} chars, over the {RUN_FILE_WRITE_MAX_CHARS} limit. "
-                "Write the file in pieces (apply_patch to append) or generate it with a "
-                "workspace_bash heredoc instead."
+                "Write the file in pieces or generate it with a workspace_bash heredoc instead."
             ),
         }
     try:
@@ -69,28 +76,96 @@ def write_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, An
     return {"ok": True, "path": str(target), "bytes_written": len(content.encode("utf-8"))}
 
 
-def apply_patch(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
-    workspace = ctx.workspace
-    if workspace is None or not Path(workspace).is_dir():
-        return {"ok": False, "error": "No workspace directory for this episode."}
-    diff = _first(arguments, "diff", "patch", "patch_text", "input", "content")
-    if not isinstance(diff, str) or not diff.strip():
-        return {"ok": False, "error": "Missing patch 'diff' string to apply."}
-    diff = _unescape_patch(diff)
+def edit_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
+    raw_path = _first(arguments, "path", "file_path", "filename", "file")
+    resolved = _resolve(ctx, raw_path)
+    if not resolved["ok"]:
+        return resolved
+    target: Path = resolved["path"]
+    resolved_note: str | None = None
 
-    peeked = peek_paths(diff)
-    name = Path(peeked[0]).name if peeked else "patch.diff"
-    saved = evidence.save_patch(ctx.evidence, diff, name=name) if ctx.evidence else None
+    if not target.exists():
+        located = resolve_by_suffix(ctx, raw_path)
+        if located is not None:
+            if not located["ok"]:
+                if ctx.evidence is not None:
+                    evidence.log_command(
+                        ctx.evidence, f"edit_file {raw_path} ({located['reason']})",
+                        returncode=1, cwd=ctx.workspace,
+                    )
+                return located["result"]
+            # Re-run the containment check on the located file: rglob can walk
+            # through a symlinked dir, and only ``_resolve`` canonicalizes before
+            # bounding, so the inner boundary stays strict even for found paths.
+            checked = _resolve(ctx, str(located["path"]))
+            if not checked["ok"]:
+                return checked
+            target = checked["path"]
+            resolved_note = str(target)
+        elif not target.exists():
+            return {"ok": False, "error": f"File does not exist: {raw_path}."}
 
-    result = apply_patch_text(diff, confine=lambda p: _resolve(ctx, p))
+    if target.is_dir():
+        return {"ok": False, "error": f"Path is a directory: {raw_path}"}
+
+    old_string = _first(arguments, "old_string", "old_str", "old", "find", "search")
+    if not isinstance(old_string, str) or old_string == "":
+        return {
+            "ok": False,
+            "error": "Missing non-empty 'old_string' to match against the file text. "
+                     "Use write_file to create a new file.",
+        }
+    new_string = _first_str(arguments, "new_string", "new_str", "new", "replacement", "replace")
+    if new_string is None:
+        return {"ok": False, "error": "Missing 'new_string' (pass \"\" to delete the matched text)."}
+    if old_string == new_string:
+        return {"ok": False, "error": "old_string and new_string are identical -- nothing to change."}
+    replace_all = bool(arguments.get("replace_all") or arguments.get("all"))
+
+    try:
+        before = target.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+    count = before.count(old_string)
+    if count == 0:
+        if ctx.evidence is not None:
+            evidence.log_command(ctx.evidence, f"edit_file {raw_path} (no match)", returncode=1, cwd=ctx.workspace)
+        hint = mismatch_hint(before, old_string)
+        error = f"old_string not found in {raw_path}."
+        return {"ok": False, "error": f"{error} {hint}".strip()}
+    if count > 1 and not replace_all:
+        if ctx.evidence is not None:
+            evidence.log_command(ctx.evidence, f"edit_file {raw_path} (ambiguous match)", returncode=1, cwd=ctx.workspace)
+        return {
+            "ok": False,
+            "error": f"old_string occurs {count} times in {raw_path} -- give a larger, "
+                     "unique snippet or pass replace_all=true.",
+        }
+
+    after = before.replace(old_string, new_string, -1 if replace_all else 1)
+    try:
+        target.write_text(after, encoding="utf-8")
+    except OSError as exc:
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+    rel_display = _display_path(ctx, target)
+    diff_text = "".join(difflib.unified_diff(
+        before.splitlines(keepends=True), after.splitlines(keepends=True),
+        fromfile=rel_display, tofile=rel_display,
+    ))
+    saved = evidence.save_patch(ctx.evidence, diff_text, name=target.name) if ctx.evidence and diff_text else None
     if ctx.evidence is not None:
-        evidence.log_command(
-            ctx.evidence,
-            f"apply_patch {', '.join(result.get('files') or peeked)}",
-            returncode=0 if result.get("ok") else 1,
-            cwd=workspace,
-        )
-    result["patch_file"] = str(saved) if saved else None
+        evidence.log_command(ctx.evidence, f"edit_file {rel_display}", returncode=0, cwd=ctx.workspace)
+
+    result: dict[str, Any] = {
+        "ok": True,
+        "path": str(target),
+        "replacements": count if replace_all else 1,
+        "patch_file": str(saved) if saved else None,
+    }
+    if resolved_note:
+        result["resolved_path"] = resolved_note
     return result
 
 
@@ -107,13 +182,23 @@ def _first(arguments: dict[str, Any], *keys: str) -> Any:
     return None
 
 
-def _unescape_patch(text: str) -> str:
-    """Recover a patch that arrived JSON-escaped: one physical line whose newlines
-    are literal ``\\n``. Only fires when there are no real newlines, so a genuine
-    multi-line patch is never touched."""
-    if "\n" not in text and "\\n" in text:
-        return text.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
-    return text
+def _first_str(arguments: dict[str, Any], *keys: str) -> str | None:
+    """Like ``_first``, but keeps an explicit ``""`` -- ``new_string`` may
+    legitimately be empty (a pure deletion), unlike every other aliased arg."""
+    for key in keys:
+        val = arguments.get(key)
+        if isinstance(val, str):
+            return val
+    return None
+
+
+def _display_path(ctx: ExecutionContext, target: Path) -> str:
+    """``target`` relative to the workspace when possible, else just its name --
+    used only as the diff header, so it never needs to be exact."""
+    try:
+        return str(target.relative_to(Path(ctx.workspace)))
+    except (ValueError, TypeError):
+        return target.name
 
 
 def _to_host(ctx: ExecutionContext, text: str) -> str:
@@ -158,7 +243,7 @@ def _resolve(ctx: ExecutionContext, raw: Any) -> dict[str, Any]:
 
 
 def _roots(ctx: ExecutionContext) -> list[Path]:
-    # ``write_file``/``apply_patch`` only ever write durable source/evidence, so they
+    # ``write_file``/``edit_file`` only ever write durable source/evidence, so they
     # stay tight to workspace + evidence (a subset of the sandbox's rw binds; bulk
     # /tmp scratch is shell-driven, not a file-tool path).
     candidates = [ctx.workspace, ctx.evidence]
@@ -177,35 +262,24 @@ FILE_TOOLS = [
         ["path", "content"],
     ),
     function_tool(
-        "apply_patch",
-        "Edit file(s) in the workspace by applying a patch. Hunks are located by "
-        "matching their context (not line numbers) and tolerate minor whitespace "
-        "drift, so you do not need exact line numbers. Two formats are accepted:\n"
-        "(1) V4A (preferred):\n"
-        "*** Begin Patch\n"
-        "*** Update File: path/to/file.py\n"
-        "@@ optional_anchor_line\n"
-        " unchanged context line\n"
-        "-removed line\n"
-        "+added line\n"
-        "*** End Patch\n"
-        "(use '*** Add File: p' then '+'-prefixed lines to create, '*** Delete File: p' "
-        "to delete, '*** Move to: p' right after an Update header to rename);\n"
-        "(2) a standard unified diff (--- / +++ / @@).\n"
-        "Paths are relative to the workspace root (e.g. 'pkg/mod.py'); a leading "
-        "'/repro/workspace/', 'a/' or 'b/' is tolerated. Every file touched must stay "
-        "inside the workspace. The patch is saved verbatim under evidence/patches/.\n"
-        "If a hunk fails to match, the error quotes the file's actual text near the "
-        "closest line -- copy that text into your context lines instead of resending "
-        "the same patch.",
+        "edit_file",
+        "Replace an exact string in an existing file. old_string must match the file's "
+        "text exactly (copy it from a workspace_bash `grep -n` / `sed -n` read, "
+        "indentation included) and must be unique in the file unless replace_all is set. "
+        "Use write_file to create new files. Paths are relative to the workspace root; if "
+        "the repo lives in a subdirectory, a bare repo-relative path is located "
+        "automatically when it resolves to exactly one file.",
         {
-            "diff": {"type": "string", "description": "The patch text: a V4A '*** Begin Patch' block or a unified diff."},
+            "path": {"type": "string", "description": "File path (relative to workspace, or absolute within the bundle)."},
+            "old_string": {"type": "string", "description": "Exact text to replace; must match the file verbatim."},
+            "new_string": {"type": "string", "description": "Replacement text (may be empty to delete old_string)."},
+            "replace_all": {"type": "boolean", "description": "Replace every occurrence instead of requiring a unique match."},
         },
-        ["diff"],
+        ["path", "old_string", "new_string"],
     ),
 ]
 
 FILE_TOOL_HANDLERS = {
     "write_file": write_file,
-    "apply_patch": apply_patch,
+    "edit_file": edit_file,
 }

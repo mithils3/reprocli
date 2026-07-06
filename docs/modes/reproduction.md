@@ -58,7 +58,7 @@ flowchart TD
   classDef gpu fill:#dcfce7,stroke:#15803d,color:#000;
 
   LOCK["LOCKFILE ROW<br/>agent_task · central_claim · mre_config<br/>match_bar · tier · selection_band · audited_h100_hours"]
-  ORCH["ORCHESTRATOR (login / CPU — NO GPU)<br/>forked run_reproduce_loop · budget meter · evidence<br/>tools: workspace_bash · run_gpu · read/write/apply_patch · list_partitions · fetch_url"]:::cpu
+  ORCH["ORCHESTRATOR (login / CPU — NO GPU)<br/>forked run_reproduce_loop · budget meter · evidence<br/>tools: workspace_bash · run_gpu · write_file/edit_file · list_partitions · fetch_url"]:::cpu
   GPU["JIT GPU STEP (fresh salloc, released on exit)<br/>salloc … srun apptainer exec --nv &lt;sif&gt; bash -lc 'cd workspace && cmd'<br/>per-paper NVMe workspace · per-paper uv venv"]:::gpu
   REP["FINAL REPORT<br/>forced final pass emits report.json<br/>what ran + metric value(s) + evidence/ citations"]
   AU["AUDITOR (--mode audit)<br/>re-scores if it wants · applies match_bar · renders verdict"]
@@ -95,7 +95,7 @@ core.
 | tool | runs where | role |
 |---|---|---|
 | `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit files, inspect data — anything that does not need a GPU |
-| `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence`; `apply_patch` runs `git apply` and saves the diff under `evidence/patches/` |
+| `write_file` / `edit_file` | orchestrator (path-confined) | writes only `workspace`/`evidence`; reads go through `workspace_bash`. `edit_file` is exact-string replacement; the resulting diff is saved under `evidence/patches/` |
 | `list_partitions` | orchestrator (`sinfo`, read-only) | enumerate the cluster's partitions so the model can pick a `partition` for `run_gpu` |
 | `fetch_url` | orchestrator (read-only http[s]) | fetch a public docs page / wheel index / raw file (`tools/fetch.py`) |
 | `run_gpu` | one JIT `salloc … srun` per call, inside the Apptainer sandbox | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget |

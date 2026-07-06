@@ -9,7 +9,7 @@ episode writes a durable record under ``evidence/`` as it works:
   - ``patches/``        -- every diff the agent applied, saved verbatim.
 
 These are *primitives*: ``init_evidence`` lays the files down at setup; the tools
-(``workspace_bash``, ``apply_patch``) and the loop append to them as the episode
+(``workspace_bash``, ``edit_file``) and the loop append to them as the episode
 runs. Microcompact can safely elide stale tool output from the conversation
 precisely because the ground truth lives here, not in the model's context.
 """

@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro import evidence
 from reprocli_repro.context import ExecutionContext
-from reprocli_repro.tools.files import apply_patch, write_file
+from reprocli_repro.tools.files import edit_file, write_file
 
 
 def _ctx(root: Path) -> ExecutionContext:
@@ -74,155 +74,123 @@ class ContainerPathTranslationTests(unittest.TestCase):
             self.assertFalse(write_file(evil, ctx)["ok"])
 
 
-class ApplyPatchTests(unittest.TestCase):
-    DIFF = "--- a/a.txt\n+++ b/a.txt\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n"
-
+class EditFileTests(unittest.TestCase):
     def test_edit_applies_and_is_saved(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
             (ctx.workspace / "a.txt").write_text("a\nb\nc\n")
-            res = apply_patch({"diff": self.DIFF}, ctx)
+            res = edit_file({"path": "a.txt", "old_string": "b", "new_string": "B"}, ctx)
             self.assertTrue(res["ok"], res)
+            self.assertEqual(res["replacements"], 1)
             self.assertEqual((ctx.workspace / "a.txt").read_text(), "a\nB\nc\n")
             self.assertEqual(len(list((ctx.evidence / "patches").glob("*.diff"))), 1)
-            self.assertIn("apply_patch", (ctx.evidence / "commands.log").read_text())
+            self.assertIn("edit_file", (ctx.evidence / "commands.log").read_text())
 
-    def test_patch_escaping_workspace_is_rejected(self):
+    def test_replace_all(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            evil = "--- a/../evil.txt\n+++ b/../evil.txt\n@@ -0,0 +1 @@\n+pwn\n"
-            res = apply_patch({"diff": evil}, ctx)
-            self.assertFalse(res["ok"])
-            self.assertIn("confined", res["error"])
-
-    def test_workspace_prefixed_path_is_recovered(self):
-        """The round-36 failure: agent bakes 'repro/workspace/' into the header."""
-        with tempfile.TemporaryDirectory() as d:
-            ctx = _ctx(Path(d))
-            (ctx.workspace / "pkg").mkdir()
-            (ctx.workspace / "pkg" / "m.py").write_text("a\nb\nc\n")
-            diff = (
-                "--- a/repro/workspace/pkg/m.py\n"
-                "+++ b/repro/workspace/pkg/m.py\n"
-                "@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n"
-            )
-            res = apply_patch({"diff": diff}, ctx)
+            (ctx.workspace / "a.txt").write_text("x\nx\nx\n")
+            res = edit_file({"path": "a.txt", "old_string": "x", "new_string": "y", "replace_all": True}, ctx)
             self.assertTrue(res["ok"], res)
-            self.assertEqual((ctx.workspace / "pkg" / "m.py").read_text(), "a\nB\nc\n")
+            self.assertEqual(res["replacements"], 3)
+            self.assertEqual((ctx.workspace / "a.txt").read_text(), "y\ny\ny\n")
 
-    def test_v4a_update_with_fuzzy_context(self):
+    def test_ambiguous_match_without_replace_all_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            # trailing whitespace in the file the patch's context omits
-            (ctx.workspace / "f.py").write_text("def x():\n    return 1   \n")
-            patch = (
-                "*** Begin Patch\n"
-                "*** Update File: f.py\n"
-                "@@ def x():\n"
-                "-    return 1\n"
-                "+    return 2\n"
-                "*** End Patch\n"
-            )
-            res = apply_patch({"diff": patch}, ctx)
-            self.assertTrue(res["ok"], res)
-            self.assertEqual((ctx.workspace / "f.py").read_text(), "def x():\n    return 2\n")
-
-    def test_v4a_add_and_delete_and_rename(self):
-        with tempfile.TemporaryDirectory() as d:
-            ctx = _ctx(Path(d))
-            (ctx.workspace / "old.txt").write_text("keep\n")
-            add = "*** Begin Patch\n*** Add File: sub/new.txt\n+hello\n+world\n*** End Patch\n"
-            self.assertTrue(apply_patch({"diff": add}, ctx)["ok"])
-            self.assertEqual((ctx.workspace / "sub" / "new.txt").read_text(), "hello\nworld\n")
-
-            rename = "*** Begin Patch\n*** Update File: old.txt\n*** Move to: renamed.txt\n@@\n-keep\n+kept\n*** End Patch\n"
-            self.assertTrue(apply_patch({"diff": rename}, ctx)["ok"])
-            self.assertFalse((ctx.workspace / "old.txt").exists())
-            self.assertEqual((ctx.workspace / "renamed.txt").read_text(), "kept\n")
-
-            delete = "*** Begin Patch\n*** Delete File: sub/new.txt\n*** End Patch\n"
-            self.assertTrue(apply_patch({"diff": delete}, ctx)["ok"])
-            self.assertFalse((ctx.workspace / "sub" / "new.txt").exists())
-
-    def test_missing_context_fails_without_touching_file(self):
-        with tempfile.TemporaryDirectory() as d:
-            ctx = _ctx(Path(d))
-            (ctx.workspace / "f.txt").write_text("a\nb\nc\n")
-            patch = "*** Begin Patch\n*** Update File: f.txt\n@@\n-nonexistent\n+x\n*** End Patch\n"
-            res = apply_patch({"diff": patch}, ctx)
+            (ctx.workspace / "a.txt").write_text("x\nx\n")
+            res = edit_file({"path": "a.txt", "old_string": "x", "new_string": "y"}, ctx)
             self.assertFalse(res["ok"])
-            self.assertEqual((ctx.workspace / "f.txt").read_text(), "a\nb\nc\n")
+            self.assertIn("2 times", res["error"])
+            self.assertEqual((ctx.workspace / "a.txt").read_text(), "x\nx\n")
 
-    def test_miss_error_quotes_nearby_file_text(self):
-        """A near-miss should show the agent the file's real text, not a dead end."""
+    def test_not_found_error_includes_nearby_text_hint(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
             (ctx.workspace / "f.py").write_text("def f():\n    return 41\n    # tail\n")
-            # context drifted: model thinks the body is 'return 99'
-            patch = (
-                "*** Begin Patch\n*** Update File: f.py\n@@ def f():\n"
-                "-    return 99\n+    return 0\n*** End Patch\n"
+            # model thinks the body is 'return 99'; the real text is 'return 41'
+            res = edit_file(
+                {"path": "f.py", "old_string": "    return 99", "new_string": "    return 0"}, ctx,
             )
-            res = apply_patch({"diff": patch}, ctx)
             self.assertFalse(res["ok"])
-            self.assertIn("Closest match", res["error"])
+            self.assertIn("not found", res["error"])
             self.assertIn("return 41", res["error"])  # quotes the real line
+            self.assertEqual((ctx.workspace / "f.py").read_text(), "def f():\n    return 41\n    # tail\n")
 
-    def test_out_of_order_hunks_get_an_actionable_error(self):
-        """Second hunk targets a line the first hunk's cursor already passed."""
+    def test_empty_new_string_deletes(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            (ctx.workspace / "f.txt").write_text("one\ntwo\nthree\nfour\n")
-            patch = (
-                "*** Begin Patch\n*** Update File: f.txt\n"
-                "@@\n-three\n+THREE\n"   # hunk A (lower in file) first
-                "@@\n-one\n+ONE\n"       # hunk B (higher in file) second
-                "*** End Patch\n"
+            (ctx.workspace / "a.txt").write_text("keep-this-drop\n")
+            res = edit_file({"path": "a.txt", "old_string": "-drop", "new_string": ""}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "a.txt").read_text(), "keep-this\n")
+
+    def test_repo_relative_path_is_suffix_resolved(self):
+        """The clone-into-workspace failure: agent passes a repo-relative path from
+        inside the cloned repo instead of the workspace-relative one."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            nested = ctx.workspace / "repo" / "src"
+            nested.mkdir(parents=True)
+            (nested / "x.py").write_text("a = 1\n")
+            res = edit_file({"path": "src/x.py", "old_string": "a = 1", "new_string": "a = 2"}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((nested / "x.py").read_text(), "a = 2\n")
+            self.assertEqual(res["resolved_path"], str(nested / "x.py"))
+
+    def test_container_absolute_path_is_suffix_resolved(self):
+        """Same confusion with the container workspace prefix stapled on:
+        /repro/workspace/<repo-relative path> that misses still gets located."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            nested = ctx.workspace / "repo" / "src"
+            nested.mkdir(parents=True)
+            (nested / "x.py").write_text("a = 1\n")
+            res = edit_file(
+                {"path": "/repro/workspace/src/x.py", "old_string": "a = 1", "new_string": "a = 2"}, ctx,
             )
-            res = apply_patch({"diff": patch}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((nested / "x.py").read_text(), "a = 2\n")
+
+    def test_suffix_hit_never_escapes_the_roots(self):
+        """A symlinked dir inside the workspace must not let a suffix hit resolve
+        outside the writable roots (rglob may or may not follow the link by Python
+        version; either way the edit must be refused)."""
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            outside = Path(d) / "outside" / "cfg"
+            outside.mkdir(parents=True)
+            (outside / "x.py").write_text("a = 1\n")
+            (ctx.workspace / "link").symlink_to(outside.parent)
+            res = edit_file({"path": "cfg/x.py", "old_string": "a = 1", "new_string": "a = 2"}, ctx)
             self.assertFalse(res["ok"])
-            self.assertIn("earlier hunk", res["error"])
-            self.assertEqual((ctx.workspace / "f.txt").read_text(), "one\ntwo\nthree\nfour\n")
+            self.assertEqual((outside / "x.py").read_text(), "a = 1\n")
 
-    def test_unprefixed_context_line_is_tolerated(self):
-        """A flush-left context line that lost its leading space must not abort the patch."""
+    def test_ambiguous_suffix_match_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            (ctx.workspace / "m.py").write_text("import os\nx = 1\n")
-            patch = (
-                "*** Begin Patch\n*** Update File: m.py\n@@\n"
-                "import os\n"          # <- no leading space; should be read as context
-                "-x = 1\n+x = 2\n*** End Patch\n"
-            )
-            res = apply_patch({"diff": patch}, ctx)
-            self.assertTrue(res["ok"], res)
-            self.assertEqual((ctx.workspace / "m.py").read_text(), "import os\nx = 2\n")
+            (ctx.workspace / "a" / "src").mkdir(parents=True)
+            (ctx.workspace / "b" / "src").mkdir(parents=True)
+            (ctx.workspace / "a" / "src" / "x.py").write_text("a = 1\n")
+            (ctx.workspace / "b" / "src" / "x.py").write_text("a = 1\n")
+            res = edit_file({"path": "src/x.py", "old_string": "a = 1", "new_string": "a = 2"}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("Ambiguous", res["error"])
 
-    def test_crlf_file_keeps_its_line_endings(self):
+    def test_edit_escaping_workspace_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            (ctx.workspace / "w.txt").write_bytes(b"a\r\nb\r\nc\r\n")
-            patch = "*** Begin Patch\n*** Update File: w.txt\n@@\n-b\n+B\n*** End Patch\n"
-            res = apply_patch({"diff": patch}, ctx)
-            self.assertTrue(res["ok"], res)
-            self.assertEqual((ctx.workspace / "w.txt").read_bytes(), b"a\r\nB\r\nc\r\n")
-
-    def test_json_escaped_patch_is_recovered(self):
-        with tempfile.TemporaryDirectory() as d:
-            ctx = _ctx(Path(d))
-            (ctx.workspace / "a.txt").write_text("a\nb\nc\n")
-            escaped = self.DIFF.replace("\n", "\\n")  # arrives as one physical line
-            res = apply_patch({"diff": escaped}, ctx)
-            self.assertTrue(res["ok"], res)
-            self.assertEqual((ctx.workspace / "a.txt").read_text(), "a\nB\nc\n")
+            res = edit_file({"path": "../evil.txt", "old_string": "a", "new_string": "b"}, ctx)
+            self.assertFalse(res["ok"])
+            self.assertIn("'..'", res["error"])
 
     def test_arg_aliases(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            self.assertTrue(write_file({"file_path": "p.txt", "text": "hi\n"}, ctx)["ok"])
-            self.assertEqual((ctx.workspace / "p.txt").read_text(), "hi\n")
             (ctx.workspace / "a.txt").write_text("a\nb\nc\n")
-            self.assertTrue(apply_patch({"patch": self.DIFF}, ctx)["ok"])
+            res = edit_file({"file_path": "a.txt", "old": "b", "new": "B"}, ctx)
+            self.assertTrue(res["ok"], res)
+            self.assertEqual((ctx.workspace / "a.txt").read_text(), "a\nB\nc\n")
 
 
 if __name__ == "__main__":

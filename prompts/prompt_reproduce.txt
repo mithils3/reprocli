@@ -121,8 +121,8 @@ Tools:
 - update_plan — durable checklist (survives compaction): {step, status} array, one
   in_progress; each call replaces the plan. Set it after scoping, keep statuses current,
   reconcile before finishing.
-- write_file / apply_patch — create/edit files in workspace + evidence (not /tmp — use shell
-  redirection there). Prefer over `echo >` / `sed -i`.
+- write_file / edit_file — create files / replace an exact old_string in one (workspace +
+  evidence; not /tmp — use shell redirection there). Prefer over `echo >` / `sed -i`.
 - fetch_url — read-only http(s) fetch (HTML→text). There is NO web search: a URL you cannot
   cite a source for is a guess.
 

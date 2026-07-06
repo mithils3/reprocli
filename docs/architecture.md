@@ -357,8 +357,8 @@ plain-subprocess fallback that could never reproduce anything.
  │                                                                                    │
  │  TOOLS (workspace-confined CPU tools + the metered run_gpu, via build_repro_tools)│
  │   workspace_bash → cwd-confined shell  (git clone, uv venv, edit, inspect)         │
- │   read_file / write_file / apply_patch  (read: workspace+reference+evidence;       │
- │                                          write: workspace+evidence only)            │
+ │   write_file / edit_file  (write: workspace+evidence only;                          │
+ │                            edit_file is exact-string replacement, not a diff)      │
  │   fetch_url      → read-only fetch of a public http(s) URL                          │
  │   list_partitions → read-only sinfo of the cluster's partitions                    │
  │   run_gpu        → one JIT salloc per step ─────────────────────────────┐  ✅      │
@@ -398,7 +398,7 @@ the S6→S7 contract the existing auditor reads (it walks `<runs-dir>/<arxiv_id>
 | tool | runs where | role |
 |---|---|---|
 | `workspace_bash` | orchestrator CPU subprocess, cwd = `workspace/` | clone the repo at a pinned commit, create the per-paper `uv` venv, install deps, edit, inspect — anything that does not need a GPU. Every command is appended to `evidence/commands.log` |
-| `read_file` / `write_file` / `apply_patch` | orchestrator (path-confined) | reads span `workspace`/`reference`/`evidence`; writes only `workspace`/`evidence` (the `reference/` copy is never writable). `apply_patch` runs `git apply` and saves the diff verbatim under `evidence/patches/` |
+| `write_file` / `edit_file` | orchestrator (path-confined) | writes only `workspace`/`evidence` (the `reference/` copy is never writable); reads go through `workspace_bash`. `edit_file` does exact-string replacement; the resulting diff is saved under `evidence/patches/` |
 | `fetch_url` | orchestrator (`tools/fetch.py`, read-only) | fetch a public http(s) URL (docs, a wheel index, a raw file) as text — no write, no GPU |
 | `list_partitions` | orchestrator (`sinfo`, read-only) | enumerates the cluster's partitions (node pools) — idle/total nodes, walltime, GPU gres — plus the built-in default, so the model can pick a `partition` for `run_gpu` instead of the profile's default |
 | `run_gpu` | one JIT `salloc … srun` per call, inside the Apptainer sandbox | the experiment: training/eval/scoring. Wraps the command, captures out/err/exit, **meters** `gpus × elapsed × hw_multiplier`, enforces a per-step timeout and the **remaining** budget. Optional `partition` (from `list_partitions`) overrides the profile default for that allocation; the profile pins only the default |
@@ -506,7 +506,7 @@ src/reprocli_repro/                 # the S6 execution agent — its own package
   dispatch.py                       # execute_repro_tool_call seam — routes build_repro_tools()
   tools/
     workspace_bash.py               # cwd-confined shell
-    files.py                        # read_file / write_file / apply_patch
+    files.py                        # write_file / edit_file
     fetch.py                        # read-only fetch_url
     partitions.py                   # list_partitions — sinfo pools + the profile default
     run_gpu.py                      # the JIT-dispatching metered GPU tool
