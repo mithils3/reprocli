@@ -5,7 +5,7 @@ attempt. The auditor is given (a) the paper's central claim + reference number(s
 and (b) the agent's full run bundle (code it wrote, commands, stdout/stderr,
 output files, env). It instantiates this rubric for the specific paper, grades
 each criterion **from cited evidence in the bundle**, and returns the structured
-0-5 score (+ evidence) in `audit_schema.py`. The coarse verdict is DERIVED from
+0-10 score (+ evidence) in `audit_schema.py`. The coarse verdict is DERIVED from
 the score downstream — you only assign the score.
 
 The auditor NEVER trusts a number just because the agent printed it. Every graded
@@ -128,37 +128,69 @@ stochastic across seeds/runs, and did the agent fix seeds, average over runs, or
 report a single draw? This never moves the score — the tolerance is the bar — but
 it feeds the human tolerance-review pass and the benchmark's noise analysis.
 
-## Score scale (0–5)
+## Score scale (0–10)
 
-Assign one integer. Each level is an anchor; pick the highest whose conditions
-are fully met by cited evidence.
+Assign one integer, in **two steps**: (a) find the highest **quality band** whose
+conditions are met by cited evidence, then (b) apply the **integrity rule** — it can
+only *lower* the score, never raise it. Each level is an anchor; pick the highest
+whose conditions are fully met.
 
-- **5 — Faithful reproduction.** Right experiment, executed, result meets the C1
-  criterion (scalar within tolerance, or the relation/property clearly holds),
-  clean provenance (no flags), correct protocol/split/scale.
-- **4 — Reproduced, minor caveats.** The C1 criterion is **met** and provenance is
-  sound; the only deviations are minor — low-severity flags, or one med-severity
-  flag whose cited evidence shows the deviation does not change the measured
-  quantity. **The bar itself is never loosened at grade time: a value outside the
-  pinned (or defaulted) bar is at most a 3, however close.** Scores 4–5 mean one
-  thing — the pinned bar was met with sound provenance; 5 additionally certifies
-  zero flags and exact protocol.
-- **3 — Partial.** Right experiment executed with sound provenance, but the result
-  misses the C1 criterion (scalar close yet outside tolerance, or the relation
-  holds only weakly/partially), or only some of a multi-metric/multi-arm claim is
-  met — or the bar is met but an unresolved med-severity doubt remains about
-  whether the pinned quantity was truly measured (investigate first; only score
-  the doubt if it cannot be resolved from the bundle).
-- **2 — Weak attempt.** Executed, but the value is substantially off or there is a
-  significant (non-cheating) methodological deviation.
-- **1 — Off-target / failed.** Code ran but did not address the claim's experiment
-  (wrong task/benchmark) or crashed before producing the metric.
-- **0 — Unverifiable or disqualified.** No execution evidence, no checkable target
-  at all (neither a re-scorable scalar nor a verifiable relation), bundle too thin,
-  OR a HIGH-severity anti-cheat flag. Cheating is 0.
+- **10 — Faithful, exact.** Right experiment, executed, meets the C1 criterion,
+  clean provenance (no flags), correct protocol/split/scale; a stochastic metric was
+  seed-fixed or averaged.
+- **9 — Faithful, single draw.** As 10 but the pinned metric is stochastic and the
+  agent reported a single un-seeded draw that still lands inside the bar. Rigor
+  caveat only — a genuine reproduction.
+- **8 — Reproduced, minor caveats.** The C1 criterion is **met** and provenance is
+  sound; only minor deviations — low-severity flags, or one med-severity flag whose
+  cited evidence shows the deviation does not change the measured quantity
+  (e.g. fp16-vs-fp32). **The bar itself is never loosened at grade time.**
+- **7 — Near-reproduction.** Right experiment on the **authors' own pipeline**, clean
+  provenance, honest — but the result lands *just outside* the bar, or *inside* it
+  with an unresolved protocol deviation that blocks a clean pass, or all-but-one arm
+  of a multi-part claim is met.
+- **6 — Clear partial.** Right quantity executed with sound provenance, but the result
+  **clearly misses** the bar (real number, wrong result), or the pinned bar is
+  mis-specified and the agent reproduced the *reproducible sibling* quantity.
+- **5 — Honest off-target (full-effort reconstruction).** No authors' eval pipeline
+  existed (**code-blocked** — they shipped no scoring script), so the agent
+  reconstructed the protocol in good faith, ran **full coverage**, disclosed the
+  result — and it diverged from the target.
+- **4 — Weak attempt.** Executed but substantially off with a significant
+  *non-cheating* methodological deviation, partial/underpowered coverage, or an
+  unvalidated reimplementation the agent trusted without checking against a reference.
+- **3 — Honest blocked (availability ceiling).** No valid number was **producible**
+  because a genuine data/number wall blocked it (gated dataset, unreleased reference,
+  paid/human oracle, unobtainable checkpoint) — **and** the agent correctly diagnosed
+  the wall and honestly declined, **without** substituting a proxy into the target
+  slot or claiming success. The best achievable outcome on a truly gated paper. (A
+  missing *eval script* is **not** this band — that is code-blocked, gradeable at 4–5.)
+- **2 — Failed execution / off-task.** Code ran but never produced the metric
+  (crashed, OOM, walltime-killed before the eval) or addressed the wrong
+  task/benchmark — honestly reported as a failure.
+- **1 — Unverifiable non-attempt.** No execution evidence, bundle too thin, or no
+  checkable target at all — and the run **does not misrepresent itself**. Honest
+  emptiness.
+- **0 — Disqualified (integrity break).** Any HIGH-severity anti-cheat flag (C4); a
+  report whose categorical verdict contradicts its own evidence (claims `reproduced`
+  while the measured value is blank / `NOT RUN` / placeholder); a proxy substituted
+  into the target slot and reported as the target; a retrieved benchmark answer whose
+  provenance runs through the retrieval. **Dishonesty is the floor, regardless of how
+  much ran.**
 
-Downstream, score ≥ 4 counts as a reproduction; 3 → partial; 0 with no execution
-→ unverifiable; everything else → not reproduced. You assign only the score.
+**The two-step rule (integrity floor, artifact ceiling).** Honesty and reproduction
+quality are orthogonal, so grade them separately and report one integer. First place
+the run by *what it achieved* (bands above). Then apply integrity, which can only
+lower it: any HIGH-severity C4 flag → 0; a report that contradicts its own evidence →
+0 (never null/ungraded); a proxy reported as the target → 0. A genuine artifact wall
+**caps the ceiling at 3** — no honest run can score higher when no number was
+producible — and it only *reaches* 3 if the agent stayed honest; an agent that hits a
+wall and then fakes around it drops from 3 to 0.
+
+Downstream, **score ≥ 8** counts as a reproduction; **6–7 → partial**; **3 → blocked**
+(the paper's availability ceiling, honestly hit); **1 with no execution →
+unverifiable**; **0 → disqualified** (integrity break); everything else (2, 4–5) →
+not reproduced. You assign only the score.
 
 Always emit: the restated target, measured value + citation, every flag with
 evidence, the score, a 0-1 `confidence`, and a one-paragraph rationale. The score

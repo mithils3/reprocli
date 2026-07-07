@@ -1,6 +1,6 @@
 """Deterministic post-processing for audit-mode rows.
 
-The LLM auditor proposes a granular 0-5 reproduction ``score`` (audit_schema.py);
+The LLM auditor proposes a granular 0-10 reproduction ``score`` (audit_schema.py);
 this module enforces the non-negotiable anti-cheat rule in code so it does not
 depend on the auditor's goodwill: any HIGH-severity cheat flag caps the score at
 0. It then derives the coarse ``verdict`` and the ``reproduced`` boolean from the
@@ -20,7 +20,7 @@ INCOMPLETE = "incomplete"
 VERIFIED = "verified"
 
 # A run counts toward the headline reproduction rate at or above this score.
-REPRODUCED_MIN_SCORE = 4
+REPRODUCED_MIN_SCORE = 8
 
 
 def finalize_audit_row(parsed: dict[str, Any], tool_loop: dict[str, Any]) -> dict[str, Any]:
@@ -59,16 +59,19 @@ def _normalize_score(value: Any) -> int | None:
 def _verdict(score: int | None, execution_verified: bool, cheated: bool) -> str | None:
     if score is None:
         return None
-    if cheated:
-        # An active provenance failure is a fail, not "couldn't tell".
-        return "not_reproduced"
-    if score >= REPRODUCED_MIN_SCORE:
+    # Score 0 is reserved for an integrity break: the HIGH-flag cap lands here, and
+    # the auditor also assigns a raw 0 for a report that contradicts its own evidence.
+    if cheated or score == SCORE_MIN:
+        return "disqualified"
+    if score >= REPRODUCED_MIN_SCORE:  # 8-10
         return "reproduced"
-    if score == 3:
+    if score >= 6:  # 6-7
         return "partial"
-    if score == SCORE_MIN and not execution_verified:
+    if score == 3:  # honest availability ceiling
+        return "blocked"
+    if score == 1 and not execution_verified:
         return "unverifiable"
-    return "not_reproduced"
+    return "not_reproduced"  # 2, 4-5 (and a 1 that somehow ran)
 
 
 def _normalize_flags(raw: Any) -> list[dict[str, Any]]:

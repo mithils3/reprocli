@@ -25,7 +25,7 @@ MATCH_BAR_KINDS = (
 )
 
 # Granular reproduction score the auditor assigns (anchors in rubric_audit.md).
-SCORE_MIN, SCORE_MAX = 0, 5
+SCORE_MIN, SCORE_MAX = 0, 10
 FLAG_KINDS = (
     "hardcoded_constant",
     "echoed_prose_number",
@@ -87,7 +87,7 @@ AUDIT_JSON_SCHEMA = _obj(
         # C5/C6: the comparison and experiment fidelity.
         "value_comparison": _STR,
         "methodology_notes": _STR,
-        # granular 0-5 reproduction score; verdict is derived from it downstream.
+        # granular 0-10 reproduction score; verdict is derived from it downstream.
         "score": {"type": "integer", "minimum": SCORE_MIN, "maximum": SCORE_MAX},
         # auditor's own 0-1 confidence; < 0.6 routes the verdict to human spot-audit.
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},

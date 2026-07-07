@@ -101,7 +101,7 @@ def sample_auditor_verdict() -> dict:
         "measured_value": 76.3,
         "measured_citation": "workspace/out/metrics.json:1",
         "cheat_flags": [],
-        "score": 4,
+        "score": 10,
         "rationale": "76.3 within 5% of 76.5; traced to metrics.json the report cites.",
     }
 
@@ -241,13 +241,13 @@ class VerdictIsTheAuditorsTests(unittest.TestCase):
 
     def test_existing_finalizer_grades_a_verdict_over_the_bundle(self) -> None:
         # The deterministic grade pipeline runs UNCHANGED over a verdict an auditor
-        # would emit from this bundle: score 4 -> reproduced, status verified.
+        # would emit from this bundle: score 10 -> reproduced, status verified.
         with tempfile.TemporaryDirectory() as tmp:
             build_bundle(Path(tmp))
             row = finalize_audit_row(sample_auditor_verdict(), {"exit_reason": "natural"})
             self.assertEqual(row["verdict"], "reproduced")
             self.assertTrue(row["reproduced"])
-            self.assertEqual(row["score"], 4)
+            self.assertEqual(row["score"], 10)
             self.assertEqual(row["verification_status"], "verified")
             self.assertFalse(row["has_high_cheat_flag"])
 

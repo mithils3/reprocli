@@ -33,44 +33,72 @@ def _score_row(score, flags=None, execution_verified=True) -> dict:
 
 def test_high_flag_caps_score_to_zero():
     flags = [{"kind": "hardcoded_constant", "evidence": "print(86.7) in eval.py:40", "severity": "high"}]
-    row = finalize_audit_row(_score_row(5, flags), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(10, flags), {"exit_reason": "natural"})
     assert row["score"] == 0
-    assert row["reported_score"] == 5
-    assert row["verdict"] == "not_reproduced"
+    assert row["reported_score"] == 10
+    assert row["verdict"] == "disqualified"
     assert row["reproduced"] is False
     assert row["has_high_cheat_flag"] is True
     assert row["verification_status"] == "verified"
 
 
-def test_score_5_is_reproduced():
-    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
+def test_score_10_is_reproduced():
+    row = finalize_audit_row(_score_row(10), {"exit_reason": "natural"})
     assert row["verdict"] == "reproduced"
     assert row["reproduced"] is True
     assert "reported_score" not in row
 
 
-def test_score_4_is_reproduced_boundary():
-    row = finalize_audit_row(_score_row(4), {"exit_reason": "natural"})
+def test_score_8_is_reproduced_boundary():
+    row = finalize_audit_row(_score_row(8), {"exit_reason": "natural"})
     assert row["verdict"] == "reproduced"
     assert row["reproduced"] is True
 
 
-def test_score_3_is_partial():
-    flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
-    row = finalize_audit_row(_score_row(3, flags), {"exit_reason": "natural"})
+def test_score_7_is_partial_boundary():
+    row = finalize_audit_row(_score_row(7), {"exit_reason": "natural"})
     assert row["verdict"] == "partial"
     assert row["reproduced"] is False
-    assert row["score"] == 3  # low flag does not cap
 
 
-def test_score_0_no_execution_is_unverifiable():
-    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+def test_score_6_is_partial():
+    flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
+    row = finalize_audit_row(_score_row(6, flags), {"exit_reason": "natural"})
+    assert row["verdict"] == "partial"
+    assert row["score"] == 6  # low flag does not cap
+
+
+def test_score_5_is_not_reproduced():
+    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
+    assert row["verdict"] == "not_reproduced"
+    assert row["reproduced"] is False
+
+
+def test_score_3_is_blocked():
+    row = finalize_audit_row(_score_row(3), {"exit_reason": "natural"})
+    assert row["verdict"] == "blocked"
+    assert row["reproduced"] is False
+
+
+def test_score_2_is_not_reproduced():
+    row = finalize_audit_row(_score_row(2), {"exit_reason": "natural"})
+    assert row["verdict"] == "not_reproduced"
+
+
+def test_score_1_no_execution_is_unverifiable():
+    row = finalize_audit_row(_score_row(1, execution_verified=False), {"exit_reason": "natural"})
     assert row["verdict"] == "unverifiable"
     assert row["reproduced"] is False
 
 
+def test_score_0_is_disqualified():
+    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+    assert row["verdict"] == "disqualified"
+    assert row["reproduced"] is False
+
+
 def test_out_of_range_score_is_degraded():
-    row = finalize_audit_row(_score_row(9), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(11), {"exit_reason": "natural"})
     assert row["verification_status"] == "degraded"
 
 

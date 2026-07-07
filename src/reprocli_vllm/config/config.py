@@ -67,7 +67,7 @@ AUDIT_SYSTEM_MESSAGE = (
     "self-scored or fabricated predictions, wrong split/scale/dataset, and "
     "cherry-picked metrics. Default to a low score; absence of evidence is a low "
     "score, not a pass. When you have gathered enough evidence, grade the attempt "
-    "with an integer 0-5 score per the rubric's score scale and return only the "
+    "with an integer 0-10 score per the rubric's score scale and return only the "
     "JSON object matching the schema."
 )
 AUDIT_FINAL_NO_TOOLS_MESSAGE = (
@@ -76,7 +76,7 @@ AUDIT_FINAL_NO_TOOLS_MESSAGE = (
     "target (metric, reference value, op, tolerance); give execution evidence; "
     "report the measured value with an exact file/line or log citation; list "
     "every anti-cheat flag with its evidence and severity; give the op/tolerance "
-    "comparison and methodology notes; end with an integer 0-5 score per the "
+    "comparison and methodology notes; end with an integer 0-10 score per the "
     "rubric's score scale and a one-paragraph rationale. "
     "Return only the JSON object: the first output character must be { and the "
     "last must be }. No prose, no markdown."

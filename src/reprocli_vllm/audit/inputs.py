@@ -19,7 +19,7 @@ from reprocli_vllm.tools.run_dir_tools import run_dir_manifest
 RUN_BUNDLE_NO_DIR_TEXT = (
     "(No --runs-dir configured, so no agent reproduction run directory is bound "
     "for this paper. With no run to inspect, the only defensible verdict is "
-    "`unverifiable` with score 0.)"
+    "`unverifiable` with score 1.)"
 )
 
 

@@ -103,7 +103,7 @@ Return exactly one JSON object matching the audit schema — no prose outside it
 - measured_value + measured_citation — exact file and line or log snippet.
 - cheat_flags — every flag, each with kind, evidence, and severity.
 - value_comparison — the explicit op/tolerance comparison — and methodology_notes.
-- score — one integer 0-5 per the rubric's anchors — plus a 0-1 confidence and a
+- score — one integer 0-10 per the rubric's anchors — plus a 0-1 confidence and a
   one-paragraph rationale. Below 0.6 confidence, or wherever a judgment call
   shaped the score, the rationale must name what a human spot-check should open.
 The coarse verdict is derived from your score downstream — do not emit one. Every
