@@ -19,6 +19,7 @@ from reprocli_serve.config import DEFAULT_GPU_MEMORY_UTILIZATION, MAX_MODEL_LEN
 KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
+QWEN3_MODEL = "Qwen/Qwen3.6-27B-FP8"
 
 
 @dataclass
@@ -37,6 +38,7 @@ class Profile:
     compilation_config: str | None = None
     block_size: int | None = None
     kv_cache_dtype: str | None = None
+    max_num_seqs: int | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -89,6 +91,43 @@ def minimax_m3_profile() -> Profile:
     )
 
 
+def qwen3_profile() -> Profile:
+    # Qwen3.6-27B: the flagship *dense* (27B) Qwen3.6 model. It uses gated delta
+    # networks (a Mamba-style hybrid attention) and a native vision encoder, and
+    # serves 262K context. On DeltaAI's GH200 the FP8 checkpoint (~33 GB weights)
+    # fits a SINGLE GPU, so this is a plain TP=1 serve (unlike the 4-8 GPU MoE
+    # profiles above). The parsers are the Qwen3 family's: qwen3_coder for tool
+    # calls, qwen3 for reasoning. --mm-encoder-tp-mode data keeps the vision
+    # encoder replicated per rank (a no-op at TP=1, kept to match the vLLM recipe
+    # so scaling to TP>1 stays correct). kv_cache_dtype fp8 buys a bigger KV pool
+    # (more concurrent requests / longer context) at the same HBM. We leave
+    # compilation_config unset: the minimax cudagraph tweak does not apply, and
+    # forcing PIECEWISE cudagraph can trip Qwen3.6's Mamba-cache sizing.
+    return Profile(
+        name="qwen3",
+        tensor_parallel_size=1,
+        tool_call_parser="qwen3_coder",
+        reasoning_parser="qwen3",
+        mm_encoder_tp_mode="data",
+        kv_cache_dtype="fp8",
+        max_num_seqs=512,
+    )
+
+
+def is_qwen3(model: str) -> bool:
+    if "Qwen3" in model.rstrip("/"):
+        return True
+    config_path = Path(model) / "config.json"
+    if not config_path.exists():
+        return False
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    architectures = config.get("architectures") or []
+    return any(str(name).startswith("Qwen3") for name in architectures)
+
+
 def is_kimi_k2_6(model: str) -> bool:
     if model == KIMI_K2_6_MODEL or model.rstrip("/").endswith("/Kimi-K2.6"):
         return True
@@ -123,4 +162,6 @@ def resolve_profile(model: str) -> Profile:
         return kimi_profile()
     if is_minimax_m3(model):
         return minimax_m3_profile()
+    if is_qwen3(model):
+        return qwen3_profile()
     return minimax_profile()

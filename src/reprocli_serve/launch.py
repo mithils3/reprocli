@@ -58,6 +58,8 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     block_size = args.block_size or profile.block_size
     if block_size:
         command.extend(["--block-size", str(block_size)])
+    if profile.max_num_seqs:
+        command.extend(["--max-num-seqs", str(profile.max_num_seqs)])
     if args.enable_expert_parallel or profile.enable_expert_parallel:
         command.append("--enable-expert-parallel")
     if args.tokenizer_mode:
