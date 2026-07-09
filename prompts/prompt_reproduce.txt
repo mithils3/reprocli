@@ -124,7 +124,10 @@ Tools:
 - write_file / edit_file — create files / replace an exact old_string in one (workspace +
   evidence; not /tmp — use shell redirection there). Prefer over `echo >` / `sed -i`.
 - fetch_url — read-only http(s) fetch (HTML→text). There is NO web search: a URL you cannot
-  cite a source for is a guess.
+  cite a source for is a guess. Exception — library docs are searchable via Context7: fetch
+  https://context7.com/api/v1/search?query=<library> (JSON; take a result "id", e.g.
+  /vllm-project/vllm), then https://context7.com/<id>/llms.txt?topic=<topic>&tokens=2000
+  for curated, current doc snippets (API signatures, install flags, version quirks).
 
 Batch independent calls in ONE turn — a turn is a round, and batching conserves them. Tools do
 work: no `echo "releasing"` no-ops, no narrating through shell commands.
