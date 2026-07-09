@@ -5,8 +5,10 @@ Construction.md" section 7 (band weights originally from "notes/Methodology/
 Paper Selection Methodology (superseded draft).md") on the three
 evaluated tiers (Easy / Medium / Hard; Artifact-Blocked is logged-only per
 the memo): eligible rows are ``verification_status == "verified"`` with audited
-H100 hours at or below the 192 cap, bucketed by compute band, filled from the
-methodology's per-tier band weights (5/7/8/5 per 25) scaled to the pool size,
+H100 hours at or below the 96 cap (lowered from 192 on 2026-07-09; the three
+96-192 rows were swapped out for cheap replacements — 26% of eval compute for
+n=3 rows of signal), bucketed by compute band, filled from the methodology's
+per-tier band weights (10/7/8 per 25) scaled to the pool size,
 cheapest-first inside each band. Deficits in an expensive band refill from the
 next cheapest band in the same tier.
 
@@ -35,9 +37,9 @@ from collections.abc import Iterator
 from reprocli_vllm.audit.h100 import as_number, h100_band
 
 EVAL_TIERS = ("Easy", "Medium", "Hard")
-BAND_ORDER = ("0-8", "8-32", "32-96", "96-192")
-BAND_WEIGHTS = {"0-8": 5, "8-32": 7, "32-96": 8, "96-192": 5}  # per 25 selected
-H100_CAP = 192.0
+BAND_ORDER = ("0-8", "8-32", "32-96")
+BAND_WEIGHTS = {"0-8": 10, "8-32": 7, "32-96": 8}  # per 25 selected
+H100_CAP = 96.0
 # Stated hours adjudicated correct by hand despite an arithmetic mismatch flag
 # (fields captured one of two stages; see the v5 H100 audit).
 MANUAL_KEEP_STATED = {"2511.08214"}

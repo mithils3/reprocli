@@ -66,6 +66,15 @@ experiment.
 ## Bands & cap
 - Bands: `0-8`, `8-32`, `32-96`, `96-192`, `>192`.
 - Cap hours at **192** (over-cap band `>192`).
+- **UPDATE 2026-07-09:** cap lowered to **96**. The three `96-192` rows
+  (2505.17315, 2512.13837, 2510.20261 — 432 H100-h, 26% of eval compute for n=3)
+  were swapped for the deterministic next-in-line cheap rows of the same tier:
+  2506.10943 SEAL (Medium, 12h), 2510.19784 DynaInfer (Medium, 12h),
+  2602.03066 NTK-shortcut (Hard, 4h). No 0-8 Medium candidates remained in the
+  pool, so the two Medium replacements come from 8-32 cheapest-first. New
+  composition: 0-8:59 / 8-32:27 / 32-96:14, total 1247.1 H100-h, max 96.0.
+  Incoming rows carry pre-recompute hour estimates and hand-authored
+  match_targets → both need the recompute/repin treatment.
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,

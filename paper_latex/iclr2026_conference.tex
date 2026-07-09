@@ -130,8 +130,8 @@ Hard & Data only, no code & Reimplement the method from the paper. \\
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
-pinned configuration otherwise. We dropped every paper whose estimate exceeds
-192 H100-hours, which caps what a single reproduction can demand. From the
+pinned configuration otherwise. We dropped every paper estimated above 192
+H100-hours before pooling. From the
 remainder we sampled a 200-paper audit pool of 67 Easy, 67 Medium, and 66
 Hard papers, stratified across four compute bands (0--8, 8--32, 32--96, and
 96--192 H100-hours).
@@ -142,18 +142,20 @@ compute estimate. Papers failed the audit for two reasons. Six papers had
 required artifacts that turned out to be inaccessible, and fifteen depended
 on paid third-party APIs, which we exclude so that reproduction cost stays
 bounded and GPU-denominated. Rejected papers were replaced from the audited
-pool. Only 17 of the 100 shipped compute estimates could be taken directly
+pool. Only 18 of the 100 shipped compute estimates could be taken directly
 from the paper. We derived the rest from the pinned configuration, echoing
 the finding that compute is systematically
 under-reported~\citep{gundersen2018state}.
 
 Through these stages the 3,414 submissions narrow to the released benchmark.
-It holds a 100-paper evaluation split of 34 Easy, 33 Medium, and 33 Hard
-papers, and a disjoint 14-paper development split. After adjudication the
-evaluation split totals 1,651 H100-hours, its compute bands hold 58, 25, 14,
-and 3 papers, and exactly one paper saturates the 192-hour cap. Of the 100
-papers, 94 first appeared as preprints in 2025, which limits the exposure of
-their artifacts in current training corpora.
+We cap what a single reproduction can demand at 96 H100-hours and drop every
+paper whose audited estimate exceeds it. The benchmark holds a 100-paper
+evaluation split of 34 Easy, 33 Medium, and 33 Hard papers, and a disjoint
+14-paper development split. After adjudication the evaluation split totals
+1,247 H100-hours, its compute bands hold 59, 27, and 14 papers, and exactly
+one paper saturates the 96-hour cap. Of the 100 papers, 94 first appeared as
+preprints in 2025 or later, which limits the exposure of their artifacts in
+current training corpora.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -206,9 +208,9 @@ compute estimate that placed the paper in its band.
 
 % TODO(data): one eval-100 row currently has a null match_bar_kind; the
 % "remaining 3" count below assumes it resolves to magnitude or range.
-\paragraph{Match bars and tolerance.} For 67 of the 100 evaluation papers the
-match bar is a point estimate. For 18 the run must beat a stated baseline,
-for 12 it must clear a reported threshold, and for the remaining 3 it must
+\paragraph{Match bars and tolerance.} For 65 of the 100 evaluation papers the
+match bar is a point estimate. For 19 the run must beat a stated baseline,
+for 13 it must clear a reported threshold, and for the remaining 3 it must
 recover a magnitude or fall inside a reported range. A point estimate matches
 when the run lands within the authors' stated tolerance, or within 5\%
 relative of the reported value when the paper states none.
@@ -240,7 +242,7 @@ Field & Type & Description \\
 \texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard}, derived from \texttt{score}. \\
 \texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
 \texttt{selection\_band} & string & Compute band used for stratified selection. \\
-\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}, \texttt{96-192}. \\
+\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}. \\
 \texttt{h100\_hours\_estimate} & float & Estimated H100-hours to run the match target. \\
 \texttt{h100\_estimate\_basis} & string & Free-text justification for the estimate. \\
 \texttt{audited\_h100\_hours} & float & Human-adjudicated H100-hours. \\
