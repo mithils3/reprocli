@@ -4,27 +4,32 @@ Split out of ``loop.py`` to keep the driver focused. ``apply_guardrails`` runs o
 between tool rounds and decides whether the next request still offers tools:
 
 * force-final when the compute budget is spent;
-* ``summarize-compact`` — one brain call that summarizes the old span so the loop
+* ``elide-compact`` — shrink the old span's bulky tool stdout in place so the loop
   keeps going (the tier that *replaces* the old hard context stop).
 
-Tool stdout stays verbatim in context until summarize-compact fires: a microcompact
-tier that elided stale tool results to ``[elided N chars]`` placeholders was removed
-after the 07-03 batch showed agents re-running discovery commands and whole GPU
-evals because the results they needed had been elided out from under them.
+Compaction elides only ``role:"tool"`` result contents (see ``compact.py``); the
+agent's own reasoning and its ``tool_calls`` stay verbatim, so the intent that was
+live going into the compaction survives it. An earlier tier summarized the whole
+span with a brain call, which flattened that intent and let agents finalize
+prematurely; an even earlier microcompact elided results with no on-disk pointer,
+which sent agents re-running whole GPU evals. Elision-with-pointer keeps both the
+reasoning and a path back to the full output (durable in ``evidence/``).
 
 The hard context cutoff no longer ends episodes; it survives only as a degraded
-backstop for when summarization itself fails and we are already past the real
-ceiling, so we never silently front-truncate the system prompt + summary head.
+backstop for when elision frees nothing and we are already past the real ceiling,
+so we never silently front-truncate the pinned system prompt + task head.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Any
 
+from reprocli_repro import compact
 from reprocli_repro import evidence as evidence_mod
-from reprocli_repro import gpu_session, summarize
+from reprocli_repro import gpu_session
 from reprocli_repro.context import ExecutionContext
 
 
@@ -35,17 +40,15 @@ def apply_guardrails(
     args: argparse.Namespace,
     exit_reasons: dict[str, str],
     include_tools: bool,
-    server_url: str,
-    model: str,
 ) -> bool:
     """Budget guardrail + context management, run between tool rounds.
 
     Returns whether the next request should still offer tools. Force-finals first
-    when the compute budget is spent, then lets ``summarize-compact`` summarize the
-    old span so the loop keeps going. The hard context cutoff no longer ends
-    episodes; it survives only as a degraded backstop for when summarization itself
-    fails and we are past the real ceiling (so we never silently front-truncate the
-    prompt).
+    when the compute budget is spent, then lets ``elide-compact`` shrink the old
+    span's bulky tool stdout so the loop keeps going. The hard context cutoff no
+    longer ends episodes; it survives only as a degraded backstop for when elision
+    frees nothing and we are past the real ceiling (so we never silently
+    front-truncate the prompt).
     """
     if not include_tools:
         gpu_session.release(ctx, "tools_off")
@@ -63,39 +66,30 @@ def apply_guardrails(
     # lags by this round's just-appended tool results, which is fine for a soft trigger:
     # the next round's real count catches up. When no usage has been recorded yet we skip
     # rather than estimate.
-    if args.summarize_compact and _over(ctx, args, args.summarize_threshold):
-        summarize_compaction(custom_id, ctx, messages, args, exit_reasons, server_url, model)
+    if args.compact_enabled and _over(ctx, args, args.compact_threshold):
+        elide_compaction(custom_id, ctx, messages, args, exit_reasons)
         if exit_reasons.get(custom_id) == "context_budget":
             return False
     return True
 
 
-def summarize_compaction(
+def elide_compaction(
     custom_id: str,
     ctx: ExecutionContext,
     messages: list[dict[str, Any]],
     args: argparse.Namespace,
     exit_reasons: dict[str, str],
-    server_url: str,
-    model: str,
 ) -> None:
-    """Summarize the old span (one brain call) and keep going; degrade only on failure."""
-    stats = summarize.summarize_compact(
+    """Elide the old span's bulky tool stdout and keep going; degrade only on failure."""
+    full_log = None if ctx.evidence is None else str(Path(ctx.evidence).parent / "agent.full.log")
+    stats = compact.elide_compact(
         messages,
-        server_url=server_url,
-        model=model,
-        args=args,
-        custom_id=custom_id,
-        keep_recent_tokens=args.summarize_keep_tokens,
-        previous_summary=ctx.summary,
-        previous_modified=ctx.modified_files,
-        plan=ctx.plan,
+        keep_recent_tokens=args.compact_keep_tokens,
+        full_log_path=full_log,
     )
     if stats["compacted"]:
-        ctx.summary = stats["summary"]
-        ctx.modified_files = stats["modified_files"]
         print(
-            f"summarize-compact {custom_id}: summarized {stats['summarized_messages']} message(s), "
+            f"elide-compact {custom_id}: elided {stats['elided_messages']} tool result(s), "
             f"{stats['chars_before']}->{stats['chars_after']} chars",
             file=sys.stderr,
         )
@@ -104,22 +98,23 @@ def summarize_compaction(
                 ctx.evidence,
                 {
                     "type": "compaction",
+                    "mode": "elide",
                     "custom_id": custom_id,
-                    "summarized_messages": stats["summarized_messages"],
+                    "elided_messages": stats["elided_messages"],
                     "chars_before": stats["chars_before"],
                     "chars_after": stats["chars_after"],
                 },
             )
         return
-    # Summarization could not reduce the prompt. Keep going (retry next round) unless
-    # the last real prompt-token count is already past the hard ceiling, in which case
-    # end gracefully rather than let vLLM front-truncate the system prompt + summary head.
+    # Elision freed nothing (no old, bulky tool output). Keep going (retry next round)
+    # unless the last real prompt-token count is already past the hard ceiling, in which
+    # case end gracefully rather than let vLLM front-truncate the pinned system + task head.
     if _over(ctx, args, 1.0):
         gpu_session.release(ctx, "context_overflow")
         exit_reasons[custom_id] = "context_budget"
         print(
             f"Stopping reproduce loop for {custom_id}: context over ceiling and "
-            f"summarize-compact failed ({stats.get('reason')})",
+            f"elide-compact freed nothing ({stats.get('reason')})",
             file=sys.stderr,
         )
 

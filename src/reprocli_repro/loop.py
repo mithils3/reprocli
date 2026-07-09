@@ -10,7 +10,7 @@ sync — this loop swaps the body for the reproduction seams:
   instead of ``execute_tool_call(call, paper=paper)``;
 * the post-round seam (the analog of ``handle_request_done`` in ``tool_loop.py``)
   calls ``guardrails.apply_guardrails`` — the compute-budget force-final plus the
-  ``summarize-compact`` context tier that keeps the loop going.
+  ``elide-compact`` context tier that keeps the loop going.
 
 Conversation shaping and output writing live in ``transcript.py``; the tool seam
 lives in ``dispatch.py``; the between-round budget + context guardrails live in
@@ -140,8 +140,6 @@ def run_reproduce_loop(
                     args,
                     exit_reasons,
                     include_tools,
-                    base_url,
-                    request_model,
                 )
                 submit_request(custom_id, next_round, include_tools)
 

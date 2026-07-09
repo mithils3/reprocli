@@ -88,7 +88,5 @@ class ExecutionContext:
     run_dir: Path | None = None          # Phase 5: bundle root where report.json is written for the auditor
     cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on
     sandbox: "Sandbox | None" = None     # Apptainer container write-confinement applied to shell steps
-    summary: str | None = None           # last summarize-compaction summary (iterative context)
-    modified_files: list[str] = field(default_factory=list)  # cumulative across compactions
     plan: list[dict[str, str]] = field(default_factory=list)  # latest update_plan checklist (survives compaction)
     last_prompt_tokens: int | None = None  # usage.prompt_tokens from the most recent response; drives the context tiers

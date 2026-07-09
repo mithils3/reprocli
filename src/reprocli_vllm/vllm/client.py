@@ -22,7 +22,7 @@ def apply_provider_routing(body: dict[str, Any]) -> None:
     """Pin the OpenRouter upstream provider in-place when one is configured.
 
     Single chokepoint for every chat-completion path (repro loop, classifier/auditor
-    tool loop, summarize-compaction), so the pin applies uniformly. No-op when unset,
+    tool loop, context compaction), so the pin applies uniformly. No-op when unset,
     and never clobbers a ``provider`` block a caller already placed on the body.
     """
     provider = openrouter_provider_routing()

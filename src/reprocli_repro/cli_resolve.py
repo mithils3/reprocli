@@ -34,21 +34,21 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
 
 # Sampling + loop-limit knobs, formerly CLI flags (C7-approved: never varied non-default
 # on the repro path — the serve profiles own sampling). Set on the resolved namespace so
-# the shared build_chat_completion_request / summarize / loop read them straight off args.
+# the shared build_chat_completion_request / compaction / loop read them straight off args.
 TEMPERATURE = 1.0
 TOP_P = 0.95
 TOP_K = 40
 MAX_TOKENS = 8192
 MAX_INPUT_TOKENS = 128000
 REQUEST_WORKERS = 8
-# Context management (guardrails.py): tool stdout stays verbatim until summarize-compact
-# rewrites the head with one brain call once SUMMARIZE_THRESHOLD of MAX_INPUT_TOKENS is
-# crossed, keeping SUMMARIZE_KEEP_TOKENS of recent turns verbatim. (A microcompact tier
-# that elided stale tool stdout earlier was removed: agents re-ran discovery commands and
-# GPU evals because the results they needed had been elided.)
-SUMMARIZE_COMPACT = True
-SUMMARIZE_KEEP_TOKENS = 20000
-SUMMARIZE_THRESHOLD = 0.6
+# Context management (guardrails.py): tool stdout stays verbatim until elide-compact
+# fires once COMPACT_THRESHOLD of MAX_INPUT_TOKENS is crossed, then it shrinks the old
+# span's bulky tool results in place to an on-disk pointer, keeping COMPACT_KEEP_TOKENS of
+# recent turns — plus all assistant reasoning — verbatim. The full output stays recoverable
+# under evidence/, so an elided number is re-read, not re-computed.
+COMPACT_ENABLED = True
+COMPACT_KEEP_TOKENS = 20000
+COMPACT_THRESHOLD = 0.70
 
 # The reproduction prompt template is a fixed repo asset (was --prompt-file).
 DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
@@ -67,16 +67,16 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.use_tools = True
     args.prompt_file = DEFAULT_PROMPT_FILE
     # Fixed sampling + loop knobs (were CLI flags). The shared request builder, the
-    # summarize tier, guardrails and the loop read these straight off the namespace.
+    # compaction tier, guardrails and the loop read these straight off the namespace.
     args.temperature = TEMPERATURE
     args.top_p = TOP_P
     args.top_k = TOP_K
     args.max_tokens = MAX_TOKENS
     args.max_input_tokens = MAX_INPUT_TOKENS
     args.request_workers = REQUEST_WORKERS
-    args.summarize_compact = SUMMARIZE_COMPACT
-    args.summarize_keep_tokens = SUMMARIZE_KEEP_TOKENS
-    args.summarize_threshold = SUMMARIZE_THRESHOLD
+    args.compact_enabled = COMPACT_ENABLED
+    args.compact_keep_tokens = COMPACT_KEEP_TOKENS
+    args.compact_threshold = COMPACT_THRESHOLD
     # Phase 5: the forced final pass (tools off) is schema-constrained to the agent's
     # report.json -- its account of the run, which the loop persists to the bundle for
     # the auditor to grade. build_chat_completion_request sends tools XOR this format.

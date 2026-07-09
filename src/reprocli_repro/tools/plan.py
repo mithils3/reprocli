@@ -4,8 +4,8 @@ Borrowed from OpenAI Codex's ``update_plan`` tool: the plan is *harness state*,
 not free-text prose. The model resends the whole ordered checklist on every call;
 the handler validates it (known statuses, at most one ``in_progress``), pins the
 latest version onto the episode's :class:`ExecutionContext` (so it survives
-context compaction, alongside ``summary``/``modified_files``), and snapshots a
-human-readable ``plan.md`` into the evidence dir for the auditor to read.
+context compaction), and snapshots a human-readable ``plan.md`` into the evidence
+dir for the auditor to read.
 
 Keeping it minimal is the point — a short spine the agent commits to and ticks
 through, which curbs the "burn turns re-planning every turn" failure the prompt
