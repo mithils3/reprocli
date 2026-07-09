@@ -2,7 +2,7 @@
 
 Mirrors the real invocations in:
   - scripts/reproduce/repro_audit_one.sh                (reproduce stage + audit stage)
-  - scripts/reproduce/reproduce_easy_minimax_m2.sbatch   (same two, sweep-parameterized)
+  - scripts/reproduce/easy_minimax_m2.sbatch   (same two, sweep-parameterized)
   - scripts/serve/serve_gh200.sbatch                     (reprocli_serve, plus its own
     inlined `python -m reprocli_serve` call in the sweep sbatch)
 

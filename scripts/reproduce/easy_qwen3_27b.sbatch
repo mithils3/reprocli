@@ -1,28 +1,34 @@
 #!/bin/bash
-# Serve MiniMax-M2.7 on 4xGH200, then run every tier-Medium paper through the
-# paired S6->S7 flow from scripts/reproduce/repro_audit_one.sh: reproduce with a
-# pinned run id, audit exactly that bundle, and optionally upload the verdict.
+# Serve Qwen/Qwen3.6-27B-FP8 on a SINGLE GH200, then run every tier-Easy paper
+# through the paired S6->S7 flow from scripts/reproduce/repro_audit_one.sh:
+# reproduce with a pinned run id, audit exactly that bundle, and optionally upload
+# the verdict.
 #
-#   sbatch scripts/reproduce/reproduce_medium_minimax_m2.sbatch
+#   sbatch scripts/reproduce/easy_qwen3_27b.sbatch
 #
-# Medium-tier sibling of reproduce_easy_minimax_m2.sbatch. Defaults to the eval
-# split's 33 Medium papers, MAX_PARALLEL=10, and RESUME=1 so re-submits after the
-# 48h cap skip papers that already wrote a verdict. Worst-case compute budget is
-# ~1200 H100-h (18x8 + 9x32 + 4x96 + 2x192); actual spend is typically well under
-# the per-paper band caps since the agent stops when it converges.
+# Qwen3.6-27B sibling of easy_minimax_m2.sbatch. The only structural
+# difference is the brain: Qwen3.6-27B is a dense 27B model whose FP8 checkpoint
+# (~33 GB weights) fits ONE GH200, so this job requests a single GPU (TP=1) instead
+# of the 4-GPU MoE allocation. All serve flags (qwen3_coder/qwen3 parsers, fp8 KV
+# cache, --mm-encoder-tp-mode data, --max-num-seqs 512) come from the qwen3 serve
+# profile (src/reprocli_serve/profiles.py), so the serve call below stays lean.
+# Every `run_gpu` experiment step still JIT-`salloc`s a SEPARATE ghx4 node and
+# releases it on exit; the orchestrator + auditor are cheap CPU processes sharing
+# this brain node. Defaults to the eval split's Easy papers, MAX_PARALLEL=6, and
+# RESUME=1 so re-submits after the 48h cap skip papers that already wrote a verdict.
 #
-#SBATCH -J repro_medium_minimax
+#SBATCH -J repro_easy_qwen3
 #SBATCH -A betw-dtai-gh
 #SBATCH -p ghx4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
-#SBATCH --gpus-per-node=4
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
-#SBATCH --mem=0
+#SBATCH --mem=120G
 #SBATCH --time=48:00:00
-#SBATCH -o slurm-repro-medium-%j.out
-#SBATCH -e slurm-repro-medium-%j.err
+#SBATCH -o slurm-repro-easy-qwen3-%j.out
+#SBATCH -e slurm-repro-easy-qwen3-%j.err
 #SBATCH --export=ALL
 #SBATCH --mail-user=mithils3@illinois.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -32,17 +38,17 @@ set -euo pipefail
 # --- Config (override from the environment) ---------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"   # local mirror; HF id also works
-SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
+MODEL="${MODEL:-Qwen/Qwen3.6-27B-FP8}"     # HF id; local mirror path also works
+SERVED_NAME="${SERVED_NAME:-Qwen/Qwen3.6-27B-FP8}"
 AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-eval}"                    # eval -> HF 'test' (the frozen 100-paper benchmark)
-TIER="${TIER:-Medium}"                      # only reproduce+grade rows of this tier
+TIER="${TIER:-Easy}"                      # only reproduce+grade rows of this tier
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.
@@ -72,9 +78,9 @@ OUTER_JOB="${SLURM_JOB_ID:-local}"
 # REPRO_* vars survive the SLURM_* env scrub below (override to join an old batch).
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
-SWEEP_DIR="${REPRO_WORK_ROOT}/medium_sweeps/${OUTER_JOB}"
+SWEEP_DIR="${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
-IDS_FILE="${SWEEP_DIR}/medium_ids.txt"
+IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
 # --- Standardized DeltaAI serve env block (shared with scripts/serve/*) ------
@@ -117,14 +123,13 @@ echo "claims=${CLAIMS}"
 nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
+# TP=1 on one GH200; all Qwen3.6 serve flags (qwen3_coder/qwen3 parsers, fp8 KV
+# cache, mm-encoder-tp-mode, max-num-seqs, native 262K context) come from the
+# qwen3 serve profile.
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --tensor-parallel-size 4 \
-  --max-model-len 196608 \
-  --distributed-executor-backend mp \
-  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
   --endpoint-file "${ENDPOINT_FILE}" &
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
@@ -156,7 +161,7 @@ trap 'kill "${SERVER_PID}" ${BEACON_PID:+"${BEACON_PID}"} 2>/dev/null || true' E
 # The orchestrator + auditor auto-discover the URL + served model from this file.
 export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
 
-# --- Step 2: enumerate the Medium tier of the split ---------------------------
+# --- Step 2: enumerate the Easy tier of the split ---------------------------
 mapfile -t PAPER_IDS < <(
   python - "${LOCKFILE}" "${SPLIT}" "${TIER}" <<'PY'
 import sys
@@ -187,7 +192,7 @@ echo "ids -> ${IDS_FILE}"
 for v in $(compgen -v | grep -E '^SLURM_' || true); do unset "$v"; done
 export SLURM_EXPORT_ENV=ALL
 
-# --- Step 4: reproduce + audit every Medium paper, PAIRED on one bundle --------
+# --- Step 4: reproduce + audit every Easy paper, PAIRED on one bundle --------
 # Per paper: reproduce with a pinned run id, symlink <grade-root>/<id> to that
 # exact bundle, audit it, then PATCH the verdict onto the same repro_runs row.
 STATUS_FILE="${SWEEP_DIR}/status.tsv"
@@ -250,7 +255,7 @@ run_one() {
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 128000 \
     --max-tokens 8192 \
-    --max-model-len 196608 \
+    --max-model-len 262144 \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
     --extracted-output "${verdicts}" \
     --trace-output "${SWEEP_DIR}/audit_${pid}_trace.jsonl" \

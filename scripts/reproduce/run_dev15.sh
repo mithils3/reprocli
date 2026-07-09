@@ -1,7 +1,7 @@
 #!/bin/bash
 # Login-node driver for the dev-15 reproduction sweep — the no-wall-cap path.
 #
-# Unlike reproduce_dev15_minimax_m2.sbatch (one ghx4 job that hosts brain +
+# Unlike dev15_minimax_m2.sbatch (one ghx4 job that hosts brain +
 # orchestrator and is bounded by the 48h partition limit), this runs the
 # orchestrator on a LOGIN NODE: it holds no GPU, every `run_gpu` step JIT-`salloc`s
 # its own ghx4 node, and the sweep can run as long as it needs. The brain still

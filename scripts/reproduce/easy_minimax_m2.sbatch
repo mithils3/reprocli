@@ -3,9 +3,9 @@
 # paired S6->S7 flow from scripts/reproduce/repro_audit_one.sh: reproduce with a
 # pinned run id, audit exactly that bundle, and optionally upload the verdict.
 #
-#   sbatch scripts/reproduce/reproduce_easy_minimax_m2.sbatch
+#   sbatch scripts/reproduce/easy_minimax_m2.sbatch
 #
-# Easy-tier sibling of reproduce_dev15_minimax_m2.sbatch. Defaults to the eval
+# Easy-tier sibling of dev15_minimax_m2.sbatch. Defaults to the eval
 # split's Easy papers, MAX_PARALLEL=10, and RESUME=1 so re-submits after the 48h
 # cap skip papers that already wrote a verdict.
 #

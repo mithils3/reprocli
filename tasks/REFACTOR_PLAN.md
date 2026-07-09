@@ -20,7 +20,7 @@ priority order:
    an Apptainer sandbox with metered JIT-SLURM GPU steps → `python
    src/run_arxiv_prompt_vllm.py --mode audit` grades the exact bundle →
    `python -m reprocli_repro.audit_upload` PATCHes the verdict onto the Supabase row.
-   Drivers: `scripts/reproduce/repro_audit_one.sh`, `reproduce_easy_minimax_m2.sbatch`.
+   Drivers: `scripts/reproduce/repro_audit_one.sh`, `easy_minimax_m2.sbatch`.
 2. **Live observability** — `supabase_sink`/`live_log`/`run_stats` streaming every run
    to `tools/run_viewer` (heaviest-used table is `repro_events`; tags/activity features
    are genuinely used). Schema is a frozen interface.
@@ -118,7 +118,7 @@ run**; `cluster.py` docstring describes the opposite of the held-session design;
 | C3 | **`delta-h200` cluster profile** + override flags `--account`/`--gpus-per-node` + uncalibrated a100/b200/h200 `HW_MULTIPLIER` entries | **Delete; hardcode deltaai/GH200.** No script targets it | Any plan to run on Delta H200 (or another cluster) before the sweep finishes? |
 | C4 | **`scripts/kimi_k2_6/`** (sbatch + runbook) | **Delete.** Kimi wasn't selected as brain; sbatch header requests 8 GPUs/node on a 4-GPU partition (never ran as written) | Provenance-only value |
 | C5 | **GPT-5.5 recheck trio** (~800 LOC): `src/reprocli_openai/recheck.py`, `tools/verify_app/publish_openai_recheck.py`, `report_openai_recheck.py` | **Delete.** One-shot complete, results baked into papers.json → lockfile; its `OUT_DIR` already points at a nonexistent directory, so a rerun would silently restart from zero anyway | A future paper swap into Hard/no-code could want a recheck — app is the truth source regardless |
-| C6 | **Sweep-driver consolidation**: generalize `reproduce_easy_minimax_m2.sbatch` (already TIER-parameterized, RESUME, paired audit) into the single sweep driver; delete `reproduce_dev15_minimax_m2.sbatch` + `run_dev15.sh` (~80% duplicated loop, both missing the audit stage) | **Do it** — this is the highest-value structural change and it's *your* active tooling | Timing: runs in flight today; also confirms dev sweeps should go through the paired-audit path |
+| C6 | **Sweep-driver consolidation**: generalize `easy_minimax_m2.sbatch` (already TIER-parameterized, RESUME, paired audit) into the single sweep driver; delete `dev15_minimax_m2.sbatch` + `run_dev15.sh` (~80% duplicated loop, both missing the audit stage) | **Do it** — this is the highest-value structural change and it's *your* active tooling | Timing: runs in flight today; also confirms dev sweeps should go through the paired-audit path |
 | C7 | Repro-side sampling flags `--temperature`/`--top-p`/`--top-k` (never set; serve profiles own sampling) | **Delete, hardcode defaults** | Cross-model sweeps might someday want per-run sampling |
 
 ---
