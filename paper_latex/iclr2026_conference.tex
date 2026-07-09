@@ -1,10 +1,6 @@
 \documentclass{article} % For LaTeX2e
 \usepackage{iclr2026_conference,times}
 
-% Optional math commands from https://github.com/goodfeli/dlbook_notation.
-% Uncomment this line only if math_commands.tex is present in your project.
-% \input{math_commands.tex}
-
 % Common packages. These do not change the ICLR style parameters.
 \usepackage{hyperref}
 \usepackage{url}
@@ -36,29 +32,12 @@ Write a concise summary of the problem, method, main results, and significance.
 
 Write your introduction here. Clearly state the problem, why it matters, your main idea, and your contributions.
 
-% A common structure is:
-% \begin{itemize}
-%     \item Contribution 1.
-%     \item Contribution 2.
-%     \item Contribution 3.
-% \end{itemize}
-
 \section{Related Work}
 \label{sec:related-work}
 
 Discuss the closest prior work and explain how your paper differs. Use \verb|\citet{}| for textual citations and \verb|\citep{}| for parenthetical citations.
 
-\section{Method}
-\label{sec:method}
-
-\subsection{Problem Setup}
-\label{subsec:problem-setup}
-
-ReproBench consists of 100 NeurIPS 2025 papers, stratified into three artifact-availability tiers: Easy, Medium, and Hard. We start from the \emph{ai-conferences} NeurIPS 2025 submissions dataset~\citep{neurips2025corpus} and take the 3,414 submissions that carry an arXiv identifier, retrieving the raw LaTeX source from arXiv and its OpenReview supplements for each paper. Each paper is then processed by an LLM-based extraction pipeline that identifies the central empirical claim and records artifact-availability signals such as released code, datasets, model weights, and evaluation assets.
-\subsection{Approach}
-\label{subsec:approach}
-
-Explain the core technical idea.
+\input{sections/benchmark}
 
 \section{Experiments}
 \label{sec:experiments}
@@ -75,31 +54,6 @@ Add datasets, compute details, hyperparameters, and evaluation protocol.
 
 Present your main results.
 
-% Example table. Delete or replace when writing your paper.
-% \begin{table}[t]
-% \caption{Main results.}
-% \label{tab:main-results}
-% \begin{center}
-% \begin{tabular}{lcc}
-% \toprule
-% Method & Metric 1 & Metric 2 \\
-% \midrule
-% Baseline & -- & -- \\
-% Ours & -- & -- \\
-% \bottomrule
-% \end{tabular}
-% \end{center}
-% \end{table}
-
-% Example figure. Delete or replace when writing your paper.
-% \begin{figure}[t]
-% \begin{center}
-% \includegraphics[width=0.8\linewidth]{figures/example.pdf}
-% \end{center}
-% \caption{Example figure caption.}
-% \label{fig:example}
-% \end{figure}
-
 \section{Analysis}
 \label{sec:analysis}
 
@@ -115,19 +69,10 @@ Discuss limitations honestly. This can include dataset limitations, compute cons
 
 Summarize the paper and its implications.
 
-% For anonymous submission, do not include acknowledgments.
-% For camera-ready, you may uncomment the following section.
-% \subsubsection*{Acknowledgments}
-% Add acknowledgments here after acceptance.
-
 \bibliography{iclr2026_conference}
 \bibliographystyle{iclr2026_conference}
 
 \appendix
-
-\section{Appendix}
-\label{app:appendix}
-
-Add supplementary proofs, extra experiments, dataset details, or additional figures here.
+\input{sections/appendix_schema}
 
 \end{document}
