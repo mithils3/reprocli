@@ -124,12 +124,12 @@ nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
 # TP=1 on one GH200; all Qwen3.6 serve flags (qwen3_coder/qwen3 parsers, fp8 KV
-# cache, mm-encoder-tp-mode, max-num-seqs) come from the qwen3 serve profile.
+# cache, mm-encoder-tp-mode, max-num-seqs, native 262K context) come from the
+# qwen3 serve profile.
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --max-model-len 196608 \
   --endpoint-file "${ENDPOINT_FILE}" &
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
@@ -255,7 +255,7 @@ run_one() {
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 128000 \
     --max-tokens 8192 \
-    --max-model-len 196608 \
+    --max-model-len 262144 \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
     --extracted-output "${verdicts}" \
     --trace-output "${SWEEP_DIR}/audit_${pid}_trace.jsonl" \

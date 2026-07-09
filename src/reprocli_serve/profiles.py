@@ -108,6 +108,7 @@ def qwen3_profile() -> Profile:
         tensor_parallel_size=1,
         tool_call_parser="qwen3_coder",
         reasoning_parser="qwen3",
+        max_model_len=262144,  # Qwen3.6-27B's native context; fp8 KV cache fits it on one GH200.
         mm_encoder_tp_mode="data",
         kv_cache_dtype="fp8",
         max_num_seqs=512,
