@@ -9,19 +9,25 @@
   const fmtK = (n) => n == null ? "—" : n < 1000 ? String(Math.round(n)) : n < 1e6 ? (n / 1e3).toFixed(n < 1e4 ? 1 : 0) + "k" : (n / 1e6).toFixed(2) + "M";
   const fmtH = (n) => n == null ? "—" : (Math.round(n * 1000) / 1000).toLocaleString();
 
-  // ---- ArcGauge: 270° gauge, green progress over a track, numerals centered ----
-  function arcGauge(numer, denom) {
+  // ---- ArcGauge: 270° gauge, green progress over a track, numerals centered.
+  // opts overrides the centre numeral (num), the sub-label (pct) and the aria-label
+  // (label); progress fraction is always numer/denom. ----
+  function arcGauge(numer, denom, opts) {
+    opts = opts || {};
     const cx = 66, cy = 62, r = 48, A0 = 135, SWEEP = 270;
     const pct = denom ? numer / denom : 0;
     const polar = (deg) => { const a = deg * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; };
     const arc = (a0, a1) => { const [x0, y0] = polar(a0), [x1, y1] = polar(a1); const large = (a1 - a0) > 180 ? 1 : 0;
       return `M${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
     const prog = A0 + SWEEP * Math.max(0, Math.min(1, pct));
-    return `<svg class="arc-gauge" viewBox="0 0 132 118" role="img" aria-label="${numer} of ${denom} reproduced">
+    const numTxt = opts.num ?? `${numer}/${denom}`;
+    const pctTxt = opts.pct ?? `${denom ? Math.round(pct * 100) : 0}%`;
+    const label = opts.label ?? `${numer} of ${denom} reproduced`;
+    return `<svg class="arc-gauge" viewBox="0 0 132 118" role="img" aria-label="${label}">
       <path d="${arc(A0, A0 + SWEEP)}" class="ag-track" fill="none" stroke-width="11" stroke-linecap="round"/>
       ${pct > 0 ? `<path d="${arc(A0, prog)}" class="ag-prog" fill="none" stroke-width="11" stroke-linecap="round"/>` : ""}
-      <text x="66" y="64" text-anchor="middle" class="ag-num">${numer}/${denom}</text>
-      <text x="66" y="86" text-anchor="middle" class="ag-pct">${denom ? Math.round(pct * 100) : 0}%</text>
+      <text x="66" y="64" text-anchor="middle" class="ag-num">${numTxt}</text>
+      <text x="66" y="86" text-anchor="middle" class="ag-pct">${pctTxt}</text>
     </svg>`;
   }
 

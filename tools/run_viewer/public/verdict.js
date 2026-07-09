@@ -15,7 +15,7 @@
     fault:      { glyph: "✕", cssvar: "--no",  word: "fault",       stamp: "NOT REPRODUCED" },
     idle:       { glyph: "○", cssvar: "--slate", word: "idle",      stamp: "NEVER RAN" },
     running:    { glyph: "◍", cssvar: "--accent", word: "running",  stamp: "RUNNING" },
-    done:       { glyph: "◌", cssvar: "--slate", word: "done",      stamp: "UNJUDGED" },
+    done:       { glyph: "◌", cssvar: "--slate", word: "unjudged",  stamp: "UNJUDGED" },
   };
   // known tag -> family (everything else is ignored for colour)
   const TAG_FAMILY = {
@@ -37,9 +37,12 @@
 
   // Stage-7 auditor verdict -> family. Authoritative when a run has been graded
   // (repro_runs.audit_*, set by reprocli_repro.audit_upload); tags are the fallback.
+  // The auditor's full 6-verdict vocabulary (0–10 scale): disqualified (cheat/0),
+  // reproduced (8–10), partial (6–7), blocked (honest availability ceiling),
+  // unverifiable (never executed), not_reproduced (failed/low score).
   const AUDIT_FAMILY = {
-    reproduced: "reproduced", partial: "miss",
-    not_reproduced: "fault", unverifiable: "fault",
+    reproduced: "reproduced", partial: "miss", blocked: "miss",
+    not_reproduced: "fault", unverifiable: "fault", disqualified: "fault",
   };
   function familyFromAudit(run) {
     if (!run) return null;
@@ -95,7 +98,6 @@
       const tags = window.Tags ? window.Tags.get(run.run_id) : [];
       const specific = tags.find((t) => TAG_FAMILY[String(t).toLowerCase().trim()] === fam);
       if (specific) return specific;
-      if (fam === "done" && run.exit_reason) return run.exit_reason;
       return this.meta(fam).word;
     },
     runInline(run) { return this.inline(this.ofRun(run), this.word(run)); },

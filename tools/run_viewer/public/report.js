@@ -80,10 +80,17 @@
       const repro = papers.filter((p) => p.reproduced);
       const sum = (rows, k) => { let any = false, t = 0; for (const r of rows) if (r[k] != null) { any = true; t += r[k]; } return any ? t : null; };
       const predicted = sum(repro, "predicted"), took = sum(repro, "took");
+      // audit scores are the Stage-7 auditor's 0–10 scale; aggregate over RUNS, not
+      // papers (a paper may have several graded runs). 0 is a real score — use != null.
+      let gradedRuns = 0, scoreSum = 0;
+      for (const p of papers) for (const run of (p.runs || [])) if (run.audit_score != null) { gradedRuns++; scoreSum += run.audit_score; }
+      const avgScore = gradedRuns ? Math.round((scoreSum / gradedRuns) * 10) / 10 : null;
+      const scorePct = avgScore == null ? null : Math.round((avgScore / 10) * 100);
       return {
         total: papers.length, reproduced: repro.length, notReproduced: papers.length - repro.length,
         predicted, took, efficiency: (took != null && predicted) ? Math.round((took / predicted) * 100) : null,
         runs: papers.reduce((a, p) => a + p.totalRuns, 0),
+        gradedRuns, scoreSum, avgScore, scorePct,
       };
     },
 
