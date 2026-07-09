@@ -1,0 +1,124 @@
+\section{ReproBench}
+\label{sec:reprobench}
+
+ReproBench evaluates whether an autonomous agent can reproduce the central
+empirical result of a machine learning paper from whatever artifacts its
+authors actually released. Each of the 100 papers in the benchmark poses one
+task. The agent must recover a single pinned result within a stated tolerance.
+This section defines the task (Section~\ref{subsec:task}) and describes how
+the benchmark was constructed (Section~\ref{subsec:construction}).
+
+\subsection{Task definition}
+\label{subsec:task}
+
+Each paper carries one reproduction target, which we call the \emph{match
+target} and fix before any agent runs. The match target is the cheapest
+configuration the authors report that still establishes the paper's central
+empirical claim, together with the value that configuration produces. Papers
+usually headline their largest model or their full benchmark suite, but the
+same claim typically rests on a smaller supporting experiment, and we pin that
+one. Pinning the smallest supporting configuration bounds the compute a task
+can demand while still exercising the paper's method end to end.
+
+% TODO(data): one eval-100 row currently has a null match_bar_kind; the
+% "remaining 3" count below assumes it resolves to magnitude or range.
+A match target records the configuration that produces the value, the metric,
+the reported value, the scope the value is measured over, and the shape of the
+bar a run must clear. For 67 of the 100 papers the bar is a point estimate.
+For 18 the run must beat a stated baseline, for 12 it must clear a reported
+threshold, and for the remaining 3 it must recover a magnitude or fall inside
+a reported range. A point estimate matches when the run lands within the
+authors' stated tolerance, or within 5\% relative of the reported value when
+the paper states none.
+
+As a running example, SharpZO (arXiv 2506.20990) claims that a two-stage
+zeroth-order method improves prompt tuning for vision-language models using
+forward passes alone. Its match target pins a test accuracy of 79.42\% on the
+EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
+reports. A run matches when it produces that accuracy from an experiment it
+actually executed, within the default 5\% relative tolerance.
+
+The agent receives the paper, the metric, the target value, the scope, and
+the bar shape. It does not receive the configuration. The agent must
+therefore design the experiment itself, deciding from the paper and the
+released artifacts what to run, retrain, or reimplement. Because the agent
+knows the number it must hit, a bare value match proves nothing. Grading is
+provenance-based. An LLM auditor traces every claimed result to execution
+evidence in the run directory, and deterministic checks force the score to
+zero when a number was echoed from the paper rather than measured.
+
+\subsection{Benchmark construction}
+\label{subsec:construction}
+
+We construct ReproBench from the 3,414 NeurIPS 2025 submissions that carry an
+arXiv identifier, collected in the \emph{ai-conferences}
+corpus~\citep{neurips2025corpus}. Construction proceeded in three stages.
+
+\textbf{Stage I: Artifact-verified classification.} For each submission we
+retrieved the raw \LaTeX{} source together with any OpenReview supplementary
+material, since some authors ship code in the supplement rather than on
+GitHub. A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read
+each paper, extracted its central empirical claim, pinned its match target,
+and audited four artifact signals: released code, released datasets, released
+model weights, and whether the required datasets are standard public
+benchmarks. The audit trusts tool calls over prose. An artifact counts as
+available only when a tool call opens it. An artifact the paper promises but
+never publishes counts as missing, as does one behind a paywall, a sign-up
+form, or a permission request. We ran the classifier on a 1,000-paper sample
+of the pool, and it fully verified 687 papers. Of these, 34 are non-empirical
+and 33 have their required artifacts blocked, leaving 620 papers eligible for
+evaluation.
+
+Artifact availability sets each paper's tier (Table~\ref{tab:tiers}). The
+tier records what the agent must rebuild, not the difficulty of the
+underlying science. Compute cost is tracked separately, so a tier records
+access, not scale. The tiers also describe the venue rather than a curated
+corner of it. Among the 687 verified papers, 33\% fall in Easy, 44\% in
+Medium, and 13\% in Hard, while 5\% are blocked outright and 5\% are
+non-empirical.
+
+\begin{table}[t]
+\caption{The three artifact-availability tiers. Each tier states what the
+agent must supply for itself and therefore how much of the result it must
+rebuild.}
+\label{tab:tiers}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Tier & Artifacts available & Agent's job \\
+\midrule
+Easy & Code, data, and weights & Run or evaluate the released artifacts. \\
+Medium & Code and data, no weights & Retrain the match-target model, then evaluate. \\
+Hard & Data only, no code & Reimplement the method from the paper. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\textbf{Stage II: Compute capping and stratified selection.} We estimated the
+compute each match target requires in H100-hours, taking the paper's reported
+hardware and wall-clock time where stated and deriving the estimate from the
+pinned configuration otherwise. We dropped every paper whose estimate exceeds
+192 H100-hours, which caps what a single reproduction can demand. From the
+remainder we sampled a 200-paper audit pool of 67 Easy, 67 Medium, and 66
+Hard papers, stratified across four compute bands (0--8, 8--32, 32--96, and
+96--192 H100-hours).
+
+\textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
+opening the evidence behind each availability call and re-deriving each
+compute estimate. Papers failed the audit for two reasons. Six papers had
+required artifacts that turned out to be inaccessible, and fifteen depended
+on paid third-party APIs, which we exclude so that reproduction cost stays
+bounded and GPU-denominated. Rejected papers were replaced from the audited
+pool. Only 17 of the 100 shipped compute estimates could be taken directly
+from the paper. We derived the rest from the pinned configuration, echoing
+the finding that compute is systematically
+under-reported~\citep{gundersen2018state}.
+
+Through these stages the 3,414 submissions narrow to the released benchmark.
+It holds a 100-paper evaluation split of 34 Easy, 33 Medium, and 33 Hard
+papers, and a disjoint 14-paper development split. After adjudication the
+evaluation split totals 1,651 H100-hours, its compute bands hold 58, 25, 14,
+and 3 papers, and exactly one paper saturates the 192-hour cap. Of the 100 papers, 94
+first appeared as preprints in 2025, which limits the exposure of their
+artifacts in current training corpora.

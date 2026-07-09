@@ -1,0 +1,140 @@
+\section{Dataset Schema}
+\label{app:dataset-schema}
+
+We release the audited benchmark as a Hugging Face dataset. The repository URL
+is withheld for anonymous review and provided in the camera-ready version. The
+dataset publishes two named splits. The \texttt{test} split holds the
+100-paper frozen benchmark and carries \texttt{split="eval"} in each row. The
+\texttt{validation} split holds the disjoint 14-paper development set and
+carries \texttt{split="dev"}. There is no \texttt{train} split. Each row is
+one paper, keyed by its arXiv identifier in \texttt{custom\_id}. The row
+records the paper's central claim, the audited artifact-availability signals,
+the reproduction task handed to the agent, the pinned match target, and the
+compute estimate that placed the paper in its band.
+
+Table~\ref{tab:schema-toplevel} lists the top-level fields. Four of them are
+nested objects, expanded in
+Tables~\ref{tab:schema-links}--\ref{tab:schema-h100}.
+
+\begin{table}[t]
+\caption{Top-level fields of each dataset row.}
+\label{tab:schema-toplevel}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{custom\_id} & string & arXiv id, the primary key. \\
+\texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
+\texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
+\texttt{paper\_kind} & string & Paper type. All rows are \texttt{empirical}. \\
+\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim. \\
+\texttt{agent\_task} & string & The reproduction instruction handed to the agent. \\
+\texttt{verified\_links} & object & Tool-confirmed artifact URLs (Table~\ref{tab:schema-links}). \\
+\texttt{signals} & object & Per-artifact availability audit (Table~\ref{tab:schema-signals}). \\
+\texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
+\texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
+\texttt{score} & int & Artifact-availability score, 0 (all present) to 3 (most missing). \\
+\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard}, derived from \texttt{score}. \\
+\texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
+\texttt{selection\_band} & string & Compute band used for stratified selection. \\
+\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}, \texttt{96-192}. \\
+\texttt{h100\_hours\_estimate} & float & Estimated H100-hours to run the match target. \\
+\texttt{h100\_estimate\_basis} & string & Free-text justification for the estimate. \\
+\texttt{audited\_h100\_hours} & float & Human-adjudicated H100-hours. \\
+\texttt{h100\_recomputed\_hours} & float or null & Recomputed hours when the estimate was revised. \\
+\texttt{h100\_arithmetic\_mismatch} & bool or null & Flag set when estimate arithmetic disagreed. \\
+\texttt{h100\_hours\_adjudicated} & bool & Whether a human adjudicated the compute figure. \\
+\texttt{h100\_needs\_human\_review} & bool & Whether the estimate was flagged for review. \\
+\texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
+\texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
+\texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each
+field is a list of strings and is empty when no artifact of that kind was
+located.}
+\label{tab:schema-links}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{paper\_or\_project} & Paper or project-page URLs. \\
+\texttt{code} & Code repository URLs. \\
+\texttt{dataset} & Dataset URLs. \\
+\texttt{weights} & Model-weight URLs. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{signals}: the per-artifact availability audit. The four
+audited signals are \texttt{code\_available}, \texttt{dataset\_available},
+\texttt{weights\_available}, and \texttt{dataset\_is\_standard}. Each signal
+is an object with the three fields below. The audit trusts a tool call, not
+the paper's own statement, so a signal is true only when its
+\texttt{verification} field is \texttt{tool\_verified}.}
+\label{tab:schema-signals}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{value} & bool & Whether the artifact is present. \\
+\texttt{verification} & string & \texttt{tool\_verified}, \texttt{tool\_searched\_not\_found}, or \texttt{not\_applicable}. \\
+\texttt{evidence} & string & The tool observation supporting the value. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{match\_target}: the quantity a reproduction run must recover
+to count as a match.}
+\label{tab:schema-matchtarget}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{config} & Experimental configuration that produces the target value. \\
+\texttt{metric} & The reported metric name. \\
+\texttt{value} & The target value to match. \\
+\texttt{scope} & The model, dataset, or setting the value applies to. \\
+\texttt{match\_bar\_kind} & Match criterion: \texttt{point\_estimate}, \texttt{direction}, \texttt{threshold}, \texttt{magnitude}, or \texttt{range}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{h100\_estimate}: the compute estimate that placed each paper
+in its band.}
+\label{tab:schema-h100}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}llp{7.6cm}@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{hours} & float & Estimated H100-hours for the match target. \\
+\texttt{basis\_kind} & string & \texttt{derived\_from\_config}, \texttt{paper\_reported}, \texttt{comparable\_experiment}, or \texttt{compute\_unspecified}. \\
+\texttt{gpu\_count} & int or null & GPU count the paper reports. \\
+\texttt{gpu\_type} & string & GPU type the paper reports. \\
+\texttt{wallclock\_hours} & float or null & Reported wall-clock hours, before H100 normalization. \\
+\texttt{h100\_equivalent\_multiplier} & float or null & Factor converting the reported GPU to H100-equivalent hours. \\
+\texttt{basis} & string & Free-text justification for the estimate. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
