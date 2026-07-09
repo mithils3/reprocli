@@ -111,7 +111,13 @@ def qwen3_profile() -> Profile:
         max_model_len=262144,  # Qwen3.6-27B's native context; fp8 KV cache fits it on one GH200.
         mm_encoder_tp_mode="data",
         kv_cache_dtype="fp8",
-        max_num_seqs=512,
+        # Qwen3.6 is a gated-delta/Mamba hybrid: a per-sequence recurrent state
+        # cache is allocated for every concurrent seq. At 512 that state (plus the
+        # 1->512 cudagraph capture range) OOM-kills the engine during profiling on
+        # a single GH200 (job 2634994). The sweep runs parallel=6 + one audit
+        # stream, so 32 is ample headroom while collapsing the mamba-state and
+        # capture footprint ~16x.
+        max_num_seqs=32,
     )
 
 
