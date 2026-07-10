@@ -47,6 +47,15 @@ from reprocli_repro.cluster import Cluster
 if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
 
+# Host RAM (GB) and CPU cores requested per GPU on the salloc. Sized to sit under a
+# DeltaAI GH200 node's ~440 GB / 288 cores at the 4-GPU cap so a full-node request
+# still fits, while giving each GPU enough host memory/cores for dataloading and
+# preprocessing that the partition's 1000 MB/core default would otherwise starve.
+# Both stay under the SU thresholds (72 cores / 110 GB per SU) so the bill tracks the
+# GPU count and a 1-GPU step is never charged as a fraction of the whole node.
+MEM_GB_PER_GPU = 100
+CPUS_PER_GPU = 60
+
 # salloc prints "... allocation <jobid>" (Pending then Granted share the number).
 _JOBID_RE = re.compile(r"allocation (\d+)")
 # srun into a dead/expired allocation fails with one of these — the held session is
@@ -112,6 +121,15 @@ def build_acquire(
 
     ``partition`` overrides the profile's default pool for this allocation (the agent
     picks it from ``list_partitions``); ``None`` falls back to ``cluster.partition``.
+
+    Host RAM and CPU cores scale with the GPU request rather than riding the
+    partition's per-core default (1000 MB/core on DeltaAI, which the GPU->core binding
+    alone often leaves too tight for dataloaders/preprocessing): ``--mem`` totals
+    ``MEM_GB_PER_GPU`` per GPU and ``--cpus-per-gpu`` pins ``CPUS_PER_GPU`` cores to
+    each GPU (per-GPU, so it survives any future multi-task step). Both are sized so
+    the SU bill -- ``max(gpus, ceil(cores/72), ceil(mem_GB/110))`` on DeltaAI -- stays
+    at the GPU count (60/72 and 100/110 both round up to 1 per GPU) and never charges
+    for more of the node than the GPUs already imply.
     """
     part = partition or cluster.partition
     _require_target(cluster, gpus, part)
@@ -122,6 +140,8 @@ def build_acquire(
         "-p", part,
         "--nodes=1",
         f"--gpus={int(gpus)}",
+        f"--mem={MEM_GB_PER_GPU * int(gpus)}G",
+        f"--cpus-per-gpu={CPUS_PER_GPU}",
         f"--time={int(minutes)}",
     ]
 

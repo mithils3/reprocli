@@ -33,6 +33,10 @@ class BuildAcquireTests(unittest.TestCase):
         self.assertIn("ghx4", argv)
         self.assertIn("--gpus=4", argv)
         self.assertIn("--time=90", argv)
+        # Host RAM/CPU scale with the GPU count (100 GB + 60 cores per GPU);
+        # --cpus-per-gpu is per-GPU so it stays 60 regardless of the count.
+        self.assertIn("--mem=400G", argv)
+        self.assertIn("--cpus-per-gpu=60", argv)
         # Acquire holds the node only; the command is spliced in later by build_srun.
         self.assertNotIn("srun", argv)
 
