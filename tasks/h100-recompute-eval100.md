@@ -75,6 +75,18 @@ experiment.
   composition: 0-8:59 / 8-32:27 / 32-96:14, total 1247.1 H100-h, max 96.0.
   Incoming rows carry pre-recompute hour estimates and hand-authored
   match_targets → both need the recompute/repin treatment.
+- **UPDATE 2026-07-10:** dropped **2506.04536 NOBLE** (Easy, 0-8, 0.5h) — genuine
+  availability wall: weights released but the HoF simulation ground-truth voltage
+  traces needed for the 2.18% rel-L2 target are not released (empty `data/`,
+  empty `data_path` in `noble.yaml`), so the metric is not producible. Swapped in
+  the deterministic next-cheapest Easy 0-8 row **2505.19154 FHGS** (0.028h,
+  `paper_reported` basis). Composition unchanged (34/33/33, bands 59/27/14, total
+  1246.6→"1,247"); paper `paper_reported` basis count 18→19. FHGS carries a
+  hand-authored provisional PSNR point-estimate match_target (30.9 on DTU scan24)
+  → needs the repin/human-freeze treatment. Two other Qwen3.6 "blocked" audits
+  (2505.18456 ADLM, 2503.17482 Steerability) were NOT dropped: their artifacts are
+  public (sibling checkpoints / released data), so they are re-audit cases, not
+  availability walls.
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,
