@@ -166,9 +166,9 @@ from reprocli_repro.inputs import (
 rows = load_lockfile_rows(sys.argv[1], split=sys.argv[2])
 want = sys.argv[3]
 tier = [(pid, row) for pid, row in rows.items() if (row.get("tier") or "") == want]
-# Biggest compute ceiling first: long-budget papers must start early or they
-# can't finish inside the sweep's remaining wall clock.
-tier.sort(key=lambda pr: band_max_hours(pr[1]) or DEFAULT_UNBANDED_BUDGET_H100_HOURS, reverse=True)
+# Smallest compute ceiling first: cheap papers land results early, and a
+# long-budget paper hitting the sweep's wall clock wastes less of the queue.
+tier.sort(key=lambda pr: band_max_hours(pr[1]) or DEFAULT_UNBANDED_BUDGET_H100_HOURS)
 for pid, _ in tier:
     print(pid)
 PY
