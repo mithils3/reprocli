@@ -12,7 +12,6 @@ Copy-paste command references live in [`commands/`](commands/), one file per tas
 
 - [commands/dataset.md](commands/dataset.md) — build, stage, and publish the
   paper-bundle dataset.
-- [commands/docs.md](commands/docs.md) — build, serve, and publish the docs site.
 
 ## CC and serving
 
@@ -32,8 +31,7 @@ The repo splits into two decoupled halves that talk only over a published URL:
 Point the runner at a server with `--vllm-server-url`, `$REPROCLI_SERVER_URL`, or
 `$REPROCLI_ENDPOINT_FILE` — so swapping the model is a URL change. With no endpoint
 configured the reproduction agent renders prompts as a dry run and the auditor
-runner exits with an error; neither self-hosts a model. See
-[docs/slurm/serve.md](docs/slurm/serve.md).
+runner exits with an error; neither self-hosts a model.
 
 When the base URL is OpenRouter, set `$REPROCLI_OPENROUTER_PROVIDER` to a provider
 slug (e.g. `deepseek`) to pin every request to that upstream with fallbacks off, so
@@ -41,12 +39,3 @@ a cache-read-dominated run is billed at that provider's own cache pricing instea
 being silently routed to a pricier host. A comma-separated list sets a preference
 order (still no fallback beyond the list). Unset → OpenRouter's default routing, and
 a no-op against a local vLLM (which ignores the field).
-
-## Documentation
-
-Full project documentation lives in [`docs/`](docs/) and is published with
-[MkDocs Material](https://squidfunk.github.io/mkdocs-material/):
-**<https://mithils3.github.io/reprocli/>** (live once GitHub Pages is enabled).
-It covers the architecture, the reproduction and auditor agents, the dataset
-pipeline, the lockfile/selection, the tool & schema reference, SLURM recipes, and a
-complete CLI flag reference.

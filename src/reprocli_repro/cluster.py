@@ -45,8 +45,8 @@ class Cluster:
     apptainer_image: str | None = None   # MANDATORY sandbox .sif every step runs inside (sandbox.py)
 
 
-# The single built-in profile. DeltaAI strings are the exact ones the live scripts pass
-# (docs/slurm/clusters.md). GPU steps always run through a JIT salloc, so account/partition
+# The single built-in profile. DeltaAI strings are the exact ones the live scripts pass.
+# GPU steps always run through a JIT salloc, so account/partition
 # are mandatory. Every step runs inside the mandatory Apptainer sandbox (sandbox.py): the
 # CUDA .sif is the read-only root, so the agent's CUDA toolchain — ``nvcc``, cuDNN, the CUDA
 # libraries — comes from the image. No host ``module load`` (it would not exist inside the
