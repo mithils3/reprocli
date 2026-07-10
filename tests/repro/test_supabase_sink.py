@@ -7,7 +7,9 @@ REPRO_BATCH_ID so the run viewer can show the whole launch as a single group.
 
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -72,6 +74,90 @@ class UpsertPayloadTests(unittest.TestCase):
         payload = next(p for k, p in captured if k == "run_upsert")
         self.assertEqual(payload["batch_id"], "slurm-999")
         self.assertEqual(payload["batch_label"], "dev15 #999")
+
+
+def _finalize_sink(upload_stats: bool = True) -> tuple[SupabaseSink, list]:
+    """A sink whose HTTP POSTs are captured (no network) instead of sent."""
+    cfg = SinkConfig(
+        url="https://x.supabase.co", service_key="k", host="h",
+        upload_full_log=False, upload_stats=upload_stats,
+        batch_id=None, batch_label=None,
+    )
+    sink = SupabaseSink(cfg)
+    posts: list = []
+    sink._post = lambda *a, **k: posts.append((a, k))  # type: ignore[method-assign]
+    return sink, posts
+
+
+class FinalizeWorkerTests(unittest.TestCase):
+    """_finalize runs on the worker: GPU rollup -> patch run row -> upload stats."""
+
+    def test_gpu_fields_merged_into_run_patch_and_stats_section_written(self) -> None:
+        run_fields = {"gpu_util_avg_pct": 43.0, "gpu_active_pct": 61.0, "gpu_samples": 5}
+        gpu_stats = {**run_fields, "active_util_threshold_pct": 10, "timeline": [[0, 43.0, 38.2]]}
+        with tempfile.TemporaryDirectory() as tmp:
+            stats_path = str(Path(tmp) / "stats.json")
+            sink, posts = _finalize_sink()
+            try:
+                with mock.patch("reprocli_repro.gpu_usage.rollup", return_value=(run_fields, gpu_stats)):
+                    sink._finalize("run1", {"status": "finished"}, {"run_id": "run1"}, stats_path, None)
+            finally:
+                sink.close(timeout=2.0)
+            # first PATCH carries the finished fields merged with the GPU rollup
+            patches = [a[2] for (a, _k) in posts if a[0] == "PATCH"]
+            self.assertTrue(patches)
+            self.assertEqual(patches[0]["gpu_util_avg_pct"], 43.0)
+            self.assertEqual(patches[0]["status"], "finished")
+            # stats.json got the "gpu" section (plus write_doc's tokens/rounds)
+            doc = json.loads(Path(stats_path).read_text(encoding="utf-8"))
+            self.assertEqual(doc["gpu"], gpu_stats)
+            self.assertIn("tokens", doc)
+            # a storage POST uploaded the stats artifact
+            self.assertTrue(any(a[0] == "POST" and "storage" in a[1] for (a, _k) in posts))
+
+    def test_rollup_failure_still_patches_and_uploads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            stats_path = str(Path(tmp) / "stats.json")
+            sink, posts = _finalize_sink()
+            try:
+                with mock.patch("reprocli_repro.gpu_usage.rollup", return_value=(None, None)):
+                    sink._finalize("run1", {"status": "finished"}, {"run_id": "run1"}, stats_path, None)
+            finally:
+                sink.close(timeout=2.0)
+            patches = [a[2] for (a, _k) in posts if a[0] == "PATCH"]
+            self.assertTrue(patches)
+            self.assertEqual(patches[0]["status"], "finished")
+            self.assertNotIn("gpu_util_avg_pct", patches[0])
+            doc = json.loads(Path(stats_path).read_text(encoding="utf-8"))
+            self.assertNotIn("gpu", doc)
+            self.assertTrue(any(a[0] == "POST" and "storage" in a[1] for (a, _k) in posts))
+
+
+class FinishEnqueueTests(unittest.TestCase):
+    """_finish enqueues exactly one finalize item (not the old three)."""
+
+    def test_finish_enqueues_single_finalize_item(self) -> None:
+        cfg = SinkConfig(
+            url="https://x.supabase.co", service_key="k", host="h",
+            upload_full_log=True, upload_stats=True, batch_id=None, batch_label=None,
+        )
+        sink = SupabaseSink(cfg)
+        captured: list = []
+        try:
+            sink._put = lambda kind, payload: captured.append((kind, payload))  # type: ignore[method-assign]
+            ctx = SimpleNamespace(evidence="/runs/run123/evidence", arxiv_id="2506.09045", budget=None)
+            sink._finish(ctx, "run123", "natural")
+        finally:
+            sink.close(timeout=2.0)
+        kinds = [k for k, _ in captured]
+        self.assertEqual(kinds, ["finalize"])
+        _, payload = captured[0]
+        run_id, fields, meta, stats_path, log_path = payload
+        self.assertEqual(run_id, "run123")
+        self.assertEqual(fields["status"], "finished")
+        self.assertEqual(meta["exit_reason"], "natural")
+        self.assertTrue(stats_path.endswith("stats.json"))
+        self.assertTrue(log_path.endswith("agent.full.log"))
 
 
 if __name__ == "__main__":

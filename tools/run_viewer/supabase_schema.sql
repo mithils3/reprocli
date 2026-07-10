@@ -319,5 +319,18 @@ do $$ begin
   end if;
 end $$;
 
+-- Per-run GPU-efficiency rollup of that run's host_metrics series, written by the
+-- sink at run finish (reprocli_repro.gpu_usage): how hard the held H100s were
+-- actually driven. avg/max util %, % of samples above the active threshold, peak
+-- and total single-GPU memory (GB), mean board power (W), and the sample count.
+-- Safe to run twice.
+alter table public.repro_runs add column if not exists gpu_util_avg_pct  numeric;
+alter table public.repro_runs add column if not exists gpu_util_max_pct  numeric;
+alter table public.repro_runs add column if not exists gpu_active_pct    numeric;
+alter table public.repro_runs add column if not exists gpu_mem_peak_gb   numeric;
+alter table public.repro_runs add column if not exists gpu_mem_total_gb  numeric;
+alter table public.repro_runs add column if not exists gpu_power_avg_w   numeric;
+alter table public.repro_runs add column if not exists gpu_samples       int;
+
 -- tell PostgREST to pick up the new columns immediately (Supabase also auto-reloads)
 notify pgrst, 'reload schema';

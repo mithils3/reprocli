@@ -102,6 +102,16 @@ function runTilesHtml(run, extra) {
     itile("LAST EVENT", lastVal, "", live ? "live" : "") +
     `</div>`;
 }
+// compact GPU-efficiency chip from the run-finish host_metrics rollup; omitted
+// until the sink has written gpu_util_avg_pct (older / still-running runs)
+function gpuChipHtml(run) {
+  if (run.gpu_util_avg_pct == null) return "";
+  const bits = [`avg ${Math.round(run.gpu_util_avg_pct)}%`];
+  if (run.gpu_active_pct != null) bits.push(`active ${Math.round(run.gpu_active_pct)}%`);
+  if (run.gpu_mem_peak_gb != null) bits.push(`peak ${Number(run.gpu_mem_peak_gb).toFixed(1)} GB`);
+  const tip = run.gpu_samples != null ? ` title="GPU rollup over ${run.gpu_samples} samples"` : "";
+  return `<span class="schip"${tip}>GPU: ${esc(bits.join(" · "))}</span>`;
+}
 function runHeaderHtml(run, extra) {
   const fam = V() ? V().ofRun(run) : "done";
   const word = V() ? V().word(run) : (run.status || "");
@@ -112,7 +122,7 @@ function runHeaderHtml(run, extra) {
   const links = window.Estimates ? window.Estimates.links(run.arxiv_id) : null;
   const lk = links && (links.paper || links.code) ? `<span class="rt-links">${links.paper ? `<a href="${esc(links.paper)}" target="_blank" rel="noopener">paper↗</a>` : ""}${links.code ? `<a href="${esc(links.code)}" target="_blank" rel="noopener">code↗</a>` : ""}</span>` : "";
   return `<div class="rt-head">${V() ? V().inline(fam, word) : ""}
-      ${run.model ? `<span class="schip">${esc(run.model)}</span>` : ""}${exit}${lk}${dl}</div>
+      ${run.model ? `<span class="schip">${esc(run.model)}</span>` : ""}${exit}${gpuChipHtml(run)}${lk}${dl}</div>
     <h2 class="rt-claim">${esc(claim || run.run_id || run.arxiv_id || "transcript")}</h2>
     <div class="rt-meta"><span class="pid">${esc(run.arxiv_id || "")}</span>${run.run_id && claim ? ` · <span class="s-rid">${esc(run.run_id)}</span>` : ""}${run.started_at || run.updated_at ? ` · started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}` : ""}${run.host ? ` · ${esc(run.host)}` : ""}${run.batch_id ? ` · <span class="s-rid" title="batch ${esc(run.batch_id)}">⛁ ${esc(run.batch_label || run.batch_id)}</span>` : ""}</div>
     ${tagbar}${runTilesHtml(run, extra)}`;

@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from reprocli_repro import live_log, postgrest, supabase_rows as rows
+from reprocli_repro import gpu_usage, live_log, postgrest, supabase_rows as rows
 from reprocli_repro.run_stats import RunStats
 from reprocli_repro.supabase_rows import budget_of, run_id_of
 
@@ -165,6 +165,8 @@ class SupabaseSink:
         self._put("run_patch", (run_id, fields))
 
     def _finish(self, ctx, run_id, exit_reason):
+        """Enqueue ONE finalize item; the worker does the GPU rollup (an HTTP GET
+        that must not run on this event thread) then patches + uploads."""
         total, remaining = budget_of(ctx)
         fields = {"status": "finished", "exit_reason": exit_reason or None,
                   "finished_at": _now_iso(), "updated_at": _now_iso(),
@@ -173,29 +175,36 @@ class SupabaseSink:
         if total is not None and remaining is not None:
             fields["spent_h100"] = round(total - remaining, 4)
             fields["remaining_h100"] = round(remaining, 4)
-        self._put("run_patch", (run_id, fields))
-        if self.cfg.upload_full_log:
-            ev = getattr(ctx, "evidence", None)
-            if ev:
-                self._put("full_log", (run_id, str(Path(ev).parent / "agent.full.log")))
-        if self.cfg.upload_stats:
-            self._queue_stats(ctx, run_id, exit_reason)
-
-    def _queue_stats(self, ctx, run_id, exit_reason):
+        meta = self._stats_meta(ctx, run_id, exit_reason)
         ev = getattr(ctx, "evidence", None)
-        if not ev:
-            return
+        parent = Path(ev).parent if ev else None
+        stats_path = str(parent / "stats.json") if parent and self.cfg.upload_stats else None
+        log_path = str(parent / "agent.full.log") if parent and self.cfg.upload_full_log else None
+        self._put("finalize", (run_id, fields, meta, stats_path, log_path))
+
+    def _stats_meta(self, ctx, run_id, exit_reason) -> dict[str, Any]:
         total, remaining = budget_of(ctx)
-        meta = {
+        return {
             "run_id": run_id, "arxiv_id": getattr(ctx, "arxiv_id", None), "host": self.cfg.host,
             "exit_reason": exit_reason or None, "generated_at": _now_iso(),
             "budget_h100": total, "remaining_h100": remaining,
             "spent_h100": (round(total - remaining, 4) if total is not None and remaining is not None else None),
             "tool_rounds_used": self._rounds_seen.get(run_id, 0),
         }
-        path = Path(ev).parent / "stats.json"
-        if self._stats_for(run_id).write_doc(path, meta):
-            self._put("stats", (run_id, str(path)))
+
+    def _finalize(self, run_id, fields, meta, stats_path, log_path):
+        """Worker-thread run finalize: GPU rollup -> patch run row -> upload artifacts.
+        A rollup failure still patches the row and uploads (swallow-all)."""
+        run_fields, gpu_stats = gpu_usage.rollup(self.cfg.url, self.cfg.service_key, run_id)
+        if run_fields:
+            fields = {**fields, **run_fields}
+        self._patch_run(run_id, fields)
+        if stats_path:
+            doc = {**meta, "gpu": gpu_stats} if gpu_stats else meta
+            if self._stats_for(run_id).write_doc(Path(stats_path), doc):
+                self._do_storage(run_id, stats_path, f"{run_id}-stats.json", "application/json", "stats_url")
+        if log_path:
+            self._do_storage(run_id, log_path, f"{run_id}.log", "text/plain", "full_log_url")
 
     # ---- worker / HTTP -------------------------------------------------------
     def _run(self) -> None:
@@ -223,10 +232,8 @@ class SupabaseSink:
                 self._upsert_run(payload)
             elif kind == "run_patch":
                 self._patch_run(payload[0], payload[1])
-            elif kind == "full_log":
-                self._do_storage(payload[0], payload[1], f"{payload[0]}.log", "text/plain", "full_log_url")
-            elif kind == "stats":
-                self._do_storage(payload[0], payload[1], f"{payload[0]}-stats.json", "application/json", "stats_url")
+            elif kind == "finalize":
+                self._finalize(*payload)
         if events:  # PostgREST bulk insert needs identical keys per row -> pad to union
             ks = set().union(*(e.keys() for e in events))
             self._post("POST", "/rest/v1/repro_events", [{k: e.get(k) for k in ks} for e in events], prefer="return=minimal")
