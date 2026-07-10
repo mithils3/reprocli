@@ -105,23 +105,33 @@
       return { keys, stats };
     },
 
-    // model × tier matrix: per cell, reproduced / attempted papers
+    // model × tier matrix: per cell, reproduced / attempted papers; per model,
+    // the avg Stage-7 audit score over its graded runs, as a % of the 0–10 scale
     modelTier(runs, successTag) {
       const E = window.Estimates, tag = successTag || this.successTag;
       const M = new Map();
       for (const run of (runs || [])) {
         const model = run.model || "—";
         const tier = (E && E.row(run.arxiv_id) && E.row(run.arxiv_id).tier) || "untiered";
-        if (!M.has(model)) M.set(model, {});
+        if (!M.has(model)) M.set(model, { tiers: {}, graded: 0, scoreSum: 0 });
         const row = M.get(model);
-        const cell = row[tier] || (row[tier] = { papers: new Set(), repro: new Set() });
+        const cell = row.tiers[tier] || (row.tiers[tier] = { papers: new Set(), repro: new Set() });
         cell.papers.add(run.arxiv_id);
         if (this.isSuccess(run, tag)) cell.repro.add(run.arxiv_id);
+        if (run.audit_score != null) { row.graded++; row.scoreSum += run.audit_score; }
       }
-      const tiers = TIER_ORDER.filter((t) => [...M.values()].some((r) => r[t]))
-        .concat([...new Set([...M.values()].flatMap((r) => Object.keys(r)))].filter((t) => !TIER_ORDER.includes(t)));
+      const tiers = TIER_ORDER.filter((t) => [...M.values()].some((r) => r.tiers[t]))
+        .concat([...new Set([...M.values()].flatMap((r) => Object.keys(r.tiers)))].filter((t) => !TIER_ORDER.includes(t)));
       const models = [...M.keys()].sort();
-      return { models, tiers, get: (m, t) => { const c = M.get(m) && M.get(m)[t]; return c ? { repro: c.repro.size, total: c.papers.size } : null; } };
+      return {
+        models, tiers,
+        get: (m, t) => { const c = M.get(m) && M.get(m).tiers[t]; return c ? { repro: c.repro.size, total: c.papers.size } : null; },
+        score: (m) => {
+          const r = M.get(m);
+          if (!r || !r.graded) return null;
+          return { pct: Math.round((r.scoreSum / (r.graded * 10)) * 100), avg: Math.round((r.scoreSum / r.graded) * 10) / 10, graded: r.graded };
+        },
+      };
     },
 
     csv(papers) {

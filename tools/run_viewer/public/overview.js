@@ -75,17 +75,21 @@
     matrixHtml(papers) {
       const mt = window.Report.modelTier(this.setRuns());
       const head = `<tr><th></th>${mt.tiers.map((t) => `<th class="mt-tier"><span class="badge ${TIER_CLS[t] || "slate"}">${esc(t)}</span></th>`).join("")}</tr>`;
-      const body = mt.models.map((m) => `<tr><td class="mt-model">${esc(m)}</td>${mt.tiers.map((t) => {
-        const c = mt.get(m, t);
-        if (!c) return `<td class="mt-cell empty">·</td>`;
-        const pc = c.total ? (c.repro / c.total) * 100 : 0;
-        return `<td class="mt-cell"><span class="mt-frac tnum">${c.repro}/${c.total}</span><span class="mt-bar"><i style="width:${pc.toFixed(0)}%"></i></span></td>`;
-      }).join("")}</tr>`).join("");
+      const body = mt.models.map((m) => {
+        const sc = mt.score(m);
+        const chip = sc ? `<span class="mt-score tnum" title="avg audit score ${sc.avg}/10 over ${sc.graded} graded run${sc.graded === 1 ? "" : "s"}">${sc.pct}%</span>` : "";
+        return `<tr><td class="mt-model">${esc(m)}${chip}</td>${mt.tiers.map((t) => {
+          const c = mt.get(m, t);
+          if (!c) return `<td class="mt-cell empty">·</td>`;
+          const pc = c.total ? (c.repro / c.total) * 100 : 0;
+          return `<td class="mt-cell"><span class="mt-frac tnum">${c.repro}/${c.total}</span><span class="mt-bar"><i style="width:${pc.toFixed(0)}%"></i></span></td>`;
+        }).join("")}</tr>`;
+      }).join("");
       const ts = window.Report.tierStats(papers);
       const tierChips = ts.keys.map((k) => `<span class="tier-stat"><span class="badge ${TIER_CLS[k] || "slate"}">${esc(k)}</span><b class="tnum">${ts.stats[k].repro}</b><span class="s-sub">/${ts.stats[k].total}</span></span>`).join("");
       return `<section class="grid2">
         <div class="panel-card">
-          <div class="pc-head"><span class="plate">reproduced by model × tier</span></div>
+          <div class="pc-head"><span class="plate">reproduced by model × tier</span><span class="lc-sub">% = avg audit score of graded runs</span></div>
           <table class="matrix">${head}${body}</table>
           <div class="tier-breakdown">${tierChips}</div>
         </div>
