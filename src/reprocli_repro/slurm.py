@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 # Both stay under the SU thresholds (72 cores / 110 GB per SU) so the bill tracks the
 # GPU count and a 1-GPU step is never charged as a fraction of the whole node.
 MEM_GB_PER_GPU = 100
-CPUS_PER_GPU = 60
+CPUS_PER_GPU = 18
 
 # salloc prints "... allocation <jobid>" (Pending then Granted share the number).
 _JOBID_RE = re.compile(r"allocation (\d+)")
@@ -128,7 +128,7 @@ def build_acquire(
     ``MEM_GB_PER_GPU`` per GPU and ``--cpus-per-gpu`` pins ``CPUS_PER_GPU`` cores to
     each GPU (per-GPU, so it survives any future multi-task step). Both are sized so
     the SU bill -- ``max(gpus, ceil(cores/72), ceil(mem_GB/110))`` on DeltaAI -- stays
-    at the GPU count (60/72 and 100/110 both round up to 1 per GPU) and never charges
+    at the GPU count (18/72 and 100/110 both round up to 1 per GPU) and never charges
     for more of the node than the GPUs already imply.
     """
     part = partition or cluster.partition
