@@ -4,9 +4,9 @@
 # agent (`reprocli_repro`). The brain holds this node's 4 GPUs for the run; the
 # orchestrator is a cheap CPU process co-located on the same node, and every
 # `run_gpu` experiment step JIT-`salloc`s a SEPARATE ghx4 node and releases it on
-# exit (see scripts/reproduce/run_reproduce_minimax_m2.md).
+# exit (see scripts/reproduce/minimax_m2/run_reproduce_minimax_m2.md).
 #
-#   sbatch scripts/reproduce/dev15_minimax_m2.sbatch
+#   sbatch scripts/reproduce/minimax_m2/dev15_minimax_m2.sbatch
 #
 # Why one GPU job instead of a CPU orchestrator job: DeltaAI has NO cpu-only
 # partition (only ghx4 / ghx4-interactive, both GPU). The brain needs a ghx4 node

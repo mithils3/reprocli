@@ -1,15 +1,17 @@
 #!/bin/bash
-# Serve MiniMax-M2.7 on 4xGH200, then run every tier-Easy paper through the
+# Serve MiniMax-M2.7 on 4xGH200, then run every tier-Medium paper through the
 # paired S6->S7 flow from scripts/reproduce/repro_audit_one.sh: reproduce with a
 # pinned run id, audit exactly that bundle, and optionally upload the verdict.
 #
-#   sbatch scripts/reproduce/easy_minimax_m2.sbatch
+#   sbatch scripts/reproduce/minimax_m2/medium_minimax_m2.sbatch
 #
-# Easy-tier sibling of dev15_minimax_m2.sbatch. Defaults to the eval
-# split's Easy papers, MAX_PARALLEL=10, and RESUME=1 so re-submits after the 48h
-# cap skip papers that already wrote a verdict.
+# Medium-tier sibling of easy_minimax_m2.sbatch. Defaults to the eval
+# split's 33 Medium papers, MAX_PARALLEL=10, and RESUME=1 so re-submits after the
+# 48h cap skip papers that already wrote a verdict. Worst-case compute budget is
+# ~1200 H100-h (18x8 + 9x32 + 4x96 + 2x192); actual spend is typically well under
+# the per-paper band caps since the agent stops when it converges.
 #
-#SBATCH -J repro_easy_minimax
+#SBATCH -J repro_medium_minimax
 #SBATCH -A betw-dtai-gh
 #SBATCH -p ghx4
 #SBATCH --nodes=1
@@ -19,8 +21,8 @@
 #SBATCH --gpu-bind=none
 #SBATCH --mem=0
 #SBATCH --time=48:00:00
-#SBATCH -o slurm-repro-easy-%j.out
-#SBATCH -e slurm-repro-easy-%j.err
+#SBATCH -o slurm-repro-medium-%j.out
+#SBATCH -e slurm-repro-medium-%j.err
 #SBATCH --export=ALL
 #SBATCH --mail-user=mithils3@illinois.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -35,12 +37,12 @@ SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-eval}"                    # eval -> HF 'test' (the frozen 100-paper benchmark)
-TIER="${TIER:-Easy}"                      # only reproduce+grade rows of this tier
+TIER="${TIER:-Medium}"                      # only reproduce+grade rows of this tier
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.
@@ -70,9 +72,9 @@ OUTER_JOB="${SLURM_JOB_ID:-local}"
 # REPRO_* vars survive the SLURM_* env scrub below (override to join an old batch).
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
-SWEEP_DIR="${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}"
+SWEEP_DIR="${REPRO_WORK_ROOT}/medium_sweeps/${OUTER_JOB}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
-IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
+IDS_FILE="${SWEEP_DIR}/medium_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
 # --- Standardized DeltaAI serve env block (shared with scripts/serve/*) ------
@@ -154,7 +156,7 @@ trap 'kill "${SERVER_PID}" ${BEACON_PID:+"${BEACON_PID}"} 2>/dev/null || true' E
 # The orchestrator + auditor auto-discover the URL + served model from this file.
 export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
 
-# --- Step 2: enumerate the Easy tier of the split ---------------------------
+# --- Step 2: enumerate the Medium tier of the split ---------------------------
 mapfile -t PAPER_IDS < <(
   python - "${LOCKFILE}" "${SPLIT}" "${TIER}" <<'PY'
 import sys
@@ -185,7 +187,7 @@ echo "ids -> ${IDS_FILE}"
 for v in $(compgen -v | grep -E '^SLURM_' || true); do unset "$v"; done
 export SLURM_EXPORT_ENV=ALL
 
-# --- Step 4: reproduce + audit every Easy paper, PAIRED on one bundle --------
+# --- Step 4: reproduce + audit every Medium paper, PAIRED on one bundle --------
 # Per paper: reproduce with a pinned run id, symlink <grade-root>/<id> to that
 # exact bundle, audit it, then PATCH the verdict onto the same repro_runs row.
 STATUS_FILE="${SWEEP_DIR}/status.tsv"

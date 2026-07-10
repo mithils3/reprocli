@@ -183,7 +183,7 @@ curl -fsS "http://${HEAD_IP}:8000/health" && echo "  health: ok"
 With `/health` green the server is ready for clients. Point a consumer at
 `http://${HEAD_IP}:8000` — e.g. the reproduction agent (`python -m reprocli_repro
 --vllm-server-url …`) or the auditor runner (`python3 src/run_arxiv_prompt_vllm.py
---mode audit --vllm-server-url …`). See `scripts/reproduce/run_reproduce_minimax_m2.md`
+--mode audit --vllm-server-url …`). See `scripts/reproduce/minimax_m2/run_reproduce_minimax_m2.md`
 for a full end-to-end client walkthrough.
 
 ## 6. Stop

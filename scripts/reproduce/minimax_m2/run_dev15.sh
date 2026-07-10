@@ -9,7 +9,7 @@
 #
 # Run it detached so it survives your SSH session:
 #   cd /u/msalunkhe/reprocli
-#   nohup bash scripts/reproduce/run_dev15.sh > dev15_sweep.out 2>&1 &
+#   nohup bash scripts/reproduce/minimax_m2/run_dev15.sh > dev15_sweep.out 2>&1 &
 #   # or inside tmux/screen
 #
 # Knobs (env): SUBMIT_SERVE=1 submits the brain if no healthy endpoint is found;

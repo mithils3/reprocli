@@ -4,7 +4,7 @@
 # reproduce with a pinned run id, audit exactly that bundle, and optionally upload
 # the verdict.
 #
-#   sbatch scripts/reproduce/medium_qwen3_27b.sbatch
+#   sbatch scripts/reproduce/qwen3_27b/medium_qwen3_27b.sbatch
 #
 # Medium-tier sibling of easy_qwen3_27b.sbatch (see that header for the serve
 # rationale: dense 27B FP8 fits ONE GH200, TP=1, all serve flags from the qwen3
