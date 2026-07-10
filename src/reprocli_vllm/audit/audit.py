@@ -1,11 +1,14 @@
 """Deterministic post-processing for audit-mode rows.
 
 The LLM auditor proposes a granular 0-10 reproduction ``score`` (audit_schema.py);
-this module enforces the non-negotiable anti-cheat rule in code so it does not
-depend on the auditor's goodwill: any HIGH-severity cheat flag caps the score at
-0. It then derives the coarse ``verdict`` and the ``reproduced`` boolean from the
-(possibly capped) score, plus the run-health ``verification_status`` (degraded
-when the auditor output is malformed).
+this module enforces the non-negotiable anti-cheat rules in code so they do not
+depend on the auditor's goodwill: (1) any HIGH-severity cheat flag caps the score
+at 0, and (2) a partial/reproduced score (>=6) asserts a run actually computed the
+metric, so if the auditor itself reports ``execution_verified=False`` that grade is
+incoherent and is capped to the unverifiable ceiling -- an un-executed run can never
+count as reproduced. It then derives the coarse ``verdict`` and the ``reproduced``
+boolean from the (possibly capped) score, plus the run-health ``verification_status``
+(degraded when the auditor output is malformed).
 """
 
 from __future__ import annotations
@@ -21,6 +24,12 @@ VERIFIED = "verified"
 
 # A run counts toward the headline reproduction rate at or above this score.
 REPRODUCED_MIN_SCORE = 8
+# At or above this score the verdict asserts a run computed the metric (partial or
+# better), so it is only coherent when execution_verified is True.
+PARTIAL_MIN_SCORE = 6
+# Ceiling an un-executed verdict is capped to: a metric that was never run cannot be
+# confirmed, only left unverifiable.
+UNVERIFIABLE_SCORE = 1
 
 
 def finalize_audit_row(parsed: dict[str, Any], tool_loop: dict[str, Any]) -> dict[str, Any]:
@@ -40,6 +49,12 @@ def finalize_audit_row(parsed: dict[str, Any], tool_loop: dict[str, Any]) -> dic
     if score is not None and high_flags and score > SCORE_MIN:
         row["reported_score"] = score
         score = SCORE_MIN
+    # A partial/reproduced score claims a run computed the metric. If the auditor
+    # simultaneously reports execution_verified=False the grade contradicts itself,
+    # so cap it to the unverifiable ceiling: no execution => never reproduced.
+    elif score is not None and not execution and score >= PARTIAL_MIN_SCORE:
+        row["reported_score"] = score
+        score = UNVERIFIABLE_SCORE
     row["score"] = score
     row["verdict"] = _verdict(score, execution, bool(high_flags))
     row["reproduced"] = score is not None and score >= REPRODUCED_MIN_SCORE

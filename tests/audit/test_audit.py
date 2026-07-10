@@ -85,6 +85,32 @@ def test_score_2_is_not_reproduced():
     assert row["verdict"] == "not_reproduced"
 
 
+def test_high_score_without_execution_is_capped_unverifiable():
+    # The finalizer must not certify a reproduction the auditor says never ran:
+    # execution_verified=False + score 10 is incoherent and caps to unverifiable.
+    row = finalize_audit_row(_score_row(10, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 1
+    assert row["reported_score"] == 10
+    assert row["verdict"] == "unverifiable"
+    assert row["reproduced"] is False
+
+
+def test_partial_score_without_execution_is_capped_unverifiable():
+    row = finalize_audit_row(_score_row(6, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 1
+    assert row["reported_score"] == 6
+    assert row["reproduced"] is False
+
+
+def test_blocked_score_3_without_execution_is_not_capped():
+    # score 3 is an honest availability ceiling that legitimately never executes;
+    # the cap only touches the partial/reproduced band (>=6).
+    row = finalize_audit_row(_score_row(3, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 3
+    assert row["verdict"] == "blocked"
+    assert "reported_score" not in row
+
+
 def test_score_1_no_execution_is_unverifiable():
     row = finalize_audit_row(_score_row(1, execution_verified=False), {"exit_reason": "natural"})
     assert row["verdict"] == "unverifiable"

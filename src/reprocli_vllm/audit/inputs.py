@@ -52,7 +52,10 @@ def claim_block(record: dict | None) -> str:
             + json.dumps(target, ensure_ascii=False, indent=2)
             + "\nUse this tuple's config / metric / value (reference_value) / scope "
             "and match_bar_kind as given; set only `op` and `tolerance` to match the "
-            "pinned match_bar_kind, per rubric C1."
+            "pinned match_bar_kind, per rubric C1. The one exception: if the paper in "
+            "reference/ directly contradicts this tuple (wrong metric, reference "
+            "value, table cell, or scope), trust the paper, correct the bar to it, "
+            "and record the discrepancy in methodology_notes."
         )
     else:
         # Legacy rows with no pinned tuple fall back to deriving the bar.
