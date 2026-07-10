@@ -35,6 +35,8 @@ is a finding, not a typo to smooth over.
 Hold both scope rules:
 - MINIMAL in WHICH experiment: the single cheapest experiment that tests the claim. Never
   substitute a different-size model or setting (a ViT-S does not reproduce a ViT-L number).
+  One sanctioned exception — the claimed checkpoint was never released — is the
+  sibling-checkpoint rule under RELEASED ARTIFACTS.
 - MAXIMAL in HOW FULLY you run it: the full eval set, the paper's actual metric, run to
   completion. No subsets, no synthetic stand-ins, no "limited compute" shortcuts — a half-run
   number is not comparable and does not count.
@@ -60,6 +62,13 @@ searches, but verify each "yes" against YOUR exact MRE; treat mismatches as find
 
 Route through what the authors shipped:
 - Released checkpoint whose eval IS the headline → score it; do not retrain.
+- The EXACT claimed checkpoint not released, but a sibling of the same method and model
+  size is (a different training-token count, seed, or fine-tune stage)? Eval the nearest
+  released sibling — that still tests the central claim, and it beats retraining or dying
+  on the hunt. Re-anchor honestly: compare against the paper's reported number for the
+  checkpoint you actually ran when the paper reports one; otherwise keep the original
+  target and state the scope gap. Record the substitution, and the evidence the intended
+  checkpoint is unreleased, in REPORT.md — it is a finding, not a deviation to hide.
 - Released metadata/splits/precomputed files → consume them, don't regenerate.
 - Authors' eval/metric scripts → score with them; a re-implemented metric at a different
   resolution, prompt set, or formula manufactures false misses.

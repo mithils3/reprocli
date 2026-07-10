@@ -27,8 +27,10 @@ grade what exists):
                       (machine-readable per-step log), plus run logs and output
                       artifacts the agent kept.
 - workspace/        — the code the agent cloned and wrote, and its venv.
-- reference/        — the paper's LaTeX and supplements. Use it when fidelity is in
-                      question: check the claim's exact table cell and protocol.
+- reference/        — the paper's LaTeX and supplements. Read it BEFORE
+                      grading to ground the claim in its source: find the exact
+                      table cell and protocol the central claim comes from, then
+                      check fidelity against it throughout.
 
 === HOW TO INVESTIGATE ===
 
@@ -39,15 +41,25 @@ rounds on the target's provenance chain before anything else.
 1. Fix the target first. Adopt the pinned success bar from the claim block before
    hunting for values, so you verify the right metric on the right config — not
    whichever number looks best.
-2. Read the agent's account (report.json, evidence/REPORT.md) to learn where it says
+2. Ground the claim in the paper. Before grading the run, read the claim's source in
+   reference/: grep the LaTeX for the target metric and reference value, open the
+   exact table or section it comes from, and confirm the protocol (dataset, split,
+   config, metric definition) you are about to verify. This tells you what
+   "reproduced" means for this paper. Default to the pinned success bar as the ruler,
+   but if the paper directly contradicts the pinned tuple — wrong metric, reference
+   value, table cell, or scope — trust the PAPER: correct the bar to what the paper
+   actually claims and record the discrepancy in methodology_notes for human review.
+   If reference/ is absent (a died-early or paid-API run), note it and grade from the
+   claim block.
+3. Read the agent's account (report.json, evidence/REPORT.md) to learn where it says
    the measured values live. Then verify, never adopt: open each cited file and
    confirm the value is there.
-3. Trace each graded value to execution. Find the command that produced it
+4. Trace each graded value to execution. Find the command that produced it
    (commands.log, run logs), and evidence it actually ran: exit code, runtime,
    training/eval log lines, output artifacts of plausible size created during the
    run. Confirm scope on the actual command line and config — dataset, split,
    checkpoint, model size — against the pinned target_scope.
-4. Actively try to refute the number (rubric C4). Cheap, high-yield checks:
+5. Actively try to refute the number (rubric C4). Cheap, high-yield checks:
    - grep the workspace code for the literal measured value → hardcoded constant;
    - compare its digits to the paper's reported figure and demand a backing
      computation → echoed prose number;
@@ -62,11 +74,11 @@ rounds on the target's provenance chain before anything else.
    - for a direction/comparison claim, run every check above on the BASELINE
      number too — a baseline that was never executed, was degraded, or was copied
      hands the method a free win and is a provenance flag, not a pass.
-5. Recompute when cheap — the strongest evidence in either direction. write_run_file
+6. Recompute when cheap — the strongest evidence in either direction. write_run_file
    a small script and run it with bash to re-derive the metric from stored
    predictions/outputs. bash times out at 60s: recompute from artifacts only; never
    re-run training or evaluation.
-6. Logs can be huge and read_run_file truncates: grep/tail/wc via bash instead of
+7. Logs can be huge and read_run_file truncates: grep/tail/wc via bash instead of
    reading trajectory.jsonl or long run logs linearly.
 
 === FLAG SEVERITY — CALIBRATE IT ===
@@ -86,6 +98,15 @@ experiment and missed the bar is a low score via C5, not a provenance flag. The
 converse also holds: a value that matches the reference but cannot be traced to
 execution is a 0, not a 4 — never let the right answer launder missing provenance.
 
+Sibling-checkpoint substitution is sanctioned, not a "materially different
+experiment": when the claim's exact checkpoint was never released (the bundle must
+evidence the failed hunt), evaluating the nearest released checkpoint of the same
+method and model size still tests the central claim. Re-anchor the bar to the
+paper's reported number for the checkpoint actually evaluated when the paper
+reports one, note the re-anchor in methodology_notes, and reserve flags for
+substitutions that change the method, model size, or metric — or that swapped
+away from a checkpoint that WAS retrievable.
+
 === THE RUBRIC (apply every criterion; cite bundle evidence) ===
 
 {RUBRIC}
@@ -97,7 +118,9 @@ Return exactly one JSON object matching the audit schema — no prose outside it
 - The success bar: when the claim block pins a tuple, copy match_bar_kind,
   target_metric, reference_value, and target_scope verbatim and set only
   op / tolerance to fit the pinned kind; derive the bar yourself only when
-  nothing is pinned.
+  nothing is pinned. If the run evaluated a sanctioned sibling checkpoint
+  (severity rules above), re-anchor reference_value and target_scope to the
+  paper's number for that checkpoint instead.
 - execution_verified + execution_evidence — the cited proof the metric was
   computed by a run.
 - measured_value + measured_citation — exact file and line or log snippet.
