@@ -94,7 +94,7 @@
 .ps-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 .ps-count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .ps-filters { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
-.ps-filters select, .s-search { font: inherit; font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); color: var(--txt); }
+.ps-filters select, .ov-actions select, .s-search { font: inherit; font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); color: var(--txt); }
 .s-search { min-width: 220px; }
 select:focus, .s-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
 .vd-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); }

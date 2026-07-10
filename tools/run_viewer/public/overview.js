@@ -12,7 +12,7 @@
   const TIER_CLS = { Easy: "yes", Medium: "over", Hard: "no" };
 
   const Overview = {
-    rows: null, busy: false, msg: "", search: "", tier: "all", verdict: "all", sort: "tier", set: "all",
+    rows: null, busy: false, msg: "", search: "", tier: "all", verdict: "all", sort: "tier", set: "all", model: "all",
 
     root() { return document.querySelector("#overview-root"); },
 
@@ -33,10 +33,17 @@
     },
     onTags() { if (this.root() && this.rows) this.render(); },
 
+    // the model dropdown scopes the WHOLE worksheet: runs are filtered by model
+    // BEFORE per-paper aggregation, so gauge/ledger/matrix/cards all reflect it
+    modelRuns() { const rs = this.rows || []; return this.model === "all" ? rs : rs.filter((r) => r.model === this.model); },
+    models() {
+      const E = window.Estimates;
+      return [...new Set((this.rows || []).filter((r) => r.model && (!E || E.row(r.arxiv_id))).map((r) => r.model))].sort();
+    },
     // only papers present in reprobench-splits (have a lockfile row); then by set
-    allPapers() { return window.Report.papers(this.rows || []).filter((p) => p.inDataset); },
+    allPapers() { return window.Report.papers(this.modelRuns()).filter((p) => p.inDataset); },
     papers() { const ps = this.allPapers(); return this.set === "all" ? ps : ps.filter((p) => p.set === this.set); },
-    setRuns() { const ok = new Set(this.papers().map((p) => p.arxiv_id)); return (this.rows || []).filter((r) => ok.has(r.arxiv_id)); },
+    setRuns() { const ok = new Set(this.papers().map((p) => p.arxiv_id)); return this.modelRuns().filter((r) => ok.has(r.arxiv_id)); },
 
     visible(papers) {
       const q = this.search.trim().toLowerCase();
@@ -126,7 +133,9 @@
       const brand = document.querySelector("#brand-count");
       const allP = this.allPapers();
       const papers = this.papers(), sm = window.Report.summary(papers);
-      if (brand) brand.textContent = `${allP.length} papers · ${allP.reduce((a, p) => a + p.totalRuns, 0)} runs`;
+      // brand badge stays global — it names the site, not the current filter
+      const brandP = this.model === "all" ? allP : window.Report.papers(this.rows || []).filter((p) => p.inDataset);
+      if (brand) brand.textContent = `${brandP.length} papers · ${brandP.reduce((a, p) => a + p.totalRuns, 0)} runs`;
       const opts = (arr, cur) => arr.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`).join("");
       const cnt = (s) => allP.filter((p) => p.set === s).length;
       const seg = [["all", "all", allP.length], ["test", "test", cnt("test")], ["dev", "dev", cnt("dev")]]
@@ -136,7 +145,7 @@
         <div class="ov-head">
           <div><h1>Reproduction worksheet</h1>
             <div class="ov-sub">Agents reproducing ML papers from <b>reprobench-splits</b> under a fixed H100·h budget — each curve is a run burning compute toward the paper's claim. ${esc(this.busy ? this.msg : "")}</div></div>
-          <div class="ov-actions"><div class="set-seg" title="filter by dataset split">${seg}</div><button id="ov-csv" class="filt">⬇ CSV</button><button id="ov-refresh" class="filt" ${this.busy ? "disabled" : ""}>↻</button></div>
+          <div class="ov-actions"><div class="set-seg" title="filter by dataset split">${seg}</div><select id="ov-model" title="scope the whole worksheet to one agent model">${opts([["all", "all models"], ...this.models().map((m) => [m, m])], this.model)}</select><button id="ov-csv" class="filt">⬇ CSV</button><button id="ov-refresh" class="filt" ${this.busy ? "disabled" : ""}>↻</button></div>
         </div>
         ${this.thesisHtml(papers, sm)}
         ${this.matrixHtml(papers)}
@@ -161,6 +170,7 @@
       const rf = el.querySelector("#ov-refresh"); if (rf) rf.onclick = () => this.load(true);
       const bind = (id, key, rerender) => { const e = el.querySelector(id); if (e) e.oninput = e.onchange = () => { this[key] = e.value; rerender ? this.render() : this.renderGrid(); }; };
       bind("#ov-tier", "tier"); bind("#ov-verdict", "verdict"); bind("#ov-sort", "sort"); bind("#ov-search", "search");
+      bind("#ov-model", "model", true);
       el.querySelectorAll(".seg-btn").forEach((b) => b.onclick = () => { this.set = b.dataset.set; this.render(); });
       el.querySelectorAll(".paper-card").forEach((b) => b.onclick = () => window.openPaper && window.openPaper(b.dataset.arx));
     },
