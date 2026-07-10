@@ -85,77 +85,77 @@ zero when a number was echoed from the paper rather than measured.
 
 We construct ReproBench from the 3,414 NeurIPS 2025 submissions that carry an
 arXiv identifier, collected in the \emph{ai-conferences}
-corpus~\citep{neurips2025corpus}. Construction proceeded in three stages.
+corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
+(Figure~\ref{fig:funnel}).
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/construction_funnel}
+\end{center}
+\caption{The construction funnel. A tool-verified classifier reduces a
+1,000-paper sample of the 3,414 NeurIPS 2025 submissions to 620 eligible
+papers, a 96 H100-hour compute cap and stratified sampling yield a 200-paper
+audit pool, and a human audit of every availability call and compute estimate
+produces the released benchmark. Six papers with inaccessible artifacts and
+fifteen that depend on paid APIs failed the audit and were replaced from the
+pool.}
+\label{fig:funnel}
+\end{figure}
 
 \textbf{Stage I: Artifact-verified classification.} For each submission we
 retrieved the raw \LaTeX{} source together with any OpenReview supplementary
-material, since some authors ship code in the supplement rather than on
-GitHub. A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read
-each paper, extracted its central empirical claim, pinned its match target,
-and audited four artifact signals: released code, released datasets, released
-model weights, and whether the required datasets are standard public
-benchmarks. The audit trusts tool calls over prose. An artifact counts as
-available only when a tool call opens it. An artifact the paper promises but
-never publishes counts as missing, as does one behind a paywall, a sign-up
-form, or a permission request. We ran the classifier on a 1,000-paper sample,
-and it fully verified 687 papers. Of these, 34 are non-empirical and 33 have
-their required artifacts blocked, leaving 620 papers eligible for evaluation.
+material, since some authors ship code in the supplement rather than on GitHub.
+A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
+extracted its central empirical claim, pinned its match target, and audited four
+artifact signals: released code, released datasets, released model weights, and
+whether the required datasets are standard public benchmarks. An artifact counts
+as available only when a tool call is able to access it. An artifact the paper
+promises but never publishes counts as missing, as does one behind a paywall, a
+sign-up form, or a permission request. We ran the classifier on a 1,000-paper
+sample, and it fully verified 687 papers. Removing non-empirical papers and
+papers with blocked artifacts leaves 620 eligible for evaluation.
 
-Artifact availability sets each paper's tier (Table~\ref{tab:tiers}). The
-tier records what the agent must rebuild, not the difficulty of the
-underlying science. Compute cost is tracked separately, so a tier records
-access, not scale. The tiers also describe the venue rather than a curated
-corner of it. Among the 687 verified papers, 33\% fall in Easy, 44\% in
-Medium, and 13\% in Hard, while 5\% are blocked outright and 5\% are
-non-empirical.
-
-\begin{table}[t]
-\caption{The three artifact-availability tiers. Each tier states what the
-agent must supply for itself and therefore how much of the result it must
-rebuild.}
-\label{tab:tiers}
-\begin{center}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Tier & Artifacts available & Agent's job \\
-\midrule
-Easy & Code, data, and weights & Run or evaluate the released artifacts. \\
-Medium & Code and data, no weights & Retrain the match-target model, then evaluate. \\
-Hard & Data only, no code & Reimplement the method from the paper. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+Artifact availability determines each paper's tier, which records how much of
+the result the agent must rebuild for itself. Easy papers
+release code, data, and weights, and the agent need only run or evaluate them.
+Medium papers withhold the weights, and the agent must retrain before
+evaluating. Hard papers withhold the code as well, and the agent must
+reimplement the method from the paper alone. Compute cost is
+derived from the paper's text if mentioned, or estimated from the MRE config.
+The tiers also describe the venue rather than a curated corner of it. Among
+the 687 verified papers, 33\% fall in Easy, 44\% in Medium, and 13\% in Hard,
+while 5\% are blocked outright and 5\% are non-empirical.
 
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
-pinned configuration otherwise. We dropped every paper estimated above 192
-H100-hours before pooling. From the
-remainder we sampled a 200-paper audit pool of 67 Easy, 67 Medium, and 66
-Hard papers, stratified across four compute bands (0--8, 8--32, 32--96, and
-96--192 H100-hours).
+pinned configuration otherwise. We dropped every paper estimated above 96
+H100-hours before pooling. From the remainder we sampled a 200-paper audit
+pool stratified by tier and compute band. We allocate the pool equally across
+tiers rather than in venue proportion because tier is the variable under
+test, and equal cells measure each tier's reproduction rate with equal
+precision. Proportional sampling would leave the Hard tier with roughly a
+dozen papers, and the venue proportions reported above let readers reweight
+any rate back to the venue level. Within each tier the band quotas lean
+toward cheap papers because the eligible pool is bottom-heavy in compute, and
+we fill every quota cheapest-first, which minimizes total benchmark cost
+under the quotas and makes selection deterministic.
 
 \textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
-opening the evidence behind each availability call and re-deriving each
-compute estimate. Papers failed the audit for two reasons. Six papers had
-required artifacts that turned out to be inaccessible, and fifteen depended
-on paid third-party APIs, which we exclude so that reproduction cost stays
-bounded and GPU-denominated. Rejected papers were replaced from the audited
-pool. Only 18 of the 100 shipped compute estimates could be taken directly
-from the paper. We derived the rest from the pinned configuration, echoing
-the finding that compute is systematically
-under-reported~\citep{gundersen2018state}.
+opening the evidence behind each availability call and re-deriving each compute
+estimate. Papers whose artifacts proved inaccessible or that depended on paid
+third-party APIs failed the audit and were replaced from the audited pool. We
+exclude paid APIs so that reproduction cost stays bounded and
+GPU-denominated. Only 18 of
+the 100 shipped compute estimates could be taken directly from the paper. We
+derived the rest from the pinned configuration, echoing the finding that compute
+is systematically under-reported~\citep{gundersen2018state}.
 
-Through these stages the 3,414 submissions narrow to the released benchmark.
-We cap what a single reproduction can demand at 96 H100-hours and drop every
-paper whose audited estimate exceeds it. The benchmark holds a 100-paper
-evaluation split of 34 Easy, 33 Medium, and 33 Hard papers, and a disjoint
-14-paper development split. After adjudication the evaluation split totals
-1,247 H100-hours, its compute bands hold 59, 27, and 14 papers, and exactly
-one paper saturates the 96-hour cap. Of the 100 papers, 94 first appeared as
-preprints in 2025 or later, which limits the exposure of their artifacts in
-current training corpora.
+Through these stages the 3,414 submissions narrow to a 100-paper evaluation
+split and a disjoint 14-paper development split, and exactly one paper
+saturates the 96-hour cap. Of the 100 papers, 94 first appeared as preprints
+in 2025 or later, which limits the exposure of their artifacts in current
+training corpora.
 
 \section{Experiments}
 \label{sec:experiments}
