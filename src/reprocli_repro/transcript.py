@@ -10,7 +10,9 @@ of what it ran and measured; the *verdict* is the auditor's, not written here.
 from __future__ import annotations
 
 import argparse
+import os
 import threading
+import time
 from typing import Any
 
 from reprocli_vllm.runtime.trace_io import append_trace_row, assistant_message
@@ -28,6 +30,11 @@ OUTPUT_WRITE_LOCK = threading.Lock()
 
 # Exit reasons that prepend the budget note to the final tools-off turn.
 EARLY_EXIT_REASONS = ("context_budget", "budget_exhausted")
+
+# Absolute unix epoch (seconds) at which SLURM kills the sweep job hosting this
+# run's vLLM brain. Set by the sweep sbatch scripts (scripts/reproduce/*); unset
+# for local runs and OpenRouter-brain drivers that carry no SLURM allocation.
+WALL_DEADLINE_ENV = "REPRO_WALL_DEADLINE_EPOCH"
 
 
 def prepare_incremental_outputs(args: argparse.Namespace) -> None:
@@ -57,16 +64,45 @@ def final_user_message(budget_note: bool, final_message: str) -> dict[str, Any]:
     return {"role": "user", "content": content}
 
 
+def sweep_wall_note(now: float | None = None) -> str | None:
+    """Countdown to the outer sweep job's SLURM wall, or ``None`` if not applicable.
+
+    Reads ``WALL_DEADLINE_ENV``, an absolute unix epoch set by the sweep sbatch
+    scripts. Missing, empty, or unparseable values return ``None`` rather than
+    raising, since most drivers (local runs, OpenRouter brains) never set it.
+    """
+    raw = os.environ.get(WALL_DEADLINE_ENV)
+    if not raw:
+        return None
+    try:
+        deadline = float(raw)
+    except ValueError:
+        return None
+    remaining = deadline - (now if now is not None else time.time())
+    if remaining <= 0:
+        return "sweep wall EXPIRED — the job hosting this run is being killed; finalize immediately"
+    h = int(remaining // 3600)
+    m = int((remaining % 3600) // 60)
+    return f"sweep wall ~{h}h{m:02d}m left"
+
+
 def round_status_message(round_index: int, max_rounds: int) -> dict[str, Any]:
     """Ephemeral per-request line telling the model which tool round it is on.
 
     Built fresh for each request and never stored in the conversation, so stale
     counters don't accumulate. Surfaces the turn budget — capped independently of the
-    H100-hour budget — which the model otherwise has no way to see.
+    H100-hour budget — which the model otherwise has no way to see. When the sweep
+    sbatch scripts have set ``WALL_DEADLINE_ENV``, also appends a countdown to the
+    outer SLURM job's wall clock; that countdown is recomputed fresh every call, so
+    it never goes stale, and is omitted (byte-identical to the old line) when unset.
     """
     used = round_index + 1
     left = max(0, max_rounds - used)
-    return {"role": "user", "content": f"Tool round {used}/{max_rounds} · {left} left"}
+    content = f"Tool round {used}/{max_rounds} · {left} left"
+    note = sweep_wall_note()
+    if note is not None:
+        content = f"{content} · {note}"
+    return {"role": "user", "content": content}
 
 
 def conversation_for_round(

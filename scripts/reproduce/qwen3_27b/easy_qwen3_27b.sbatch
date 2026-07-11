@@ -83,6 +83,18 @@ ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
 IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
+# Sweep-wall countdown surfaced to the agent every tool round (transcript.py reads
+# this): the absolute epoch when SLURM kills this job. squeue %e is the scheduler's
+# own end time; fall back to now + the #SBATCH --time cap if it is unavailable.
+if end_ts="$(squeue -h -j "${SLURM_JOB_ID}" -o '%e' 2>/dev/null)" \
+   && [ -n "${end_ts}" ] \
+   && REPRO_WALL_DEADLINE_EPOCH="$(date -d "${end_ts}" +%s 2>/dev/null)"; then
+  :
+else
+  REPRO_WALL_DEADLINE_EPOCH="$(( $(date +%s) + 48 * 3600 ))"
+fi
+export REPRO_WALL_DEADLINE_EPOCH
+
 # --- Standardized DeltaAI serve env block (shared with scripts/serve/*) ------
 export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
 export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton

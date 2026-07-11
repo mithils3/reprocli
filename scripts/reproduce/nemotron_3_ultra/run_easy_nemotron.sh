@@ -104,6 +104,20 @@ if [[ -z "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
   echo "WARNING: SUPABASE_SERVICE_KEY is unset; runs + audit verdicts will NOT upload to agent-logs." >&2
 fi
 
+# Sweep-wall countdown surfaced to the agent every tool round (transcript.py
+# reads this): only meaningful if this driver happens to be launched inside a
+# SLURM allocation. Normally it is a plain login-node nohup'd process with no
+# SLURM_JOB_ID and no #SBATCH --time cap to fall back to, so it stays unset and
+# the countdown line is simply omitted (the daily/rate-limit caps above are the
+# real ceiling here, not a SLURM wall).
+if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+  if end_ts="$(squeue -h -j "${SLURM_JOB_ID}" -o '%e' 2>/dev/null)" \
+     && [[ -n "${end_ts}" ]] \
+     && REPRO_WALL_DEADLINE_EPOCH="$(date -d "${end_ts}" +%s 2>/dev/null)"; then
+    export REPRO_WALL_DEADLINE_EPOCH
+  fi
+fi
+
 # --- Activate the repo venv --------------------------------------------------
 if command -v module >/dev/null 2>&1; then
   module load python/3.11.9 || true

@@ -182,11 +182,15 @@ LONG-JOB PROTOCOL — blind wall-kills are where budgets die:
   `session_remaining_seconds` (plus a warning near the wall). Re-running the same blind job
   with a longer wall, without learning where it was stuck, torches budgets.
 
-WATCH BOTH BUDGETS (surfaced every turn):
+WATCH ALL BUDGETS (surfaced every turn):
 - Compute: {BUDGET_H100_HOURS} H100-hours total; each run_gpu result carries this call's cost
   and your remaining. At zero you are force-finaled mid-run.
 - Rounds: `Tool round U/300 · N left` each turn. You can be cut off by rounds with compute to
   spare — EXECUTE early and batch calls.
+- Sweep wall (when shown): `sweep wall ~Hh MMm left` on the same status line — the shared
+  SLURM job hosting your brain model. At zero EVERYTHING dies mid-step: this conversation,
+  held GPU sessions, unsaved state. Never start a run_gpu step whose minutes= exceeds it,
+  and finalize well before zero.
 
 === DATA — BULK INPUTS ON /tmp ===
 
