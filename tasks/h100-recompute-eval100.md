@@ -87,6 +87,33 @@ experiment.
   (2505.18456 ADLM, 2503.17482 Steerability) were NOT dropped: their artifacts are
   public (sibling checkpoints / released data), so they are re-audit cases, not
   availability walls.
+- **UPDATE 2026-07-11:** dropped **four Medium rows** under the same
+  hard-wall / never-released principle and swapped in the four next-cheapest
+  audited-pool Medium rows (cheapest-first, 8-32 band; no 0-8 Medium candidates
+  remained). Composition held at 34/33/33; overall bands 59/27/14 → **57/29/14**
+  (Medium 0-8 18→16, 8-32 11→13); total ~1246.6 → **~1259 H100-h**. Dropped:
+  - **2503.17482 Steerability** — the paper's own released CSV contradicts its
+    Table 1 number by 2×, and the SD1.4 data behind the claim exists nowhere
+    (internally-contradicted + source data never released). Was Medium 0-8, 0.0h.
+    Previously a "blocked" re-audit case (07-10); the CSV contradiction is a
+    genuine construct wall, so it is now a drop, not a re-audit.
+  - **2505.17685 FSDrive** — checkpoint never released + ToS-gated nuScenes with
+    no complete mirror. Was Medium 8-32, 20.64h.
+  - **2505.20425 OSVI-WM** — `mujoco_py` has no aarch64 build, ever. **Caveat:
+    this is a harness-specific aarch64 wall, NOT a paper defect** — if the
+    harness ever leaves aarch64, this paper should RETURN rather than count as a
+    permanent wall. Was Medium 8-32, 12.8h.
+  - **2110.03155 Categorical-DRL** — dropped for consistency: same
+    aarch64/`mujoco_py` mechanism as OSVI-WM (it was DQ'd over that mechanism in
+    sweep 2640098 but marked passable and never adjudicated). Carries the same
+    harness-specific-return caveat. Was Medium 0-8, 3.75h.
+  Added (provisional match_targets + provisional H100 fields → all four owe the
+  repin/human-freeze treatment, flagged `h100_needs_human_review=true`):
+  **2510.24940 SemCoT** (12.0h, SVAMP acc ~46% point-estimate),
+  **2511.00119 GeneFlow** (12.0h, RF FID « diffusion, direction),
+  **2505.24089 BASE-MIA** (12.8h, Cora GCN AUC ~82.45% point-estimate),
+  **2410.19933 RePO** (13.0h, safety rate >90% threshold). Uploaded
+  `eval_100.jsonl` to HF (commit `6feda9cb`).
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,
