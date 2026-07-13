@@ -194,11 +194,11 @@ identical conditions.
 Open-weight models are served on the cluster and API models are accessed
 through their public endpoints. Every model runs the same harness, prompts,
 and per-paper budgets, so results differ only in the model.
-Appendix~\ref{app:harness} records pinned versions, serving configuration,
+Appendix~\ref{app:models} records pinned versions, serving configuration,
 and decoding settings.
 
 \paragraph{Metric} - We report the average reproduction score as our primary metric. We also provide  \% of papers reproduced as a metric.
-We also report of the token usage of every model evaluated, and the total cost of the running the benchmark for 
+We also report of the token usage of every model evaluated, and the total cost of the running the benchmark for each model, which consitis of it's API Pricing  
 \subsection{Results}
 \label{subsec:results}
 
@@ -229,6 +229,12 @@ Summarize the paper and its implications.
 
 % TODO(harness): prompts, tool schemas, run_gpu session mechanics, sandbox,
 % budget enforcement, report format.
+
+\section{Models and Serving}
+\label{app:models}
+
+% TODO(models): pinned model versions, serving configuration, decoding
+% settings, per-model token usage and cost.
 
 \section{Dataset Schema}
 \label{app:dataset-schema}
