@@ -49,12 +49,36 @@ tolerance.
 \label{subsec:features}
 
 \paragraph{End-to-end reproduction.} Each task hands the agent a recent
-paper and a target, not a scripted pipeline. The agent plans the
-reproduction, builds the environment, debugs failures, and manages its own
-GPU allocations under a fixed compute grant, the same work a researcher
-faces when reproducing a paper. One open-ended task therefore exercises
-planning, coding, and resource management together, where existing agentic
-benchmarks isolate them.
+paper and a target, not a scripted pipeline. No prepared environment is
+provided. The agent plans the reproduction, installs the paper's stack and
+reconciles its dependency errors, debugs failures, and manages its own GPU
+allocations, the same work a researcher faces when reproducing a paper. One
+open-ended task therefore exercises planning, coding, and resource
+management together, and in particular the execute, debug, and improve loop
+that sandboxed execution benchmarks~\citep{siegel2024corebench} skip.
+
+\paragraph{Natural artifact availability.} We do not withhold artifacts to
+manufacture difficulty. We gather everything the authors released and
+stratify papers by what is missing, so each tier mirrors a situation a
+human reproducer actually meets. This choice also limits contamination.
+Reimplement-tier papers never released code, so no reference implementation
+exists for a model to absorb during training, and across all tiers our
+cluster seldom matches the authors' hardware and software stack exactly, so
+replaying memorized artifacts is rarely enough.
+
+\paragraph{Sufficient compute.} Each paper carries a GPU grant sized from
+its minimal reproducible experiment, so every agent has enough compute for
+a genuine attempt with room for trial and error, and a failure reflects
+capability rather than an exhausted budget. Prior reproduction benchmarks
+allot sub-retraining budgets~\citep{starace2025paperbench, kon2025expbench}
+and must therefore grade process rather than the paper's number.
+
+\paragraph{Provenance-audited grading.} The benchmark records what the
+agent claims and grades what the evidence shows. Every reported number is
+traced to execution evidence, and deterministic checks zero out numbers
+echoed from the paper rather than measured. Recording the claim and the
+audited outcome side by side is what lets us measure how far agent
+self-reports diverge from verified reproductions.
 
 \paragraph{Refresh at low human cost.} An agent classifier reads and
 verifies the candidate papers, and humans audit only the selected pool
@@ -62,13 +86,6 @@ verifies the candidate papers, and humans audit only the selected pool
 peer-reviewed targets, so the benchmark can be rebuilt yearly from new
 NeurIPS, ICML, and ICLR submissions. The pool tracks the research frontier
 and resists saturation as agents improve.
-
-\paragraph{Contamination resistance.} Reimplement-tier papers never
-released code, so no reference implementation exists for a model to absorb
-during training. Across all tiers, our cluster seldom matches the authors'
-hardware and software stack exactly, so replaying memorized artifacts is
-rarely enough. The agent typically has to adapt what it finds to an environment
-the authors never tested.
 
 \subsection{Task definition}
 \label{subsec:task}
