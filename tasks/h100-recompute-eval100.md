@@ -154,7 +154,11 @@ experiment.
   models GPT-3.5/GPT-4, ~$1500 API spend; on the open LLaMA3-70B the paper's own
   Table 2 shows ECE worsening 5.0→7.8), 2602.20296 Decomp (decomposition teacher
   is GPT-4o, decomposed data unreleased), 2512.00762 Seeing-the-Wind (material
-  estimation via GPT-4o-Vision is in the MRE). Screen remaining pool rows for
+  estimation via GPT-4o-Vision is in the MRE). All four are now marked
+  `swap_ineligible` (reason `paid_api_dependency`, with per-paper evidence) in
+  `outputs/v5/audit_pool_extracted.jsonl` and the HF copy
+  `Mithilss/neurips-2025-audit-pool` (local backup
+  `audit_pool_extracted.jsonl.bak-2026-07-13`). Screen remaining pool rows for
   API-in-the-loop before any future swap-in.
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
