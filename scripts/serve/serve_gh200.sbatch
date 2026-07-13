@@ -13,9 +13,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --gpus-per-node=4
+#SBATCH --gpus-per-node=2
 #SBATCH --gpu-bind=none
-#SBATCH --mem=256G
+#SBATCH --mem=220G
 #SBATCH --time=24:00:00
 #SBATCH -o slurm-serve-%j.out
 #SBATCH -e slurm-serve-%j.err
@@ -28,7 +28,7 @@ set -euo pipefail
 # --- Paths (override from the environment) ----------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"      # reprocli_serve lives in src/
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"        # any venv with vllm installed
-MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"
+MODEL="${MODEL:-cyankiwi/MiniMax-M2.7-AWQ-4bit}"   # 4-bit AWQ W4A16, fits 2xGH200
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 # Publish on a SHARED filesystem so other nodes can read the URL.
@@ -77,5 +77,9 @@ python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --tensor-parallel-size 4 \
-  --endpoint-file "${ENDPOINT_FILE}"
+  --tensor-parallel-size 2 \
+  --max-model-len 196608 \
+  --distributed-executor-backend mp \
+  --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
+  --endpoint-file "${ENDPOINT_FILE}" \
+  -- --kv-offloading-backend native --kv-offloading-size 64   # 64GB CPU RAM as KV-cache overflow (V1 replaces --swap-space)

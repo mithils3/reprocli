@@ -26,9 +26,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=64
-#SBATCH --gpus-per-node=4
+#SBATCH --gpus-per-node=2
 #SBATCH --gpu-bind=none
-#SBATCH --mem=0
+#SBATCH --mem=220G
 #SBATCH --time=48:00:00
 #SBATCH -o slurm-repro-dev15-%j.out
 #SBATCH -e slurm-repro-dev15-%j.err
@@ -41,7 +41,7 @@ set -euo pipefail
 # --- Config (override from the environment) ---------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL="${MODEL:-MiniMaxAI/MiniMax-M2.7}"   # local mirror; HF id also works
+MODEL="${MODEL:-cyankiwi/MiniMax-M2.7-AWQ-4bit}"   # 4-bit AWQ W4A16, fits 2xGH200
 SERVED_NAME="${SERVED_NAME:-MiniMaxAI/MiniMax-M2.7}"
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-dev}"                    # dev -> HF 'validation' (the dev-15 split)
@@ -123,11 +123,12 @@ python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --tensor-parallel-size 4 \
+  --tensor-parallel-size 2 \
   --max-model-len 196608 \
   --distributed-executor-backend mp \
   --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
-  --endpoint-file "${ENDPOINT_FILE}" &
+  --endpoint-file "${ENDPOINT_FILE}" \
+  -- --kv-offloading-backend native --kv-offloading-size 64 &   # 64GB CPU RAM as KV-cache overflow (V1 replaces --swap-space)
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 
