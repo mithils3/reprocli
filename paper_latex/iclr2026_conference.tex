@@ -160,7 +160,26 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
-Add datasets, compute details, hyperparameters, and evaluation protocol.
+\paragraph{Agent harness.} We run every agent in a deliberately thin
+ReAct-style tool loop~\citep{yao2023react} so that outcomes measure the model
+rather than our scaffolding. The agent receives the paper's \LaTeX{} source,
+its OpenReview supplement, the verified links to the released artifacts, and
+the match target of Section~\ref{subsec:task}. It acts through seven tools. A
+workspace-confined shell (\texttt{workspace\_bash}) covers cloning,
+environment setup, file inspection, and CPU-side work.
+\texttt{write\_file} and \texttt{edit\_file} modify files,
+\texttt{update\_plan} maintains a running checklist, and \texttt{fetch\_url}
+retrieves public URLs. The remaining two tools expose the Slurm cluster the
+benchmark runs on. \texttt{list\_partitions} reports the available node
+pools, and \texttt{run\_gpu} is the only path to a GPU, holding an allocation
+whose wall clock is metered against the run's fixed H100-hour grant. The
+agent chooses its own partitions, allocation sizes, and session lengths, so
+every run also exercises the budgeting and scheduling decisions that real
+reproduction work demands. Each run receives roughly 500\,GB of scratch
+storage for datasets and checkpoints, and ends with a structured report in
+which the agent states what it ran and whether it believes the result
+reproduced. Appendix~\ref{app:harness} gives the prompts, tool schemas, and
+session mechanics.
 
 \subsection{Results}
 \label{subsec:results}
@@ -186,6 +205,12 @@ Summarize the paper and its implications.
 \bibliographystyle{iclr2026_conference}
 
 \appendix
+
+\section{Harness Details}
+\label{app:harness}
+
+% TODO(harness): prompts, tool schemas, run_gpu session mechanics, sandbox,
+% budget enforcement, report format.
 
 \section{Dataset Schema}
 \label{app:dataset-schema}
