@@ -148,9 +148,7 @@ is systematically under-reported~\citep{gundersen2018state}.
 
 Through these stages the 3,414 submissions narrow to a 100-paper evaluation
 split and a disjoint 14-paper development split, and exactly one paper
-saturates the 96-hour cap. Of the 100 papers, 94 first appeared as preprints
-in 2025 or later, which limits the exposure of their artifacts in current
-training corpora.
+saturates the 96-hour cap.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -160,28 +158,34 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
+\begin{figure}[t]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/harness_overview}
+\end{center}
+\caption{The agent harness. The agent receives the paper and its match
+target, acts through a ReAct tool loop over a workspace shell and a metered
+Slurm GPU session with roughly 500\,GB of scratch storage, and ends with a
+schema-constrained \texttt{report.json} whose claims the provenance auditor
+grades against the run's \texttt{evidence/} directory.}
+\label{fig:harness}
+\end{figure}
+
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
-loop~\citep{yao2023react}. The toolset is minimal but general. A workspace
-shell and a metered GPU session express the same workflows a human reproducer
-runs on a cluster, and the harness adds no guidance beyond them, so outcomes
-measure the model rather than our scaffolding. The agent receives the paper's \LaTeX{} source,
-its OpenReview supplement, the verified links to the released artifacts, and
-the match target of Section~\ref{subsec:task}. It acts through seven tools. A
-workspace-confined shell (\texttt{workspace\_bash}) covers cloning,
-environment setup, file inspection, and CPU-side work.
-\texttt{write\_file} and \texttt{edit\_file} modify files,
-\texttt{update\_plan} maintains a running checklist, and \texttt{fetch\_url}
-retrieves public URLs. The remaining two tools expose the Slurm cluster the
-benchmark runs on. \texttt{list\_partitions} reports the available node
-pools, and \texttt{run\_gpu} is the only path to a GPU, holding an allocation
-whose wall clock is metered against the run's fixed H100-hour grant. The
-agent chooses its own partitions, allocation sizes, and session lengths, so
-every run also exercises the budgeting and scheduling decisions that real
-reproduction work demands. Each run receives roughly 500\,GB of scratch
-storage for datasets and checkpoints, and ends with a structured report in
-which the agent states what it ran and whether it believes the result
-reproduced. Appendix~\ref{app:harness} gives the prompts, tool schemas, and
-session mechanics.
+loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
+minimal but general. A workspace shell and a metered GPU session express the
+same workflows a human reproducer runs on a cluster, and the harness adds no
+guidance beyond them, so outcomes measure the model rather than our
+scaffolding. The agent receives the paper's \LaTeX{} source, its OpenReview
+supplement, the verified links to the released artifacts, and the match
+target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
+GPU, holding a Slurm allocation whose wall clock is metered against the
+run's fixed H100-hour grant. The agent chooses its own partitions,
+allocation sizes, and session lengths, so every run also exercises the
+budgeting and scheduling decisions that real reproduction work demands.
+Each run ends with a structured report in which the agent states what it
+ran, what it measured, and whether it believes the result reproduced, which
+is its claim and not its grade. Appendix~\ref{app:harness} gives the
+prompts, tool schemas, and session mechanics.
 
 \subsection{Results}
 \label{subsec:results}

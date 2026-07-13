@@ -204,7 +204,7 @@ body {
 <span class="kw">&gt; GET</span> github.com/&#8230;/repo    <span class="ok">&#10003; code</span>
 <span class="kw">&gt; GET</span> hf.co/&#8230;/dataset      <span class="ok">&#10003; data</span>
 <span class="kw">&gt; GET</span> &#8230;/weights.ckpt       <span class="bad">&#10007; absent</span>
-<span class="dim">&#8594;</span> tier = <b>Medium</b> <span class="dim">(retrain)</span></div>
+<span class="dim">&#8594;</span> tier = <b>Retrain</b> <span class="dim">(weights withheld)</span></div>
       <div style="display:flex; flex-direction:column; justify-content:flex-end; gap:5px;">
         <div class="flowcount">1,000 sampled</div>
         <div class="flowcount">687 verified</div>
@@ -220,9 +220,9 @@ body {
       <div class="capnote">drop above <span class="mono">96 H100-h</span></div>
       <table class="strat">
         <tr><th></th><th>0&#8211;8</th><th>8&#8211;32</th><th>32&#8211;96</th><th class="n">n</th></tr>
-        <tr><td class="rowlab">Easy</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
-        <tr><td class="rowlab">Med</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
-        <tr><td class="rowlab">Hard</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">66</td></tr>
+        <tr><td class="rowlab">Run</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
+        <tr><td class="rowlab">Retrain</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
+        <tr><td class="rowlab">Reimpl.</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">66</td></tr>
       </table>
       <div class="foot"><div class="flowcount">620 &#8594; 200 pool</div></div>
     </div>
@@ -251,12 +251,11 @@ body {
   </div>
   <div class="tree">
     <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg><span class="name">test/</span><span class="val">100 papers</span></div>
-    <div class="sub">34 Easy &#183; 33 Med &#183; 33 Hard</div>
+    <div class="sub">34 Run &#183; 33 Retrain &#183; 33 Reimplement</div>
     <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg><span class="name">dev/</span><span class="val">14 papers</span></div>
     <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25ZM11.75 3a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5a.75.75 0 0 1 .75-.75Zm-8.25.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0ZM8 3a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 8 3Z"/></svg><span class="name">bands</span><span class="val">57 &#183; 29 &#183; 14</span></div>
     <div class="sub">0&#8211;8 &#183; 8&#8211;32 &#183; 32&#8211;96 H100-h</div>
     <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.75.75 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z"/></svg><span class="name">cap</span><span class="val">96 H100-h max</span></div>
-    <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M4.75 0a.75.75 0 0 1 .75.75V2h5V.75a.75.75 0 0 1 1.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 0 1 4.75 0ZM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V7.5Zm10.75-4H2.75a.25.25 0 0 0-.25.25V6h11V3.75a.25.25 0 0 0-.25-.25Z"/></svg><span class="name">94%</span><span class="val">2025+ preprints</span></div>
   </div>
   <div class="total">&#931; 1,259 H100-hours</div>
 </div>
