@@ -160,9 +160,10 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
-\paragraph{Agent harness.} We run every agent in a deliberately thin
-ReAct-style tool loop~\citep{yao2023react} so that outcomes measure the model
-rather than our scaffolding. The agent receives the paper's \LaTeX{} source,
+\paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
+loop~\citep{yao2023react}. The harness supplies every tool a reproduction
+requires and no guidance beyond them, so it neither restricts the model nor
+hand-holds it, and outcomes measure the model rather than our scaffolding. The agent receives the paper's \LaTeX{} source,
 its OpenReview supplement, the verified links to the released artifacts, and
 the match target of Section~\ref{subsec:task}. It acts through seven tools. A
 workspace-confined shell (\texttt{workspace\_bash}) covers cloning,
