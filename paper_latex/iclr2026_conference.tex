@@ -45,6 +45,30 @@ empirical result of a machine learning paper from whatever artifacts its
 authors actually released. Each of the 100 papers in the benchmark poses one
 task, and the agent must recover a single pinned result within a stated
 tolerance.
+\subsection{Features of RECLAIM}
+\label{subsec:features}
+
+\paragraph{End-to-end reproduction.} Each task hands the agent a recent
+paper and a target, not a scripted pipeline. The agent plans the
+reproduction, builds the environment, debugs failures, and manages its own
+GPU allocations under a fixed compute grant, the same work a researcher
+faces when reproducing a paper. One open-ended task therefore exercises
+planning, coding, and resource management together, where existing agentic
+benchmarks isolate them.
+
+\paragraph{Refresh at low human cost.} An agent classifier reads and
+verifies the candidate papers, and humans audit only the selected pool
+(Section~\ref{subsec:construction}). Each conference cycle supplies fresh
+peer-reviewed targets, so the benchmark can be rebuilt yearly from new
+NeurIPS, ICML, and ICLR submissions. The pool tracks the research frontier
+and resists saturation as agents improve.
+
+\paragraph{Contamination resistance.} Reimplement-tier papers never
+released code, so no reference implementation exists for a model to absorb
+during training. Across all tiers, our cluster differs from the authors'
+hardware and software stack, so a run cannot succeed by replaying memorized
+artifacts. The agent must adapt what it finds to an environment the authors
+never tested.
 
 \subsection{Task definition}
 \label{subsec:task}
