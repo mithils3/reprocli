@@ -96,9 +96,7 @@ corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 1,000-paper sample of the 3,414 NeurIPS 2025 submissions to 620 eligible
 papers, a 96 H100-hour compute cap and stratified sampling yield a 200-paper
 audit pool, and a human audit of every availability call and compute estimate
-produces the released benchmark. Six papers with inaccessible artifacts and
-fifteen that depend on paid APIs failed the audit and were replaced from the
-pool.}
+produces the released benchmark.}
 \label{fig:funnel}
 \end{figure}
 
@@ -115,16 +113,16 @@ sign-up form, or a permission request. We ran the classifier on a 1,000-paper
 sample, and it fully verified 687 papers. Removing non-empirical papers and
 papers with blocked artifacts leaves 620 eligible for evaluation.
 
-Artifact availability determines each paper's tier, which records how much of
-the result the agent must rebuild for itself. Easy papers
-release code, data, and weights, and the agent need only run or evaluate them.
-Medium papers withhold the weights, and the agent must retrain before
-evaluating. Hard papers withhold the code as well, and the agent must
-reimplement the method from the paper alone. Compute cost is
+Artifact availability assigns each paper to a tier that records how much of
+the result the agent must rebuild. Run papers
+release code, data, and weights, and the agent need only execute or evaluate them.
+Retrain papers withhold the weights, and the agent must train the model before
+evaluating. Reimplement papers withhold the code as well, and the agent must
+rebuild the method from the paper alone. Compute cost is
 derived from the paper's text if mentioned, or estimated from the MRE config.
 The tiers also describe the venue rather than a curated corner of it. Among
-the 687 verified papers, 33\% fall in Easy, 44\% in Medium, and 13\% in Hard,
-while 5\% are blocked outright and 5\% are non-empirical.
+the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
+Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
@@ -134,12 +132,9 @@ H100-hours before pooling. From the remainder we sampled a 200-paper audit
 pool stratified by tier and compute band. We allocate the pool equally across
 tiers rather than in venue proportion because tier is the variable under
 test, and equal cells measure each tier's reproduction rate with equal
-precision. Proportional sampling would leave the Hard tier with roughly a
+precision. Proportional sampling would leave the Reimplement tier with roughly a
 dozen papers, and the venue proportions reported above let readers reweight
-any rate back to the venue level. Within each tier the band quotas lean
-toward cheap papers because the eligible pool is bottom-heavy in compute, and
-we fill every quota cheapest-first, which minimizes total benchmark cost
-under the quotas and makes selection deterministic.
+any rate back to the venue level.
 
 \textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
 opening the evidence behind each availability call and re-deriving each compute
@@ -239,7 +234,7 @@ Field & Type & Description \\
 \texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
 \texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
 \texttt{score} & int & Artifact-availability score, 0 (all present) to 3 (most missing). \\
-\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard}, derived from \texttt{score}. \\
+\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard} in the released lockfile, corresponding to the Run, Retrain, and Reimplement tiers; derived from \texttt{score}. \\
 \texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
 \texttt{selection\_band} & string & Compute band used for stratified selection. \\
 \texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}. \\
