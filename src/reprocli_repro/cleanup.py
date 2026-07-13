@@ -9,12 +9,17 @@ scratch, and the Supabase sink only uploads ``stats.json`` + ``agent.full.log``
 from ``evidence/``. So once an episode reaches a terminal state we prune the
 workspace's big artifacts to keep the run root (and the shared filesystem) small.
 
-Two passes, both confined to ``workspace/`` (``reference/`` and ``evidence/`` are
-never touched) and both skipping symlinks so we only ever delete a link, never the
+Three steps, all confined to ``workspace/`` (``reference/`` and ``evidence/`` are
+never touched) and all skipping symlinks so we only ever delete a link, never the
 thing it points at:
 
-  1. delete any single regular file larger than the threshold, then
-  2. delete the *tightest* subdirectory whose total still exceeds the threshold —
+  1. delete the agent's Python venv(s) whole — the prompt tells it to build a
+     ``.venv`` and install a multi-GB aarch64 CUDA torch into it; that install is
+     the single biggest reclaimable artifact and must go as a unit (the size
+     passes below would only shred it partially). Venvs are found by their
+     definitive ``pyvenv.cfg`` marker, so a repo-nested or oddly-named one counts.
+  2. delete any single regular file larger than the threshold, then
+  3. delete the *tightest* subdirectory whose total still exceeds the threshold —
      the deepest qualifying dir, so a sharded dataset dir (many sub-threshold
      shards) is removed whole while the enclosing cloned code repo survives.
 
@@ -43,6 +48,37 @@ def _human(num_bytes: int) -> str:
             return f"{size:.1f}{unit}"
         size /= 1024
     return f"{size:.1f}TiB"
+
+
+def _tree_size(root: Path) -> int:
+    """Recursive byte size of ``root``'s regular files, not following symlinks."""
+    total = 0
+    for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
+        for name in filenames:
+            fp = os.path.join(dirpath, name)
+            if os.path.islink(fp):
+                continue
+            try:
+                total += os.path.getsize(fp)
+            except OSError:
+                continue
+    return total
+
+
+def _find_venvs(workspace: Path) -> list[Path]:
+    """Every Python venv under ``workspace``, identified by its ``pyvenv.cfg``.
+
+    Does not descend into a venv once found, so a venv-inside-a-venv counts once.
+    """
+    venvs: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(workspace, followlinks=False):
+        if os.path.islink(dirpath):
+            dirnames[:] = []
+            continue
+        if "pyvenv.cfg" in filenames:
+            venvs.append(Path(dirpath))
+            dirnames[:] = []  # a venv's internals are never themselves a venv to prune
+    return venvs
 
 
 def _dir_sizes(workspace: Path) -> dict[str, int]:
@@ -94,40 +130,53 @@ def prune_workspace(
     workspace: Path | str | None,
     threshold_mb: float,
     *,
+    remove_venv: bool = True,
     log: TextIO = sys.stderr,
     label: str = "",
 ) -> int:
-    """Delete big files and big subdirs from ``workspace``; return bytes freed.
+    """Delete the venv(s), big files, and big subdirs from ``workspace``; return
+    bytes freed.
 
-    A ``threshold_mb`` of 0 (or a missing/non-directory workspace) is a no-op.
+    A missing/non-directory workspace is a no-op. ``threshold_mb`` of 0 disables the
+    size passes but ``remove_venv`` still applies; ``remove_venv=False`` with
+    ``threshold_mb=0`` is a full no-op.
     """
-    if not workspace or threshold_mb <= 0:
+    if not workspace:
         return 0
     root = Path(workspace)
     if not root.is_dir():
         return 0
-    threshold = int(threshold_mb * 1024 * 1024)
     tag = f"prune {label}: " if label else "prune: "
     deleted: list[tuple[Path, int]] = []
 
-    # Pass 1: individual oversized files (anywhere in the tree, symlinks skipped).
-    for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
-        for name in filenames:
-            fp = Path(dirpath) / name
-            try:
-                if fp.is_symlink():
-                    continue
-                size = fp.stat().st_size
-            except OSError:
-                continue
-            if size > threshold:
-                if _remove(fp, is_dir=False, tag=tag, log=log):
-                    deleted.append((fp, size))
+    # Step 1: the agent's venv(s), removed whole (torch + deps are the biggest
+    # single reclaim; the size passes would only shred them partially).
+    if remove_venv:
+        for venv in _find_venvs(root):
+            size = _tree_size(venv)
+            if _remove(venv, is_dir=True, tag=tag, log=log):
+                deleted.append((venv, size))
 
-    # Pass 2: tightest subdirs still over threshold once big files are gone.
-    for path, size in _deepest_big_dirs(root, threshold):
-        if _remove(path, is_dir=True, tag=tag, log=log):
-            deleted.append((path, size))
+    if threshold_mb > 0:
+        threshold = int(threshold_mb * 1024 * 1024)
+        # Step 2: individual oversized files (anywhere in the tree, symlinks skipped).
+        for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
+            for name in filenames:
+                fp = Path(dirpath) / name
+                try:
+                    if fp.is_symlink():
+                        continue
+                    size = fp.stat().st_size
+                except OSError:
+                    continue
+                if size > threshold:
+                    if _remove(fp, is_dir=False, tag=tag, log=log):
+                        deleted.append((fp, size))
+
+        # Step 3: tightest subdirs still over threshold once big files are gone.
+        for path, size in _deepest_big_dirs(root, threshold):
+            if _remove(path, is_dir=True, tag=tag, log=log):
+                deleted.append((path, size))
 
     freed = sum(size for _, size in deleted)
     for path, size in deleted:

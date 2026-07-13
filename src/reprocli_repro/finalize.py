@@ -76,12 +76,13 @@ def finalize_episode(
     _write_episode_report(ctx, message, exit_reason)
     live_log.log_final(ctx, message, round_index=round_index, exit_reason=exit_reason)
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
-    # Reclaim NVMe scratch: drop any oversized files/dirs the agent left in the
-    # workspace (e.g. an accidental full-dataset download). The auditor grades
-    # report.json + evidence/, never the workspace, so this is safe post-finalize.
+    # Reclaim NVMe scratch: drop the agent's venv plus any oversized files/dirs it
+    # left in the workspace (e.g. an accidental full-dataset download). The auditor
+    # grades report.json + evidence/, never the workspace, so this is safe here.
     cleanup.prune_workspace(
         ctx.workspace,
         getattr(args, "prune_workspace_threshold_mb", cleanup.DEFAULT_PRUNE_THRESHOLD_MB),
+        remove_venv=getattr(args, "prune_workspace_venv", True),
         label=ctx.arxiv_id,
     )
 

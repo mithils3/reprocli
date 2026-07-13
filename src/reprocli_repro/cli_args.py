@@ -100,6 +100,14 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
         "dataset downloads on the NVMe scratch. reference/ and evidence/ are never "
         f"touched; 0 disables (default: {DEFAULT_PRUNE_THRESHOLD_MB:g}).",
     )
+    group.add_argument(
+        "--prune-workspace-venv",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="When an episode finishes, delete the agent's Python venv(s) from the "
+        "workspace whole (the multi-GB CUDA torch install is the biggest single "
+        "reclaim). Applies even when the size threshold is 0 (default: on).",
+    )
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:
