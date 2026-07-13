@@ -37,10 +37,10 @@ Write your introduction here. Clearly state the problem, why it matters, your ma
 
 Discuss the closest prior work and explain how your paper differs. Use \verb|\citet{}| for textual citations and \verb|\citep{}| for parenthetical citations.
 
-\section{ReproBench}
-\label{sec:reprobench}
+\section{RECLAIM}
+\label{sec:reclaim}
 
-ReproBench evaluates whether an autonomous agent can reproduce the central
+RECLAIM evaluates whether an autonomous agent can reproduce the central
 empirical result of a machine learning paper from whatever artifacts its
 authors actually released. Each of the 100 papers in the benchmark poses one
 task, and the agent must recover a single pinned result within a stated
@@ -83,7 +83,7 @@ zero when a number was echoed from the paper rather than measured.
 \subsection{Benchmark construction}
 \label{subsec:construction}
 
-We construct ReproBench from the 3,414 NeurIPS 2025 submissions that carry an
+We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that carry an
 arXiv identifier, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
@@ -187,6 +187,18 @@ grades against the run's \texttt{evidence/} directory.}
 \label{fig:harness}
 \end{figure}
 
+\paragraph{Models.} We evaluate open-weight and API-served models under
+identical conditions.
+% TODO: finalize the model list with pinned versions, e.g.
+% Qwen3.6-27B (open-weight) and MiniMax-M2.7 (API-served).
+Open-weight models are served on the cluster and API models are accessed
+through their public endpoints. Every model runs the same harness, prompts,
+and per-paper budgets, so results differ only in the model.
+Appendix~\ref{app:harness} records pinned versions, serving configuration,
+and decoding settings.
+
+\paragraph{Metric} - We report the average reproduction score as our primary metric. We also provide  \% of papers reproduced as a metric.
+We also report of the token usage of every model evaluated, and the total cost of the running the benchmark for 
 \subsection{Results}
 \label{subsec:results}
 
