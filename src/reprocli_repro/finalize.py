@@ -21,7 +21,7 @@ from typing import Any
 
 from reprocli_vllm.runtime.run_health import loop_telemetry
 
-from reprocli_repro import gpu_session, live_log, report
+from reprocli_repro import cleanup, gpu_session, live_log, report
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.transcript import (
     EARLY_EXIT_REASONS,
@@ -76,6 +76,14 @@ def finalize_episode(
     _write_episode_report(ctx, message, exit_reason)
     live_log.log_final(ctx, message, round_index=round_index, exit_reason=exit_reason)
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
+    # Reclaim NVMe scratch: drop any oversized files/dirs the agent left in the
+    # workspace (e.g. an accidental full-dataset download). The auditor grades
+    # report.json + evidence/, never the workspace, so this is safe post-finalize.
+    cleanup.prune_workspace(
+        ctx.workspace,
+        getattr(args, "prune_workspace_threshold_mb", cleanup.DEFAULT_PRUNE_THRESHOLD_MB),
+        label=ctx.arxiv_id,
+    )
 
 
 def _write_episode_report(ctx: ExecutionContext, message: dict[str, Any], exit_reason: str) -> None:

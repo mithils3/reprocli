@@ -20,6 +20,7 @@ from pathlib import Path
 
 from reprocli_vllm.config.config import DEFAULT_MODEL
 
+from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
 from reprocli_repro.cli_resolve import apply_defaults, validate
 from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 
@@ -89,6 +90,15 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Materialize the read-only reference/ copy at setup (default: on).",
+    )
+    group.add_argument(
+        "--prune-workspace-threshold-mb",
+        type=float,
+        default=DEFAULT_PRUNE_THRESHOLD_MB,
+        help="When an episode finishes, delete workspace files larger than this many "
+        "MB and workspace subdirectories whose total exceeds it, reclaiming accidental "
+        "dataset downloads on the NVMe scratch. reference/ and evidence/ are never "
+        f"touched; 0 disables (default: {DEFAULT_PRUNE_THRESHOLD_MB:g}).",
     )
 
 
