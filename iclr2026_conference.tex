@@ -158,18 +158,6 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
-\begin{figure}[t]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/harness_overview}
-\end{center}
-\caption{The agent harness. The agent receives the paper and its match
-target, acts through a ReAct tool loop over a workspace shell and a metered
-Slurm GPU session with roughly 500\,GB of scratch storage, and ends with a
-schema-constrained \texttt{report.json} whose claims the provenance auditor
-grades against the run's \texttt{evidence/} directory.}
-\label{fig:harness}
-\end{figure}
-
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
 loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
 minimal but general. A workspace shell and a metered GPU session express the
@@ -186,6 +174,18 @@ Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced, which
 is its claim and not its grade. Appendix~\ref{app:harness} gives the
 prompts, tool schemas, and session mechanics.
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/harness_overview}
+\end{center}
+\caption{The agent harness. The agent receives the paper and its match
+target, acts through a ReAct tool loop over a workspace shell and a metered
+Slurm GPU session with roughly 500\,GB of scratch storage, and ends with a
+schema-constrained \texttt{report.json} whose claims the provenance auditor
+grades against the run's \texttt{evidence/} directory.}
+\label{fig:harness}
+\end{figure}
 
 \subsection{Results}
 \label{subsec:results}
