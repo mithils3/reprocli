@@ -197,8 +197,17 @@ and per-paper budgets, so results differ only in the model.
 Appendix~\ref{app:models} records pinned versions, serving configuration,
 and decoding settings.
 
-\paragraph{Metric} - We report the average reproduction score as our primary metric. We also provide  \% of papers reproduced as a metric.
-We also report of the token usage of every model evaluated, and the total cost of the running the benchmark for each model, which consitis of it's API Pricing  
+\paragraph{Metrics.} Our primary metric is the mean reproduction score, the
+grade the provenance auditor assigns each run. We also report the
+reproduction rate, the fraction of papers whose runs the auditor grades as
+reproduced. Alongside both we report each model's token usage and the total
+cost of running the benchmark with that model, which combines its API
+pricing with the GPU hours its runs consumed at a fixed rate of \$2 per
+H100-hour.
+% TODO(metrics): confirm the H100-hour rate; the draft said $200, which
+% reads as a typo for $2. Also state the score scale (0-10) once the
+% auditor section fixes it.
+
 \subsection{Results}
 \label{subsec:results}
 
