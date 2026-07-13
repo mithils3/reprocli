@@ -114,6 +114,26 @@ experiment.
   **2505.24089 BASE-MIA** (12.8h, Cora GCN AUC ~82.45% point-estimate),
   **2410.19933 RePO** (13.0h, safety rate >90% threshold). Uploaded
   `eval_100.jsonl` to HF (commit `6feda9cb`).
+- **UPDATE 2026-07-13:** dropped **two Hard rows with NO replacement** (user
+  decision) after the prospective host-probe adjudication of all 33 Hard papers
+  (no agent sweep exists for Hard; one adversarial prober + two independent
+  refuters per claimed wall; report `Analysis/Repro-Agent Runs/Hard-Tier
+  Genuine-Wall Adjudication (prospective probe, 2026-07-13).md`). Composition
+  now **34/33/31, test=98**; Hard bands 14/9/10 → **13/8/10**; total ~1259 →
+  **~1235 H100-h**. Dropped:
+  - **2506.07104 REO-RL** — implementation + trained checkpoints never released
+    (single stale "Init" commit, empty Releases, unanswered code-request issue,
+    zero HF hits); the lockfile agent_task's base-model-only proxy cannot test
+    the actual ≥50% REG-reduction claim, and REO-RL training from scratch does
+    not fit the 8 H100-h band. Was Hard 0-8, 6.0h.
+  - **2505.19516 DiffE2E** — anchor (Driving Score 83, CARLA Longest6
+    closed-loop) requires the CARLA simulator, which has never shipped an
+    aarch64 build across its release history (x86-only SSE in the UE4 toolchain,
+    no maintained aarch64 fork). **Harness-specific wall, NOT a paper defect —
+    RETURN if the harness leaves aarch64** (same caveat class as OSVI-WM /
+    Categorical-DRL). Was Hard 8-32, 18.0h.
+  Adjudication cleared the other 31 Hard rows as reproducible-in-principle
+  (boundary cases and verified lockfile link corrections listed in the report).
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,
