@@ -18,9 +18,9 @@
   src: url('fonts/ttf/JetBrainsMono-Bold.ttf');
   font-weight: 700;
 }
-@page { size: 880px 432px; margin: 0; }
+@page { size: 880px 348px; margin: 0; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 880px; height: 432px; }
+html, body { width: 880px; height: 348px; }
 body {
   font-family: 'Inter', sans-serif;
   color: #1f2328;
@@ -59,7 +59,7 @@ body {
 .inrow {
   display: flex; align-items: center; gap: 7px;
   font-size: 11px; color: #424a53;
-  padding: 8px 0; border-bottom: 1px solid #eaeef2;
+  padding: 10px 0; border-bottom: 1px solid #eaeef2;
 }
 .inrow svg { flex: none; }
 .inputs .first { margin-top: 10px; }
@@ -82,11 +82,11 @@ body {
 .agent .head { display: flex; align-items: baseline; gap: 8px; }
 .agent .head .t { font-size: 13.5px; font-weight: 650; }
 .agent .head .s { font-size: 10.5px; font-weight: 500; color: #8b949e; }
-.tgroup { margin-top: 11px; }
+.tgroup { margin-top: 12px; }
 .tgroup .grouplab { color: #8b949e; margin-bottom: 6px; }
 .trow {
   display: flex; align-items: center; gap: 8px;
-  padding: 3.5px 0;
+  padding: 4.5px 0;
 }
 .tchip {
   font-family: 'JBMono', monospace; font-size: 10.5px; font-weight: 500;
@@ -94,14 +94,6 @@ body {
   border-radius: 6px; padding: 2.5px 7px; white-space: nowrap; flex: none;
 }
 .tdesc { font-size: 10.5px; color: #a7b0ba; line-height: 1.35; }
-.gpu-badge {
-  margin-left: auto; flex: none;
-  display: flex; align-items: center; gap: 4px;
-  font-size: 8.5px; font-weight: 600; color: #ffd7a8;
-  background: #3a2f21; border: 1px solid #6b4f2a; border-radius: 5px;
-  padding: 2px 6px; white-space: nowrap;
-}
-.gpu-badge svg { flex: none; }
 .agent .note {
   margin-top: auto;
   font-size: 9.5px; color: #8b949e; line-height: 1.45;
@@ -126,7 +118,7 @@ body {
 }
 .field {
   font-family: 'JBMono', monospace; font-size: 10px; line-height: 1.3;
-  padding: 2.6px 0; color: #1f2328;
+  padding: 3px 0; color: #1f2328;
 }
 .field .k { font-weight: 500; color: #1f2328; }
 .field .braces { color: #656d76; }
@@ -207,16 +199,11 @@ body {
     <div class="grouplab">cluster &#183; Slurm</div>
     <div class="trow"><span class="tchip">list_partitions</span><span class="tdesc">node pools via sinfo</span></div>
     <div class="trow">
-      <span class="tchip">run_gpu</span><span class="tdesc">only path to a GPU: salloc hold, srun steps</span>
-      <span class="gpu-badge">
-        <svg width="9" height="9" viewBox="0 0 16 16" fill="#ffd7a8"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.75.75 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z"/></svg>
-        billed by wall clock
-      </span>
+      <span class="tchip">run_gpu</span><span class="tdesc">only path to a GPU: salloc hold, srun steps, wall clock metered vs the H100-h grant</span>
     </div>
-    <div class="trow" style="padding-top:0"><span class="tchip" style="visibility:hidden">run_gpu</span><span class="tdesc" style="color:#7d8590">wall clock metered vs the fixed H100-h grant</span></div>
   </div>
 
-  <div class="note">~500&#8202;GB scratch &#183; round cap + H100-h budget enforced by the harness</div>
+  <div class="note">~500&#8202;GB scratch &#183; round + H100-h budgets harness-enforced</div>
 </div>
 
 <div class="arrow-col"><svg width="21" height="14" viewBox="0 0 21 14"><path d="M0 7h13" stroke="#24292f" stroke-width="2.4"/><path d="M11 2 19 7l-8 5z" fill="#24292f"/></svg></div>
