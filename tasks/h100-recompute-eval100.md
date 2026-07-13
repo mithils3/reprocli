@@ -134,6 +134,28 @@ experiment.
     Categorical-DRL). Was Hard 8-32, 18.0h.
   Adjudication cleared the other 31 Hard rows as reproducible-in-principle
   (boundary cases and verified lockfile link corrections listed in the report).
+- **UPDATE 2026-07-13 (later):** refilled the two Hard slots (user decision,
+  cheapest-first from the remaining 23 audited Hard pool rows, each host-probed
+  before insertion). Composition back to **34/33/33, test=100**; Hard bands
+  13/8/10 → **15/8/10**; total ~1238 H100-h. Added (provisional match_targets,
+  `h100_needs_human_review=true`, owe the repin/human-freeze treatment):
+  - **2505.12677 CURE** (0.6h, Hard 0-8) — eval-only route: the paper's own
+    pre-erased UNet checkpoints are on a public ungated Google Drive folder
+    linked from the repo; anchor LPIPS_e=0.41 (Table 1, Kelly McKernan row,
+    threshold bar). Unlearning training code itself is unreleased.
+  - **2410.15392 EF-3DGS** (2.0h, Hard 0-8) — no code, but fully open pipeline:
+    Tanks and Temples public, events synthesized with open V2E, 3DGS
+    source-buildable on aarch64; direction anchor "up to 3dB higher PSNR /
+    40% lower ATE at 1 FPS" (v1 abstract + Tables 1-2; v2 abstract says 2dB —
+    repin must pin scene-level numbers).
+  **Four cheaper candidates were REJECTED on host-probe for latent paid-API
+  dependence the pool signals do not capture**: 2505.15101 CaMVo (5 of 7
+  ensemble models are Claude/GPT/o-series APIs), 2503.02863 SteerConf (headline
+  models GPT-3.5/GPT-4, ~$1500 API spend; on the open LLaMA3-70B the paper's own
+  Table 2 shows ECE worsening 5.0→7.8), 2602.20296 Decomp (decomposition teacher
+  is GPT-4o, decomposed data unreleased), 2512.00762 Seeing-the-Wind (material
+  estimation via GPT-4o-Vision is in the MRE). Screen remaining pool rows for
+  API-in-the-loop before any future swap-in.
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,
