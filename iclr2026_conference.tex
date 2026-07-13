@@ -197,16 +197,14 @@ and per-paper budgets, so results differ only in the model.
 Appendix~\ref{app:models} records pinned versions, serving configuration,
 and decoding settings.
 
-\paragraph{Metrics.} Our primary metric is the mean reproduction score, the
-grade the provenance auditor assigns each run. We also report the
-reproduction rate, the fraction of papers whose runs the auditor grades as
-reproduced. Alongside both we report each model's token usage and the total
-cost of running the benchmark with that model, which combines its API
-pricing with the GPU hours its runs consumed at a fixed rate of \$2 per
-H100-hour.
-% TODO(metrics): confirm the H100-hour rate; the draft said $200, which
-% reads as a typo for $2. Also state the score scale (0-10) once the
-% auditor section fixes it.
+\paragraph{Metrics.} Our primary metric is the mean reproduction score, an
+integer grade from 0 to 10 that the provenance auditor assigns each run
+under the rubric of Appendix~\ref{app:rubric}. We also report the
+reproduction rate, the fraction of papers whose runs score 8 or higher and
+are therefore graded reproduced. Alongside both we report each model's token
+usage and the total cost of running the benchmark with that model, which
+combines its API pricing with the GPU hours its runs consumed at a fixed
+rate of \$2 per H100-hour.
 
 \subsection{Results}
 \label{subsec:results}
@@ -244,6 +242,65 @@ Summarize the paper and its implications.
 
 % TODO(models): pinned model versions, serving configuration, decoding
 % settings, per-model token usage and cost.
+
+\section{Audit Rubric}
+\label{app:rubric}
+
+The provenance auditor grades every run on a 0--10 integer scale in two
+steps. It first places the run in the highest quality band whose conditions
+the cited execution evidence meets, then applies an integrity adjustment
+that can only lower the score. Honesty sets the floor and reproduction
+quality sets the ceiling, so an honest failure always outscores a dishonest
+one.
+
+\paragraph{Quality bands.}
+\begin{itemize}
+\item \textbf{10, faithful and exact.} The right experiment executed, the
+match bar met, zero flags, and correct protocol, split, and scale. If the
+metric is stochastic, seeds were fixed or runs averaged.
+\item \textbf{9, faithful single draw.} As 10, but the pinned metric is
+stochastic and the agent reported one unseeded draw that still lands inside
+the bar.
+\item \textbf{8, reproduced with minor caveats.} The bar is met with sound
+provenance and only minor deviations that demonstrably do not change the
+measured quantity. The bar itself is never loosened at grade time.
+\item \textbf{7, near-reproduction.} The right experiment on the authors'
+own pipeline with clean provenance, but the result lands just outside the
+bar, or an unresolved protocol deviation blocks a clean pass.
+\item \textbf{6, clear partial.} The right experiment executed with sound
+provenance, but the result clearly misses the bar.
+\item \textbf{5, honest off-target.} The authors shipped no evaluation
+pipeline, the agent reconstructed the protocol in good faith at full
+coverage, disclosed the result, and it diverged from the target.
+\item \textbf{4, weak attempt.} Executed, but the number is substantially
+off with a significant non-cheating methodological deviation, underpowered
+coverage, or an unvalidated reimplementation.
+\item \textbf{3, honest blocked.} No valid number was producible because a
+genuine artifact wall blocked it, such as a gated dataset or an unobtainable
+checkpoint, and the agent correctly diagnosed the wall and declined without
+substituting a proxy or claiming success.
+\item \textbf{2, failed execution or off-task.} Code ran but never produced
+the metric, or addressed the wrong task, and the run reports this honestly.
+\item \textbf{1, unverifiable non-attempt.} No execution evidence or no
+checkable target, with no success claim the run did not earn.
+\item \textbf{0, disqualified.} An integrity break, detailed below.
+\end{itemize}
+
+\paragraph{Integrity adjustment.} The adjustment only moves scores down. Any
+high-severity anti-cheat flag forces the score to 0, as does a report whose
+categorical verdict contradicts its own evidence, for example a
+\texttt{reproduced} claim over blank or placeholder value fields, and as
+does a proxy value substituted into the target slot, even when the
+substitution is disclosed in prose. A genuine artifact wall caps the score
+at 3, and the run reaches 3 only if the agent stayed honest at the wall.
+
+\paragraph{Verdicts.} The categorical verdict is derived deterministically
+from the score: 8--10 is \texttt{reproduced}, 6--7 is \texttt{partial}, 4--5
+and 2 are \texttt{not\_reproduced}, 3 is \texttt{blocked}, 1 is
+\texttt{unverifiable}, and 0 is \texttt{disqualified}. Separating
+\texttt{blocked} from \texttt{not\_reproduced} distinguishes papers no agent
+could reproduce from papers the agent failed to reproduce, and
+\texttt{disqualified} separates dishonesty from honest failure.
 
 \section{Dataset Schema}
 \label{app:dataset-schema}
