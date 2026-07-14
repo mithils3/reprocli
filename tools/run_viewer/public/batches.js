@@ -60,9 +60,11 @@
     const spent = entry.runs.reduce((a, r) => a + (Number(r.spent_h100) || 0), 0);
     const models = new Set(entry.runs.map((r) => r.model).filter(Boolean));
     const modelChip = models.size === 1 ? `<span class="schip">${RE.esc(RE.shortModel([...models][0]))}</span>` : "";
+    const nonFrozenChip = window.Freeze && window.Freeze.isNonFrozenRecord(entry.runs[0])
+      ? `<span class="schip non-frozen" title="Slurm job predates the frozen benchmark cutoff">non-frozen</span>` : "";
     const c = counts(entry.runs), latest = entry.runs[0].updated_at;
     const btn = RE.el(`<button class="batch-head ${isCol ? "collapsed" : ""}" title="batch ${RE.esc(entry.id)}" aria-expanded="${!isCol}">
-      <span class="bh-title"><span class="bh-chev">${isCol ? "▸" : "▾"}</span><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span><span class="schip tnum">${entry.runs.length} runs</span>${modelChip}</span>
+      <span class="bh-title"><span class="bh-chev">${isCol ? "▸" : "▾"}</span><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span>${nonFrozenChip}<span class="schip tnum">${entry.runs.length} runs</span>${modelChip}</span>
       ${segBar(c)}
       <span class="bh-sub"><span class="bh-counts">${countWords(c)}</span><span class="schip tnum" title="total compute spent">${RE.esc(RE.fmtHM(spent))}</span><span class="bh-time tnum" title="${RE.esc(RE.fmtTime(latest))}">${RE.esc(RE.fmtAgo(latest))}</span></span>
       </button>`);

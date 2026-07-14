@@ -20,7 +20,9 @@ const RemoteSource = {
     const { data, error } = await this.client.from("repro_runs")
       .select("*").order("updated_at", { ascending: false }).limit(300);
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    if (window.Freeze) window.Freeze.setRuns(rows);
+    return rows;
   },
 
   async loadRun(runId) {

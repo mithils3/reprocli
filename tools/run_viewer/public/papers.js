@@ -28,7 +28,11 @@
       try { this.rows = await window.RemoteSource.listRuns(); } catch (e) {} finally { this.busy = false; this.render(); }
     },
     onTags() { if (this.root() && this.rows) this.render(); },
-    allPapers() { return window.Report.papers(this.rows || []).filter((p) => p.inDataset); },
+    onFreeze() { if (this.root() && this.rows) this.render(); },
+    allPapers() {
+      const rows = window.Freeze ? window.Freeze.filter(this.rows || []) : (this.rows || []);
+      return window.Report.papers(rows).filter((p) => p.inDataset);
+    },
     papers() { const ps = this.allPapers(); return this.set === "all" ? ps : ps.filter((p) => p.set === this.set); },
 
     openPaper(arxiv) { this.current = arxiv; if (this.rows) this.render(); else this.load(); },

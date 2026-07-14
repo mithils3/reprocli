@@ -27,9 +27,11 @@
     const claim = RE.claimOf(run) || run.arxiv_id || run.run_id;
     const model = RE.shortModel(run.model);
     const live = RE.effectiveStatus(run) === "running";
+    const freezeChip = window.Freeze && window.Freeze.isNonFrozenRecord(run)
+      ? `<span class="schip non-frozen">non-frozen</span>` : "";
     const ago = live ? `<span class="dot running"></span>${RE.fmtAgo(run.updated_at)}` : RE.fmtAgo(run.updated_at);
     const c = RE.el(`<button class="fcard" type="button" data-run="${RE.esc(run.run_id)}" title="${RE.esc(run.arxiv_id || "")}">
-      <span class="fc-top">${V ? V.runInline(run) : ""}<span class="fc-ago ${live ? "live" : ""}">${ago}</span></span>
+      <span class="fc-top">${V ? V.runInline(run) : ""}${freezeChip}<span class="fc-ago ${live ? "live" : ""}">${ago}</span></span>
       <span class="fc-claim">${RE.esc(claim)}</span>
       ${model ? `<span class="fc-model tnum">${RE.esc(model)}</span>` : ""}
       <span class="fc-fuel">${RE.microFuelHtml(run)}</span></button>`);

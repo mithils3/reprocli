@@ -54,6 +54,7 @@
       rounds: num(run.tool_rounds_used), tool_calls: num(run.tool_calls),
       prompt, completion, total, cached, uncached,
       spent: num(run.spent_h100),
+      batch_id: run.batch_id, started_at: run.started_at,
       stats_url: run.stats_url || run.full_log_url || null,
       hasTokens: total != null,
     };
@@ -92,6 +93,7 @@
       const q = this.search.trim().toLowerCase(), T = window.Tags;
       return (this.rows || []).filter((r) =>
         (this.filter === "all" || r.cls === this.filter) &&
+        (!window.Freeze || !window.Freeze.isExcluded(r)) &&
         this.tagFilter.pass(r.run_id, T) &&
         (!q || (`${r.arxiv_id} ${r.model} ${r.run_id}`).toLowerCase().includes(q)));
     },
@@ -163,7 +165,8 @@
     render() {
       const el = this.root();
       if (!el) return;
-      const noTok = (this.rows || []).filter((r) => !r.hasTokens).length;
+      const baseRows = window.Freeze ? window.Freeze.filter(this.rows || []) : (this.rows || []);
+      const noTok = baseRows.filter((r) => !r.hasTokens).length;
       const note = ["Token columns are the model's <b>real usage</b> recorded by the harness."]
         .concat(noTok ? [`${noTok} run${noTok > 1 ? "s" : ""} predate usage logging and show <b>—</b>.`] : []).join(" ");
       el.innerHTML = `
@@ -210,6 +213,7 @@
 
     // tags changed elsewhere while the Stats tab is open
     onTags() { if (this.root()) { this.renderTagFilters(); this.renderBody(); } },
+    onFreeze() { if (this.root()) this.render(); },
 
     renderBody() {
       const body = document.querySelector("#stats-body");

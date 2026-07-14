@@ -5,7 +5,7 @@
 .ov-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .ov-head h1 { font-family: var(--display); font-size: 26px; font-weight: 600; }
 .ov-sub { font-size: 12.5px; color: var(--muted); margin-top: 5px; max-width: 720px; line-height: 1.5; }
-.ov-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.ov-actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; align-items: center; }
 
 /* dev/test segmented control + set badge */
 .set-seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--panel); }

@@ -120,8 +120,10 @@ function runHeaderHtml(run, extra) {
   const dl = run.full_log_url ? `<a class="link" href="${esc(run.full_log_url)}" target="_blank" rel="noopener">⬇ full log</a>` : "";
   const tagbar = (window.Tags && run.run_id) ? `<div class="tagbar" data-run="${esc(run.run_id)}"></div>` : "";
   const links = window.Estimates ? window.Estimates.links(run.arxiv_id) : null;
+  const freezeChip = window.Freeze && window.Freeze.isNonFrozenRecord(run)
+    ? `<span class="schip non-frozen">non-frozen</span>` : "";
   const lk = links && (links.paper || links.code) ? `<span class="rt-links">${links.paper ? `<a href="${esc(links.paper)}" target="_blank" rel="noopener">paper↗</a>` : ""}${links.code ? `<a href="${esc(links.code)}" target="_blank" rel="noopener">code↗</a>` : ""}</span>` : "";
-  return `<div class="rt-head">${V() ? V().inline(fam, word) : ""}
+  return `<div class="rt-head">${V() ? V().inline(fam, word) : ""}${freezeChip}
       ${run.model ? `<span class="schip">${esc(run.model)}</span>` : ""}${exit}${gpuChipHtml(run)}${lk}${dl}</div>
     <h2 class="rt-claim">${esc(claim || run.run_id || run.arxiv_id || "transcript")}</h2>
     <div class="rt-meta"><span class="pid">${esc(run.arxiv_id || "")}</span>${run.run_id && claim ? ` · <span class="s-rid">${esc(run.run_id)}</span>` : ""}${run.started_at || run.updated_at ? ` · started ${fmtTime(run.started_at)} · updated ${fmtTime(run.updated_at)}` : ""}${run.host ? ` · ${esc(run.host)}` : ""}${run.batch_id ? ` · <span class="s-rid" title="batch ${esc(run.batch_id)}">⛁ ${esc(run.batch_label || run.batch_id)}</span>` : ""}</div>

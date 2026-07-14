@@ -32,13 +32,18 @@
       finally { this.busy = false; this.render(); }
     },
     onTags() { if (this.root() && this.rows) this.render(); },
+    onFreeze() { if (this.root() && this.rows) this.render(); },
 
+    overviewRuns() {
+      const rs = this.rows || [];
+      return window.Freeze ? window.Freeze.filter(rs) : rs;
+    },
     // the model dropdown scopes the WHOLE worksheet: runs are filtered by model
     // BEFORE per-paper aggregation, so gauge/ledger/matrix/cards all reflect it
-    modelRuns() { const rs = this.rows || []; return this.model === "all" ? rs : rs.filter((r) => r.model === this.model); },
+    modelRuns() { const rs = this.overviewRuns(); return this.model === "all" ? rs : rs.filter((r) => r.model === this.model); },
     models() {
       const E = window.Estimates;
-      return [...new Set((this.rows || []).filter((r) => r.model && (!E || E.row(r.arxiv_id))).map((r) => r.model))].sort();
+      return [...new Set(this.overviewRuns().filter((r) => r.model && (!E || E.row(r.arxiv_id))).map((r) => r.model))].sort();
     },
     // only papers present in reprobench-splits (have a lockfile row); then by set
     allPapers() { return window.Report.papers(this.modelRuns()).filter((p) => p.inDataset); },
@@ -134,7 +139,7 @@
       const allP = this.allPapers();
       const papers = this.papers(), sm = window.Report.summary(papers);
       // brand badge stays global — it names the site, not the current filter
-      const brandP = this.model === "all" ? allP : window.Report.papers(this.rows || []).filter((p) => p.inDataset);
+      const brandP = window.Report.papers(this.overviewRuns()).filter((p) => p.inDataset);
       if (brand) brand.textContent = `${brandP.length} papers · ${brandP.reduce((a, p) => a + p.totalRuns, 0)} runs`;
       const opts = (arr, cur) => arr.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`).join("");
       const cnt = (s) => allP.filter((p) => p.set === s).length;

@@ -43,14 +43,25 @@
       this.runs = Object.values(this.byId).sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
     },
 
+    visibleRuns() { return window.Freeze ? window.Freeze.filter(this.runs) : this.runs; },
+    onFreeze() {
+      if (this.live && window.Freeze && window.Freeze.isExcluded(this.live)) {
+        if (this.ch) { window.RemoteSource.unsubscribe(this.ch); this.ch = null; }
+        this.currentId = null; this.live = null;
+        this.detail().innerHTML = `<div class="empty">The open audit is excluded by the non-frozen filter.</div>`;
+      }
+      this.renderList();
+    },
+
     renderList() {
       const host = this.list(); if (!host) return;
       host.innerHTML = "";
-      if (!this.runs.length) {
-        host.innerHTML = `<div class="empty small">No audits yet — run one and watch the auditor grade it live.</div>`;
+      const runs = this.visibleRuns();
+      if (!runs.length) {
+        host.innerHTML = `<div class="empty small">${this.runs.length ? "No audits match the global filter." : "No audits yet — run one and watch the auditor grade it live."}</div>`;
         return;
       }
-      for (const run of this.runs) {
+      for (const run of runs) {
         const item = R.renderRunListItem(run);
         if (run.audit_run_id === this.currentId) item.classList.add("active");
         item.addEventListener("click", () => this.openAudit(run.audit_run_id));

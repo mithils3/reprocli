@@ -33,13 +33,15 @@
     const claim = R.claimOf(run) || run.arxiv_id;
     const model = shortModel(run.model);
     const V = window.Verdict;
+    const freezeChip = window.Freeze && window.Freeze.isNonFrozenRecord(run)
+      ? `<span class="schip non-frozen">non-frozen</span>` : "";
     const ago = R.fmtAgo(run.updated_at);
     const timeSlot = live
       ? `<span class="pl-ago live"><span class="dot running"></span>${ago}</span>`
       : `<span class="pl-ago">${ago}</span>`;
     const title = `${run.arxiv_id || ""}${run.run_id ? " · " + run.run_id : ""}`;
     return R.el(`<button class="plitem ${si.cls === "dead" ? "dead" : ""}" data-run="${esc(run.run_id)}" title="${esc(title)}">
-      <span class="pl-l1">${V ? V.runInline(run) : ""}${model ? `<span class="pl-model tnum">${esc(model)}</span>` : ""}${timeSlot}</span>
+      <span class="pl-l1">${V ? V.runInline(run) : ""}${freezeChip}${model ? `<span class="pl-model tnum">${esc(model)}</span>` : ""}${timeSlot}</span>
       <span class="pl-claim">${esc(claim)}</span>
       <span class="pl-fuel">${microFuelHtml(run)}</span>
       ${window.Tags ? window.Tags.chipsHtml(run.run_id) : ""}</button>`);

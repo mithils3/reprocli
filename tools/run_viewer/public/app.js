@@ -23,6 +23,7 @@ function setView(v) {
   document.querySelectorAll(".view").forEach((m) => m.classList.add("hidden"));
   const el = $("#view-" + v);
   if (el) el.classList.remove("hidden");
+  if (window.Freeze) window.Freeze.setButtonVisible(v !== "local");
   const tog = $("#sidebar-toggle"); if (tog) tog.style.display = v === "live" ? "" : "none";
   if (v === "overview" && window.Overview) window.Overview.open();
   if (v === "papers" && window.Papers) window.Papers.open();
@@ -53,6 +54,7 @@ function visibleRuns() {
     (state.filter === "all" || R.effectiveStatus(r) === state.filter) &&
     (!state.excludeDead || R.effectiveStatus(r) !== "dead") &&
     (!state.excludeRoundLimit || !R.isRoundLimit(r)) &&
+    (!window.Freeze || !window.Freeze.isExcluded(r)) &&
     state.tagFilter.pass(r.run_id, window.Tags) &&
     (!q || (`${r.arxiv_id} ${r.model || ""} ${r.run_id} ${r.batch_id || ""} ${r.batch_label || ""} ${R.claimOf(r) || ""}`).toLowerCase().includes(q)));
 }
@@ -184,6 +186,17 @@ function boot() {
   $("#sidebar-toggle").addEventListener("click", () => { $("#view-live").classList.toggle("nolist"); $("#sidebar-toggle").classList.toggle("on"); });
   $("#search").addEventListener("input", (e) => { state.search = e.target.value; renderList(); });
   wireLocal(); renderFilters();
+  if (window.Freeze) {
+    window.Freeze.mount();
+    window.Freeze.onChange(() => {
+      const current = state.liveRun || state.byId[state.currentRunId];
+      if (state.currentRunId && current && window.Freeze.isExcluded(current)) closeRun(); else renderList();
+      if (window.Overview) window.Overview.onFreeze();
+      if (window.Papers) window.Papers.onFreeze();
+      if (window.Audits) window.Audits.onFreeze();
+      if (window.Stats) window.Stats.onFreeze();
+    });
+  }
   state.remote = window.RemoteSource.init(); setConn(); loadRunList();
   if (state.remote) {
     window.RemoteSource.subscribeRunList((run) => { upsertRun(run); if (state.view === "live") renderList(); });
