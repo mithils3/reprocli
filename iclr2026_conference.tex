@@ -35,7 +35,55 @@ Write your introduction here. Clearly state the problem, why it matters, your ma
 \section{Related Work}
 \label{sec:related-work}
 
-Discuss the closest prior work and explain how your paper differs. Use \verb|\citet{}| for textual citations and \verb|\citep{}| for parenthetical citations.
+RECLAIM measures whether an agent can reproduce a published result end to
+end, starting from the artifacts the paper's authors actually released and
+graded by the provenance of the evidence the run produces. Existing
+benchmarks each cover a part of this setting and leave a different part
+unmeasured.
+
+\paragraph{Repository and terminal agents.}
+Agent evaluations have moved from isolated code generation to long-horizon
+work in real repositories and
+terminals~\citep{jimenez2024swebench,merrill2026terminalbench,
+miserendino2025swelancer,deng2025swebenchpro,lu2026frontiercode}. SWE-bench
+grades patches for real GitHub issues with the repository's own
+tests~\citep{jimenez2024swebench}, and Terminal-Bench 2.0 poses diverse
+command-line tasks in containers with executable
+checks~\citep{merrill2026terminalbench}. These benchmarks start from an
+explicit objective, a prepared environment, and a verifier written in
+advance, so they do not measure whether an agent can turn a paper and its
+release state into a runnable experiment.
+
+\paragraph{ML engineering and experimentation.}
+A second family targets the machine-learning workflow itself, from model
+development to research engineering~\citep{huang2024mlagentbench,
+nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench has
+agents build and iteratively refine pipelines for Kaggle competitions under
+a fixed compute budget, scoring submissions against historical
+leaderboards~\citep{chan2024mlebench}. These benchmarks leave the choice of
+method to the agent, so they do not measure whether it can adapt a
+prescribed method and configuration to a new environment and recover the
+specific result the authors report.
+
+\paragraph{Scientific reproduction.}
+A growing line of benchmarks measures how well agents reproduce published
+research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
+xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
+edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}.
+CORE-Bench asks agents to rerun the released code of computationally
+reproducible papers and recover known
+artifacts~\citep{siegel2024corebench}, a setting frontier models have since
+effectively saturated~\citep{favaro2026recursive}. PaperBench has agents
+replicate 20 ICML 2024 papers from scratch without the authors' released
+code, graded against author-developed hierarchical
+rubrics~\citep{starace2025paperbench}. EXP-Bench withholds the paper
+itself, giving the agent a research question and starter code from which it
+must design, execute, and analyze the experiments~\citep{kon2025expbench}.
+Each benchmark thus alters the release state to shape its task, requiring
+working code, forbidding it, or withholding the paper, so none measures
+reproduction under the release conditions reproducers actually face.
 
 \section{RECLAIM}
 \label{sec:reclaim}
@@ -54,24 +102,24 @@ provided. The agent plans the reproduction, installs the paper's stack and
 reconciles its dependency errors, debugs failures, and manages its own GPU
 allocations, the same work a researcher faces when reproducing a paper. One
 open-ended task therefore exercises planning, coding, and resource
-management together, and in particular the execute, debug, and improve loop
-that sandboxed execution benchmarks~\citep{siegel2024corebench} skip.
+management together. RECLAIM complements prior computational-reproducibility
+benchmarks~\citep{siegel2024corebench} by evaluating the less structured case
+in which an agent must recover and execute an experiment from the paper and its
+naturally released artifacts.
 
-\paragraph{Natural artifact availability.} We do not withhold artifacts to
-manufacture difficulty. We gather everything the authors released and
-stratify papers by what is missing, so each tier mirrors a situation a
-human reproducer actually meets. This choice also limits contamination.
+\paragraph{Natural artifact availability.} We stratify papers by the artifacts
+their authors released, so each tier reflects a real reproduction setting rather
+than difficulty manufactured by withholding resources. This choice also limits contamination.
 Reimplement-tier papers never released code, so no reference implementation
 exists for a model to absorb during training, and across all tiers our
 cluster seldom matches the authors' hardware and software stack exactly, so
 replaying memorized artifacts is rarely enough.
 
-\paragraph{Sufficient compute.} Each paper carries a GPU grant sized from
-its minimal reproducible experiment, so every agent has enough compute for
-a genuine attempt with room for trial and error, and a failure reflects
-capability rather than an exhausted budget. Prior reproduction benchmarks
-allot sub-retraining budgets~\citep{starace2025paperbench, kon2025expbench}
-and must therefore grade process rather than the paper's number.
+\paragraph{Sufficient compute.} Each paper carries a GPU grant estimated from
+its minimal reproducible experiment, with additional capacity for iteration. As
+reported in Section~\ref{subsec:results}, most agent runs do not exhaust their
+assigned compute. Although this does not establish sufficiency for every task,
+it indicates that the compute cap is not the binding constraint for most runs.
 
 \paragraph{Provenance-audited grading.} The benchmark records what the
 agent claims and grades what the evidence shows. Every reported number is
@@ -187,8 +235,9 @@ third-party APIs failed the audit and were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
 GPU-denominated. Only 19 of
 the 100 shipped compute estimates could be taken directly from the paper. We
-derived the rest from the pinned configuration, echoing the finding that compute
-is systematically under-reported~\citep{gundersen2018state}.
+derived the rest from the pinned configuration. The need to reconstruct these
+estimates is one instance of the broader documentation gaps that impede
+reproduction in AI research~\citep{gundersen2018state}.
 
 \section{Experiments}
 \label{sec:experiments}
