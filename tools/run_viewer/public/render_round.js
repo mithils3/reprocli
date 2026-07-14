@@ -2,7 +2,9 @@
    tool-call json tree. Split out of render.js for the 300-line rule; attaches its
    builders onto window.RENDER. Reasoning/assistant prose sits on flat cards (grid
    off) for legibility; the costliest round wears a ⚡ spike flag; the FINAL round
-   carries the verdict cap with the took-vs-predicted balance. */
+   carries the verdict cap with the took-vs-predicted balance. When a round's
+   content/reasoning (or a stdout dump) is a machine-JSON payload, JsonView turns
+   it into a card / tree; its delegated handler also drives the tree carets. */
 "use strict";
 
 (function () {
@@ -38,6 +40,8 @@
   function streamHtml(label, text, cls) {
     if (!text) return "";
     const n = text.split("\n").length;
+    const jv = text.length < 60000 && window.JsonView && window.JsonView.parse(text);
+    if (jv) return collapsibleHtml(`${label} · json · ${n} lines`, `<div class="jv-stream">${window.JsonView.treeHtml(jv)}</div>`, false);
     return collapsibleHtml(`${label} · ${n} line${n !== 1 ? "s" : ""}`, `<pre class="stream ${cls}">${esc(text)}</pre>`, false);
   }
   function resultHtml(c) {
@@ -64,7 +68,10 @@
     return `<div class="call"><div class="call-h"><span class="tool">${esc(c.tool_name)}</span></div><div class="call-body">${body}</div></div>`;
   }
   function block(label, text) {
-    return text ? `<div class="block flat"><div class="block-l">${label}</div><p class="rprose">${esc(text)}</p></div>` : "";
+    if (!text) return "";
+    const jv = window.JsonView && window.JsonView.blockHtml(text);
+    if (jv) return `<div class="block flat jv-block"><div class="block-l">${jv.label || label}</div>${jv.html}</div>`;
+    return `<div class="block flat"><div class="block-l">${label}</div><p class="rprose">${esc(text)}</p></div>`;
   }
 
   function roundCost(round) {
