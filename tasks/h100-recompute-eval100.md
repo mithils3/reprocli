@@ -117,7 +117,7 @@ experiment.
 - **UPDATE 2026-07-13:** dropped **two Hard rows with NO replacement** (user
   decision) after the prospective host-probe adjudication of all 33 Hard papers
   (no agent sweep exists for Hard; one adversarial prober + two independent
-  refuters per claimed wall; report `Analysis/Repro-Agent Runs/Hard-Tier
+  refuters per claimed wall; report archived at `Archive/Hard-Tier
   Genuine-Wall Adjudication (prospective probe, 2026-07-13).md`). Composition
   now **34/33/31, test=98**; Hard bands 14/9/10 → **13/8/10**; total ~1259 →
   **~1235 H100-h**. Dropped:
@@ -160,6 +160,34 @@ experiment.
   `Mithilss/neurips-2025-audit-pool` (local backup
   `audit_pool_extracted.jsonl.bak-2026-07-13`). Screen remaining pool rows for
   API-in-the-loop before any future swap-in.
+- **UPDATE 2026-07-14:** dropped **two more Hard rows** — the two the 07-13 probe
+  left *uncertain* (report section 4), both resolved to genuine walls by the
+  decisive follow-up probe — and refilled cheapest-first from the never-rejected
+  audited Hard pool. Composition held **34/33/33**, test=100; Hard bands 15/8/10 ->
+  **16/9/8**; eval total ~1,238 -> **~1,154 H100-h** (Hard 714.2 -> 630.2). HF
+  commit `7f4259ee`. `splits_summary.json` was regenerated (its eval blocks had
+  been stale since the 07-01 recompute) and the stale local
+  `outputs/v6/app_rebuild/eval_100.jsonl` (two cycles behind HF) was re-synced;
+  pre-change backup `eval_100_backup_2026-07-14_pre-sifm-dtm-drop.jsonl`. Dropped:
+  - **2410.14732 SIFM** (Arctic sea-ice forecasting) — no code/weights/PWC/mirror
+    anywhere AND the paper discloses no training hardware/hyperparameters, so a
+    from-scratch reimplementation cannot be cost-bounded. Was Hard 32-96, 51.2h.
+  - **2506.23589 Transition Matching / DTM** (Meta) — no code/weights anywhere;
+    the cheapest valid MRE (1.7B DiT+40M flow head, 500K iters) is ~120,000
+    H100-h, ~625-1250x the budget band (the 61.44h audited figure was a
+    reduced-scale re-scoping that does not establish the claim). Was Hard 32-96, 61.44h.
+  Added (host-probed clean, never-rejected; provisional match_targets,
+  `h100_needs_human_review=true`, owe repin):
+  - **2510.05767** ("Diversity Is All You Need for Contrastive Learning", spectral
+    batch selection / Greedy-64) — 4.6h, Hard 0-8. Direction anchor: Greedy-64
+    converges faster than random on CIFAR-10 (numeric ~15% is ImageNet-100).
+  - **2505.10039** ("Rethinking Circuit Completeness", Ns+Dn) — 24.0h, Hard 8-32.
+    Direction anchor: Ns+Dn completeness > Ns-alone on GPT2-small (IOI).
+  **Skipped** the cheaper **2510.13462 BadSwitch** (13h): a verify-app
+  `human_rejected_dropped` row whose switch-base-8+SST-2 anchor cell gives ~90%
+  ASR (100% needs the 16B model), so the by-the-book choice took never-rejected
+  rows. Full chronology: `notes/Reports/reprobench_substitution_log.md`;
+  reason-by-reason: `notes/Reports/reprobench_dropped_papers.pdf`.
 - Band edges inclusive → a value on the boundary lands in the LOWER band.
 - Reference impls:
   - `src/reprocli_vllm/audit/h100.py` — `recomputed_hours`, `h100_band`,
