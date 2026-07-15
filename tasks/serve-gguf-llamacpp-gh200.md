@@ -114,6 +114,7 @@ failed with the same pair) and `--ctx-size`; never isolated.
       --alias GLM-5.2-IQ4_XS \
       -ngl 99 \
       -ctk q8_0 -ctv q8_0 \
+      --reasoning-preserve \
       --ctx-size 131072 --parallel 1 \
       --cache-reuse 256 \
       --host 127.0.0.1 --port 8080 \
@@ -133,6 +134,12 @@ Notes on each:
   server dies with a KV-type error, drop these.
 - `-nkvo/--no-kv-offload` puts KV in CPU RAM. Avoid: attention touches KV every
   token at every layer, so this reintroduces the §3 bottleneck.
+- `--reasoning-preserve` keeps reasoning traces across turns when the chat
+  template supports it. The server tells you at startup: `chat template supports
+  preserving reasoning, consider enabling it via --reasoning-preserve`. Take the
+  hint for any reasoning model used as an agent brain — reasoning models degrade
+  when prior reasoning is stripped between turns. Costs context: traces stay in
+  the transcript, so budget for it. Watch for the message on every new model.
 - `--cache-reuse 256` salvages KV via shifting when a prompt diverges mid-stream
   (what happens when an agent's transcript is edited, not just appended).
 - Prompt caching (`--cache-prompt`) is **on by default**. Agent transcripts are
@@ -233,7 +240,7 @@ than the vLLM one — no profile, no parsers, no compilation config:
     ENDPOINT_FILE=/work/nvme/bfvr/msalunkhe/endpoints/glm52.json
 
     llama-server --model "$SHARD" --alias GLM-5.2 \
-      -ngl 99 -ctk q8_0 -ctv q8_0 \
+      -ngl 99 -ctk q8_0 -ctv q8_0 --reasoning-preserve \
       --ctx-size 131072 --parallel 8 --cache-reuse 256 \
       --host 0.0.0.0 --port 8080 &
 
