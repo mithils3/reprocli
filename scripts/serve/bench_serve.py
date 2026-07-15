@@ -80,6 +80,32 @@ def _post(cfg: Config, path: str, payload: dict) -> urllib.request.addinfourl:
     return urllib.request.urlopen(req, timeout=cfg.timeout)
 
 
+def wait_for_server(cfg: Config, timeout: float) -> None:
+    """Block until /health answers 200.
+
+    vLLM only binds the API server once engine init finishes, so a refused
+    connection means "still loading", not "broken". A 400 GiB checkpoint with
+    CPU offload takes ~35-45 min to weight-load, compile and profile, which is
+    why the default timeout is an hour rather than a few minutes.
+    """
+    base = cfg.base_url.rsplit("/v1", 1)[0]
+    start = time.monotonic()
+    last_note = 0.0
+    while (elapsed := time.monotonic() - start) < timeout:
+        try:
+            with urllib.request.urlopen(f"{base}/health", timeout=10) as resp:
+                if resp.status == 200:
+                    print(f"server healthy after {elapsed:.0f}s")
+                    return
+        except Exception:  # noqa: BLE001 - refused/timeout both mean "not yet"
+            pass
+        if elapsed - last_note >= 60:
+            print(f"waiting for {base}/health ... {elapsed / 60:.0f}m elapsed")
+            last_note = elapsed
+        time.sleep(5)
+    sys.exit(f"server did not answer {base}/health within {timeout:.0f}s")
+
+
 def count_tokens(cfg: Config, messages: list[dict]) -> int:
     """Exact prompt length via vLLM's /tokenize, so 85k means 85k."""
     base = cfg.base_url.rsplit("/v1", 1)[0]
@@ -249,13 +275,17 @@ def main() -> None:
     ap.add_argument("--npp", type=int, default=512, help="table: prompt tokens")
     ap.add_argument("--ntg", type=int, default=128, help="table: generated tokens")
     ap.add_argument("--npl", default="1,2,4,8", help="table: concurrency levels")
+    ap.add_argument("--wait-timeout", type=float, default=3600.0, help="seconds to wait for /health")
+    ap.add_argument("--no-wait", action="store_true", help="fail immediately if the server is down")
     args = ap.parse_args()
 
     cfg = Config(base_url=args.base_url.rstrip("/"), model=args.model)
+    if not args.no_wait:
+        wait_for_server(cfg, args.wait_timeout)
     try:
         count_tokens(cfg, [{"role": "user", "content": "ping"}])
-    except Exception as exc:  # noqa: BLE001 - any failure here means no server
-        sys.exit(f"cannot reach {cfg.base_url} as model {cfg.model!r}: {exc}")
+    except Exception as exc:  # noqa: BLE001 - bad URL, bad model name, or (with --no-wait) no server
+        sys.exit(f"probe failed at {cfg.base_url} for model {cfg.model!r}: {exc}")
 
     if args.scenario in ("agentic", "both"):
         scenario_agentic(cfg, args.input_tokens, args.output_tokens)
