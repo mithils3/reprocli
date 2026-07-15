@@ -42,10 +42,15 @@ DeepSeek-V4-Flash (`unsloth/DeepSeek-V4-Flash-GGUF`) at UD-Q4_K_XL is 155 GB
 ## 3. Why not to close the gap with CPU offload
 
 The tempting move is `UD-Q4_K_XL` + `--n-cpu-moe`, spilling experts to Grace
-over NVLink-C2C at ~900 GB/s. **It does not work well.** MEASURED on GLM-5.2:
+over NVLink-C2C at ~900 GB/s. **It does not work well.** MEASURED on GLM-5.2,
+same model, same node, offload vs none:
 
     UD-Q4_K_XL + -ot "ffn_down_exps.weight=CPU"   ~200 t/s prefill
-    DeepSeek-V4-Flash, pure HBM, no offload       ~951 t/s prefill (B=1)
+    UD-IQ4_XS,  pure HBM, no offload              ~575 t/s prefill
+
+A 2.9x prefill win from dropping to a smaller quant that fits. **Fit the quant
+to HBM; do not offload to keep a bigger one.** This is the single most important
+finding in this runbook.
 
 Prefill batches 2048 tokens, which activates essentially all 256 experts per
 layer, so every CPU-resident expert tensor gets computed on Grace. Decode only
@@ -189,6 +194,40 @@ MEASURED, DeepSeek-V4-Flash UD-Q4_K_XL on 2xGH200, pure HBM:
 Prefill saturates by B=2; decode scales 3.4x from B=1 to B=8. Use this as the
 reference for any new model on this hardware.
 
+MEASURED, GLM-5.2 UD-IQ4_XS on 4xGH200, pure HBM, q8_0 KV, `--parallel 1`:
+
+    prefill   ~575 t/s at 35k ctx, degrading to ~536 t/s by 41k (attention cost)
+    decode    ~40 t/s (B=1)
+    HBM       80 / 91 / 91 / 85 GiB = ~347 GiB of 382
+    GPU util  ~48% average
+
+**Decode is FASTER than DeepSeek-V4-Flash (40 vs 30.6 t/s) despite 2.4x the
+weights.** Decode speed tracks *active* params and memory bandwidth, not total
+size: GLM-5.2 activates 8 of 256 experts per token. Do not assume a bigger MoE
+decodes slower — measure. (Caveat: DeepSeek was benchmarked on 2 GPUs, GLM-5.2
+on 4, so this is not a controlled comparison.)
+
+### Why GPU utilization is ~48%, and why that is expected
+
+`--split-mode layer` (the default) is **pipeline parallelism, not tensor
+parallelism**. Layers are dealt out sequentially across GPUs, a token flows
+through them in order, and only one GPU computes at a time while the rest wait
+on activations. `nvitop` shows 100/0/100/0 catching the handoff. Memory
+bandwidth at ~11% confirms it: decode should be HBM-bound, so 11% means waiting,
+not reading.
+
+Levers, in order of expected value:
+
+- `--parallel N` + concurrent requests. Batching fills the pipeline bubbles.
+  This is why DeepSeek's aggregate scaled 3.4x to B=8 while per-stream decode
+  barely moved. If sweeps run several agents at once, low per-GPU util is
+  irrelevant — aggregate is what you bill.
+- `-sm row` shards tensors so all GPUs work every layer. Trades communication
+  for parallelism; does not always win. Measure.
+- Accept it. llama.cpp is not a tensor-parallel engine. `serve_gh200.sbatch`'s
+  vLLM path does real TP and would use this hardware better — llama.cpp is the
+  right tool only when GGUF is the only checkpoint that fits.
+
 For a **realistic agentic profile** (~80-90k input, cached prefix), size the KV:
 `-c` must cover `npl * (npp + ntg)`, so 90k x 2 sequences needs `-c 200000`.
 
@@ -261,10 +300,16 @@ Differences from the vLLM sbatch that matter:
 
 ## 10. Open items
 
-- GLM-5.2 UD-IQ4_XS has **not** been benchmarked yet — §3's numbers are the
-  offloaded Q4_K_XL. Fill in the §8 table once measured.
 - Decode t/s under expert offload was never measured (we cancelled at 36%
-  prefill). If someone revisits offload, that is the missing number.
+  prefill). If someone revisits offload, that is the missing number — though §3
+  makes the case moot.
+- `-sm row` was never measured against the default layer split. If single-stream
+  decode matters more than aggregate, that is the first thing to try.
+- No batched/concurrent numbers for GLM-5.2 — only `--parallel 1`. Run
+  `llama-batched-bench -npl 1,2,4,8` to get the aggregate curve that actually
+  matters for sweeps.
+- Quant validation (§7) not run against UD-IQ4_XS. Its quality delta vs the
+  "lossless" UD-Q4_K_XL remains unquantified.
 - The 6-flag server hang (§6) was never root-caused. If it recurs, bisect:
   `--ctx-size` first, then `--flash-attn`, then `-sm`/`-ts`.
 - llama.cpp is not wired into `reprocli_serve`. Today it is a manual endpoint;
