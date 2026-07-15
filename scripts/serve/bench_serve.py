@@ -80,30 +80,33 @@ def _post(cfg: Config, path: str, payload: dict) -> urllib.request.addinfourl:
     return urllib.request.urlopen(req, timeout=cfg.timeout)
 
 
-def wait_for_server(cfg: Config, timeout: float) -> None:
-    """Block until /health answers 200.
+def wait_for_server(cfg: Config, timeout: float = 0.0) -> None:
+    """Poll /health every 5s until it answers 200. Waits forever by default.
 
     vLLM only binds the API server once engine init finishes, so a refused
-    connection means "still loading", not "broken". A 400 GiB checkpoint with
-    CPU offload takes ~35-45 min to weight-load, compile and profile, which is
-    why the default timeout is an hour rather than a few minutes.
+    connection means "still loading", not "broken". Startup for a 400 GiB
+    checkpoint with CPU offload is ~35-45 min and varies with what is cached,
+    so there is no useful deadline to pick -- just poll until it is up, or
+    Ctrl-C. Pass a positive `timeout` to bound it.
     """
     base = cfg.base_url.rsplit("/v1", 1)[0]
     start = time.monotonic()
     last_note = 0.0
-    while (elapsed := time.monotonic() - start) < timeout:
+    while True:
+        elapsed = time.monotonic() - start
         try:
             with urllib.request.urlopen(f"{base}/health", timeout=10) as resp:
                 if resp.status == 200:
-                    print(f"server healthy after {elapsed:.0f}s")
+                    print(f"server healthy after {elapsed / 60:.1f}m")
                     return
         except Exception:  # noqa: BLE001 - refused/timeout both mean "not yet"
             pass
+        if timeout > 0 and elapsed >= timeout:
+            sys.exit(f"server did not answer {base}/health within {timeout:.0f}s")
         if elapsed - last_note >= 60:
             print(f"waiting for {base}/health ... {elapsed / 60:.0f}m elapsed")
             last_note = elapsed
         time.sleep(5)
-    sys.exit(f"server did not answer {base}/health within {timeout:.0f}s")
 
 
 def count_tokens(cfg: Config, messages: list[dict]) -> int:
@@ -275,7 +278,7 @@ def main() -> None:
     ap.add_argument("--npp", type=int, default=512, help="table: prompt tokens")
     ap.add_argument("--ntg", type=int, default=128, help="table: generated tokens")
     ap.add_argument("--npl", default="1,2,4,8", help="table: concurrency levels")
-    ap.add_argument("--wait-timeout", type=float, default=3600.0, help="seconds to wait for /health")
+    ap.add_argument("--wait-timeout", type=float, default=0.0, help="seconds to wait for /health (0 = forever)")
     ap.add_argument("--no-wait", action="store_true", help="fail immediately if the server is down")
     args = ap.parse_args()
 
