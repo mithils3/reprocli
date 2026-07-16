@@ -32,14 +32,8 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
     "-- the auditor grades it. Return only the JSON object."
 )
 
-# Sampling is left unset by default: the request builder omits unset fields, so
-# the served model's own generation_config defaults apply (vLLM recipe style).
-# Qwen3.6 is the one exception (thinking-mode sampling for precise coding);
-# apply_sampling_for_model pins it when the served model is a Qwen3 variant.
-QWEN3_TEMPERATURE = 0.6
-QWEN3_TOP_P = 0.95
-QWEN3_TOP_K = 20
-QWEN3_MIN_P = 0.0
+# Sampling is left unset for every model: the request builder omits unset fields,
+# so the served model's own generation_config defaults apply (vLLM recipe style).
 MAX_TOKENS = 32768
 MAX_INPUT_TOKENS = 128000
 REQUEST_WORKERS = 8
@@ -63,28 +57,13 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--budget-h100-hours must be >= 0")
 
 
-def apply_sampling_for_model(args: argparse.Namespace, model: str | None) -> None:
-    """Pin Qwen3's recommended thinking-mode sampling when the brain is a Qwen3.
-
-    Every other model keeps sampling unset (requests omit the fields, so the served
-    model's generation_config defaults apply). This is called once the served model
-    id is known (``__main__``), so a Qwen3 brain gets temp 0.6 / top_p 0.95 /
-    top_k 20 / min_p 0.0 without a CLI flag.
-    """
-    if model and "qwen3" in model.lower():
-        args.temperature = QWEN3_TEMPERATURE
-        args.top_p = QWEN3_TOP_P
-        args.top_k = QWEN3_TOP_K
-        args.min_p = QWEN3_MIN_P
-
-
 def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
     args.prompt_file = DEFAULT_PROMPT_FILE
     # Sampling stays unset (the request builder omits None fields, deferring to the
-    # served model's generation_config); apply_sampling_for_model pins Qwen3 later.
+    # served model's generation_config).
     args.temperature = None
     args.top_p = None
     args.top_k = None
