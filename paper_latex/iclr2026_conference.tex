@@ -8,6 +8,23 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{listings}
+
+% Verbatim prompt/message listings (Appendix A). Long lines soft-wrap; content
+% is never edited to fit.
+\lstset{
+  basicstyle=\scriptsize\ttfamily,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  aboveskip=8pt,
+  belowskip=8pt,
+  % The prompt file is UTF-8; map its non-ASCII characters for pdflatex.
+  literate={—}{{---}}1 {–}{{--}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
+           {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1,
+}
 
 \title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
 
@@ -322,8 +339,266 @@ Summarize the paper and its implications.
 \section{Harness Details}
 \label{app:harness}
 
-% TODO(harness): prompts, tool schemas, run_gpu session mechanics, sandbox,
-% budget enforcement, report format.
+The harness is a plain ReAct tool loop over the seven tools of
+Table~\ref{tab:tools}. It adds no retrieval, no subagents, and no
+task-specific heuristics beyond the prompt reproduced in
+Appendix~\ref{app:prompts}, so an episode's outcome reflects the model's own
+decisions. This appendix records the loop mechanics, the tool semantics, the
+GPU session and billing model, the sandbox, the context management, and the
+report format. The values given here are the defaults used for every run in
+the paper.
+
+\subsection{Tool loop}
+\label{app:tool-loop}
+
+Each episode runs one paper with one model. The conversation opens with a
+fixed system message and a task prompt rendered from the paper's dataset row
+(Appendix~\ref{app:prompts}), then alternates model turns with tool results.
+A turn may batch several tool calls, and the prompt encourages batching
+because each turn consumes one round. A tool result is trimmed to 40{,}000
+characters before it enters the conversation, and a transient tool failure
+is retried once before its error is returned to the model.
+
+Episodes are capped at 300 rounds. Every request carries an ephemeral status
+line stating the current round and the rounds remaining, appended to the
+request and never stored, since the model has no other way to observe the
+turn budget. The cap is a backstop. The binding limit is the compute budget
+of Appendix~\ref{app:gpu-metering}, and in practice runs end by the agent's
+own choice long before either bound (Section~\ref{subsec:results}).
+
+An episode ends when the model stops calling tools, when it hits the round
+cap, when its compute budget is exhausted, or when its context passes the
+ceiling of Appendix~\ref{app:context} with nothing left to elide. In every
+case the loop issues one final request with the tools removed and the
+response constrained to the report schema of
+Appendix~\ref{app:report-format}, so every run ends with a machine-readable
+account.
+
+\subsection{Toolset}
+\label{app:toolset}
+
+\begin{table}[h]
+\caption{The seven tools advertised to the model. There is no file-read
+tool. The agent reads code and logs through targeted \texttt{grep} and
+\texttt{sed} calls in \texttt{workspace\_bash}, which is far cheaper in
+context than dumping whole files.}
+\label{tab:tools}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.6cm}@{}}
+\toprule
+Tool & Function \\
+\midrule
+\texttt{workspace\_bash} & Bash in the episode workspace on a CPU node with
+no GPU. Cloning, installs, edits, inspection. Default timeout 900\,s,
+maximum 3{,}600\,s. \\
+\texttt{write\_file} & Write a UTF-8 file under the workspace or evidence
+roots. \\
+\texttt{edit\_file} & Replace one exact string in an existing file. The
+match must be unique unless \texttt{replace\_all} is set. \\
+\texttt{update\_plan} & Replace the agent's checklist of steps and statuses,
+with at most one step in progress. \\
+\texttt{fetch\_url} & Fetch a public http(s) URL and reduce HTML to text.
+There is no web search. \\
+\texttt{list\_partitions} & List the cluster's Slurm partitions with node
+counts, walltime caps, and GPU resources. Read-only. \\
+\texttt{run\_gpu} & Run one command on the held GPU allocation
+(Appendix~\ref{app:gpu-metering}). The only path to a GPU. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Every tool leaves a durable trace. Each shell command is appended to
+\texttt{evidence/commands.log} with its exit code, duration, and working
+directory. Each applied \texttt{edit\_file} change is saved verbatim as a
+unified diff under \texttt{evidence/patches/}. Each \texttt{update\_plan}
+call overwrites \texttt{evidence/plan.md} with the current checklist, and
+because the plan is harness state rather than conversation text it survives
+the context compaction of Appendix~\ref{app:context}. The write tools
+resolve every path against the workspace and evidence roots, canonicalize
+symlinks, and reject traversal, so the read-only reference copy of the paper
+cannot be modified.
+
+\subsection{GPU sessions and compute metering}
+\label{app:gpu-metering}
+
+\texttt{run\_gpu} holds one Slurm allocation across calls. The first call
+acquires it, and the agent may wait in the queue once. Every later call runs
+on the same node with no new queue wait, so installing, smoke-testing, and
+running the experiment land on one allocation, and the node-local scratch
+persists between calls until release. Calls block until the command returns.
+There is no background execution.
+
+Three parameters are set on the call that starts a session and are fixed
+until it is released. \texttt{gpus} (default 1) is capped at the node size,
+four on our cluster. \texttt{minutes} (default 30, maximum 1{,}440) becomes
+the allocation's Slurm \texttt{--time} cap, so a step still running at the
+wall is killed. \texttt{partition} selects the node pool, and the agent can
+enumerate the pools with \texttt{list\_partitions}. Setting
+\texttt{release=true} frees the allocation after the call, and the harness
+releases any session still held when the episode ends.
+
+The meter charges held wall clock, GPUs times held hours times a hardware
+multiplier, in H100-equivalent hours. Our GH200 nodes are charged at 1.0.
+Queue wait is not billed. Idle time on a held node is billed, including the
+time the model spends reasoning between commands, and the loop bills accrued
+wall clock between rounds, so a held node depletes the budget even when no
+command is running. Two checks enforce the ceiling. Before a session starts,
+the harness refuses an allocation whose worst case, GPUs times
+\texttt{minutes} times the multiplier, exceeds the remaining budget. Between
+rounds, once the accrued charge exhausts the budget, the loop releases the
+session and forces the final report pass. Each paper's ceiling is the upper
+edge of its compute band, 8, 32, or 96 H100-hours.
+
+Each step's stdout and stderr stream to a numbered log under
+\texttt{evidence/} while the step runs, so a job killed at the
+\texttt{--time} wall still leaves everything it printed on disk, and the
+tool result names the log and returns the output tail rather than nothing.
+Every result also reports the accrued cost, the remaining budget, and the
+seconds left on the allocation. A warning fires within two minutes of the
+wall, and a command launched onto an allocation with under two minutes left
+is moved onto a fresh allocation in the same call rather than started on a
+doomed one.
+
+\subsection{Sandbox}
+\label{app:sandbox}
+
+Every shell step, in \texttt{workspace\_bash} and in \texttt{run\_gpu}, runs
+inside an Apptainer container, and the harness refuses to start when it
+cannot sandbox. The container image is the read-only root filesystem, a
+CUDA 12.9 and cuDNN development image with git, \texttt{uv}, compilers, and
+common media libraries layered in. PyTorch is not preinstalled. The agent
+builds its own virtual environment and installs a CUDA-enabled torch as its
+first action.
+
+Only bound paths are visible inside the container. The episode's workspace
+and evidence directories are bound read-write, the reference copy of the
+paper read-only, and the node-local scratch (at least 500\,GB of NVMe at
+\texttt{/tmp}) and the shared package caches read-write, so a downloaded
+dataset or built wheel is reused across papers. The host home directory and
+every other host path are not mounted. The container environment is scrubbed
+with \texttt{--cleanenv} and \texttt{--no-home}, and an explicit allowlist
+(the Hugging Face token, cache locations, proxy settings) is forwarded
+through Apptainer's environment mechanism so no token appears on a command
+line. GPU steps add \texttt{--nv} to pass the device and driver through. The
+long per-run host paths are remapped to fixed short container paths
+(\texttt{/repro/workspace}, \texttt{/repro/reference},
+\texttt{/repro/evidence}), so the prompt and the agent's commands are
+identical across papers.
+
+\subsection{Context management}
+\label{app:context}
+
+The conversation is held under a 128{,}000-token input ceiling, measured
+with the serving engine's own prompt-token count rather than an estimate.
+When a request crosses 70\% of the ceiling, the harness elides old tool
+output in place. The content of any tool result that is older than the most
+recent 20{,}000 tokens and longer than 1{,}000 characters is replaced with a
+placeholder naming the on-disk file that holds the full output. The system
+message, the task prompt, all of the model's own messages and tool calls,
+and the recent tail stay verbatim. Because every tool result is persisted
+under \texttt{evidence/} as it happens, an elided number can be re-read from
+disk instead of re-computed on the GPU. When elision frees nothing and the
+conversation is past the ceiling, the episode is finalized early rather than
+letting the serving engine truncate the prompt head. The prompt tells the
+agent that its context is compacted over time and that only files survive,
+which is also what makes the evidence bundle complete enough to audit.
+
+\subsection{Evidence bundle and report format}
+\label{app:report-format}
+
+Each run writes a self-contained bundle with three parts. The
+\texttt{workspace/} holds the agent's clones, environment, and scripts and
+is editable. The \texttt{reference/} holds the paper's \LaTeX{} source and
+its OpenReview supplement and is read-only. The \texttt{evidence/} directory
+is the durable record the auditor reads. It accumulates
+\texttt{commands.log} (every shell command with exit codes),
+\texttt{trajectory.jsonl} (one structured row per tool step with its cost),
+\texttt{env.lock} (the resolved package environment), \texttt{patches/}
+(every applied diff), the streamed per-step GPU logs, \texttt{plan.md}, and
+whatever the agent writes itself, including the \texttt{REPORT.md} the
+prompt requires. The auditor grades \texttt{report.json} and
+\texttt{evidence/} and never reads the workspace.
+
+The final tools-off pass constrains the model's output to a JSON schema, and
+the returned object is persisted as \texttt{report.json}.
+Table~\ref{tab:report-schema} lists its fields. Each entry of
+\texttt{measurements} carries the metric name, the observed value, the
+paper's reference value, the scope the value was measured over, and
+citations into \texttt{evidence/} backing the observed value, so a number
+without a cited evidence file is identifiable as unsupported.
+The \texttt{agent\_assessment} field is the agent's own verdict on its run.
+It is the self-claimed outcome that Section~\ref{subsec:results} compares
+against the audited grade, and nothing in the pipeline treats it as ground
+truth.
+
+\begin{table}[h]
+\caption{Fields of the schema-constrained \texttt{report.json}. The report
+is the agent's account of the run, not the verdict.}
+\label{tab:report-schema}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+Field & Content \\
+\midrule
+\texttt{paper\_id} & The paper's arXiv identifier. \\
+\texttt{claim} & The agent's restatement of the claim it worked toward. \\
+\texttt{what\_ran} & What was actually executed, from environment to run. \\
+\texttt{scoring\_command} & One command that reproduces the measured number
+from a clean state. Empty when nothing ran. \\
+\texttt{measurements} & The measured metrics, each citing evidence files. \\
+\texttt{agent\_assessment} & \texttt{reproduced}, \texttt{partial},
+\texttt{not\_reproduced}, or \texttt{could\_not\_run}. \\
+\texttt{changes\_made} & Deviations from the released reference. \\
+\texttt{blockers} & What blocked a full reproduction, empty when nothing
+did. \\
+\texttt{evidence\_files} & The files under \texttt{evidence/} the auditor
+should open first. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Prompts}
+\label{app:prompts}
+
+The system message and the final-turn instruction are fixed strings, shown
+in Listing~\ref{lst:system-message} and Listing~\ref{lst:final-message}. The
+task prompt is rendered per paper from a fixed template, shown in full in
+Listing~\ref{lst:task-prompt}. Rendering substitutes the paper's central
+claim, its reported numbers, the pinned match target, the verified artifact
+links, the availability signals, the tier and compute band, the H100-hour
+budget, and the fixed container paths of Appendix~\ref{app:sandbox}. The
+template is the product of failure-driven revision on the development split,
+and several of its instructions name specific observed failure modes, such
+as blind re-runs of wall-killed jobs and validation-free reimplementation.
+It was validated against other models' successful runs before adoption so
+that fixes for one model's failures do not overfit the prompt to that model.
+
+\begin{lstlisting}[caption={The system message.},label={lst:system-message}]
+You are a reproduction agent. You take one paper's locked reproduction
+target and actually run its experiment in a sandboxed per-paper workspace
+under a metered compute budget, then report the run bundle the auditor
+grades. Spend budget deliberately; write durable evidence as you go.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={The final-turn instruction, sent with tools
+removed and the response constrained to the report
+schema.},label={lst:final-message}]
+The tool phase is over. Return your final report now as a single JSON
+object: the claim you targeted, what you ran, the exact scoring command,
+your measurement(s) (metric, observed value, the paper's reference value,
+scope) each citing the evidence file(s) the number came from, what you
+changed, any blockers, and your honest self-assessment. This is your
+account of the run, not the verdict -- the auditor grades it. Return only
+the JSON object.
+\end{lstlisting}
+
+\lstinputlisting[caption={The task prompt template, rendered per paper by
+substituting the \texttt{\{PLACEHOLDER\}} fields from the paper's dataset
+row.},label={lst:task-prompt}]{prompts/prompt_reproduce.txt}
 
 \section{Models and Serving}
 \label{app:models}
