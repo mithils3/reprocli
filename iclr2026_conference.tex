@@ -340,10 +340,7 @@ Summarize the paper and its implications.
 \label{app:harness}
 
 The harness is a plain ReAct tool loop over the seven tools of
-Table~\ref{tab:tools}. It adds no retrieval, no subagents, and no
-task-specific heuristics beyond the prompt reproduced in
-Appendix~\ref{app:prompts}, so an episode's outcome reflects the model's own
-decisions. This appendix records the loop mechanics, the tool semantics, the
+Table~\ref{tab:tools}. This appendix records the loop mechanics, the tool semantics, the
 GPU session and billing model, the sandbox, the context management, and the
 report format. The values given here are the defaults used for every run in
 the paper.
@@ -378,9 +375,7 @@ account.
 \label{app:toolset}
 
 \begin{table}[h]
-\caption{The seven tools advertised to the model. There is no file-read
-tool. The agent reads code and logs through targeted \texttt{grep} and
-\texttt{sed} calls in \texttt{workspace\_bash}, which is far cheaper in
+\caption{The seven tools advertised to the model. \# remove this \_bash}, which is far cheaper in
 context than dumping whole files.}
 \label{tab:tools}
 \begin{center}
@@ -426,7 +421,7 @@ cannot be modified.
 \texttt{run\_gpu} holds one Slurm allocation across calls. The first call
 acquires it, and the agent may wait in the queue once. Every later call runs
 on the same node with no new queue wait, so installing, smoke-testing, and
-running the experiment land on one allocation, and the node-local scratch
+running the experiment utlizes the same allocation, and the node-local scratch
 persists between calls until release. Calls block until the command returns.
 There is no background execution.
 
@@ -491,9 +486,7 @@ identical across papers.
 \subsection{Context management}
 \label{app:context}
 
-The conversation is held under a 128{,}000-token input ceiling, measured
-with the serving engine's own prompt-token count rather than an estimate.
-When a request crosses 70\% of the ceiling, the harness elides old tool
+When a request crosses 70\% of the context ceiling, the harness elides old tool
 output in place. The content of any tool result that is older than the most
 recent 20{,}000 tokens and longer than 1{,}000 characters is replaced with a
 placeholder naming the on-disk file that holds the full output. The system
