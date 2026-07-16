@@ -14,13 +14,12 @@ import argparse
 
 from reprocli_vllm.config.config import MAX_MODEL_LEN
 
-# Request-time sampling the auditor sends to the served brain (previously the
-# client half of the minimax serve profile).
-AUDIT_TEMPERATURE = 1.0
-AUDIT_TOP_P = 0.95
-AUDIT_TOP_K = 40
-# Qwen3.6 thinking-mode sampling for precise coding (top_p is 0.95 for both).
+# Qwen3.6 thinking-mode sampling for precise coding — the one model we pin
+# explicitly. Every other model's sampling stays unset: the request builder
+# omits unset fields, so the served model's own generation_config defaults
+# apply (vLLM recipe style).
 QWEN3_TEMPERATURE = 0.6
+QWEN3_TOP_P = 0.95
 QWEN3_TOP_K = 20
 QWEN3_MIN_P = 0.0
 
@@ -30,20 +29,22 @@ def _is_qwen3(model: str | None) -> bool:
 
 
 def apply_model_defaults(args: argparse.Namespace) -> None:
-    """Fill the request-time sampling/length defaults the auditor POSTs.
+    """Fill the request-time length default and, for Qwen3, its pinned sampling.
 
-    A Qwen3 brain gets its recommended thinking-mode sampling (temp 0.6 / top_k 20 /
-    min_p 0.0, top_p unchanged at 0.95) for any field the user did not set explicitly;
-    every other model keeps the MiniMax-recommended defaults.
+    A Qwen3 brain gets its recommended thinking-mode sampling (temp 0.6 / top_p
+    0.95 / top_k 20 / min_p 0.0) for any field the user did not set explicitly.
+    Every other model's sampling is left unset so requests omit the fields and
+    the served model's generation_config defaults apply.
     """
-    qwen = _is_qwen3(getattr(args, "model", None))
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    if args.temperature is None:
-        args.temperature = QWEN3_TEMPERATURE if qwen else AUDIT_TEMPERATURE
-    if args.top_p is None:
-        args.top_p = AUDIT_TOP_P
-    if args.top_k is None:
-        args.top_k = QWEN3_TOP_K if qwen else AUDIT_TOP_K
     args.min_p = getattr(args, "min_p", None)
-    if args.min_p is None and qwen:
+    if not _is_qwen3(getattr(args, "model", None)):
+        return
+    if args.temperature is None:
+        args.temperature = QWEN3_TEMPERATURE
+    if args.top_p is None:
+        args.top_p = QWEN3_TOP_P
+    if args.top_k is None:
+        args.top_k = QWEN3_TOP_K
+    if args.min_p is None:
         args.min_p = QWEN3_MIN_P

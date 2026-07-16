@@ -53,6 +53,20 @@ class VllmBatchRequestTests(unittest.TestCase):
         self.assertIn("tools", request["body"])
         self.assertNotIn("response_format", request["body"])
 
+    def test_sampling_omitted_when_unset(self) -> None:
+        # Unset sampling -> fields omitted from the body, so the served model's
+        # generation_config defaults apply.
+        body = build_chat_completion_request(
+            "model",
+            "2501.00001",
+            [],
+            args(temperature=None, top_p=None, top_k=None),
+            include_tools=True,
+        )["body"]
+        self.assertNotIn("temperature", body)
+        self.assertNotIn("top_p", body)
+        self.assertNotIn("top_k", body)
+
     def test_min_p_included_only_when_set(self) -> None:
         # No min_p attribute on the namespace -> omitted (getattr default None).
         body = build_chat_completion_request(

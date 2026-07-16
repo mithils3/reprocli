@@ -29,11 +29,15 @@ def build_chat_completion_request(
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "temperature": args.temperature,
-        "top_p": args.top_p,
         "max_tokens": args.max_tokens,
         "truncate_prompt_tokens": args.max_input_tokens,
     }
+    # Sampling fields are sent only when set; an unset field is omitted so the
+    # served model's own generation_config defaults apply (vLLM recipe style).
+    if args.temperature is not None:
+        body["temperature"] = args.temperature
+    if args.top_p is not None:
+        body["top_p"] = args.top_p
     if args.top_k is not None:
         body["top_k"] = args.top_k
     if getattr(args, "min_p", None) is not None:
