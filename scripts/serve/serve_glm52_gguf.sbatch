@@ -25,7 +25,7 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 #SBATCH --mem=440G
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH -o slurm-serve-glm52-gguf-%j.out
 #SBATCH -e slurm-serve-glm52-gguf-%j.err
 #SBATCH --export=ALL
