@@ -440,7 +440,8 @@ enumerate the pools with \texttt{list\_partitions}. Setting
 releases any session still held when the episode ends.
 
 The meter charges held wall clock, GPUs times held hours times a hardware
-multiplier, in H100-equivalent hours. Our GH200 nodes are charged at 1.0.
+multiplier, in H100-equivalent hours. Each GH200 GPU carries a multiplier of
+1.0, so a fully held four-GPU node bills four H100-equivalent hours per hour.
 Queue wait is not billed. Idle time on a held node is billed, including the
 time the model spends reasoning between commands, and the loop bills accrued
 wall clock between rounds, so a held node depletes the budget even when no
