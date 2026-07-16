@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
+from reprocli_serve import launch
 from reprocli_serve.args import parse_args
 from reprocli_serve.launch import build_serve_command
 from reprocli_serve.profiles import resolve_profile
@@ -77,6 +80,28 @@ class KimiMultinodeServeCommandTests(unittest.TestCase):
         self.assertEqual(value_after(self.cmd, "--node-rank"), "1")
         self.assertEqual(value_after(self.cmd, "--master-addr"), "1.2.3.4")
         self.assertIn("--headless", self.cmd)
+
+
+class CompilationConfigSanitizerTests(unittest.TestCase):
+    """The minimax sbatch config must survive a vLLM that dropped the pass flag."""
+
+    CONFIG = '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'
+
+    def config_given_fields(self, fields: set[str] | None) -> str:
+        with mock.patch.object(launch, "_known_pass_config_fields", return_value=fields):
+            cmd = command_for(["--model", "m", "--compilation-config", self.CONFIG])
+        return value_after(cmd, "--compilation-config")
+
+    def test_unknown_pass_key_is_dropped(self) -> None:
+        value = self.config_given_fields({"enable_fusion", "enable_noop"})
+        self.assertEqual(json.loads(value), {"mode": 3})
+
+    def test_known_pass_key_is_kept(self) -> None:
+        value = self.config_given_fields({"fuse_minimax_qk_norm"})
+        self.assertEqual(json.loads(value), {"mode": 3, "pass_config": {"fuse_minimax_qk_norm": True}})
+
+    def test_passes_through_when_vllm_is_unavailable(self) -> None:
+        self.assertEqual(self.config_given_fields(None), self.CONFIG)
 
 
 class PassthroughTests(unittest.TestCase):

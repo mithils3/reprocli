@@ -7,6 +7,8 @@ host/port (and, for multi-node, wires the rendezvous flags).
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
 import subprocess
 import sys
 
@@ -49,7 +51,7 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         command.extend(["--mm-encoder-tp-mode", mm_mode])
     compilation = args.compilation_config or profile.compilation_config
     if compilation:
-        command.extend(["--compilation-config", compilation])
+        command.extend(["--compilation-config", _supported_compilation_config(compilation)])
     if args.distributed_executor_backend:
         command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
     kv_cache_dtype = args.kv_cache_dtype or profile.kv_cache_dtype
@@ -70,6 +72,57 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     command.extend(_multinode_flags(args))
     command.extend(args.extra_vllm_args)
     return command
+
+
+def _supported_compilation_config(compilation: str) -> str:
+    """Drop ``pass_config`` keys the installed vLLM does not recognize.
+
+    vLLM deletes a pass flag once the fusion becomes automatic (e.g. the MiniMax
+    QK-norm pass), and an unknown key makes ``vllm serve`` exit 2 on a pydantic
+    validation error before ready. Older builds still need the explicit flag for
+    throughput, so unknown keys are filtered at launch against the installed
+    ``PassConfig`` instead of being edited out of every sbatch script.
+    """
+    try:
+        config = json.loads(compilation)
+    except json.JSONDecodeError:
+        return compilation
+    if not isinstance(config, dict) or not isinstance(config.get("pass_config"), dict):
+        return compilation
+    known = _known_pass_config_fields()
+    if known is None:
+        return compilation
+    passes = config["pass_config"]
+    dropped = sorted(set(passes) - known)
+    if not dropped:
+        return compilation
+    kept = {key: value for key, value in passes.items() if key in known}
+    if kept:
+        config["pass_config"] = kept
+    else:
+        del config["pass_config"]
+    print(
+        "reprocli_serve: dropping pass_config keys this vLLM does not support: "
+        + " ".join(dropped),
+        file=sys.stderr,
+        flush=True,
+    )
+    return json.dumps(config, separators=(",", ":"))
+
+
+def _known_pass_config_fields() -> set[str] | None:
+    """Field names of the installed vLLM's PassConfig, or None if undeterminable."""
+    try:
+        from vllm.config import PassConfig
+    except Exception:
+        return None
+    fields = getattr(PassConfig, "model_fields", None)
+    if fields:
+        return set(fields)
+    try:
+        return {field.name for field in dataclasses.fields(PassConfig)}
+    except Exception:
+        return None
 
 
 def _dataparallel_flags(args: argparse.Namespace) -> list[str]:
