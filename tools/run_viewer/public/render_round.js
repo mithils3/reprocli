@@ -98,6 +98,10 @@
     const exit = isFinal && round.exit_reason ? `<span class="badge ${bad ? "no" : "yes"}">exit: ${esc(round.exit_reason)}</span>` : "";
     const tally = toolTally(round.calls), faults = faultCount(round.calls);
     const faultFlag = faults ? `<span class="r-fault">✕ ${faults} failed</span>` : "";
+    // A 'length' finish means the turn overran the output-token cap and was cut off
+    // mid-stream (the loop trims + nudges it); flag it like the other round markers.
+    const cutFlag = round.finish_reason === "length"
+      ? `<span class="badge no" title="turn hit the output-token limit">✂ cut off at token limit</span>` : "";
     const costChip = cost != null ? `<span class="r-cost tnum" title="+${cost} H100·h${rem != null ? ` · ${rem} left` : ""}">+${R.fmtHM(cost)}${rem != null ? ` · ${R.fmtHM(rem)} left` : ""}</span>` : "";
     const isCol = !isFinal && !!collapsed;
     let cap = "";
@@ -107,7 +111,7 @@
     }
     return `<div class="rcard ${isFinal ? "final" : ""} ${bad ? "bad" : ""} ${spike ? "spike" : ""} ${isCol ? "collapsed" : ""}" data-key="${esc(key)}" data-round="${esc(round.round_index ?? "")}">
       <button class="rcard-h" type="button" aria-expanded="${!isCol}"><span class="r-idx">${isFinal ? "✅ FINAL" : "ROUND " + (round.round_index ?? "?")}</span>
-        <span class="ftime">${round.ts ? esc(R.fmtTime(round.ts)) : ""}</span>${tally ? `<span class="r-tally">${tally}</span>` : ""}${faultFlag}${exit}${spike ? `<span class="badge over" title="costliest round">⚡ spike</span>` : ""}${costChip}</button>
+        <span class="ftime">${round.ts ? esc(R.fmtTime(round.ts)) : ""}</span>${tally ? `<span class="r-tally">${tally}</span>` : ""}${faultFlag}${cutFlag}${exit}${spike ? `<span class="badge over" title="costliest round">⚡ spike</span>` : ""}${costChip}</button>
       <div class="rcard-body">
         ${block("💭 reasoning", round.reasoning)}${block("🗒 assistant", round.content)}
         ${(round.calls || []).map(callHtml).join("")}${cap}</div></div>`;

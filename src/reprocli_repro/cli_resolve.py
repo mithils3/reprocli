@@ -38,7 +38,13 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
 TEMPERATURE = 1.0
 TOP_P = 0.95
 TOP_K = 40
-MAX_TOKENS = 8192
+# Qwen3.6 thinking-mode sampling for precise coding (temp/top_k/min_p; top_p stays
+# 0.95). The defaults above match MiniMax's recommendation; apply_sampling_for_model
+# swaps these in when the served model is a Qwen3 variant.
+QWEN3_TEMPERATURE = 0.6
+QWEN3_TOP_K = 20
+QWEN3_MIN_P = 0.0
+MAX_TOKENS = 32768
 MAX_INPUT_TOKENS = 128000
 REQUEST_WORKERS = 8
 # Context management (guardrails.py): tool stdout stays verbatim until elide-compact
@@ -61,6 +67,19 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--budget-h100-hours must be >= 0")
 
 
+def apply_sampling_for_model(args: argparse.Namespace, model: str | None) -> None:
+    """Switch to Qwen3's recommended thinking-mode sampling when the brain is a Qwen3.
+
+    The defaults resolved in ``apply_defaults`` match MiniMax's recommendation. This
+    is called once the served model id is known (``__main__``), so a Qwen3 brain gets
+    temp 0.6 / top_k 20 / min_p 0.0 (top_p stays 0.95) without a CLI flag.
+    """
+    if model and "qwen3" in model.lower():
+        args.temperature = QWEN3_TEMPERATURE
+        args.top_k = QWEN3_TOP_K
+        args.min_p = QWEN3_MIN_P
+
+
 def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
@@ -71,6 +90,7 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.temperature = TEMPERATURE
     args.top_p = TOP_P
     args.top_k = TOP_K
+    args.min_p = None
     args.max_tokens = MAX_TOKENS
     args.max_input_tokens = MAX_INPUT_TOKENS
     args.request_workers = REQUEST_WORKERS

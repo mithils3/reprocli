@@ -84,6 +84,7 @@ create table if not exists public.repro_events (
   reasoning      text,
   content        text,
   exit_reason    text,                           -- on 'final' events (mirrors the run's exit)
+  finish_reason  text,                           -- model's finish_reason for the turn ('length' => cut off)
   tool_name      text,
   command        text,
   detail_kind    text,                           -- 'command'|'diff'|'path'|'json'
@@ -106,6 +107,7 @@ create index if not exists repro_events_run_idx on public.repro_events (run_id, 
 
 -- existing deployments: add columns introduced after first run (safe to run twice)
 alter table public.repro_events add column if not exists exit_reason text;
+alter table public.repro_events add column if not exists finish_reason text;
 
 -- keep updated_at fresh on every PATCH
 create or replace function public.touch_updated_at()
@@ -186,6 +188,7 @@ create table if not exists public.audit_events (
   reasoning      text,
   content        text,
   exit_reason    text,
+  finish_reason  text,                           -- model's finish_reason for the turn ('length' => cut off)
   tool_name      text,
   command        text,
   detail_kind    text,                           -- 'command'|'path'|'json'

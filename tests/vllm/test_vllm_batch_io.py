@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from reprocli_vllm.vllm.io import build_chat_completion_request
+from reprocli_vllm.vllm.io import build_chat_completion_request, response_finish_reason
 from reprocli_vllm.schema.output import FINAL_RESPONSE_FORMAT
 
 
@@ -52,6 +52,31 @@ class VllmBatchRequestTests(unittest.TestCase):
 
         self.assertIn("tools", request["body"])
         self.assertNotIn("response_format", request["body"])
+
+    def test_min_p_included_only_when_set(self) -> None:
+        # No min_p attribute on the namespace -> omitted (getattr default None).
+        body = build_chat_completion_request(
+            "model", "2501.00001", [], args(), include_tools=True
+        )["body"]
+        self.assertNotIn("min_p", body)
+        # Explicit min_p -> forwarded.
+        body = build_chat_completion_request(
+            "model", "2501.00001", [], args(min_p=0.0), include_tools=True
+        )["body"]
+        self.assertEqual(body["min_p"], 0.0)
+
+
+class ResponseFinishReasonTests(unittest.TestCase):
+    def test_normal_row(self) -> None:
+        row = {"response": {"body": {"choices": [{"finish_reason": "length"}]}}}
+        self.assertEqual(response_finish_reason(row), "length")
+
+    def test_empty_choices(self) -> None:
+        row = {"response": {"body": {"choices": []}}}
+        self.assertIsNone(response_finish_reason(row))
+
+    def test_missing_body(self) -> None:
+        self.assertIsNone(response_finish_reason({"response": {}}))
 
 
 if __name__ == "__main__":

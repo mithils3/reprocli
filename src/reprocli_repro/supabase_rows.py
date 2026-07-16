@@ -41,6 +41,7 @@ def message_row(base: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]
     reasoning, _ = cap(msg.get("reasoning") or msg.get("reasoning_content"), STDOUT_CAP * 2)
     content, _ = cap(msg.get("content"), STDOUT_CAP * 2)
     base.update({"role": "assistant", "reasoning": reasoning or None, "content": content or None})
+    base["finish_reason"] = payload.get("finish_reason")
     if base.get("kind") == "final":
         base["exit_reason"] = payload.get("exit_reason") or None
     return base

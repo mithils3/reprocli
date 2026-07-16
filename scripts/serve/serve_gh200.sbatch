@@ -73,12 +73,13 @@ nvidia-smi topo -m || true
 # Single 4xGH200 node => tensor-parallel 4 picked from the model profile.
 # The launcher binds 0.0.0.0, discovers a routable hsn (hsn0..hsn3) fabric IP,
 # and writes $ENDPOINT_FILE once /health is green. It blocks until the job ends.
+# No --max-model-len: launch.py falls back to the model profile's context, so
+# each model serves its own native window (Qwen3.6-27B = 262144, MiniMax = 196608).
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
   --tensor-parallel-size 2 \
-  --max-model-len 196608 \
   --distributed-executor-backend mp \
   --compilation-config '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}' \
   --endpoint-file "${ENDPOINT_FILE}" \

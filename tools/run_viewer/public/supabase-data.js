@@ -160,7 +160,7 @@ const RemoteSource = {
       let r = byKey.get(key);
       if (!r) {
         r = { round_index: idx, kind, arxiv_id: null, ts: null, exit_reason: null,
-          reasoning: "", content: "", calls: [] };
+          finish_reason: null, reasoning: "", content: "", calls: [] };
         byKey.set(key, r); order.push(r);
       }
       return r;
@@ -170,6 +170,7 @@ const RemoteSource = {
         const r = ensure(e.kind === "final" ? "final" : "round", e.round_index);
         if (e.reasoning) r.reasoning = e.reasoning;
         if (e.content) r.content = e.content;
+        if (e.finish_reason) r.finish_reason = e.finish_reason;
         if (e.kind === "final") r.exit_reason = e.exit_reason || r.exit_reason;
         if (!r.ts && e.created_at) r.ts = e.created_at;
       } else if (e.kind === "call_start") {

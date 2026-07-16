@@ -300,7 +300,7 @@ run_one() {
     --paper-ids-file "${ids_file}" \
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 118000 \
-    --max-tokens 8192 \
+    --max-tokens 32768 \
     --max-model-len "$(( CTX_SIZE / PARALLEL ))" \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
     --extracted-output "${verdicts}" \

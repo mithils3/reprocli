@@ -39,7 +39,7 @@ MODEL_DIR="${MODEL_DIR:-/work/nvme/bfvr/msalunkhe/models/GLM-5.2-IQ4XS}"
 SHARD="${SHARD:-${MODEL_DIR}/UD-IQ4_XS/GLM-5.2-UD-IQ4_XS-00001-of-00009.gguf}"
 ALIAS="${ALIAS:-zai-org/GLM-5.2}"          # what bench_serve.py / agents ask for
 PORT="${PORT:-8080}"
-CTX_SIZE="${CTX_SIZE:-131072}"             # TOTAL context, split across slots
+CTX_SIZE="${CTX_SIZE:-163840}"             # TOTAL context (fits 128000 in + 32768 out), split across slots
 PARALLEL="${PARALLEL:-1}"                  # slots; prompt cache is per-slot (§9)
 # Publish on a SHARED filesystem so consumers on other nodes can find the URL.
 ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/endpoints/glm52.json}"

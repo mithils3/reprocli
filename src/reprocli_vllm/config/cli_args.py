@@ -83,7 +83,7 @@ def parse_args() -> argparse.Namespace:
         type=argparse_path,
         help="Run only the arXiv ids listed in this file (one per line).",
     )
-    parser.add_argument("--max-tokens", type=int, default=8192)
+    parser.add_argument("--max-tokens", type=int, default=32768)
     parser.add_argument("--max-input-tokens", type=int, default=128000)
     parser.add_argument("--tool-rounds", type=int, default=10)
     parser.add_argument("--request-workers", type=int, default=8)

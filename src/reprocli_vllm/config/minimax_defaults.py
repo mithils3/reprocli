@@ -19,11 +19,31 @@ from reprocli_vllm.config.config import MAX_MODEL_LEN
 AUDIT_TEMPERATURE = 1.0
 AUDIT_TOP_P = 0.95
 AUDIT_TOP_K = 40
+# Qwen3.6 thinking-mode sampling for precise coding (top_p is 0.95 for both).
+QWEN3_TEMPERATURE = 0.6
+QWEN3_TOP_K = 20
+QWEN3_MIN_P = 0.0
+
+
+def _is_qwen3(model: str | None) -> bool:
+    return bool(model) and "qwen3" in model.lower()
 
 
 def apply_model_defaults(args: argparse.Namespace) -> None:
-    """Fill the request-time sampling/length defaults the auditor POSTs."""
+    """Fill the request-time sampling/length defaults the auditor POSTs.
+
+    A Qwen3 brain gets its recommended thinking-mode sampling (temp 0.6 / top_k 20 /
+    min_p 0.0, top_p unchanged at 0.95) for any field the user did not set explicitly;
+    every other model keeps the MiniMax-recommended defaults.
+    """
+    qwen = _is_qwen3(getattr(args, "model", None))
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.temperature = AUDIT_TEMPERATURE if args.temperature is None else args.temperature
-    args.top_p = AUDIT_TOP_P if args.top_p is None else args.top_p
-    args.top_k = AUDIT_TOP_K if args.top_k is None else args.top_k
+    if args.temperature is None:
+        args.temperature = QWEN3_TEMPERATURE if qwen else AUDIT_TEMPERATURE
+    if args.top_p is None:
+        args.top_p = AUDIT_TOP_P
+    if args.top_k is None:
+        args.top_k = QWEN3_TOP_K if qwen else AUDIT_TOP_K
+    args.min_p = getattr(args, "min_p", None)
+    if args.min_p is None and qwen:
+        args.min_p = QWEN3_MIN_P

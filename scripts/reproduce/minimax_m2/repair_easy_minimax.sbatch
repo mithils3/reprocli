@@ -235,7 +235,7 @@ audit_bundle() {
     --paper-ids-file "${ids_file}" \
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 128000 \
-    --max-tokens 8192 \
+    --max-tokens 32768 \
     --max-model-len 196608 \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
     --extracted-output "${verdicts}" \

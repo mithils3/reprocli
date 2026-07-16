@@ -20,6 +20,7 @@ import sys
 from typing import Any
 
 from reprocli_vllm.runtime.run_health import loop_telemetry
+from reprocli_vllm.vllm.io import response_finish_reason
 
 from reprocli_repro import cleanup, gpu_session, live_log, report
 from reprocli_repro.context import ExecutionContext
@@ -74,7 +75,13 @@ def finalize_episode(
     # Phase 5: persist the agent's account as report.json for the auditor — BEFORE the
     # terminal event below announces the run finished.
     _write_episode_report(ctx, message, exit_reason)
-    live_log.log_final(ctx, message, round_index=round_index, exit_reason=exit_reason)
+    live_log.log_final(
+        ctx,
+        message,
+        round_index=round_index,
+        exit_reason=exit_reason,
+        finish_reason=response_finish_reason(row),
+    )
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
     # Reclaim NVMe scratch: drop the agent's venv plus any oversized files/dirs it
     # left in the workspace (e.g. an accidental full-dataset download). The auditor

@@ -33,6 +33,7 @@ from reprocli_vllm.vllm.io import (
     build_chat_completion_request,
     initial_messages,
     normalize_tool_calls,
+    response_finish_reason,
     response_message,
 )
 
@@ -43,10 +44,13 @@ from reprocli_repro.finalize import finalize_episode
 from reprocli_repro.guardrails import apply_guardrails
 from reprocli_repro.transcript import (
     EARLY_EXIT_REASONS,
+    LENGTH_RETRY_LIMIT,
     conversation_for_round,
+    length_nudge_message,
     noop,
     prepare_incremental_outputs,
     round_status_message,
+    trim_truncated_reasoning,
 )
 
 
@@ -66,6 +70,7 @@ def run_reproduce_loop(
     original_ids = [ctx.arxiv_id for ctx in contexts]
     final_rows: dict[str, dict] = {}
     exit_reasons: dict[str, str] = {}
+    length_retries = {custom_id: 0 for custom_id in original_ids}
     tool_rounds_used = {custom_id: 0 for custom_id in original_ids}
     workers = max(1, min(args.request_workers, len(original_ids)))
     base_url = server_url.rstrip("/")
@@ -124,6 +129,7 @@ def run_reproduce_loop(
                         final_rows,
                         tool_rounds_used,
                         exit_reasons,
+                        length_retries,
                         contexts_by_id,
                         args,
                     )
@@ -157,6 +163,7 @@ def handle_request_done(
     final_rows: dict[str, dict],
     tool_rounds_used: dict[str, int],
     exit_reasons: dict[str, str],
+    length_retries: dict[str, int],
     contexts_by_id: dict[str, ExecutionContext],
     args: argparse.Namespace,
 ) -> None:
@@ -191,6 +198,7 @@ def handle_request_done(
         return
     row = response_row(custom_id, result)
     message = response_message(row)
+    finish_reason = response_finish_reason(row)
     # Capture the model's real token usage for this response (every round, the
     # intermediate force-final pass, and the final turn each pass through here once).
     body = row.get("response", {}).get("body")
@@ -216,10 +224,28 @@ def handle_request_done(
         tool_futures[tool_future] = state
         return
     if state["include_tools"]:
+        if finish_reason == "length" and length_retries[custom_id] < LENGTH_RETRY_LIMIT:
+            # The turn hit the output-token cap before emitting a tool call, so it was
+            # cut off mid-reasoning. Don't read that as "the model is done" -- trim the
+            # bloated reasoning, nudge it to act, and re-issue with tools still on (via
+            # the noop tool-future path, so guardrails + the round limit still apply).
+            length_retries[custom_id] += 1
+            trimmed = trim_truncated_reasoning(message)
+            conversations[custom_id].append(assistant_message(trimmed, tool_calls))
+            conversations[custom_id].append(length_nudge_message())
+            live_log.log_round_open(
+                contexts_by_id[custom_id], trimmed,
+                round_index=round_index, finish_reason=finish_reason,
+            )
+            tool_futures[tools.submit(noop)] = state
+            return
         # Model stopped without a tool call while tools were live; re-issue one
         # tools-off pass to get the schema-constrained final submission.
         conversations[custom_id].append(assistant_message(message, tool_calls))
-        live_log.log_round_open(contexts_by_id[custom_id], message, round_index=round_index)
+        live_log.log_round_open(
+            contexts_by_id[custom_id], message,
+            round_index=round_index, finish_reason=finish_reason,
+        )
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}
         return
     exit_reason = exit_reasons.get(custom_id, "natural")

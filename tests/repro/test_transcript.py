@@ -7,9 +7,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.transcript import (
+    TRUNCATED_REASONING_KEEP_CHARS,
     WALL_DEADLINE_ENV,
+    length_nudge_message,
     round_status_message,
     sweep_wall_note,
+    trim_truncated_reasoning,
 )
 
 
@@ -58,3 +61,30 @@ def test_round_status_message_with_wall_env(monkeypatch):
     msg = round_status_message(0, 300)
     assert "sweep wall ~" in msg["content"]
     assert msg["content"].startswith("Tool round 1/300 · 299 left · ")
+
+
+def test_trim_truncated_reasoning_cuts_long_fields():
+    long = "x" * (TRUNCATED_REASONING_KEEP_CHARS + 500)
+    message = {"role": "assistant", "reasoning": long, "reasoning_content": long}
+    trimmed = trim_truncated_reasoning(message)
+    for key in ("reasoning", "reasoning_content"):
+        assert len(trimmed[key]) < len(long)
+        assert trimmed[key].startswith("x" * TRUNCATED_REASONING_KEEP_CHARS)
+        assert "cut off at the output-token limit" in trimmed[key]
+    # The input dict is never mutated.
+    assert message["reasoning"] == long
+    assert message["reasoning_content"] == long
+
+
+def test_trim_truncated_reasoning_leaves_short_fields():
+    message = {"role": "assistant", "reasoning": "short plan", "content": "hi"}
+    trimmed = trim_truncated_reasoning(message)
+    assert trimmed["reasoning"] == "short plan"
+    assert trimmed["content"] == "hi"
+    assert trimmed is not message
+
+
+def test_length_nudge_message_is_user_role():
+    msg = length_nudge_message()
+    assert msg["role"] == "user"
+    assert "tool call" in msg["content"]

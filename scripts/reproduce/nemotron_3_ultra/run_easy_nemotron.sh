@@ -63,7 +63,7 @@ MAX_PARALLEL="${MAX_PARALLEL:-5}"        # papers in flight at once (num paralle
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 # Auditor context caps (override if the model advertises a smaller window).
 AUDIT_MAX_INPUT_TOKENS="${AUDIT_MAX_INPUT_TOKENS:-128000}"
-AUDIT_MAX_TOKENS="${AUDIT_MAX_TOKENS:-8192}"
+AUDIT_MAX_TOKENS="${AUDIT_MAX_TOKENS:-32768}"
 AUDIT_MAX_MODEL_LEN="${AUDIT_MAX_MODEL_LEN:-262144}"
 
 # Ride out free-tier throttling: bump the per-call retry budget well above the

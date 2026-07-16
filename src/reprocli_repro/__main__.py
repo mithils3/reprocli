@@ -24,6 +24,7 @@ from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
 
 from reprocli_repro import gpu_session, sandbox, supabase_sink
 from reprocli_repro.cli_args import parse_args
+from reprocli_repro.cli_resolve import apply_sampling_for_model
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.dataset import band_of
 from reprocli_repro.inputs import EpisodeInput, build_context, prepare_episodes
@@ -75,6 +76,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"sandbox: {contexts[0].sandbox.status()}" if contexts else "sandbox: apptainer", file=sys.stderr)
 
     model_id = resolve_served_model(server_url, args.served_model_name)
+    # The served brain's id is only known now; switch to Qwen3-appropriate sampling
+    # when it is a Qwen3 variant (defaults otherwise match MiniMax's recommendation).
+    apply_sampling_for_model(args, model_id or getattr(args, "model", None))
     print(
         f"Attached to brain at {server_url} (model {model_id!r}); "
         f"cluster={args.cluster_profile.name} hw={args.cluster_profile.hw}",

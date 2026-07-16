@@ -36,6 +36,8 @@ def build_chat_completion_request(
     }
     if args.top_k is not None:
         body["top_k"] = args.top_k
+    if getattr(args, "min_p", None) is not None:
+        body["min_p"] = args.min_p
     if include_tools:
         body["tools"] = args.tools
         body["tool_choice"] = tool_choice
@@ -105,6 +107,14 @@ def response_message(row: dict[str, Any]) -> dict[str, Any]:
     if not choices:
         return {}
     return choices[0].get("message") or {}
+
+
+def response_finish_reason(row: dict[str, Any]) -> str | None:
+    body = row.get("response", {}).get("body") or {}
+    choices = body.get("choices") or []
+    if not choices:
+        return None
+    return choices[0].get("finish_reason")
 
 
 def normalize_tool_calls(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:

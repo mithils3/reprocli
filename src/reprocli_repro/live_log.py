@@ -193,12 +193,17 @@ def log_round_open(
     message: dict[str, Any],
     *,
     round_index: int | None = None,
+    finish_reason: str | None = None,
 ) -> None:
     """Open a round: flush the model's reasoning/text before any tool runs."""
     rnd = f"round {round_index}" if round_index is not None else "round"
     header = f" {rnd} · {getattr(ctx, 'arxiv_id', '?')} · {_stamp()}"
+    if finish_reason and finish_reason != "stop":
+        header += f" · finish={finish_reason}"
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full)])
-    _notify("round_open", ctx, {"round_index": round_index, "message": message})
+    _notify("round_open", ctx, {
+        "round_index": round_index, "message": message, "finish_reason": finish_reason,
+    })
 
 
 def log_call_start(ctx: ExecutionContext, call: dict[str, Any]) -> None:
@@ -227,14 +232,20 @@ def log_final(
     *,
     round_index: int | None = None,
     exit_reason: str = "",
+    finish_reason: str | None = None,
 ) -> None:
     """Append the episode's terminal submission (final assistant turn)."""
     rnd = f" (round {round_index})" if round_index is not None else ""
     header = (
         f" ✅ FINAL{rnd} · {getattr(ctx, 'arxiv_id', '?')} · exit={exit_reason} · {_stamp()}"
     )
+    if finish_reason and finish_reason != "stop":
+        header += f" · finish={finish_reason}"
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full), ""])
-    _notify("final", ctx, {"round_index": round_index, "message": message, "exit_reason": exit_reason})
+    _notify("final", ctx, {
+        "round_index": round_index, "message": message,
+        "exit_reason": exit_reason, "finish_reason": finish_reason,
+    })
 
 
 def log_usage(

@@ -31,6 +31,18 @@ OUTPUT_WRITE_LOCK = threading.Lock()
 # Exit reasons that prepend the budget note to the final tools-off turn.
 EARLY_EXIT_REASONS = ("context_budget", "budget_exhausted")
 
+# Max times a single episode may be nudged after a length-truncated turn before the
+# loop gives up and force-finals it. A truncated turn carries no tool call, so left
+# unbounded a model that keeps overrunning the output cap would loop forever; two
+# retries let it recover the plan and act without stranding the round budget.
+LENGTH_RETRY_LIMIT = 2
+
+# How much of a truncated turn's reasoning to keep when re-issuing. The tail was cut
+# mid-stream by the output-token cap, so the useful plan is at the head; the rest is
+# dropped so the trimmed turn does not itself re-blow the budget on the next request.
+TRUNCATED_REASONING_KEEP_CHARS = 2000
+TRUNCATED_REASONING_MARKER = " ...[cut off at the output-token limit]"
+
 # Absolute unix epoch (seconds) at which SLURM kills the sweep job hosting this
 # run's vLLM brain. Set by the sweep sbatch scripts (scripts/reproduce/*); unset
 # for local runs and OpenRouter-brain drivers that carry no SLURM allocation.
@@ -57,6 +69,34 @@ def append_completed_outputs(
 
 def noop() -> None:
     return None
+
+
+def trim_truncated_reasoning(message: dict[str, Any]) -> dict[str, Any]:
+    """Shallow copy of ``message`` with over-long ``reasoning``/``reasoning_content`` cut.
+
+    A turn that hit the output-token cap carries a bloated, mid-stream reasoning
+    trace. We keep the head (the plan) and mark the cut so the re-issued turn stays
+    cheap. The input dict is never mutated; short fields pass through untouched.
+    """
+    trimmed = dict(message)
+    for key in ("reasoning", "reasoning_content"):
+        value = trimmed.get(key)
+        if isinstance(value, str) and len(value) > TRUNCATED_REASONING_KEEP_CHARS:
+            trimmed[key] = value[:TRUNCATED_REASONING_KEEP_CHARS] + TRUNCATED_REASONING_MARKER
+    return trimmed
+
+
+def length_nudge_message() -> dict[str, Any]:
+    """User turn that follows a length-truncated turn: act now, keep reasoning short."""
+    return {
+        "role": "user",
+        "content": (
+            "Your previous turn hit the output-token limit before emitting any tool "
+            "call, so it was cut off mid-stream and trimmed above. Do not re-plan from "
+            "scratch. Take the next concrete action with a tool call now, and keep "
+            "reasoning brief."
+        ),
+    }
 
 
 def final_user_message(budget_note: bool, final_message: str) -> dict[str, Any]:
