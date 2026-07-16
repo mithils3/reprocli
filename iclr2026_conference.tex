@@ -341,8 +341,7 @@ Summarize the paper and its implications.
 
 The harness is a plain ReAct tool loop over the seven tools of
 Table~\ref{tab:tools}. This appendix records the loop mechanics, the tool semantics, the
-GPU session and billing model, the sandbox, the context management, and the
-report format. The values given here are the defaults used for every run in
+GPU session and billing model, the sandbox, and the report format. The values given here are the defaults used for every run in
 the paper.
 
 \subsection{Tool loop}
@@ -364,8 +363,8 @@ of Appendix~\ref{app:gpu-metering}, and in practice runs end by the agent's
 own choice long before either bound (Section~\ref{subsec:results}).
 
 An episode ends when the model stops calling tools, when it hits the round
-cap, when its compute budget is exhausted, or when its context passes the
-ceiling of Appendix~\ref{app:context} with nothing left to elide. In every
+cap, when its compute budget is exhausted, or when its context window is
+full with nothing left to compact. In every
 case the loop issues one final request with the tools removed and the
 response constrained to the report schema of
 Appendix~\ref{app:report-format}, so every run ends with a machine-readable
@@ -375,8 +374,7 @@ account.
 \label{app:toolset}
 
 \begin{table}[h]
-\caption{The seven tools advertised to the model. \# remove this \_bash}, which is far cheaper in
-context than dumping whole files.}
+\caption{The seven tools advertised to the model.}
 \label{tab:tools}
 \begin{center}
 \small
@@ -410,7 +408,7 @@ directory. Each applied \texttt{edit\_file} change is saved verbatim as a
 unified diff under \texttt{evidence/patches/}. Each \texttt{update\_plan}
 call overwrites \texttt{evidence/plan.md} with the current checklist, and
 because the plan is harness state rather than conversation text it survives
-the context compaction of Appendix~\ref{app:context}. The write tools
+context compaction. The write tools
 resolve every path against the workspace and evidence roots, canonicalize
 symlinks, and reject traversal, so the read-only reference copy of the paper
 cannot be modified.
@@ -483,22 +481,6 @@ long per-run host paths are remapped to fixed short container paths
 \texttt{/repro/evidence}), so the prompt and the agent's commands are
 identical across papers.
 
-\subsection{Context management}
-\label{app:context}
-
-When a request crosses 70\% of the context ceiling, the harness elides old tool
-output in place. The content of any tool result that is older than the most
-recent 20{,}000 tokens and longer than 1{,}000 characters is replaced with a
-placeholder naming the on-disk file that holds the full output. The system
-message, the task prompt, all of the model's own messages and tool calls,
-and the recent tail stay verbatim. Because every tool result is persisted
-under \texttt{evidence/} as it happens, an elided number can be re-read from
-disk instead of re-computed on the GPU. When elision frees nothing and the
-conversation is past the ceiling, the episode is finalized early rather than
-letting the serving engine truncate the prompt head. The prompt tells the
-agent that its context is compacted over time and that only files survive,
-which is also what makes the evidence bundle complete enough to audit.
-
 \subsection{Evidence bundle and report format}
 \label{app:report-format}
 
@@ -528,8 +510,7 @@ against the audited grade, and nothing in the pipeline treats it as ground
 truth.
 
 \begin{table}[h]
-\caption{Fields of the schema-constrained \texttt{report.json}. The report
-is the agent's account of the run, not the verdict.}
+\caption{Schema of \texttt{report.json}.}
 \label{tab:report-schema}
 \begin{center}
 \small
