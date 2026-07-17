@@ -5,10 +5,20 @@ brain on a 4xGH200 node. Companion to `serve-gguf-llamacpp-gh200.md`, which
 serves the same model as GGUF through llama.cpp. The two paths trade off against
 each other and the comparison is not settled — see §8.
 
+> **STATUS: ABANDONED 2026-07-15. Use the llama.cpp path.**
+>
+> The server never reached `/health`. Four walls in one afternoon (§4a, §4b, §5,
+> §7), the last of which — an illegal memory access in the model forward — looks
+> like `--cpu-offload-gb` simply not working on quantized MoE. The prize was an
+> *unmeasured* prefill number (§8) against a llama.cpp path already measured at
+> 40 t/s decode / 575 t/s prefill.
+>
+> Read this before trying again. Everything below is real and was paid for; §9
+> says what would have to change to make a retry worth it.
+
 Written 2026-07-15 from a bring-up on gh068/gh151 with vLLM 0.25.1, torch
 2.11.0+cu130. Numbers marked MEASURED were observed in that session; everything
-else is arithmetic. **The server never reached /health.** Sections 1-6 are
-verified up to the point they describe; §7 is where it stalled.
+else is arithmetic. Sections 1-6 are verified up to the point they describe.
 
 ## 1. The hardware budget, and why offload is forced
 

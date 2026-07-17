@@ -119,13 +119,6 @@ def qwen3_profile() -> Profile:
         # stream, so 32 is ample headroom while collapsing the mamba-state and
         # capture footprint ~16x.
         max_num_seqs=32,
-        # The sweep brain shares one --mem cgroup with every agent's CPU work
-        # (job 2666353: the cap was hit and the engine was the OOM-kill victim).
-        # vLLM's default 4 GiB pinned CPU swap only exists to offload preempted
-        # sequences' KV to host RAM; 0 disables that offload entirely, so
-        # preempted seqs recompute instead of swapping and the engine pins no
-        # host memory against the shared cap.
-        swap_space_gb=0,
     )
 
 
