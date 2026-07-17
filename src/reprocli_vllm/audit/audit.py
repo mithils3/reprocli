@@ -82,11 +82,11 @@ def _verdict(score: int | None, execution_verified: bool, cheated: bool) -> str 
         return "reproduced"
     if score >= 6:  # 6-7
         return "partial"
-    if score == 3:  # honest availability ceiling
-        return "blocked"
     if score == 1 and not execution_verified:
         return "unverifiable"
-    return "not_reproduced"  # 2, 4-5 (and a 1 that somehow ran)
+    # 2-5 (and a 1 that somehow ran). The honest availability ceiling (score 3)
+    # stays visible in the score; it no longer gets its own coarse verdict.
+    return "not_reproduced"
 
 
 def _normalize_flags(raw: Any) -> list[dict[str, Any]]:

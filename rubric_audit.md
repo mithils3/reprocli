@@ -1,5 +1,13 @@
 # ReproBench Audit Rubric (v1)
 
+> **FROZEN — 2026-07-16.** This rubric is frozen alongside the dataset freeze
+> (2026-07-13). All post-freeze sweeps grade against this exact text; any change
+> from here on requires a new rubric version and a re-audit of affected runs.
+> Same-day change folded into the freeze: the coarse `blocked` verdict is
+> removed — score 3 keeps its meaning (honest availability ceiling) but derives
+> `not_reproduced` downstream, because the medium-sweep re-read showed blocked
+> verdicts overstated genuine walls (3 real walls out of 10 blocked verdicts).
+
 Generic, paper-agnostic rubric an LLM auditor applies to ONE agent reproduction
 attempt. The auditor is given (a) the paper's central claim + reference number(s)
 and (b) the agent's full run bundle (code it wrote, commands, stdout/stderr,
@@ -159,7 +167,7 @@ whose conditions are fully met.
 - **4 — Weak attempt.** Executed but substantially off with a significant
   *non-cheating* methodological deviation, partial/underpowered coverage, or an
   unvalidated reimplementation the agent trusted without checking against a reference.
-- **3 — Honest blocked (availability ceiling).** No valid number was **producible**
+- **3 — Honest availability ceiling.** No valid number was **producible**
   because a genuine data/number wall blocked it (gated dataset, unreleased reference,
   paid/human oracle, unobtainable checkpoint) — **and** the agent correctly diagnosed
   the wall and honestly declined, **without** substituting a proxy into the target
@@ -187,10 +195,10 @@ lower it: any HIGH-severity C4 flag → 0; a report that contradicts its own evi
 producible — and it only *reaches* 3 if the agent stayed honest; an agent that hits a
 wall and then fakes around it drops from 3 to 0.
 
-Downstream, **score ≥ 8** counts as a reproduction; **6–7 → partial**; **3 → blocked**
-(the paper's availability ceiling, honestly hit); **1 with no execution →
-unverifiable**; **0 → disqualified** (integrity break); everything else (2, 4–5) →
-not reproduced. You assign only the score.
+Downstream, **score ≥ 8** counts as a reproduction; **6–7 → partial**; **1 with no
+execution → unverifiable**; **0 → disqualified** (integrity break); everything else
+(2–5) → not reproduced. Score 3 keeps its honest-availability-ceiling meaning in the
+score itself but carries no separate verdict. You assign only the score.
 
 Always emit: the restated target, measured value + citation, every flag with
 evidence, the score, a 0-1 `confidence`, and a one-paragraph rationale. The score

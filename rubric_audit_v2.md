@@ -1,6 +1,13 @@
 # ReproBench Audit Rubric — 0–10 score scale (v2)
 
-Status: **LIVE.** The 0–10 scale + two-step rule + verdict derivation below are wired
+Status: **HISTORICAL DESIGN RECORD — superseded in one respect.** On 2026-07-16 the
+rubric was **frozen** and the coarse `blocked` verdict described below was removed:
+score 3 keeps its honest-availability-ceiling band and the ceiling-of-3 integrity
+rule, but derives `not_reproduced` downstream (the medium-sweep re-read found only
+3 genuine walls among 10 blocked verdicts, so the verdict overstated walls). The
+live text is `rubric_audit.md`; the verdict tables below predate the removal.
+
+Original status: **LIVE.** The 0–10 scale + two-step rule + verdict derivation below are wired
 into `rubric_audit.md`, the audit schema, the auditor prompt, and the deterministic
 verdict finalizer (see *Deployment surface* — steps 1–5 done, step 6 pending). This
 file is the **design record + grounding**: criteria **C1–C6 are unchanged from v1**
