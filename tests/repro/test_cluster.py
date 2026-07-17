@@ -27,6 +27,8 @@ class ResolveClusterTests(unittest.TestCase):
         self.assertEqual(c.gpus_per_node, 4)
         # The mandatory Apptainer sandbox is backed by the pinned CUDA .sif by default.
         self.assertEqual(c.apptainer_image, DEFAULT_APPTAINER_SIF)
+        # Each agent's CPU shell steps are capped so six can share the brain node.
+        self.assertEqual(c.sandbox_cpus, 4)
         # deltaai is the sole known name.
         self.assertEqual(cluster_names(), ("deltaai",))
 
@@ -34,10 +36,11 @@ class ResolveClusterTests(unittest.TestCase):
         c = resolve_cluster("deltaai", partition="ghx4-interactive", apptainer_image="/my/image.sif")
         self.assertEqual(c.partition, "ghx4-interactive")
         self.assertEqual(c.apptainer_image, "/my/image.sif")
-        # Everything else stays pinned to the profile.
+        # Everything else stays pinned to the profile, including the CPU cap.
         self.assertEqual(c.account, "betw-dtai-gh")
         self.assertEqual(c.gpus_per_node, 4)
         self.assertEqual(c.hw, "gh200")
+        self.assertEqual(c.sandbox_cpus, 4)
 
     def test_unknown_cluster_rejected(self):
         with self.assertRaises(SystemExit):

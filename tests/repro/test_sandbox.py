@@ -68,6 +68,51 @@ class WrapArgvTests(unittest.TestCase):
         self.assertNotIn("PYTHONUNBUFFERED=1", self._sandbox().wrap_argv("python t.py"))
 
 
+class CpuCapTests(unittest.TestCase):
+    def _sandbox(self, cpus) -> Sandbox:
+        return Sandbox(
+            image=IMAGE,
+            binds=(Bind("/host/ws", CONTAINER_WORKSPACE),),
+            workdir=CONTAINER_WORKSPACE,
+            cpus=cpus,
+        )
+
+    def test_cpu_step_gets_taskset_prefix_and_max_jobs(self):
+        with mock.patch.object(shutil, "which", return_value="/usr/bin/taskset"), \
+                mock.patch.object(os, "sched_getaffinity", return_value=set(range(8)), create=True):
+            argv = self._sandbox(2).wrap_argv("echo hi")
+        self.assertEqual(argv[0], "taskset")
+        self.assertEqual(argv[1], "-c")
+        cores = argv[2].split(",")
+        self.assertEqual(len(cores), 2)
+        for c in cores:
+            self.assertIn(int(c), range(8))
+        self.assertIn("apptainer", argv)
+        self.assertIn("--env", argv)
+        idx = argv.index("MAX_JOBS=2")
+        self.assertEqual(argv[idx - 1], "--env")
+
+    def test_gpu_step_ignores_cpu_cap(self):
+        with mock.patch.object(shutil, "which", return_value="/usr/bin/taskset"), \
+                mock.patch.object(os, "sched_getaffinity", return_value=set(range(8)), create=True):
+            argv = self._sandbox(2).wrap_argv("echo hi", nv=True)
+        self.assertNotIn("taskset", argv)
+        self.assertFalse(any(a.startswith("MAX_JOBS=") for a in argv))
+
+    def test_cpus_none_keeps_shape_unchanged(self):
+        with mock.patch.object(shutil, "which", return_value="/usr/bin/taskset"):
+            argv = self._sandbox(None).wrap_argv("echo hi")
+        self.assertNotIn("taskset", argv)
+        self.assertFalse(any(a.startswith("MAX_JOBS=") for a in argv))
+        self.assertEqual(argv[0], "apptainer")
+
+    def test_missing_taskset_still_caps_build_env(self):
+        with mock.patch.object(shutil, "which", return_value=None):
+            argv = self._sandbox(2).wrap_argv("echo hi")
+        self.assertNotIn("taskset", argv)
+        self.assertIn("MAX_JOBS=2", argv)
+
+
 class ExecArgvIntegrationTests(unittest.TestCase):
     def test_exec_argv_wraps_only_when_sandbox_passed(self):
         # No sandbox -> the plain body, cd to the given (host) workspace.

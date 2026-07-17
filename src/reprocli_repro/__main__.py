@@ -57,7 +57,10 @@ def main(argv: list[str] | None = None) -> int:
         # (workspace_bash / run_gpu): the read-only image is /, with rw binds for the
         # workspace/evidence/caches and a ro bind for reference. Built only for a live
         # run; a dry run renders prompts without a sandbox.
-        sb = sandbox.from_run_paths(ep.run_paths, image=image) if live else None
+        sb = (
+            sandbox.from_run_paths(ep.run_paths, image=image, cpus=args.cluster_profile.sandbox_cpus)
+            if live else None
+        )
         result = prepare_workspace(
             ep.run_paths,
             arxiv_id=ep.arxiv_id,

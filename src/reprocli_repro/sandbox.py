@@ -47,6 +47,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable
 
+from reprocli_repro.sandbox_limits import build_env_args, taskset_argv
+
 if TYPE_CHECKING:
     from reprocli_repro.inputs import RunPaths
 
@@ -189,20 +191,24 @@ class Sandbox:
     image: str
     binds: tuple[Bind, ...] = ()
     workdir: str = CONTAINER_WORKSPACE
+    cpus: int | None = None  # CPU-step core cap; None = uncapped (see sandbox_limits.py)
 
     def wrap_argv(self, body: str, *, nv: bool = False) -> list[str]:
         """``["apptainer", "exec", <flags...>, <image>, "bash", "-lc", <body>]``.
 
-        ``nv`` adds ``--nv`` so a GPU step sees the device + CUDA driver; CPU-setup
-        steps on the login node omit it (there is no GPU there to pass through).
+        ``nv`` adds ``--nv`` for a GPU step; a capped CPU step is prefixed with
+        ``taskset`` instead (sandbox_limits.py), so its default build parallelism
+        follows the shrunk core count.
         """
-        return [*self._apptainer_prefix(nv=nv), "bash", "-lc", body]
+        prefix = taskset_argv(self.cpus) if not nv and self.cpus else []
+        return [*prefix, *self._apptainer_prefix(nv=nv), "bash", "-lc", body]
 
     def status(self) -> str:
         """Human-readable effective state for the setup summary / evidence."""
         rw = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if not b.ro) or "(none)"
         ro = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if b.ro) or "(none)"
-        return f"apptainer (mandatory) {self.image}; pwd {self.workdir}; rw: {rw}; ro: {ro}"
+        cap = f"; cpus<={self.cpus}" if self.cpus else ""
+        return f"apptainer (mandatory) {self.image}; pwd {self.workdir}; rw: {rw}; ro: {ro}{cap}"
 
     def _apptainer_prefix(self, *, nv: bool) -> list[str]:
         # --pwd lands each step in the workspace mount, so the body needs no `cd` to find
@@ -215,6 +221,9 @@ class Sandbox:
             # (`stdbuf` can't do this here: its LD_PRELOAD does not survive into the
             # container.) --nv passes the device + CUDA driver through.
             argv += ["--nv", "--env", "PYTHONUNBUFFERED=1"]
+        elif self.cpus:
+            # cap build fan-out for tools that read env instead of nproc
+            argv += build_env_args(self.cpus)
         for bind in self.binds:
             argv += ["--bind", bind.arg()]
         # The agent image bundles its own `uv` + `python3.12`, so this bind is just an
@@ -251,6 +260,7 @@ def from_run_paths(
     *,
     image: str,
     caches: Iterable[Path] | None = None,
+    cpus: int | None = None,
 ) -> Sandbox:
     """Build the episode's sandbox binds: workspace/evidence remapped to short ``/repro``
     paths (rw), reference ro, the node-local ``/tmp`` and the shared caches at their own
@@ -258,7 +268,7 @@ def from_run_paths(
 
     Every bind source must exist before ``apptainer`` runs, so we create the episode dirs
     and cache roots up front (idempotent) and drop any that can't be created. Cache roots
-    default to :func:`default_cache_dirs`.
+    default to :func:`default_cache_dirs`. ``cpus`` sets the CPU-step core cap (sandbox_limits.py).
     """
     binds: list[Bind] = [Bind("/tmp", "/tmp")]  # node-local scratch (a real bind, not a tmpfs)
     workspace = _ensure_dir(run_paths.workspace)
@@ -276,7 +286,7 @@ def from_run_paths(
         if resolved is not None and str(resolved) not in seen:
             seen.add(str(resolved))
             binds.append(Bind(str(resolved), str(resolved)))
-    return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE)
+    return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE, cpus=cpus)
 
 
 def _ensure_dir(path: Path | None) -> Path | None:
