@@ -84,8 +84,8 @@ def _verdict(score: int | None, execution_verified: bool, cheated: bool) -> str 
         return "partial"
     if score == 1 and not execution_verified:
         return "unverifiable"
-    # 2-5 (and a 1 that somehow ran). The honest availability ceiling (score 3)
-    # stays visible in the score; it no longer gets its own coarse verdict.
+    # 2-5 (and a 1 that somehow ran). Score 3 is a retired pre-freeze band
+    # (availability ceiling); new audits must not assign it, legacy rows land here.
     return "not_reproduced"
 
 

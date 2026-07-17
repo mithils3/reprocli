@@ -39,8 +39,8 @@
   // (repro_runs.audit_*, set by reprocli_repro.audit_upload); tags are the fallback.
   // The auditor's verdict vocabulary (0–10 scale): disqualified (cheat/0),
   // reproduced (8–10), partial (6–7), unverifiable (never executed),
-  // not_reproduced (everything else, incl. the score-3 availability ceiling).
-  // `blocked` lingers only in pre-freeze rows (verdict removed 2026-07-16).
+  // not_reproduced (everything else). `blocked` and score 3 were retired at the
+  // 2026-07-16 rubric freeze and linger only in pre-freeze rows.
   const AUDIT_FAMILY = {
     reproduced: "reproduced", partial: "miss", blocked: "miss",
     not_reproduced: "fault", unverifiable: "fault", disqualified: "fault",
