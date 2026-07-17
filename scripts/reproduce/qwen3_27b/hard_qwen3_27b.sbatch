@@ -25,10 +25,14 @@
 #SBATCH -p ghx4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+# 72 cores = this superchip's full Grace CPU; 110G is the 1-GPU share of the
+# node's 480G LPDDR, leaving ~16G per agent at MAX_PARALLEL=6 after the brain's
+# host RSS. Job 2666353 OOM-killed the brain at 120G with uncapped agent builds;
+# sandbox_limits.py now bounds each agent's build fan-out so this share holds.
+#SBATCH --cpus-per-task=72
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
-#SBATCH --mem=120G
+#SBATCH --mem=110G
 #SBATCH --time=48:00:00
 #SBATCH -o slurm-repro-hard-qwen3-%j.out
 #SBATCH -e slurm-repro-hard-qwen3-%j.err

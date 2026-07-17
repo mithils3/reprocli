@@ -23,10 +23,10 @@
 #SBATCH -p ghx4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=72
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
-#SBATCH --mem=120G
+#SBATCH --mem=110G
 #SBATCH --time=48:00:00
 #SBATCH -o slurm-repro-medium-qwen3-%j.out
 #SBATCH -e slurm-repro-medium-qwen3-%j.err
