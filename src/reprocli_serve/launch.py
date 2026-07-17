@@ -60,6 +60,9 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     block_size = args.block_size or profile.block_size
     if block_size:
         command.extend(["--block-size", str(block_size)])
+    swap_space = args.swap_space if args.swap_space is not None else profile.swap_space_gb
+    if swap_space is not None:
+        command.extend(["--swap-space", str(swap_space)])
     if profile.max_num_seqs:
         command.extend(["--max-num-seqs", str(profile.max_num_seqs)])
     if args.enable_expert_parallel or profile.enable_expert_parallel:

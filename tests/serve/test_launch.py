@@ -48,6 +48,21 @@ class MinimaxServeCommandTests(unittest.TestCase):
         self.assertEqual(value_after(cmd, "--served-model-name"), "MiniMaxAI/MiniMax-M2.7")
 
 
+class Qwen3ServeCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.cmd = command_for(["--model", "Qwen/Qwen3.6-27B-FP8"])
+
+    def test_disables_cpu_kv_offload(self) -> None:
+        self.assertEqual(value_after(self.cmd, "--swap-space"), "0")
+
+    def test_swap_space_cli_override_wins(self) -> None:
+        cmd = command_for(["--model", "Qwen/Qwen3.6-27B-FP8", "--swap-space", "4"])
+        self.assertEqual(value_after(cmd, "--swap-space"), "4.0")
+
+    def test_other_profiles_leave_swap_space_to_vllm(self) -> None:
+        self.assertNotIn("--swap-space", command_for(["--model", "MiniMaxAI/MiniMax-M2.7"]))
+
+
 class KimiMultinodeServeCommandTests(unittest.TestCase):
     def setUp(self) -> None:
         self.cmd = command_for(

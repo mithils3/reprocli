@@ -70,6 +70,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
     parser.add_argument("--kv-cache-dtype")
     parser.add_argument("--block-size", type=int)
+    parser.add_argument(
+        "--swap-space",
+        type=float,
+        help="GiB of pinned host RAM for preempted-KV offload (0 disables; "
+        "unset falls back to the profile, then vLLM's default).",
+    )
     parser.add_argument("--tokenizer-mode")
     parser.add_argument("--structured-outputs-backend")
     parser.add_argument("--trust-remote-code", action="store_true")
