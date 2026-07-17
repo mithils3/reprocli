@@ -48,6 +48,25 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash \
   set `--max-model-len` just under the capacity the error reports.
 - First request after startup stalls while DeepGEMM JIT-compiles kernels.
 
+## Reasoning effort (sweep requirement)
+
+AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max Effort** variant.
+The roster ladder cites that number, so eval-100 sweeps MUST run Think Max or the
+capability axis is confounded (same trap as MiniMax AWQ-reported-as-upstream).
+
+Effort is per-request, not a serve flag — the brain client must send:
+
+```python
+extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "max"}}
+```
+
+- Sampling: temperature 1.0, top_p 1.0 (DeepSeek's Think Max recommendation).
+- Think Max needs max-model-len >= 393216; the default 1M above satisfies it.
+- NOT yet plumbed: no `chat_template_kwargs` support exists in the repro client.
+  Add a per-model request-kwargs field to the sweep profile before this sweep.
+- Budget warning: Max Effort measured 2.5x average verbosity on the AA index
+  (230M vs 92M tokens); size round budgets and wall-clock caps accordingly.
+
 ## Benchmark
 
 ```bash
