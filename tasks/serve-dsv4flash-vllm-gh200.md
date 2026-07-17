@@ -53,6 +53,8 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash \
 AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max Effort** variant.
 The roster ladder cites that number, so eval-100 sweeps MUST run Think Max or the
 capability axis is confounded (same trap as MiniMax AWQ-reported-as-upstream).
+Max is also load-bearing for the ladder: at High Effort the model scores 37,
+tying Qwen3.6-27B exactly; Max (+3 -> 40) is what makes it a distinct rung.
 
 Effort is per-request, not a serve flag — the brain client must send:
 
