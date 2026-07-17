@@ -25,9 +25,11 @@
 #SBATCH -p ghx4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-# 72 cores = this superchip's full Grace CPU; 110G is the 1-GPU share of the
-# node's 480G LPDDR, leaving ~16G per agent at MAX_PARALLEL=6 after the brain's
-# host RSS. Job 2666353 OOM-killed the brain at 120G with uncapped agent builds;
+# The ghx4 node is 4x GH200: 288 Grace cores, 480G LPDDR, 4 GPUs. 72 cores +
+# 110G is the exact quarter-node share of a 1-GPU request, so the billing
+# factor stays the GPU's own (1000) and the extra cores/memory cost nothing.
+# Leaves ~16G per agent at MAX_PARALLEL=6 after the brain's host RSS. Job
+# 2666353 OOM-killed the brain at 120G with uncapped agent builds;
 # sandbox_limits.py now bounds each agent's build fan-out so this share holds.
 #SBATCH --cpus-per-task=72
 #SBATCH --gpus-per-node=1

@@ -44,6 +44,7 @@ class Cluster:
     partition: str | None = None         # salloc -p
     apptainer_image: str | None = None   # MANDATORY sandbox .sif every step runs inside (sandbox.py)
     sandbox_cpus: int | None = None      # cores per agent CPU step on the shared orchestrator node; None = uncapped
+    sandbox_mem_gb: int | None = None    # per-process address-space cap (GiB) for agent CPU steps; None = uncapped
 
 
 # The single built-in profile. DeltaAI strings are the exact ones the live scripts pass.
@@ -65,10 +66,12 @@ _PROFILES: dict[str, Cluster] = {
         # ``partition`` to ``run_gpu``. The profile pins only the *default*.
         partition="ghx4",
         apptainer_image=DEFAULT_APPTAINER_SIF,
-        # Caps each agent's CPU shell steps to 4 cores: six agents can share the node's
-        # cgroup without one uncapped `-j nproc` build blowing the --mem cap and OOM-
-        # killing the vLLM brain (see sandbox_limits.py).
-        sandbox_cpus=4,
+        # Per-paper share of the brain node's quarter-node request (72 cores / 110G
+        # at 1 GPU): 12 cores + 16G per agent CPU step, so six agents plus the vLLM
+        # brain fit the cgroup and one runaway build can't OOM-kill the brain again
+        # (job 2666353; enforcement in sandbox_limits.py, build fan-out capped there).
+        sandbox_cpus=12,
+        sandbox_mem_gb=16,
     ),
 }
 

@@ -69,12 +69,13 @@ class WrapArgvTests(unittest.TestCase):
 
 
 class CpuCapTests(unittest.TestCase):
-    def _sandbox(self, cpus) -> Sandbox:
+    def _sandbox(self, cpus, mem_gb=None) -> Sandbox:
         return Sandbox(
             image=IMAGE,
             binds=(Bind("/host/ws", CONTAINER_WORKSPACE),),
             workdir=CONTAINER_WORKSPACE,
             cpus=cpus,
+            mem_gb=mem_gb,
         )
 
     def test_cpu_step_gets_taskset_prefix_and_max_jobs(self):
@@ -111,6 +112,26 @@ class CpuCapTests(unittest.TestCase):
             argv = self._sandbox(2).wrap_argv("echo hi")
         self.assertNotIn("taskset", argv)
         self.assertIn("MAX_JOBS=2", argv)
+
+    def test_wide_slice_keeps_build_fanout_at_four(self):
+        # Compile RAM scales with job count; 12 cores speed non-build work but
+        # builds stay at 4 jobs so they fit the 16G per-paper share.
+        with mock.patch.object(shutil, "which", return_value="/usr/bin/taskset"), \
+                mock.patch.object(os, "sched_getaffinity", return_value=set(range(72)), create=True):
+            argv = self._sandbox(12).wrap_argv("echo hi")
+        self.assertEqual(len(argv[2].split(",")), 12)
+        self.assertIn("MAX_JOBS=4", argv)
+        self.assertIn("MAKEFLAGS=-j4", argv)
+
+    def test_mem_cap_prefixes_body_with_ulimit(self):
+        with mock.patch.object(shutil, "which", return_value=None):
+            argv = self._sandbox(2, mem_gb=16).wrap_argv("echo hi")
+        self.assertEqual(argv[-1], f"ulimit -v {16 * 1024 * 1024} 2>/dev/null; echo hi")
+
+    def test_gpu_step_body_is_never_ulimited(self):
+        with mock.patch.object(shutil, "which", return_value=None):
+            argv = self._sandbox(2, mem_gb=16).wrap_argv("echo hi", nv=True)
+        self.assertEqual(argv[-1], "echo hi")
 
 
 class ExecArgvIntegrationTests(unittest.TestCase):

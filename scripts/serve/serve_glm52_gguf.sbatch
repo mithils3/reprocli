@@ -21,7 +21,7 @@
 #SBATCH -p ghx4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=288
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 #SBATCH --mem=440G

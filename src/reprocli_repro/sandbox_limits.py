@@ -64,10 +64,28 @@ def build_env_args(cpus: int) -> list[str]:
     builds honor directly; ``NVCC_THREADS``, ``CMAKE_BUILD_PARALLEL_LEVEL``, and
     ``MAKEFLAGS`` cover cmake/make/nvcc invocations that read their job count from the
     environment instead of calling ``nproc``.
+
+    The job count stays at 4 even when the core slice is wider: one nvcc job peaks at
+    3-5 GB, so 4 jobs is what fits the per-paper RAM share (see :func:`ulimit_body`),
+    while the extra cores still speed up everything that is not a compile.
     """
+    jobs = min(cpus, 4)
     return [
-        "--env", f"MAX_JOBS={cpus}",
+        "--env", f"MAX_JOBS={jobs}",
         "--env", "NVCC_THREADS=2",
-        "--env", f"CMAKE_BUILD_PARALLEL_LEVEL={cpus}",
-        "--env", f"MAKEFLAGS=-j{cpus}",
+        "--env", f"CMAKE_BUILD_PARALLEL_LEVEL={jobs}",
+        "--env", f"MAKEFLAGS=-j{jobs}",
     ]
+
+
+def ulimit_body(mem_gb: int, body: str) -> str:
+    """Prefix *body* with a per-process address-space cap of *mem_gb* GiB.
+
+    Without cgroup delegation there is no true per-tree RAM ceiling; ``ulimit -v``
+    (RLIMIT_AS) is the portable approximation. It is per *process*, so a build's N
+    jobs can jointly exceed it (bounded by ``build_env_args``'s fan-out cap), and it
+    counts virtual address space: a step that mmaps a dataset larger than the cap
+    fails even though the resident footprint is small. That failure mode is accepted;
+    bulk data work belongs on the paper's own ``run_gpu`` node, not the shared brain.
+    """
+    return f"ulimit -v {mem_gb * 1024 * 1024} 2>/dev/null; {body}"

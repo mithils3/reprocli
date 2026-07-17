@@ -8,12 +8,10 @@ inspecting command strings. This module wraps each step in an **Apptainer** cont
 (DeltaAI's supported runtime — it has no bubblewrap and no Docker) so the step runs
 inside a read-only image and can only *write* the episode's own dirs.
 
-Apptainer confines differently from bubblewrap. There is no ``--ro-bind / /``: the
-container **image** is the read-only root (``/``), so the agent's CUDA toolchain — the
-CUDA stack and ``nvcc`` — comes from the image (a raw NVIDIA CUDA ``.sif`` on DeltaAI;
-``torch`` is NOT prebuilt, the agent installs it) rather than the host, and host
-``module load`` is gone.
-Only the paths we *bind* are visible at all:
+Apptainer confines differently from bubblewrap: the container **image** is the
+read-only root (``/``), so the agent's CUDA toolchain (``nvcc``; ``torch`` is NOT
+prebuilt, the agent installs it) comes from the image — a raw NVIDIA CUDA ``.sif``
+on DeltaAI — and host ``module load`` is gone. Only bound paths are visible at all:
 
 * **read-write** binds over the episode's ``workspace``/``evidence``, the node-local
   ``/tmp`` (the agent's bulk scratch — a real bind, **not** a tmpfs, so weights and
@@ -27,11 +25,9 @@ Only the paths we *bind* are visible at all:
 ``--cleanenv`` stops the orchestrator's ``LD_LIBRARY_PATH``/``PYTHONPATH`` leaking into
 the container (host libs would shadow the image's own and crash ``git``/``torch``), and
 ``--no-home`` keeps the host home — and any keys ``~/.bashrc`` would export into a
-``bash -lc`` login shell — out of the sandbox. The env vars the agent legitimately needs
-(``HF_TOKEN`` and friends, the proxy vars) are forwarded explicitly via ``APPTAINERENV_*``
-(see :func:`forward_env`) so gated Hugging Face downloads keep working without putting a
-token on the command line. ``--nv`` is added on GPU steps to pass the device + CUDA driver
-through.
+``bash -lc`` login shell — out of the sandbox. Env the agent legitimately needs (HF
+auth/caches, proxies) is forwarded via ``APPTAINERENV_*`` (:func:`forward_env`), never
+on the command line. ``--nv`` on GPU steps passes the device + CUDA driver through.
 
 The sandbox is **mandatory**: every agent shell step is wrapped, with no opt-out.
 :func:`require_apptainer` **hard-fails the run** if Apptainer cannot execute the image on
@@ -47,7 +43,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable
 
-from reprocli_repro.sandbox_limits import build_env_args, taskset_argv
+from reprocli_repro.sandbox_limits import build_env_args, taskset_argv, ulimit_body
 
 if TYPE_CHECKING:
     from reprocli_repro.inputs import RunPaths
@@ -192,22 +188,25 @@ class Sandbox:
     binds: tuple[Bind, ...] = ()
     workdir: str = CONTAINER_WORKSPACE
     cpus: int | None = None  # CPU-step core cap; None = uncapped (see sandbox_limits.py)
+    mem_gb: int | None = None  # CPU-step per-process address-space cap; None = uncapped
 
     def wrap_argv(self, body: str, *, nv: bool = False) -> list[str]:
         """``["apptainer", "exec", <flags...>, <image>, "bash", "-lc", <body>]``.
 
         ``nv`` adds ``--nv`` for a GPU step; a capped CPU step is prefixed with
         ``taskset`` instead (sandbox_limits.py), so its default build parallelism
-        follows the shrunk core count.
+        follows the shrunk core count, and its body gets the ``ulimit -v`` RAM cap.
         """
         prefix = taskset_argv(self.cpus) if not nv and self.cpus else []
+        if not nv and self.mem_gb:
+            body = ulimit_body(self.mem_gb, body)
         return [*prefix, *self._apptainer_prefix(nv=nv), "bash", "-lc", body]
 
     def status(self) -> str:
         """Human-readable effective state for the setup summary / evidence."""
         rw = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if not b.ro) or "(none)"
         ro = ", ".join(f"{b.src}->{b.dst}" for b in self.binds if b.ro) or "(none)"
-        cap = f"; cpus<={self.cpus}" if self.cpus else ""
+        cap = (f"; cpus<={self.cpus}" if self.cpus else "") + (f"; mem<={self.mem_gb}G" if self.mem_gb else "")
         return f"apptainer (mandatory) {self.image}; pwd {self.workdir}; rw: {rw}; ro: {ro}{cap}"
 
     def _apptainer_prefix(self, *, nv: bool) -> list[str]:
@@ -261,6 +260,7 @@ def from_run_paths(
     image: str,
     caches: Iterable[Path] | None = None,
     cpus: int | None = None,
+    mem_gb: int | None = None,
 ) -> Sandbox:
     """Build the episode's sandbox binds: workspace/evidence remapped to short ``/repro``
     paths (rw), reference ro, the node-local ``/tmp`` and the shared caches at their own
@@ -286,7 +286,7 @@ def from_run_paths(
         if resolved is not None and str(resolved) not in seen:
             seen.add(str(resolved))
             binds.append(Bind(str(resolved), str(resolved)))
-    return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE, cpus=cpus)
+    return Sandbox(image=image, binds=tuple(binds), workdir=CONTAINER_WORKSPACE, cpus=cpus, mem_gb=mem_gb)
 
 
 def _ensure_dir(path: Path | None) -> Path | None:

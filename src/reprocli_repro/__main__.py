@@ -58,7 +58,12 @@ def main(argv: list[str] | None = None) -> int:
         # workspace/evidence/caches and a ro bind for reference. Built only for a live
         # run; a dry run renders prompts without a sandbox.
         sb = (
-            sandbox.from_run_paths(ep.run_paths, image=image, cpus=args.cluster_profile.sandbox_cpus)
+            sandbox.from_run_paths(
+                ep.run_paths,
+                image=image,
+                cpus=args.cluster_profile.sandbox_cpus,
+                mem_gb=args.cluster_profile.sandbox_mem_gb,
+            )
             if live else None
         )
         result = prepare_workspace(
