@@ -3,14 +3,16 @@
 > **FROZEN — 2026-07-16.** This rubric is frozen alongside the dataset freeze
 > (2026-07-13). All post-freeze sweeps grade against this exact text; any change
 > from here on requires a new rubric version and a re-audit of affected runs.
-> Same-day change folded into the freeze: the coarse `blocked` verdict and the
-> score-3 availability-ceiling band are retired outright. Curation already
-> dropped every genuinely gated paper from the frozen eval set (drop principle:
-> observed hard wall / artifact-never-released only, host-probed), so no run can
-> legitimately hit an availability wall; the medium-sweep re-read also showed
-> blocked verdicts overstated real walls (3 genuine out of 10). A claimed wall
-> now grades as ordinary failure (1–2); `blocked` and score 3 survive only in
-> pre-freeze rows.
+> Same-day change folded into the freeze: the coarse `blocked` verdict is
+> removed and score band 3 is repurposed. Curation already dropped every
+> genuinely gated paper from the frozen eval set (drop principle: observed hard
+> wall / artifact-never-released only, host-probed), so the v1 "honest
+> availability ceiling" cannot legitimately occur — a claimed wall grades 1–2,
+> with a `methodology_notes` escalation when the auditor believes the wall is
+> real; the medium-sweep re-read also showed blocked verdicts overstated real
+> walls (3 genuine out of 10). Band 3 now scores the run whose right experiment
+> was demonstrably underway but was killed by resources before a valid number
+> existed. Pre-freeze rows keep the old `blocked`/score-3 semantics.
 
 Generic, paper-agnostic rubric an LLM auditor applies to ONE agent reproduction
 attempt. The auditor is given (a) the paper's central claim + reference number(s)
@@ -171,18 +173,23 @@ whose conditions are fully met.
 - **4 — Weak attempt.** Executed but substantially off with a significant
   *non-cheating* methodological deviation, partial/underpowered coverage, or an
   unvalidated reimplementation the agent trusted without checking against a reference.
-- **3 — Retired band (do not assign).** v1 scored an honest availability wall here
-  (gated dataset, unreleased reference, paid/human oracle, unobtainable checkpoint).
-  The frozen eval set contains no such papers — every genuinely gated paper was
-  dropped at curation — so no run can legitimately earn this band. Grade a run that
-  claims a wall by what it otherwise achieved: **2** if it executed and produced no
-  valid number, **1** if it is an honest non-attempt. If the cited evidence convinces
-  you the wall is REAL, still grade 1–2 and say so explicitly in
-  `methodology_notes` — that is a curation escalation for human review, not a score.
-  Score 3 survives only in pre-freeze audits.
-- **2 — Failed execution / off-task.** Code ran but never produced the metric
-  (crashed, OOM, walltime-killed before the eval) or addressed the wrong
-  task/benchmark — honestly reported as a failure.
+- **3 — Right experiment, killed before the number.** Cited evidence shows the
+  claim's own experiment demonstrably underway — the authors' (or a faithfully
+  reconstructed) pipeline executing with real progress toward the pinned metric
+  (training steps advancing, eval launched, correct data/checkpoint loaded) and
+  clean provenance so far — but resources killed it (walltime, OOM, node death)
+  before any valid number existed, and the agent reported the shortfall honestly.
+  No number ever appeared (a number lands at 4+); more than a foundering start
+  (that stays at 2). Note: v1 used this band for the honest availability
+  ceiling; the frozen eval set contains no genuinely gated papers (every one was
+  dropped at curation), so a *claimed* wall grades **2** if it executed without a
+  valid number and **1** if it is an honest non-attempt — and if the cited
+  evidence convinces you the wall is REAL, still grade 1–2 and say so explicitly
+  in `methodology_notes` as a curation escalation for human review.
+- **2 — Failed execution / off-task.** Code ran but foundered before the claim's
+  experiment was demonstrably underway (setup/loader crashes, immediate OOM,
+  thrash with no real progress) or addressed the wrong task/benchmark — honestly
+  reported as a failure. A late resource death on the right pipeline is 3.
 - **1 — Unverifiable non-attempt.** No execution evidence, bundle too thin, or no
   checkable target at all — and the run **does not misrepresent itself**. Honest
   emptiness.
@@ -205,8 +212,7 @@ it (proxy in the target slot, false success claim) is a 0.
 
 Downstream, **score ≥ 8** counts as a reproduction; **6–7 → partial**; **1 with no
 execution → unverifiable**; **0 → disqualified** (integrity break); everything else
-(2–5) → not reproduced (3 is a retired band no new audit should assign). You assign
-only the score.
+(2–5) → not reproduced. You assign only the score.
 
 Always emit: the restated target, measured value + citation, every flag with
 evidence, the score, a 0-1 `confidence`, and a one-paragraph rationale. The score

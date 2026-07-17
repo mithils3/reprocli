@@ -75,8 +75,8 @@ def test_score_5_is_not_reproduced():
 
 
 def test_score_3_is_not_reproduced():
-    # Score 3 (v1 availability ceiling) is a retired band as of the 2026-07-16
-    # rubric freeze; a legacy or stray 3 lands at not_reproduced.
+    # Score 3 (post-freeze: right experiment killed before the number; pre-freeze:
+    # availability ceiling) carries no separate verdict since 2026-07-16.
     row = finalize_audit_row(_score_row(3), {"exit_reason": "natural"})
     assert row["verdict"] == "not_reproduced"
     assert row["reproduced"] is False
@@ -105,8 +105,8 @@ def test_partial_score_without_execution_is_capped_unverifiable():
 
 
 def test_score_3_without_execution_is_not_capped():
-    # A pre-freeze score 3 (availability ceiling) legitimately never executed;
-    # the no-execution cap only touches the partial/reproduced band (>=6).
+    # Score 3 (killed before the number) by definition never computed the metric,
+    # so execution_verified=False is coherent; the cap only touches >=6.
     row = finalize_audit_row(_score_row(3, execution_verified=False), {"exit_reason": "natural"})
     assert row["score"] == 3
     assert row["verdict"] == "not_reproduced"

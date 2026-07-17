@@ -1,12 +1,14 @@
 # ReproBench Audit Rubric — 0–10 score scale (v2)
 
 Status: **HISTORICAL DESIGN RECORD — superseded in one respect.** On 2026-07-16 the
-rubric was **frozen** and both the coarse `blocked` verdict and the score-3
-availability-ceiling band (incl. the ceiling-of-3 integrity rule) were retired:
-curation dropped every genuinely gated paper from the frozen eval set, so no run can
+rubric was **frozen**, the coarse `blocked` verdict was removed, and the score-3
+band was repurposed (incl. dropping the ceiling-of-3 integrity rule): curation
+dropped every genuinely gated paper from the frozen eval set, so no run can
 legitimately hit a wall, and the medium-sweep re-read found only 3 genuine walls
-among 10 blocked verdicts. A claimed wall now grades 1–2; a legacy score 3 derives
-`not_reproduced`. The live text is `rubric_audit.md`; the tables below predate this.
+among 10 blocked verdicts. A claimed wall now grades 1–2; band 3 instead scores the
+right experiment killed by resources before a valid number existed; any score 3
+derives `not_reproduced`. The live text is `rubric_audit.md`; the tables below
+predate this.
 
 Original status: **LIVE.** The 0–10 scale + two-step rule + verdict derivation below are wired
 into `rubric_audit.md`, the audit schema, the auditor prompt, and the deterministic

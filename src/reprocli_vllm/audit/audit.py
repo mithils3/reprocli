@@ -84,8 +84,9 @@ def _verdict(score: int | None, execution_verified: bool, cheated: bool) -> str 
         return "partial"
     if score == 1 and not execution_verified:
         return "unverifiable"
-    # 2-5 (and a 1 that somehow ran). Score 3 is a retired pre-freeze band
-    # (availability ceiling); new audits must not assign it, legacy rows land here.
+    # 2-5 (and a 1 that somehow ran). Post-freeze, 3 = right experiment killed by
+    # resources before the number; pre-freeze rows used 3 for the availability
+    # ceiling (`blocked`). Either way it is a not_reproduced.
     return "not_reproduced"
 
 
