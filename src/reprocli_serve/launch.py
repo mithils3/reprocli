@@ -78,38 +78,59 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
 
 
 def _supported_compilation_config(compilation: str) -> str:
-    """Drop ``pass_config`` keys the installed vLLM does not recognize.
+    """Normalize ``pass_config`` against the installed vLLM.
 
-    vLLM deletes a pass flag once the fusion becomes automatic (e.g. the MiniMax
-    QK-norm pass), and an unknown key makes ``vllm serve`` exit 2 on a pydantic
-    validation error before ready. Older builds still need the explicit flag for
-    throughput, so unknown keys are filtered at launch against the installed
-    ``PassConfig`` instead of being edited out of every sbatch script.
+    Two launch-time rewrites, both keyed off the installed ``PassConfig`` so
+    they track the venv instead of being edited into every sbatch script:
+
+    - Unknown keys are dropped. vLLM deletes a pass flag once the fusion
+      becomes automatic (e.g. the MiniMax QK-norm pass), and an unknown key
+      makes ``vllm serve`` exit 2 on a pydantic validation error before ready.
+      Older builds still need the explicit flag for throughput.
+    - ``fuse_allreduce_rms`` defaults to OFF. vLLM 0.25 enables the FlashInfer
+      allreduce+RMSNorm fusion by default for TP compiles, and the mnnvl
+      backend it auto-selects on GH200 hits a CUDA illegal memory access in the
+      profile run (job 2667723 died before ready on the 2-GPU ghx4 share). Set
+      the key explicitly in the config to opt back in on a build that fixed it.
     """
     try:
         config = json.loads(compilation)
     except json.JSONDecodeError:
         return compilation
-    if not isinstance(config, dict) or not isinstance(config.get("pass_config"), dict):
+    if not isinstance(config, dict):
         return compilation
     known = _known_pass_config_fields()
     if known is None:
         return compilation
-    passes = config["pass_config"]
+    raw_passes = config.get("pass_config")
+    passes = dict(raw_passes) if isinstance(raw_passes, dict) else {}
+    changed = False
     dropped = sorted(set(passes) - known)
-    if not dropped:
+    if dropped:
+        passes = {key: value for key, value in passes.items() if key in known}
+        changed = True
+        print(
+            "reprocli_serve: dropping pass_config keys this vLLM does not support: "
+            + " ".join(dropped),
+            file=sys.stderr,
+            flush=True,
+        )
+    if "fuse_allreduce_rms" in known and "fuse_allreduce_rms" not in passes:
+        passes["fuse_allreduce_rms"] = False
+        changed = True
+        print(
+            "reprocli_serve: disabling fuse_allreduce_rms (FlashInfer mnnvl "
+            "allreduce fusion IMAs on GH200; set it in --compilation-config to "
+            "opt back in)",
+            file=sys.stderr,
+            flush=True,
+        )
+    if not changed:
         return compilation
-    kept = {key: value for key, value in passes.items() if key in known}
-    if kept:
-        config["pass_config"] = kept
+    if passes:
+        config["pass_config"] = passes
     else:
-        del config["pass_config"]
-    print(
-        "reprocli_serve: dropping pass_config keys this vLLM does not support: "
-        + " ".join(dropped),
-        file=sys.stderr,
-        flush=True,
-    )
+        config.pop("pass_config", None)
     return json.dumps(config, separators=(",", ":"))
 
 

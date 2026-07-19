@@ -116,6 +116,42 @@ class CompilationConfigSanitizerTests(unittest.TestCase):
         self.assertEqual(self.config_given_fields(None), self.CONFIG)
 
 
+class AllreduceFusionDefaultOffTests(unittest.TestCase):
+    """vLLM 0.25 default-enables fuse_allreduce_rms; its mnnvl backend IMAs on GH200."""
+
+    def config_given(self, config: str, fields: set[str] | None) -> str:
+        with mock.patch.object(launch, "_known_pass_config_fields", return_value=fields):
+            cmd = command_for(["--model", "m", "--compilation-config", config])
+        return value_after(cmd, "--compilation-config")
+
+    def test_job_2667723_config_disables_the_fusion(self) -> None:
+        # The repair sbatch's config on the upgraded venv: the stale QK-norm key
+        # is dropped AND the crashing allreduce fusion is forced off.
+        value = self.config_given(
+            '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}',
+            {"fuse_allreduce_rms", "fuse_norm_quant"},
+        )
+        self.assertEqual(
+            json.loads(value), {"mode": 3, "pass_config": {"fuse_allreduce_rms": False}}
+        )
+
+    def test_injects_pass_config_when_absent(self) -> None:
+        value = self.config_given('{"mode":3}', {"fuse_allreduce_rms"})
+        self.assertEqual(
+            json.loads(value), {"mode": 3, "pass_config": {"fuse_allreduce_rms": False}}
+        )
+
+    def test_explicit_opt_in_is_preserved(self) -> None:
+        config = '{"mode":3,"pass_config":{"fuse_allreduce_rms":true}}'
+        value = self.config_given(config, {"fuse_allreduce_rms"})
+        self.assertEqual(value, config)
+
+    def test_untouched_on_a_vllm_without_the_field(self) -> None:
+        config = '{"mode":3,"pass_config":{"fuse_minimax_qk_norm":true}}'
+        value = self.config_given(config, {"fuse_minimax_qk_norm"})
+        self.assertEqual(value, config)
+
+
 class PassthroughTests(unittest.TestCase):
     def test_extra_args_are_appended_verbatim(self) -> None:
         cmd = command_for(["--model", "m", "--", "--swap-space", "16"])
