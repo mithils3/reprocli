@@ -1,26 +1,26 @@
-/* Dark mode — "cyanotype midnight". A deep desaturated navy ground (NOT pure
-   black), so the cyan burn-trace, indigo predicted ceiling and the verdict
-   palette read like a lit instrument panel. styles.css / viewer.css / overview.css
+/* Dark mode — "warm charcoal". Anthropic's near-black is a warm brown-grey ground
+   (NOT pure black), so the clay burn-trace, indigo predicted ceiling and the verdict
+   palette glow like ink on toasted paper. styles.css / viewer.css / overview.css
    drive everything off these custom properties; here we just re-point them. */
 
 :root[data-theme="dark"] {
-  --bg: #0B1622;
-  --bg-side: #0E1B29;
-  --panel: #11202F;
-  --panel2: #172738;
-  --line: #17283C;
-  --line-strong: #243A52;
-  --txt: #DCE7F2;
-  --muted: #8398AE;
-  --accent: #34C9E0;
-  --accent-strong: #5BD8EC;
-  --accent-tint: rgba(52, 201, 224, .14);
-  --yes: #44CC85;  --yes-tint: rgba(68, 204, 133, .16);  --yes-deep: #7BE0AC;
-  --over: #E8A33A; --over-tint: rgba(232, 163, 58, .16); --over-deep: #F0C079;
-  --no: #F0688A;   --no-tint: rgba(240, 104, 138, .15);  --no-deep: #F58FA8;
-  --predicted: #9488F2; --predicted-tint: rgba(148, 136, 242, .16);
-  --slate: #5C6B82; --slate-tint: rgba(124, 140, 158, .16);
-  --grid-line: rgba(120, 160, 200, .055);
+  --bg: #201E1A;
+  --bg-side: #26241F;
+  --panel: #2B2823;
+  --panel2: #34302A;
+  --line: #35312A;
+  --line-strong: #48423A;
+  --txt: #ECE7DA;
+  --muted: #9E9683;
+  --accent: #D97757;
+  --accent-strong: #E68E6F;
+  --accent-tint: rgba(217, 119, 87, .15);
+  --yes: #5FA36B;  --yes-tint: rgba(95, 163, 107, .16);  --yes-deep: #8FC79A;
+  --over: #E0A63A; --over-tint: rgba(224, 166, 58, .16); --over-deep: #F0C97E;
+  --no: #E06A82;   --no-tint: rgba(224, 106, 130, .16);  --no-deep: #F094A6;
+  --predicted: #9A8FF0; --predicted-tint: rgba(154, 143, 240, .16);
+  --slate: #6B6456; --slate-tint: rgba(158, 150, 131, .16);
+  --grid-line: rgba(220, 205, 175, .05);
   --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 4px 16px rgba(0, 0, 0, .5);
   color-scheme: dark;
 }

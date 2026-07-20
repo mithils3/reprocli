@@ -1,34 +1,35 @@
 /* trace.paper — design system foundation.
-   Identity: a cyan COMPUTE-BURN TRACE drawn on faint engineering graph paper.
-   Every run is a curve of cumulative H100·h vs round, raced against an indigo
-   dashed "predicted" ceiling. Polychrome-semantic palette: cyan=live/trace,
-   green=reproduced, amber=over-budget, coral=fault, indigo=predicted, slate=idle.
-   Light tokens + the grid live here; dark in theme.css; views in overview.css /
-   viewer.css. Type: Space Grotesk (instrument numerals) + IBM Plex Sans/Mono. */
+   Identity: an Anthropic-warm reading surface — a clay COMPUTE-BURN TRACE drawn on
+   soft cream paper, not a cold blueprint. Every run is a curve of cumulative H100·h
+   vs round, raced against a muted-indigo dashed "predicted" ceiling. Polychrome-
+   semantic palette: clay=live/trace, sage=reproduced, amber=over-budget, rose=fault,
+   indigo=predicted, warm-grey=idle. Light tokens + the grid live here; dark in
+   theme.css; views in overview.css / viewer.css. Type: Fraunces (editorial serif
+   headings) + Inter (UI sans) + IBM Plex Mono. */
 
 :root {
-  --bg: #E8EDF3;             /* cool blueprint ground */
-  --bg-side: #E1E7EF;        /* sidebar / rail gutter, a half-step deeper */
-  --panel: #F4F7FB;          /* raised instrument cards */
-  --panel2: #DFE7F1;         /* inset surfaces: code, chips, gauge tracks */
-  --line: #CFD9E6;           /* hairline rules, card edges, axis ticks */
-  --line-strong: #B9C6D8;
-  --txt: #102334;            /* navy pen — also the neutral in-progress trace */
-  --muted: #5C6E80;          /* labels, captions, demoted arxiv id */
-  --accent: #0892A5;         /* Trace Cyan — signature, live curve, active */
-  --accent-strong: #06788A;  /* AA cyan for links/text on the light ground */
-  --accent-tint: rgba(8, 146, 165, .10);
-  --yes: #1C8B57;  --yes-tint: rgba(28, 139, 87, .12);  --yes-deep: #136B41;   /* reproduced */
-  --over: #B8740C; --over-tint: rgba(184, 116, 12, .12); --over-deep: #8A5708;  /* over-budget / miss */
-  --no: #C8385E;   --no-tint: rgba(200, 56, 94, .10);    --no-deep: #9E2A49;    /* fault */
-  --predicted: #5A52D9; --predicted-tint: rgba(90, 82, 217, .12);               /* the target line */
-  --slate: #7C8C9E;  --slate-tint: rgba(124, 140, 158, .14);                    /* idle / never-ran */
-  --grid-line: rgba(16, 35, 52, .055);   /* the plot grid, ~5% contrast */
+  --bg: #F0EEE6;             /* Anthropic cream ground */
+  --bg-side: #E8E5D9;        /* sidebar / rail gutter, a half-step deeper */
+  --panel: #FAF9F5;          /* raised cards, near-white cream */
+  --panel2: #EAE6DA;         /* inset surfaces: code, chips, gauge tracks */
+  --line: #DAD5C6;           /* hairline rules, card edges, axis ticks */
+  --line-strong: #C7C0AD;
+  --txt: #1A1915;            /* warm ink — also the neutral in-progress trace */
+  --muted: #6B665A;          /* warm grey labels, captions, demoted arxiv id */
+  --accent: #C15F3C;         /* Clay — signature, live curve, active */
+  --accent-strong: #A64A2A;  /* AA clay for links/text on the cream ground */
+  --accent-tint: rgba(193, 95, 60, .10);
+  --yes: #4F8A5B;  --yes-tint: rgba(79, 138, 91, .12);  --yes-deep: #356B41;   /* reproduced (sage) */
+  --over: #B8740C; --over-tint: rgba(184, 116, 12, .12); --over-deep: #8A5708;  /* over-budget / miss (amber) */
+  --no: #C13B54;   --no-tint: rgba(193, 59, 84, .10);    --no-deep: #97293E;    /* fault (rose) */
+  --predicted: #6B63C4; --predicted-tint: rgba(107, 99, 196, .12);              /* the target line (indigo) */
+  --slate: #8A8375;  --slate-tint: rgba(138, 131, 117, .14);                    /* idle / never-ran */
+  --grid-line: rgba(26, 25, 21, .05);    /* the plot grid, ~5% contrast */
   --grid-step: 23px;
-  --display: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
-  --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --shadow: 0 1px 2px rgba(16, 35, 52, .06), 0 4px 14px rgba(16, 35, 52, .05);
+  --shadow: 0 1px 2px rgba(26, 25, 21, .06), 0 4px 14px rgba(26, 25, 21, .05);
   --radius: 12px;
 }
 

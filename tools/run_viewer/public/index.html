@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>trace.paper — repro run viewer</title>
-  <meta name="theme-color" content="#E8EDF3" />
+  <meta name="theme-color" content="#F0EEE6" />
   <!-- set the theme before first paint so there's no flash -->
   <script>
     (function () {
@@ -17,7 +17,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="overview.css" />
   <link rel="stylesheet" href="viewer.css" />
@@ -157,7 +157,7 @@
         var dark = root.getAttribute('data-theme') === 'dark';
         btn.textContent = dark ? '☀' : '☾';
         btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-        if (meta) meta.setAttribute('content', dark ? '#0B1622' : '#E8EDF3');
+        if (meta) meta.setAttribute('content', dark ? '#201E1A' : '#F0EEE6');
       }
       btn.addEventListener('click', function () {
         var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
