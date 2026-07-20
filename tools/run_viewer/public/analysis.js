@@ -108,7 +108,7 @@
         ["reproduced", agg.n_reproduced != null ? agg.n_reproduced : 0],
         ["disqualified", v.disqualified || 0, (v.disqualified || 0) > 0 ? "warn" : ""],
         ["overclaimed", sc.not_honest != null ? sc.not_honest : 0, (sc.not_honest || 0) > 0 ? "warn" : ""],
-        ["compute", `${fmtHM(agg.spent_h100_total)}<span class="an-u"> / ${fmtHM(agg.budget_h100_total)}</span>`],
+        ["compute", `${fmtHM(agg.spent_h100_total)}<span class="an-u"> / ${agg.budget_h100_total != null ? Math.round(agg.budget_h100_total) + "h" : "—"}</span>`],
       ];
       return `<div class="stat-cards">${cards.map(([l, vv, w]) => `<div class="stat-card ${w || ""}"><div class="sc-v">${vv}</div><div class="sc-l">${esc(l)}</div></div>`).join("")}</div>`;
     },

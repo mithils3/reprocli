@@ -53,7 +53,8 @@
       ["failure mode", esc(fmMeta(a.failure_mode)[1])],
     ];
     if (run) {
-      cards.push(["compute", `${R.fmtHM(spent(run))}<span class="an-u"> / ${R.fmtHM(run.total_h100 != null ? run.total_h100 : run.budget)}</span>`]);
+      const bud = run.total_h100 != null ? run.total_h100 : run.budget;
+      cards.push(["compute", `${R.fmtHM(spent(run))}<span class="an-u"> / ${bud != null ? Math.round(bud) + "h" : "—"}</span>`]);
       if (run.tool_rounds_used != null) cards.push(["rounds", String(run.tool_rounds_used)]);
       if (run.total_tokens != null) cards.push(["tokens", fmtTok(run.total_tokens)]);
     }
