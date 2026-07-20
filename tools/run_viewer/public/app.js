@@ -23,11 +23,12 @@ function setView(v) {
   document.querySelectorAll(".view").forEach((m) => m.classList.add("hidden"));
   const el = $("#view-" + v);
   if (el) el.classList.remove("hidden");
-  if (window.Freeze) window.Freeze.setButtonVisible(v !== "local");
+  if (window.Freeze) window.Freeze.setButtonVisible(v !== "local" && v !== "analysis");
   const tog = $("#sidebar-toggle"); if (tog) tog.style.display = v === "live" ? "" : "none";
   if (v === "overview" && window.Overview) window.Overview.open();
   if (v === "papers" && window.Papers) window.Papers.open();
   if (v === "audits" && window.Audits) window.Audits.open();
+  if (v === "analysis" && window.Analysis) window.Analysis.open();
   if (v === "stats" && window.Stats) window.Stats.open();
   if (v === "live") {
     if (was === "live" && state.currentRunId != null) closeRun(); // tab re-click → back to the board

@@ -62,6 +62,16 @@ and ask for a per-run dissection:
   legitimate from the transcript (auditor false-positives are paper-relevant);
 - compute behavior: `spent_h100` vs band, GPU util fields, idle-allocation waste.
 
+Collect every subagent's dissections into one **`analyses.json`** (a JSON array,
+one object per run) so step 5 can publish it. The website + `upload.py` read this
+shape per object: `run_id`, `arxiv_id`, `paper_gist`, `target_claim`,
+`failure_mode` (+ `failure_mode_detail`), `artifact_availability`,
+`genuine_wall{is_wall,what}`, `agent_trajectory_summary`,
+`agent_final_selfclaim{claimed_outcome,claimed_numbers,honest_about_failure}`,
+`self_claim_gap`, `audit_summary{score,verdict,cheat_flags[],rationale_gist}`,
+`suspected_grading_error`, `compute_pattern`, `notable_insights[]`,
+`evidence_quotes[{round,quote}]`.
+
 ## 4. Synthesize the report
 
 Write the report to `notes/Analysis/Repro-Agent Runs/` (one file per sweep,
@@ -78,6 +88,38 @@ date-prefixed, e.g. `2026-07-20 Hard Sweep 2672018.md`). It must contain:
 
 Commit the repo-side changes; the vault has its own git (never `git add -A`
 from `notes/`).
+
+## 5. Publish to the website (Analysis tab)
+
+`upload.py` pushes the sweep to the run viewer's **Analysis** tab
+(https://agent-logs.vercel.app/) so each paper's dissection is browsable,
+searchable and copyable — the same content the PDF carries, rendered in-theme. It
+upserts one `repro_sweeps` header row + one `repro_analyses` row per paper (both
+anon-readable) and stores the source PDF in the public `repro-analyses` bucket.
+
+One-time (creates the tables + bucket): apply the schema once —
+`SUPABASE_ACCESS_TOKEN=... python3 tools/run_viewer/setup_db.py`.
+
+Per sweep (needs the **service key**, not the PAT):
+
+```bash
+source <(grep -E 'SUPABASE_SERVICE_KEY' ~/.bashrc)
+python3 .claude/skills/analyze-sweep/upload.py \
+  --slug hard-2672018 --title "Qwen3.6-27B Hard-Tier Dissection" \
+  --subtitle "sweep 2672018 · post-freeze" --tier Hard --frozen \
+  --batch-id slurm-2672018 \
+  --runs "$OUT/runs.json" --analyses "$OUT/analyses.json" \
+  --pdf "notes/Analysis/Repro-Agent Runs/<report>.pdf"
+```
+
+- `--frozen` marks a post-freeze (paper-eligible) sweep; omit for pre-freeze
+  process-validation runs — the report page shows the right caveat banner either way.
+- Aggregates (per-band means, verdict + failure-mode counts, self-claim gap,
+  compute) are computed from `runs.json` + `analyses.json`; nothing to precompute.
+- Idempotent: re-runs upsert on `slug` / `run_id` and the PDF overwrites. Add
+  `--dry-run` to preview without writing.
+- The viewer reads live (anon), so a new sweep needs **no redeploy**. Only redeploy
+  when you change the front-end itself: `cd tools/run_viewer/public && vercel --prod`.
 
 ## Gotchas
 

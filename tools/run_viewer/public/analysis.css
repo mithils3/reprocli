@@ -1,0 +1,125 @@
+/* analysis.css — the Analysis tab (sweep list · report · per-paper dissection).
+   Reuses styles.css / overview.css tokens and primitives (panel-card, stat-card,
+   badge, plate, vd, stamp, paper-grid). Only Analysis-specific pieces live here:
+   the sweep cards, the failure-mode mix bar/rows, the freeze caveat, and the
+   dissection detail (claim2 split, flags, quotes). */
+
+#view-analysis .detail > * { max-width: 1240px; }
+
+/* ---- failure-mode swatches (shared by the mix bar + the report bars) ------- */
+.fmv-yes { background: var(--yes); } .fmv-no { background: var(--no); }
+.fmv-over { background: var(--over); } .fmv-slate { background: var(--slate); }
+.fmv-predicted { background: var(--predicted); }
+
+/* ---- list: a card per sweep ---------------------------------------------- */
+.an-sweeps { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 16px; }
+.an-sweep-card { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 15px 17px; display: flex; flex-direction: column; gap: 10px; transition: border-color .14s, transform .08s; }
+.an-sweep-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.an-sc-top { display: flex; align-items: center; gap: 8px; }
+.an-sc-count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.an-sc-title { font-family: var(--display); font-size: 17px; font-weight: 600; line-height: 1.25; color: var(--txt); letter-spacing: -.01em; }
+.an-sc-sub { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: -3px; }
+.an-sc-foot { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+.an-sc-mean b { font-family: var(--display); font-size: 22px; font-weight: 700; color: var(--txt); }
+.an-sc-mean span { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-left: 3px; }
+.an-sc-model { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+
+/* the thin stacked failure-mode mix bar */
+.an-fmbar { display: flex; height: 8px; border-radius: 5px; overflow: hidden; background: var(--panel2); border: 1px solid var(--line); }
+.an-fmbar.empty { opacity: .5; }
+.an-fmseg { height: 100%; }
+
+/* ---- report header + freeze caveat --------------------------------------- */
+.an-r-head { margin-bottom: 12px; }
+.an-r-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.an-r-links { margin-left: auto; display: inline-flex; gap: 12px; }
+.an-r-title { font-family: var(--display); font-size: 27px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; }
+.an-r-sub { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+.an-frozen { color: var(--yes-deep); border-color: var(--yes); background: var(--yes-tint); }
+.an-caveat { font-size: 12.5px; line-height: 1.5; padding: 10px 14px; border-radius: 10px; border: 1px solid; margin: 14px 0 16px; }
+.an-caveat.frozen { color: var(--yes-deep); border-color: var(--yes); background: var(--yes-tint); }
+.an-caveat.pre { color: var(--over-deep); border-color: var(--over); background: var(--over-tint); }
+.an-caveat b { font-weight: 600; }
+
+.an-r-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0 20px; }
+.an-r-grid2 .panel-card { min-width: 0; }
+.an-pad { padding: 6px 2px; }
+.an-band-table { font-size: 12.5px; } .an-band-table tbody tr { cursor: default; }
+.an-vd-cell { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* failure-mode horizontal bars (report) */
+.an-fmrows { display: grid; gap: 8px; }
+.an-fmrow { display: grid; grid-template-columns: 168px 1fr 26px; align-items: center; gap: 10px; }
+.an-fmlabel { font-family: var(--mono); font-size: 11px; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.an-fmtrack { height: 12px; background: var(--panel2); border-radius: 5px; overflow: hidden; }
+.an-fmtrack i { display: block; height: 100%; border-radius: 5px; }
+.an-fmn { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; }
+
+.an-legend { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* ---- per-paper cards (report grid) --------------------------------------- */
+.an-paper-grid { grid-template-columns: repeat(auto-fill, minmax(296px, 1fr)); }
+.an-paper-card .pcd-top { flex-wrap: wrap; }
+.an-score { font-family: var(--display); font-weight: 700; font-size: 14px; margin-left: auto; padding: 1px 8px; border-radius: 6px; border: 1px solid; white-space: nowrap; }
+.an-score span { font-family: var(--mono); font-size: 9.5px; font-weight: 500; opacity: .8; }
+.an-score.yes { color: var(--yes-deep); border-color: var(--yes); background: var(--yes-tint); }
+.an-score.over { color: var(--over-deep); border-color: var(--over); background: var(--over-tint); }
+.an-score.no { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
+.an-score.slate { color: var(--muted); border-color: var(--slate); background: var(--slate-tint); }
+
+/* ---- per-paper dissection detail ----------------------------------------- */
+.an-detail { display: flex; flex-direction: column; gap: 14px; }
+.an-d-hero { margin-bottom: 2px; }
+.an-d-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.an-d-actions { margin-left: auto; display: inline-flex; gap: 8px; }
+.an-arx { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.an-link { background: var(--panel); border: 1px solid var(--line-strong); color: var(--accent-strong); font-family: var(--mono);
+  font-size: 11.5px; padding: 4px 10px; border-radius: 7px; transition: border-color .14s, background .14s; }
+.an-link:hover { border-color: var(--accent); background: var(--panel2); text-decoration: none; }
+.an-link:disabled { color: var(--muted); border-color: var(--line); cursor: default; opacity: .6; }
+.an-d-claim { font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
+.an-d-gist { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin: 8px 0 0; max-width: 900px; }
+
+.an-sec .pc-head { justify-content: flex-start; gap: 10px; }
+.an-sec-note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.an-sec p { margin: 0 0 9px; font-size: 13.5px; line-height: 1.62; color: var(--txt); }
+.an-sec p:last-child { margin-bottom: 0; }
+.an-facts { margin: 0; }
+.an-facts .sc-v { font-size: 18px; } .an-u { font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* self-claim vs audit — the signature split */
+.an-claim2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.an-claim-col { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel2); }
+.an-claim-col.claimed { border-left: 3px solid var(--over); }
+.an-claim-col.audited { border-left: 3px solid var(--accent); }
+.an-claim-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.an-nums { margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line-strong); }
+.an-nums p { font-family: var(--mono); font-size: 12px; }
+.an-gap { margin-top: 12px; padding: 11px 14px; border-radius: 10px; background: var(--no-tint); border: 1px solid var(--no); }
+.an-gap .plate { display: block; margin-bottom: 5px; color: var(--no-deep); }
+
+/* genuine wall + cheat flags */
+.an-wall { display: flex; flex-direction: column; gap: 8px; }
+.an-wall .badge { align-self: flex-start; }
+.an-flag { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-bottom: 9px; background: var(--panel2); }
+.an-flag:last-child { margin-bottom: 0; }
+.an-flag.no { border-color: var(--no); background: var(--no-tint); }
+.an-flag.over { border-color: var(--over); background: var(--over-tint); }
+.an-flag-h { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.an-flag-kind { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--txt); }
+.an-flag-ev { font-size: 12.5px; line-height: 1.55; color: var(--txt); }
+
+.an-insights { margin: 0; padding-left: 20px; display: grid; gap: 7px; }
+.an-insights li { font-size: 13.5px; line-height: 1.55; }
+.an-quotes { display: grid; gap: 10px; }
+.an-q { margin: 0; display: grid; grid-template-columns: 78px 1fr; gap: 12px; align-items: start; padding: 9px 12px;
+  border-left: 3px solid var(--accent); background: var(--panel2); border-radius: 0 8px 8px 0; }
+.an-q-round { font-family: var(--mono); font-size: 10.5px; color: var(--accent-strong); text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+.an-q-txt { font-family: var(--mono); font-size: 12px; line-height: 1.55; color: var(--txt); }
+
+@media (max-width: 900px) {
+  .an-r-grid2, .an-claim2 { grid-template-columns: 1fr; }
+  .an-fmrow { grid-template-columns: 130px 1fr 24px; }
+  .an-q { grid-template-columns: 1fr; gap: 4px; }
+}

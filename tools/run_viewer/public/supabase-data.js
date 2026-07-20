@@ -150,6 +150,36 @@ const RemoteSource = {
       .subscribe();
   },
 
+  // ---- sweep dissections (repro_sweeps / repro_analyses; anon read-only) ----
+  // Curated write-once artifact from .claude/skills/analyze-sweep/upload.py: one
+  // repro_sweeps header + one repro_analyses row per paper. loadSweep also pulls
+  // the batch's repro_runs so the detail can show real meters + deep-link the run.
+  async listSweeps() {
+    if (!this.client) return [];
+    const { data, error } = await this.client.from("repro_sweeps")
+      .select("*").order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  async loadSweep(slug) {
+    const [sw, an] = await Promise.all([
+      this.client.from("repro_sweeps").select("*").eq("slug", slug).limit(1),
+      this.client.from("repro_analyses").select("*").eq("sweep_slug", slug)
+        .order("audit_score", { ascending: false, nullsFirst: false }),
+    ]);
+    if (an.error) throw an.error;
+    const sweep = (sw.data && sw.data[0]) || { slug };
+    const runsById = {};
+    if (sweep.batch_id) {
+      const { data: runs } = await this.client.from("repro_runs").select("*").eq("batch_id", sweep.batch_id);
+      (runs || []).forEach((r) => { runsById[r.run_id] = r; });
+    }
+    // the full per-run dissection is the jsonb `data`; the sibling columns are just
+    // denormalized keys for the list query, so hand the renderers the data object.
+    const analyses = (an.data || []).map((r) => r.data || r);
+    return { sweep, analyses, runsById };
+  },
+
   // event key → which Round a row belongs to (mirrors render.js's data-key)
   roundKey(e) { return (e.kind === "final" ? "final:" : "round:") + e.round_index; },
 

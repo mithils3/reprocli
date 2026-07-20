@@ -335,5 +335,79 @@ alter table public.repro_runs add column if not exists gpu_mem_total_gb  numeric
 alter table public.repro_runs add column if not exists gpu_power_avg_w   numeric;
 alter table public.repro_runs add column if not exists gpu_samples       int;
 
+-- ---------------------------------------------------------------------------
+-- repro_sweeps / repro_analyses  (post-hoc DISSECTION of a finished sweep, shown
+-- in the viewer's Analysis tab). Unlike repro_runs (live meters) these are a
+-- curated write-once artifact: the analyze-sweep skill fans out subagents over a
+-- batch, then uploads one repro_sweeps row (the report header + rollup) and one
+-- repro_analyses row per paper (the full per-run dissection as jsonb `data`).
+-- Anon READ ONLY; writes come from .claude/skills/analyze-sweep/upload.py with the
+-- service_role key. sweep_slug / batch_id / run_id join by convention (no FK).
+-- ---------------------------------------------------------------------------
+create table if not exists public.repro_sweeps (
+  slug             text primary key,             -- stable id, e.g. 'hard-2672018'
+  title            text not null,                -- 'Qwen3.6-27B Hard-Tier Dissection'
+  subtitle         text,                         -- 'sweep 2672018 · post-freeze'
+  batch_id         text,                         -- joins repro_runs.batch_id (e.g. slurm-2672018)
+  model            text,
+  tier             text,                         -- Easy | Medium | Hard | mixed
+  frozen           boolean default false,        -- post dataset+rubric freeze => a paper result
+  run_count        int    default 0,             -- papers dissected in this sweep
+  mean_audit_score numeric,                       -- headline number (0-10, capped)
+  aggregates       jsonb,                         -- full rollup: per-band means, verdict/failure-mode counts, self-claim gap, compute
+  report_pdf_url   text,                          -- public Storage URL of the source PDF (nullable)
+  report_md        text,                          -- optional narrative markdown (nullable)
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+create index if not exists repro_sweeps_updated_idx on public.repro_sweeps (updated_at desc);
+
+create table if not exists public.repro_analyses (
+  run_id        text primary key,                -- joins repro_runs.run_id (no FK on purpose)
+  sweep_slug    text not null,                   -- joins repro_sweeps.slug
+  arxiv_id      text,
+  failure_mode  text,                            -- taxonomy: success|near_miss_partial|reimplement_without_validating|...
+  audit_score   int,                             -- capped 0-10
+  audit_verdict text,                            -- reproduced|partial|not_reproduced|unverifiable|disqualified
+  reproduced    boolean,
+  target_claim  text,                            -- denormalized for list rendering
+  paper_gist    text,                            -- denormalized for list rendering
+  data          jsonb not null,                  -- the complete per-run dissection object
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index if not exists repro_analyses_sweep_idx on public.repro_analyses (sweep_slug);
+create index if not exists repro_analyses_arxiv_idx on public.repro_analyses (arxiv_id);
+
+drop trigger if exists repro_sweeps_touch on public.repro_sweeps;
+create trigger repro_sweeps_touch before update on public.repro_sweeps
+  for each row execute function public.touch_updated_at();
+drop trigger if exists repro_analyses_touch on public.repro_analyses;
+create trigger repro_analyses_touch before update on public.repro_analyses
+  for each row execute function public.touch_updated_at();
+
+alter table public.repro_sweeps   enable row level security;
+alter table public.repro_analyses enable row level security;
+drop policy if exists repro_sweeps_read   on public.repro_sweeps;
+create policy repro_sweeps_read   on public.repro_sweeps   for select to anon, authenticated using (true);
+drop policy if exists repro_analyses_read on public.repro_analyses;
+create policy repro_analyses_read on public.repro_analyses for select to anon, authenticated using (true);
+
+do $$ begin
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='repro_sweeps') then
+    alter publication supabase_realtime add table public.repro_sweeps;
+  end if;
+  if not exists (select 1 from pg_publication_tables
+                 where pubname='supabase_realtime' and schemaname='public' and tablename='repro_analyses') then
+    alter publication supabase_realtime add table public.repro_analyses;
+  end if;
+end $$;
+
+-- Public 'repro-analyses' Storage bucket for the source dissection PDFs.
+insert into storage.buckets (id, name, public)
+  values ('repro-analyses', 'repro-analyses', true)
+  on conflict (id) do update set public = true;
+
 -- tell PostgREST to pick up the new columns immediately (Supabase also auto-reloads)
 notify pgrst, 'reload schema';

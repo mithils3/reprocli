@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="jsonview.css" />
   <link rel="stylesheet" href="live.css" />
   <link rel="stylesheet" href="hosts.css" />
+  <link rel="stylesheet" href="analysis.css" />
   <link rel="stylesheet" href="theme.css" />
 </head>
 <body>
@@ -44,6 +45,7 @@
         <button class="tab" data-view="papers">Papers</button>
         <button class="tab" data-view="live">Live</button>
         <button class="tab" data-view="audits">Audits</button>
+        <button class="tab" data-view="analysis">Analysis</button>
         <button class="tab" data-view="stats">Stats</button>
         <button class="tab" data-view="local">Local</button>
       </nav>
@@ -85,6 +87,11 @@
       <section id="audit-detail" class="detail">
         <div class="empty">Pick an audit to watch the S7 auditor grade a run in real time.</div>
       </section>
+    </main>
+
+    <!-- ANALYSIS: post-hoc sweep dissections (repro_sweeps / repro_analyses) -->
+    <main id="view-analysis" class="view hidden">
+      <section class="detail"><div id="analysis-root"></div></section>
     </main>
 
     <!-- STATS: token / compute tallies across all runs -->
@@ -137,6 +144,8 @@
   <script src="papers.js"></script>
   <script src="audits.js"></script>
   <script src="batches.js"></script>
+  <script src="analysis_detail.js"></script>
+  <script src="analysis.js"></script>
   <script src="app.js"></script>
   <script>
     /* theme toggle: flip data-theme, persist, keep icon + browser UI colour in sync */
