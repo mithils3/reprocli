@@ -1,7 +1,8 @@
 data/
 .codex/
 .agents/
-.claude/
+.claude/*
+!.claude/skills/
 __pycache__/
 *.pyc
 outputs/
