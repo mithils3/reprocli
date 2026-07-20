@@ -157,7 +157,7 @@
         var dark = root.getAttribute('data-theme') === 'dark';
         btn.textContent = dark ? '☀' : '☾';
         btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-        if (meta) meta.setAttribute('content', dark ? '#201E1A' : '#F0EEE6');
+        if (meta) meta.setAttribute('content', dark ? '#000000' : '#F0EEE6');
       }
       btn.addEventListener('click', function () {
         var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';

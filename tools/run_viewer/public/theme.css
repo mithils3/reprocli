@@ -1,17 +1,18 @@
-/* Dark mode — "warm charcoal". Anthropic's near-black is a warm brown-grey ground
-   (NOT pure black), so the clay burn-trace, indigo predicted ceiling and the verdict
-   palette glow like ink on toasted paper. styles.css / viewer.css / overview.css
-   drive everything off these custom properties; here we just re-point them. */
+/* Dark mode — "true black". A pure black ground with neutral (no blue, no brown)
+   greys stepping up to the raised cards, so the clay burn-trace, indigo predicted
+   ceiling and the verdict palette glow like ink on unlit glass. styles.css /
+   viewer.css / overview.css drive everything off these custom properties; here we
+   just re-point them. */
 
 :root[data-theme="dark"] {
-  --bg: #201E1A;
-  --bg-side: #26241F;
-  --panel: #2B2823;
-  --panel2: #34302A;
-  --line: #35312A;
-  --line-strong: #48423A;
-  --txt: #ECE7DA;
-  --muted: #9E9683;
+  --bg: #000000;
+  --bg-side: #0A0A0A;
+  --panel: #121212;
+  --panel2: #1C1C1C;
+  --line: #262626;
+  --line-strong: #383838;
+  --txt: #EDEBE6;
+  --muted: #8E8B84;
   --accent: #D97757;
   --accent-strong: #E68E6F;
   --accent-tint: rgba(217, 119, 87, .15);
@@ -19,9 +20,9 @@
   --over: #E0A63A; --over-tint: rgba(224, 166, 58, .16); --over-deep: #F0C97E;
   --no: #E06A82;   --no-tint: rgba(224, 106, 130, .16);  --no-deep: #F094A6;
   --predicted: #9A8FF0; --predicted-tint: rgba(154, 143, 240, .16);
-  --slate: #6B6456; --slate-tint: rgba(158, 150, 131, .16);
-  --grid-line: rgba(220, 205, 175, .05);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 4px 16px rgba(0, 0, 0, .5);
+  --slate: #605C55; --slate-tint: rgba(142, 139, 132, .16);
+  --grid-line: rgba(255, 255, 255, .04);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .6), 0 4px 16px rgba(0, 0, 0, .7);
   color-scheme: dark;
 }
 :root[data-theme="dark"] .plitem:hover { background: color-mix(in srgb, var(--panel) 60%, transparent); }
