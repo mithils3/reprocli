@@ -34,6 +34,11 @@ ENDPOINT_FILE="${ENDPOINT_FILE:-/work/nvme/bfvr/msalunkhe/endpoints/minimax_m2.j
 
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
 export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/hf_cache}"
+# The reproduction AGENT runs inside the Apptainer sandbox; send ONLY its in-container HF
+# pulls (per-paper models + datasets, the bulk that filled /work) to node-local /tmp, which
+# clears per job. APPTAINERENV_HF_HOME wins inside the wrap (sandbox.forward_env honors a
+# pre-set value), so the served brain + orchestrator above keep the persistent /work cache.
+export APPTAINERENV_HF_HOME="${APPTAINERENV_HF_HOME:-/tmp/hf_cache}"
 [[ -z "${HF_TOKEN:-}" ]] && echo "WARNING: HF_TOKEN unset; Hub downloads may fail." >&2
 
 module load python/3.11.9

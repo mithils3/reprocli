@@ -53,6 +53,11 @@ MAX_PARALLEL="${MAX_PARALLEL:-5}"        # papers in flight at once; each adds 1
 # Keep the agent's heavy I/O (bundles, per-paper uv venvs, run bundles) off $HOME.
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
 export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/hf_cache}"
+# The reproduction AGENT runs inside the Apptainer sandbox; send ONLY its in-container HF
+# pulls (per-paper models + datasets, the bulk that filled /work) to node-local /tmp, which
+# clears per job. APPTAINERENV_HF_HOME wins inside the wrap (sandbox.forward_env honors a
+# pre-set value), so the served brain + orchestrator above keep the persistent /work cache.
+export APPTAINERENV_HF_HOME="${APPTAINERENV_HF_HOME:-/tmp/hf_cache}"
 # HF_TOKEN is inherited via --export=ALL; the lockfile + paper bundles need it.
 if [[ -z "${HF_TOKEN:-}" ]]; then
   echo "WARNING: HF_TOKEN is unset; the lockfile/bundle download from the Hub may fail." >&2
