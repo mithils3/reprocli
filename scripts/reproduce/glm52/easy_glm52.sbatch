@@ -65,16 +65,6 @@ RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a 
 PARALLEL="${PARALLEL:-${MAX_PARALLEL}}"
 CTX_SIZE="${CTX_SIZE:-$(( PARALLEL * 131072 ))}"
 KV_IN_CPU="${KV_IN_CPU:-0}"
-# Multi-GPU tensor placement across the 4 GH200s. 'layer' (default) is the
-# pipeline split: whole layers pinned per GPU, so for one request only the GPU
-# holding the current layer computes and batched decode tops out near a single
-# GPU's HBM bandwidth (~14 t/s aggregate for this quant, job 2696344). 'row'
-# would shard each tensor across all four GPUs (tensor-parallel-ish) to lift
-# that, BUT it FAILS to load on the UD-IQ3_S i-quant here: "device CUDA0 does
-# not support split buffers" (job 2697006). Row needs a split-buffer-capable
-# quant (legacy/K quants), so it stays opt-in; keep 'layer' until the quant
-# changes. 'none' pins everything to GPU0.
-SPLIT_MODE="${SPLIT_MODE:-layer}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
 case "${SPLIT}" in
@@ -151,23 +141,20 @@ fi
 echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  budget=${BUDGET_LABEL}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
 echo "runs_dir=${RUNS_DIR}  resume=${RESUME}  audit_model=${AUDIT_MODEL}  audit_rounds=${AUDIT_TOOL_ROUNDS}"
 echo "claims=${CLAIMS}"
-echo "brain: shard=${SHARD}  ctx=${CTX_SIZE}  slots=${PARALLEL}  kv_in_cpu=${KV_IN_CPU}  split_mode=${SPLIT_MODE}"
+echo "brain: shard=${SHARD}  ctx=${CTX_SIZE}  slots=${PARALLEL}  kv_in_cpu=${KV_IN_CPU}"
 nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
-# Flags per runbook §6: shard 1 only (llama.cpp finds the rest), -ngl 99,
-# -sm ${SPLIT_MODE} (layer default; row fails to load on this i-quant with
-# "does not support split buffers", see the SPLIT_MODE note), q8_0 KV quant
-# (drop -ctk/-ctv first if the server dies with a KV-type error). KV stays on
-# HBM by default now; only when KV_IN_CPU=1 is --no-kv-offload added, spilling
-# KV to Grace LPDDR over C2C.
+# Flags per runbook §6: shard 1 only (llama.cpp finds the rest), -ngl 99, no
+# --split-mode/--tensor-split, q8_0 KV quant (drop -ctk/-ctv first if the
+# server dies with a KV-type error). KV stays on HBM by default now; only when
+# KV_IN_CPU=1 is --no-kv-offload added, spilling KV to Grace LPDDR over C2C.
 KV_ARGS=()
 if [[ "${KV_IN_CPU}" == "1" ]]; then KV_ARGS+=(--no-kv-offload); fi
 CUDA_VISIBLE_DEVICES=0,1,2,3 llama-server \
   --model "${SHARD}" \
   --alias "${SERVED_NAME}" \
   -ngl 99 \
-  -sm "${SPLIT_MODE}" \
   "${KV_ARGS[@]}" \
   -ctk q8_0 -ctv q8_0 \
   --reasoning-preserve \
