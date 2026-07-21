@@ -10,9 +10,11 @@
 # brain: GLM-5.2 ships GGUF-first at a size vLLM cannot serve here (the vLLM
 # path is abandoned, tasks/serve-glm52-vllm-gh200.md), so Step 1 launches
 # llama-server per tasks/serve-gguf-llamacpp-gh200.md instead of reprocli_serve
-# and hand-publishes the same endpoint JSON contract. Weights (~347 GiB) need
-# all four GPUs; the KV cache lives in Grace CPU RAM (--no-kv-offload) so the
-# multi-slot context does not compete with weights for the last ~35 GiB of HBM.
+# and hand-publishes the same endpoint JSON contract. Weights are the UD-IQ3_S
+# 3-bit quant (~288 GiB) across all four GPUs. Dropping from IQ4_XS frees enough
+# HBM to keep the whole q8_0 KV pool (~35 GiB) on the GPUs, so the brain runs
+# WITHOUT --no-kv-offload (KV_IN_CPU=0). IQ4_XS left no room and forced KV onto
+# the Grace C2C link, which capped decode near ~1 t/s per slot; see runbook §2-3.
 # Every `run_gpu` experiment step still JIT-sallocs a SEPARATE ghx4 node; the
 # orchestrator + auditor are cheap CPU processes sharing this brain node.
 # Defaults to the eval split's Easy papers, MAX_PARALLEL=6, and RESUME=1 so
@@ -39,8 +41,10 @@ set -euo pipefail
 # --- Config (override from the environment) ---------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL_DIR="${MODEL_DIR:-/work/nvme/bfvr/msalunkhe/models/GLM-5.2-IQ4XS}"
-SHARD="${SHARD:-${MODEL_DIR}/UD-IQ4_XS/GLM-5.2-UD-IQ4_XS-00001-of-00009.gguf}"
+MODEL_DIR="${MODEL_DIR:-/work/nvme/bfvr/msalunkhe/models/GLM-5.2-IQ3S}"
+QUANT="${QUANT:-UD-IQ3_S}"                 # quant subdir + shard-name infix
+# Shard count differs by quant, so glob shard 1 instead of pinning -of-000NN.
+SHARD="${SHARD:-$(ls "${MODEL_DIR}/${QUANT}"/*-00001-of-*.gguf 2>/dev/null | head -1 || true)}"
 SERVED_NAME="${SERVED_NAME:-zai-org/GLM-5.2}"
 AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
 PORT="${PORT:-8080}"
@@ -54,12 +58,13 @@ MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 # llama.cpp brain knobs. The prompt cache is per-slot (runbook §9), so slots
 # match MAX_PARALLEL and each slot gets CTX_SIZE/PARALLEL = 128K of context.
-# The whole 768K KV pool sits in CPU RAM (--no-kv-offload); in HBM it would
-# not fit next to 347 GiB of weights. Set KV_IN_CPU=0 to put KV back in HBM
-# (then shrink CTX_SIZE to ~131072 or the allocation fails).
+# The whole 768K q8_0 KV pool (~35 GiB) now lives in HBM (KV_IN_CPU=0): the
+# UD-IQ3_S weights (~288 GiB) leave ~94 GiB free, so KV no longer competes for
+# the last few GiB and decode stays on HBM instead of the C2C link. Set
+# KV_IN_CPU=1 to push KV back to Grace RAM (needed only for a >340 GiB quant).
 PARALLEL="${PARALLEL:-${MAX_PARALLEL}}"
 CTX_SIZE="${CTX_SIZE:-$(( PARALLEL * 131072 ))}"
-KV_IN_CPU="${KV_IN_CPU:-1}"
+KV_IN_CPU="${KV_IN_CPU:-0}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
 case "${SPLIT}" in
@@ -142,8 +147,8 @@ nvidia-smi topo -m || true
 # --- Step 1: serve the brain (background), wait for /health ------------------
 # Flags per runbook §6: shard 1 only (llama.cpp finds the rest), -ngl 99, no
 # --split-mode/--tensor-split, q8_0 KV quant (drop -ctk/-ctv first if the
-# server dies with a KV-type error). --no-kv-offload holds KV in Grace LPDDR,
-# reached over the 900 GB/s C2C link.
+# server dies with a KV-type error). KV stays on HBM by default now; only when
+# KV_IN_CPU=1 is --no-kv-offload added, spilling KV to Grace LPDDR over C2C.
 KV_ARGS=()
 if [[ "${KV_IN_CPU}" == "1" ]]; then KV_ARGS+=(--no-kv-offload); fi
 CUDA_VISIBLE_DEVICES=0,1,2,3 llama-server \
