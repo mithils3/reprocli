@@ -29,7 +29,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from driver import _fnum, aggregates  # noqa: E402  (sibling module, same skill dir)
+from driver import aggregates  # noqa: E402  (sibling module, same skill dir)
 
 BASE = "https://rjnkpoxwdslkgxjliakq.supabase.co"
 REST = f"{BASE}/rest/v1"

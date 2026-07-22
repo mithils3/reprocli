@@ -140,7 +140,7 @@ def report(records: list[tuple[int, int, Result]], wall: float, turns: int) -> N
     if not ok:
         sys.exit("all turns failed")
 
-    print(f"\nturn   ttft mean/p95 (s)   decode t/s   prompt tok   cached")
+    print("\nturn   ttft mean/p95 (s)   decode t/s   prompt tok   cached")
     for turn in range(turns):
         rs = [r for _, t, r in ok if t == turn]
         if not rs:

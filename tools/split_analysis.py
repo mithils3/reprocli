@@ -32,7 +32,6 @@ LOCAL_DEV = ROOT / "outputs/v5/audit_pool_dev15_extracted.jsonl"
 
 TIERS = ("Easy", "Medium", "Hard")
 BANDS = ("0-8", "8-32", "32-96", "96-192")
-SIGNALS = ("code_available", "dataset_available", "weights_available", "dataset_is_standard")
 
 DOMAIN_NAMES = {
     "A": "Generative vision (diffusion/flow)",
