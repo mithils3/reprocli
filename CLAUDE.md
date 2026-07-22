@@ -1,8 +1,8 @@
 # Project Rules
 
-- Keep hand-written source files under 300 lines; `*.txt`, `*.md`, and LaTeX (`*.tex`, `*.bib`) files may exceed 300 lines.
-- Split code into focused modules before a file crosses that limit.
-- Generated data, paper text dumps, binary artifacts, and model outputs are exempt.
+- File size is judged by cohesion, not a fixed cap: a hand-written source file should map to one clear responsibility. Up to ~500 lines is fine; up to ~800 is acceptable when the file is one coherent concern.
+- Split a file only when it mixes concerns, and do not merge unrelated concerns just to cut file count. Prefer fewer files that each own one responsibility over many fragments.
+- `*.txt`, `*.md`, LaTeX (`*.tex`, `*.bib`), generated data, paper text dumps, binary artifacts, and model outputs are exempt from any size guidance.
 
 # Writing the paper (`paper_latex/`)
 
