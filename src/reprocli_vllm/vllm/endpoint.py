@@ -36,6 +36,7 @@ ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
 ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
+ENV_EXTRA_BODY = "REPROCLI_EXTRA_BODY"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -74,6 +75,47 @@ def openrouter_provider_routing() -> dict[str, Any] | None:
     if not providers:
         return None
     return {"order": providers, "allow_fallbacks": False}
+
+
+def body_overlay() -> dict[str, Any] | None:
+    """Per-provider chat-completion body fields, as a JSON merge patch, or ``None``.
+
+    The runner speaks one dialect (OpenAI chat-completions) to every endpoint, but
+    each provider has knobs outside that dialect: ``truncate_prompt_tokens`` is
+    vLLM's and nothing else understands it, while Anthropic's OpenAI-compatible
+    endpoint takes ``thinking`` / ``output_config`` to control extended thinking.
+    ``REPROCLI_EXTRA_BODY`` is a JSON object merged onto every request body with
+    RFC 7386 merge-patch semantics -- a ``null`` value DELETES that field -- so
+    pointing the same agent at a new provider stays a URL + env change:
+
+        REPROCLI_EXTRA_BODY='{"thinking": {"type": "adaptive"},
+                              "output_config": {"effort": "high"},
+                              "truncate_prompt_tokens": null}'
+
+    Malformed JSON raises rather than being ignored: a silently-dropped thinking
+    config would grade a whole sweep with the wrong model settings.
+    """
+    raw = (os.environ.get(ENV_EXTRA_BODY) or "").strip()
+    if not raw:
+        return None
+    try:
+        overlay = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{ENV_EXTRA_BODY} is not valid JSON: {exc}") from exc
+    if not isinstance(overlay, dict):
+        raise ValueError(f"{ENV_EXTRA_BODY} must be a JSON object, got {type(overlay).__name__}")
+    return overlay
+
+
+def merge_patch(target: dict[str, Any], patch: dict[str, Any]) -> None:
+    """Apply an RFC 7386 merge patch to ``target`` in place (null deletes a key)."""
+    for key, value in patch.items():
+        if value is None:
+            target.pop(key, None)
+        elif isinstance(value, dict) and isinstance(target.get(key), dict):
+            merge_patch(target[key], value)
+        else:
+            target[key] = value
 
 
 def normalize_server_url(value: str) -> str:
@@ -142,10 +184,22 @@ def resolve_served_model(
     the single advertised model (the common case: one model per serve job); if the
     server lists several we take the first and say so. An explicit override is used
     verbatim but checked against the advertised list so a typo fails loudly here
-    rather than as a per-request 404.
+    rather than as a per-request 404 -- unless the endpoint won't list its models at
+    all (a hosted API may gate or omit ``/v1/models``), in which case an explicit
+    name is taken on trust: the caller already said what to send.
     """
-    available = fetch_served_models(base_url, timeout)
     override = (cli_value or os.environ.get(ENV_SERVED_MODEL) or "").strip()
+    try:
+        available = fetch_served_models(base_url, timeout)
+    except RuntimeError:
+        if not override:
+            raise
+        print(
+            f"{base_url}/v1/models is not listable; using the requested model "
+            f"{override!r} unchecked.",
+            file=sys.stderr,
+        )
+        return override
     if override:
         if available and override not in available:
             raise RuntimeError(

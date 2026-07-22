@@ -12,10 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
     ENV_ENDPOINT_FILE,
+    ENV_EXTRA_BODY,
     ENV_OPENROUTER_PROVIDER,
     ENV_SERVED_MODEL,
     ENV_SERVER_URL,
     auth_headers,
+    body_overlay,
+    merge_patch,
     normalize_server_url,
     openrouter_provider_routing,
     resolve_api_key,
@@ -100,6 +103,61 @@ class ResolveServedModelTests(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True), self._patch_models([]):
             with self.assertRaises(RuntimeError):
                 resolve_served_model("http://h:8000")
+
+    def _unlistable(self):
+        return patch(
+            "reprocli_vllm.vllm.endpoint.fetch_served_models",
+            side_effect=RuntimeError("could not list models"),
+        )
+
+    def test_explicit_model_survives_unlistable_endpoint(self) -> None:
+        # A hosted API may gate or omit /v1/models; an explicit name is enough.
+        with patch.dict("os.environ", {}, clear=True), self._unlistable():
+            self.assertEqual(
+                resolve_served_model("https://api.anthropic.com", "claude-opus-4-8"),
+                "claude-opus-4-8",
+            )
+
+    def test_unlistable_endpoint_still_raises_without_a_name(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), self._unlistable():
+            with self.assertRaises(RuntimeError):
+                resolve_served_model("https://api.anthropic.com")
+
+
+class BodyOverlayTests(unittest.TestCase):
+    def test_none_when_unset_or_blank(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(body_overlay())
+        with patch.dict("os.environ", {ENV_EXTRA_BODY: "  "}, clear=True):
+            self.assertIsNone(body_overlay())
+
+    def test_parses_object(self) -> None:
+        with patch.dict("os.environ", {ENV_EXTRA_BODY: '{"thinking": {"type": "adaptive"}}'}, clear=True):
+            self.assertEqual(body_overlay(), {"thinking": {"type": "adaptive"}})
+
+    def test_malformed_json_raises(self) -> None:
+        with patch.dict("os.environ", {ENV_EXTRA_BODY: "{thinking"}, clear=True):
+            with self.assertRaises(ValueError):
+                body_overlay()
+
+    def test_non_object_raises(self) -> None:
+        with patch.dict("os.environ", {ENV_EXTRA_BODY: '["thinking"]'}, clear=True):
+            with self.assertRaises(ValueError):
+                body_overlay()
+
+
+class MergePatchTests(unittest.TestCase):
+    def test_sets_deletes_and_merges_nested(self) -> None:
+        target = {"keep": 1, "drop": 2, "nested": {"a": 1, "b": 2}}
+        merge_patch(target, {"add": 3, "drop": None, "nested": {"b": 9, "c": 3}})
+        self.assertEqual(
+            target, {"keep": 1, "add": 3, "nested": {"a": 1, "b": 9, "c": 3}}
+        )
+
+    def test_replaces_a_scalar_with_an_object(self) -> None:
+        target = {"thinking": "off"}
+        merge_patch(target, {"thinking": {"type": "adaptive"}})
+        self.assertEqual(target["thinking"], {"type": "adaptive"})
 
 
 class AuthHeaderTests(unittest.TestCase):
