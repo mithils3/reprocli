@@ -19,7 +19,7 @@ The reproduction agent acts on its episode through these tools:
   wall clock (``gpu_session``); ``partition`` (optional) selects the pool to hold.
 
 ``build_repro_tools`` returns the schema list advertised to the model (wired onto
-``args.tools`` in ``cli_resolve``); ``REPRO_TOOL_HANDLERS`` maps each name to its
+``args.tools`` in ``cli_args``); ``REPRO_TOOL_HANDLERS`` maps each name to its
 ``(arguments, ctx)`` handler. ``execute_repro_tool_call`` is the single entry the
 loop dispatches through (``dispatch.append_tool_results``): it parses arguments,
 routes to the handler against this episode's ``ExecutionContext``, retries a
@@ -42,8 +42,7 @@ from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
 from reprocli_repro.tools.partitions import LIST_PARTITIONS_HANDLERS, LIST_PARTITIONS_TOOLS
 from reprocli_repro.tools.plan import UPDATE_PLAN_HANDLERS, UPDATE_PLAN_TOOLS
-from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS
-from reprocli_repro.tools.run_gpu_schema import run_gpu_tool
+from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
 # The per-node GPU cap baked into run_gpu's schema is cluster-specific; cli_args

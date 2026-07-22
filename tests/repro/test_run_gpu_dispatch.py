@@ -13,8 +13,7 @@ from reprocli_repro.cluster import resolve_cluster
 from reprocli_repro.context import Budget, ExecutionContext
 from reprocli_repro.slurm import SessionHandle, StepResult
 from reprocli_repro.tools import build_repro_tools, execute_repro_tool_call
-from reprocli_repro.tools.run_gpu import run_gpu
-from reprocli_repro.tools.run_gpu_schema import run_gpu_tool
+from reprocli_repro.tools.run_gpu import run_gpu, run_gpu_tool
 
 
 def _ctx(root: Path, *, budget_hours: float = 8.0) -> ExecutionContext:

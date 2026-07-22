@@ -25,7 +25,7 @@ from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
 from reprocli_repro.tools import output as output_mod
-from reprocli_repro.tools.run_gpu_notes import bounded
+from reprocli_repro.tools.run_gpu import bounded
 
 # Setup steps (clone, dependency installs) routinely run for minutes, so the
 # default is far longer than the auditor's 60s; metered GPU steps get their own

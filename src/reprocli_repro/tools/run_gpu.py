@@ -42,7 +42,7 @@ import shlex
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS
+from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
 
 from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
@@ -50,14 +50,6 @@ from reprocli_repro import gpu_session, slurm
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.sandbox import CONTAINER_EVIDENCE
 from reprocli_repro.tools import output as output_mod
-from reprocli_repro.tools.run_gpu_notes import (
-    STALE_LAUNCH_SECONDS,
-    bounded,
-    clamp_note,
-    expiry_warning,
-    reuse_note,
-    stale_rotation,
-)
 
 # Defaults/bounds for the model-set knobs, applied on the call that *starts* a
 # session. ``gpus`` is capped to the node by ``slurm.build_acquire``; ``minutes`` is
@@ -71,6 +63,14 @@ QUEUE_GRACE_SECONDS = 4 * 3600
 # Chars of streamed output returned when the step was killed (wall/timeout): the
 # tail is where the last checkpoint line / progress state / traceback is.
 KILL_TAIL_CHARS = 4000
+# Warn the model when the held allocation is within this many seconds of its --time
+# wall: past it SLURM reclaims the node mid-step and any unsaved state is lost.
+SESSION_WARN_SECONDS = 120
+# Refuse to LAUNCH a new command on a session with less than this left on its
+# --time. Three 06-29 runs started multi-minute jobs into a <2-min hold and lost
+# them; a launch that near the wall can only be killed, so this is a deterministic
+# guard, not a heuristic.
+STALE_LAUNCH_SECONDS = 120
 
 
 def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
@@ -270,5 +270,155 @@ def _record(
 
 RUN_GPU_HANDLERS = {"run_gpu": run_gpu}
 
-# The ``run_gpu`` JSON schema (``run_gpu_tool``) lives in ``run_gpu_schema.py``; the
-# model-facing notes/warnings/refusal strings live in ``run_gpu_notes.py``.
+
+# --------------------------------------------------------------------------- #
+# Model-facing notes / warnings / refusals                                     #
+# --------------------------------------------------------------------------- #
+# Message quality is load-bearing here: the 06-29 batch showed agents burning
+# sessions on exactly the semantics these spell out (``minutes`` on a reuse call
+# does NOT extend the hold), so each message states the semantics and the recovery
+# action, not just the failure.
+def bounded(value: Any, default: int, maximum: int) -> int:
+    if value in (None, ""):
+        return default
+    try:
+        return max(1, min(int(value), maximum))
+    except (TypeError, ValueError):
+        return default
+
+
+def clamp_note(requested: Any, effective: int, cap: int) -> str | None:
+    """Tell the agent when its requested GPU count was clamped to the node cap."""
+    if requested in (None, ""):
+        return None
+    asked = _safe_int(requested)
+    if asked is not None and asked != effective:
+        return f"requested gpus={asked} clamped to {effective} (node capacity is {cap})."
+    return None
+
+
+def expiry_warning(session: Any, remaining_seconds: float) -> str | None:
+    """Loud heads-up when the held allocation is about to hit its --time wall.
+
+    Past the wall SLURM reclaims the node mid-step, so anything not written to disk
+    (training state, in-memory results) is gone. Surfaced so the model checkpoints and
+    re-acquires a fresh/longer hold *before* it loses the node, not after.
+    """
+    if remaining_seconds > SESSION_WARN_SECONDS:
+        return None
+    return (
+        f"SESSION ENDING: ~{remaining_seconds / 60:.1f} min left on this {session.minutes}-min "
+        f"allocation (jobid {session.jobid}) before SLURM reclaims the node and loses any unsaved "
+        "state. Save results/checkpoints to disk now. Long work left? release=true and start a "
+        "fresh session with a larger minutes= (or finish what fits in the time remaining)."
+    )
+
+
+def stale_rotation(session: Any, remaining_seconds: float, new_minutes: int) -> str:
+    """Explain that a spent held session was auto-released and a fresh one acquired.
+
+    A session within ``STALE_LAUNCH_SECONDS`` of (or past) its ``--time`` wall can only
+    run doomed commands, so ``run_gpu`` rotates it out — release + re-acquire in the
+    same call — instead of refusing every launch until the agent manually releases.
+    (Refuse-and-keep dead-ended: the spent session stayed bound, so once past its wall
+    it sat as a zombie blocking all re-acquisition.) States that ``minutes`` is fixed
+    per allocation so the agent sizes the next hold to the whole job.
+    """
+    return (
+        f"prior session (jobid {session.jobid}) had only ~{remaining_seconds:.0f}s of its "
+        f"{session.minutes}-min --time left, so it was released and a fresh {new_minutes}-min "
+        "allocation was acquired for this command. minutes= is fixed per allocation — this new "
+        f"hold lasts {new_minutes} min from now; size minutes= to the whole job to avoid "
+        "mid-run rotations."
+    )
+
+
+def reuse_note(arguments: dict[str, Any], session: Any) -> str | None:
+    """Warn when gpus/minutes are passed to a call that reuses a live session."""
+    asked_gpus = arguments.get("gpus")
+    if asked_gpus not in (None, "") and _safe_int(asked_gpus) not in (None, session.gpus):
+        return (
+            f"a GPU session is already held ({session.gpus} gpu, jobid {session.jobid}); "
+            "gpus/minutes are fixed until you release it (run_gpu release=true) and start a new one."
+        )
+    return None
+
+
+def _safe_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# Tool schema                                                                  #
+# --------------------------------------------------------------------------- #
+def run_gpu_tool(gpus_per_node: int) -> dict:
+    """Build the ``run_gpu`` schema, advertising this cluster's per-node GPU cap."""
+    return function_tool(
+        "run_gpu",
+        "Run ONE command on a real GPU (training, evaluation, scoring, verifying the "
+        "container's torch.cuda, nvidia-smi). The GPU allocation is HELD across calls: the "
+        "first run_gpu acquires it (you may wait in the queue once) and every later "
+        "run_gpu runs on the SAME node with NO new queue wait, so install → verify → "
+        "run as successive calls. You are billed WALL-CLOCK for the whole time the "
+        "allocation is held — gpus x held-time x hw, including while you reason or "
+        "install between commands — so set release=true the moment you are done with "
+        "the GPU to stop the meter (re-acquire later if you need it again). The command "
+        "runs with the workspace as its cwd; cost and remaining budget are returned and "
+        "recorded to evidence/. Each step's FULL stdout/stderr is streamed to the file named "
+        "in the result's output_log (under /repro/evidence/) as it runs — it survives even if "
+        "the step is killed, so read/grep that file instead of re-running a job just to see "
+        "its output. Each result also reports session_remaining_seconds — the "
+        "wall left before this allocation hits its `minutes` (--time) cap and SLURM reclaims "
+        "the node (losing any unsaved state); when it runs low a session_expiry_warning tells "
+        "you to checkpoint to disk and, if you need more time, release and re-acquire. If you "
+        "launch a command onto a hold that is already within ~2 min of (or past) its --time "
+        "wall, run_gpu auto-rotates: it releases the spent allocation and acquires a fresh one "
+        "sized to this call's minutes=, then runs your command on it (reported in the result's "
+        "note) — so a spent session never blocks you.",
+        {
+            "command": {
+                "type": "string",
+                "description": "The GPU command to run (e.g. `python train.py ...`). Omit only with release=true to just free the session.",
+            },
+            "gpus": {
+                "type": "integer",
+                "default": DEFAULT_GPUS,
+                "minimum": 1,
+                "maximum": gpus_per_node,
+                "description": (
+                    f"GPUs to hold (1-{gpus_per_node}, one node); set only on the call that STARTS "
+                    "the session. Default to 1 — many real runs are correctly single-GPU and a 1-GPU "
+                    "FULL run is a real run, not a smoke test. Take more ONLY when the model/batch "
+                    "won't fit in one GPU's memory or a parallelizable run won't finish in your "
+                    "wall-clock; throughput then scales with gpus (wall budget ~same)."
+                ),
+            },
+            "minutes": {
+                "type": "integer",
+                "default": DEFAULT_MINUTES,
+                "minimum": 1,
+                "maximum": MAX_MINUTES,
+                "description": "Max lifetime of the held allocation (SLURM --time) and the budget "
+                "pre-authorization; set on the call that STARTS the session. Pick ~ how long you "
+                "will hold it. IGNORED on a reuse call — it cannot extend a held session; to get "
+                "more time, release=true and re-acquire with a larger value.",
+            },
+            "release": {
+                "type": "boolean",
+                "default": False,
+                "description": "Set true when you are done with the GPU: frees the allocation after "
+                "this command (or immediately if no command) so wall-clock billing stops.",
+            },
+            "partition": {
+                "type": "string",
+                "description": "SLURM partition (node pool) to allocate on. Omit to use this "
+                "cluster's default; call list_partitions to see the alternatives (e.g. a "
+                "faster-queueing interactive pool). Takes effect only on the call that STARTS "
+                "the session; fixed until you release it.",
+            },
+        },
+        [],  # command is enforced by the handler (it is optional only with release=true)
+    )

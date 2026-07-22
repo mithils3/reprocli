@@ -9,14 +9,12 @@ persists the returned object next to ``evidence/`` for the Stage-7 auditor.
 
 from __future__ import annotations
 
-from reprocli_repro.report.schema import (
+from reprocli_repro.report.report import (
     AGENT_ASSESSMENTS,
+    REPORT_FILENAME,
     REPORT_JSON_SCHEMA,
     REPORT_RESPONSE_FORMAT,
     REPORT_SCHEMA_NAME,
-)
-from reprocli_repro.report.validate import (
-    REPORT_FILENAME,
     coerce_report,
     validate_report,
     write_episode_report,
