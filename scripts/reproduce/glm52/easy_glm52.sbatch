@@ -1,25 +1,10 @@
 #!/bin/bash
-# Serve GLM-5.2 UD-IQ4_XS via llama.cpp on 4xGH200, then run every tier-Easy
-# paper through the paired S6->S7 flow from scripts/reproduce/repro_audit_one.sh:
-# reproduce with a pinned run id, audit exactly that bundle, and optionally
-# upload the verdict.
-#
+# Serve GLM-5.2 UD-IQ3_S via llama.cpp on 4xGH200, then run a paired
+# reproduce->audit sweep over the eval split's Easy tier (pinned run id,
+# audit that exact bundle, optional verdict upload).
 #   sbatch scripts/reproduce/glm52/easy_glm52.sbatch
-#
-# GLM-5.2 sibling of easy_minimax_m2.sbatch. The structural difference is the
-# brain: GLM-5.2 ships GGUF-first at a size vLLM cannot serve here (the vLLM
-# path is abandoned, tasks/serve-glm52-vllm-gh200.md), so Step 1 launches
-# llama-server per tasks/serve-gguf-llamacpp-gh200.md instead of reprocli_serve
-# and hand-publishes the same endpoint JSON contract. Weights are the UD-IQ3_S
-# 3-bit quant (~288 GiB) across all four GPUs. Dropping from IQ4_XS frees enough
-# HBM to keep the whole q8_0 KV pool (~35 GiB) on the GPUs, so the brain runs
-# WITHOUT --no-kv-offload (KV_IN_CPU=0). IQ4_XS left no room and forced KV onto
-# the Grace C2C link, which capped decode near ~1 t/s per slot; see runbook §2-3.
-# Every `run_gpu` experiment step still JIT-sallocs a SEPARATE ghx4 node; the
-# orchestrator + auditor are cheap CPU processes sharing this brain node.
-# Defaults to the eval split's Easy papers, MAX_PARALLEL=6, and RESUME=1 so
-# re-submits after the 48h cap skip papers that already wrote a verdict.
-#
+# Rationale: tasks/serve-gguf-llamacpp-gh200.md; vLLM path abandoned, see
+# tasks/serve-glm52-vllm-gh200.md.
 #SBATCH -J repro_easy_glm52
 #SBATCH -A betw-dtai-gh
 #SBATCH -p ghx4
@@ -56,46 +41,35 @@ TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
-# llama.cpp brain knobs. The prompt cache is per-slot (runbook §9), so slots
-# match MAX_PARALLEL and each slot gets CTX_SIZE/PARALLEL = 128K of context.
-# The whole 768K q8_0 KV pool (~35 GiB) now lives in HBM (KV_IN_CPU=0): the
-# UD-IQ3_S weights (~288 GiB) leave ~94 GiB free, so KV no longer competes for
-# the last few GiB and decode stays on HBM instead of the C2C link. Set
-# KV_IN_CPU=1 to push KV back to Grace RAM (needed only for a >340 GiB quant).
+# Brain knobs: prompt cache is per-slot, so slots=MAX_PARALLEL and each slot gets
+# CTX_SIZE/PARALLEL=128K. KV pool stays in HBM; KV_IN_CPU=1 pushes KV to Grace RAM
+# (only needed for a >340 GiB quant).
 PARALLEL="${PARALLEL:-${MAX_PARALLEL}}"
 CTX_SIZE="${CTX_SIZE:-$(( PARALLEL * 131072 ))}"
 KV_IN_CPU="${KV_IN_CPU:-0}"
 
-# Audit against the same canonical lockfile claim the agent targeted.
 case "${SPLIT}" in
   dev|validation) CLAIMS_FILE="dev_split.jsonl" ;;
   *)              CLAIMS_FILE="eval_100.jsonl" ;;
 esac
 CLAIMS="${CLAIMS:-hf://datasets/${LOCKFILE}/${CLAIMS_FILE}}"
 
-# Keep the agent's heavy I/O (bundles, per-paper uv venvs, run bundles) off $HOME.
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
 export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/hf_cache}"
-# The reproduction AGENT runs inside the Apptainer sandbox; send ONLY its in-container HF
-# pulls (per-paper models + datasets, the bulk that filled /work) to node-local /tmp, which
-# clears per job. APPTAINERENV_HF_HOME wins inside the wrap (sandbox.forward_env honors a
-# pre-set value), so the served brain + orchestrator above keep the persistent /work cache.
+# APPTAINERENV_HF_HOME sends the in-container agent's HF pulls to node-local /tmp
+# (clears per job); the served brain + orchestrator keep the persistent /work cache.
 export APPTAINERENV_HF_HOME="${APPTAINERENV_HF_HOME:-/tmp/hf_cache}"
 RUNS_DIR="${RUNS_DIR:-${REPRO_WORK_ROOT}/agent_runs}"
 if [[ -z "${HF_TOKEN:-}" ]]; then
   echo "WARNING: HF_TOKEN is unset; the lockfile/bundle download from the Hub may fail." >&2
 fi
 
-# Agent-logs upload is opt-in: the reproduce sink upserts repro_runs, then
-# audit_upload PATCHes audit_* onto the pinned run_id.
 export SUPABASE_URL="${SUPABASE_URL:-https://rjnkpoxwdslkgxjliakq.supabase.co}"
 if [[ -z "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
   echo "WARNING: SUPABASE_SERVICE_KEY is unset; runs + audit verdicts will NOT upload to agent-logs." >&2
 fi
 
 OUTER_JOB="${SLURM_JOB_ID:-local}"
-# One batch id per sbatch launch groups this sweep's runs in the viewer; the
-# REPRO_* vars survive the SLURM_* env scrub below (override to join an old batch).
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
 SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}}"
@@ -103,9 +77,7 @@ ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
 IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
-# Sweep-wall countdown surfaced to the agent every tool round (transcript.py reads
-# this): the absolute epoch when SLURM kills this job. squeue %e is the scheduler's
-# own end time; fall back to now + the #SBATCH --time cap if it is unavailable.
+# Sweep-wall deadline (epoch) surfaced to the agent each round; from squeue %e, else --time cap.
 if end_ts="$(squeue -h -j "${SLURM_JOB_ID}" -o '%e' 2>/dev/null)" \
    && [ -n "${end_ts}" ] \
    && REPRO_WALL_DEADLINE_EPOCH="$(date -d "${end_ts}" +%s 2>/dev/null)"; then
@@ -115,8 +87,7 @@ else
 fi
 export REPRO_WALL_DEADLINE_EPOCH
 
-# No vLLM/NCCL env block here: llama-server does its own multi-GPU (runbook §9).
-# The venv is still needed for the orchestrator, auditor, and upload tooling.
+# No vLLM/NCCL block: llama-server does its own multi-GPU. venv is for the orchestrator/auditor.
 ulimit -l unlimited || true
 ulimit -s unlimited || true
 
@@ -130,7 +101,6 @@ command -v llama-server >/dev/null || { echo "llama-server not on PATH; build pe
 [[ -f "${SHARD}" ]] || { echo "missing shard ${SHARD}; download per runbook §4" >&2; exit 1; }
 
 echo "host=$(hostname)  job=${OUTER_JOB}  endpoint_file=${ENDPOINT_FILE}"
-# Empty budget means the CLI derives the paper ceiling from its selection band.
 if [[ -n "${BUDGET_H100_HOURS}" ]]; then
   BUDGET_ARG=(--budget-h100-hours "${BUDGET_H100_HOURS}")
   BUDGET_LABEL="${BUDGET_H100_HOURS}h (flat)"
@@ -145,10 +115,7 @@ echo "brain: shard=${SHARD}  ctx=${CTX_SIZE}  slots=${PARALLEL}  kv_in_cpu=${KV_
 nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
-# Flags per runbook §6: shard 1 only (llama.cpp finds the rest), -ngl 99, no
-# --split-mode/--tensor-split, q8_0 KV quant (drop -ctk/-ctv first if the
-# server dies with a KV-type error). KV stays on HBM by default now; only when
-# KV_IN_CPU=1 is --no-kv-offload added, spilling KV to Grace LPDDR over C2C.
+# Serve flags: shard 1 only, -ngl 99, q8_0 KV; KV_IN_CPU=1 adds --no-kv-offload.
 KV_ARGS=()
 if [[ "${KV_IN_CPU}" == "1" ]]; then KV_ARGS+=(--no-kv-offload); fi
 CUDA_VISIBLE_DEVICES=0,1,2,3 llama-server \
@@ -165,11 +132,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 llama-server \
 SERVER_PID=$!
 trap 'rm -f "${ENDPOINT_FILE}"; kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 
-# llama.cpp is not wired into reprocli_serve, so publish the endpoint contract
-# (src/reprocli_serve/endpoint.py keys) by hand: discover a routable Slingshot
-# fabric IP (hsn0..hsn3) and write the JSON once /health goes green. GGUF load
-# from shared NVMe is minutes, not the vLLM path's 45; 2h of polling is generous
-# and a dead brain must kill the sweep, not idle under it (job 2602811).
+# llama.cpp is not wired into reprocli_serve, so hand-publish the endpoint JSON
+# (src/reprocli_serve/endpoint.py keys): find a routable Slingshot IP (hsn0..3)
+# and write it once /health is green. A dead brain must kill the sweep, not idle.
 HSN_IP="$(ip -4 -o addr show | awk '$2 ~ /^hsn/ {split($4, a, "/"); print a[1]; exit}')"
 [[ -n "${HSN_IP}" ]] || { echo "no hsn interface found" >&2; exit 1; }
 for _ in $(seq 1 720); do
@@ -200,9 +165,6 @@ with open(sys.argv[1], "w") as f:
 PY
 echo "brain up at ${BASE_URL}"
 
-# Host telemetry (optional; same opt-in as the agent-logs upload): one master
-# beacon samples this node + tails this job's .out into host_status.log_tail.
-# Per-run beacons ride each JIT allocation (spawned by gpu_session).
 BEACON_PID=""
 if [[ -n "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
   LOGFILE="$(scontrol show job "${OUTER_JOB}" 2>/dev/null | sed -n 's/.*StdOut=\([^ ]*\).*/\1/p' | head -1)"
@@ -211,7 +173,6 @@ if [[ -n "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
 fi
 trap 'rm -f "${ENDPOINT_FILE}"; kill "${SERVER_PID}" ${BEACON_PID:+"${BEACON_PID}"} 2>/dev/null || true' EXIT
 
-# The orchestrator + auditor auto-discover the URL + served model from this file.
 export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
 
 # --- Step 2: enumerate the Easy tier of the split ---------------------------
@@ -240,14 +201,11 @@ printf '%s\n' "${PAPER_IDS[@]}" > "${IDS_FILE}"
 echo "split '${SPLIT}' tier '${TIER}' has ${#PAPER_IDS[@]} papers: ${PAPER_IDS[*]}"
 echo "ids -> ${IDS_FILE}"
 
-# --- Step 3: scrub inherited SLURM_* so each run_gpu salloc/srun is clean ----
-# Child srun inherits this allocation's env; scrub it for fresh JIT GPU steps.
+# --- Step 3: scrub inherited SLURM_* so JIT sallocs/sruns start clean --------
 for v in $(compgen -v | grep -E '^SLURM_' || true); do unset "$v"; done
 export SLURM_EXPORT_ENV=ALL
 
 # --- Step 4: reproduce + audit every Easy paper, PAIRED on one bundle --------
-# Per paper: reproduce with a pinned run id, symlink <grade-root>/<id> to that
-# exact bundle, audit it, then PATCH the verdict onto the same repro_runs row.
 STATUS_FILE="${SWEEP_DIR}/status.tsv"
 
 run_one() {
@@ -265,7 +223,7 @@ run_one() {
   local rid="${OUTER_JOB}-${pid}-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')"
   echo ">>> [$(date '+%F %T')] start ${pid} (run_id=${rid})"
 
-  # (1) Reproduce this paper; the brain URL comes from REPROCLI_ENDPOINT_FILE.
+  # (1) Reproduce this paper.
   python -m reprocli_repro \
     --paper-id "${pid}" \
     --split "${SPLIT}" \
@@ -279,7 +237,7 @@ run_one() {
     >"${log}" 2>&1
   local rc=$?
 
-  # (2) Locate this run's bundle, unique by run id across budget dirs.
+  # (2) Locate this run's bundle by run id.
   local run_dir
   run_dir="$(find "${RUNS_DIR}/${pid}" -type d -name "${rid}" -print -quit 2>/dev/null || true)"
   if [[ -z "${run_dir}" ]]; then
@@ -288,7 +246,7 @@ run_one() {
     return 0
   fi
 
-  # (3) Make the auditor's <runs-dir>/<pid> contract resolve to this bundle only.
+  # (3) Point the auditor's <runs-dir>/<pid> at this bundle only.
   local grade_root ids_file
   grade_root="$(mktemp -d "${SWEEP_DIR}/grade_${pid}.XXXXXX")"
   ln -s "${run_dir}" "${grade_root}/${pid}"
@@ -296,9 +254,7 @@ run_one() {
   printf '%s\n' "${pid}" > "${ids_file}"
 
   # (4) Audit exactly this bundle and link the live audit to the graded run.
-  # --max-model-len matches ONE llama.cpp slot (CTX_SIZE/PARALLEL), not the
-  # vLLM siblings' 196K: a request longer than its slot gets truncated or
-  # rejected by the server, so the client must size prompts to the slot.
+  # --max-model-len = one llama.cpp slot (CTX_SIZE/PARALLEL); longer prompts truncate.
   REPROCLI_GRADED_RUN_ID="${rid}" \
   python3 src/run_arxiv_prompt_vllm.py \
     --mode audit \
@@ -320,7 +276,7 @@ run_one() {
   local arc=$?
   rm -rf "${grade_root}"
 
-  # (5) Upload only successful, nonempty audit verdicts to the pinned run_id.
+  # (5) Upload successful, nonempty verdicts to the pinned run_id.
   local uploaded="off"
   if [[ "${arc}" != "0" ]]; then
     uploaded="audit-fail"
@@ -345,7 +301,6 @@ run_one() {
 
 : > "${STATUS_FILE}"
 set +e   # one bad paper must not abort the sweep
-# Track only per-paper PIDs; the brain server is also a background child.
 run_pids=()
 inflight=0
 for pid in "${PAPER_IDS[@]}"; do
