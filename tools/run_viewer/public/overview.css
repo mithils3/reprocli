@@ -77,6 +77,11 @@
 .matrix th, .matrix td { padding: 6px 8px; text-align: center; }
 .matrix th:first-child, .matrix td:first-child { text-align: left; }
 .mt-model { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; }
+/* audit scores by grader: one row per auditor model over the runs on screen */
+.graders-card { margin: 14px 0; }
+.matrix.graders th.gr-n, .matrix.graders td.gr-n { text-align: right; }
+.matrix.graders th.gr-n { color: var(--muted); font-weight: 500; font-size: 11px; }
+.matrix.graders tr + tr td { border-top: 1px solid var(--line); }
 .mt-score { margin-left: 7px; font-size: 10.5px; font-weight: 600; color: var(--muted); }
 .mt-frac { font-family: var(--mono); font-size: 12px; font-weight: 500; display: block; }
 .mt-bar { display: block; height: 4px; border-radius: 2px; background: var(--panel2); overflow: hidden; margin-top: 3px; }

@@ -134,6 +134,35 @@
       };
     },
 
+    // per-GRADER aggregation over audit_runs: how each auditor model scored the
+    // same runs. A run's repro_runs.audit_* columns hold only the last verdict
+    // uploaded, so a second grader is invisible there; audit_runs keeps every pass.
+    // `runsById` scopes the audits to the runs currently on screen and supplies the
+    // stored verdict each audit may contradict.
+    graders(audits, runsById) {
+      const G = new Map();
+      for (const audit of (audits || [])) {
+        const run = runsById && runsById.get(audit.graded_run_id);
+        if (runsById && !run) continue;              // outside the current scope
+        if (!Number.isInteger(audit.score)) continue; // still running, or degraded
+        const name = String(audit.model || "unknown").split("/").pop();
+        if (!G.has(name)) G.set(name, { audits: 0, scoreSum: 0, reproduced: 0, disagree: 0 });
+        const row = G.get(name);
+        row.audits++;
+        row.scoreSum += audit.score;
+        if (audit.reproduced) row.reproduced++;
+        const stored = run && run.audit_verdict;
+        if (stored && audit.verdict && stored !== audit.verdict) row.disagree++;
+      }
+      return [...G.entries()]
+        .map(([grader, r]) => ({
+          grader, audits: r.audits, reproduced: r.reproduced, disagree: r.disagree,
+          avg: Math.round((r.scoreSum / r.audits) * 10) / 10,
+          pct: Math.round((r.scoreSum / (r.audits * 10)) * 100),
+        }))
+        .sort((a, b) => b.audits - a.audits);
+    },
+
     csv(papers) {
       const pct = (a, b) => (a == null || !b ? "" : Math.round((a / b) * 100));
       const cell = (v) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };

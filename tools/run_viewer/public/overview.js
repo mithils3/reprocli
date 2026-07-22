@@ -12,7 +12,7 @@
   const TIER_CLS = { Easy: "yes", Medium: "over", Hard: "no" };
 
   const Overview = {
-    rows: null, busy: false, msg: "", search: "", tier: "all", verdict: "all", sort: "tier", set: "all", model: "all",
+    rows: null, audits: null, busy: false, msg: "", search: "", tier: "all", verdict: "all", sort: "tier", set: "all", model: "all",
 
     root() { return document.querySelector("#overview-root"); },
 
@@ -29,6 +29,9 @@
       this.busy = true; this.msg = "loading runs…"; if (this.rows) this.render();
       try { this.rows = await window.RemoteSource.listRuns(); this.msg = ""; }
       catch (e) { this.msg = "error: " + (e.message || e); }
+      // every grading pass, not just the verdict stored on the run
+      try { this.audits = await window.RemoteSource.listAudits(); }
+      catch (e) { this.audits = this.audits || []; }
       finally { this.busy = false; this.render(); }
     },
     onTags() { if (this.root() && this.rows) this.render(); },
@@ -112,6 +115,25 @@
       </section>`;
     },
 
+    gradersHtml() {
+      const scoped = new Map(this.setRuns().map((r) => [r.run_id, r]));
+      const rows = window.Report.graders(this.audits, scoped);
+      if (!rows.length) return "";
+      const body = rows.map((g) => `<tr>
+        <td class="mt-model">${esc(g.grader)}</td>
+        <td class="gr-n tnum">${g.audits}</td>
+        <td class="gr-n tnum" title="${g.avg}/10 mean">${g.avg}</td>
+        <td class="gr-n tnum">${g.reproduced}</td>
+        <td class="gr-n tnum">${g.disagree ? `<span class="schip regrade">${g.disagree}</span>` : "·"}</td></tr>`).join("");
+      return `<section class="panel-card graders-card">
+        <div class="pc-head"><span class="plate">audit scores by grader</span><span class="lc-sub">every pass over these runs, not just the stored verdict</span></div>
+        <table class="matrix graders">
+          <tr><th></th><th class="gr-n">audits</th><th class="gr-n">mean</th><th class="gr-n">repro</th><th class="gr-n">≠ stored</th></tr>
+          ${body}
+        </table>
+      </section>`;
+    },
+
     paperCardHtml(p) {
       const m = V().meta(p.verdict);
       const links = p.links || {};
@@ -154,6 +176,7 @@
         </div>
         ${this.thesisHtml(papers, sm)}
         ${this.matrixHtml(papers)}
+        ${this.gradersHtml()}
         <section class="papers-section">
           <div class="ps-head"><span class="plate">papers</span><span class="ps-count">${vis.length} of ${papers.length}</span>
             <div class="ps-filters">
