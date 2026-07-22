@@ -114,7 +114,7 @@ tolerance.
 \label{subsec:features}
 
 \paragraph{End-to-end reproduction.} Each task hands the agent a recent
-paper and a target, not a scripted pipeline. No prepared environment is
+paper and a target. No scripted pipeline or prepared environment is
 provided. The agent plans the reproduction, installs the paper's stack and
 reconciles its dependency errors, debugs failures, and manages its own GPU
 allocations, the same work a researcher faces when reproducing a paper. One
@@ -125,8 +125,9 @@ in which an agent must recover and execute an experiment from the paper and its
 naturally released artifacts.
 
 \paragraph{Natural artifact availability.} We stratify papers by the artifacts
-their authors released, so each tier reflects a real reproduction setting rather
-than difficulty manufactured by withholding resources. This choice also limits contamination.
+their authors released, so each tier reflects a reproduction setting that
+actually occurs in the field, and no difficulty is manufactured by
+withholding resources. This choice also limits contamination.
 Reimplement-tier papers never released code, so no reference implementation
 exists for a model to absorb during training, and across all tiers our
 cluster seldom matches the authors' hardware and software stack exactly, so
@@ -140,9 +141,9 @@ it indicates that the compute cap is not the binding constraint for most runs.
 
 \paragraph{Provenance-audited grading.} The benchmark records what the
 agent claims and grades what the evidence shows. Every reported number is
-traced to execution evidence, and deterministic checks zero out numbers
-echoed from the paper rather than measured. Because the audit checks how
-the number was produced rather than adherence to a prescribed procedure, the
+traced to execution evidence, and deterministic checks zero out any number
+that was echoed from the paper and never measured. Because the audit checks how
+the number was produced, the
 agent is free to reach the result by any faithful route, and a novel
 reproduction strategy scores as well as the authors' own. Recording the
 claim and the audited outcome side by side is what lets us measure how far
@@ -187,7 +188,7 @@ released artifacts what to run, retrain, or reimplement. Because the agent
 knows the number it must hit, a bare value match proves nothing. An LLM
 auditor therefore traces every claimed result to execution
 evidence in the run directory, and deterministic checks force the score to
-zero when a number was echoed from the paper rather than measured.
+zero when a number was echoed from the paper and never measured.
 
 \subsection{Benchmark construction}
 \label{subsec:construction}
@@ -211,7 +212,7 @@ produces the released benchmark.}
 
 \textbf{Stage I: Artifact-verified classification.} For each submission we
 retrieved the raw \LaTeX{} source together with any OpenReview supplementary
-material, since some authors ship code in the supplement rather than on GitHub.
+material, since some authors ship code only in the supplement.
 A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
 extracted its central empirical claim, pinned its match target, and audited four
 artifact signals: released code, released datasets, released model weights, and
@@ -229,7 +230,7 @@ Retrain papers withhold the weights, and the agent must train the model before
 evaluating. Reimplement papers withhold the code as well, and the agent must
 rebuild the method from the paper alone. Compute cost is
 derived from the paper's text if mentioned, or estimated from the MRE config.
-The tiers also describe the venue rather than a curated corner of it. Among
+The tiers also describe the venue as a whole. Among
 the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
 Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 
@@ -239,9 +240,8 @@ hardware and wall-clock time where stated and deriving the estimate from the
 pinned configuration otherwise. We dropped every paper estimated above 96
 H100-hours before pooling. From the remainder we sampled a 200-paper audit
 pool stratified by tier and compute band. We allocate the pool equally across
-tiers rather than in venue proportion because tier is the variable under
-test, and equal cells measure each tier's reproduction rate with equal
-precision. Proportional sampling would leave the Reimplement tier with roughly a
+tiers because tier is the variable under test, and equal cells measure each
+tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
 dozen papers, and the venue proportions reported above let readers reweight
 any rate back to the venue level.
 
@@ -270,20 +270,20 @@ reported number to the execution that produced it, checks the executed
 protocol, split, and scale against the pinned configuration, and
 cross-checks the agent's measurements against the paper's reported values.
 When the recorded evidence does not settle a claim, it writes and executes
-its own scoring scripts over the run's saved outputs, recomputing metrics
-from raw artifacts rather than trusting the agent's summaries. It inspects
+its own scoring scripts over the run's saved outputs and recomputes
+metrics directly from the raw artifacts. It inspects
 and recomputes but never re-runs the reproduction, so a grade reflects the
 evidence the run actually produced.
 
 The auditor's discretion is bounded in code. Every violation it finds is
 recorded as a typed anti-cheat flag with a severity, and the scoring code
-applies the integrity adjustment of Appendix~\ref{app:rubric} rather than
-leaving it to the auditor. A high-severity flag, such as a number echoed
+applies the integrity adjustment of Appendix~\ref{app:rubric}. A
+high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
 forces the score to zero, and a genuine artifact wall caps the score at 3.
-Grading by evidence rather than against a prescribed procedure also
-preserves the agent's creativity, since any faithful route to the pinned
-number earns full credit, including strategies the authors never used. An
+Grading by evidence also preserves the agent's creativity, since any
+faithful route to the pinned number earns full credit, including
+strategies the authors never used. An
 LLM auditor reads far more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
@@ -304,8 +304,7 @@ Describe your experimental setup, baselines, metrics, and implementation details
 loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
-guidance beyond them, so outcomes measure the model rather than our
-scaffolding. The agent receives the paper's \LaTeX{} source, its OpenReview
+guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
 target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
 GPU, holding a Slurm allocation whose wall clock is metered against the
@@ -313,8 +312,8 @@ run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
 budgeting and scheduling decisions that real reproduction work demands.
 Each run ends with a structured report in which the agent states what it
-ran, what it measured, and whether it believes the result reproduced, which
-is its claim and not its grade. Appendix~\ref{app:harness} gives the
+ran, what it measured, and whether it believes the result reproduced. This
+self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, tool schemas, and session mechanics.
 
 \begin{figure}[h]
@@ -359,8 +358,9 @@ Present your main results.
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
-band comes close to exhausting the grant we assign it. The gradient tracks
-the experiment the paper demands, not the compute the agent receives.
+band comes close to exhausting the grant we assign it
+(Table~\ref{tab:band-compute}). The gradient tracks the scale of the
+experiment the paper demands.
 Agents handle short evaluation-style experiments well. They load a released
 checkpoint, run an inference pass, and recompute a metric. They do not
 launch and see through a full training run. When the pinned claim requires
@@ -370,6 +370,26 @@ the experiment stops being short.
 % TODO(scale-narrative): add numbers when final grades land. Band means,
 % budget-spent fractions per band, and the miniature examples (46M params
 % for 1.96B, 256px for 512px) from the medium-2690187 dissection.
+
+\begin{table}[h]
+\caption{Reproduction score and compute use by compute band.
+% TODO(band-table): fill from final grades. Optionally add a per-tier
+% breakdown or swap for a grouped bar figure if space allows.
+}
+\label{tab:band-compute}
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Band (H100-h) & Papers & Mean score & Grant spent (\%) \\
+\midrule
+8 & XX & XX & XX \\
+32 & XX & XX & XX \\
+96 & XX & XX & XX \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
 
 \section{Limitations}
 \label{sec:limitations}
@@ -457,8 +477,7 @@ Every tool leaves a durable trace. Each shell command is appended to
 directory. Each applied \texttt{edit\_file} change is saved verbatim as a
 unified diff under \texttt{evidence/patches/}. Each \texttt{update\_plan}
 call overwrites \texttt{evidence/plan.md} with the current checklist, and
-because the plan is harness state rather than conversation text it survives
-context compaction. The write tools
+because the plan is harness state it survives context compaction. The write tools
 resolve every path against the workspace and evidence roots, canonicalize
 symlinks, and reject traversal, so the read-only reference copy of the paper
 cannot be modified.
@@ -498,12 +517,11 @@ edge of its compute band, 8, 32, or 96 H100-hours.
 Each step's stdout and stderr stream to a numbered log under
 \texttt{evidence/} while the step runs, so a job killed at the
 \texttt{--time} wall still leaves everything it printed on disk, and the
-tool result names the log and returns the output tail rather than nothing.
+tool result names the log and returns the output tail.
 Every result also reports the accrued cost, the remaining budget, and the
 seconds left on the allocation. A warning fires within two minutes of the
 wall, and a command launched onto an allocation with under two minutes left
-is moved onto a fresh allocation in the same call rather than started on a
-doomed one.
+is moved onto a fresh allocation in the same call.
 
 \subsection{Sandbox}
 \label{app:sandbox}
@@ -795,9 +813,9 @@ Field & Description \\
 \caption{\texttt{signals}: the per-artifact availability audit. The four
 audited signals are \texttt{code\_available}, \texttt{dataset\_available},
 \texttt{weights\_available}, and \texttt{dataset\_is\_standard}. Each signal
-is an object with the three fields below. The audit trusts a tool call, not
-the paper's own statement, so a signal is true only when its
-\texttt{verification} field is \texttt{tool\_verified}.}
+is an object with the three fields below. A signal is true only when its
+\texttt{verification} field is \texttt{tool\_verified}, so every available
+artifact is backed by a successful tool call.}
 \label{tab:schema-signals}
 \begin{center}
 \small
