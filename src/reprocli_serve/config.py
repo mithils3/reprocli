@@ -32,4 +32,3 @@ DEFAULT_ENDPOINT_FILENAME = "vllm_endpoint.json"
 
 # Environment-variable names that form the cross-repo seam.
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
-ENV_SERVER_URL = "REPROCLI_SERVER_URL"
