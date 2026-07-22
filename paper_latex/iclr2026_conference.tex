@@ -266,7 +266,7 @@ reproduction in AI research~\citep{gundersen2018state}.
 Every finished run is graded by an LLM auditor that reads the
 run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
-deterministically. We fix Claude Opus 4.8 as the auditor for every run of
+deterministically. We fix Claude Sonnet 5 as the auditor for every run of
 every agent, and we froze the rubric before grading began, so scores are
 comparable across models and no agent grades its own family. The auditor is
 adversarial by instruction. It treats the agent's final report as a set of
