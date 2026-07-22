@@ -24,8 +24,11 @@
 #   LIMIT=1 scripts/reproduce/audit_sweep_claude.sh slurm-2687371          # smoke test
 #   nohup scripts/reproduce/audit_sweep_claude.sh slurm-2687371 > audit_2687371.log 2>&1 &
 #
+# Stage 3 OVERWRITES the audit_* columns these runs already carry (e.g. a sweep the
+# model self-graded): UPLOAD=0 keeps them and leaves the verdicts in the local JSONL.
+#
 # Env overrides: AUDIT_MODEL ENDPOINT EFFORT RUNS_DIR TOOL_ROUNDS WORKERS LIMIT
-#                CLAIMS SUPABASE_URL REPROCLI_EXTRA_BODY SKIP_AUDITED
+#                CLAIMS SUPABASE_URL REPROCLI_EXTRA_BODY SKIP_AUDITED UPLOAD
 
 set -euo pipefail
 
@@ -94,13 +97,20 @@ python3 src/run_arxiv_prompt_vllm.py \
   --trace-output "audit_${BATCH}_trace.jsonl" \
   --save-round-jsonl
 
-echo ">>> [3/3] upload verdicts -> repro_runs (audit_model=$AUDIT_MODEL)"
-# The grade root's symlinks resolve into each real bundle, whose stats.json names
-# the run -- so every verdict patches the row of the run it graded.
-python3 -m reprocli_repro.audit_upload \
-  --verdicts "$VERDICTS" \
-  --runs-dir "$GRADE_ROOT" \
-  --audit-model "$AUDIT_MODEL"
+# Uploading REPLACES the audit_* columns already on these rows (a sweep graded by
+# its own model keeps only one verdict per run). Set UPLOAD=0 to keep the existing
+# verdicts and compare graders from the local JSONL instead.
+if [[ "${UPLOAD:-1}" == "0" ]]; then
+  echo ">>> [3/3] skipped upload (UPLOAD=0); verdicts stay in $VERDICTS"
+else
+  echo ">>> [3/3] upload verdicts -> repro_runs (audit_model=$AUDIT_MODEL, overwrites prior audit_*)"
+  # The grade root's symlinks resolve into each real bundle, whose stats.json names
+  # the run -- so every verdict patches the row of the run it graded.
+  python3 -m reprocli_repro.audit_upload \
+    --verdicts "$VERDICTS" \
+    --runs-dir "$GRADE_ROOT" \
+    --audit-model "$AUDIT_MODEL"
+fi
 
 echo ">>> how $AUDIT_MODEL graded $BATCH:"
 python3 - "$VERDICTS" <<'PY'
