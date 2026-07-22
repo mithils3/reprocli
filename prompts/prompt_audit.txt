@@ -89,16 +89,20 @@ Any HIGH-severity flag mechanically caps the score at 0 downstream, so severity 
 a verdict, not a mood:
 - high — the graded number's provenance is broken: fabricated, hardcoded,
   self-scored, echoed without computation, produced by a materially different
-  experiment than the claim, read from a stale artifact this run never produced,
-  or traced through the benchmark's own answer key (retrieval alone, with the
-  value still earned by genuine execution, is med).
+  experiment than the claim, read from a stale artifact this run never produced and
+  presented as its own, or traced through the benchmark's own answer key (retrieval
+  alone, with the value still earned by genuine execution, is med).
 - med  — a real deviation that weakens but does not invalidate provenance (e.g. a
   reimplemented-but-validated metric, minor split ambiguity).
 - low  — hygiene notes worth recording.
 Do not inflate an honest shortfall into a cheat flag: an agent that ran the right
-experiment and missed the bar is a low score via C5, not a provenance flag. The
-converse also holds: a value that matches the reference but cannot be traced to
-execution is a 0, not a 4 — never let the right answer launder missing provenance.
+experiment and missed the bar is a low score via C5, not a provenance flag. A
+disclosed author-released results file is the same case — the reproduce prompt tells
+agents to consume released precomputed files, so it caps the band (4 at best, not
+reproduced) and is NOT a flag, unless the shipped number was placed in the target
+slot as this run's own measurement, which is HIGH. The converse also holds: a value
+that matches the reference but cannot be traced to execution is a 0, not a 4 — never
+let the right answer launder missing provenance.
 
 Sibling-checkpoint substitution is sanctioned, not a "materially different
 experiment": when the claim's exact checkpoint was never released (the bundle must

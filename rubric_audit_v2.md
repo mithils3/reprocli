@@ -1,6 +1,12 @@
 # ReproBench Audit Rubric — 0–10 score scale (v2)
 
-Status: **HISTORICAL DESIGN RECORD — superseded in one respect.** On 2026-07-16 the
+Status: **HISTORICAL DESIGN RECORD — superseded in two respects.** The second: the
+worked table below scores runs that re-aggregated an author-released results file as
+10 ("authors' pipeline, exact"). The live rubric now rules that the graded quantity
+must be computed in this run from model outputs this run produced, so those rows cap
+at band 4. See `rubric_audit.md` -> "Released artifacts: inputs yes, outputs no".
+
+Original superseding note: On 2026-07-16 the
 rubric was **frozen**, the coarse `blocked` verdict was removed, and the score-3
 band was repurposed (incl. dropping the ceiling-of-3 integrity rule): curation
 dropped every genuinely gated paper from the frozen eval set, so no run can

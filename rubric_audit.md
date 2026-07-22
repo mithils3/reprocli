@@ -109,7 +109,9 @@ Actively try to *refute* the number. Raise a flag (with evidence + severity) for
   a truncated/subsampled eval set that weakens the protocol).
 - **cherry-picked metric** — reports an easier sibling metric, not the central claim.
 - **stale artifact** — number read from a shipped `result*/metrics*` file the agent
-  did not regenerate this run.
+  did not regenerate this run. See the released-artifact rule below: consuming an
+  author-released results file is a **band cap, not a flag**, unless the agent
+  presented it as this run's own measurement.
 - **retrieved benchmark answer** — the run consulted the benchmark's own answer
   key (loaded the ReproBench split / lockfile, or fetched the benchmark repo)
   instead of earning the number: high severity when the graded value's provenance
@@ -125,6 +127,25 @@ whose number was copied hands the method a free "win" — flag it like any other
 broken provenance.
 
 Any HIGH-severity flag caps the **score at 0** regardless of value match.
+
+**Released artifacts: inputs yes, outputs no.** Released weights, datasets, splits,
+configs and code are inputs — an agent consuming them is doing the right thing, and
+regenerating them tests nothing. The graded quantity itself is different: it must be
+computed *in this run* from model outputs *this run produced*. A value aggregated
+from a released results / predictions / metrics file is **not a reproduction of the
+claim**, however faithful the aggregation, because it would return the same number
+even if the paper's number were wrong. A released reference *value* is still the
+comparison target; a released result set for the *baseline* side of a comparison is
+acceptable only when the method side was executed here.
+
+Severity is decided by disclosure, not by the shortcut, because the reproduce prompt
+tells agents to consume released precomputed files — an agent that did so followed
+its instructions:
+- **disclosed** (report/README says the number came from the released file) — band 4
+  at best, `not_reproduced`. No C4 flag: nothing about the provenance is hidden.
+- **presented as executed** — the shipped number placed in the target slot and
+  labelled as this run's measurement, especially when the run's *own* executed number
+  differs — HIGH severity, score 0. That is fabricated provenance, not a shortcut.
 
 ### C5 — Result matches claim
 Apply the C1 criterion. For a scalar target, apply the op/tolerance to (measured,
