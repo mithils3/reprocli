@@ -20,11 +20,11 @@ from reprocli_vllm.config.config import (
     AUDIT_RUNS_DIR_DEFAULT,
     AUDIT_SYSTEM_MESSAGE,
     DEFAULT_MODEL,
+    MAX_MODEL_LEN,
     MAX_REPEATED_TOOL_CALLS,
 )
 from reprocli_vllm.schema.audit import AUDIT_RESPONSE_FORMAT
 from reprocli_vllm.tools.run_dir_tools import AUDIT_TOOLS
-from reprocli_vllm.config.minimax_defaults import apply_model_defaults
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 
@@ -111,6 +111,23 @@ def parse_args() -> argparse.Namespace:
     if args.trace_output is None:
         args.trace_output = trace_output_path(args.output)
     return args
+
+
+def apply_model_defaults(args: argparse.Namespace) -> None:
+    """Fill the request-time length default.
+
+    The auditor is a URL-only client: it only fills the request-time fields it
+    POSTs to an already-served brain. The vLLM engine/serve-launch flags (tensor
+    parallel, tool/reasoning parsers, compilation config, kv-cache dtype, ...)
+    live in ``reprocli_serve/profiles.py``, the single source of truth for how a
+    model is served, not here.
+
+    Sampling is left unset for every model unless the user set it explicitly:
+    the request builder omits unset fields, so the served model's own
+    generation_config defaults apply (vLLM recipe style).
+    """
+    args.max_model_len = args.max_model_len or MAX_MODEL_LEN
+    args.min_p = getattr(args, "min_p", None)
 
 
 def resolve_mode_settings(args: argparse.Namespace) -> None:

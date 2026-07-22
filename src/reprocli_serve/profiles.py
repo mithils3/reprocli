@@ -3,7 +3,7 @@
 A profile is the set of ``vllm serve`` flags a model needs to expose tool calling
 and reasoning correctly. The auditor runner never holds these: it is a URL-only
 client of an already-served brain and carries only request-time sampling defaults
-(``reprocli_vllm/config/minimax_defaults.py``). Sampling params
+(``reprocli_vllm/config/cli_args.py``). Sampling params
 (temperature/top_p/top_k) are NOT here either: those are request-time fields the
 client sends, not server launch flags.
 """
