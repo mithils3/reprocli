@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import tempfile
@@ -12,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_claude import __main__ as cli
 from reprocli_claude import agent
 from reprocli_repro.batch_runs import Run
+from reprocli_vllm.runtime.audit_sink import AuditSink, SinkConfig
 from tests.claude.test_claude_agent import VERDICT, StubClient, _text
 
 
@@ -94,6 +96,37 @@ class AuditRunTests(unittest.TestCase):
         row = self._row(StubClient([_text(json.dumps(VERDICT))] * 2))
         self.assertIsInstance(row["usage"], agent.Usage)
         self.assertGreater(row["usage"].output, 0)
+
+
+class AttemptTagTests(unittest.TestCase):
+    """A second grader of the same run must not land on the first audit's row."""
+
+    def test_tag_is_model_plus_stamp(self) -> None:
+        self.assertEqual(cli.attempt_tag("claude-opus-4-8", "20260722T215500Z"),
+                         "claude-opus-4-8-20260722T215500Z")
+        self.assertEqual(cli.attempt_tag("MiniMaxAI/MiniMax-M2.7", "S"), "MiniMax-M2.7-S")
+
+    def test_every_grading_pass_gets_its_own_audit_row(self) -> None:
+        base = SinkConfig(url="u", service_key="k", graded_run_id="2690187-2410.19933-4873ee",
+                          model="m", host="h")
+        ids = {
+            _audit_run_id(dataclasses.replace(base, attempt=attempt))
+            for attempt in (None, "claude-opus-4-8-A", "claude-opus-4-8-B", "MiniMax-M2.7-A")
+        }
+        self.assertEqual(len(ids), 4)
+
+    def test_untagged_ids_are_unchanged(self) -> None:
+        # The vLLM auditor passes no attempt; its ids must keep their old shape.
+        cfg = SinkConfig(url="u", service_key="k", graded_run_id="rid", model="m", host="h")
+        self.assertEqual(_audit_run_id(cfg), "rid-2410.19933-audit")
+
+
+def _audit_run_id(cfg: SinkConfig) -> str:
+    """Ask the real sink for its id, without starting its worker thread."""
+    sink = AuditSink.__new__(AuditSink)
+    sink.cfg = cfg
+    sink._base = "stamp"
+    return sink._audit_run_id("2410.19933")
 
 
 class SummaryTests(unittest.TestCase):

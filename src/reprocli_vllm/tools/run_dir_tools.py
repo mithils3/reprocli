@@ -20,6 +20,8 @@ citable. ``run_dir_manifest`` builds the file listing injected into the prompt.
 
 from __future__ import annotations
 
+import os
+import signal
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -83,24 +85,57 @@ def run_bash(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         return {"ok": False, "error": f"Run dir does not exist: {run_dir}"}
     timeout = _bounded(arguments.get("timeout"), BASH_TIMEOUT, BASH_TIMEOUT)
     try:
-        proc = subprocess.run(
+        # Own process group, so the timeout can kill the whole tree. `subprocess.run`
+        # kills only the direct child: a command that backgrounds or spawns anything
+        # (`python eval.py &`, a server, a pool) leaves grandchildren holding the
+        # inherited stdout pipe, and the reap after the timeout blocks on a read that
+        # never ends -- the timeout expires and the tool hangs anyway, stalling the
+        # whole audit on one shell command.
+        proc = subprocess.Popen(
             ["bash", "-lc", command],
             cwd=str(run_dir),
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
+            start_new_session=True,
         )
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "command": command, "error": f"bash timed out after {timeout}s"}
     except OSError as exc:
         return {"ok": False, "command": command, "error": f"{type(exc).__name__}: {exc}"}
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        stdout, stderr = _kill_group(proc)
+        return {
+            "ok": False,
+            "command": command,
+            "error": f"bash timed out after {timeout}s (process group killed)",
+            "stdout": stdout,
+            "stderr": stderr,
+        }
     return {
         "ok": proc.returncode == 0,
         "command": command,
         "returncode": proc.returncode,
-        "stdout": proc.stdout,
-        "stderr": proc.stderr,
+        "stdout": stdout,
+        "stderr": stderr,
     }
+
+
+def _kill_group(proc: "subprocess.Popen[str]") -> tuple[str, str]:
+    """SIGKILL the timed-out command's whole process group; return what it printed.
+
+    The second wait is itself bounded: if something survives the kill (an
+    unkillable D-state child on a network filesystem), we abandon the output
+    rather than block the auditor forever.
+    """
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        proc.kill()
+    try:
+        return proc.communicate(timeout=5)
+    except (subprocess.TimeoutExpired, ValueError):
+        return "", ""
 
 
 def write_run_file(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:

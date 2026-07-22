@@ -25,6 +25,7 @@ import dataclasses
 import os
 import sys
 import threading
+import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -192,6 +193,17 @@ def audit_run(
             sink.close()
 
 
+def attempt_tag(model: str, stamp: str) -> str:
+    """Identity for this grading pass: ``<model>-<stamp>``.
+
+    Without it a second grader of the same run inherits the first audit's row --
+    same id, so the run row shows the older verdict and every event insert
+    collides with rows already at those seq numbers and is dropped. The stamp
+    keeps re-grades by the SAME model distinct too.
+    """
+    return f"{model.rsplit('/', 1)[-1]}-{stamp}"
+
+
 def _open_sink(sink_config: SinkConfig | None, run: batch_runs.Run) -> AuditSink | None:
     """One sink per run so each audit links to the run it graded, not to $env."""
     if sink_config is None:
@@ -274,10 +286,16 @@ def main(argv: list[str] | None = None) -> int:
     # a sweep forever on a login node with flaky outbound DNS.
     client = anthropic.Anthropic(max_retries=5, timeout=REQUEST_TIMEOUT)
     sink_config = None if args.no_stream else SinkConfig.from_env(args.model)
+    if sink_config is not None:
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+        sink_config = dataclasses.replace(sink_config, attempt=attempt_tag(args.model, stamp))
+        print(f"streaming to the Audits page as <run>-<paper>-{sink_config.attempt}-audit",
+              file=sys.stderr)
     truncate_output_file(args.output)
     truncate_output_file(args.extracted_output)
+    workers = max(1, min(args.workers, len(runs)))  # one worker per run; never idle threads
     print(f"Grading {len(runs)} run(s) with {args.model} (effort={args.effort}, "
-          f"{args.tool_rounds} tool rounds, {args.workers} workers)", file=sys.stderr)
+          f"{args.tool_rounds} tool rounds, {workers} concurrent)", file=sys.stderr)
 
     def grade(run: batch_runs.Run) -> dict[str, Any]:
         # One run's failure (API error, a bundle that explodes a tool) must not
@@ -290,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
             return {"custom_id": run.arxiv_id, "score": None, "error": str(exc),
                     "usage": agent.Usage()}
 
-    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with ThreadPoolExecutor(max_workers=workers) as pool:
         rows = list(pool.map(grade, runs))
     _summarize(rows, args)
     return 0

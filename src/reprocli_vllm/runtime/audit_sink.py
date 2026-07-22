@@ -104,6 +104,14 @@ class SinkConfig:
     graded_run_id: str | None
     model: str | None
     host: str
+    # Discriminator for the audit's identity. The id is otherwise derived from the
+    # graded run alone, so a SECOND grader of the same run (a different model, or a
+    # re-grade) lands on the first audit's row: it overwrites the run row's model
+    # and status while inheriting the old verdict, and every event insert collides
+    # with the existing (audit_run_id, seq) rows and is dropped -- an audit that
+    # appears finished with someone else's score and no transcript. Set this per
+    # grading attempt to give each audit its own row.
+    attempt: str | None = None
 
     @classmethod
     def from_env(cls, model: str | None = None) -> "SinkConfig | None":
@@ -134,16 +142,22 @@ class AuditSink:
     # ---- identity -----------------------------------------------------------
     def _audit_run_id(self, custom_id: str) -> str:
         base = self.cfg.graded_run_id or self._base
-        return f"{base}-{custom_id}-audit"
+        attempt = f"-{self.cfg.attempt}" if self.cfg.attempt else ""
+        return f"{base}-{custom_id}{attempt}-audit"
 
     def _ensure_run(self, custom_id: str) -> str:
         aid = self._audit_run_id(custom_id)
         if aid not in self._seen:
             self._seen.add(aid)
+            # The verdict columns are cleared on start: re-grading into an existing
+            # row must not display the previous run's score while this one works.
             self._put("run_upsert", {
                 "audit_run_id": aid, "graded_run_id": self.cfg.graded_run_id,
                 "arxiv_id": custom_id, "model": self.cfg.model, "status": "running",
                 "host": self.cfg.host, "started_at": _now_iso(), "updated_at": _now_iso(),
+                "score": None, "verdict": None, "reproduced": None,
+                "has_high_cheat_flag": None, "exit_reason": None, "finished_at": None,
+                "tool_rounds_used": 0,
             })
         return aid
 
@@ -226,14 +240,26 @@ class AuditSink:
 
     def _post(self, method: str, path: str, body: Any, *, prefer: str | None = None) -> None:
         try:
-            code, _ = postgrest.request(
+            code, text = postgrest.request(
                 self.cfg.url + path, service_key=self.cfg.service_key, method=method,
                 body=body, prefer=prefer, timeout=HTTP_TIMEOUT)
-        except Exception:  # noqa: BLE001 — best-effort; never propagate
-            self.failed += 1
+        except Exception as exc:  # noqa: BLE001 — best-effort; never propagate
+            self._note_failure(f"{type(exc).__name__}: {exc}")
             return
         if not code or code >= 300:
-            self.failed += 1
+            self._note_failure(f"HTTP {code} {text[:200]}")
+
+    def _note_failure(self, detail: str) -> None:
+        """Count a failed write, and say so the FIRST time.
+
+        Silence here reads as a working stream: a rejected insert (a colliding
+        audit id, a schema drift) would otherwise leave the dashboard quietly
+        empty while the audit runs to completion.
+        """
+        self.failed += 1
+        if self.failed == 1:
+            print(f"audit_sink: write rejected ({detail}); the Audits page will be incomplete",
+                  flush=True)
 
     def close(self, timeout: float = 12.0) -> None:
         self._stop.set()
