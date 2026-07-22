@@ -22,6 +22,7 @@ testable against a stub and the SDK import stays in the entry point.
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -39,14 +40,44 @@ DEFAULT_EFFORT = "high"
 DEFAULT_MAX_TOKENS = 32_000
 DEFAULT_TOOL_ROUNDS = 25
 CACHE_CONTROL = {"type": "ephemeral"}
-# Claude Opus 4.8 list price, $ per token (base in / out / 5m cache write / cache read).
-PRICES = (5e-6, 25e-6, 6.25e-6, 0.5e-6)
+SONNET_5_INTRO_UNTIL = "2026-08-31"  # $2/$10 per MTok through this date, $3/$15 after
+
+
+def _tier(base_in: float, base_out: float) -> tuple[float, float, float, float]:
+    """(input, output, 5m cache write, cache read) $/token from the base pair.
+
+    Cache writes are 1.25x base input and reads 0.1x, uniformly across models.
+    """
+    return (base_in, base_out, base_in * 1.25, base_in * 0.1)
+
+
+PRICES = {
+    "claude-opus-4-8": _tier(5e-6, 25e-6),
+    "claude-opus-4-7": _tier(5e-6, 25e-6),
+    "claude-opus-4-6": _tier(5e-6, 25e-6),
+    "claude-fable-5": _tier(10e-6, 50e-6),
+    "claude-haiku-4-5": _tier(1e-6, 5e-6),
+}
+
+
+def prices_for(model: str | None, today: str | None = None) -> tuple[float, float, float, float]:
+    """Per-token prices for one grader model, defaulting to the Opus tier.
+
+    Sonnet 5 is date-dependent (introductory pricing runs out), so the cost line
+    doesn't quietly halve or double when the promotion ends.
+    """
+    name = (model or "").rsplit("/", 1)[-1]
+    if name.startswith("claude-sonnet-5"):
+        stamp = today or time.strftime("%Y-%m-%d")
+        return _tier(2e-6, 10e-6) if stamp <= SONNET_5_INTRO_UNTIL else _tier(3e-6, 15e-6)
+    return PRICES.get(name, PRICES["claude-opus-4-8"])
 
 
 @dataclass
 class Usage:
-    """Token counters summed across every request of one audit."""
+    """Token counters summed across every request of one audit, priced by model."""
 
+    model: str | None = None
     input: int = 0
     output: int = 0
     cache_write: int = 0
@@ -66,7 +97,7 @@ class Usage:
 
     @property
     def cost(self) -> float:
-        rate_in, rate_out, rate_write, rate_read = PRICES
+        rate_in, rate_out, rate_write, rate_read = prices_for(self.model)
         return (
             self.input * rate_in
             + self.output * rate_out
@@ -173,7 +204,7 @@ def run_audit(
     """Investigate ``run_dir`` with the tools, then return the schema-bound verdict."""
     tools = anthropic_tools()
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
-    usage, round_index = Usage(), 0
+    usage, round_index = Usage(model=model), 0
     rounds_used = tool_calls = tool_errors = 0
     exit_reason = "natural"
 

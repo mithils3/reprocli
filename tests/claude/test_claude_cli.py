@@ -136,7 +136,7 @@ class SummaryTests(unittest.TestCase):
                                  "cache_creation_input_tokens": 0,
                                  "cache_read_input_tokens": 900})())
         rows = [{"score": 8, "reproduced": True, "usage": usage}, {"score": None, "usage": usage}]
-        args = argparse.Namespace(extracted_output=Path("v.jsonl"))
+        args = argparse.Namespace(extracted_output=Path("v.jsonl"), model="claude-opus-4-8")
         cli._summarize(rows, args)  # prints to stderr; must not raise on the None score
 
 

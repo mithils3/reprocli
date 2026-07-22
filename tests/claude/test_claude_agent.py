@@ -240,6 +240,30 @@ class UsageTests(unittest.TestCase):
         self.assertEqual((a.input, a.output, a.cache_read, a.cache_write), (5, 7, 3, 6))
 
 
+class PricingTests(unittest.TestCase):
+    def test_each_tier_is_priced_from_its_own_base(self) -> None:
+        opus = agent.Usage(model="claude-opus-4-8")
+        sonnet = agent.Usage(model="claude-sonnet-5")
+        for usage in (opus, sonnet):
+            usage.add(_usage(input_tokens=1_000_000, output_tokens=0))
+        self.assertAlmostEqual(opus.cost, 5.0, places=6)
+        self.assertAlmostEqual(sonnet.cost, 2.0, places=6)  # introductory rate
+
+    def test_sonnet_5_intro_pricing_expires(self) -> None:
+        before = agent.prices_for("claude-sonnet-5", today="2026-08-31")
+        after = agent.prices_for("claude-sonnet-5", today="2026-09-01")
+        self.assertEqual((before[0], before[1]), (2e-6, 10e-6))
+        self.assertEqual((after[0], after[1]), (3e-6, 15e-6))
+
+    def test_unknown_model_falls_back_to_the_opus_tier(self) -> None:
+        self.assertEqual(agent.prices_for("some-new-model"), agent.PRICES["claude-opus-4-8"])
+
+    def test_cache_reads_and_writes_track_the_base_rate(self) -> None:
+        _in, _out, write, read = agent.prices_for("claude-haiku-4-5")
+        self.assertAlmostEqual(write, 1.25e-6)
+        self.assertAlmostEqual(read, 0.1e-6)
+
+
 class SchemaAndToolTests(unittest.TestCase):
     def test_tools_are_translated_from_the_shared_definitions(self) -> None:
         tools = agent.anthropic_tools()

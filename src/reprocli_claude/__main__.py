@@ -306,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {run.arxiv_id}: audit failed -- {type(exc).__name__}: {exc}",
                   file=sys.stderr, flush=True)
             return {"custom_id": run.arxiv_id, "score": None, "error": str(exc),
-                    "usage": agent.Usage()}
+                    "usage": agent.Usage(model=args.model)}
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         rows = list(pool.map(grade, runs))
@@ -316,7 +316,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _summarize(rows: list[dict[str, Any]], args: argparse.Namespace) -> None:
     scored = [row for row in rows if isinstance(row.get("score"), int)]
-    total = agent.Usage()
+    total = agent.Usage(model=args.model)
     for row in rows:
         total.merge(row["usage"])
     if scored:
