@@ -263,12 +263,11 @@ run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
 deterministically. We fix Claude Opus 4.8 as the auditor for every run of
 every agent, and we froze the rubric before grading began, so scores are
-comparable across models and no agent grades its own family.
-
-The auditor is adversarial by instruction. It treats the agent's final
-report as a set of unverified claims and grades what the evidence shows. It
-traces every reported number to the execution that produced it, checks the
-executed protocol, split, and scale against the pinned configuration, and
+comparable across models and no agent grades its own family. The auditor is
+adversarial by instruction. It treats the agent's final report as a set of
+unverified claims and grades what the evidence shows. It traces every
+reported number to the execution that produced it, checks the executed
+protocol, split, and scale against the pinned configuration, and
 cross-checks the agent's measurements against the paper's reported values.
 When the recorded evidence does not settle a claim, it writes and executes
 its own scoring scripts over the run's saved outputs, recomputing metrics
@@ -282,8 +281,16 @@ applies the integrity adjustment of Appendix~\ref{app:rubric} rather than
 leaving it to the auditor. A high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
 forces the score to zero, and a genuine artifact wall caps the score at 3.
-% TODO(auditor-validation): report human-vs-auditor agreement and
-% injected-cheat flag recall here once the validation study runs.
+Grading by evidence rather than against a prescribed procedure also
+preserves the agent's creativity, since any faithful route to the pinned
+number earns full credit, including strategies the authors never used. An
+LLM auditor reads far more material per run than a human grader can,
+working through hundreds of tool rounds, logs, and saved outputs in
+minutes, which is what makes auditing every run of every sweep feasible.
+On a held-out set of runs, the auditor's verdicts agree with expert human
+graders at XX. % TODO(auditor-validation): replace XX with the
+% human-vs-auditor agreement metric (F1 or kappa) and add injected-cheat
+% flag recall once the validation study runs.
 
 \section{Experiments}
 \label{sec:experiments}
