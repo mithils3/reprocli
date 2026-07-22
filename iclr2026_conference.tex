@@ -99,10 +99,10 @@ itself, giving the agent a research question and starter code from which it
 must design, execute, and analyze the experiments~\citep{kon2025expbench}.
 Each benchmark fixes the release state before the run begins, and most fix
 it by selecting papers whose code is already public and already runs. The
-stricter selections go further. PaperBench keeps only papers replicable
-from the text on a single machine without closed-source dependencies, and
-CORE-Bench draws from a pool already verified to rerun, since its authors
-saw no need to include irreproducible papers. None of these benchmarks
+stricter selections go further. They keep only papers replicable from the
+text on a single machine without closed-source dependencies, or draw from a
+pool already verified to rerun, on the stated reasoning that irreproducible
+papers are not worth including. None of these benchmarks
 samples papers across the release states they are published in, so none
 measures reproduction under the conditions reproducers actually face.
 
