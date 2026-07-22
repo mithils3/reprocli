@@ -98,6 +98,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01
 .schip { font-family: var(--mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--line);
   border-radius: 6px; padding: 1px 7px; background: var(--panel2); font-weight: 500; }
 .schip.non-frozen { color: var(--over-deep); border-color: var(--over); background: var(--over-tint); }
+.schip.regrade { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
 
 /* ---- verdict glyph + word (4 families collapse 11 tags) ----------------- */
 .vd { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
