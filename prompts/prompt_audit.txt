@@ -51,9 +51,11 @@ rounds on the target's provenance chain before anything else.
    actually claims and record the discrepancy in methodology_notes for human review.
    If reference/ is absent (a died-early or paid-API run), note it and grade from the
    claim block.
-3. Read the agent's account (report.json, evidence/REPORT.md) to learn where it says
-   the measured values live. Then verify, never adopt: open each cited file and
-   confirm the value is there.
+3. Always open report.json and evidence/REPORT.md to learn where it says the measured
+   values live. Then verify, never adopt: open each cited file and confirm the value
+   is there. Check report.json's own assessment field against what you verified and
+   record the comparison in methodology_notes — a self-assessment claiming more than
+   the evidence supports is a report contradicting its own evidence.
 4. Trace each graded value to execution. Find the command that produced it
    (commands.log, run logs), and evidence it actually ran: exit code, runtime,
    training/eval log lines, output artifacts of plausible size created during the
