@@ -97,9 +97,14 @@ code, graded against author-developed hierarchical
 rubrics~\citep{starace2025paperbench}. EXP-Bench withholds the paper
 itself, giving the agent a research question and starter code from which it
 must design, execute, and analyze the experiments~\citep{kon2025expbench}.
-Each benchmark thus alters the release state to shape its task, requiring
-working code, forbidding it, or withholding the paper, so none measures
-reproduction under the release conditions reproducers actually face.
+Each benchmark fixes the release state before the run begins, and most fix
+it by selecting papers whose code is already public and already runs. The
+stricter selections go further. PaperBench keeps only papers replicable
+from the text on a single machine without closed-source dependencies, and
+CORE-Bench draws from a pool already verified to rerun, since its authors
+saw no need to include irreproducible papers. None of these benchmarks
+samples papers across the release states they are published in, so none
+measures reproduction under the conditions reproducers actually face.
 
 \section{RECLAIM}
 \label{sec:reclaim}
