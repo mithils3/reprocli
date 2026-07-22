@@ -47,6 +47,7 @@ SPLIT_CLAIMS = {
     "test": "eval_100.jsonl",
 }
 CLAIMS_REPO = "hf://datasets/Mithilss/reprobench-splits"
+REQUEST_TIMEOUT = 900.0
 WRITE_LOCK = threading.Lock()
 
 
@@ -199,13 +200,31 @@ def _open_sink(sink_config: SinkConfig | None, run: batch_runs.Run) -> AuditSink
 
 
 def _sink_bridge(sink: AuditSink | None, paper_id: str):
-    if sink is None:
-        return None
+    """Forward loop events to the Audits page, and narrate them on stderr.
+
+    The narration is not decoration: an audit spends minutes per round inside one
+    request, and a terminal that prints nothing between "grading" and the verdict
+    is indistinguishable from a hung process.
+    """
 
     def _emit(kind: str, round_index: int, payload: dict[str, Any]) -> None:
-        sink.on_event(kind, {"custom_id": paper_id, "round_index": round_index}, payload)
+        _narrate(paper_id, kind, round_index, payload)
+        if sink is not None:
+            sink.on_event(kind, {"custom_id": paper_id, "round_index": round_index}, payload)
 
     return _emit
+
+
+def _narrate(paper_id: str, kind: str, round_index: int, payload: dict[str, Any]) -> None:
+    if kind == "call_start":
+        function = payload["call"]["function"]
+        arguments = str(function.get("arguments") or "")
+        print(f"  [{paper_id}] round {round_index + 1}: {function['name']} {arguments[:90]}",
+              file=sys.stderr, flush=True)
+    elif kind == "verdict_turn":
+        print(f"  [{paper_id}] writing the verdict after {payload['rounds_used']} round(s) "
+              f"-- this turn makes no tool calls, so it is silent",
+              file=sys.stderr, flush=True)
 
 
 def _upload(run_id: str, verdict: dict[str, Any], model: str) -> None:
@@ -251,7 +270,9 @@ def main(argv: list[str] | None = None) -> int:
 
     import anthropic  # imported here so --dry-run works without the SDK installed
 
-    client = anthropic.Anthropic(max_retries=5)
+    # An explicit ceiling: a wedged request should fail and be retried, not hang
+    # a sweep forever on a login node with flaky outbound DNS.
+    client = anthropic.Anthropic(max_retries=5, timeout=REQUEST_TIMEOUT)
     sink_config = None if args.no_stream else SinkConfig.from_env(args.model)
     truncate_output_file(args.output)
     truncate_output_file(args.extracted_output)

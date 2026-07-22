@@ -220,6 +220,9 @@ def run_audit(
         return AuditResult(paper_id, "", tool_loop, usage)
 
     # Tools off, schema on: the verdict is graded from the evidence just gathered.
+    # Announced first because this turn is silent -- it makes no tool calls, so
+    # without a marker a slow verdict looks like a hung process.
+    _emit(on_event, "verdict_turn", round_index, {"rounds_used": rounds_used})
     final = _send(
         client,
         model=model,

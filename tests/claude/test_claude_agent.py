@@ -165,7 +165,10 @@ class RunAuditTests(unittest.TestCase):
             client, paper_id="2505.1", prompt="p", run_dir=self.run_dir,
             on_event=lambda kind, idx, payload: seen.append(kind),
         )
-        self.assertEqual(seen, ["round_open", "call_start", "call_result", "round_open"])
+        self.assertEqual(
+            seen,
+            ["round_open", "call_start", "call_result", "round_open", "verdict_turn"],
+        )
 
     def test_verdict_row_matches_the_vllm_auditor_finalizer(self) -> None:
         client = StubClient([_text(json.dumps({**VERDICT, "score": 10}))] * 2)
