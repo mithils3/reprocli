@@ -8,8 +8,6 @@ from typing import Any
 
 from reprocli_vllm.vllm.endpoint import (
     auth_headers,
-    body_overlay,
-    merge_patch,
     openrouter_provider_routing,
     resolve_api_key,
 )
@@ -64,21 +62,6 @@ def prepare_structured_output(body: dict[str, Any]) -> None:
     body["provider"] = provider
 
 
-def apply_body_overlay(body: dict[str, Any]) -> list[str]:
-    """Merge ``REPROCLI_EXTRA_BODY`` into ``body`` in place; return the fields it ADDED.
-
-    The added names are what a rejection can be matched against: a provider that
-    400s on a knob we injected (rather than on the request itself) can be retried
-    once without it -- see :func:`drop_rejected_overlay_fields`. Fields the overlay
-    *deleted* are not returned: they are already gone from the body.
-    """
-    overlay = body_overlay()
-    if not overlay:
-        return []
-    merge_patch(body, overlay)
-    return [key for key, value in overlay.items() if value is not None]
-
-
 def post_chat_completion_row(
     base_url: str,
     row: dict[str, Any],
@@ -88,12 +71,9 @@ def post_chat_completion_row(
 ) -> Any:
     apply_provider_routing(row["body"])
     prepare_structured_output(row["body"])
-    overlay_fields = apply_body_overlay(row["body"])
     if stream:
         return stream_chat_completion(base_url, row, timeout)
-    return post_vllm_chat_completion(
-        base_url, row["body"], timeout, overlay_fields=overlay_fields
-    )
+    return post_vllm_chat_completion(base_url, row["body"], timeout)
 
 
 def response_row(custom_id: str, body: Any) -> dict[str, Any]:
@@ -106,60 +86,20 @@ def response_row(custom_id: str, body: Any) -> dict[str, Any]:
     }
 
 
-def post_vllm_chat_completion(
-    base_url: str,
-    body: dict[str, Any],
-    timeout: float,
-    *,
-    overlay_fields: list[str] | tuple[str, ...] = (),
-) -> Any:
+def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: float) -> Any:
     try:
         return _post_body(base_url, body, timeout)
     except urllib.error.HTTPError as exc:
         downgraded = downgrade_response_format_on_reject(body, exc)
-        if downgraded is not None:
-            print(
-                f"[response_format] no reachable provider enforces json_schema "
-                f"(HTTP {exc.code}); retrying once with json_object",
-                file=sys.stderr,
-                flush=True,
-            )
-            return _post_body(base_url, downgraded, timeout)
-        stripped, dropped = drop_rejected_overlay_fields(body, exc, overlay_fields)
-        if stripped is None:
+        if downgraded is None:
             raise
         print(
-            f"[extra_body] endpoint rejected {', '.join(dropped)} (HTTP {exc.code}); "
-            f"retrying once without",
+            f"[response_format] no reachable provider enforces json_schema "
+            f"(HTTP {exc.code}); retrying once with json_object",
             file=sys.stderr,
             flush=True,
         )
-        return _post_body(base_url, stripped, timeout)
-
-
-def drop_rejected_overlay_fields(
-    body: dict[str, Any],
-    exc: urllib.error.HTTPError,
-    overlay_fields: list[str] | tuple[str, ...],
-) -> tuple[dict[str, Any] | None, list[str]]:
-    """A copy of ``body`` without the overlay fields this 400 names, or ``(None, [])``.
-
-    ``REPROCLI_EXTRA_BODY`` carries provider knobs the agent core knows nothing
-    about (``thinking``, ``output_config``, ...). When the endpoint doesn't accept
-    one, it 400s naming the field, and every request of the run would fail the same
-    way -- a whole sweep lost to one env var. Retrying once without the named fields
-    degrades to the provider's defaults (thinking off, default effort) and keeps the
-    run alive; the warning says which knob was dropped so the grade is never quietly
-    attributed to settings that never applied. Only 400s are treated this way, and
-    only when the error body actually names one of OUR fields.
-    """
-    if exc.code != 400 or not overlay_fields:
-        return None, []
-    detail = (getattr(exc, "reprocli_body", "") or "").lower()
-    dropped = [field for field in overlay_fields if field.lower() in detail and field in body]
-    if not dropped:
-        return None, []
-    return {key: value for key, value in body.items() if key not in dropped}, dropped
+        return _post_body(base_url, downgraded, timeout)
 
 
 def _post_body(base_url: str, body: dict[str, Any], timeout: float) -> Any:

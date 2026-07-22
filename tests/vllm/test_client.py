@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm import client
-from reprocli_vllm.vllm.endpoint import ENV_API_KEY, ENV_EXTRA_BODY, ENV_OPENROUTER_PROVIDER
+from reprocli_vllm.vllm.endpoint import ENV_API_KEY, ENV_OPENROUTER_PROVIDER
 
 JSON_SCHEMA_RF = {
     "type": "json_schema",
@@ -43,7 +43,7 @@ class PostRowInjectsProviderTests(unittest.TestCase):
         row = {"custom_id": "c1", "body": {"model": "m", "messages": []}}
         seen: dict = {}
 
-        def _fake_post(base_url, body, timeout, *, overlay_fields=()):
+        def _fake_post(base_url, body, timeout):
             seen["body"] = body
             return {"choices": []}
 
@@ -118,71 +118,6 @@ class DowngradeResponseFormatTests(unittest.TestCase):
         body = {"response_format": {"type": "json_object"}}
         exc = _http_error(400, b"This response_format type is unavailable now")
         self.assertIsNone(client.downgrade_response_format_on_reject(body, exc))
-
-
-ANTHROPIC_OVERLAY = (
-    '{"thinking": {"type": "adaptive"}, "output_config": {"effort": "high"},'
-    ' "truncate_prompt_tokens": null}'
-)
-
-
-class ApplyBodyOverlayTests(unittest.TestCase):
-    def test_noop_when_unset(self) -> None:
-        body = {"model": "m", "truncate_prompt_tokens": 128000}
-        with patch.dict("os.environ", {}, clear=True):
-            self.assertEqual(client.apply_body_overlay(body), [])
-        self.assertEqual(body["truncate_prompt_tokens"], 128000)
-
-    def test_adds_provider_fields_and_deletes_nulled_ones(self) -> None:
-        body = {"model": "claude-opus-4-8", "truncate_prompt_tokens": 128000}
-        with patch.dict("os.environ", {ENV_EXTRA_BODY: ANTHROPIC_OVERLAY}, clear=True):
-            added = client.apply_body_overlay(body)
-        self.assertEqual(body["thinking"], {"type": "adaptive"})
-        self.assertEqual(body["output_config"], {"effort": "high"})
-        self.assertNotIn("truncate_prompt_tokens", body)  # vLLM-only field, deleted
-        self.assertEqual(sorted(added), ["output_config", "thinking"])  # deletions aren't "added"
-
-    def test_row_body_is_overlaid_before_post(self) -> None:
-        row = {"custom_id": "c1", "body": {"model": "m", "messages": []}}
-        seen: dict = {}
-
-        def _fake_post(base_url, body, timeout, *, overlay_fields=()):
-            seen.update(body=body, overlay_fields=overlay_fields)
-            return {"choices": []}
-
-        with patch.dict("os.environ", {ENV_EXTRA_BODY: ANTHROPIC_OVERLAY}, clear=True):
-            with patch.object(client, "post_vllm_chat_completion", _fake_post):
-                client.post_chat_completion_row("https://api.anthropic.com", row, 1.0)
-
-        self.assertEqual(seen["body"]["thinking"], {"type": "adaptive"})
-        self.assertEqual(sorted(seen["overlay_fields"]), ["output_config", "thinking"])
-
-
-class DropRejectedOverlayFieldsTests(unittest.TestCase):
-    def test_drops_the_field_the_error_names(self) -> None:
-        body = {"model": "m", "thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}}
-        exc = _http_error(400, b'{"error":{"message":"unexpected parameter: output_config"}}')
-        out, dropped = client.drop_rejected_overlay_fields(
-            body, exc, ["thinking", "output_config"]
-        )
-        self.assertEqual(dropped, ["output_config"])
-        self.assertNotIn("output_config", out)
-        self.assertIn("thinking", out)  # only what the endpoint complained about
-
-    def test_no_retry_for_unrelated_400(self) -> None:
-        body = {"model": "m", "thinking": {"type": "adaptive"}}
-        exc = _http_error(400, b'{"error":{"message":"context length exceeded"}}')
-        self.assertEqual(client.drop_rejected_overlay_fields(body, exc, ["thinking"]), (None, []))
-
-    def test_no_retry_for_non_400(self) -> None:
-        body = {"model": "m", "thinking": {"type": "adaptive"}}
-        exc = _http_error(500, b"thinking is broken upstream")
-        self.assertEqual(client.drop_rejected_overlay_fields(body, exc, ["thinking"]), (None, []))
-
-    def test_no_retry_without_overlay(self) -> None:
-        body = {"model": "m"}
-        exc = _http_error(400, b"thinking")
-        self.assertEqual(client.drop_rejected_overlay_fields(body, exc, []), (None, []))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import unittest
@@ -71,32 +72,22 @@ class BundleResolutionTests(unittest.TestCase):
         self.assertEqual([r.arxiv_id for r in resolved], ["2505.1"])
         self.assertEqual([r.arxiv_id for r in missing], ["2505.2"])
 
-    def test_grade_root_maps_paper_id_to_that_run_only(self) -> None:
-        runs = batch_runs.select_runs([_row("2505.1", "run-new")])
-        resolved, _ = batch_runs.resolve_bundles(runs, self.runs_dir)
-        grade_root = Path(self.tmp.name) / "grade"
-        batch_runs.build_grade_root(resolved, grade_root)
-        link = grade_root / "2505.1"
-        self.assertTrue(link.is_symlink())
-        # The auditor's <runs-dir>/<paper_id> contract now resolves to ONE attempt.
-        self.assertEqual(link.resolve(), (self.runs_dir / "2505.1" / "8h" / "run-new").resolve())
-
-    def test_grade_root_is_rebuildable(self) -> None:
-        runs = batch_runs.select_runs([_row("2505.1", "run-old")])
-        resolved, _ = batch_runs.resolve_bundles(runs, self.runs_dir)
-        grade_root = Path(self.tmp.name) / "grade"
-        batch_runs.build_grade_root(resolved, grade_root)
-        resolved[0].bundle = self.runs_dir / "2505.1" / "8h" / "run-new"
-        batch_runs.build_grade_root(resolved, grade_root)  # stale link replaced, not an error
+    def test_newest_bundle_picks_the_latest_run_record(self) -> None:
+        # No run_id to match (grading by paper id), so recency decides.
+        old = self.runs_dir / "2505.1" / "8h" / "run-old" / "report.json"
+        new = self.runs_dir / "2505.1" / "8h" / "run-new" / "report.json"
+        old.write_text("{}", encoding="utf-8")
+        new.write_text("{}", encoding="utf-8")
+        os.utime(old, (1_000_000, 1_000_000))
+        os.utime(new, (2_000_000, 2_000_000))
         self.assertEqual(
-            (grade_root / "2505.1").resolve(),
-            (self.runs_dir / "2505.1" / "8h" / "run-new").resolve(),
+            batch_runs.newest_bundle(self.runs_dir, "2505.1"),
+            self.runs_dir / "2505.1" / "8h" / "run-new",
         )
 
-    def test_ids_file_lists_one_paper_per_line(self) -> None:
-        runs = batch_runs.select_runs([_row("2505.1", "run-new"), _row("2505.2", "run-new")])
-        path = batch_runs.write_ids_file(Path(self.tmp.name) / "ids.txt", runs)
-        self.assertEqual(path.read_text().split(), ["2505.1", "2505.2"])
+    def test_newest_bundle_ignores_dirs_with_no_run_record(self) -> None:
+        self.assertIsNone(batch_runs.newest_bundle(self.runs_dir, "2505.1"))
+        self.assertIsNone(batch_runs.newest_bundle(self.runs_dir, "9999.9"))
 
 
 if __name__ == "__main__":

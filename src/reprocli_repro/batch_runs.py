@@ -1,26 +1,18 @@
-"""Bind one sbatch sweep's runs to the exact bundles an auditor should grade.
+"""Resolve one sbatch sweep's runs to the exact bundles a grader should read.
 
 A sweep is a ``batch_id`` (``slurm-<jobid>``) shared by every ``reprocli_repro``
 process the sbatch launched; each run leaves its bundle at
-``<runs-dir>/<arxiv_id>/<budget>h/<run_id>/``. The auditor, though, reads ONE
-directory per paper (``<runs-dir>/<paper_id>``), which for a paper attempted more
-than once mixes every attempt together -- so pointing it straight at the runs dir
-would grade whatever attempt happens to sort first, not this sweep's.
+``<runs-dir>/<arxiv_id>/<budget>h/<run_id>/``. Naming a paper is therefore not
+enough to name a run: a paper attempted more than once has several bundles, and
+"the sweep's attempt" is only identifiable through the ``run_id`` its row carries.
 
-This module bridges the two. It reads the sweep's rows from the run-viewer
-Supabase, resolves each ``run_id`` to the bundle it actually wrote, and builds a
-*grade root*: a directory of symlinks ``<grade-root>/<arxiv_id> -> <that run's
-bundle>`` plus the matching paper-ids file. Point the auditor at the grade root
-and it grades exactly this sweep; point ``reprocli_repro.audit_upload`` at the
-same root afterwards and every verdict lands on the right ``repro_runs`` row
-(each bundle carries its own ``stats.json`` naming its run).
-
-Read-only against Supabase; needs ``SUPABASE_URL`` + ``SUPABASE_SERVICE_KEY``.
+This module reads the sweep's rows from the run-viewer Supabase and resolves each
+``run_id`` to the bundle it actually wrote, so a grader points at one attempt and
+its verdict patches the matching ``repro_runs`` row. Read-only; needs
+``SUPABASE_URL`` + ``SUPABASE_SERVICE_KEY``.
 
     PYTHONPATH=src python -m reprocli_repro.batch_runs \
-      --batch slurm-2687371 \
-      --runs-dir /work/nvme/bfvr/msalunkhe/reprocli/agent_runs \
-      --grade-root "$SCRATCH/grade-2687371" --ids-file "$SCRATCH/ids.txt"
+      --batch slurm-2687371 --runs-dir /work/nvme/bfvr/msalunkhe/reprocli/agent_runs
 """
 
 from __future__ import annotations
@@ -131,6 +123,26 @@ def bundle_for(runs_dir: Path, arxiv_id: str, run_id: str) -> Path | None:
     return None
 
 
+def newest_bundle(runs_dir: Path, arxiv_id: str) -> Path | None:
+    """The most recent bundle for a paper, for grading outside a sweep.
+
+    Used when the caller names papers rather than a batch: with no ``run_id`` to
+    match, the newest bundle that actually holds a run record (``report.json`` or
+    ``stats.json``) is the only defensible choice.
+    """
+    paper_dir = Path(runs_dir) / arxiv_id
+    if not paper_dir.is_dir():
+        return None
+    marked = [
+        path.parent
+        for path in paper_dir.rglob("*")
+        if path.name in ("report.json", "stats.json") and path.is_file()
+    ]
+    if not marked:
+        return None
+    return max(marked, key=lambda path: path.stat().st_mtime)
+
+
 def resolve_bundles(runs: list[Run], runs_dir: Path) -> tuple[list[Run], list[Run]]:
     """Split ``runs`` into (resolved, missing) by whether their bundle is on disk."""
     resolved, missing = [], []
@@ -140,36 +152,11 @@ def resolve_bundles(runs: list[Run], runs_dir: Path) -> tuple[list[Run], list[Ru
     return resolved, missing
 
 
-def build_grade_root(runs: list[Run], grade_root: Path) -> Path:
-    """Populate ``grade_root`` with one ``<arxiv_id> -> bundle`` symlink per run."""
-    grade_root = Path(grade_root)
-    grade_root.mkdir(parents=True, exist_ok=True)
-    for run in runs:
-        if run.bundle is None:
-            continue
-        link = grade_root / run.arxiv_id
-        if link.is_symlink() or link.exists():
-            link.unlink()
-        link.symlink_to(run.bundle.resolve(), target_is_directory=True)
-    return grade_root
-
-
-def write_ids_file(path: Path, runs: list[Run]) -> Path:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(f"{run.arxiv_id}\n" for run in runs), encoding="utf-8")
-    return path
-
-
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="reprocli_repro.batch_runs", description=__doc__)
     parser.add_argument("--batch", required=True, help="batch_id to resolve, e.g. slurm-2687371.")
     parser.add_argument("--runs-dir", type=Path, required=True,
                         help="Root of the agent run bundles (<runs-dir>/<arxiv_id>/<budget>h/<run_id>).")
-    parser.add_argument("--grade-root", type=Path,
-                        help="Directory to fill with <arxiv_id> -> bundle symlinks for the auditor.")
-    parser.add_argument("--ids-file", type=Path,
-                        help="Write the resolved paper ids here (auditor --paper-ids-file).")
     parser.add_argument("--supabase-url", default=os.environ.get("SUPABASE_URL"),
                         help="Supabase project URL (default: $SUPABASE_URL).")
     parser.add_argument("--include-running", action="store_true",
@@ -203,10 +190,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"batch_runs: no gradeable bundles for {args.batch}", file=sys.stderr)
         return 1
 
-    if args.grade_root:
-        build_grade_root(resolved, args.grade_root)
-    if args.ids_file:
-        write_ids_file(args.ids_file, resolved)
     for run in resolved:
         print(f"{run.arxiv_id}\t{run.run_id}\t{run.bundle}")
     print(
