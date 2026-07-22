@@ -79,14 +79,14 @@ class ExecutionContext:
 
     arxiv_id: str
     lockfile_row: dict[str, Any] = field(default_factory=dict)
-    workspace: Path | None = None        # Phase 2: editable code clone + venv (rw)
-    reference: Path | None = None        # Phase 2: read-only paper LaTeX + supplement (ro)
-    budget: Budget | None = None         # Phase 3: metered compute budget
+    workspace: Path | None = None        # editable code clone + venv (rw)
+    reference: Path | None = None        # read-only paper LaTeX + supplement (ro)
+    budget: Budget | None = None         # metered compute budget
     allocation: str | None = None        # jobid of the held GPU allocation (mirrors session.jobid)
     session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
-    evidence: Path | None = None         # Phase 2: commands.log / trajectory.jsonl / ...
-    run_dir: Path | None = None          # Phase 5: bundle root where report.json is written for the auditor
-    cluster: "Cluster | None" = None     # Phase 4: GPU substrate run_gpu allocates on
+    evidence: Path | None = None         # commands.log / trajectory.jsonl / ...
+    run_dir: Path | None = None          # bundle root where report.json is written for the auditor
+    cluster: "Cluster | None" = None     # GPU substrate run_gpu allocates on
     sandbox: "Sandbox | None" = None     # Apptainer container write-confinement applied to shell steps
     plan: list[dict[str, str]] = field(default_factory=list)  # latest update_plan checklist (survives compaction)
     last_prompt_tokens: int | None = None  # usage.prompt_tokens from the most recent response; drives the context tiers

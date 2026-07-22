@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_repro import live_log
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro.evidence import init_evidence
-from reprocli_repro.finalize import finalize_episode
+from reprocli_repro.loop import finalize_episode
 
 
 def make_args(tmp: Path) -> argparse.Namespace:

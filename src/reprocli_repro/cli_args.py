@@ -6,10 +6,9 @@ metered compute budget. ``parse_args`` returns a fully-resolved Namespace: repro
 defaults applied (system/final messages, tool + response-format seams) and all
 cross-argument validation enforced.
 
-Phase 0 ships the stable surface the forked tool loop and the context-management
-tiers need. Run-selection flags (``--paper-id`` / ``--lockfile`` / ``--runs-dir``)
-are accepted now so the CLI shape is stable; they are consumed by the input
-pipeline starting in Phase 1.
+``validate`` enforces the cross-argument rules and ``apply_defaults`` resolves the
+repro defaults (system/final messages, the JIT-allocation cluster profile, the
+advertised toolset, the trace path).
 """
 
 from __future__ import annotations
@@ -19,10 +18,45 @@ import os
 from pathlib import Path
 
 from reprocli_vllm.config.config import DEFAULT_MODEL
+from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
-from reprocli_repro.cli_resolve import apply_defaults, validate
+from reprocli_repro.cluster import from_args as resolve_cluster
 from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
+from reprocli_repro.report import REPORT_RESPONSE_FORMAT
+from reprocli_repro.tools import build_repro_tools
+
+REPRO_SYSTEM_MESSAGE = (
+    "You are a reproduction agent. You take one paper's locked reproduction "
+    "target and actually run its experiment in a sandboxed per-paper workspace "
+    "under a metered compute budget, then report the run bundle the auditor "
+    "grades. Spend budget deliberately; write durable evidence as you go."
+)
+REPRO_FINAL_NO_TOOLS_MESSAGE = (
+    "The tool phase is over. Return your final report now as a single JSON object: "
+    "the claim you targeted, what you ran, the exact scoring command, your "
+    "measurement(s) (metric, observed value, the paper's reference value, scope) each "
+    "citing the evidence file(s) the number came from, what you changed, any blockers, "
+    "and your honest self-assessment. This is your account of the run, not the verdict "
+    "-- the auditor grades it. Return only the JSON object."
+)
+
+# Sampling is left unset for every model: the request builder omits unset fields,
+# so the served model's own generation_config defaults apply (vLLM recipe style).
+MAX_TOKENS = 32768
+MAX_INPUT_TOKENS = 128000
+REQUEST_WORKERS = 8
+# Context management (guardrails in loop.py): tool stdout stays verbatim until elide-compact
+# fires once COMPACT_THRESHOLD of MAX_INPUT_TOKENS is crossed, then it shrinks the old
+# span's bulky tool results in place to an on-disk pointer, keeping COMPACT_KEEP_TOKENS of
+# recent turns — plus all assistant reasoning — verbatim. The full output stays recoverable
+# under evidence/, so an elided number is re-read, not re-computed.
+COMPACT_ENABLED = True
+COMPACT_KEEP_TOKENS = 20000
+COMPACT_THRESHOLD = 0.70
+
+# The reproduction prompt template is a fixed repo asset (was --prompt-file).
+DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
 # dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
@@ -48,7 +82,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _add_run_selection(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("run selection (consumed starting Phase 1)")
+    group = parser.add_argument_group("run selection")
     group.add_argument("--paper-id", help="arXiv id of the single paper to reproduce.")
     group.add_argument(
         "--run-id",
@@ -169,3 +203,41 @@ def _add_outputs(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("outputs")
     group.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     group.add_argument("--save-round-jsonl", action="store_true")
+
+
+def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    if args.tool_rounds < 1:
+        parser.error("--tool-rounds must be >= 1")
+    if args.budget_h100_hours is not None and args.budget_h100_hours < 0:
+        parser.error("--budget-h100-hours must be >= 0")
+
+
+def apply_defaults(args: argparse.Namespace) -> None:
+    args.system_message = REPRO_SYSTEM_MESSAGE
+    args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
+    args.use_tools = True
+    args.prompt_file = DEFAULT_PROMPT_FILE
+    # Sampling stays unset (the request builder omits None fields, deferring to the
+    # served model's generation_config).
+    args.temperature = None
+    args.top_p = None
+    args.top_k = None
+    args.min_p = None
+    args.max_tokens = MAX_TOKENS
+    args.max_input_tokens = MAX_INPUT_TOKENS
+    args.request_workers = REQUEST_WORKERS
+    args.compact_enabled = COMPACT_ENABLED
+    args.compact_keep_tokens = COMPACT_KEEP_TOKENS
+    args.compact_threshold = COMPACT_THRESHOLD
+    # Phase 5: the forced final pass (tools off) is schema-constrained to the agent's
+    # report.json -- its account of the run, which the loop persists to the bundle for
+    # the auditor to grade. build_chat_completion_request sends tools XOR this format.
+    args.response_format = REPORT_RESPONSE_FORMAT
+    # Resolve the JIT-allocation substrate once: the named profile merged with any
+    # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
+    args.cluster_profile = resolve_cluster(args)
+    # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
+    # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
+    # per-node size, so the model picks a valid GPU count for this substrate.
+    args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
+    args.trace_output = trace_output_path(args.output)

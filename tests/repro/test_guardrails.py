@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.context import ExecutionContext
-from reprocli_repro.guardrails import _over
+from reprocli_repro.loop import _over
 
 
 def _args(max_input_tokens: int = 100_000) -> argparse.Namespace:

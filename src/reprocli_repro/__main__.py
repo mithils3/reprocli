@@ -1,19 +1,16 @@
 """Entry point: ``python -m reprocli_repro``.
 
-Phases 0-3 stood up the package: CLI, forked tool loop, ``ExecutionContext``,
-the lockfile->episode input pipeline, the per-paper
-workspace/reference/evidence, and the budget meter + JIT-SLURM substrate. Phase 4
-closes the loop: each prepared episode becomes an ``ExecutionContext`` (workspace +
-budget + cluster + evidence), and ``run_reproduce_loop`` drives the model through
-the execution toolset (``workspace_bash`` / file ops / the metered ``run_gpu``)
-until it finishes or the compute budget is spent.
+Each prepared episode becomes an ``ExecutionContext`` (workspace + budget +
+cluster + evidence), and ``run_reproduce_loop`` drives the model through the
+execution toolset (``workspace_bash`` / file ops / the metered ``run_gpu``) until
+it finishes or the compute budget is spent.
 
 The brain is an already-served vLLM endpoint (``--vllm-server-url`` /
 ``$REPROCLI_SERVER_URL`` / ``$REPROCLI_ENDPOINT_FILE``); this agent never
 self-hosts a model. With no endpoint configured the command falls back to a dry
 run -- it still prepares every episode's bundle and prints the rendered prompt, so
-the inputs can be inspected offline. Phase 5 finalizes the agent's ``report.json``
-bundle; the *verdict* over that bundle is the auditor's, not written here.
+the inputs can be inspected offline. The agent's ``report.json`` bundle is
+finalized here; the *verdict* over that bundle is the auditor's, not written here.
 """
 
 from __future__ import annotations

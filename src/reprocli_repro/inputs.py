@@ -1,4 +1,4 @@
-"""Phase 1: one lockfile row -> one fully-rendered reproduction episode.
+"""One lockfile row -> one fully-rendered reproduction episode.
 
 Turns the audited lockfile (the selected-paper audit pool) into the inputs the
 forked tool loop needs: the opening prompt and the per-episode run directory.
@@ -40,7 +40,7 @@ DEFAULT_UNBANDED_BUDGET_H100_HOURS = 8.0
 
 @dataclass
 class RunPaths:
-    """The resolved bundle layout for one episode (created in Phase 2)."""
+    """The resolved bundle layout for one episode."""
 
     run_dir: Path
     workspace: Path
@@ -128,7 +128,7 @@ def prepare_episodes(args: argparse.Namespace) -> list[EpisodeInput]:
     return episodes
 
 
-def build_context(ep: EpisodeInput, *, allocation: str | None = None) -> ExecutionContext:
+def build_context(ep: EpisodeInput) -> ExecutionContext:
     """Construct the per-episode loop state from a prepared episode."""
     return ExecutionContext(
         arxiv_id=ep.arxiv_id,
@@ -138,5 +138,4 @@ def build_context(ep: EpisodeInput, *, allocation: str | None = None) -> Executi
         evidence=ep.run_paths.evidence,
         run_dir=ep.run_paths.run_dir,
         budget=Budget(total_h100_hours=ep.budget),
-        allocation=allocation,
     )
