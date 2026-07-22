@@ -255,6 +255,35 @@ the 100 shipped compute estimates could be taken directly from the paper. We
 derived the rest from the pinned configuration. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
 reproduction in AI research~\citep{gundersen2018state}.
+\section{Provenance Auditing}
+\label{sec:auditing}
+
+Every finished run is graded by a provenance auditor, an LLM that reads the
+run's evidence directory and transcript and assigns the 0--10 score of
+Appendix~\ref{app:rubric}, from which the categorical verdict is derived
+deterministically. We fix Claude Opus 4.8 as the auditor for every run of
+every agent, and we froze the rubric before grading began, so scores are
+comparable across models and no agent grades its own family.
+
+The auditor is adversarial by instruction. It treats the agent's final
+report as a set of unverified claims and grades what the evidence shows. It
+traces every reported number to the execution that produced it, checks the
+executed protocol, split, and scale against the pinned configuration, and
+cross-checks the agent's measurements against the paper's reported values.
+When the recorded evidence does not settle a claim, it writes and executes
+its own scoring scripts over the run's saved outputs, recomputing metrics
+from raw artifacts rather than trusting the agent's summaries. It inspects
+and recomputes but never re-runs the reproduction, so a grade reflects the
+evidence the run actually produced.
+
+The auditor's discretion is bounded in code. Every violation it finds is
+recorded as a typed anti-cheat flag with a severity, and the scoring code
+applies the integrity adjustment of Appendix~\ref{app:rubric} rather than
+leaving it to the auditor. A high-severity flag, such as a number echoed
+from the paper, a hardcoded constant, or a proxy value in the target slot,
+forces the score to zero, and a genuine artifact wall caps the score at 3.
+% TODO(auditor-validation): report human-vs-auditor agreement and
+% injected-cheat flag recall here once the validation study runs.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -319,7 +348,21 @@ Present your main results.
 \section{Analysis}
 \label{sec:analysis}
 
-Add ablations, error analysis, qualitative results, scaling behavior, or robustness checks.
+% Placeholder section: ablations, error analysis, qualitative results.
+
+\paragraph{Failure rises with the scale of the required experiment.}
+Reproduction scores fall as the paper's compute band grows, even though no
+band comes close to exhausting the grant we assign it. The gradient tracks
+the experiment the paper demands, not the compute the agent receives.
+Agents handle short evaluation-style experiments well. They load a released
+checkpoint, run an inference pass, and recompute a metric. They do not
+launch and see through a full training run. When the pinned claim requires
+training at scale, the agent substitutes a miniature of the experiment and
+reports the shortfall, so end-to-end reproduction breaks down exactly where
+the experiment stops being short.
+% TODO(scale-narrative): add numbers when final grades land. Band means,
+% budget-spent fractions per band, and the miniature examples (46M params
+% for 1.96B, 256px for 512px) from the medium-2690187 dissection.
 
 \section{Limitations}
 \label{sec:limitations}
