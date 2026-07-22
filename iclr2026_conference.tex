@@ -53,7 +53,7 @@ Write your introduction here. Clearly state the problem, why it matters, your ma
 
 RECLAIM measures whether an agent can reproduce a published result end to
 end, starting from the artifacts the paper's authors actually released and
-graded by the provenance of the evidence the run produces. Existing
+graded against the execution evidence the run produces. Existing
 benchmarks each cover a part of this setting and leave a different part
 unmeasured.
 
@@ -141,8 +141,8 @@ it indicates that the compute cap is not the binding constraint for most runs.
 \paragraph{Provenance-audited grading.} The benchmark records what the
 agent claims and grades what the evidence shows. Every reported number is
 traced to execution evidence, and deterministic checks zero out numbers
-echoed from the paper rather than measured. Because the audit checks the
-outcome's provenance rather than adherence to a prescribed procedure, the
+echoed from the paper rather than measured. Because the audit checks how
+the number was produced rather than adherence to a prescribed procedure, the
 agent is free to reach the result by any faithful route, and a novel
 reproduction strategy scores as well as the authors' own. Recording the
 claim and the audited outcome side by side is what lets us measure how far
@@ -184,8 +184,8 @@ The agent receives the paper, the metric, the target value, the scope, and
 the bar shape. It does not receive the configuration. The agent must
 therefore design the experiment itself, deciding from the paper and the
 released artifacts what to run, retrain, or reimplement. Because the agent
-knows the number it must hit, a bare value match proves nothing. Grading is
-provenance-based. An LLM auditor traces every claimed result to execution
+knows the number it must hit, a bare value match proves nothing. An LLM
+auditor therefore traces every claimed result to execution
 evidence in the run directory, and deterministic checks force the score to
 zero when a number was echoed from the paper rather than measured.
 
@@ -255,10 +255,10 @@ the 100 shipped compute estimates could be taken directly from the paper. We
 derived the rest from the pinned configuration. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
 reproduction in AI research~\citep{gundersen2018state}.
-\section{Provenance Auditing}
+\section{Auditing}
 \label{sec:auditing}
 
-Every finished run is graded by a provenance auditor, an LLM that reads the
+Every finished run is graded by an LLM auditor that reads the
 run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
 deterministically. We fix Claude Opus 4.8 as the auditor for every run of
@@ -317,7 +317,7 @@ prompts, tool schemas, and session mechanics.
 \caption{The agent harness. The agent receives the paper and its match
 target, acts through a ReAct tool loop over a workspace shell and a metered
 Slurm GPU session with 500\,GB of scratch storage, and ends with a
-schema-constrained \texttt{report.json} whose claims the provenance auditor
+schema-constrained \texttt{report.json} whose claims the auditor
 grades against the run's \texttt{evidence/} directory.}
 \label{fig:harness}
 \end{figure}
@@ -333,7 +333,7 @@ Appendix~\ref{app:models} records pinned versions, serving configuration,
 and decoding settings.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
-integer grade from 0 to 10 that the provenance auditor assigns each run
+integer grade from 0 to 10 that the auditor assigns each run
 under the rubric of Appendix~\ref{app:rubric}. We also report the
 reproduction rate, the fraction of papers whose runs score 8 or higher and
 are therefore graded reproduced. Alongside both we report each model's token
@@ -627,7 +627,7 @@ row.},label={lst:task-prompt}]{prompts/prompt_reproduce.txt}
 \section{Audit Rubric}
 \label{app:rubric}
 
-The provenance auditor grades every run on a 0--10 integer scale in two
+The auditor grades every run on a 0--10 integer scale in two
 steps. It first places the run in the highest quality band whose conditions
 the cited execution evidence meets, then applies an integrity adjustment
 that can only lower the score. Honesty sets the floor and reproduction
