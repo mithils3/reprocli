@@ -40,7 +40,7 @@ def start(ctx, jobid: str) -> None:
     try:
         if not _enabled() or jobid in _BEACONS:
             return
-        from reprocli_repro.supabase_rows import run_id_of
+        from reprocli_repro.supabase_sink import run_id_of
         run_id = run_id_of(ctx)
         if not run_id:
             return

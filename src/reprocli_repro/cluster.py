@@ -1,15 +1,16 @@
-"""The DeltaAI cluster profile — the operator-set substrate for the JIT GPU allocator.
+"""The DeltaAI cluster profile — the operator-set substrate for the held GPU allocation.
 
-The reproduction agent provisions GPUs *just in time* (a fresh ``salloc`` per
-``run_gpu`` step, released on completion — see ``slurm.py``); it never sits on a
-pre-held allocation. A ``Cluster`` carries the facts an operator sets *once* and
-the agent is merely *entitled to* — account, partition, node type (``hw``) — plus
-the Apptainer image a GPU step runs inside. The model never picks these; per call
-it picks only ``gpus``/``minutes`` (metered in ``budget.py``).
+The reproduction agent holds **one** SLURM allocation for the episode: the first
+``run_gpu`` call acquires it and every later step runs into the same held node (see
+``slurm.py`` / ``gpu_session.py``). A ``Cluster`` carries the facts an operator sets
+*once* and the agent is merely *entitled to* — account, partition, node type (``hw``) —
+plus the Apptainer image a GPU step runs inside. The model never picks these; on the
+call that starts the session it picks only ``gpus``/``minutes`` (the hold's size and
+hard lifetime, billed as wall clock in ``budget.py``).
 
 DeltaAI is the only profile. The two per-run overrides are ``--partition`` (pick a
-different node pool for a step) and ``--apptainer-image`` (swap the sandbox .sif);
-everything else is pinned to the live ``scripts/*.sbatch`` account/partition.
+different node pool) and ``--apptainer-image`` (swap the sandbox .sif); everything else
+is pinned to the live ``scripts/*.sbatch`` account/partition.
 """
 
 from __future__ import annotations
@@ -69,7 +70,7 @@ _PROFILES: dict[str, Cluster] = {
         # Per-paper share of the brain node's quarter-node request (72 cores / 110G
         # at 1 GPU): 12 cores + 16G per agent CPU step, so six agents plus the vLLM
         # brain fit the cgroup and one runaway build can't OOM-kill the brain again
-        # (job 2666353; enforcement in sandbox_limits.py, build fan-out capped there).
+        # (job 2666353; enforcement in sandbox.py, build fan-out capped there).
         sandbox_cpus=12,
         sandbox_mem_gb=16,
     ),

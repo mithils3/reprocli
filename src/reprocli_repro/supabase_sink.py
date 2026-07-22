@@ -10,12 +10,13 @@ on-disk ``agent.full.log`` stays the source of truth. Fed via
 ``usage`` is summed onto the run row; on ``final`` the full log and a detailed
 ``stats.json`` are optionally pushed to Storage.
 
-Pure row construction lives in ``supabase_rows``; per-run token bookkeeping in
-``run_stats`` — this module is the queue + worker + HTTP plumbing.
+This module holds it all: the pure PostgREST row builders, the per-run token
+bookkeeping (``RunStats``), and the queue + worker + HTTP plumbing.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import queue
 import socket
@@ -25,9 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from reprocli_repro import gpu_usage, live_log, postgrest, supabase_rows as rows
-from reprocli_repro.run_stats import RunStats
-from reprocli_repro.supabase_rows import budget_of, run_id_of
+from reprocli_repro import gpu_usage, live_log, postgrest
 
 QUEUE_MAX = 4000           # events; beyond this we drop rather than block the loop
 BATCH_MAX = 50
@@ -37,6 +36,135 @@ BUCKET = "repro-logs"
 
 def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+# ---- pure PostgREST row builders -------------------------------------------
+# Pure: a context / event payload in, a row ``dict`` out — no state, no network.
+# The sink supplies the ``base`` dict (``run_id`` / ``seq`` / ``kind`` /
+# ``round_index``) since the sequence counter is stateful.
+
+STDOUT_CAP = 8000  # chars per stdout/stderr/text cell (full text -> agent.full.log)
+
+
+def cap(text: Any, limit: int = STDOUT_CAP) -> tuple[str, bool]:
+    s = "" if text is None else str(text)
+    if len(s) <= limit:
+        return s, False
+    return s[:limit] + f"\n…(+{len(s) - limit} chars — see agent.full.log)", True
+
+
+def run_id_of(ctx) -> str | None:
+    ev = getattr(ctx, "evidence", None)
+    return Path(ev).parent.name if ev else None
+
+
+def budget_of(ctx) -> tuple[float | None, float | None]:
+    b = getattr(ctx, "budget", None)
+    if b is None:
+        return None, None
+    return b.total_h100_hours, b.remaining()
+
+
+def message_row(base: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    msg = payload.get("message") or {}
+    reasoning, _ = cap(msg.get("reasoning") or msg.get("reasoning_content"), STDOUT_CAP * 2)
+    content, _ = cap(msg.get("content"), STDOUT_CAP * 2)
+    base.update({"role": "assistant", "reasoning": reasoning or None, "content": content or None})
+    base["finish_reason"] = payload.get("finish_reason")
+    if base.get("kind") == "final":
+        base["exit_reason"] = payload.get("exit_reason") or None
+    return base
+
+
+def call_row(base: dict[str, Any], call: dict[str, Any]) -> dict[str, Any]:
+    args = live_log.call_arguments(call)
+    name = str((call.get("function") or {}).get("name") or "?")
+    base["tool_name"] = name
+    if "command" in args:
+        base.update(detail_kind="command", command=str(args["command"]))
+    elif "diff" in args:
+        path = args.get("path")
+        base.update(detail_kind="diff", command=f"(apply diff{' to ' + str(path) if path else ''})")
+    elif "path" in args:
+        base.update(detail_kind="path", command=str(args["path"]))
+    elif args:
+        base.update(detail_kind="json", args=args)
+    return base
+
+
+def result_row(base: dict[str, Any], res: dict[str, Any]) -> dict[str, Any]:
+    out, t1 = cap(res.get("stdout"))
+    err, t2 = cap(res.get("stderr"))
+    base.update({
+        "ok": res.get("ok"), "rc": res.get("returncode"), "duration_s": res.get("duration_s"),
+        "cost_h100": res.get("cost_h100_hours"), "remaining_h100": res.get("remaining_h100_hours"),
+        "error": (str(res["error"]).splitlines()[0] if res.get("error") else None),
+        "path": res.get("path"), "stdout": out or None, "stderr": err or None,
+        "truncated": bool(t1 or t2),
+    })
+    return base
+
+
+# ---- per-run token bookkeeping ---------------------------------------------
+# Pure in-memory bookkeeping: feed it each model response's ``usage`` and each
+# tool call; it yields the ``repro_runs`` aggregate fields and writes the detailed
+# ``stats.json`` document. No network, no globals.
+
+_KEYS = ("prompt", "completion", "total", "cached", "reasoning")
+
+
+def usage_fields(usage: Any) -> dict[str, int]:
+    """OpenAI / vLLM ``usage`` object -> flat int counts (defensive about shape)."""
+    if not isinstance(usage, dict):
+        return {k: 0 for k in _KEYS}
+    pt = int(usage.get("prompt_tokens") or 0)
+    ct = int(usage.get("completion_tokens") or 0)
+    tt = int(usage.get("total_tokens") or (pt + ct))
+    ptd = usage.get("prompt_tokens_details")
+    ctd = usage.get("completion_tokens_details")
+    cached = int(ptd.get("cached_tokens") or 0) if isinstance(ptd, dict) else 0
+    reasoning = int(ctd.get("reasoning_tokens") or 0) if isinstance(ctd, dict) else 0
+    return {"prompt": pt, "completion": ct, "total": tt, "cached": cached, "reasoning": reasoning}
+
+
+class RunStats:
+    """Accumulates token usage + per-round records for a single run."""
+
+    def __init__(self) -> None:
+        self.tokens = {k: 0 for k in _KEYS}
+        self.rounds: list[dict[str, Any]] = []
+        self.tool_calls = 0
+
+    def add_usage(self, round_index: int | None, kind: str | None, usage: Any) -> None:
+        f = usage_fields(usage)
+        for k in _KEYS:
+            self.tokens[k] += f[k]
+        self.rounds.append({
+            "round_index": round_index, "kind": kind or "round",
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **f,
+        })
+
+    def add_tool_call(self) -> None:
+        self.tool_calls += 1
+
+    def run_fields(self) -> dict[str, Any]:
+        """The aggregate columns patched onto the ``repro_runs`` row."""
+        t = self.tokens
+        return {
+            "prompt_tokens": t["prompt"], "completion_tokens": t["completion"],
+            "total_tokens": t["total"], "cached_tokens": t["cached"],
+            "reasoning_tokens": t["reasoning"], "tool_calls": self.tool_calls,
+        }
+
+    def write_doc(self, path: Path, meta: dict[str, Any]) -> bool:
+        """Write the detailed ``stats.json`` (meta + tokens + per-round). True on success."""
+        doc = dict(meta)
+        doc.update({"tokens": dict(self.tokens), "tool_calls": self.tool_calls, "rounds": self.rounds})
+        try:
+            path.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+            return True
+        except OSError:
+            return False
 
 
 @dataclass
@@ -134,7 +262,7 @@ class SupabaseSink:
             self._round[run_id] = idx
             if isinstance(idx, int):
                 self._rounds_seen[run_id] = max(self._rounds_seen.get(run_id, 0), idx + 1)
-            self._put("events", rows.message_row(self._row_base(run_id, kind, idx), payload))
+            self._put("events", message_row(self._row_base(run_id, kind, idx), payload))
             if kind == "final":
                 self._finish(ctx, run_id, payload.get("exit_reason") or "")
         elif kind == "usage":
@@ -143,9 +271,9 @@ class SupabaseSink:
             self._put("run_patch", (run_id, {**self._stats_for(run_id).run_fields(), "updated_at": _now_iso()}))
         elif kind == "call_start":
             self._stats_for(run_id).add_tool_call()
-            self._put("events", rows.call_row(self._row_base(run_id, "call_start", self._round.get(run_id)), payload["call"]))
+            self._put("events", call_row(self._row_base(run_id, "call_start", self._round.get(run_id)), payload["call"]))
         elif kind == "call_result":
-            self._put("events", rows.result_row(self._row_base(run_id, "call_result", self._round.get(run_id)), payload["result"]))
+            self._put("events", result_row(self._row_base(run_id, "call_result", self._round.get(run_id)), payload["result"]))
             self._patch_meters(run_id, payload["result"])
 
     # ---- run-row meter / finalize --------------------------------------------
