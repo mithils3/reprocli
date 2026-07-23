@@ -129,6 +129,36 @@ def _audit_run_id(cfg: SinkConfig) -> str:
     return sink._audit_run_id("2410.19933")
 
 
+class EventWriteTests(unittest.TestCase):
+    """One duplicate row must not take a whole batch of good events down with it.
+
+    Two graders launched in the same second derive the same attempt stamp, so the
+    loser collides on every seq it allocates. A plain insert 409s the entire
+    statement, silently dropping the other rows in the batch.
+    """
+
+    def _flush_events(self, rows: list[dict[str, object]]) -> list[tuple]:
+        posts: list[tuple] = []
+        sink = AuditSink.__new__(AuditSink)
+        sink._post = lambda *a, **kw: posts.append((a, kw))  # type: ignore[method-assign]
+        sink._flush([("events", row) for row in rows])
+        return posts
+
+    def test_event_insert_is_idempotent_on_run_and_seq(self) -> None:
+        (args, kwargs), = self._flush_events([{"audit_run_id": "a", "seq": 0, "kind": "final"}])
+        self.assertIn("on_conflict=audit_run_id,seq", args[1])
+        self.assertIn("resolution=ignore-duplicates", kwargs["prefer"])
+
+    def test_rows_are_padded_to_the_shared_key_union(self) -> None:
+        (args, _), = self._flush_events([
+            {"audit_run_id": "a", "seq": 0, "kind": "round_open"},
+            {"audit_run_id": "a", "seq": 1, "kind": "call_start", "tool_name": "bash"},
+        ])
+        self.assertEqual([sorted(row) for row in args[2]],
+                         [["audit_run_id", "kind", "seq", "tool_name"]] * 2)
+        self.assertIsNone(args[2][0]["tool_name"])
+
+
 class SummaryTests(unittest.TestCase):
     def test_summary_survives_a_mix_of_graded_and_degraded_rows(self) -> None:
         usage = agent.Usage()

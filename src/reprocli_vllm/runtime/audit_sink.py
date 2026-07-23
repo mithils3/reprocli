@@ -235,8 +235,17 @@ class AuditSink:
                            prefer="return=minimal")
         if events:  # bulk insert needs identical keys per row -> pad to the union
             ks = set().union(*(e.keys() for e in events))
-            self._post("POST", "/rest/v1/audit_events", [{k: e.get(k) for k in ks} for e in events],
-                       prefer="return=minimal")
+            # Idempotent on (audit_run_id, seq), like the run upsert above. A plain
+            # insert makes ONE duplicate row fatal to the whole batch: PostgREST
+            # rejects the statement, so up to BATCH_MAX-1 perfectly good events are
+            # lost with it. Duplicates are not hypothetical -- two graders launched
+            # in the same second derive the same attempt stamp, hence the same
+            # audit_run_id, and the second one collides on every seq it allocates.
+            # ignore-duplicates keeps the transcript already on the page and lets
+            # the rest of the batch land.
+            self._post("POST", "/rest/v1/audit_events?on_conflict=audit_run_id,seq",
+                       [{k: e.get(k) for k in ks} for e in events],
+                       prefer="resolution=ignore-duplicates,return=minimal")
 
     def _post(self, method: str, path: str, body: Any, *, prefer: str | None = None) -> None:
         try:
