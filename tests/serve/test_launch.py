@@ -60,6 +60,34 @@ class Qwen3ServeCommandTests(unittest.TestCase):
         self.assertEqual(value_after(cmd, "--swap-space"), "0.0")
 
 
+class DeepseekV4ServeCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.cmd = command_for(["--model", "deepseek-ai/DeepSeek-V4-Flash"])
+
+    def test_uses_deepseek_profile_flags(self) -> None:
+        self.assertEqual(value_after(self.cmd, "--tensor-parallel-size"), "2")
+        self.assertEqual(value_after(self.cmd, "--tool-call-parser"), "deepseek_v4")
+        self.assertEqual(value_after(self.cmd, "--reasoning-parser"), "deepseek_v4")
+        self.assertEqual(value_after(self.cmd, "--kv-cache-dtype"), "fp8")
+        self.assertEqual(value_after(self.cmd, "--max-model-len"), "393216")
+        self.assertIn("--enable-auto-tool-choice", self.cmd)
+
+    def test_parser_override_is_the_sbatch_escape_hatch(self) -> None:
+        # If a vLLM build names the V4 tool parser deepseek_v3, the sbatch overrides it.
+        cmd = command_for(
+            [
+                "--model",
+                "deepseek-ai/DeepSeek-V4-Flash",
+                "--tool-call-parser",
+                "deepseek_v3",
+                "--reasoning-parser",
+                "deepseek_v3",
+            ]
+        )
+        self.assertEqual(value_after(cmd, "--tool-call-parser"), "deepseek_v3")
+        self.assertEqual(value_after(cmd, "--reasoning-parser"), "deepseek_v3")
+
+
 class KimiMultinodeServeCommandTests(unittest.TestCase):
     def setUp(self) -> None:
         self.cmd = command_for(

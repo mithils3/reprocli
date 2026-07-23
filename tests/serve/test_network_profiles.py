@@ -73,6 +73,20 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(profile.tensor_parallel_size, 4)
         self.assertIsNotNone(profile.compilation_config)
 
+    def test_deepseek_v4_by_id(self) -> None:
+        profile = resolve_profile("deepseek-ai/DeepSeek-V4-Flash")
+        self.assertEqual(profile.name, "deepseek_v4")
+        self.assertEqual(profile.tensor_parallel_size, 2)
+        self.assertEqual(profile.tool_call_parser, "deepseek_v4")
+        self.assertEqual(profile.reasoning_parser, "deepseek_v4")
+        self.assertEqual(profile.kv_cache_dtype, "fp8")
+        # Think Max needs >= 393216; a smaller default would silently cap it.
+        self.assertGreaterEqual(profile.max_model_len, 393216)
+
+    def test_deepseek_v4_not_misrouted_to_minimax(self) -> None:
+        # DeepSeek must NOT fall through to the minimax default (TP=4, wrong parsers).
+        self.assertNotEqual(resolve_profile("deepseek-ai/DeepSeek-V4-Flash").name, "minimax_m2")
+
 
 if __name__ == "__main__":
     unittest.main()

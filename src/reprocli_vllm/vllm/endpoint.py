@@ -36,6 +36,7 @@ ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
 ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
+ENV_CHAT_TEMPLATE_KWARGS = "REPROCLI_CHAT_TEMPLATE_KWARGS"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -74,6 +75,38 @@ def openrouter_provider_routing() -> dict[str, Any] | None:
     if not providers:
         return None
     return {"order": providers, "allow_fallbacks": False}
+
+
+def chat_template_kwargs() -> dict[str, Any] | None:
+    """Per-request ``chat_template_kwargs`` to attach to every completion, or None.
+
+    Set ``REPROCLI_CHAT_TEMPLATE_KWARGS`` to a JSON object and it rides on every
+    chat-completion body (repro loop, auditor/classifier tool loop). This is how a
+    model's chat template is told to render a non-default mode that no sampling
+    field can express — e.g. DeepSeek-V4-Flash Think Max, which the AA index rung
+    depends on:
+
+        REPROCLI_CHAT_TEMPLATE_KWARGS='{"thinking": true, "reasoning_effort": "max"}'
+
+    Unset/empty or unparseable -> ``None`` and no field is sent, so every other
+    model (and a plain vLLM that ignores the field) is unaffected.
+    """
+    raw = (os.environ.get(ENV_CHAT_TEMPLATE_KWARGS) or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        print(
+            f"[chat_template_kwargs] ignoring unparseable {ENV_CHAT_TEMPLATE_KWARGS} "
+            f"(not JSON): {raw!r}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return None
+    if not isinstance(parsed, dict) or not parsed:
+        return None
+    return parsed
 
 
 def normalize_server_url(value: str) -> str:

@@ -8,6 +8,7 @@ from typing import Any
 
 from reprocli_vllm.vllm.endpoint import (
     auth_headers,
+    chat_template_kwargs,
     openrouter_provider_routing,
     resolve_api_key,
 )
@@ -28,6 +29,18 @@ def apply_provider_routing(body: dict[str, Any]) -> None:
     provider = openrouter_provider_routing()
     if provider is not None:
         body.setdefault("provider", provider)
+
+
+def apply_chat_template_kwargs(body: dict[str, Any]) -> None:
+    """Attach env-configured ``chat_template_kwargs`` in-place, if any.
+
+    Same chokepoint and same never-clobber contract as ``apply_provider_routing``:
+    a body that already carries the field wins, so a caller can still override
+    per request. No-op when the env var is unset (every non-DeepSeek sweep).
+    """
+    kwargs = chat_template_kwargs()
+    if kwargs is not None:
+        body.setdefault("chat_template_kwargs", kwargs)
 
 
 def prepare_structured_output(body: dict[str, Any]) -> None:
@@ -70,6 +83,7 @@ def post_chat_completion_row(
     stream: bool = False,
 ) -> Any:
     apply_provider_routing(row["body"])
+    apply_chat_template_kwargs(row["body"])
     prepare_structured_output(row["body"])
     if stream:
         return stream_chat_completion(base_url, row, timeout)

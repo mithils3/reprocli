@@ -20,6 +20,7 @@ KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
 QWEN3_MODEL = "Qwen/Qwen3.6-27B-FP8"
+DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
 
 
 @dataclass
@@ -122,6 +123,51 @@ def qwen3_profile() -> Profile:
     )
 
 
+def deepseek_v4_profile() -> Profile:
+    # DeepSeek-V4-Flash: a 158B MoE (~13B active) with the Lightning Indexer
+    # (sparse attention) served natively INT8/FP8 (~149 GiB). On DeltaAI it runs
+    # TP=2 on ONE ghx4 node's two-GPU share (weights ~74 GiB/GPU, thin GPU KV),
+    # verified 2026-07-16 (tasks/serve-dsv4flash-vllm-gh200.md). Two flags are
+    # REQUIRED, not tunable:
+    #   - kv_cache_dtype fp8: V4's fp8_ds_mla KV layout asserts on anything else.
+    #   - the CPU KV-offload tier and the DeepGEMM LD_LIBRARY_PATH +
+    #     VLLM_USE_FLASHINFER_SAMPLER=0 exports live in the sbatch, not here
+    #     (they are launch-env, not serve flags).
+    # max_model_len is 393216 because the sweep pins Think Max reasoning (AA index
+    # 40 = Max Effort, the rung that separates V4-Flash from Qwen3.6-27B's 37), and
+    # Think Max requires max-model-len >= 393216. The Think Max kwargs themselves
+    # ride REPROCLI_CHAT_TEMPLATE_KWARGS (client apply_chat_template_kwargs), not a
+    # serve flag. The parsers follow notes/References/Model Selection Notes.md
+    # ("parser deepseek_v4"); vLLM also registers deepseek_v4 as a tokenizer mode.
+    # If a given vLLM build names the tool parser differently (e.g. deepseek_v3),
+    # override with the sbatch's TOOL_PARSER/REASONING_PARSER (reprocli_serve
+    # --tool-call-parser / --reasoning-parser). No compilation_config: the verified
+    # TP=2 serve used none; if the FlashInfer mnnvl allreduce fusion IMAs on a
+    # newer build, pass --compilation-config to route through the GH200 guard.
+    return Profile(
+        name="deepseek_v4",
+        tensor_parallel_size=2,
+        tool_call_parser="deepseek_v4",
+        reasoning_parser="deepseek_v4",
+        max_model_len=393216,
+        kv_cache_dtype="fp8",
+    )
+
+
+def is_deepseek_v4(model: str) -> bool:
+    if "DeepSeek-V4" in model.rstrip("/"):
+        return True
+    config_path = Path(model) / "config.json"
+    if not config_path.exists():
+        return False
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    architectures = config.get("architectures") or []
+    return any(str(name).startswith("DeepseekV4") for name in architectures)
+
+
 def is_qwen3(model: str) -> bool:
     if "Qwen3" in model.rstrip("/"):
         return True
@@ -170,6 +216,8 @@ def resolve_profile(model: str) -> Profile:
         return kimi_profile()
     if is_minimax_m3(model):
         return minimax_m3_profile()
+    if is_deepseek_v4(model):
+        return deepseek_v4_profile()
     if is_qwen3(model):
         return qwen3_profile()
     return minimax_profile()

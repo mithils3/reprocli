@@ -10,7 +10,11 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm import client
-from reprocli_vllm.vllm.endpoint import ENV_API_KEY, ENV_OPENROUTER_PROVIDER
+from reprocli_vllm.vllm.endpoint import (
+    ENV_API_KEY,
+    ENV_CHAT_TEMPLATE_KWARGS,
+    ENV_OPENROUTER_PROVIDER,
+)
 
 JSON_SCHEMA_RF = {
     "type": "json_schema",
@@ -118,6 +122,52 @@ class DowngradeResponseFormatTests(unittest.TestCase):
         body = {"response_format": {"type": "json_object"}}
         exc = _http_error(400, b"This response_format type is unavailable now")
         self.assertIsNone(client.downgrade_response_format_on_reject(body, exc))
+
+
+class ApplyChatTemplateKwargsTests(unittest.TestCase):
+    THINK_MAX = '{"thinking": true, "reasoning_effort": "max"}'
+
+    def test_noop_when_unset(self) -> None:
+        body = {"model": "m", "messages": []}
+        with patch.dict("os.environ", {}, clear=True):
+            client.apply_chat_template_kwargs(body)
+        self.assertNotIn("chat_template_kwargs", body)
+
+    def test_attaches_think_max_when_set(self) -> None:
+        body = {"model": "deepseek-ai/DeepSeek-V4-Flash", "messages": []}
+        with patch.dict("os.environ", {ENV_CHAT_TEMPLATE_KWARGS: self.THINK_MAX}, clear=True):
+            client.apply_chat_template_kwargs(body)
+        self.assertEqual(
+            body["chat_template_kwargs"], {"thinking": True, "reasoning_effort": "max"}
+        )
+
+    def test_does_not_clobber_existing(self) -> None:
+        body = {"chat_template_kwargs": {"thinking": False}}
+        with patch.dict("os.environ", {ENV_CHAT_TEMPLATE_KWARGS: self.THINK_MAX}, clear=True):
+            client.apply_chat_template_kwargs(body)
+        self.assertEqual(body["chat_template_kwargs"], {"thinking": False})
+
+    def test_ignores_unparseable_json(self) -> None:
+        body = {"model": "m", "messages": []}
+        with patch.dict("os.environ", {ENV_CHAT_TEMPLATE_KWARGS: "not json"}, clear=True):
+            client.apply_chat_template_kwargs(body)
+        self.assertNotIn("chat_template_kwargs", body)
+
+    def test_reaches_body_through_post_row(self) -> None:
+        row = {"custom_id": "c1", "body": {"model": "m", "messages": []}}
+        seen: dict = {}
+
+        def _fake_post(base_url, body, timeout):
+            seen["body"] = body
+            return {"choices": []}
+
+        with patch.dict("os.environ", {ENV_CHAT_TEMPLATE_KWARGS: self.THINK_MAX}, clear=True):
+            with patch.object(client, "post_vllm_chat_completion", _fake_post):
+                client.post_chat_completion_row("http://h:8000", row, 1.0)
+
+        self.assertEqual(
+            seen["body"]["chat_template_kwargs"], {"thinking": True, "reasoning_effort": "max"}
+        )
 
 
 if __name__ == "__main__":
