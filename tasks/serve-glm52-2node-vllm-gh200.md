@@ -18,7 +18,7 @@ needed to run this.
 
 ```bash
 hf download cyankiwi/GLM-5.2-AWQ-INT4 \
-  --local-dir /work/hdd/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4
+  --local-dir /work/nvme/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4
 ```
 
 474 GB, ~3-6 min. Plain flags only — no `HF_XET_*`, no big `--max-workers` (E).
@@ -73,7 +73,7 @@ Both nodes must print `ok`. If not, fix `LD_LIBRARY_PATH` before launching (D1).
 
 ```bash
 mkdir -p logs
-MODEL=/work/hdd/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4
+MODEL=/work/nvme/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4
 
 srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
   --gpus-per-task=4 --cpus-per-task=32 bash -lc '
@@ -433,7 +433,12 @@ The single-node runbook argued for node-local `/tmp`, correctly, for
 **single-node** serving. Two nodes breaks the argument: each node's ranks load
 from the path you pass, so `/tmp/GLM-5-2` on node A is invisible to node B.
 
-No speed is lost. vLLM's auto-prefetch stays off either way — the log says why:
+Use `/work/nvme`, not `/work/hdd` — 474 GB read by 8 ranks is the one workload
+where the flash tier earns its keep, and `/work/nvme/bfvr/msalunkhe/models` is
+already where most checkpoints here live.
+
+No speed is lost against `/tmp`. vLLM's auto-prefetch stays off either way — the
+log says why:
 *"Auto-prefetch is disabled because the filesystem (XFS) is not a recognized
 network FS (NFS/Lustre) and the checkpoint size exceeds 90% of available RAM
 (271.62 GiB)"*. **Both** clauses must pass, and 441.7 > 244.5 fails the RAM
