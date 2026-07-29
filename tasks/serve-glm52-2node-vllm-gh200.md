@@ -6,8 +6,9 @@ Config: **TP=4 + PP=2, bf16 KV, no MTP, no CPU offload.**
 > **STATUS: VERIFIED AND BENCHMARKED (job 2765627, 2026-07-29).** Bring-up in
 > **8m47s**, 530,240-token KV pool, no offload. Against the llama.cpp incumbent
 > on an 85k transcript: **decode 78.6 vs 40 t/s (2.0x)**, **cold prefill 6,822 vs
-> 575 t/s (11.9x)**, ttft 12.49 s -> 1.32 s on turn 2. Still pending: the 8-agent
-> concurrency run, which is what the sweep actually does.
+> 575 t/s (11.9x)**. Under sweep-shaped load (8 agents x 10 turns): **280.2 t/s
+> aggregate, 21.9 turns/min, 85.8% cache share**. This layout is good enough to
+> serve on. The open risk is tail latency — p95 ttft reached 20.50 s.
 
     10:53:41  ranks start          rank=0 gh109 / rank=1 gh113
     11:00:10  stage 0 loaded       51.29 GiB, 316 s
@@ -172,10 +173,30 @@ vllm bench serve --base-url "http://${HEAD_IP}:8000" \
 | ttft on 85k, turn 1 | — | **12.49 s** | |
 | ttft on 85k, turn 2 | — | **1.32 s** | 9.5x faster |
 | warm prefill t/s (effective) | — | 64,512 | 99.9% cached |
-| decode t/s (8 agents) | — | *pending* | |
-| cached share, 8 agents x 10 turns | — | *pending* | |
 | time to `/health` | ~0 | 8m47s | |
 | KV pool allocated | — | 530,240 tok | |
+
+8 agents x 10 turns, 3,014-token shared system prompt, 768 tokens out per turn:
+
+| | vLLM TP=4+PP=2 |
+|---|---|
+| **aggregate output** | **280.2 t/s** (3.6x the single stream) |
+| **throughput** | **21.9 turns/min** — 80 turns in 3.7 min |
+| **cache share** | **85.8%** (714,304 of 832,121 prompt tokens) |
+| per-stream decode | ~44 t/s |
+| ttft, mean / worst p95 | 0.89-4.73 s / **20.50 s** |
+
+**Cache share climbs monotonically, 78.0% -> 93.7% across the ten turns.** That
+is the healthy signature: transcripts grow, the shared prefix grows with them,
+and nothing is being evicted. A 530,240-token pool is not close to binding at
+this concurrency.
+
+The per-turn decode column needs care. Under concurrency a request that waits
+behind others has its queue time charged to `ttft`, leaving a short decode window
+and a per-request rate several times the true one — turn 5 read **199.9 t/s**
+against ~44 either side, on the same turn that logged the worst p95 ttft (20.50
+s). One such request moves a mean of 8 from 44 to 66. `bench_agent_sim.py` now
+reports the **median** for that reason. Quote the aggregate, not the column.
 
 **vLLM wins both halves, and decode is the surprise.** I predicted decode would
 be a wash (llama.cpp 40 t/s, dnhkng 43 t/s on 2xGH200 after NUMA work). It is
@@ -461,34 +482,44 @@ Both arguments were about *ceilings*, and the floor turned out to be high enough
 that neither bound. Treat that as a caution about the reasoning, not just a happy
 result.
 
-**Still measure the 8-agent number before committing.** It is what the sweep
-actually runs, and single-stream decode is a floor rather than the operating
-point. B=8 aggregate came in at 182.2 t/s, but from the untimed table (step 7),
-so it needs a clean re-run alongside `bench_agent_sim.py`.
+**Under sweep-shaped load it holds up: 280.2 t/s aggregate, 3.6x the single
+stream.** Single-stream decode really was a floor, as expected — per-stream drops
+to ~44 t/s under 8-way concurrency while the aggregate more than triples. That is
+continuous batching doing its job, and it is the number the sweep actually sees.
 
-The one counterweight left: cold prefill amortizes, so an 11.9x cold-prefill win
-is worth less than it looks — an agent pays it once and turn 2+ hits the prefix
-cache (MEASURED: 99.9% cached, ttft 12.49 s -> 1.32 s). *Except* that compaction
-rewrites the transcript and diverges the prefix, forcing a re-prefill. How much
-prefill actually costs therefore depends on the compaction rate, measurable from
-`repro_events`. Get that number before sizing the win.
+**Prefix caching behaves.** 85.8% overall, climbing 78.0% -> 93.7% as transcripts
+grow, squarely in the 80-95% band real sweeps show. Nothing evicts at 530k
+tokens. So the 11.9x cold-prefill win is worth less than it looks — an agent pays
+it once and every later turn hits cache (12.49 s -> 1.32 s ttft) — but that is
+the good case, not a caveat.
 
-Watch `cached%` on the agent sim — it should climb toward the 80-95% real sweeps
-show. A sag as transcripts grow means the KV pool is evicting, which at 530k
-tokens would be surprising and worth chasing.
+The real caveat is compaction: it rewrites the transcript and diverges the
+prefix, forcing a re-prefill that this sim never triggers. How much prefill costs
+in production therefore depends on the compaction rate, measurable from
+`repro_events`. Get that number before sizing the prefill win.
 
-**Verdict so far: this path pays for itself.** Two nodes instead of one, an
-8m47s startup, and three upstream bugs, against 2x decode and 11.9x cold prefill.
-The remaining unknown is quality — the AWQ-INT4 vs UD-IQ4_XS delta is unquantified
-on both sides, and no throughput number settles it.
+**Watch tail latency, not throughput.** p95 ttft hit **20.50 s** on turn 5 while
+the mean was 4.26 s. Head-of-line blocking under 8-way concurrency is the one
+number here that got worse, and it is invisible in the aggregate. If the sweep
+runs more than 8 concurrent agents, measure this before raising `--max-num-seqs`
+above 16.
+
+**Verdict: this path pays for itself.** Two nodes instead of one, an 8m47s
+startup, and three upstream bugs, against 2x single-stream decode, 11.9x cold
+prefill, and 280 t/s aggregate under load. The remaining unknown is quality — the
+AWQ-INT4 vs UD-IQ4_XS delta is unquantified on both sides, and no throughput
+number settles it.
 
 ## G. Open items
 
-- **`bench_agent_sim.py --agents 8 --turns 10` has not been run.** It is the
-  number that decides this, and the only source for `cached%` under real
-  concurrency.
+- **p95 ttft of 20.50 s under 8 agents** is the one bad number. Head-of-line
+  blocking, invisible in the aggregate. Characterise it before running more than
+  8 concurrent agents or raising `--max-num-seqs`.
 - **Re-run the npp/ntg table** now that `bench_serve.py` excludes untimed
   requests instead of averaging in zeros. Its PP/TG columns were unusable.
+- **Compaction re-prefill is unmeasured.** The agent sim is append-only, so it
+  never diverges a prefix; production does. Pull the compaction rate from
+  `repro_events` to size what prefill actually costs.
 - **Why did no short-prompt request record a first token?** The agentic path
   (same `stream_once`) timed fine at 85k. The fix stops it corrupting the mean
   but does not explain it. Suspects, in order: a reasoning/tool-call delta shape

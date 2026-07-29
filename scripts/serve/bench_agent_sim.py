@@ -148,9 +148,17 @@ def report(records: list[tuple[int, int, Result]], wall: float, turns: int) -> N
         ttfts = sorted(r.ttft for r in rs)
         p95 = ttfts[min(len(ttfts) - 1, int(len(ttfts) * 0.95))]
         cached_pct = 100 * sum(r.cached_tokens for r in rs) / max(1, sum(r.prompt_tokens for r in rs))
+        # Median, and only over requests that recorded a first token. Under
+        # concurrency a request that waits behind others has its queue time
+        # charged to ttft, which leaves a short decode window and a per-request
+        # rate several times the true one; one of those distorts a mean of 8
+        # badly (turn 5 of the 2026-07-29 GLM-5.2 run read 199.9 t/s against ~44
+        # either side). The aggregate at the bottom is the number to quote.
+        timed = [r for r in rs if r.timed]
+        decode = f"{statistics.median(r.decode_tps for r in timed):8.1f}" if timed else "      --"
         print(
             f"{turn + 1:4d}   {statistics.mean(ttfts):7.2f} / {p95:5.2f}     "
-            f"{statistics.mean(r.decode_tps for r in rs):8.1f}   "
+            f"{decode}   "
             f"{statistics.mean(r.prompt_tokens for r in rs):10.0f}   {cached_pct:5.1f}%"
         )
 
