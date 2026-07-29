@@ -7,6 +7,12 @@ each other and the comparison is not settled — see §8.
 
 > **STATUS: ABANDONED 2026-07-15. Use the llama.cpp path.**
 >
+> **Superseded for the retry: see `serve-glm52-2node-vllm-gh200.md`.** On two
+> ghx4 nodes (8 GPUs) the weights fit in HBM with 323 GiB spare, so
+> `--cpu-offload-gb` goes to zero and §1 and §7 below stop applying. §4 and §5
+> still do. That runbook also corrects the checkpoint size used here: the repo
+> is now 441.65 GiB, not 410.1.
+>
 > The server never reached `/health`. Four walls in one afternoon (§4a, §4b, §5,
 > §7), the last of which — an illegal memory access in the model forward — looks
 > like `--cpu-offload-gb` simply not working on quantized MoE. The prize was an
