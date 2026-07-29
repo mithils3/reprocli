@@ -4,10 +4,12 @@
 Config: **TP=4 + PP=2, bf16 KV, no MTP, no CPU offload.**
 
 > **STATUS: PARTIALLY VERIFIED (job 2765627, 2026-07-29).** Weights load on 8
-> GPUs with no offload, both attention backends select correctly, and the
-> preflight passes on both nodes. The server has NOT yet reached `/health` —
-> the first attempt died on a missing `--headless` (fixed in step 5). Lines
-> marked MEASURED are from that run; everything else is arithmetic.
+> GPUs with no offload, both attention backends select correctly, torch.compile
+> completes in 90-108 s, and the preflight passes on both nodes. The server has
+> NOT yet reached `/health`. Two attempts, two fixed causes: a missing
+> `--headless` on rank 1, then the FlashInfer mnnvl all-reduce fusion IMA in the
+> profiling run (D4). Both are fixed in step 5. Lines marked MEASURED are from
+> those runs; everything else is arithmetic.
 
 Commands first. Everything after the `NOTES` divider is why, and none of it is
 needed to run this.
