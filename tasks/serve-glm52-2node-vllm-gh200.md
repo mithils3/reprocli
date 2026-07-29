@@ -3,9 +3,11 @@
 `cyankiwi/GLM-5.2-AWQ-INT4` on **two ghx4 nodes = 8 GH200**.
 Config: **TP=4 + PP=2, bf16 KV, no MTP, no CPU offload.**
 
-> **STATUS: UNVERIFIED — nothing here has been run.** Numbers are arithmetic from
-> `config.json` + the HF API, or carried over MEASURED from a sibling runbook.
-> No GLM-5.2 vLLM server has ever reached `/health` on this cluster.
+> **STATUS: PARTIALLY VERIFIED (job 2765627, 2026-07-29).** Weights load on 8
+> GPUs with no offload, both attention backends select correctly, and the
+> preflight passes on both nodes. The server has NOT yet reached `/health` —
+> the first attempt died on a missing `--headless` (fixed in step 5). Lines
+> marked MEASURED are from that run; everything else is arithmetic.
 
 Commands first. Everything after the `NOTES` divider is why, and none of it is
 needed to run this.
@@ -83,6 +85,8 @@ srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
     export NCCL_SOCKET_IFNAME=hsn0,hsn1,hsn2,hsn3
     export GLOO_SOCKET_IFNAME=hsn0
     export VLLM_HOST_IP="$(ip -o -4 addr show hsn0 | awk "{split(\$4,a,\"/\"); print a[1]; exit}")"
+    HEADLESS=()
+    if [[ "$SLURM_PROCID" != "0" ]]; then HEADLESS=(--headless); fi
     vllm serve '"$MODEL"' \
       --served-model-name zai-org/GLM-5.2 \
       --tensor-parallel-size 4 \
@@ -96,16 +100,28 @@ srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
       --enable-auto-tool-choice \
       --enable-prompt-tokens-details \
       --trust-remote-code \
-      --host 0.0.0.0 --port 8000
+      --host 0.0.0.0 --port 8000 \
+      "${HEADLESS[@]}"
   ' >"logs/glm52-2node-${SLURM_JOB_ID}.log" 2>&1 &
 export VLLM_SERVER_PID=$!
 
 tail -f "logs/glm52-2node-${SLURM_JOB_ID}.log"
 ```
 
-Expect **~30-45 min** to `/health`. These log lines look like failures and are
-not: `shm_broadcast: No available shared memory broadcast block found in 60
-seconds` (repeats through the ~17 min torch.compile), and NCCL INIT chatter.
+**`--headless` on every rank but 0 is mandatory.** Only rank 0 runs the API
+server and the EngineCore; followers run workers only. Without it, node 1 starts
+its own `APIServer` + `EngineCore`, which dies at KV-cache init with
+`AssertionError: collective_rpc should not be called on follower node`
+(MEASURED, job 2765627 — it gets all the way past weight loading first, so this
+costs a full ~7 min to discover).
+
+MEASURED weight load, job 2765627: **304 s** (stage 0) / **363 s** (stage 1),
+`Model loading took` 323 s / 381 s. Far faster than the single-node 874 s — no
+offload, and `/work/nvme`.
+
+These log lines look like failures and are not: `shm_broadcast: No available
+shared memory broadcast block found in 60 seconds` (repeats through
+torch.compile), and NCCL INIT chatter.
 
 **Do not add** `--cpu-offload-gb`, `--kv-cache-dtype fp8`, `--speculative-config`,
 or `--enable-expert-parallel`. Each is wrong here for a specific reason (B, D2).
@@ -116,9 +132,14 @@ or `--enable-expert-parallel`. Each is wrong here for a specific reason (B, D2).
 curl -fsS "http://${HEAD_IP}:8000/health" && echo "  health: ok"
 ```
 
-Sanity-check the load line in the log: `Model loading took ~53 GiB memory` per
-GPU. ~55 GiB means the MTP layer got loaded and something enabled the draft
-model (A).
+Sanity-check the load lines. MEASURED, job 2765627:
+
+    Worker_PP0_*  Model loading took 51.29 GiB    backend DEEPSEEK_V32_INDEXER
+    Worker_PP1_*  Model loading took 58.0  GiB    backend FLASH_ATTN_MLA_SPARSE
+
+Both backends are correct — the indexer and the sparse-MLA attention are
+separate specs, and neither is the FLASHMLA_SPARSE that fp8 KV would have forced
+(D2). The **6.7 GiB stage asymmetry is expected but not fully explained** (A).
 
 ## 7. Benchmark
 
@@ -215,15 +236,47 @@ curl -s "https://huggingface.co/api/models/cyankiwi/GLM-5.2-AWQ-INT4/tree/main?r
 ```
 
 **Download size is not resident size.** The MTP module is `model.layers.78`
-(78 layers means indices 0-77, so 78 is the extra one) and vLLM does not
-instantiate it without `--speculative-config`. We do not use MTP (B), so:
+(78 layers means indices 0-77, so 78 is the extra one):
 
     downloaded   474.22 GB  =  441.65 GiB     (all 83 shards)
-    resident     454.29 GB  =  423.09 GiB     (layer 78 skipped at load)
+    weights excl. MTP       =  423.09 GiB     = 52.89 GiB/GPU at 8-way
 
-You still download all 83 shards: layer 78 lives entirely in
+You download all 83 shards regardless: layer 78 lives entirely in
 `model-00083-of-00083.safetensors`, but that shard also holds part of layer 77,
 so there is nothing to exclude.
+
+### MEASURED (job 2765627), and the part that does not add up
+
+    Worker_PP0_*  Model loading took 51.29 GiB    (39 layers + embed_tokens)
+    Worker_PP1_*  Model loading took 58.0  GiB    (39 layers + norm + lm_head)
+
+Stage 0 lands near the 52.89 GiB arithmetic. **Stage 1 is 6.7 GiB heavier, and
+that is not explained by `lm_head`** — embed_tokens and lm_head are the same
+shape (154880 x 6144 bf16 = 1.77 GiB, TP-sharded to 0.44 GiB), so they cancel.
+
+The likely cause: **layer 78 is being loaded after all.** Stage 1 logs an extra
+MoE init line that stage 0 does not —
+
+    Worker_PP1_TP0  int_wna16.py:295    Using MoEPrepareAndFinalizeNoDPEPModular
+    Worker_PP1_TP0  unquantized.py:334  Using MoEPrepareAndFinalizeNoDPEPModular
+
+an *unquantized* MoE alongside the INT4 one, on the last PP stage only, which is
+where an MTP module would land. 18.54 GiB / 4 TP ranks = 4.6 GiB, in the right
+neighbourhood for a 6.7 GiB delta. So plan against **58.0 GiB**, not 52.89, and
+treat "vLLM skips the MTP layer without `--speculative-config`" as unconfirmed —
+the evidence here points the other way.
+
+Consequence for the KV budget: the tightest GPU sets the pool.
+
+    usable / GPU at 0.90    86.0 GiB
+    resident (stage 1)     -58.0 GiB
+                           ---------
+    free for KV             28.0 GiB   ->  ~670k tokens at TP=4/PP=2
+
+Still ~5 concurrent full 131k transcripts, so nothing here is binding. If you
+want the 6.7 GiB back, rebalance the split — each layer is ~1.35 GiB/GPU, so
+`VLLM_PP_LAYER_PARTITION=41,37` roughly evens the two stages at ~55 GiB. Worth
+~64k tokens of extra pool; do it only if the pool turns out to matter.
 
 ### Why 2 nodes changes the outcome
 
@@ -236,7 +289,7 @@ so there is nothing to exclude.
 |---|---|---|
 | HBM | 382.3 GiB | 764.6 GiB |
 | weights / GPU | 105.8 GiB | **52.9 GiB** |
-| free at util 0.90 | **-19.8 GiB** | **+33.1 GiB** |
+| free at util 0.90 | **-19.8 GiB** | **+28.0 GiB** MEASURED |
 | `--cpu-offload-gb` | forced | **0** |
 | pinned host memory | 113-145 GiB | 0 |
 
@@ -251,17 +304,17 @@ MLA latent is 576 (512 `kv_lora` + 64 `qk_rope`), so bf16 costs **1152
 B/token/layer**. Under TP the MLA latent is *replicated* across ranks rather
 than sharded, so per-GPU cost tracks layers-per-GPU:
 
-| layout | layers / GPU | B/token/GPU | KV pool at 33.1 GiB |
+| layout | layers / GPU | B/token/GPU | KV pool at 28.0 GiB MEASURED |
 |---|---|---|---|
-| TP=8, PP=1 | 78 | 89,856 (87.8 KiB) | ~396k tokens |
-| **TP=4, PP=2** | 39 | 44,928 (43.9 KiB) | **~792k tokens** |
+| TP=8, PP=1 | 78 | 89,856 (87.8 KiB) | ~335k tokens |
+| **TP=4, PP=2** | 39 | 44,928 (43.9 KiB) | **~670k tokens** |
 
 Plus the DSA indexer cache: 21 `full` indexers x `index_head_dim` 128 =
 ~2.6 KiB/token model-wide if the index keys are fp8, double if bf16. At 131k
 that is 0.3-0.7 GiB. Real, not decisive.
 
 One full 131,072-token sequence costs 5.5 GiB/GPU at TP=4/PP=2, so the pool
-holds ~6 concurrent max-length transcripts, or far more real ones.
+holds ~5 concurrent max-length transcripts, or far more real ones.
 
 ### Architecture, from `config.json` (confirmed 2026-07-29)
 
@@ -290,7 +343,7 @@ bugs"*).
 
 | layout | fits | MTP | KV / GPU | fabric cost per token | precedent on this cluster |
 |---|---|---|---|---|---|
-| **TP=4 + PP=2** | yes | no | **792k tok** | 1 hidden state (12 KB) per stage boundary | `scripts/serve/serve_multinode.sbatch` (Kimi-K2.6) |
+| **TP=4 + PP=2** | yes | no | **670k tok** | 1 hidden state (12 KB) per stage boundary | `scripts/serve/serve_multinode.sbatch` (Kimi-K2.6) |
 | TP=8 across nodes | yes | yes | 396k tok | 78 layers x all-reduce over Slingshot | MiniMax-M3 MXFP8, 428 GB, VERIFIED |
 | TP=4 + DP=2 + EP | yes | yes | 396k tok | + MoE all-to-all | none |
 
@@ -312,7 +365,7 @@ lands, revisit — MTP under PP=2 would collapse this table to one row.
 
 Other flag choices in step 5:
 
-- `--gpu-memory-utilization 0.90`, not 0.93: with 33.1 GiB free there is no
+- `--gpu-memory-utilization 0.90`, not 0.93: with 28.0 GiB free there is no
   reason to run tight, and profiling headroom is what the single-node attempt
   kept losing.
 - `--max-model-len 131072`, not the model's 1M. Raise after the benchmark sizes
@@ -335,7 +388,7 @@ With 78 layers (78/3 = 26, 78/6 = 13, both even) the surviving 6-GPU layouts:
 
 | layout | weights / GPU | free at 0.90 | layers / GPU | KV pool | 131k seq |
 |---|---|---|---|---|---|
-| **8 GPU, TP=4 + PP=2** | 52.9 GiB | 33.1 GiB | 39 | 792k tok | 5.5 GiB |
+| **8 GPU, TP=4 + PP=2** | 58.0 GiB MEASURED | 28.0 GiB | 39 | 670k tok | 5.5 GiB |
 | 6 GPU, TP=2 + PP=3 | 70.5 GiB | 15.5 GiB | 26 | 556k tok | 3.7 GiB |
 | 6 GPU, TP=1 + PP=6 | 70.5 GiB | 15.5 GiB | 13 | 1112k tok | 1.8 GiB |
 
@@ -522,14 +575,20 @@ a long startup, three upstream bugs, and a quant whose quality edge over UD-IQ4_
 is unquantified on both sides.
 
 Watch `cached%` on the agent sim. It should climb toward the 80-95% real sweeps
-show; a sag as transcripts grow means the KV pool is evicting, which at 792k
+show; a sag as transcripts grow means the KV pool is evicting, which at 670k
 tokens would be surprising and worth chasing.
 
 ## H. Open items
 
-- Nothing in this file has been executed. A's offload-to-zero claim is
-  arithmetic; the first run either confirms it at KV-cache init or does not.
-- The step-7 table is empty. That is the deliverable.
+- The step-7 table is empty. That is the deliverable, and nothing has reached
+  `/health` yet.
+- **Is layer 78 (MTP) actually being loaded?** Stage 1 is 6.7 GiB heavier than
+  stage 0 and logs an extra *unquantized* MoE init (A). If it is resident, ~4.6
+  GiB/GPU is being spent on a module PP=2 can never use, and finding the switch
+  to skip it is worth 4.6 GiB of KV pool. Confirm by diffing the loaded weight
+  names, not by inference from the memory delta.
+- PP stages are imbalanced 51.29 / 58.0 GiB. `VLLM_PP_LAYER_PARTITION=41,37`
+  should even them; untested, and worth only ~64k tokens of pool.
 - **No `glm52_profile()`** (F1). Until it exists, every harness launch must pass
   `glm47`/`glm45` by hand and a typo serves MiniMax parsers silently.
 - **`SERVER_STARTUP_TIMEOUT` is not overridable** (F2). A one-line env read in
