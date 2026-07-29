@@ -63,6 +63,12 @@ export HEAD_IP
 echo "HEAD_IP=$HEAD_IP"    # must NOT be empty or 127.*
 ```
 
+**`export HEAD_IP` is load-bearing** — do not stop pasting at the assignment. A
+bare `HEAD_IP=$(...)` sets it in your shell only, and srun does not propagate
+unexported variables, so every rank sees it as empty. The launcher derives it
+from fabric DNS as a fallback and prints a `note:` when it does, but do not rely
+on that.
+
 ## 4. Preflight — 2 seconds, saves ~45 minutes
 
 ```bash

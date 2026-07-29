@@ -28,10 +28,30 @@ GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.90}"
 IFACE="${IFACE:-hsn0}"
 RANK="${SLURM_PROCID:-0}"
 
+# HEAD_IP is rank 0's fabric address, the torch.distributed rendezvous master.
+# Normally exported by the caller (runbook step 3). If it is missing, derive it:
+# every rank can resolve the first node in the allocation on the hsn fabric,
+# where compute-node hostnames already live (gh109.hsn.cm.delta.internal.ncsa.edu).
 if [ -z "${HEAD_IP:-}" ]; then
-  echo "FATAL: HEAD_IP is unset. Discover it first (runbook step 3)." >&2
-  exit 1
+  HEAD_NODE="$(scontrol show hostnames "${SLURM_JOB_NODELIST:-}" 2>/dev/null | head -1)"
+  if [ -n "${HEAD_NODE}" ]; then
+    HEAD_IP="$(getent ahostsv4 "${HEAD_NODE}.hsn.cm.delta.internal.ncsa.edu" 2>/dev/null | awk '{print $1; exit}')"
+  fi
+  if [ -n "${HEAD_IP:-}" ]; then
+    export HEAD_IP
+    echo "note: HEAD_IP was unset; derived ${HEAD_IP} from ${HEAD_NODE} via fabric DNS" >&2
+  else
+    echo "FATAL: HEAD_IP is unset and could not be derived." >&2
+    echo "  Most likely: you ran the step-3 discovery but skipped 'export HEAD_IP'." >&2
+    echo "  A bare  HEAD_IP=\$(srun ...)  sets it in your shell only; srun does not" >&2
+    echo "  propagate unexported variables. Run:  export HEAD_IP; echo \$HEAD_IP" >&2
+    exit 1
+  fi
 fi
+
+case "${HEAD_IP}" in
+  127.*|"") echo "FATAL: HEAD_IP=${HEAD_IP} is loopback; ranks will never rendezvous." >&2; exit 1 ;;
+esac
 
 module load python/3.11.9
 # shellcheck disable=SC1091
