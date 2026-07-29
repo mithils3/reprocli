@@ -85,6 +85,8 @@ srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
     export NCCL_SOCKET_IFNAME=hsn0,hsn1,hsn2,hsn3
     export GLOO_SOCKET_IFNAME=hsn0
     export VLLM_HOST_IP="$(ip -o -4 addr show hsn0 | awk "{split(\$4,a,\"/\"); print a[1]; exit}")"
+    export VLLM_ALLREDUCE_USE_SYMM_MEM=0
+    export VLLM_USE_FLASHINFER_SAMPLER=0
     HEADLESS=()
     if [[ "$SLURM_PROCID" != "0" ]]; then HEADLESS=(--headless); fi
     vllm serve '"$MODEL"' \
@@ -95,6 +97,8 @@ srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
       --max-model-len 131072 \
       --max-num-seqs 16 \
       --gpu-memory-utilization 0.90 \
+      --disable-custom-all-reduce \
+      --compilation-config '\''{"pass_config":{"fuse_allreduce_rms":false}}'\'' \
       --tool-call-parser glm47 \
       --reasoning-parser glm45 \
       --enable-auto-tool-choice \
@@ -107,6 +111,9 @@ export VLLM_SERVER_PID=$!
 
 tail -f "logs/glm52-2node-${SLURM_JOB_ID}.log"
 ```
+
+The `'\''` around the JSON is not decoration: the payload is single-quoted, so a
+bare `'` would end it. `'\''` closes, emits a literal quote, reopens.
 
 **`--headless` on every rank but 0 is mandatory.** Only rank 0 runs the API
 server and the EngineCore; followers run workers only. Without it, node 1 starts
@@ -125,6 +132,9 @@ torch.compile), and NCCL INIT chatter.
 
 **Do not add** `--cpu-offload-gb`, `--kv-cache-dtype fp8`, `--speculative-config`,
 or `--enable-expert-parallel`. Each is wrong here for a specific reason (B, D2).
+
+**Do not drop** `--disable-custom-all-reduce`, `fuse_allreduce_rms:false`, or
+`VLLM_ALLREDUCE_USE_SYMM_MEM=0`. All three are required together (D4).
 
 ## 6. Health
 
@@ -474,6 +484,57 @@ The official recipe *does* use `--kv-cache-dtype fp8`. It targets 8xH200 with a
 different backend selection and is wrong for GH200. On 2 nodes there is 341 GiB
 spare anyway (A) — nothing to buy.
 
+### D4. FlashInfer mnnvl all-reduce — REQUIRED, and it kills the profiling run
+
+MEASURED, job 2765627: the server got past weight load, past torch.compile
+(90-108 s), then died in `profile_cudagraph_memory` with a wall of
+`CUBLAS_STATUS_EXECUTION_FAILED` / `CUBLAS_STATUS_INTERNAL_ERROR` /
+`illegal memory access` across all 8 workers. **Those are async fallout, not the
+cause.** The cause is one line on `Worker_PP0_TP0`:
+
+    RuntimeError: Check failed: (status == cudaSuccess) is false:
+      trtllm_mnnvl_allreduce_fusion failed with error code
+      an illegal memory access was encountered
+
+with the setup visible earlier in the log:
+
+    compilation.py:312        Enabled custom fusions: allreduce_rms
+    symm_mem.py:106  WARNING  SymmMemCommunicator: symmetric memory multicast
+                              operations are not supported.
+    flashinfer_all_reduce.py  Auto-selected flashinfer allreduce backend: mnnvl
+    allreduce_rms_fusion.py   Failed to initialize Flashinfer allreduce workspace.
+
+vLLM fused RMSNorm + all-reduce, FlashInfer picked the `mnnvl` symmetric-memory
+all-reduce, this GH200 topology cannot do symmetric-memory multicast, the
+workspace init failed — and the *already-compiled* graph called the fused kernel
+anyway. Three flags force plain NCCL and remove the fused path:
+
+```bash
+export VLLM_ALLREDUCE_USE_SYMM_MEM=0
+      --disable-custom-all-reduce
+      --compilation-config '{"pass_config":{"fuse_allreduce_rms":false}}'
+```
+
+Note `disable_custom_all_reduce=True` was **already** set in the failing run
+(vLLM defaults it on for multi-node). It is not sufficient alone —
+`fuse_allreduce_rms` is the one that matters.
+
+This is the same wall as `serve-laguna-s21-vllm-gh200.md`, which documents it on
+2 GPUs and one node. It is a property of GH200 + FlashInfer, not of this model or
+the node count. The repo already knows: `src/reprocli_serve/launch.py:119` force-
+disables `fuse_allreduce_rms` for exactly this reason — but only when a
+`--compilation-config` is passed through `reprocli_serve`, so raw `vllm serve`
+gets no protection. Hence F4.
+
+`VLLM_USE_FLASHINFER_SAMPLER=0` is set alongside preemptively: the log shows
+`Using FlashInfer for top-p & top-k sampling`, and both the Laguna and
+DeepSeek-V4-Flash runbooks list the FlashInfer sampler as a crash on this
+platform (`TopKMaskLogits: invalid resource handle`). It costs nothing at these
+batch sizes.
+
+Changing `--compilation-config` changes the config hash, so the poisoned AOT
+graph is not reused — no cache clearing needed, but you do pay a fresh compile.
+
 ### D3. `CXXABI_1.3.15` — optional
 
 Only silences warning spam from the *standalone* `deep_gemm` wheel; vLLM's
@@ -524,6 +585,14 @@ bring-up MEASURED **~45 min** to KV cache init (874 s weight load + 1024 s
 torch.compile + 170 s warmup). Two nodes with no offload should be faster, but
 not obviously under 30 minutes on a cold Inductor cache. Hence raw `vllm serve`
 for bring-up (step 5) and the harness only afterwards (step 9).
+
+### F4. `launch.py`'s all-reduce guard only fires when a compilation-config is passed
+
+`_supported_compilation_config()` force-disables `fuse_allreduce_rms` (D4), but
+`build_serve_command` only calls it inside `if compilation:` — so a model whose
+profile sets no `compilation_config`, launched with no `--compilation-config`,
+gets no guard and hits the mnnvl IMA. Every profile except `minimax_m2` is in
+that state. Worth making the guard unconditional on GH200.
 
 ### F3. `NCCL_SOCKET_IFNAME=hsn` is a bare prefix and it hangs
 
@@ -595,6 +664,10 @@ tokens would be surprising and worth chasing.
   `config.py` would let the harness path work for slow-starting models.
 - **`serve_multinode.sbatch` exports the bare `NCCL_SOCKET_IFNAME=hsn`** (F3).
   Worth fixing there, not just working around here.
+- **`launch.py`'s `fuse_allreduce_rms` guard is conditional** (F4). It only runs
+  when a compilation-config is passed, so most profiles are unprotected against
+  the mnnvl IMA that killed job 2765627. Making it unconditional on GH200 is a
+  small change that would have saved ~12 minutes here.
 - MTP under PP is an open upstream RFC (vllm#44697). If it lands, TP=4+PP=2 wins
   outright and the 19.91 GB module stops being dead weight. Re-check before any
   sweep commits to this brain.
