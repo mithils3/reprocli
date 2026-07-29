@@ -54,14 +54,26 @@ class Result:
     error: str | None = None
 
     @property
+    def timed(self) -> bool:
+        """True when a first token was observed, so ttft splits prefill from decode.
+
+        Without it neither rate is recoverable: prefill has no duration, and the
+        decode window silently absorbs prefill plus queueing. Both rates return
+        NaN in that case and the reporters drop them -- returning 0.0 here put a
+        fabricated measurement into statistics.mean() and dragged the average
+        toward zero, which is how a working server reported `PP t/s 0.0`.
+        """
+        return self.ttft > 0.0 and self.prompt_tokens > 0
+
+    @property
     def prefill_tps(self) -> float:
-        return self.prompt_tokens / self.ttft if self.ttft > 0 else 0.0
+        return self.prompt_tokens / self.ttft if self.timed else float("nan")
 
     @property
     def decode_tps(self) -> float:
         tail = self.wall - self.ttft
         n = self.completion_tokens - 1
-        return n / tail if tail > 0 and n > 0 else 0.0
+        return n / tail if self.timed and tail > 0 and n > 0 else float("nan")
 
 
 @dataclass
@@ -145,14 +157,20 @@ def stream_once(cfg: Config, messages: list[dict], max_tokens: int) -> Result:
                 if body == "[DONE]":
                     break
                 chunk = json.loads(body)
-                # The reasoning parser splits output across two delta fields;
-                # a GLM-5.2 thinking trace arrives as reasoning_content, so
-                # counting only `content` would time the wrong first token.
+                # The reasoning parser splits output across several delta fields;
+                # a GLM-5.2 thinking trace arrives as reasoning_content and a
+                # tool call as tool_calls, so counting only `content` would time
+                # the wrong first token -- or, if the whole response is reasoning
+                # or a tool call, never time one at all.
                 for choice in chunk.get("choices") or []:
                     delta = choice.get("delta") or {}
-                    if delta.get("content") or delta.get("reasoning_content"):
-                        if ttft == 0.0:
-                            ttft = time.perf_counter() - start
+                    payload_fields = (
+                        delta.get("content"),
+                        delta.get("reasoning_content"),
+                        delta.get("tool_calls"),
+                    )
+                    if any(payload_fields) and ttft == 0.0:
+                        ttft = time.perf_counter() - start
                 if usage := chunk.get("usage"):
                     prompt_tokens = usage.get("prompt_tokens", 0)
                     completion_tokens = usage.get("completion_tokens", 0)
@@ -211,10 +229,14 @@ def fmt(results: list[Result]) -> str:
     ok = [r for r in results if not r.error]
     if not ok:
         return "all requests failed"
+    timed = [r for r in ok if r.timed]
+    if not timed:
+        return f"no first-token timing on {len(ok)} request(s) -- rates unavailable"
+    note = f"   [{len(ok) - len(timed)}/{len(ok)} untimed, excluded]" if len(timed) < len(ok) else ""
     return (
-        f"prefill {statistics.mean(r.prefill_tps for r in ok):7.1f} t/s   "
-        f"decode {statistics.mean(r.decode_tps for r in ok):6.1f} t/s   "
-        f"ttft {statistics.mean(r.ttft for r in ok):6.2f}s"
+        f"prefill {statistics.mean(r.prefill_tps for r in timed):7.1f} t/s   "
+        f"decode {statistics.mean(r.decode_tps for r in timed):6.1f} t/s   "
+        f"ttft {statistics.mean(r.ttft for r in timed):6.2f}s{note}"
     )
 
 
@@ -261,10 +283,17 @@ def scenario_table(cfg: Config, npp: int, ntg: int, levels: list[int]) -> None:
         if not ok:
             print(f"{b:3d}   FAILED: {results[0].error if results else 'no results'}")
             continue
+        # total is the honest aggregate: it needs only completion counts and the
+        # batch wall-clock, so it survives even when no request got a ttft.
         total = sum(r.completion_tokens for r in ok) / wall if wall > 0 else 0.0
+        timed = [r for r in ok if r.timed]
+        if not timed:
+            print(f"{b:3d}        --       --   {total:7.1f}   ({len(ok)} untimed)")
+            continue
+        note = f"   ({len(ok) - len(timed)}/{len(ok)} untimed)" if len(timed) < len(ok) else ""
         print(
-            f"{b:3d}  {statistics.mean(r.prefill_tps for r in ok):7.1f}  "
-            f"{statistics.mean(r.decode_tps for r in ok):7.1f}   {total:7.1f}"
+            f"{b:3d}  {statistics.mean(r.prefill_tps for r in timed):7.1f}  "
+            f"{statistics.mean(r.decode_tps for r in timed):7.1f}   {total:7.1f}{note}"
         )
 
 

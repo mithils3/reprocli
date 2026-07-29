@@ -3,10 +3,11 @@
 `cyankiwi/GLM-5.2-AWQ-INT4` on **two ghx4 nodes = 8 GH200**.
 Config: **TP=4 + PP=2, bf16 KV, no MTP, no CPU offload.**
 
-> **STATUS: SERVER VERIFIED (job 2765627, 2026-07-29).** Bring-up in **8m47s**,
-> `Application startup complete`, 530,240-token KV pool, no offload.
-> **Every throughput number is still unmeasured** — the step-7 table is the
-> deliverable.
+> **STATUS: VERIFIED AND BENCHMARKED (job 2765627, 2026-07-29).** Bring-up in
+> **8m47s**, 530,240-token KV pool, no offload. Against the llama.cpp incumbent
+> on an 85k transcript: **decode 78.6 vs 40 t/s (2.0x)**, **cold prefill 6,822 vs
+> 575 t/s (11.9x)**, ttft 12.49 s -> 1.32 s on turn 2. Still pending: the 8-agent
+> concurrency run, which is what the sweep actually does.
 
     10:53:41  ranks start          rank=0 gh109 / rank=1 gh113
     11:00:10  stage 0 loaded       51.29 GiB, 316 s
@@ -160,17 +161,40 @@ vllm bench serve --base-url "http://${HEAD_IP}:8000" \
   --num-prompts 64 --max-concurrency 8 --seed 42
 ```
 
-### Fill this in
+### Results (MEASURED 2026-07-29, job 2765627)
 
-| | llama.cpp IQ4_XS | vLLM TP=4+PP=2 |
-|---|---|---|
-| decode t/s (1 stream) | **40** MEASURED | |
-| decode t/s (8 agents) | — | |
-| cold prefill t/s | **575** MEASURED | |
-| warm prefill t/s | — | |
-| cached share, 8 agents x 10 turns | — | |
-| time to `/health` | ~0 | **8m47s** MEASURED |
-| KV pool actually allocated | — | **530,240 tok** MEASURED |
+85,228-token transcript, 256 tokens out, single stream:
+
+| | llama.cpp IQ4_XS | vLLM TP=4+PP=2 | |
+|---|---|---|---|
+| decode t/s (1 stream) | 40 | **78.6** | **2.0x** |
+| cold prefill t/s | 575 | **6,822** | **11.9x** |
+| ttft on 85k, turn 1 | — | **12.49 s** | |
+| ttft on 85k, turn 2 | — | **1.32 s** | 9.5x faster |
+| warm prefill t/s (effective) | — | 64,512 | 99.9% cached |
+| decode t/s (8 agents) | — | *pending* | |
+| cached share, 8 agents x 10 turns | — | *pending* | |
+| time to `/health` | ~0 | 8m47s | |
+| KV pool allocated | — | 530,240 tok | |
+
+**vLLM wins both halves, and decode is the surprise.** I predicted decode would
+be a wash (llama.cpp 40 t/s, dnhkng 43 t/s on 2xGH200 after NUMA work). It is
+2x, at 85k of context, with MTP off. Prefill is the rout the shape of the two
+engines predicted: 11.9x.
+
+Warm prefill is an *effective* rate — `prompt_tokens / ttft` over all 85,249
+tokens, of which 85,184 were cache hits. It is the right agent-facing number
+(what a turn actually costs) but not a compute throughput, so do not compare it
+to llama.cpp's 575.
+
+**The npp/ntg table's PP and TG columns were not trustworthy in this run.** Every
+short-prompt request came back with no first-token timing, so `prefill_tps` fell
+to a fabricated `0.0` that then went into the mean, and `decode_tps` divided by a
+window that still contained prefill and queueing — which is why B=1 read 48.8 t/s
+against the agentic run's 78.6 t/s at 166x the context. `bench_serve.py` now
+returns NaN and excludes those instead of averaging in zeros. Only `total t/s`
+was sound (it needs just completion counts and batch wall-clock): **182.2 t/s
+aggregate at B=8**. Re-run the table to get the per-request columns.
 
 ## 8. Stop
 
@@ -418,39 +442,59 @@ self-congesting to 5.6 MB/s. At plain defaults, 474 GB is ~3-6 minutes.
 
 ## F. Reading the benchmark
 
-**Weight the 8-agent number, not the single-stream one.** PP=2 half-idles the
-pipeline at low concurrency — stage 0 waits while stage 1 works. A single
-interactive stream will look bad and is not representative. Reject this layout on
-the 8-agent number or not at all.
+**Prefill was the predicted win and it landed: 11.9x.** llama.cpp gets ~575 t/s
+because `--split-mode layer` is pipeline parallelism with one GPU computing at a
+time (~48% util). vLLM does real TP, Marlin INT4 kernels, and chunked prefill.
+85k costs 148 s there and 12.5 s here.
 
-**Decode is probably a wash.** llama.cpp MEASURED 40 t/s; dnhkng got 43 t/s on
-vLLM after NUMA work. The one mechanism that could have made vLLM decisively win
-decode was MTP, and PP=2 forecloses it (B).
+**Decode was predicted to be a wash and was not: 78.6 vs 40 t/s.** The prediction
+rested on two arguments that both look wrong now. First, MTP: the one mechanism
+that could have made vLLM decisively win decode is foreclosed by PP=2 (B), and
+decode doubled anyway — so MTP would be gravy, not the deciding factor. Second,
+PP bubbles: a single sequence is strictly sequential across the two stages, so
+batch-1 decode should half-idle the pipeline, and 78.6 t/s says that idle costs
+less than the per-stage work saved. DSA is the likely reason the 85k context is
+not a drag at all — `index_topk=2048` caps attended tokens regardless of
+transcript length, so decode cost is roughly flat in context.
 
-**Prefill is the structural case.** llama.cpp gets ~575 t/s because
-`--split-mode layer` is pipeline parallelism with one GPU computing at a time
-(~48% util). vLLM does real TP, Marlin INT4 kernels, and chunked prefill. Nobody
-has published a GLM-5.2 prefill number on 8xGH200. 85k at 575 t/s is ~148 s.
+Both arguments were about *ceilings*, and the floor turned out to be high enough
+that neither bound. Treat that as a caution about the reasoning, not just a happy
+result.
 
-The counterweight: cold prefill amortizes — an agent pays it once and turn 2+ hits
-the prefix cache, *except* that compaction rewrites the transcript and diverges
-the prefix, forcing a re-prefill. How much prefill actually costs depends on the
-compaction rate, which is measurable from `repro_events`. Get that number before
-weighting prefill heavily.
+**Still measure the 8-agent number before committing.** It is what the sweep
+actually runs, and single-stream decode is a floor rather than the operating
+point. B=8 aggregate came in at 182.2 t/s, but from the untimed table (step 7),
+so it needs a clean re-run alongside `bench_agent_sim.py`.
 
-**So the case rests on warm prefill and concurrency.** With MTP gone, if 8-agent
-throughput and the warm-prefill multiple are not clearly better than llama.cpp,
-this path does not pay for itself: two nodes instead of one, a long startup, three
-upstream bugs, and a quant whose quality edge over UD-IQ4_XS is unquantified on
-both sides.
+The one counterweight left: cold prefill amortizes, so an 11.9x cold-prefill win
+is worth less than it looks — an agent pays it once and turn 2+ hits the prefix
+cache (MEASURED: 99.9% cached, ttft 12.49 s -> 1.32 s). *Except* that compaction
+rewrites the transcript and diverges the prefix, forcing a re-prefill. How much
+prefill actually costs therefore depends on the compaction rate, measurable from
+`repro_events`. Get that number before sizing the win.
 
 Watch `cached%` on the agent sim — it should climb toward the 80-95% real sweeps
 show. A sag as transcripts grow means the KV pool is evicting, which at 530k
 tokens would be surprising and worth chasing.
 
+**Verdict so far: this path pays for itself.** Two nodes instead of one, an
+8m47s startup, and three upstream bugs, against 2x decode and 11.9x cold prefill.
+The remaining unknown is quality — the AWQ-INT4 vs UD-IQ4_XS delta is unquantified
+on both sides, and no throughput number settles it.
+
 ## G. Open items
 
-- **The step-7 table is empty.** That is the deliverable.
+- **`bench_agent_sim.py --agents 8 --turns 10` has not been run.** It is the
+  number that decides this, and the only source for `cached%` under real
+  concurrency.
+- **Re-run the npp/ntg table** now that `bench_serve.py` excludes untimed
+  requests instead of averaging in zeros. Its PP/TG columns were unusable.
+- **Why did no short-prompt request record a first token?** The agentic path
+  (same `stream_once`) timed fine at 85k. The fix stops it corrupting the mean
+  but does not explain it. Suspects, in order: a reasoning/tool-call delta shape
+  the parser only emits for short prompts, or the threaded `stream_many` path.
+  `--scenario agentic --input-tokens 512 --output-tokens 128` isolates it —
+  same short prompt, no threads.
 - Is layer 78 (MTP) actually resident (A)? If so, ~4.6 GiB/GPU is spent on a
   module PP=2 can never use. Confirm by diffing loaded weight names.
 - PP stages imbalanced 51.29 / 58.0 GiB. `VLLM_PP_LAYER_PARTITION=41,37` should
