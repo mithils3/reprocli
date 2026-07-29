@@ -6,11 +6,10 @@
 #SBATCH -J repro_medium_glm52
 #SBATCH -A betw-dtai-gh
 #SBATCH -p ghx4
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=288
 #SBATCH --gpus-per-node=4
-#SBATCH --gpu-bind=none
 #SBATCH --mem=440G
 #SBATCH --time=48:00:00
 #SBATCH -o slurm-repro-medium-glm52-%j.out
@@ -22,15 +21,12 @@
 set -euo pipefail
 
 # --- Config (override from the environment) ---------------------------------
-REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
-VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL_DIR="${MODEL_DIR:-/work/nvme/bfvr/msalunkhe/models/GLM-5.2-IQ3S}"
-QUANT="${QUANT:-UD-IQ3_S}"                 # quant subdir + shard-name infix
-# Shard count differs by quant, so glob shard 1 instead of pinning -of-000NN.
-SHARD="${SHARD:-$(ls "${MODEL_DIR}/${QUANT}"/*-00001-of-*.gguf 2>/dev/null | head -1 || true)}"
-SERVED_NAME="${SERVED_NAME:-zai-org/GLM-5.2}"
+export REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
+export VENV="${VENV:-${REPROCLI}/.venv}"
+export MODEL="${MODEL:-/work/nvme/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4}"
+export SERVED_NAME="${SERVED_NAME:-zai-org/GLM-5.2}"
 AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
-PORT="${PORT:-8080}"
+export PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-eval}"                    # eval -> HF 'test' (the frozen 100-paper benchmark)
 TIER="${TIER:-Medium}"                      # only reproduce+grade rows of this tier
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
@@ -39,12 +35,17 @@ TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
-# Brain knobs: prompt cache is per-slot, so slots=MAX_PARALLEL and each slot gets
-# CTX_SIZE/PARALLEL=128K. KV pool stays in HBM; KV_IN_CPU=1 pushes KV to Grace RAM
-# (only needed for a >340 GiB quant).
-PARALLEL="${PARALLEL:-${MAX_PARALLEL}}"
-CTX_SIZE="${CTX_SIZE:-$(( PARALLEL * 131072 ))}"
-KV_IN_CPU="${KV_IN_CPU:-0}"
+# Brain knobs. MAX_MODEL_LEN must hold the auditor's 118k in + 32k out.
+# vLLM shares ONE ~530k-token KV pool across all streams, where llama.cpp gave
+# each slot its own 131k. MAX_PARALLEL=6 transcripts near full length would
+# exceed that pool and vLLM starts preempting. The 8-agent benchmark only
+# reached 17k-token transcripts (~136k total), so pool pressure at sweep scale
+# is UNTESTED -- if throughput sags mid-sweep, lower MAX_PARALLEL first.
+export TP="${TP:-4}"
+export MAX_MODEL_LEN="${MAX_MODEL_LEN:-196608}"
+export MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"   # MAX_PARALLEL papers + the audit stream
+export GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.90}"
+export IFACE="${IFACE:-hsn0}"
 
 case "${SPLIT}" in
   dev|validation) CLAIMS_FILE="dev_split.jsonl" ;;
@@ -85,7 +86,17 @@ else
 fi
 export REPRO_WALL_DEADLINE_EPOCH
 
-# No vLLM/NCCL block: llama-server does its own multi-GPU. venv is for the orchestrator/auditor.
+export VLLM_CACHE_ROOT=/work/nvme/bfvr/msalunkhe/.cache/vllm
+export TORCHINDUCTOR_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/torchinductor
+export TRITON_CACHE_DIR=/work/nvme/bfvr/msalunkhe/.cache/triton
+export SAFETENSORS_FAST_GPU=1 CUDA_MODULE_LOADING=LAZY CUDA_DEVICE_ORDER=PCI_BUS_ID
+export PYTHONFAULTHANDLER=1
+export NCCL_CUMEM_ENABLE=0 NCCL_CUMEM_HOST_ENABLE=0
+export NCCL_NET_PLUGIN="${NCCL_NET_PLUGIN_OVERRIDE:-none}"
+export OMP_NUM_THREADS=1
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1800
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
+unset VLLM_HOST_IP MASTER_ADDR MASTER_PORT   # per-node facts; inherited ones bind the wrong host
 ulimit -l unlimited || true
 ulimit -s unlimited || true
 
@@ -94,9 +105,7 @@ source "${VENV}/bin/activate"
 export PYTHONPATH="${REPROCLI}/src:${PYTHONPATH:-}"
 cd "${REPROCLI}"
 
-export PATH="$HOME/llama.cpp/build/bin:$PATH"
-command -v llama-server >/dev/null || { echo "llama-server not on PATH; build per tasks/serve-gguf-llamacpp-gh200.md §5" >&2; exit 1; }
-[[ -f "${SHARD}" ]] || { echo "missing shard ${SHARD}; download per runbook §4" >&2; exit 1; }
+[[ -d "${MODEL}" ]] || { echo "missing checkpoint ${MODEL}; download per runbook step 1" >&2; exit 1; }
 
 echo "host=$(hostname)  job=${OUTER_JOB}  endpoint_file=${ENDPOINT_FILE}"
 if [[ -n "${BUDGET_H100_HOURS}" ]]; then
@@ -109,51 +118,55 @@ fi
 echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  budget=${BUDGET_LABEL}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
 echo "runs_dir=${RUNS_DIR}  resume=${RESUME}  audit_model=${AUDIT_MODEL}  audit_rounds=${AUDIT_TOOL_ROUNDS}"
 echo "claims=${CLAIMS}"
-echo "brain: shard=${SHARD}  ctx=${CTX_SIZE}  slots=${PARALLEL}  kv_in_cpu=${KV_IN_CPU}"
+echo "brain: ${MODEL}  tp=${TP}  max_model_len=${MAX_MODEL_LEN}  max_num_seqs=${MAX_NUM_SEQS}"
 nvidia-smi topo -m || true
 
-# --- Step 1: serve the brain (background), wait for /health ------------------
-# Serve flags: shard 1 only, -ngl 99, q8_0 KV; KV_IN_CPU=1 adds --no-kv-offload.
-KV_ARGS=()
-if [[ "${KV_IN_CPU}" == "1" ]]; then KV_ARGS+=(--no-kv-offload); fi
-CUDA_VISIBLE_DEVICES=0,1,2,3 llama-server \
-  --model "${SHARD}" \
-  --alias "${SERVED_NAME}" \
-  -ngl 99 \
-  "${KV_ARGS[@]}" \
-  -ctk q8_0 -ctv q8_0 \
-  --reasoning-preserve \
-  --ctx-size "${CTX_SIZE}" --parallel "${PARALLEL}" \
-  --cache-reuse 256 \
-  --host 0.0.0.0 --port "${PORT}" \
-  >"${SWEEP_DIR}/brain.log" 2>&1 &
+# --- Step 1: serve the brain across both nodes, wait for /health -------------
+mapfile -t NODES < <(scontrol show hostnames "${SLURM_JOB_NODELIST}")
+export NNODES="${#NODES[@]}"
+export PP="${PP:-${NNODES}}"
+HEAD_IP="$(
+  srun --jobid="${SLURM_JOB_ID}" --nodes=1 --ntasks=1 --nodelist="${NODES[0]}" \
+    bash -lc "ip -o -4 addr show ${IFACE} | awk '{split(\$4,a,\"/\"); print a[1]; exit}'"
+)"
+[[ -n "${HEAD_IP}" && "${HEAD_IP}" != 127.* ]] || {
+  echo "bad HEAD_IP='${HEAD_IP}' from ${IFACE} on ${NODES[0]}" >&2; exit 1; }
+export HEAD_IP
+echo "nodes=${NNODES} head=${NODES[0]} head_ip=${HEAD_IP} tp=${TP} pp=${PP}"
+
+# Two seconds here, versus ~7 min to fail at the DSA indexer.
+srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" bash -c \
+  "source ${VENV}/bin/activate
+   export LD_LIBRARY_PATH=${VENV}/lib/python3.11/site-packages/nvidia/cu13/lib:\${LD_LIBRARY_PATH:-}
+   python -c 'import vllm.third_party.deep_gemm'" \
+  || { echo "deep_gemm import failed; fix LD_LIBRARY_PATH per runbook C1" >&2; exit 1; }
+
+srun --jobid="${SLURM_JOB_ID}" --nodes="${NNODES}" --ntasks="${NNODES}" \
+  --ntasks-per-node=1 --gpus-per-task="${TP}" --cpus-per-task=32 \
+  bash scripts/serve/glm52_2node.sh >"${SWEEP_DIR}/brain.log" 2>&1 &
 SERVER_PID=$!
 trap 'rm -f "${ENDPOINT_FILE}"; kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 
-# llama.cpp is not wired into reprocli_serve, so hand-publish the endpoint JSON
-# (src/reprocli_serve/endpoint.py keys): find a routable Slingshot IP (hsn0..3)
-# and write it once /health is green. A dead brain must kill the sweep, not idle.
-HSN_IP="$(ip -4 -o addr show | awk '$2 ~ /^hsn/ {split($4, a, "/"); print a[1]; exit}')"
-[[ -n "${HSN_IP}" ]] || { echo "no hsn interface found" >&2; exit 1; }
+# ~9 min cold. A dead brain must kill the sweep, not leave it idling.
 for _ in $(seq 1 720); do
-  curl -sf "http://127.0.0.1:${PORT}/health" >/dev/null && break
+  curl -sf "http://${HEAD_IP}:${PORT}/health" >/dev/null && break
   if ! kill -0 "${SERVER_PID}" 2>/dev/null; then
     echo "brain exited before /health (see ${SWEEP_DIR}/brain.log)" >&2; exit 1
   fi
   sleep 10
 done
-curl -sf "http://127.0.0.1:${PORT}/health" >/dev/null || { echo "timed out waiting for /health" >&2; exit 1; }
+curl -sf "http://${HEAD_IP}:${PORT}/health" >/dev/null || { echo "timed out waiting for /health" >&2; exit 1; }
 
-BASE_URL="http://${HSN_IP}:${PORT}/v1"
+BASE_URL="http://${HEAD_IP}:${PORT}/v1"
 python3 - "${ENDPOINT_FILE}" <<PY
-import json, socket, sys
+import json, sys
 payload = {
     "base_url": "${BASE_URL}",
-    "host": "${HSN_IP}",
+    "host": "${HEAD_IP}",
     "port": ${PORT},
     "served_model_name": "${SERVED_NAME}",
-    "model_path": "${SHARD}",
-    "node": socket.gethostname(),
+    "model_path": "${MODEL}",
+    "node": "${NODES[0]}",
     "job_id": "${OUTER_JOB}",
     "health": "ready",
 }
@@ -252,7 +265,6 @@ run_one() {
   printf '%s\n' "${pid}" > "${ids_file}"
 
   # (4) Audit exactly this bundle and link the live audit to the graded run.
-  # --max-model-len = one llama.cpp slot (CTX_SIZE/PARALLEL); longer prompts truncate.
   REPROCLI_GRADED_RUN_ID="${rid}" \
   python3 src/run_arxiv_prompt_vllm.py \
     --mode audit \
@@ -265,7 +277,7 @@ run_one() {
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --max-input-tokens 118000 \
     --max-tokens 32768 \
-    --max-model-len "$(( CTX_SIZE / PARALLEL ))" \
+    --max-model-len "${MAX_MODEL_LEN}" \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \
     --extracted-output "${verdicts}" \
     --trace-output "${SWEEP_DIR}/audit_${pid}_trace.jsonl" \

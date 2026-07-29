@@ -1,16 +1,13 @@
 #!/bin/bash
-# Per-rank launcher for cyankiwi/GLM-5.2-AWQ-INT4 on 2x GH200 nodes, TP=4 + PP=2.
-# Runbook: tasks/serve-glm52-2node-vllm-gh200.md
+# Per-rank launcher for GLM-5.2-AWQ-INT4 on 2x GH200 nodes, TP=4 + PP=2.
+# One process per node; rank 0 serves the API, the rest run --headless.
+# Runbook: tasks/serve-glm52-2node-vllm-gh200.md (letters below are its notes).
 #
-# One process per node; rank 0 serves the API, the rest run --headless. Exists so
-# the launch is a single pasteable srun line instead of a nested-quoted payload:
-#
-#   export HEAD_IP=...          # see runbook step 3
+# Batch:       sbatch scripts/serve/serve_glm52.sbatch
+# Interactive: export HEAD_IP=...   # runbook step 3
 #   srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
 #     --gpus-per-task=4 --cpus-per-task=32 bash scripts/serve/glm52_2node.sh \
-#     2>&1 | tee "logs/glm52-2node-${SLURM_JOB_ID}.log"
-#
-# Every setting is an env override, so no edits are needed to retune.
+#     > "logs/glm52-2node-${SLURM_JOB_ID}.log" 2>&1 &
 
 set -o pipefail
 
@@ -28,10 +25,9 @@ GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.90}"
 IFACE="${IFACE:-hsn0}"
 RANK="${SLURM_PROCID:-0}"
 
-# HEAD_IP is rank 0's fabric address, the torch.distributed rendezvous master.
-# Normally exported by the caller (runbook step 3). If it is missing, derive it:
-# every rank can resolve the first node in the allocation on the hsn fabric,
-# where compute-node hostnames already live (gh109.hsn.cm.delta.internal.ncsa.edu).
+# rank 0's fabric address = the torch.distributed rendezvous master. Normally
+# exported by the caller; fall back to fabric DNS, where compute-node hostnames
+# already resolve (gh109.hsn.cm.delta.internal.ncsa.edu).
 if [ -z "${HEAD_IP:-}" ]; then
   HEAD_NODE="$(scontrol show hostnames "${SLURM_JOB_NODELIST:-}" 2>/dev/null | head -1)"
   if [ -n "${HEAD_NODE}" ]; then
@@ -42,9 +38,8 @@ if [ -z "${HEAD_IP:-}" ]; then
     echo "note: HEAD_IP was unset; derived ${HEAD_IP} from ${HEAD_NODE} via fabric DNS" >&2
   else
     echo "FATAL: HEAD_IP is unset and could not be derived." >&2
-    echo "  Most likely: you ran the step-3 discovery but skipped 'export HEAD_IP'." >&2
-    echo "  A bare  HEAD_IP=\$(srun ...)  sets it in your shell only; srun does not" >&2
-    echo "  propagate unexported variables. Run:  export HEAD_IP; echo \$HEAD_IP" >&2
+    echo "  Most likely you ran the step-3 discovery but skipped 'export HEAD_IP':" >&2
+    echo "  srun does not propagate unexported variables." >&2
     exit 1
   fi
 fi
@@ -57,45 +52,40 @@ module load python/3.11.9
 # shellcheck disable=SC1091
 source "${VENV}/bin/activate"
 
-# DeepGEMM needs CUDA 13's libnvrtc; without it the DSA indexer reports itself
-# as unsupported ~7 min into startup. See runbook D1.
+# DeepGEMM needs CUDA 13's libnvrtc, else the DSA indexer reports itself as
+# unsupported ~7 min in. cuda_nvrtc/lib holds the wrong (v12) one. See C1.
 export LD_LIBRARY_PATH="${VENV}/lib/python3.11/site-packages/nvidia/cu13/lib:${LD_LIBRARY_PATH:-}"
 
-# Pin the four Slingshot NICs by exact name INSIDE the payload: a bare "hsn"
-# prefix also matches the hsn0.561.. VLAN aliases and hangs NCCL init. See F3.
+# Exact NIC names: a bare "hsn" prefix also matches the hsn0.561.. VLAN aliases
+# and hangs NCCL init. See E2.
 export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-hsn0,hsn1,hsn2,hsn3}"
 export GLOO_SOCKET_IFNAME="${GLOO_SOCKET_IFNAME:-${IFACE}}"
 
 # Each node advertises its OWN fabric IP for vLLM's internal RPC, not HEAD_IP.
-# ALWAYS recompute: an inherited VLLM_HOST_IP (left over in the launching shell,
-# or a 127.0.0.1 copied from a single-node sbatch) names a host this node cannot
-# bind, and the engine dies with
-#   zmq.error.ZMQError: Cannot assign requested address (addr='tcp://<other>:...')
-# right after logging "mq_connect_ip=<other> (local)". Never honour the caller.
+# Always recompute: an inherited value names a host this node cannot bind and
+# the engine dies with zmq "Cannot assign requested address". See E3.
 VLLM_HOST_IP="$(ip -o -4 addr show "${IFACE}" | awk '{split($4,a,"/"); print a[1]; exit}')"
 if [ -z "${VLLM_HOST_IP}" ]; then
-  echo "FATAL: no IPv4 address on ${IFACE} at $(hostname -s). Check the fabric interface." >&2
+  echo "FATAL: no IPv4 address on ${IFACE} at $(hostname -s)." >&2
   exit 1
 fi
 export VLLM_HOST_IP
-
-# Same reasoning: a stale MASTER_ADDR/MASTER_PORT in the environment (the
-# single-node sbatch pins MASTER_ADDR=127.0.0.1) would fight --master-addr.
 unset MASTER_ADDR MASTER_PORT
 
-# FlashInfer's mnnvl symmetric-memory all-reduce IMAs on GH200. This env var is
-# one of three required pieces; the other two are --disable-custom-all-reduce
-# and fuse_allreduce_rms:false below. See runbook D4.
+# FlashInfer's mnnvl symm-mem all-reduce IMAs on GH200. This plus
+# --disable-custom-all-reduce plus fuse_allreduce_rms:false are needed together
+# (C3); the sampler is a separate known crash on this platform.
 export VLLM_ALLREDUCE_USE_SYMM_MEM=0
-# FlashInfer's top-k/top-p sampler crashes the profile run on this platform.
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
 if ! python -c "import vllm.third_party.deep_gemm" 2>/dev/null; then
   echo "FATAL: vllm.third_party.deep_gemm will not import on $(hostname)." >&2
-  echo "       Fix LD_LIBRARY_PATH (needs nvidia/cu13/lib, not cuda_nvrtc/lib)." >&2
+  echo "       Fix LD_LIBRARY_PATH (needs nvidia/cu13/lib)." >&2
   exit 1
 fi
 
+# Followers run workers only; without --headless they start their own APIServer
+# and die at KV init, after loading every weight first.
 HEADLESS=()
 if [ "${RANK}" != "0" ]; then
   HEADLESS=(--headless)
