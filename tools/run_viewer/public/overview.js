@@ -32,10 +32,12 @@
       // every grading pass, not just the verdict stored on the run
       try { this.audits = await window.RemoteSource.listAudits(); }
       catch (e) { this.audits = this.audits || []; }
-      finally { this.busy = false; this.render(); }
+      // the Claude-only lens grades off these same passes — feed it before the paint
+      finally { if (window.AuditLens) window.AuditLens.setAudits(this.audits); this.busy = false; this.render(); }
     },
     onTags() { if (this.root() && this.rows) this.render(); },
     onFreeze() { if (this.root() && this.rows) this.render(); },
+    onLens() { if (this.root() && this.rows) this.render(); },
 
     overviewRuns() {
       const rs = this.rows || [];
@@ -73,10 +75,15 @@
     thesisHtml(papers, sm) {
       const stampFam = sm.took == null ? "idle" : (sm.took <= (sm.predicted ?? Infinity) ? "reproduced" : "miss");
       const stampLbl = sm.took == null ? "NO DATA" : (sm.took <= (sm.predicted ?? Infinity) ? "UNDER BUDGET" : "OVER BUDGET");
+      // Claude re-audit coverage rides in the caption: with the lens ON the runs
+      // without a Claude pass contribute no score at all, so the average is only
+      // readable next to how many runs it was computed over.
+      const L = window.AuditLens, cov = L ? L.coverage(this.setRuns()) : null;
+      const covTxt = cov ? ` · ${cov.audited}/${cov.finished} finished runs Claude-audited` : "";
       return `<section class="thesis">
         <div class="thesis-card gauge-card">
           ${C().arcGauge(sm.avgScore ?? 0, 10, { num: sm.avgScore == null ? "—" : `${sm.avgScore}/10`, pct: sm.scorePct == null ? "no grades yet" : `${sm.scorePct}%`, label: `average audit score ${sm.avgScore ?? "—"} of 10` })}
-          <div class="gauge-cap"><b>avg audit score</b><span>${sm.gradedRuns} graded runs · ${sm.reproduced}/${sm.total} papers reproduced</span></div>
+          <div class="gauge-cap"><b>avg ${L && L.active ? "Claude " : ""}audit score</b><span>${sm.gradedRuns} graded runs · ${sm.reproduced}/${sm.total} papers reproduced${covTxt}</span></div>
         </div>
         <div class="thesis-card ledger-card">
           <div class="lc-head"><span class="plate">compute ledger</span><span class="lc-sub">reproduced papers</span>${V().stamp(stampFam, stampLbl)}</div>
@@ -137,12 +144,17 @@
     paperCardHtml(p) {
       const m = V().meta(p.verdict);
       const links = p.links || {};
+      // under the lens a paper with finished runs and no score has not been
+      // re-audited — say so, rather than let it read as an unrun paper
+      const L = window.AuditLens;
+      const noAudit = !!L && L.active && p.auditScore == null && (p.runs || []).some((r) => r.status === "finished");
       const lk = (links.code || links.paper) ? `<span class="pc-links">${links.paper ? `<a href="${esc(links.paper)}" target="_blank" rel="noopener" title="paper">paper↗</a>` : ""}${links.code ? `<a href="${esc(links.code)}" target="_blank" rel="noopener" title="code">code↗</a>` : ""}</span>` : "";
       return `<button class="paper-card" data-arx="${esc(p.arxiv_id)}">
         <div class="pcd-top"><span class="vg vd ${p.verdict}" title="${esc(m.word)}">${m.glyph}</span>
           ${p.tier ? `<span class="badge ${TIER_CLS[p.tier] || "slate"}">${esc(p.tier)}</span>` : ""}
           ${p.set ? `<span class="set-badge ${p.set}">${esc(p.set)}</span>` : ""}
-          ${p.auditScore != null ? `<span class="badge ${p.verdict === "reproduced" ? "yes" : p.verdict === "miss" ? "over" : "no"}" title="Stage-7 auditor${p.auditReportedScore != null ? ` — capped from ${p.auditReportedScore}/10` : ""}${p.auditVerdict ? ` · ${esc(p.auditVerdict)}` : ""}">${p.auditScore}/10${p.auditFlag ? " ⚑" : ""}</span>` : ""}
+          ${p.auditScore != null ? `<span class="badge ${p.verdict === "reproduced" ? "yes" : p.verdict === "miss" ? "over" : "no"}" title="Stage-7 auditor${p.auditReportedScore != null ? ` — capped from ${p.auditReportedScore}/10` : ""}${p.auditVerdict ? ` · ${esc(p.auditVerdict)}` : ""}">${p.auditScore}/10${p.auditFlag ? " ⚑" : ""}</span>`
+            : noAudit ? `<span class="schip noaudit" title="no Claude audit pass yet">no Claude audit</span>` : ""}
           <span class="pcd-runs">${p.successCount}/${p.totalRuns}</span></div>
         <div class="pcd-claim">${esc(p.claim || "(" + p.arxiv_id + ")")}</div>
         <div class="pcd-foot">${Tr().ledger(p.took, p.predicted, { pct: p.reproduced })}

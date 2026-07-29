@@ -24,6 +24,7 @@ function setView(v) {
   const el = $("#view-" + v);
   if (el) el.classList.remove("hidden");
   if (window.Freeze) window.Freeze.setButtonVisible(v !== "local" && v !== "analysis");
+  if (window.AuditLens) window.AuditLens.setButtonVisible(v !== "local" && v !== "analysis");
   const tog = $("#sidebar-toggle"); if (tog) tog.style.display = v === "live" ? "" : "none";
   if (v === "overview" && window.Overview) window.Overview.open();
   if (v === "papers" && window.Papers) window.Papers.open();
@@ -198,8 +199,19 @@ function boot() {
       if (window.Stats) window.Stats.onFreeze();
     });
   }
+  if (window.AuditLens) {
+    window.AuditLens.mount();
+    window.AuditLens.onChange(() => {
+      renderList();
+      if (window.Overview && window.Overview.onLens) window.Overview.onLens();
+      if (window.Papers && window.Papers.onFreeze) window.Papers.onFreeze();
+      if (window.Audits && window.Audits.onLens) window.Audits.onLens();
+      if (window.Stats && window.Stats.onFreeze) window.Stats.onFreeze();
+    });
+  }
   state.remote = window.RemoteSource.init(); setConn(); loadRunList();
   if (state.remote) {
+    if (window.AuditLens) window.AuditLens.load(window.RemoteSource);
     window.RemoteSource.subscribeRunList((run) => { upsertRun(run); if (state.view === "live") renderList(); });
     if (window.Tags) { Tags.onChange(onTagsChange); Tags.load().catch(() => {}); window.RemoteSource.subscribeTags((row, evt) => Tags.applyRow(row, evt)); }
     if (window.Hosts) window.Hosts.init(); // cluster telemetry (no-ops if the tables don't exist yet)

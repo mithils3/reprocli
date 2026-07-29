@@ -18,7 +18,7 @@ const RemoteSource = {
 
   async listRuns() {
     const { data, error } = await this.client.from("repro_runs")
-      .select("*").order("updated_at", { ascending: false }).limit(300);
+      .select("*").order("updated_at", { ascending: false }).limit(2000);
     if (error) throw error;
     const rows = data || [];
     if (window.Freeze) window.Freeze.setRuns(rows);
@@ -65,7 +65,7 @@ const RemoteSource = {
   },
   async listAudits() {
     const { data, error } = await this.client.from("audit_runs")
-      .select("*").order("updated_at", { ascending: false }).limit(300);
+      .select("*").order("updated_at", { ascending: false }).limit(2000);
     if (error) throw error;
     return (data || []).map((r) => this._auditRun(r));
   },

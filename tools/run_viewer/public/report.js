@@ -34,10 +34,14 @@
     },
 
     papers(runs, successTag) {
-      const V = window.Verdict, E = window.Estimates;
+      const V = window.Verdict, E = window.Estimates, L = window.AuditLens;
       const tag = successTag || this.successTag;
+      // The Claude-only lens is applied BEFORE grouping, so the per-paper runs
+      // array and `chosen` both carry lens-mapped rows and summary() — which walks
+      // p.runs for the score average — needs no lens of its own.
+      const rows = (runs || []).map((r) => L ? L.view(r) : r);
       const groups = new Map();
-      for (const run of (runs || [])) {
+      for (const run of rows) {
         const id = run.arxiv_id || "?";
         if (!groups.has(id)) groups.set(id, []);
         groups.get(id).push(run);
@@ -108,9 +112,9 @@
     // model × tier matrix: per cell, reproduced / attempted papers; per model,
     // the avg Stage-7 audit score over its graded runs, as a % of the 0–10 scale
     modelTier(runs, successTag) {
-      const E = window.Estimates, tag = successTag || this.successTag;
+      const E = window.Estimates, L = window.AuditLens, tag = successTag || this.successTag;
       const M = new Map();
-      for (const run of (runs || [])) {
+      for (const run of (runs || []).map((r) => L ? L.view(r) : r)) {
         const model = run.model || "—";
         const tier = (E && E.row(run.arxiv_id) && E.row(run.arxiv_id).tier) || "untiered";
         if (!M.has(model)) M.set(model, { tiers: {}, graded: 0, scoreSum: 0 });

@@ -63,6 +63,18 @@
 
     graderOf(run) { return (R.shortModel ? R.shortModel(run && run.model) : (run && run.model)) || "unknown"; },
 
+    /* The inverse of the audit list: finished reproduce runs that no Claude pass
+       has graded yet. Read off this.graded (filled by load()'s listRuns) and
+       recomputed on every renderFilters, so the count tracks incoming audits. */
+    missingRuns() {
+      const L = window.AuditLens;
+      if (!L) return []; // without the lens there is no way to know which are missing
+      const finished = Object.values(this.graded).filter((run) => run && run.status === "finished");
+      const scoped = window.Freeze ? window.Freeze.filter(finished) : finished;
+      return scoped.filter((run) => !L.hasClaudeAudit(run.run_id))
+        .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+    },
+
     renderFilters() {
       const host = this.filters(); if (!host) return;
       const counts = new Map();
@@ -71,7 +83,9 @@
         [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([g, n]) => [g, `${g} (${n})`]));
       host.innerHTML = chips.map(([key, label]) =>
         `<button class="filt ${this.grader === key ? "active" : ""}" data-grader="${R.esc(key)}">${R.esc(label)}</button>`
-      ).join("");
+      ).join("") +
+        `<button class="filt noaudit ${this.grader === "missing" ? "active" : ""}" data-grader="missing"
+          title="finished reproduce runs with no Claude audit pass yet">no Claude (${this.missingRuns().length})</button>`;
       host.querySelectorAll(".filt[data-grader]").forEach((b) => b.addEventListener("click", () => {
         this.grader = b.dataset.grader; this.renderFilters(); this.renderList();
       }));
@@ -91,10 +105,12 @@
       }
       this.renderList();
     },
+    onLens() { this.renderFilters(); this.renderList(); },
 
     renderList() {
       const host = this.list(); if (!host) return;
       host.innerHTML = "";
+      if (this.grader === "missing") { this.renderMissing(host); return; }
       const runs = this.visibleRuns();
       if (!runs.length) {
         host.innerHTML = `<div class="empty small">${this.runs.length ? "No audits match the global filter." : "No audits yet — run one and watch the auditor grade it live."}</div>`;
@@ -105,6 +121,29 @@
         this.decorate(item, run);
         if (run.audit_run_id === this.currentId) item.classList.add("active");
         item.addEventListener("click", () => this.openAudit(run.audit_run_id));
+        host.appendChild(item);
+      }
+    },
+
+    /* The "no Claude" list shows REPRO runs, not audits — there is no audit row to
+       open, so a click jumps to the Live transcript, which is where the user
+       launches the missing audit from. */
+    renderMissing(host) {
+      const runs = this.missingRuns();
+      if (!runs.length) {
+        host.innerHTML = `<div class="empty small">Every finished run has a Claude audit.</div>`;
+        return;
+      }
+      for (const run of runs) {
+        const item = R.renderRunListItem(run);
+        const line = item.querySelector(".pl-l1");
+        if (line) {
+          const chip = `<span class="schip noaudit">no Claude audit</span>`;
+          const anchor = line.querySelector(".vd");
+          if (anchor) anchor.insertAdjacentHTML("afterend", chip);
+          else line.insertAdjacentHTML("afterbegin", chip);
+        }
+        item.addEventListener("click", () => window.openRun && window.openRun(run.run_id));
         host.appendChild(item);
       }
     },

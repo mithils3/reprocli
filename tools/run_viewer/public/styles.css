@@ -99,6 +99,8 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01
   border-radius: 6px; padding: 1px 7px; background: var(--panel2); font-weight: 500; }
 .schip.non-frozen { color: var(--over-deep); border-color: var(--over); background: var(--over-tint); }
 .schip.regrade { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
+/* absence, not a verdict: a run the Claude re-audit has not reached yet */
+.schip.noaudit { color: var(--muted); border-style: dashed; }
 
 /* ---- verdict glyph + word (4 families collapse 11 tags) ----------------- */
 .vd { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -124,6 +126,10 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01
 .filt.active { background: var(--txt); color: var(--bg); border-color: var(--txt); }
 .global-freeze.active { background: var(--no-tint); color: var(--no-deep); border-color: var(--no); }
 .global-freeze { white-space: nowrap; }
+/* the lens is a positive mode (read the trusted grader), not an exclusion — so it
+   overrides .global-freeze.active's coral with the reproduced sage */
+#audit-lens-toggle.active { background: var(--yes-tint); color: var(--yes-deep); border-color: var(--yes); }
+.filt.noaudit { border-style: dashed; }
 .filt.excl-toggle { margin-left: auto; }
 .filt.excl-toggle ~ .filt.excl-toggle { margin-left: 5px; }
 .filt.excl-toggle.active { background: var(--no-tint); color: var(--no-deep); border-color: var(--no); }

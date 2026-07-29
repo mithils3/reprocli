@@ -54,14 +54,22 @@
     return null;
   }
 
+  // window.AuditLens, when active, re-points a run's audit_* fields at its Claude
+  // grading pass (or blanks them when there is none). It is applied at the three
+  // entry points below so every verdict surface agrees; familyFromAudit stays pure.
+
   const Verdict = {
     FAMILY,
     tagFamily(tag) { return TAG_FAMILY[String(tag).toLowerCase().trim()] || null; },
 
-    auditFamily(run) { return familyFromAudit(run); },
+    auditFamily(run) {
+      if (window.AuditLens) run = window.AuditLens.view(run);
+      return familyFromAudit(run);
+    },
 
     // a single run -> family key: the auditor verdict wins, then tags, then status
     ofRun(run) {
+      if (window.AuditLens) run = window.AuditLens.view(run);
       if (!run) return "idle";
       const byAudit = familyFromAudit(run);
       if (byAudit) return byAudit;
@@ -94,7 +102,9 @@
     },
 
     // the most specific human word for a run (auditor verdict wins, then a known tag)
+    // — reads the lens-mapped run, since audit_verdict is what it quotes
     word(run) {
+      if (window.AuditLens) run = window.AuditLens.view(run);
       const fam = this.ofRun(run);
       if (run && run.audit_verdict && familyFromAudit(run) === fam) return run.audit_verdict;
       const tags = window.Tags ? window.Tags.get(run.run_id) : [];
