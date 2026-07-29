@@ -5,6 +5,9 @@ retry that `tasks/serve-glm52-vllm-gh200.md` §9 asked for. That runbook is
 ABANDONED; this one exists because the variable that killed it was GPU count,
 not tuning.
 
+**The config: TP=4 + PP=2, bf16 KV, no MTP, no CPU offload.** Jump to §6 to
+launch it, §7 to benchmark it. §2 is why, §2b is why not 6 GPUs.
+
 > **STATUS: UNVERIFIED — nothing here has been run.** Every number below is
 > either arithmetic from `config.json` + the HF API, or carried over MEASURED
 > from a sibling runbook (cited at the point of use). No GLM-5.2 vLLM server has
@@ -28,8 +31,22 @@ is stale. From the HF API on 2026-07-29 (`lastModified: 2026-07-28`):
 
 The model card breaks it out: **454.29 GB base + 19.91 GB MTP layer**, and
 `config.json` now carries `num_nextn_predict_layers: 1`. The MTP module used to
-be absent; it ships in-repo now, which makes §2's layout choice a real fork
-rather than a footnote.
+be absent; it ships in-repo now.
+
+**Download size is not resident size.** The MTP module is `model.layers.78`
+(78 layers means indices 0-77, so 78 is the extra one) and vLLM does not
+instantiate it without `--speculative-config`. We are not using MTP (§2), so:
+
+    downloaded   474.22 GB  =  441.65 GiB     (all 83 shards)
+    resident     454.29 GB  =  423.09 GiB     (layer 78 skipped at load)
+
+Every memory figure below uses **423.09 GiB**. Verify it at first load against
+the `Model loading took N GiB memory` line — if it reports ~55 GiB/GPU rather
+than ~53, layer 78 is being loaded and something enabled the draft model.
+
+You still have to download all 83 shards: layer 78 lives entirely in
+`model-00083-of-00083.safetensors`, but that shard also holds part of layer 77,
+so there is nothing to exclude.
 
 Always re-run this before trusting any memory table in this file:
 
@@ -60,18 +77,19 @@ still weighs 441 GiB.
 This is the whole reason to retry.
 
     2 nodes x 4 GH200 x 95.58 GiB  =  764.6 GiB HBM
-    weights, 83 shards             =  441.7 GiB
+    resident weights (excl. MTP)   =  423.1 GiB
                                       ----------
-                                      323.0 GiB spare, before KV
+                                      341.5 GiB spare, before KV
 
-Against the single-node case, which was 28 GiB short *before* KV cache and so
-forced offload:
+Against the single-node case, which was short *before* KV cache and so forced
+offload:
 
 | | 1 node (4 GPU) | 2 nodes (8 GPU) |
 |---|---|---|
 | HBM | 382.3 GiB | 764.6 GiB |
-| weights / GPU | 110.4 GiB | **55.2 GiB** |
-| `--cpu-offload-gb` | 28-36, forced | **0** |
+| weights / GPU | 105.8 GiB | **52.9 GiB** |
+| free at util 0.90 | **-19.8 GiB** | **+33.1 GiB** |
+| `--cpu-offload-gb` | forced | **0** |
 | pinned host memory | 113-145 GiB | 0 |
 
 Dropping offload to zero deletes, by construction, the two walls that ended the
@@ -83,9 +101,9 @@ improve for reasons other than sharding.
 At `--gpu-memory-utilization 0.90`:
 
     usable / GPU        86.0 GiB
-    resident weights   -55.2 GiB
+    resident weights   -52.9 GiB
                        ---------
-    free for KV        30.8 GiB
+    free for KV        33.1 GiB
 
 ### KV pool, bf16 (arithmetic)
 
@@ -93,60 +111,130 @@ MLA latent is 576 (512 `kv_lora` + 64 `qk_rope`), so bf16 costs **1152
 B/token/layer**. Per-GPU cost depends on how many layers land on that GPU, and
 under TP the MLA latent is *replicated* across ranks rather than sharded:
 
-| layout | layers / GPU | B/token/GPU | KV pool at 30.8 GiB |
+| layout | layers / GPU | B/token/GPU | KV pool at 33.1 GiB |
 |---|---|---|---|
-| TP=8, PP=1 | 78 | 89,856 (87.8 KiB) | **~368k tokens** |
-| TP=4, PP=2 | 39 | 44,928 (43.9 KiB) | **~736k tokens** |
+| TP=8, PP=1 | 78 | 89,856 (87.8 KiB) | ~396k tokens |
+| **TP=4, PP=2** | 39 | 44,928 (43.9 KiB) | **~792k tokens** |
 
 Add the DSA indexer cache: 21 `full` indexers x `index_head_dim` 128 =
 ~2.6 KiB/token model-wide if the index keys are fp8, double that if bf16. At
 131k context that is 0.3-0.7 GiB. Real, not decisive.
 
 For scale: one full 131,072-token sequence costs 5.5 GiB/GPU at TP=4/PP=2, so
-the pool holds ~5 concurrent max-length transcripts, or far more real ones.
+the pool holds ~6 concurrent max-length transcripts, or far more real ones.
 
 ---
 
-## 2. Layout: the choice is MTP vs. KV pool, and only measurement settles it
+## 2. Layout: TP=4 + PP=2, MTP off
 
-Three layouts fit. They are not equivalent, and the deciding factor is a vLLM
-limitation, not the hardware.
+**Decided. Run TP=4 + PP=2 and do not enable MTP.** The rest of this section is
+why, and what it costs.
 
-**Speculative decoding is incompatible with pipeline parallelism in vLLM.** MTP
-under PP>1 either crashes or silently diverges from the greedy baseline; the
-token accounting lives on the last PP rank only and never reaches the others.
-This is tracked as an open RFC (vllm#44697), not a fixed bug, and it was
-independently hit in the wild (`bird/GLM-spark`, GLM-5.2 across 3 nodes: *"does
-not work with PP=3 in this vLLM version due to multiple code bugs"*).
-
-So:
+The deciding fact is a vLLM limitation, not the hardware: **speculative decoding
+is incompatible with pipeline parallelism.** MTP under PP>1 either crashes or
+silently diverges from the greedy baseline; the token accounting lives on the
+last PP rank only and never reaches the others. Open RFC (vllm#44697), not a
+fixed bug, and independently hit in the wild (`bird/GLM-spark`, GLM-5.2 across
+3 nodes: *"does not work with PP=3 in this vLLM version due to multiple code
+bugs"*).
 
 | layout | fits | MTP | KV / GPU | fabric cost per token | precedent on this cluster |
 |---|---|---|---|---|---|
-| **TP=4 + PP=2** | yes | **no** | 736k tok | 1 hidden state (12 KB) at the stage boundary | `scripts/serve/serve_multinode.sbatch` (Kimi-K2.6) |
-| **TP=8 across nodes** | yes | **yes** | 368k tok | 78 layers x all-reduce over Slingshot | MiniMax-M3 MXFP8, 428 GB, VERIFIED |
-| TP=4 + DP=2 + EP | yes | yes | 368k tok | + MoE all-to-all | none; skip for bring-up |
+| **TP=4 + PP=2** | yes | no | **792k tok** | 1 hidden state (12 KB) per stage boundary | `scripts/serve/serve_multinode.sbatch` (Kimi-K2.6) |
+| TP=8 across nodes | yes | yes | 396k tok | 78 layers x all-reduce over Slingshot | MiniMax-M3 MXFP8, 428 GB, VERIFIED |
+| TP=4 + DP=2 + EP | yes | yes | 396k tok | + MoE all-to-all | none |
 
-MTP is not a rounding error here. The official vLLM recipe runs
+PP=2 wins on everything except MTP: double the KV pool, and the fabric carries
+one 12 KB hidden state per microbatch boundary instead of two all-reduces per
+layer for all 78 layers. It is also the layout `serve_multinode.sbatch` already
+implements, so there is no new launch machinery to get wrong.
+
+**What giving up MTP costs.** The official recipe runs
 `--speculative-config.method mtp --speculative-config.num_speculative_tokens 5`,
-GLM-5.2's headline architecture claim is a ~20% improvement in MTP acceptance
-length over 5.1, and this repo ships the 19.91 GB MTP module. Under PP=2 that
-module is dead weight on disk.
+GLM-5.2's headline architecture claim is ~20% better MTP acceptance length than
+5.1, and the one published GH200 data point is a 43 -> 55 t/s decode gain from
+an FP8 MTP-3 graft (dnhkng). So this is a real decode number left on the table,
+not a rounding error. The 19.91 GB MTP module also becomes dead weight — it is
+still downloaded, just never loaded (§0).
 
-Against that, TP=8 puts 78 layers' worth of all-reduce on the Slingshot fabric
-instead of NVLink. DeltaAI has 4x 200GbE per node; the MiniMax-M3 runbook shows
-this works for a similar-size MoE, but "works" is not "is free".
+That trade is accepted deliberately. If vllm#44697 lands, revisit: MTP under
+PP=2 would collapse this table to one row.
 
-**Bring up TP=4 + PP=2 first** (§6). It is the layout the existing multi-node
-sbatch already implements, it has the largest KV pool, and it puts almost
-nothing on the fabric — the fewest ways to fail while you are still finding out
-whether the model serves at all. Then run §7's A/B against TP=8 + MTP=5. The
-answer is a measurement, and nobody has published it.
+**The one caveat that will bite the benchmark.** PP=2 half-idles the pipeline at
+low concurrency, because stage 0 sits waiting while stage 1 works. A single
+interactive stream will look bad and it is not representative — the sweep's 6-8
+concurrent agents are what keep both stages fed. **Benchmark at sweep
+concurrency, not at batch 1**, or you will reject this layout for the wrong
+reason. `bench_agent_sim.py --agents 8` is the honest measurement here;
+`bench_serve.py`'s single-stream decode number is the pessimistic floor.
 
-One caveat to carry into the A/B: PP=2 half-idles the pipeline at low
-concurrency. A single interactive stream will look bad; the sweep's 6-8
-concurrent agents are what keep both stages fed. Benchmark at sweep concurrency,
-not at batch 1, or you will reject PP for the wrong reason.
+---
+
+## 2b. Fewer GPUs: 6 fits, 4 still does not
+
+Short answer: **6 GPUs fits, but only as TP=2 + PP=3, and it is the wrong trade
+for this benchmark.** Use 8. The reasoning is worth writing down because the
+constraint that bites is not memory.
+
+### TP must divide 64, so TP=6 and TP=3 do not exist
+
+vLLM shards attention heads across TP ranks and requires an even split. GLM-5.2
+has `num_attention_heads: 64`, `n_routed_experts: 256`, `moe_intermediate_size:
+2048`, and 64 % 6 = 4, 64 % 3 = 1. So:
+
+    valid TP:    1, 2, 4, 8
+    invalid TP:  3, 6
+
+That rules out the obvious "TP=6 on 6 GPUs" outright. With 78 layers (78/3 = 26,
+78/6 = 13, both even) the surviving 6-GPU layouts are:
+
+| layout | weights / GPU | free at 0.90 | layers / GPU | KV pool | 131k seq |
+|---|---|---|---|---|---|
+| **8 GPU, TP=4 + PP=2** | 52.9 GiB | 33.1 GiB | 39 | 792k tok | 5.5 GiB |
+| 6 GPU, TP=2 + PP=3 | 70.5 GiB | 15.5 GiB | 26 | 556k tok | 3.7 GiB |
+| 6 GPU, TP=1 + PP=6 | 70.5 GiB | 15.5 GiB | 13 | 1112k tok | 1.8 GiB |
+
+Memory is not the problem. 15.5 GiB free per GPU and a 556k-token pool are both
+comfortable.
+
+### The problems are allocation shape and compute width
+
+**No ghx4 node has 6 GPUs**, so you hold two nodes either way. The saving is
+billing (~25% of the GPU-hours), not a smaller footprint or a shorter queue.
+Partial-node requests are allowed — `scripts/serve/serve_gh200.sbatch` already
+asks for `--gpus-per-node=2` — so both 4+2 and 3+3 are allocatable. Neither is
+good:
+
+- **3+3** is uniform, which is what the native `--nnodes`/`--node-rank`
+  rendezvous assumes. But with TP=2 the three TP groups are ranks (0,1), (2,3),
+  (4,5), and (2,3) straddles the node boundary. One third of the layers then pay
+  an inter-node all-reduce *per layer* — exactly the cost PP was chosen to avoid
+  (§2).
+- **4+2** keeps all three TP groups inside a node, which is what you actually
+  want. But it is a non-uniform layout, and vLLM's rank-to-GPU assignment is
+  engine-managed rather than configurable; placing it means the Ray backend
+  (`--distributed-executor-backend ray`), which is new machinery this runbook
+  has no verified shape for.
+
+**And TP=2 halves the per-stage compute width.** Prefill is the entire case for
+the vLLM path over llama.cpp (§7) — the incumbent's weakness is precisely that
+`--split-mode layer` computes on one GPU at a time. Going TP=4 -> TP=2 attacks
+the metric this exercise exists to measure. A 3-deep pipeline also needs more
+concurrent requests than a 2-deep one before the bubble amortizes.
+
+So: **not for the bring-up.** Revisit after §7 if the numbers show the GPUs
+compute-underutilized, in which case 6 GPUs at TP=2+PP=3 via Ray is the shape to
+try.
+
+### 4 GPUs is closer than the old runbook thought, but still short
+
+With the MTP layer non-resident (§0), one node needs 105.8 GiB/GPU against
+86.0 usable — a **19.8 GiB/GPU** deficit, not the 28-36 the single-node runbook
+budgeted. That is below the `--cpu-offload-gb 28` it MEASURED as "tolerable"
+(2m31s rank-0 gap) and well below the 36 that stalled. A single-node retry is
+therefore less hopeless than it reads. It is still a different runbook's problem,
+and it walks straight back into the pinned-allocation and NUMA regime this one
+exists to escape.
 
 ---
 
@@ -232,7 +320,7 @@ fails the RAM clause on Lustre too.
 
 ---
 
-## 5. Two landmines specific to launching through this repo
+## 5. Three landmines specific to launching through this repo
 
 ### 5a. `resolve_profile()` silently serves GLM with MiniMax parsers
 
@@ -374,11 +462,11 @@ Notes on the non-obvious choices:
 - **No `--kv-cache-dtype fp8`** (§3b). Two independent upstream bugs.
 - **No `--speculative-config`.** MTP is incompatible with PP>1 (§2). Adding it
   here is the single most likely way to get a silently-wrong server rather than
-  a crash.
+  a crash — it may not error, it may just quietly stop matching greedy.
 - **No `--enable-expert-parallel`.** It reshuffles which params live where and
   adds a MoE all-to-all on the fabric. Not a variable you want live during
   bring-up.
-- `--gpu-memory-utilization 0.90`, not 0.93: with 30.8 GiB free there is no
+- `--gpu-memory-utilization 0.90`, not 0.93: with 33.1 GiB free there is no
   reason to run tight, and profiling headroom is what the single-node attempt
   kept losing.
 - `--max-model-len 131072`, not the model's 1M. Raise it after §7 measures the
@@ -394,26 +482,33 @@ Health, once the log shows the API binding:
 curl -fsS "http://${HEAD_IP}:8000/health" && echo "  health: ok"
 ```
 
-### 6.4 The TP=8 + MTP arm
+### 6.4 Switching to the harness once startup is measured
 
-Same allocation, same env. Swap the parallelism and add the draft config:
+Once §7 has a startup number and the Inductor cache is warm, the same launch
+goes through `reprocli_serve` — which publishes the endpoint file that
+`reprocli_repro` and the auditor read, so sweeps can find the URL:
 
 ```bash
-      --tensor-parallel-size 8 \
-      --speculative-config.method mtp \
-      --speculative-config.num_speculative_tokens 5 \
+    python -m reprocli_serve \
+      --model '"$MODEL"' --served-model-name zai-org/GLM-5.2 \
+      --port 8000 --tensor-parallel-size 4 --pipeline-parallel-size 2 \
+      --nnodes 2 --node-rank "$SLURM_PROCID" --master-addr '"$HEAD_IP"' \
+      --advertise-ip '"$HEAD_IP"' \
+      --tool-call-parser glm47 --reasoning-parser glm45 \
+      --max-model-len 131072 --gpu-memory-utilization 0.90 \
+      --endpoint-file '"$ENDPOINT_FILE"' \
+      "${H[@]}"          # H=(--headless) on rank != 0
 ```
 
-and drop `--pipeline-parallel-size`. Everything else is unchanged. Two things to
-watch: the KV pool halves (§1), and MTP acceptance is only worth having if it
-survives the fabric all-reduce cost — which is exactly the §7 A/B.
+Both parser flags are mandatory here, not decorative — see §5a. And this path
+is the one that dies at 30 minutes (§5b), which is why it comes second.
 
 ---
 
 ## 7. Benchmark — this is the deliverable
 
 The single-node path died with **zero** performance numbers. Producing them is
-the reason to spend two nodes. Run all three, on both layouts.
+the reason to spend two nodes. Run all three.
 
 ```bash
 # 1. Cold/warm prefill + decode on an ~85k agentic transcript, plus the
@@ -442,29 +537,32 @@ timer (§5b).
 
 ### Record this table
 
-| | llama.cpp IQ4_XS | vLLM TP=4+PP=2 | vLLM TP=8+MTP=5 |
-|---|---|---|---|
-| decode t/s (1 stream) | **40** MEASURED | | |
-| decode t/s (8 agents) | — | | |
-| cold prefill t/s | **575** MEASURED | | |
-| warm prefill t/s | — | | |
-| cached share, 8 agents x 10 turns | — | | |
-| time to `/health` | ~0 | | |
-| MTP acceptance length | n/a | n/a | |
+| | llama.cpp IQ4_XS | vLLM TP=4+PP=2 |
+|---|---|---|
+| decode t/s (1 stream) | **40** MEASURED | |
+| decode t/s (8 agents) | — | |
+| cold prefill t/s | **575** MEASURED | |
+| warm prefill t/s | — | |
+| cached share, 8 agents x 10 turns | — | |
+| time to `/health` | ~0 | |
+| KV pool actually allocated | — | |
 
 The llama.cpp column is MEASURED in `serve-gguf-llamacpp-gh200.md` §8 on one
-node. It is the incumbent and it costs no startup.
+node. It is the incumbent, it costs no startup, and it uses half the hardware.
+
+Record the single-stream decode number, but weight the 8-agent one: PP=2 is
+bubble-bound at batch 1 (§2) and the single-stream figure is a floor, not the
+operating point.
 
 ### The decision rule
 
-`serve-glm52-vllm-gh200.md` §8 set it, and it still holds with one amendment.
+`serve-glm52-vllm-gh200.md` §8 set it and it still holds.
 
-**Decode is probably a wash.** llama.cpp MEASURED 40 t/s; the dnhkng blog got
-43 t/s on vLLM after NUMA work. Nothing there is worth a long startup — *unless*
-MTP lands, which is the new variable: the recipe's 5 draft tokens plus GLM-5.2's
-claimed +20% acceptance length is the only mechanism on the table that could
-make vLLM decisively win decode. The blog measured 43 -> 55 t/s from an FP8
-MTP-3 graft. That is why §6.4 exists.
+**Decode is probably a wash, and MTP is off the table.** llama.cpp MEASURED
+40 t/s; the dnhkng blog got 43 t/s on vLLM after NUMA work. The one mechanism
+that could have made vLLM decisively win decode was MTP (that blog measured
+43 -> 55 t/s from an FP8 MTP-3 graft), and PP=2 forecloses it (§2). So do not
+expect this path to win on decode. If it does, that is a surprise worth chasing.
 
 **Prefill is the structural case.** llama.cpp gets ~575 t/s because
 `--split-mode layer` is pipeline parallelism with one GPU computing at a time
@@ -479,13 +577,14 @@ re-prefill. So how much prefill actually costs depends on the compaction rate,
 which is measurable from `repro_events`. Get that number before weighting
 prefill heavily.
 
-**So: if neither the warm-prefill multiple nor MTP-assisted decode is
-several-fold better than llama.cpp, this path does not pay for itself** — it
-costs two nodes instead of one, a long startup, three upstream bugs, and a quant
-whose quality edge over UD-IQ4_XS is unquantified on both sides.
+**So the whole case rests on warm prefill and on concurrency.** With MTP gone,
+if the 8-agent throughput and the warm-prefill multiple are not clearly better
+than llama.cpp, this path does not pay for itself — it costs two nodes instead
+of one, a long startup, three upstream bugs, and a quant whose quality edge over
+UD-IQ4_XS is unquantified on both sides.
 
 Watch `cached%` on the agent sim. It should climb toward the 80-95% real sweeps
-show; a sag as transcripts grow means the KV pool is evicting, which at 736k
+show; a sag as transcripts grow means the KV pool is evicting, which at 792k
 tokens (§1) would be surprising and worth chasing.
 
 ---
@@ -496,8 +595,8 @@ This runbook reads "2xGH200 nodes" as **two ghx4 nodes = 8 GPUs**. Note that
 `serve-laguna-s21-vllm-gh200.md` uses "2xGH200" for two GPUs on one node, so the
 vocabulary is genuinely overloaded here.
 
-On 2 GPUs the arithmetic is unkind: 191.2 GiB HBM against 441.7 GiB of weights
-means ~125 GiB of pinned host memory *per GPU*, which is deeper into exactly the
+On 2 GPUs the arithmetic is unkind: 191.2 GiB HBM against 423.1 GiB of resident
+weights means ~125 GiB of pinned host memory *per GPU*, which is deeper into the
 regime where the single-node attempt stalled (§7 there: TP0 stuck in
 `_maybe_offload_to_cpu` for 15+ minutes at 36 GiB/GPU). The one published data
 point is the dnhkng blog on 2xGH200 + `--cpu-offload-gb 170`: **2.39 t/s**,
@@ -524,8 +623,12 @@ serve the GGUF through llama.cpp instead.
 - **`serve_multinode.sbatch` exports the bare `NCCL_SOCKET_IFNAME=hsn`** (§5c),
   which the M3 runbook documents as a hang. Worth fixing there, not just
   working around here.
-- MTP under PP is an open upstream RFC (vllm#44697). If it lands, the §2 table
-  collapses to one row and TP=4+PP=2 wins outright.
+- MTP under PP is an open upstream RFC (vllm#44697). If it lands, TP=4+PP=2 wins
+  outright and the 19.91 GB module stops being dead weight. Worth re-checking
+  before any later sweep commits to this brain.
+- 6 GPUs (TP=2+PP=3) is memory-viable but needs the Ray backend for a sane 4+2
+  rank placement, which is unverified here (§2b). Only worth building if §7
+  shows the GPUs compute-underutilized.
 - `save_sharded_state` to kill the TP read amplification on load
   (`serve-glm52-vllm-gh200.md` §3). Needs one successful load first.
 - AWQ-INT4 vs UD-IQ4_XS quality delta is unquantified on both sides. Neither
