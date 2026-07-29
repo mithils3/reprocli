@@ -75,47 +75,21 @@ Both nodes must print `ok`. If not, fix `LD_LIBRARY_PATH` before launching (D1).
 
 ## 5. Launch
 
+One line. The per-rank payload lives in `scripts/serve/glm52_2node.sh` so there
+is no nested quoting to get wrong:
+
 ```bash
-mkdir -p logs
-MODEL=/work/nvme/bfvr/msalunkhe/models/GLM-5.2-AWQ-INT4
-
-srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 \
-  --gpus-per-task=4 --cpus-per-task=32 bash -lc '
-    module load python/3.11.9
-    source /u/msalunkhe/reprocli/.venv/bin/activate
-    export LD_LIBRARY_PATH=/u/msalunkhe/reprocli/.venv/lib/python3.11/site-packages/nvidia/cu13/lib:$LD_LIBRARY_PATH
-    export NCCL_SOCKET_IFNAME=hsn0,hsn1,hsn2,hsn3
-    export GLOO_SOCKET_IFNAME=hsn0
-    export VLLM_HOST_IP="$(ip -o -4 addr show hsn0 | awk "{split(\$4,a,\"/\"); print a[1]; exit}")"
-    export VLLM_ALLREDUCE_USE_SYMM_MEM=0
-    export VLLM_USE_FLASHINFER_SAMPLER=0
-    HEADLESS=()
-    if [[ "$SLURM_PROCID" != "0" ]]; then HEADLESS=(--headless); fi
-    vllm serve '"$MODEL"' \
-      --served-model-name zai-org/GLM-5.2 \
-      --tensor-parallel-size 4 \
-      --pipeline-parallel-size 2 \
-      --nnodes 2 --node-rank "$SLURM_PROCID" --master-addr '"$HEAD_IP"' \
-      --max-model-len 131072 \
-      --max-num-seqs 16 \
-      --gpu-memory-utilization 0.90 \
-      --disable-custom-all-reduce \
-      --compilation-config '\''{"pass_config":{"fuse_allreduce_rms":false}}'\'' \
-      --tool-call-parser glm47 \
-      --reasoning-parser glm45 \
-      --enable-auto-tool-choice \
-      --enable-prompt-tokens-details \
-      --trust-remote-code \
-      --host 0.0.0.0 --port 8000 \
-      "${HEADLESS[@]}"
-  ' >"logs/glm52-2node-${SLURM_JOB_ID}.log" 2>&1 &
-export VLLM_SERVER_PID=$!
-
-tail -f "logs/glm52-2node-${SLURM_JOB_ID}.log"
+mkdir -p logs && srun --jobid="$SLURM_JOB_ID" --nodes=2 --ntasks=2 --ntasks-per-node=1 --gpus-per-task=4 --cpus-per-task=32 bash scripts/serve/glm52_2node.sh 2>&1 | tee "logs/glm52-2node-${SLURM_JOB_ID}.log"
 ```
 
-The `'\''` around the JSON is not decoration: the payload is single-quoted, so a
-bare `'` would end it. `'\''` closes, emits a literal quote, reopens.
+It reads `HEAD_IP` from the environment (step 3) and everything else from
+defaults you can override the same way: `MODEL`, `SERVED_NAME`, `PORT`, `TP`,
+`PP`, `NNODES`, `MAX_MODEL_LEN`, `MAX_NUM_SEQS`, `GPU_MEM_UTIL`, `IFACE`.
+
+The script sets the DeepGEMM `LD_LIBRARY_PATH` (D1), pins the four Slingshot NICs
+by exact name (F3), advertises each node's own fabric IP, forces plain NCCL (D4),
+re-runs the deep_gemm import check per rank, and adds `--headless` on every rank
+but 0.
 
 **`--headless` on every rank but 0 is mandatory.** Only rank 0 runs the API
 server and the EngineCore; followers run workers only. Without it, node 1 starts
@@ -124,19 +98,23 @@ its own `APIServer` + `EngineCore`, which dies at KV-cache init with
 (MEASURED, job 2765627 — it gets all the way past weight loading first, so this
 costs a full ~7 min to discover).
 
-MEASURED weight load, job 2765627: **304 s** (stage 0) / **363 s** (stage 1),
-`Model loading took` 323 s / 381 s. Far faster than the single-node 874 s — no
-offload, and `/work/nvme`.
+MEASURED, job 2765627: weight load **304 s** (stage 0) / **363 s** (stage 1),
+`Model loading took` 323 s / 381 s, `torch.compile` **90-108 s**. Far faster than
+the single-node 874 s + 1024 s — no offload, and `/work/nvme`.
 
 These log lines look like failures and are not: `shm_broadcast: No available
 shared memory broadcast block found in 60 seconds` (repeats through
-torch.compile), and NCCL INIT chatter.
+torch.compile), the `deep_gemm ... CXXABI_1.3.15` import warnings (D3), and NCCL
+INIT chatter.
 
 **Do not add** `--cpu-offload-gb`, `--kv-cache-dtype fp8`, `--speculative-config`,
 or `--enable-expert-parallel`. Each is wrong here for a specific reason (B, D2).
 
 **Do not drop** `--disable-custom-all-reduce`, `fuse_allreduce_rms:false`, or
 `VLLM_ALLREDUCE_USE_SYMM_MEM=0`. All three are required together (D4).
+
+If you need to run a variant without editing the script, override on the srun
+line, e.g. `MAX_MODEL_LEN=196608 srun ...`.
 
 ## 6. Health
 
