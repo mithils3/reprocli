@@ -67,10 +67,21 @@ export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-hsn0,hsn1,hsn2,hsn3}"
 export GLOO_SOCKET_IFNAME="${GLOO_SOCKET_IFNAME:-${IFACE}}"
 
 # Each node advertises its OWN fabric IP for vLLM's internal RPC, not HEAD_IP.
-if [ -z "${VLLM_HOST_IP:-}" ]; then
-  VLLM_HOST_IP="$(ip -o -4 addr show "${IFACE}" | awk '{split($4,a,"/"); print a[1]; exit}')"
-  export VLLM_HOST_IP
+# ALWAYS recompute: an inherited VLLM_HOST_IP (left over in the launching shell,
+# or a 127.0.0.1 copied from a single-node sbatch) names a host this node cannot
+# bind, and the engine dies with
+#   zmq.error.ZMQError: Cannot assign requested address (addr='tcp://<other>:...')
+# right after logging "mq_connect_ip=<other> (local)". Never honour the caller.
+VLLM_HOST_IP="$(ip -o -4 addr show "${IFACE}" | awk '{split($4,a,"/"); print a[1]; exit}')"
+if [ -z "${VLLM_HOST_IP}" ]; then
+  echo "FATAL: no IPv4 address on ${IFACE} at $(hostname -s). Check the fabric interface." >&2
+  exit 1
 fi
+export VLLM_HOST_IP
+
+# Same reasoning: a stale MASTER_ADDR/MASTER_PORT in the environment (the
+# single-node sbatch pins MASTER_ADDR=127.0.0.1) would fight --master-addr.
+unset MASTER_ADDR MASTER_PORT
 
 # FlashInfer's mnnvl symmetric-memory all-reduce IMAs on GH200. This env var is
 # one of three required pieces; the other two are --disable-custom-all-reduce

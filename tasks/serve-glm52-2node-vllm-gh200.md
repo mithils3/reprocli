@@ -572,6 +572,28 @@ torch.compile + 170 s warmup). Two nodes with no offload should be faster, but
 not obviously under 30 minutes on a cold Inductor cache. Hence raw `vllm serve`
 for bring-up (step 5) and the harness only afterwards (step 9).
 
+### F5. A stale `VLLM_HOST_IP` in the launching shell breaks the engine
+
+MEASURED, 2026-07-29: with `VLLM_HOST_IP` left exported in the login shell, rank
+0 logged
+
+    DP group leader: ... master_addr=172.28.81.240, mq_connect_ip=172.28.80.7 (local)
+    zmq.error.ZMQError: Cannot assign requested address (addr='tcp://172.28.80.7:38165')
+
+`master_addr` was right and `mq_connect_ip` was a different host, so the engine's
+ZMQ socket had nothing to bind. `VLLM_HOST_IP` must be **each node's own** fabric
+address, so it can never be inherited from the launcher — `scripts/serve/glm52_2node.sh`
+now recomputes it unconditionally and unsets `MASTER_ADDR`/`MASTER_PORT` for the
+same reason (`serve_gh200.sbatch` pins `MASTER_ADDR=127.0.0.1`, which would fight
+`--master-addr` if it ever leaked in).
+
+Both vars are per-node facts. Treat any inherited value as poison. If you are
+launching by hand rather than through the script:
+
+```bash
+unset VLLM_HOST_IP MASTER_ADDR MASTER_PORT
+```
+
 ### F4. `launch.py`'s all-reduce guard only fires when a compilation-config is passed
 
 `_supported_compilation_config()` force-disables `fuse_allreduce_rms` (D4), but
