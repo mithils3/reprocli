@@ -238,6 +238,25 @@ export SLURM_EXPORT_ENV=ALL
 # exact bundle, audit it, then PATCH the verdict onto the same repro_runs row.
 STATUS_FILE="${SWEEP_DIR}/status.tsv"
 
+# The brain can be reachable at sweep start and gone later (node loss, OOM kill,
+# a requeue of the serve step). A paper dispatched against a dead address dies in
+# seconds and every path below returns 0, so it would be filed as a model failure
+# and never retried. Probe /models -- the exact call the worker makes -- and wait
+# rather than spend the paper. reprocli_serve publishes base_url without a /v1
+# suffix and the glm52 scripts publish one with it, so normalize before probing.
+brain_ready() {
+  curl -fsS --max-time 10 "${BASE_URL%/v1}/v1/models" >/dev/null 2>&1
+}
+
+wait_for_brain() {
+  local tries="${1:-60}"
+  for _ in $(seq 1 "${tries}"); do
+    brain_ready && return 0
+    sleep 10
+  done
+  return 1
+}
+
 run_one() {
   local pid="$1"
   local log="${SWEEP_DIR}/repro_${pid}.log"
@@ -247,6 +266,12 @@ run_one() {
   if [[ "${RESUME}" == "1" && -s "${verdicts}" ]]; then
     printf '%s\t%s\t%s\t%s\t%s\n' "${pid}" "-" "resume-skip" "-" "-" >> "${STATUS_FILE}"
     echo "=== [$(date '+%F %T')] ${pid} already graded -> skip (${verdicts})"
+    return 0
+  fi
+
+  if ! wait_for_brain 60; then
+    printf '%s\t%s\t%s\t%s\t%s\n' "${pid}" "-" "brain-down" "-" "-" >> "${STATUS_FILE}"
+    echo "!!! [$(date '+%F %T')] ${pid} NOT dispatched: brain unreachable at ${BASE_URL}"
     return 0
   fi
 
@@ -349,6 +374,12 @@ repro_ok=$(awk -F'\t' '$2=="0"' "${STATUS_FILE}" | wc -l)
 audit_ok=$(awk -F'\t' '$3=="0"' "${STATUS_FILE}" | wc -l)
 upload_ok=$(awk -F'\t' '$4=="ok"' "${STATUS_FILE}" | wc -l)
 total=$(wc -l < "${STATUS_FILE}")
+harness_fail=$(awk -F'\t' '$3=="no-bundle" || $3=="brain-down"' "${STATUS_FILE}" | wc -l)
+if (( harness_fail > 0 )); then
+  echo "WARNING: ${harness_fail} paper(s) failed WITHOUT producing a bundle -- harness casualties,"
+  echo "         not model failures. They wrote no verdict, so RESUME=1 re-picks them:"
+  awk -F'\t' '$3=="no-bundle" || $3=="brain-down" {print "           " $1 "  (" $3 ")"}' "${STATUS_FILE}"
+fi
 echo "reproduced ok: ${repro_ok}/${total}   audited ok: ${audit_ok}/${total}   uploaded ok: ${upload_ok}/${total}   (per-paper rc in ${STATUS_FILE})"
 sort "${STATUS_FILE}"
 
