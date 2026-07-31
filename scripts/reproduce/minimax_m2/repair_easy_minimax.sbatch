@@ -177,6 +177,8 @@ else
 fi
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
+# Never inherit an endpoint from a requeue of this same job id.
+rm -f "${ENDPOINT_FILE}"
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
@@ -199,8 +201,21 @@ for _ in $(seq 1 720); do
 done
 [[ -f "${ENDPOINT_FILE}" ]] || { echo "timed out waiting for ${ENDPOINT_FILE}" >&2; exit 1; }
 
-BASE_URL="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["base_url"])' "${ENDPOINT_FILE}")"
-curl -fsS "${BASE_URL}/health" >/dev/null && echo "brain up at ${BASE_URL}"
+# A resume points SWEEP_DIR at a predecessor's directory. Refuse an endpoint this
+# job did not publish: attaching to a dead node's address burns every paper the
+# dispatch loop reaches before the real brain overwrites the file.
+BASE_URL="$(python3 - "${ENDPOINT_FILE}" "${OUTER_JOB}" <<'PY'
+import json, sys
+
+payload = json.load(open(sys.argv[1]))
+owner = str(payload.get("job_id", ""))
+if owner != sys.argv[2]:
+    raise SystemExit(f"endpoint {sys.argv[1]} was published by job {owner!r}, not {sys.argv[2]!r}")
+print(payload["base_url"])
+PY
+)" || exit 1
+curl -fsS "${BASE_URL}/health" >/dev/null || { echo "brain unreachable at ${BASE_URL}" >&2; exit 1; }
+echo "brain up at ${BASE_URL}"
 
 BEACON_PID=""
 if [[ -n "${SUPABASE_SERVICE_KEY:-}${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then

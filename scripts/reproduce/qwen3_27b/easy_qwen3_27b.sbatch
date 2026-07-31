@@ -84,7 +84,7 @@ OUTER_JOB="${SLURM_JOB_ID:-local}"
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
 SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}}"
-ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
+ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.${OUTER_JOB}.json}"
 IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
@@ -143,6 +143,8 @@ nvidia-smi topo -m || true
 # TP=1 on one GH200; all Qwen3.6 serve flags (qwen3_coder/qwen3 parsers, fp8 KV
 # cache, mm-encoder-tp-mode, max-num-seqs, native 262K context) come from the
 # qwen3 serve profile.
+# Never inherit an endpoint from a requeue of this same job id.
+rm -f "${ENDPOINT_FILE}"
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
@@ -161,8 +163,21 @@ for _ in $(seq 1 720); do
 done
 [[ -f "${ENDPOINT_FILE}" ]] || { echo "timed out waiting for ${ENDPOINT_FILE}" >&2; exit 1; }
 
-BASE_URL="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["base_url"])' "${ENDPOINT_FILE}")"
-curl -fsS "${BASE_URL}/health" >/dev/null && echo "brain up at ${BASE_URL}"
+# A resume points SWEEP_DIR at a predecessor's directory. Refuse an endpoint this
+# job did not publish: attaching to a dead node's address burns every paper the
+# dispatch loop reaches before the real brain overwrites the file.
+BASE_URL="$(python3 - "${ENDPOINT_FILE}" "${OUTER_JOB}" <<'PY'
+import json, sys
+
+payload = json.load(open(sys.argv[1]))
+owner = str(payload.get("job_id", ""))
+if owner != sys.argv[2]:
+    raise SystemExit(f"endpoint {sys.argv[1]} was published by job {owner!r}, not {sys.argv[2]!r}")
+print(payload["base_url"])
+PY
+)" || exit 1
+curl -fsS "${BASE_URL}/health" >/dev/null || { echo "brain unreachable at ${BASE_URL}" >&2; exit 1; }
+echo "brain up at ${BASE_URL}"
 
 # Host telemetry (optional; same opt-in as the agent-logs upload): one master
 # beacon samples this node + tails this job's .out into host_status.log_tail.

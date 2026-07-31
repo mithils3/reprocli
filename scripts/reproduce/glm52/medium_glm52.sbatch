@@ -72,7 +72,7 @@ OUTER_JOB="${SLURM_JOB_ID:-local}"
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
 SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/medium_sweeps/${OUTER_JOB}}"
-ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.json}"
+ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.${OUTER_JOB}.json}"
 IDS_FILE="${SWEEP_DIR}/medium_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
