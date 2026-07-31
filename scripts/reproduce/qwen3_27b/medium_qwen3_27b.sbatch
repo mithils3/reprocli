@@ -8,9 +8,12 @@
 #
 # Medium-tier sibling of easy_qwen3_27b.sbatch (see that header for the serve
 # rationale: dense 27B FP8 fits ONE GH200, TP=1, all serve flags from the qwen3
-# profile). Defaults to the eval split's 33 Medium papers, MAX_PARALLEL=6 (the
-# single-GPU brain is seq-capped, so don't raise this casually), and RESUME=1 so
-# re-submits after the 48h cap skip papers that already wrote a verdict.
+# profile). Defaults to the eval split's 33 Medium papers, MAX_PARALLEL=10, and
+# RESUME=1 so re-submits after the 48h cap skip papers that already wrote a
+# verdict. The brain is seq-capped at max_num_seqs=32 and a paper's reproduce and
+# audit are sequential within run_one, so 10 papers is 10 concurrent streams and
+# stays well inside that; the binding constraint at this width is ghx4 queue
+# pressure from 10 concurrent JIT allocations, not the brain.
 # Worst-case compute budget is ~1200 H100-h (18x8 + 9x32 + 4x96 + 2x192); actual
 # spend is typically well under the per-paper band caps since the agent stops
 # when it converges.
@@ -49,7 +52,7 @@ LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.

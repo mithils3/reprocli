@@ -116,9 +116,9 @@ def qwen3_profile() -> Profile:
         # Qwen3.6 is a gated-delta/Mamba hybrid: a per-sequence recurrent state
         # cache is allocated for every concurrent seq. At 512 that state (plus the
         # 1->512 cudagraph capture range) OOM-kills the engine during profiling on
-        # a single GH200 (job 2634994). The sweep runs parallel=6 + one audit
-        # stream, so 32 is ample headroom while collapsing the mamba-state and
-        # capture footprint ~16x.
+        # a single GH200 (job 2634994). The Medium sweep runs parallel=10 + one
+        # audit stream, so 32 is ample headroom while collapsing the mamba-state
+        # and capture footprint ~16x.
         max_num_seqs=32,
     )
 
