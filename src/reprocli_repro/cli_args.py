@@ -212,15 +212,29 @@ def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
         parser.error("--budget-h100-hours must be >= 0")
 
 
+def _env_float(name: str) -> float | None:
+    """Read an optional float override from the environment; unset/blank -> None."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be a number, got {raw!r}") from exc
+
+
 def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
     args.prompt_file = DEFAULT_PROMPT_FILE
     # Sampling stays unset (the request builder omits None fields, deferring to the
-    # served model's generation_config).
+    # served model's generation_config). REPROCLI_TOP_P is the one escape hatch: a
+    # brain whose card recommends a different top_p for AGENTIC use than its
+    # generation_config ships (DeepSeek-V4-Flash-0731: 0.95 agentic vs 1.0 in the
+    # checkpoint) needs the agentic value, and this loop is that agentic case.
     args.temperature = None
-    args.top_p = None
+    args.top_p = _env_float("REPROCLI_TOP_P")
     args.top_k = None
     args.min_p = None
     args.max_tokens = MAX_TOKENS

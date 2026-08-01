@@ -17,9 +17,11 @@
 #     weights from ~149 GiB to ~155 GiB. DSpark stays OFF here: turning it on wants
 #     --speculative-config '{"method":"dspark","num_speculative_tokens":7}' and a
 #     vLLM build that registers the method. The weights load either way.
-#     (Ignore the Hub's "304B parameters" for this repo. 0731 stores the fp4 experts
-#     unpacked where the preview packed them, so the count doubles while the bytes
-#     move 148.6 -> 155.4 GiB. Bytes are what has to fit.)
+#     (The Hub's "158B" vs "304B parameters" for the two repos is a counting basis,
+#     not a size change: the preview counts fp4 experts as the bytes they are packed
+#     into (141.7B x 2 = the card's 284B logical), 0731 counts them logically, and the
+#     difference is exactly 12.88B = the DSpark module. Bytes are what has to fit, and
+#     those move 148.6 -> 155.4 GiB.)
 #   - TP=2 puts ~78 GiB of weights on each 96 GB GPU, up from the preview's ~74 GiB,
 #     so GPU KV is ~3 GiB/GPU thinner and the 100 GiB Grace CPU KV tier below carries
 #     more of the load. If vLLM refuses to start for want of KV blocks, rerun on the
@@ -36,9 +38,11 @@
 #     the sweep MUST run Max or the capability axis is confounded. Think Max also
 #     needs max-model-len >= 393216 (the profile default) and DeepSeek's recommended
 #     temperature 1.0 / top_p 1.0 (audit sends them explicitly; the repro agent
-#     leaves sampling unset and defers to the checkpoint's generation_config, which
-#     0731 still ships as 1.0 / 1.0). 0731's card additionally recommends top_p 0.95
-#     for agentic scenarios; we stay at 1.0 so the rung matches the preview sweeps.
+#     reads it from REPROCLI_TOP_P). 0731's card recommends top_p 0.95 for agentic
+#     scenarios and 1.0 otherwise, and both loops here are agentic, so this sweep runs
+#     0.95 on BOTH. That is a deliberate break from the preview sweeps, which ran the
+#     checkpoint's 1.0 because the preview card recommended 1.0 flat; sampling is a
+#     confound when comparing the two, on top of the effort-ladder re-cut below.
 #     0731 also re-cut the effort ladder: its encoder maps "high" to the prompt the
 #     preview used for "max" and gives "max" a strictly stronger one, so
 #     reasoning_effort "max" remains the top rung and runs more verbose than before.
@@ -86,6 +90,11 @@ AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration ro
 MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-393216}" # Think Max floor; matches the deepseek_v4 profile default
+# DeepSeek's agentic-scenario recommendation for 0731 (the card's other value, 1.0, is
+# for non-agentic use). Applied to the repro agent via REPROCLI_TOP_P and to the
+# auditor via --top-p, so one knob moves both loops.
+TOP_P="${TOP_P:-0.95}"
+export REPROCLI_TOP_P="${TOP_P}"
 
 # Pin Think Max on every request (repro loop + auditor tool loop). The client's
 # apply_chat_template_kwargs reads this and never clobbers a per-request override.
@@ -363,8 +372,8 @@ run_one() {
   printf '%s\n' "${pid}" > "${ids_file}"
 
   # (4) Audit exactly this bundle and link the live audit to the graded run.
-  # Explicit temperature 1.0 / top_p 1.0 = DeepSeek's Think Max recommendation;
-  # the effort itself rides REPROCLI_CHAT_TEMPLATE_KWARGS.
+  # Explicit temperature 1.0 / top_p ${TOP_P} = DeepSeek's recommendation for an
+  # agentic loop; the effort itself rides REPROCLI_CHAT_TEMPLATE_KWARGS.
   REPROCLI_GRADED_RUN_ID="${rid}" \
   python3 src/run_arxiv_prompt_vllm.py \
     --mode audit \
@@ -376,7 +385,7 @@ run_one() {
     --paper-ids-file "${ids_file}" \
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --temperature 1.0 \
-    --top-p 1.0 \
+    --top-p "${TOP_P}" \
     --max-input-tokens 128000 \
     --max-tokens 32768 \
     --max-model-len "${MAX_MODEL_LEN}" \

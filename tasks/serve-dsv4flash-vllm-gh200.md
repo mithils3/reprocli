@@ -14,9 +14,11 @@ worth knowing, none of them re-verified on hardware yet:
 
 - Weights grow 148.6 -> 155.4 GiB, so TP=2 puts ~78 GiB on each 96 GB GPU
   instead of ~74 and GPU KV gets that much thinner. If startup fails for want of
-  KV blocks, go TP=4 on the full node. The Hub reports "304B parameters" for
-  0731 because it stores the fp4 experts unpacked where the preview packed them;
-  the byte counts above are the real footprint.
+  KV blocks, go TP=4 on the full node. The Hub's "158B" (preview) vs "304B"
+  (0731) is a counting basis, not a size change: the preview counts fp4 experts
+  as the bytes they pack into (141.7B x 2 = the card's 284B logical), 0731 counts
+  them logically, and the gap is exactly 12.88B = the DSpark module. Bytes are
+  the real footprint.
 - 0731 ships a DSpark speculative-decoding module in the same checkpoint,
   enabled with `--speculative-config '{"method":"dspark","num_speculative_tokens":7}'`
   on a vLLM build that registers the method. We leave it off.
@@ -24,7 +26,10 @@ worth knowing, none of them re-verified on hardware yet:
   `high` is the prompt the preview attached to `max`, and `max` is a new,
   stronger one. `reasoning_effort: "max"` is still the top rung, now more verbose.
 - The card adds a `top_p = 0.95` recommendation for agentic scenarios (1.0
-  otherwise); the sweep stays at 1.0 to keep the rung comparable with earlier runs.
+  otherwise). Both sweep loops are agentic, so both run 0.95: the auditor via
+  `--top-p`, the repro agent via `REPROCLI_TOP_P` (which is otherwise unset, so
+  every other brain still defers to its `generation_config`). Preview sweeps ran
+  1.0, so sampling is a confound when comparing across the swap.
 
 ## Environment (both exports required, every shell)
 
