@@ -20,7 +20,7 @@ KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
 QWEN3_MODEL = "Qwen/Qwen3.6-27B-FP8"
-DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
+DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
 
 
 @dataclass
@@ -125,9 +125,12 @@ def qwen3_profile() -> Profile:
 
 def deepseek_v4_profile() -> Profile:
     # DeepSeek-V4-Flash: a 158B MoE (~13B active) with the Lightning Indexer
-    # (sparse attention) served natively INT8/FP8 (~149 GiB). On DeltaAI it runs
-    # TP=2 on ONE ghx4 node's two-GPU share (weights ~74 GiB/GPU, thin GPU KV),
-    # verified 2026-07-16 (tasks/serve-dsv4flash-vllm-gh200.md). Two flags are
+    # (sparse attention) served natively INT8/FP8. On DeltaAI it runs TP=2 on ONE
+    # ghx4 node's two-GPU share with thin GPU KV: ~149 GiB of weights (~74 GiB/GPU)
+    # for the preview checkpoint, ~155 GiB (~78 GiB/GPU) for the -0731 release,
+    # which carries a DSpark speculative-decoding module. Both share this profile
+    # (is_deepseek_v4 matches either), verified 2026-07-16 on the preview
+    # (tasks/serve-dsv4flash-vllm-gh200.md). Two flags are
     # REQUIRED, not tunable:
     #   - kv_cache_dtype fp8: V4's fp8_ds_mla KV layout asserts on anything else.
     #   - the CPU KV-offload tier and the DeepGEMM LD_LIBRARY_PATH +

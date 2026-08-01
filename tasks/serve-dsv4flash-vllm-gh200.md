@@ -6,6 +6,26 @@ natively INT8/FP8, 149 GiB). This IS the lossless config: the unsloth GGUFs
 re-quantize this same checkpoint, so there is no reason to use them with vLLM
 (whose GGUF loader rejects deepseek* architectures anyway, vllm#13665).
 
+**2026-08-01: sweeps now serve `deepseek-ai/DeepSeek-V4-Flash-0731`**, the
+official release that supersedes this preview checkpoint. Everything below still
+applies as written (identical `config.json` apart from the DSpark fields,
+identical tokenizer, same required exports and flags); swap the model id. Deltas
+worth knowing, none of them re-verified on hardware yet:
+
+- Weights grow 148.6 -> 155.4 GiB, so TP=2 puts ~78 GiB on each 96 GB GPU
+  instead of ~74 and GPU KV gets that much thinner. If startup fails for want of
+  KV blocks, go TP=4 on the full node. The Hub reports "304B parameters" for
+  0731 because it stores the fp4 experts unpacked where the preview packed them;
+  the byte counts above are the real footprint.
+- 0731 ships a DSpark speculative-decoding module in the same checkpoint,
+  enabled with `--speculative-config '{"method":"dspark","num_speculative_tokens":7}'`
+  on a vLLM build that registers the method. We leave it off.
+- The reasoning-effort ladder was re-cut. In `encoding/encoding_dsv4.py`, 0731's
+  `high` is the prompt the preview attached to `max`, and `max` is a new,
+  stronger one. `reasoning_effort: "max"` is still the top rung, now more verbose.
+- The card adds a `top_p = 0.95` recommendation for agentic scenarios (1.0
+  otherwise); the sweep stays at 1.0 to keep the rung comparable with earlier runs.
+
 ## Environment (both exports required, every shell)
 
 ```bash

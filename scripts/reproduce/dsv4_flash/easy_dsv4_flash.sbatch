@@ -1,5 +1,5 @@
 #!/bin/bash
-# Serve DeepSeek-V4-Flash on 2xGH200 (one ghx4 node's two-GPU share, TP=2), then
+# Serve DeepSeek-V4-Flash-0731 on 2xGH200 (one ghx4 node's two-GPU share, TP=2), then
 # run every tier-Easy paper through the paired S6->S7 flow from
 # scripts/reproduce/repro_audit_one.sh: reproduce with a pinned run id, audit
 # exactly that bundle, and optionally upload the verdict.
@@ -7,11 +7,26 @@
 #   sbatch scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch
 #
 # 2xGH200 sibling of easy_minimax_m2.sbatch. Structural differences, all from
-# tasks/serve-dsv4flash-vllm-gh200.md (verified 2026-07-16, vLLM 0.25.1):
-#   - brain: deepseek-ai/DeepSeek-V4-Flash, 158B MoE ~13B active, native INT8/FP8
-#     (~149 GiB), TP=2 on a two-GPU ghx4 share. Serve profile (deepseek_v4) carries
-#     kv_cache_dtype fp8 (REQUIRED: V4's fp8_ds_mla KV layout asserts otherwise),
-#     the deepseek_v4 parsers, and max_model_len 393216.
+# tasks/serve-dsv4flash-vllm-gh200.md (verified 2026-07-16 on the PREVIEW
+# checkpoint, vLLM 0.25.1):
+#   - brain: deepseek-ai/DeepSeek-V4-Flash-0731, the official release that
+#     supersedes the preview. Same architecture (model_type deepseek_v4, 43 layers,
+#     256 experts / 6 active, native INT8/FP8), same required flags, same tokenizer,
+#     so the serve profile and both parsers carry over untouched. It ships a DSpark
+#     speculative-decoding module inside the checkpoint, which is what grows the
+#     weights from ~149 GiB to ~155 GiB. DSpark stays OFF here: turning it on wants
+#     --speculative-config '{"method":"dspark","num_speculative_tokens":7}' and a
+#     vLLM build that registers the method. The weights load either way.
+#     (Ignore the Hub's "304B parameters" for this repo. 0731 stores the fp4 experts
+#     unpacked where the preview packed them, so the count doubles while the bytes
+#     move 148.6 -> 155.4 GiB. Bytes are what has to fit.)
+#   - TP=2 puts ~78 GiB of weights on each 96 GB GPU, up from the preview's ~74 GiB,
+#     so GPU KV is ~3 GiB/GPU thinner and the 100 GiB Grace CPU KV tier below carries
+#     more of the load. If vLLM refuses to start for want of KV blocks, rerun on the
+#     whole node: sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
+#   - Serve profile (deepseek_v4) carries kv_cache_dtype fp8 (REQUIRED: V4's
+#     fp8_ds_mla KV layout asserts otherwise), the deepseek_v4 parsers, and
+#     max_model_len 393216.
 #   - two REQUIRED launch-env exports live below, not in the profile: the DeepGEMM
 #     LD_LIBRARY_PATH (V4's Lightning Indexer dies without libnvrtc.so.13) and
 #     VLLM_USE_FLASHINFER_SAMPLER=0 (the FlashInfer sampler kernel crashes on GH200).
@@ -21,7 +36,12 @@
 #     the sweep MUST run Max or the capability axis is confounded. Think Max also
 #     needs max-model-len >= 393216 (the profile default) and DeepSeek's recommended
 #     temperature 1.0 / top_p 1.0 (audit sends them explicitly; the repro agent
-#     leaves sampling unset and defers to the checkpoint's generation_config).
+#     leaves sampling unset and defers to the checkpoint's generation_config, which
+#     0731 still ships as 1.0 / 1.0). 0731's card additionally recommends top_p 0.95
+#     for agentic scenarios; we stay at 1.0 so the rung matches the preview sweeps.
+#     0731 also re-cut the effort ladder: its encoder maps "high" to the prompt the
+#     preview used for "max" and gives "max" a strictly stronger one, so
+#     reasoning_effort "max" remains the top rung and runs more verbose than before.
 #   - Max Effort measured ~2.5x verbosity on the AA index, so wall-clock and round
 #     budgets burn faster; RESUME=1 + the 48h cap let a re-submit finish the tail.
 # Defaults to the eval split's Easy papers, MAX_PARALLEL=6, RESUME=1.
@@ -47,8 +67,9 @@ set -euo pipefail
 # --- Config (override from the environment) ---------------------------------
 REPROCLI="${REPROCLI:-/u/msalunkhe/reprocli}"
 VENV="${VENV:-/u/msalunkhe/reprocli/.venv}"
-MODEL="${MODEL:-deepseek-ai/DeepSeek-V4-Flash}"   # native INT8/FP8, fits 2xGH200 at TP=2
-SERVED_NAME="${SERVED_NAME:-deepseek-ai/DeepSeek-V4-Flash}"
+MODEL="${MODEL:-deepseek-ai/DeepSeek-V4-Flash-0731}"   # native INT8/FP8, ~155 GiB, fits 2xGH200 at TP=2
+SERVED_NAME="${SERVED_NAME:-deepseek-ai/DeepSeek-V4-Flash-0731}"
+TP="${TP:-2}"                            # GPUs for the brain; TP=4 needs sbatch --gpus-per-node=4
 AUDIT_MODEL="${AUDIT_MODEL:-${SERVED_NAME}}"  # grader; this job serves one brain, so it defaults to it
 # Parser escape hatch: the deepseek_v4 profile defaults follow Model Selection
 # Notes ("parser deepseek_v4"). If a given vLLM build names the V4 tool parser
@@ -164,13 +185,14 @@ else
 fi
 echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  budget=${BUDGET_LABEL}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
 echo "runs_dir=${RUNS_DIR}  resume=${RESUME}  audit_model=${AUDIT_MODEL}  audit_rounds=${AUDIT_TOOL_ROUNDS}"
+echo "brain=${MODEL}  tp=${TP}"
 echo "parsers: tool=${TOOL_PARSER}  reasoning=${REASONING_PARSER}  max_model_len=${MAX_MODEL_LEN}"
 echo "think_max_kwargs=${REPROCLI_CHAT_TEMPLATE_KWARGS}"
 echo "claims=${CLAIMS}"
 nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
-# TP=2 on two GH200 (deepseek_v4 profile: fp8 KV, deepseek_v4 parsers,
+# TP=${TP} on the allocated GH200s (deepseek_v4 profile: fp8 KV, deepseek_v4 parsers,
 # max_model_len 393216). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
 # (native OffloadingConnector, total across TP ranks) so multi-agent transcripts
 # don't thrash the thin GPU KV. Parsers are passed explicitly so TOOL_PARSER /
@@ -181,7 +203,7 @@ python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --tensor-parallel-size 2 \
+  --tensor-parallel-size "${TP}" \
   --max-model-len "${MAX_MODEL_LEN}" \
   --tool-call-parser "${TOOL_PARSER}" \
   --reasoning-parser "${REASONING_PARSER}" \
