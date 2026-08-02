@@ -173,6 +173,23 @@ def build_srun(
     ]
 
 
+def _decode(blob: bytes | str | None) -> str:
+    """Text of a captured stream, whether the caller got str or raw bytes.
+
+    ``subprocess.run(..., text=True)`` only decodes on the *normal* return path: the
+    output it attaches to a raised ``TimeoutExpired`` is still ``bytes``. Concatenating
+    that onto a str raises ``TypeError: can't concat str to bytes``, which is exactly
+    how a queue-wait timeout used to take down the whole ``run_gpu`` call — the agent
+    got a bare type error instead of "salloc timed out", so it could not tell a
+    starved queue from a broken command and blind-retried the step.
+    """
+    if blob is None:
+        return ""
+    if isinstance(blob, str):
+        return blob
+    return blob.decode("utf-8", errors="replace")
+
+
 def acquire_session(
     cluster: Cluster,
     *,
@@ -186,18 +203,25 @@ def acquire_session(
     try:
         proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
+        # Keep whatever salloc printed before we gave up: the "Pending job allocation
+        # <id>" line and the QOS/reservation reason are the only signal the agent gets
+        # about *why* the queue never granted a node.
+        printed = "\n".join(
+            part for part in (_decode(exc.stdout), _decode(exc.stderr)) if part.strip()
+        )
+        waited = f" after {exc.timeout:.0f}s" if exc.timeout else ""
         return SessionHandle(
             ok=False,
             jobid=None,
-            stderr=(exc.stderr or "") + "\n[salloc timed out waiting for the allocation]",
+            stderr=f"{printed}\n[salloc timed out{waited} waiting for the allocation]".lstrip("\n"),
             command=argv,
         )
-    found = _JOBID_RE.findall((proc.stdout or "") + "\n" + (proc.stderr or ""))
+    found = _JOBID_RE.findall(_decode(proc.stdout) + "\n" + _decode(proc.stderr))
     jobid = found[-1] if found else None
     return SessionHandle(
         ok=jobid is not None and proc.returncode == 0,
         jobid=jobid,
-        stderr=proc.stderr or "",
+        stderr=_decode(proc.stderr),
         command=argv,
     )
 

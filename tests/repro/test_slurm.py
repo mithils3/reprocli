@@ -115,6 +115,52 @@ class AcquireSessionTests(unittest.TestCase):
         self.assertFalse(handle.ok)
         self.assertIsNone(handle.jobid)
 
+    def test_queue_timeout_with_byte_output_reports_the_timeout(self):
+        """A starved queue must surface as "salloc timed out", not TypeError.
+
+        ``subprocess.run(text=True)`` decodes only on the normal return path — the
+        output hung on a raised ``TimeoutExpired`` is still bytes. Concatenating that
+        onto a str used to raise ``TypeError: can't concat str to bytes``, which
+        escaped ``run_gpu`` entirely: 45 calls across 14 runs of the Qwen3.6-27B
+        medium sweep died this way, each burning its full ``minutes + 4h`` queue
+        grace and returning no reason at all.
+        """
+        timed_out = subprocess.TimeoutExpired(
+            cmd=["salloc"], timeout=21600.0,
+            output=b"salloc: Pending job allocation 2759663\n",
+            stderr=b"salloc: job queued and waiting for resources\n",
+        )
+        with mock.patch("reprocli_repro.slurm.subprocess.run", side_effect=timed_out):
+            handle = acquire_session(
+                resolve_cluster("deltaai"), gpus=1, minutes=120, timeout=21600.0
+            )
+        self.assertFalse(handle.ok)
+        self.assertIsNone(handle.jobid)
+        self.assertIn("salloc timed out", handle.stderr)
+        self.assertIn("21600s", handle.stderr)
+        # The queue's own explanation survives, so the agent can tell a starved
+        # queue from a broken command instead of blind-retrying the step.
+        self.assertIn("job queued and waiting for resources", handle.stderr)
+        self.assertIn("Pending job allocation 2759663", handle.stderr)
+
+    def test_queue_timeout_accepts_str_output_too(self):
+        """Same path when the platform hands back already-decoded text."""
+        timed_out = subprocess.TimeoutExpired(
+            cmd=["salloc"], timeout=300.0, output="", stderr="salloc: still pending\n"
+        )
+        with mock.patch("reprocli_repro.slurm.subprocess.run", side_effect=timed_out):
+            handle = acquire_session(resolve_cluster("deltaai"), gpus=1, minutes=5, timeout=300.0)
+        self.assertFalse(handle.ok)
+        self.assertIn("salloc timed out", handle.stderr)
+        self.assertIn("still pending", handle.stderr)
+
+    def test_queue_timeout_with_no_output_is_still_readable(self):
+        timed_out = subprocess.TimeoutExpired(cmd=["salloc"], timeout=60.0)
+        with mock.patch("reprocli_repro.slurm.subprocess.run", side_effect=timed_out):
+            handle = acquire_session(resolve_cluster("deltaai"), gpus=1, minutes=5, timeout=60.0)
+        self.assertFalse(handle.ok)
+        self.assertTrue(handle.stderr.startswith("[salloc timed out"), handle.stderr)
+
 
 class RunInSessionTests(unittest.TestCase):
     """The srun argv is faked to plain bash so the *streaming* path runs for real."""
