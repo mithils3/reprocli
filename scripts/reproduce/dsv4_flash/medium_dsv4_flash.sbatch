@@ -1,60 +1,32 @@
 #!/bin/bash
 # Serve DeepSeek-V4-Flash-0731 on 2xGH200 (one ghx4 node's two-GPU share, TP=2), then
-# run every tier-Easy paper through the paired S6->S7 flow from
+# run every tier-Medium paper through the paired S6->S7 flow from
 # scripts/reproduce/repro_audit_one.sh: reproduce with a pinned run id, audit
 # exactly that bundle, and optionally upload the verdict.
 #
-#   sbatch scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch
+#   sbatch scripts/reproduce/dsv4_flash/medium_dsv4_flash.sbatch
 #
-# 2xGH200 sibling of easy_minimax_m2.sbatch. Structural differences, all from
-# tasks/serve-dsv4flash-vllm-gh200.md (verified 2026-07-16 on the PREVIEW
-# checkpoint, vLLM 0.25.1):
-#   - brain: deepseek-ai/DeepSeek-V4-Flash-0731, the official release that
-#     supersedes the preview. Same architecture (model_type deepseek_v4, 43 layers,
-#     256 experts / 6 active, native INT8/FP8), same required flags, same tokenizer,
-#     so the serve profile and both parsers carry over untouched. It ships a DSpark
-#     speculative-decoding module inside the checkpoint, which is what grows the
-#     weights from ~149 GiB to ~155 GiB. DSpark stays OFF here: turning it on wants
-#     --speculative-config '{"method":"dspark","num_speculative_tokens":7}' and a
-#     vLLM build that registers the method. The weights load either way.
-#     (The Hub's "158B" vs "304B parameters" for the two repos is a counting basis,
-#     not a size change: the preview counts fp4 experts as the bytes they are packed
-#     into (141.7B x 2 = the card's 284B logical), 0731 counts them logically, and the
-#     difference is exactly 12.88B = the DSpark module. Bytes are what has to fit, and
-#     those move 148.6 -> 155.4 GiB.)
-#   - TP=2 puts ~78 GiB of weights on each 96 GB GPU, up from the preview's ~74 GiB,
-#     so GPU KV is ~3 GiB/GPU thinner and the 100 GiB Grace CPU KV tier below carries
-#     more of the load. If vLLM refuses to start for want of KV blocks, rerun on the
-#     whole node: sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
-#   - Serve profile (deepseek_v4) carries kv_cache_dtype fp8 (REQUIRED: V4's
-#     fp8_ds_mla KV layout asserts otherwise), the deepseek_v4 parsers, and
-#     max_model_len 393216.
-#   - two REQUIRED launch-env exports live below, not in the profile: the DeepGEMM
-#     LD_LIBRARY_PATH (V4's Lightning Indexer dies without libnvrtc.so.13) and
-#     VLLM_USE_FLASHINFER_SAMPLER=0 (the FlashInfer sampler kernel crashes on GH200).
-#   - Think Max reasoning is pinned via REPROCLI_CHAT_TEMPLATE_KWARGS (the client's
-#     apply_chat_template_kwargs rides it onto every request). AA Intelligence Index
-#     40 = Max Effort is the rung that separates V4-Flash from Qwen3.6-27B (High=37);
-#     the sweep MUST run Max or the capability axis is confounded. Think Max also
-#     needs max-model-len >= 393216 (the profile default) and DeepSeek's recommended
-#     temperature 1.0 / top_p 1.0 (audit sends them explicitly; the repro agent
-#     reads it from REPROCLI_TOP_P). 0731's card recommends top_p 0.95 for agentic
-#     scenarios and 1.0 otherwise, and both loops here are agentic, so this sweep runs
-#     0.95 on BOTH. That is a deliberate break from the preview sweeps, which ran the
-#     checkpoint's 1.0 because the preview card recommended 1.0 flat; sampling is a
-#     confound when comparing the two, on top of the effort-ladder re-cut below.
-#     0731 also re-cut the effort ladder: its encoder maps "high" to the prompt the
-#     preview used for "max" and gives "max" a strictly stronger one, so
-#     reasoning_effort "max" remains the top rung and runs more verbose than before.
-#   - Max Effort measured ~2.5x verbosity on the AA index, so wall-clock and round
-#     budgets burn faster; RESUME=1 + the 48h cap let a re-submit finish the tail.
-# Defaults to the eval split's Easy papers, MAX_PARALLEL=10, RESUME=1. The
+# Medium-tier sibling of easy_dsv4_flash.sbatch (see that header for the full serve
+# rationale: DeepSeek-V4-Flash-0731 on 2xGH200 at TP=2, ~155 GiB of weights, the
+# REQUIRED kv_cache_dtype fp8 + DeepGEMM LD_LIBRARY_PATH +
+# VLLM_USE_FLASHINFER_SAMPLER=0, Think Max pinned via REPROCLI_CHAT_TEMPLATE_KWARGS,
+# and top_p 0.95 on both loops because both are agentic). If vLLM refuses to start
+# for want of KV blocks, rerun on the whole node:
+# sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
+#
+# Defaults to the eval split's 32 Medium papers, MAX_PARALLEL=10, and RESUME=1 so
+# re-submits after the 48h cap skip papers that already wrote a verdict. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
 # per-sequence KV small even at max_model_len 393216, so 10 papers plus one audit
 # stream sit far inside the brain; what binds at this width is ghx4 queue pressure
 # from 10 concurrent JIT allocations, not the brain.
+# Worst-case compute budget is ~920 H100-h (15x8 + 13x32 + 4x96); actual spend is
+# typically well under the per-paper band caps since the agent stops when it
+# converges. Max Effort measured ~2.5x verbosity on the AA index, so wall clock
+# burns faster than the round budget suggests -- expect a re-submit to finish the
+# tail.
 #
-#SBATCH -J repro_easy_dsv4
+#SBATCH -J repro_medium_dsv4
 #SBATCH -A betw-dtai-gh
 #SBATCH -p ghx4
 #SBATCH --nodes=1
@@ -64,8 +36,8 @@
 #SBATCH --gpu-bind=none
 #SBATCH --mem=220G
 #SBATCH --time=48:00:00
-#SBATCH -o slurm-repro-easy-dsv4-%j.out
-#SBATCH -e slurm-repro-easy-dsv4-%j.err
+#SBATCH -o slurm-repro-medium-dsv4-%j.out
+#SBATCH -e slurm-repro-medium-dsv4-%j.err
 #SBATCH --export=ALL
 #SBATCH --mail-user=mithils3@illinois.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -86,7 +58,7 @@ TOOL_PARSER="${TOOL_PARSER:-deepseek_v4}"
 REASONING_PARSER="${REASONING_PARSER:-deepseek_v4}"
 PORT="${PORT:-8000}"
 SPLIT="${SPLIT:-eval}"                    # eval -> HF 'test' (the frozen 100-paper benchmark)
-TIER="${TIER:-Easy}"                      # only reproduce+grade rows of this tier
+TIER="${TIER:-Medium}"                    # only reproduce+grade rows of this tier
 LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
@@ -136,9 +108,9 @@ OUTER_JOB="${SLURM_JOB_ID:-local}"
 # REPRO_* vars survive the SLURM_* env scrub below (override to join an old batch).
 export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
-SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}}"
+SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/medium_sweeps/${OUTER_JOB}}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.${OUTER_JOB}.json}"
-IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
+IDS_FILE="${SWEEP_DIR}/medium_ids.txt"
 mkdir -p "${SWEEP_DIR}"
 
 # Sweep-wall countdown surfaced to the agent every tool round (transcript.py reads
