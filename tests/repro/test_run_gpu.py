@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import time
@@ -259,6 +260,44 @@ class OutputPersistenceTests(unittest.TestCase):
             self.assertIn("final accuracy: 0.913", res["stdout"])
             self.assertNotIn("1%", res["stdout"])  # intermediate frames collapsed
             self.assertFalse(res["truncated"])
+
+
+class QueueGraceTests(unittest.TestCase):
+    """How long an un-granted acquire is allowed to sit in the queue.
+
+    The bound handed to ``acquire_session`` is the hold's own ``--time`` plus this
+    grace. It was 4h, which sat *inside* the observed tail — successful ghx4 acquires
+    reached 6.2h — so ordinary asks were being killed mid-queue.
+    """
+
+    def _timeout_for(self, minutes: int) -> float:
+        with tempfile.TemporaryDirectory() as d:
+            ctx = _ctx(Path(d))
+            acq, run, rel = _patch()
+            with acq as a, run, rel:
+                run_gpu({"command": "python train.py", "minutes": minutes}, ctx)
+            return a.call_args.kwargs["timeout"]
+
+    def test_default_grace_is_eight_hours_past_the_hold(self):
+        self.assertEqual(self._timeout_for(120), 120 * 60 + 8 * 3600)
+
+    def test_env_override_widens_the_grace(self):
+        with mock.patch.dict(os.environ, {"REPRO_QUEUE_GRACE_HOURS": "14"}):
+            self.assertEqual(self._timeout_for(120), 120 * 60 + 14 * 3600)
+
+    def test_env_override_accepts_fractional_hours(self):
+        with mock.patch.dict(os.environ, {"REPRO_QUEUE_GRACE_HOURS": "0.5"}):
+            self.assertEqual(self._timeout_for(60), 60 * 60 + 1800)
+
+    def test_garbage_env_falls_back_to_the_default(self):
+        # A typo in a sweep's export must not wedge a 48h job.
+        for bad in ("abc", "", "   "):
+            with mock.patch.dict(os.environ, {"REPRO_QUEUE_GRACE_HOURS": bad}):
+                self.assertEqual(self._timeout_for(60), 60 * 60 + 8 * 3600)
+
+    def test_negative_grace_clamps_to_zero(self):
+        with mock.patch.dict(os.environ, {"REPRO_QUEUE_GRACE_HOURS": "-3"}):
+            self.assertEqual(self._timeout_for(60), 60 * 60)
 
 
 if __name__ == "__main__":

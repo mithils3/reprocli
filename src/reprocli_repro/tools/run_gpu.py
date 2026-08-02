@@ -38,6 +38,7 @@ and force-finals the episode on the next round (``loop.apply_guardrails``).
 
 from __future__ import annotations
 
+import os
 import shlex
 from pathlib import Path
 from typing import Any
@@ -59,7 +60,25 @@ DEFAULT_MINUTES = 30
 MAX_MINUTES = 24 * 60
 # Bound an acquire that never returns (wedged in queue) without killing a legitimate
 # long queue wait: wait the hold's own wall cap plus this grace before giving up.
-QUEUE_GRACE_SECONDS = 4 * 3600
+#
+# 8h, raised from 4h: on the 07-25..08-02 ghx4 sweeps the *successful* acquires
+# already reached 6.2h, so a 4h grace was inside the normal tail — 27 of the 45 waits
+# it killed were ordinary 2h asks the queue simply had not granted yet. Queue wait is
+# not billed (``ensure_session`` starts the meter at grant), so a longer grace costs
+# job wall clock, not H100-hours. Raise it per sweep with REPRO_QUEUE_GRACE_HOURS when
+# the cluster is congested; lower it when a sweep is wall-bound and would rather fail
+# fast onto another partition.
+DEFAULT_QUEUE_GRACE_HOURS = 8.0
+
+
+def queue_grace_seconds() -> float:
+    """Grace past the hold's own ``--time`` before an un-granted acquire is given up on."""
+    raw = os.environ.get("REPRO_QUEUE_GRACE_HOURS", "").strip()
+    try:
+        hours = float(raw) if raw else DEFAULT_QUEUE_GRACE_HOURS
+    except ValueError:
+        hours = DEFAULT_QUEUE_GRACE_HOURS  # a typo in a sweep's env must not wedge the run
+    return max(0.0, hours) * 3600.0
 # Chars of streamed output returned when the step was killed (wall/timeout): the
 # tail is where the last checkpoint line / progress state / traceback is.
 KILL_TAIL_CHARS = 4000
@@ -120,7 +139,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
         partition = str(arguments.get("partition") or "").strip() or None
         session, err = gpu_session.ensure_session(
             ctx, gpus=gpus, minutes=minutes, partition=partition,
-            timeout=minutes * 60 + QUEUE_GRACE_SECONDS,
+            timeout=minutes * 60 + queue_grace_seconds(),
         )
         if session is None:
             return {"ok": False, "tool": "run_gpu", "command": command, "error": f"could not acquire GPU allocation: {err}"}
