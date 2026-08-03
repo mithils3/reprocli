@@ -215,6 +215,11 @@ def handle_request_done(
         contexts_by_id[custom_id].last_prompt_tokens = int(usage["prompt_tokens"])
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
+        # The episode acted, so whatever made an earlier turn overrun is behind it.
+        # LENGTH_RETRY_LIMIT guards against a model stuck overrunning; counting
+        # recovered truncations against it instead force-finals a healthy run at its
+        # third unlucky turn, hours of budget unspent.
+        length_retries[custom_id] = 0
         tool_rounds_used[custom_id] = max(tool_rounds_used[custom_id], round_index + 1)
         if round_index + 1 >= args.tool_rounds:
             exit_reasons[custom_id] = "round_limit"
@@ -245,10 +250,14 @@ def handle_request_done(
             tool_futures[tools.submit(noop)] = state
             return
         # Model stopped without a tool call while tools were live; re-issue one
-        # tools-off pass to get the schema-constrained final submission.
-        conversations[custom_id].append(assistant_message(message, tool_calls))
+        # tools-off pass to get the schema-constrained final submission. Trim first:
+        # arriving here on a length-truncated turn (the retry budget is spent) would
+        # otherwise carry the full cut-off reasoning into the report request, and the
+        # model writes its report against a mid-stream ramble instead of the run.
+        final_turn = trim_truncated_reasoning(message) if finish_reason == "length" else message
+        conversations[custom_id].append(assistant_message(final_turn, tool_calls))
         live_log.log_round_open(
-            contexts_by_id[custom_id], message,
+            contexts_by_id[custom_id], final_turn,
             round_index=round_index, finish_reason=finish_reason,
         )
         tool_futures[tools.submit(noop)] = {**state, "force_final": True}

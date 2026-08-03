@@ -23,15 +23,33 @@ def _length_body():
     }
 
 
+def _tool_call_body():
+    # An ordinary productive turn: the episode emitted a tool call and acted.
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "tool_calls": [{
+                        "id": "c1", "type": "function",
+                        "function": {"name": "workspace_bash", "arguments": '{"command": "ls"}'},
+                    }],
+                },
+                "finish_reason": "tool_calls",
+            }
+        ]
+    }
+
+
 def _done_future(body):
     fut: "Future" = Future()
     fut.set_result(body)
     return fut
 
 
-def _harness(length_retries_start: int):
+def _harness(length_retries_start: int, body=None):
     custom_id = "2501.00001"
-    future = _done_future(_length_body())
+    future = _done_future(body if body is not None else _length_body())
     request_futures = {future: {"custom_id": custom_id, "round_index": 0, "include_tools": True}}
     tool_futures: dict = {}
     conversations = {custom_id: [{"role": "user", "content": "go"}]}
@@ -77,3 +95,17 @@ def test_length_retry_exhausted_falls_back_to_force_final():
     assert out["custom_id"] not in out["final_rows"]
     states = list(out["tool_futures"].values())
     assert states and states[0].get("force_final") is True
+
+
+def test_force_final_after_truncation_carries_a_trimmed_turn():
+    # The give-up path must not hand the report request the full cut-off ramble.
+    out = _harness(length_retries_start=2)
+    assert len(out["conversation"][-1]["reasoning"]) < 5000
+
+
+def test_a_productive_round_clears_the_length_retry_budget():
+    # The limit exists to stop a model stuck overrunning, not to retire a run that
+    # overran, recovered, and kept working -- so acting resets the counter.
+    out = _harness(length_retries_start=2, body=_tool_call_body())
+    assert out["length_retries"][out["custom_id"]] == 0
+    assert out["custom_id"] not in out["final_rows"]

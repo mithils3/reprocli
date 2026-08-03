@@ -74,7 +74,11 @@ export REPROCLI_TOP_P="${TOP_P}"
 
 # Pin Think Max on every request (repro loop + auditor tool loop). The client's
 # apply_chat_template_kwargs reads this and never clobbers a per-request override.
-export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-{\"thinking\": true, \"reasoning_effort\": \"max\"}}"
+# The default is held in its own variable: bash ends a ${VAR:-...} default at the
+# first unescaped "}", so an inline JSON default silently appends a stray brace to
+# any operator override, and the unparseable value is dropped whole (endpoint.py).
+CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "max"}'
+export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-${CHAT_TEMPLATE_KWARGS_DEFAULT}}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
 case "${SPLIT}" in

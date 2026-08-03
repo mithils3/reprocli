@@ -49,6 +49,24 @@ export MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"   # MAX_PARALLEL papers + the audit st
 export GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.90}"
 export IFACE="${IFACE:-hsn0}"
 
+# Reasoning effort. GLM-5.2 reuses DeepSeek-V4's reasoning_effort mechanism with two
+# rungs, and its chat template resolves to "max" unless the request says "high" -- so
+# leaving this unset does not mean "the default", it means Think Max on every round.
+# Think Max against the loop's 32k output cap truncated whole rounds mid-reasoning
+# (job 2766342: 3 rounds of 31 on 2503.18430, each burning the full cap for ~13 min
+# and emitting no tool call). "high" is the documented lever. Read by the client's
+# apply_chat_template_kwargs, so it rides both the repro loop and the auditor.
+# https://recipes.vllm.ai/zai-org/GLM-5.2
+# The default is held in its own variable: bash ends a ${VAR:-...} default at the
+# first unescaped "}", so an inline JSON default silently appends a stray brace to
+# any operator override, and the unparseable value is dropped whole (endpoint.py).
+CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "high"}'
+export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-${CHAT_TEMPLATE_KWARGS_DEFAULT}}"
+# Sampling stays unset on purpose: vLLM's --generation-config defaults to "auto", so
+# the checkpoint's generation_config.json applies -- temperature 1.0 / top_p 0.95,
+# byte-identical to upstream zai-org/GLM-5.2 and to the card's recommendation. Verified
+# against cyankiwi/GLM-5.2-AWQ-INT4 on 2026-08-03; re-check it if the quant is rebuilt.
+
 case "${SPLIT}" in
   dev|validation) CLAIMS_FILE="dev_split.jsonl" ;;
   *)              CLAIMS_FILE="eval_100.jsonl" ;;
