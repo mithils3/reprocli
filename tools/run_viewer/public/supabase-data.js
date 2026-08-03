@@ -171,7 +171,10 @@ const RemoteSource = {
     const sweep = (sw.data && sw.data[0]) || { slug };
     const runsById = {};
     if (sweep.batch_id) {
-      const { data: runs } = await this.client.from("repro_runs").select("*").eq("batch_id", sweep.batch_id);
+      // A sweep stores one batch_id, but an ONLY_IDS retry is the same sweep under a
+      // second job id (merge.js), so expand to the whole group before fetching.
+      const ids = window.Merge ? window.Merge.batchIds(sweep.batch_id) : [sweep.batch_id];
+      const { data: runs } = await this.client.from("repro_runs").select("*").in("batch_id", ids);
       (runs || []).forEach((r) => { runsById[r.run_id] = r; });
     }
     // the full per-run dissection is the jsonb `data`; the sibling columns are just

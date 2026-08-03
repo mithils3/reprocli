@@ -41,6 +41,16 @@
     return LABEL[String(key || "")] || (run && run.batch_label) || key;
   }
 
+  // Every batch_id that belongs to the group `key` names: `key` itself plus the
+  // retries folded into it. A published Analysis sweep stores one batch_id, so
+  // fetching its runs has to expand back to the whole group or the retry's papers
+  // arrive without meters.
+  function batchIds(key) {
+    const k = String(key || "");
+    if (!k) return [];
+    return [k, ...Object.keys(PARENT).filter((retry) => PARENT[retry] === k)];
+  }
+
   // run_ids in `runs` that a later attempt at the same paper replaced. Only the
   // newest attempt per arxiv_id survives; ties (no usable timestamp) keep the
   // first, which arrives newest-first from the sidebar query.
@@ -62,5 +72,5 @@
     return out;
   }
 
-  window.Merge = { batchKey, groupLabel, supersededIds };
+  window.Merge = { batchKey, groupLabel, batchIds, supersededIds };
 })();
