@@ -101,6 +101,10 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01
 .schip.regrade { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
 /* absence, not a verdict: a run the Claude re-audit has not reached yet */
 .schip.noaudit { color: var(--muted); border-style: dashed; }
+/* sweep merge (merge.js): a group folded from several sbatch jobs, and the
+   attempts a later job in that group re-ran */
+.schip.merged { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-tint); }
+.schip.superseded { color: var(--muted); border-style: dashed; }
 
 /* ---- verdict glyph + word (4 families collapse 11 tags) ----------------- */
 .vd { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -153,6 +157,9 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01
 /* ---- batch groups (one sbatch launch) — styled in live.css ---------------- */
 .batch-runs { border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); margin-left: 14px; }
 .batch-runs .plitem { padding-left: 14px; }
+/* replaced by a later attempt in the same sweep: still openable, visibly retired */
+.batch-runs .plitem.superseded { opacity: 0.55; }
+.batch-runs .plitem.superseded:hover, .batch-runs .plitem.superseded.active { opacity: 1; }
 
 /* ---- detail scroll region ----------------------------------------------- */
 .detail { overflow-y: auto; padding: 26px 34px 88px; scroll-behavior: smooth; }

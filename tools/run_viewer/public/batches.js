@@ -13,26 +13,39 @@
   // rows arrive sorted updated_at desc. Emit an ordered list interleaving
   // {kind:"batch", id, label, runs:[…]} (positioned at its most-recent run) and
   // {kind:"run", run} for batch_id-null rows, all in overall updated_at-desc order.
+  // Grouping is keyed by window.Merge.batchKey, so a retry sbatch lands in its
+  // parent's group; a group that ends up spanning several sbatch jobs also carries
+  // the run_ids the retry superseded (see supersede note in merge.js).
   function group(rows) {
     const out = [], byId = new Map();
     for (const run of rows || []) {
-      const bid = run.batch_id;
+      const bid = window.Merge ? window.Merge.batchKey(run) : run.batch_id;
       if (bid == null || bid === "") { out.push({ kind: "run", run }); continue; }
       let entry = byId.get(bid);
       if (!entry) {
-        entry = { kind: "batch", id: bid, label: run.batch_label || bid, runs: [] };
+        const label = window.Merge ? window.Merge.groupLabel(bid, run) : (run.batch_label || bid);
+        entry = { kind: "batch", id: bid, label, runs: [], sources: new Set() };
         byId.set(bid, entry);
         out.push(entry);
       }
       entry.runs.push(run);
+      entry.sources.add(run.batch_id);
+    }
+    for (const entry of byId.values()) {
+      // Only a merged group can hold two attempts at one paper; leave single-job
+      // sweeps counted exactly as before.
+      entry.superseded = (entry.sources.size > 1 && window.Merge)
+        ? window.Merge.supersededIds(entry.runs) : new Set();
     }
     return out;
   }
 
-  // effectiveStatus buckets for a group of runs
-  function counts(runs) {
+  // effectiveStatus buckets for a group of runs; a superseded attempt is not a
+  // member of the roster any more, so it is left out of the tally.
+  function counts(runs, superseded) {
     const RE = R(), c = { running: 0, done: 0, dead: 0, error: 0 };
     for (const run of runs) {
+      if (superseded && superseded.has(run.run_id)) continue;
       const s = RE.effectiveStatus(run);
       if (s === "finished") c.done++;
       else if (s === "dead") c.dead++;
@@ -62,9 +75,15 @@
     const modelChip = models.size === 1 ? `<span class="schip">${RE.esc(RE.shortModel([...models][0]))}</span>` : "";
     const nonFrozenChip = window.Freeze && window.Freeze.isNonFrozenRecord(entry.runs[0])
       ? `<span class="schip non-frozen" title="Slurm job predates the frozen benchmark cutoff">non-frozen</span>` : "";
-    const c = counts(entry.runs), latest = entry.runs[0].updated_at;
+    const sup = entry.superseded || new Set();
+    const c = counts(entry.runs, sup), latest = entry.runs[0].updated_at;
+    const roster = entry.runs.length - sup.size;
+    const mergedChip = entry.sources && entry.sources.size > 1
+      ? `<span class="schip merged" title="${RE.esc([...entry.sources].join(" + "))}">merged ${entry.sources.size} jobs</span>` : "";
+    const supChip = sup.size
+      ? `<span class="schip superseded" title="re-run by a later attempt in this sweep">+${sup.size} superseded</span>` : "";
     const btn = RE.el(`<button class="batch-head ${isCol ? "collapsed" : ""}" title="batch ${RE.esc(entry.id)}" aria-expanded="${!isCol}">
-      <span class="bh-title"><span class="bh-chev">${isCol ? "▸" : "▾"}</span><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span>${nonFrozenChip}<span class="schip tnum">${entry.runs.length} runs</span>${modelChip}</span>
+      <span class="bh-title"><span class="bh-chev">${isCol ? "▸" : "▾"}</span><span class="bh-glyph">⛁</span><span class="bh-label">${RE.esc(entry.label || entry.id)}</span>${nonFrozenChip}${mergedChip}<span class="schip tnum">${roster} runs</span>${supChip}${modelChip}</span>
       ${segBar(c)}
       <span class="bh-sub"><span class="bh-counts">${countWords(c)}</span><span class="schip tnum" title="total compute spent">${RE.esc(RE.fmtHM(spent))}</span><span class="bh-time tnum" title="${RE.esc(RE.fmtTime(latest))}">${RE.esc(RE.fmtAgo(latest))}</span></span>
       </button>`);
@@ -75,9 +94,16 @@
     return btn;
   }
 
-  function runItem(run, opts) {
+  function runItem(run, opts, superseded) {
     const item = R().renderRunListItem(run);
     if (run.run_id === opts.currentRunId) item.classList.add("active");
+    // A superseded attempt stays in the list (its transcript is still the record of
+    // what went wrong) but reads as replaced and sits out of the group's counts.
+    if (superseded && superseded.has(run.run_id)) {
+      item.classList.add("superseded");
+      const l1 = item.querySelector(".pl-l1");
+      if (l1) l1.insertAdjacentHTML("beforeend", `<span class="schip superseded">superseded</span>`);
+    }
     item.addEventListener("click", () => opts.onOpen(run.run_id));
     return item;
   }
@@ -91,7 +117,7 @@
       if (collapsed.has(entry.id)) continue;
       const wrap = document.createElement("div");
       wrap.className = "batch-runs";
-      for (const run of entry.runs) wrap.appendChild(runItem(run, opts));
+      for (const run of entry.runs) wrap.appendChild(runItem(run, opts, entry.superseded));
       listEl.appendChild(wrap);
     }
   }
