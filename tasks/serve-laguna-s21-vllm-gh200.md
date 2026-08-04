@@ -48,6 +48,7 @@ CUDA_VISIBLE_DEVICES=0,1 vllm serve /tmp/Langua-S-2.1 \
   --enable-auto-tool-choice \
   --tool-call-parser poolside_v1 \
   --reasoning-parser poolside_v1 \
+  --default-chat-template-kwargs '{"enable_thinking": true}' \
   --host 0.0.0.0 --port 8000
 ```
 
@@ -83,11 +84,44 @@ Unlike GLM-5.2 / V4-Flash, Laguna has no DSA indexer, so vLLM falls back to
 
 ## Sampling (per-request, brain client)
 
-`generation_config.json`: temperature 1.0, top_p 1.0, **top_k 20**, thinking on,
-EOS `[2, 24]`, max_new 32768. `top_k 20` is not an OpenAI param, so a plain
+`generation_config.json`: temperature 1.0, top_p 1.0, **top_k 20**, min_p 0.0,
+EOS `[2, 24]`, plus `default_chat_template_kwargs {"enable_thinking": true}` and the
+DFlash `speculative_config`. `top_k 20` is not an OpenAI param, so a plain
 OpenAI-compatible client drops it silently and the model runs off-distribution —
 plumb it through the repro client via `extra_body={"top_k": 20}` (same class as
-the DSV4-Flash `chat_template_kwargs` plumbing).
+the DSV4-Flash `chat_template_kwargs` plumbing). Do not add `min_p` once DFlash
+speculation is on; vLLM rejects `min_p`/`logit_bias` with speculation.
+
+## Thinking: on, and the open tag is in the PROMPT
+
+Two sources declare thinking on — `generation_config.json`'s
+`default_chat_template_kwargs` and `chat_template.jinja`'s
+`enable_thinking | default(true)`. The vLLM recipe page says "reasoning is off by
+default in the chat template" and is wrong for this checkpoint, so the serve profile
+pins the flag rather than trusting either default.
+
+What that costs: with thinking on, the generation-prompt tail is
+`<assistant><think>`, so the **model never emits an opening `<think>`** — it completes
+from inside the block and emits only the closing tag.
+
+```jinja
+{%- if add_generation_prompt -%}{{- "<assistant>" -}}
+  {%- if enable_thinking -%}{{- '<think>' -}}{%- else -%}{{- '</think>' -}}{%- endif -%}
+{%- endif -%}
+```
+
+In sweep 2859889 `poolside_v1` never entered the reasoning state against that
+pre-fill: **0 of 2136 rounds** carried `reasoning_content`, while 2034 had a bare
+`</think>` sitting in `content` (1470 of them leading). The whole chain of thought
+became replayable `content`, ran the transcript into the 128K input ceiling, and
+killed 28 of 32 runs on `context_budget`. Smoke-test one request and assert
+`reasoning_content` is non-empty before trusting a sweep.
+
+The template also replays prior-turn reasoning with no turn-age limit
+(`{%- if enable_thinking or preserve_thinking -%}{{- '<think>' + reasoning_content +
+'</think>' -}}`), unlike Qwen3, which strips it. So a working parser alone does not
+bound the context — the harness must also stop sending `reasoning` on old assistant
+turns.
 
 ## Benchmark (once /health binds)
 

@@ -52,6 +52,12 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     compilation = args.compilation_config or profile.compilation_config
     if compilation:
         command.extend(["--compilation-config", _supported_compilation_config(compilation)])
+    # Server-side default for the chat template's render-time switches (thinking on/off,
+    # effort ladders). Per-request REPROCLI_CHAT_TEMPLATE_KWARGS still wins where it is
+    # set; this is the floor for the requests that omit them.
+    template_kwargs = args.default_chat_template_kwargs or profile.default_chat_template_kwargs
+    if template_kwargs:
+        command.extend(["--default-chat-template-kwargs", template_kwargs])
     if args.distributed_executor_backend:
         command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
     kv_cache_dtype = args.kv_cache_dtype or profile.kv_cache_dtype

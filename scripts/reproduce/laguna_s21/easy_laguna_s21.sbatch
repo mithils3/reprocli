@@ -37,9 +37,13 @@
 #     the model runs off-distribution. Deferring to generation_config does not save
 #     you: vLLM only applies it to fields the request omits, and the omission is the
 #     bug. Same class as the DSV4-Flash chat_template_kwargs plumbing.
-#   - No Think Max / reasoning_effort knob: Laguna has no effort ladder. Its
-#     generation_config turns thinking on by default and this sweep leaves it there,
-#     so REPROCLI_CHAT_TEMPLATE_KWARGS stays unset.
+#   - No Think Max / reasoning_effort knob: Laguna has no effort ladder. Thinking is
+#     on, and the serve profile now pins it server-side with
+#     --default-chat-template-kwargs '{"enable_thinking": true}' -- what the checkpoint
+#     already declares (generation_config.json default_chat_template_kwargs, and
+#     chat_template.jinja's `enable_thinking | default(true)`), pinned because the vLLM
+#     recipe page claims the opposite. REPROCLI_CHAT_TEMPLATE_KWARGS stays unset: the
+#     server default is the whole contract here, and a per-request copy would only drift.
 #   - deep_gemm / libnvrtc / CXXABI import warnings are BENIGN here. Laguna has no
 #     DSA indexer, so vLLM falls back to the TRITON FP8 MoE backend and serves fine.
 #     Unlike V4-Flash, whose Lightning Indexer has no non-DeepGEMM fallback, there is

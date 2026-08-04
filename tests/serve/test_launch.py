@@ -88,6 +88,42 @@ class DeepseekV4ServeCommandTests(unittest.TestCase):
         self.assertEqual(value_after(cmd, "--reasoning-parser"), "deepseek_v3")
 
 
+class LagunaServeCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.cmd = command_for(["--model", "poolside/Laguna-S-2.1-INT4"])
+
+    def test_uses_laguna_profile_flags(self) -> None:
+        self.assertEqual(value_after(self.cmd, "--tensor-parallel-size"), "2")
+        self.assertEqual(value_after(self.cmd, "--tool-call-parser"), "poolside_v1")
+        self.assertEqual(value_after(self.cmd, "--reasoning-parser"), "poolside_v1")
+        self.assertEqual(value_after(self.cmd, "--kv-cache-dtype"), "fp8")
+        self.assertEqual(value_after(self.cmd, "--max-model-len"), "262144")
+        self.assertIn("--enable-auto-tool-choice", self.cmd)
+
+    def test_pins_thinking_on_the_way_the_checkpoint_declares_it(self) -> None:
+        # generation_config.json ships default_chat_template_kwargs {"enable_thinking":
+        # true}; the vLLM recipe page claims the opposite, so the profile pins it.
+        kwargs = json.loads(value_after(self.cmd, "--default-chat-template-kwargs"))
+        self.assertEqual(kwargs, {"enable_thinking": True})
+
+    def test_template_kwargs_cli_override(self) -> None:
+        cmd = command_for(
+            [
+                "--model",
+                "poolside/Laguna-S-2.1-INT4",
+                "--default-chat-template-kwargs",
+                '{"enable_thinking":false}',
+            ]
+        )
+        self.assertEqual(
+            value_after(cmd, "--default-chat-template-kwargs"), '{"enable_thinking":false}'
+        )
+
+    def test_profiles_without_the_pin_omit_the_flag(self) -> None:
+        cmd = command_for(["--model", "Qwen/Qwen3.6-27B-FP8"])
+        self.assertNotIn("--default-chat-template-kwargs", cmd)
+
+
 class KimiMultinodeServeCommandTests(unittest.TestCase):
     def setUp(self) -> None:
         self.cmd = command_for(

@@ -67,6 +67,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--reasoning-parser")
     parser.add_argument("--mm-encoder-tp-mode")
     parser.add_argument("--compilation-config")
+    parser.add_argument(
+        "--default-chat-template-kwargs",
+        help="JSON object of chat-template render kwargs the server applies to requests "
+        "that omit them (e.g. '{\"enable_thinking\": true}'). Overrides the profile.",
+    )
     parser.add_argument("--distributed-executor-backend", choices=("mp", "ray"))
     parser.add_argument("--kv-cache-dtype")
     parser.add_argument("--block-size", type=int)

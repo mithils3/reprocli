@@ -57,6 +57,7 @@ class Profile:
     enable_expert_parallel: bool = False
     mm_encoder_tp_mode: str | None = None
     compilation_config: str | None = None
+    default_chat_template_kwargs: str | None = None
     block_size: int | None = None
     kv_cache_dtype: str | None = None
     max_num_seqs: int | None = None
@@ -205,6 +206,22 @@ def laguna_profile() -> Profile:
     # fp8_ds_mla, which asserts): it halves per-token KV so several concurrent 256K
     # transcripts fit alongside the audit stream.
     #
+    # default_chat_template_kwargs pins what the checkpoint already declares:
+    # generation_config.json ships default_chat_template_kwargs {"enable_thinking": true}
+    # and chat_template.jinja does `enable_thinking | default(true)`, so this is a no-op
+    # against the shipped template. It is pinned anyway because the two published sources
+    # disagree -- the vLLM recipe page states "reasoning is off by default in the chat
+    # template" -- and the failure is silent and total: with thinking off the template
+    # emits `</think>` instead of `<think>` at the generation-prompt tail and the model
+    # answers without reasoning for a whole sweep before anyone notices.
+    #
+    # This does NOT fix the leak seen in sweep 2859889 (0 of 2136 rounds carried
+    # reasoning_content, 2034 had a bare `</think>` in content). That is the opposite
+    # problem: thinking is ON, so the template pre-fills `<think>` into the prompt, the
+    # model emits only the closing tag, and poolside_v1 never enters the reasoning state.
+    # Fixing that needs a parser that handles a pre-filled open tag, plus a harness-side
+    # stop on replaying old reasoning -- see the note in reprocli_repro.
+    #
     # Laguna has NO DSA indexer, so the deep_gemm / libnvrtc / CXXABI import warnings
     # that matter for V4-Flash are benign here -- vLLM falls back to the TRITON FP8
     # MoE backend and serves correctly. Do not chase them.
@@ -218,6 +235,9 @@ def laguna_profile() -> Profile:
         kv_cache_dtype="fp8",
         compilation_config=json.dumps(
             LAGUNA_COMPILATION_CONFIG, separators=(",", ":")
+        ),
+        default_chat_template_kwargs=json.dumps(
+            {"enable_thinking": True}, separators=(",", ":")
         ),
     )
 
