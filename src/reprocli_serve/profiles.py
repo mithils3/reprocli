@@ -32,6 +32,15 @@ DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
 DEEPSEEK_V4_COMPILATION_CONFIG = {
     "pass_config": {"fuse_norm_quant": False, "fuse_act_quant": False},
 }
+LAGUNA_S21_MODEL = "poolside/Laguna-S-2.1-INT4"
+# Laguna dies at the profiling run without this, behind a misleading async
+# CUBLAS_STATUS_EXECUTION_FAILED. The real crash is vLLM fusing RMSNorm into the
+# all-reduce and letting FlashInfer pick the mnnvl symmetric-memory backend, which
+# the 2xGH200 topology cannot do (illegal memory access in the CUDASymmetricMemory
+# dtor). Turning the fusion off is one of the three legs; the other two are
+# --disable-custom-all-reduce and VLLM_ALLREDUCE_USE_SYMM_MEM=0, both launch-side.
+# See tasks/serve-laguna-s21-vllm-gh200.md (verified 2026-07-21).
+LAGUNA_COMPILATION_CONFIG = {"pass_config": {"fuse_allreduce_rms": False}}
 
 
 @dataclass
@@ -181,6 +190,52 @@ def deepseek_v4_profile() -> Profile:
     )
 
 
+def laguna_profile() -> Profile:
+    # poolside/Laguna-S-2.1: a 117.6B MoE (~8.5B active) agentic-coding specialist,
+    # arch LagunaForCausalLM, sliding-window attention with per-head gating in 36 of
+    # 48 layers. vLLM 0.25.1 registers the arch and the poolside_v1 parsers natively.
+    # This profile targets the INT4 (W4A16) checkpoint: ~72 GiB of weights, so TP=2
+    # puts ~36 GiB on each 96 GB GH200 and leaves ~53 GiB/GPU for KV -- roomier than
+    # the FP8 checkpoint's ~56.6 GiB/GPU, which is what the runbook verified.
+    #
+    # max_model_len 262144 is the ceiling, not a choice: only the BF16 repo goes to
+    # 1M, and both quantized checkpoints cap at 256K.
+    #
+    # kv_cache_dtype fp8 is a capacity option, not a requirement (unlike V4's
+    # fp8_ds_mla, which asserts): it halves per-token KV so several concurrent 256K
+    # transcripts fit alongside the audit stream.
+    #
+    # Laguna has NO DSA indexer, so the deep_gemm / libnvrtc / CXXABI import warnings
+    # that matter for V4-Flash are benign here -- vLLM falls back to the TRITON FP8
+    # MoE backend and serves correctly. Do not chase them.
+    return Profile(
+        name="laguna_s21",
+        tensor_parallel_size=2,
+        tool_call_parser="poolside_v1",
+        reasoning_parser="poolside_v1",
+        max_model_len=262144,
+        gpu_memory_utilization=0.93,
+        kv_cache_dtype="fp8",
+        compilation_config=json.dumps(
+            LAGUNA_COMPILATION_CONFIG, separators=(",", ":")
+        ),
+    )
+
+
+def is_laguna(model: str) -> bool:
+    if "Laguna" in model.rstrip("/"):
+        return True
+    config_path = Path(model) / "config.json"
+    if not config_path.exists():
+        return False
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    architectures = config.get("architectures") or []
+    return any(str(name).startswith("Laguna") for name in architectures)
+
+
 def is_deepseek_v4(model: str) -> bool:
     if "DeepSeek-V4" in model.rstrip("/"):
         return True
@@ -247,4 +302,6 @@ def resolve_profile(model: str) -> Profile:
         return deepseek_v4_profile()
     if is_qwen3(model):
         return qwen3_profile()
+    if is_laguna(model):
+        return laguna_profile()
     return minimax_profile()

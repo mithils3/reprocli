@@ -223,6 +223,17 @@ def _env_float(name: str) -> float | None:
         raise SystemExit(f"{name} must be a number, got {raw!r}") from exc
 
 
+def _env_int(name: str) -> int | None:
+    """Read an optional int override from the environment; unset/blank -> None."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be an integer, got {raw!r}") from exc
+
+
 def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
@@ -233,9 +244,14 @@ def apply_defaults(args: argparse.Namespace) -> None:
     # brain whose card recommends a different top_p for AGENTIC use than its
     # generation_config ships (DeepSeek-V4-Flash-0731: 0.95 agentic vs 1.0 in the
     # checkpoint) needs the agentic value, and this loop is that agentic case.
+    # REPROCLI_TOP_K is the same hatch for a NON-OpenAI sampling field: top_k is not
+    # an OpenAI chat-completions param, so a brain whose generation_config pins one
+    # (Laguna-S-2.1: top_k 20) has it silently dropped by an OpenAI-compatible client
+    # and runs off-distribution. Deferring to generation_config is not enough here --
+    # vLLM only applies it to fields the request omits, and the omission is the bug.
     args.temperature = None
     args.top_p = _env_float("REPROCLI_TOP_P")
-    args.top_k = None
+    args.top_k = _env_int("REPROCLI_TOP_K")
     args.min_p = None
     args.max_tokens = MAX_TOKENS
     args.max_input_tokens = MAX_INPUT_TOKENS
