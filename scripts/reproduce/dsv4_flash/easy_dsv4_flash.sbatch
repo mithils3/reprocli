@@ -27,8 +27,12 @@
 #     more of the load. If vLLM refuses to start for want of KV blocks, rerun on the
 #     whole node: sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
 #   - Serve profile (deepseek_v4) carries kv_cache_dtype fp8 (REQUIRED: V4's
-#     fp8_ds_mla KV layout asserts otherwise), the deepseek_v4 parsers, and
-#     max_model_len 393216.
+#     fp8_ds_mla KV layout asserts otherwise), the deepseek_v4 parsers,
+#     max_model_len 393216, block_size 256 (the recipe's value, and what the model's
+#     own DEEPSEEK_SPARSE_SWA backend forces anyway), and a compilation config that
+#     turns off the norm_quant / act_quant custom fusions -- see COMPILATION_CONFIG
+#     below for why. No --tokenizer-mode: vLLM defaults it to deepseek_v4 from the
+#     architecture, which is what makes the Think Max kwargs below bind.
 #   - two REQUIRED launch-env exports live below, not in the profile: the DeepGEMM
 #     LD_LIBRARY_PATH (V4's Lightning Indexer dies without libnvrtc.so.13) and
 #     VLLM_USE_FLASHINFER_SAMPLER=0 (the FlashInfer sampler kernel crashes on GH200).
@@ -107,6 +111,36 @@ export REPROCLI_TOP_P="${TOP_P}"
 # any operator override, and the unparseable value is dropped whole (endpoint.py).
 CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "max"}'
 export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-${CHAT_TEMPLATE_KWARGS_DEFAULT}}"
+
+# Turn off the two custom fusions vLLM enables by default for this checkpoint. They
+# are reported to garble token output for DeepSeek-V4-Flash-0731 on aarch64 even at
+# temperature 0, with prompt encoding and sampling ruled out (vllm#50773), and job
+# 2818716 decoded degenerate token repetition in 5 of its 16 runs while the qwen3 /
+# minimax / glm52 sweeps on the same node showed 0 of 64. Same default-in-its-own-
+# variable trap as above: an inline JSON default would end at the first "}".
+# Same value as the deepseek_v4 profile carries; set here so it is visible and
+# overridable. Set COMPILATION_CONFIG=none to serve with vLLM's own defaults again.
+COMPILATION_CONFIG_DEFAULT='{"pass_config":{"fuse_norm_quant":false,"fuse_act_quant":false}}'
+COMPILATION_CONFIG="${COMPILATION_CONFIG:-${COMPILATION_CONFIG_DEFAULT}}"
+if [[ "${COMPILATION_CONFIG}" == "none" ]]; then
+  COMPILATION_ARG=()
+else
+  COMPILATION_ARG=(--compilation-config "${COMPILATION_CONFIG}")
+fi
+
+# Other suspects for the same corruption, left at their defaults because none is
+# verified here and each has a cost. To A/B one, re-submit with --export=ALL,VAR=...:
+#   VLLM_USE_DEEP_GEMM=0     DeepGEMM's JIT kernels are reported to hit illegal
+#                            memory accesses on GH200's SM 9.0 UMA (vllm#49183), and
+#                            a stale deep_gemm garbled V4-Flash output for one
+#                            reporter (vllm#43416). Expect this to fail outright:
+#                            V4's Lightning Indexer has no non-DeepGEMM fallback.
+#   VLLM_USE_BREAKABLE_CUDAGRAPH=0
+#                            vLLM auto-enables this and it disables the torch.compile
+#                            pipeline while keeping FULL cudagraph capture.
+#   EXTRA_SERVE_ARGS="--disable-custom-all-reduce"
+#                            what the published 2xGH200 configuration runs.
+read -r -a EXTRA_SERVE_ARGS_ARR <<< "${EXTRA_SERVE_ARGS:-}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
 case "${SPLIT}" in
@@ -204,6 +238,7 @@ echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  budget=${BUDGET_LABE
 echo "runs_dir=${RUNS_DIR}  resume=${RESUME}  audit_model=${AUDIT_MODEL}  audit_rounds=${AUDIT_TOOL_ROUNDS}"
 echo "brain=${MODEL}  tp=${TP}"
 echo "parsers: tool=${TOOL_PARSER}  reasoning=${REASONING_PARSER}  max_model_len=${MAX_MODEL_LEN}"
+echo "compilation_config=${COMPILATION_CONFIG}  extra_serve_args=${EXTRA_SERVE_ARGS:-none}"
 echo "think_max_kwargs=${REPROCLI_CHAT_TEMPLATE_KWARGS}"
 echo "claims=${CLAIMS}"
 nvidia-smi topo -m || true
@@ -224,8 +259,10 @@ python -m reprocli_serve \
   --max-model-len "${MAX_MODEL_LEN}" \
   --tool-call-parser "${TOOL_PARSER}" \
   --reasoning-parser "${REASONING_PARSER}" \
+  "${COMPILATION_ARG[@]}" \
   --endpoint-file "${ENDPOINT_FILE}" \
-  -- --kv-offloading-backend native --kv-offloading-size 100 &
+  -- --kv-offloading-backend native --kv-offloading-size 100 \
+     "${EXTRA_SERVE_ARGS_ARR[@]}" &
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 

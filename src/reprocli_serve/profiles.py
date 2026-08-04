@@ -21,6 +21,17 @@ MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
 QWEN3_MODEL = "Qwen/Qwen3.6-27B-FP8"
 DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
+# vLLM enables the norm_quant / act_quant custom fusions by default for this model
+# ("Enabled custom fusions: norm_quant, act_quant, allreduce_rms" at startup). They
+# are reported to garble token output for DeepSeek-V4-Flash-0731 on aarch64, at
+# temperature 0, with prompt encoding and sampling ruled out (vllm#50773). Turning
+# them off is the one serve-side change that addresses the degenerate decoding seen
+# in sweep 2818716 (5 of 16 runs collapsed into token repetition; 0 of 64 across the
+# qwen3 / minimax / glm52 sweeps on the same node). launch.py drops either key if the
+# installed vLLM's PassConfig does not carry it, so an older or newer build still starts.
+DEEPSEEK_V4_COMPILATION_CONFIG = {
+    "pass_config": {"fuse_norm_quant": False, "fuse_act_quant": False},
+}
 
 
 @dataclass
@@ -50,7 +61,9 @@ def minimax_profile() -> Profile:
         tensor_parallel_size=4,
         tool_call_parser="minimax_m2",
         reasoning_parser="minimax_m2",
-        compilation_config=json.dumps(MINIMAX_COMPILATION_CONFIG, separators=(",", ":")),
+        compilation_config=json.dumps(
+            MINIMAX_COMPILATION_CONFIG, separators=(",", ":")
+        ),
     )
 
 
@@ -141,12 +154,19 @@ def deepseek_v4_profile() -> Profile:
     # Think Max requires max-model-len >= 393216. The Think Max kwargs themselves
     # ride REPROCLI_CHAT_TEMPLATE_KWARGS (client apply_chat_template_kwargs), not a
     # serve flag. The parsers follow notes/References/Model Selection Notes.md
-    # ("parser deepseek_v4"); vLLM also registers deepseek_v4 as a tokenizer mode.
-    # If a given vLLM build names the tool parser differently (e.g. deepseek_v3),
-    # override with the sbatch's TOOL_PARSER/REASONING_PARSER (reprocli_serve
-    # --tool-call-parser / --reasoning-parser). No compilation_config: the verified
-    # TP=2 serve used none; if the FlashInfer mnnvl allreduce fusion IMAs on a
-    # newer build, pass --compilation-config to route through the GH200 guard.
+    # ("parser deepseek_v4"). No --tokenizer-mode: vLLM 0.25.1 already logs
+    # "Defaulting to tokenizer_mode='deepseek_v4' for DeepseekV4ForCausalLM" and
+    # renders through renderers/deepseek_v4.py, which is what makes the Think Max
+    # chat_template_kwargs bind (job 2818716 startup log). If a given vLLM build
+    # names the tool parser differently (e.g. deepseek_v3), override with the
+    # sbatch's TOOL_PARSER/REASONING_PARSER.
+    # block_size 256 matches the vLLM recipe. It is what the model's own
+    # DEEPSEEK_SPARSE_SWA backend already forces ("Setting kv cache block size to 256"),
+    # so this pins the value rather than changing it, the way minimax_m3 pins 128.
+    # compilation_config disables the two custom fusions that garble output on this
+    # checkpoint (see DEEPSEEK_V4_COMPILATION_CONFIG). Passing any config also routes
+    # through launch.py's GH200 guard, which additionally forces fuse_allreduce_rms
+    # off (the FlashInfer mnnvl allreduce fusion IMAs here, job 2667723).
     return Profile(
         name="deepseek_v4",
         tensor_parallel_size=2,
@@ -154,6 +174,10 @@ def deepseek_v4_profile() -> Profile:
         reasoning_parser="deepseek_v4",
         max_model_len=393216,
         kv_cache_dtype="fp8",
+        block_size=256,
+        compilation_config=json.dumps(
+            DEEPSEEK_V4_COMPILATION_CONFIG, separators=(",", ":")
+        ),
     )
 
 
