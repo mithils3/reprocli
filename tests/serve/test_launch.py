@@ -180,6 +180,46 @@ class AllreduceFusionDefaultOffTests(unittest.TestCase):
         self.assertEqual(value, config)
 
 
+class MegaMoeExtraArgGuardTests(unittest.TestCase):
+    """job 2858259 died on --moe-backend deep_gemm_mega_moe after 48 shards loaded on GH200."""
+
+    def command_given_below_sm100(self, below: bool, extra: list[str]) -> list[str]:
+        with mock.patch.object(launch, "_below_sm100", return_value=below):
+            return command_for(["--model", "m", "--"] + extra)
+
+    def test_mega_moe_is_dropped_below_sm100(self) -> None:
+        cmd = self.command_given_below_sm100(
+            True, ["--moe-backend", "deep_gemm_mega_moe", "--enable-expert-parallel"]
+        )
+        self.assertNotIn("--moe-backend", cmd)
+        self.assertNotIn("deep_gemm_mega_moe", cmd)
+        self.assertIn("--enable-expert-parallel", cmd)
+
+    def test_equals_form_is_dropped(self) -> None:
+        cmd = self.command_given_below_sm100(
+            True, ["--moe-backend=deep_gemm_mega_moe", "--enable-expert-parallel"]
+        )
+        self.assertNotIn("--moe-backend=deep_gemm_mega_moe", cmd)
+        self.assertIn("--enable-expert-parallel", cmd)
+
+    def test_kept_on_sm100(self) -> None:
+        cmd = self.command_given_below_sm100(
+            False, ["--moe-backend", "deep_gemm_mega_moe", "--enable-expert-parallel"]
+        )
+        self.assertEqual(value_after(cmd, "--moe-backend"), "deep_gemm_mega_moe")
+        self.assertIn("--enable-expert-parallel", cmd)
+
+    def test_other_backends_pass_through_below_sm100(self) -> None:
+        cmd = self.command_given_below_sm100(True, ["--moe-backend", "triton"])
+        self.assertEqual(value_after(cmd, "--moe-backend"), "triton")
+
+    def test_no_gpu_probe_without_moe_flag(self) -> None:
+        # The capability probe imports torch, so it must not run for unrelated args.
+        with mock.patch.object(launch, "_below_sm100", side_effect=AssertionError("probed")):
+            cmd = command_for(["--model", "m", "--", "--swap-space", "16"])
+        self.assertEqual(cmd[-2:], ["--swap-space", "16"])
+
+
 class PassthroughTests(unittest.TestCase):
     def test_extra_args_are_appended_verbatim(self) -> None:
         cmd = command_for(["--model", "m", "--", "--swap-space", "16"])

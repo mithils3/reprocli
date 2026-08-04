@@ -73,8 +73,68 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
         command.extend(["--structured-outputs-config.backend", args.structured_outputs_backend])
     command.extend(_dataparallel_flags(args))
     command.extend(_multinode_flags(args))
-    command.extend(args.extra_vllm_args)
+    command.extend(_supported_extra_args(args.extra_vllm_args))
     return command
+
+
+def _supported_extra_args(extra: list[str]) -> list[str]:
+    """Drop pass-through flags this GPU cannot run.
+
+    One launch-time rewrite so far, the extra-args sibling of the ``pass_config``
+    rewrites below:
+
+    - ``--moe-backend deep_gemm_mega_moe`` is dropped below SM100. It is the
+      vLLM recipe's Blackwell FP8 MoE kernel, and on a Hopper card vLLM raises
+      ``NotImplementedError("DeepGEMM MegaMoE requires SM100 GPUs.")`` only
+      AFTER loading all 48 checkpoint shards, so the serve dies ~3 minutes in
+      and the allocation is spent (job 2858259 on 2xGH200). The Hopper port is
+      an unmerged RFC (vllm#42284), blocked on an upstream DeepGEMM PR.
+      Dropping the flag lands on vLLM's auto MoE-backend selection, which is
+      what the official recipe does on Hopper and what every verified GH200
+      serve of this model has run. Pass a non-mega backend explicitly to
+      override; other ``--moe-backend`` values are left alone.
+    """
+    kept: list[str] = []
+    index = 0
+    while index < len(extra):
+        token = extra[index]
+        value = None
+        width = 1
+        if token == "--moe-backend" and index + 1 < len(extra):
+            value = extra[index + 1]
+            width = 2
+        elif token.startswith("--moe-backend="):
+            value = token.split("=", 1)[1]
+        if value == "deep_gemm_mega_moe" and _below_sm100():
+            print(
+                "reprocli_serve: dropping --moe-backend deep_gemm_mega_moe "
+                "(SM100-only; vLLM auto-selects the MoE backend on this GPU — "
+                "pass a non-mega backend explicitly to override)",
+                file=sys.stderr,
+                flush=True,
+            )
+            index += width
+            continue
+        kept.append(token)
+        index += 1
+    return kept
+
+
+def _below_sm100() -> bool:
+    """True only when the GPU is determinably pre-Blackwell (compute major < 10).
+
+    An undeterminable capability (no torch, no CUDA, a probe that raises) returns
+    False: leave the operator's flag alone and let vLLM be the authority. torch is
+    imported lazily so a command without a mega-MoE flag never pays for it.
+    """
+    try:
+        import torch
+
+        if not torch.cuda.is_available():
+            return False
+        return torch.cuda.get_device_capability(0)[0] < 10
+    except Exception:
+        return False
 
 
 def _supported_compilation_config(compilation: str) -> str:

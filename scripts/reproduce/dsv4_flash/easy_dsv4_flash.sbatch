@@ -140,6 +140,12 @@ fi
 #                            pipeline while keeping FULL cudagraph capture.
 #   EXTRA_SERVE_ARGS="--disable-custom-all-reduce"
 #                            what the published 2xGH200 configuration runs.
+#   EXTRA_SERVE_ARGS="--moe-backend deep_gemm_mega_moe"
+#                            the recipe's Blackwell FP8 MoE kernel, SM100-only: on
+#                            GH200 vLLM raises AFTER loading all 48 shards and the
+#                            serve dies before ready (job 2858259). Unrelated to the
+#                            corruption. reprocli_serve now strips it on sub-SM100
+#                            nodes; the Hopper port is an unmerged RFC (vllm#42284).
 read -r -a EXTRA_SERVE_ARGS_ARR <<< "${EXTRA_SERVE_ARGS:-}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
