@@ -32,15 +32,22 @@
 #     own DEEPSEEK_SPARSE_SWA backend forces anyway), and a compilation config that
 #     turns off the norm_quant / act_quant custom fusions -- see COMPILATION_CONFIG
 #     below for why. No --tokenizer-mode: vLLM defaults it to deepseek_v4 from the
-#     architecture, which is what makes the Think Max kwargs below bind.
+#     architecture, which is what makes the Think High kwargs below bind.
 #   - two REQUIRED launch-env exports live below, not in the profile: the DeepGEMM
 #     LD_LIBRARY_PATH (V4's Lightning Indexer dies without libnvrtc.so.13) and
 #     VLLM_USE_FLASHINFER_SAMPLER=0 (the FlashInfer sampler kernel crashes on GH200).
-#   - Think Max reasoning is pinned via REPROCLI_CHAT_TEMPLATE_KWARGS (the client's
-#     apply_chat_template_kwargs rides it onto every request). AA Intelligence Index
-#     40 = Max Effort is the rung that separates V4-Flash from Qwen3.6-27B (High=37);
-#     the sweep MUST run Max or the capability axis is confounded. Think Max also
-#     needs max-model-len >= 393216 (the profile default) and DeepSeek's recommended
+#   - Think High reasoning is pinned via REPROCLI_CHAT_TEMPLATE_KWARGS (the client's
+#     apply_chat_template_kwargs rides it onto every request). This is a DELIBERATE
+#     step down from Max, taken 2026-08-06. Max costs the AA Intelligence Index 40
+#     rung that separated V4-Flash from Qwen3.6-27B (High=37), so the capability axis
+#     is no longer anchored to the published index number and cross-model claims must
+#     say which rung ran. What buys it back: V4's encoder never drops prior-turn
+#     reasoning while tools are in the request, so every round's CoT is re-rendered
+#     into the next prompt, and Max's ~2.5x verbosity made that replay 49-72% of the
+#     input ceiling in sweep 2883229 -- 16 of 27 scored runs died on context_budget.
+#     0731's ladder was also re-cut so "high" IS the prompt the preview shipped as
+#     "max", which is the rung the preview sweeps actually ran. Think High also
+#     needs max-model-len >= 393216 (well under the profile's 1M) and DeepSeek's recommended
 #     temperature 1.0 / top_p 1.0 (audit sends them explicitly; the repro agent
 #     reads it from REPROCLI_TOP_P). 0731's card recommends top_p 0.95 for agentic
 #     scenarios and 1.0 otherwise, and both loops here are agentic, so this sweep runs
@@ -48,10 +55,12 @@
 #     checkpoint's 1.0 because the preview card recommended 1.0 flat; sampling is a
 #     confound when comparing the two, on top of the effort-ladder re-cut below.
 #     0731 also re-cut the effort ladder: its encoder maps "high" to the prompt the
-#     preview used for "max" and gives "max" a strictly stronger one, so
-#     reasoning_effort "max" remains the top rung and runs more verbose than before.
-#   - Max Effort measured ~2.5x verbosity on the AA index, so wall-clock and round
-#     budgets burn faster; RESUME=1 + the 48h cap let a re-submit finish the tail.
+#     preview used for "max" and gives "max" a strictly stronger one. So this sweep's
+#     "high" matches the preview sweeps' effective rung, and only the 0731 Max sweeps
+#     (2818716, 2856192, 2869802, 2883229) sit above it.
+#   - High Effort is well short of Max's ~2.5x verbosity, so wall-clock and round
+#     budgets burn slower than those sweeps; RESUME=1 + the 48h cap still let a
+#     re-submit finish the tail.
 # Defaults to the eval split's Easy papers, MAX_PARALLEL=10, RESUME=1. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
 # per-sequence KV small even at max_model_len 1048576, so 10 papers plus one audit
@@ -108,12 +117,12 @@ AUDIT_MAX_INPUT_TOKENS=$(( MAX_MODEL_LEN - 32768 ))
 TOP_P="${TOP_P:-0.95}"
 export REPROCLI_TOP_P="${TOP_P}"
 
-# Pin Think Max on every request (repro loop + auditor tool loop). The client's
+# Pin Think High on every request (repro loop + auditor tool loop). The client's
 # apply_chat_template_kwargs reads this and never clobbers a per-request override.
 # The default is held in its own variable: bash ends a ${VAR:-...} default at the
 # first unescaped "}", so an inline JSON default silently appends a stray brace to
 # any operator override, and the unparseable value is dropped whole (endpoint.py).
-CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "max"}'
+CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "high"}'
 export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-${CHAT_TEMPLATE_KWARGS_DEFAULT}}"
 
 # Turn off the two custom fusions vLLM enables by default for this checkpoint. They
@@ -395,7 +404,7 @@ run_one() {
 
   # (1) Reproduce this paper; the brain URL comes from REPROCLI_ENDPOINT_FILE.
   # Sampling stays unset so the agent defers to DeepSeek's generation_config
-  # (temp 1.0 / top_p 1.0 for Think Max); the effort itself rides
+  # (temp 1.0 / top_p 1.0 for Think High); the effort itself rides
   # REPROCLI_CHAT_TEMPLATE_KWARGS.
   python -m reprocli_repro \
     --paper-id "${pid}" \

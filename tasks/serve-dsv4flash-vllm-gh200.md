@@ -73,26 +73,45 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash \
   set `--max-model-len` just under the capacity the error reports.
 - First request after startup stalls while DeepGEMM JIT-compiles kernels.
 
-## Reasoning effort (sweep requirement)
+## Reasoning effort
 
-AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max Effort** variant.
-The roster ladder cites that number, so eval-100 sweeps MUST run Think Max or the
-capability axis is confounded (same trap as MiniMax AWQ-reported-as-upstream).
-Max is also load-bearing for the ladder: at High Effort the model scores 37,
-tying Qwen3.6-27B exactly; Max (+3 -> 40) is what makes it a distinct rung.
+**2026-08-06: the sweeps run `high`, not `max`.** This reverses the requirement
+below, deliberately and with a known cost. Read both halves before changing it.
 
-Effort is per-request, not a serve flag — the brain client must send:
+Why High now. V4's encoder does not drop prior-turn reasoning while tools are in
+the request (`encoding_dsv4.py`: `effective_drop_thinking = False` when any
+message carries tools), so every round's chain of thought is re-rendered into the
+next prompt with no turn-age limit. Max's 2.5x verbosity turned that replay into
+49-72% of the input ceiling in sweep 2883229 (median 61%), and 16 of the 27
+scored runs died on `context_budget` — against 1 of 34 for Qwen3.6 and 3 of 34
+for MiniMax-M2.7 on the same papers. The 1M ceiling buys headroom back, but High
+attacks the growth rate rather than the wall. 0731 also re-cut the ladder so
+`high` IS the prompt the preview shipped as `max`, so this rung matches what the
+preview sweeps effectively ran.
+
+What it costs. AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max
+Effort** variant, and the roster ladder cites that number. At High the model
+scores 37, tying Qwen3.6-27B exactly — so the published index no longer separates
+them and the capability axis is not anchored to it. Any cross-model claim must
+name the rung that ran (same class of trap as MiniMax AWQ-reported-as-upstream).
+Sweeps 2818716, 2856192, 2869802 and 2883229 ran Max; everything after runs High,
+so effort is a comparability confound across that boundary.
+
+Effort is per-request, not a serve flag — the brain client sends:
 
 ```python
-extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "max"}}
+extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}}
 ```
 
-- Sampling: temperature 1.0, top_p 1.0 (DeepSeek's Think Max recommendation).
-- Think Max needs max-model-len >= 393216; the default 1M above satisfies it.
-- NOT yet plumbed: no `chat_template_kwargs` support exists in the repro client.
-  Add a per-model request-kwargs field to the sweep profile before this sweep.
-- Budget warning: Max Effort measured 2.5x average verbosity on the AA index
-  (230M vs 92M tokens); size round budgets and wall-clock caps accordingly.
+- Plumbed via `REPROCLI_CHAT_TEMPLATE_KWARGS`, pinned in each dsv4 sbatch's
+  `CHAT_TEMPLATE_KWARGS_DEFAULT`; the client's `apply_chat_template_kwargs`
+  rides it onto every request and never clobbers a per-request override.
+- Sampling: temperature 1.0, top_p 0.95 (0731's agentic recommendation; both
+  loops here are agentic). The preview's flat 1.0 is a confound across the swap.
+- Needs max-model-len >= 393216; the profile's 1M satisfies it with room to spare.
+- Budget: Max measured 2.5x average verbosity on the AA index (230M vs 92M
+  tokens), so High-effort sweeps burn round and wall-clock budget slower than
+  the four Max sweeps above.
 
 ## Benchmark
 
