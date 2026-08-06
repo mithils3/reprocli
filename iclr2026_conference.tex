@@ -46,7 +46,23 @@ Write a concise summary of the problem, method, main results, and significance.
 \section{Introduction}
 \label{sec:introduction}
 
-Write your introduction here. Clearly state the problem, why it matters, your main idea, and your contributions.
+Reproducibility, the ability to obtain results consistent with those the
+authors of a paper report, is the bedrock of science. Research advances by
+building on published results, so those results must be recoverable by
+someone other than their authors. In machine learning they often are not,
+and independent studies attribute the shortfall to missing code, missing
+data, and underspecified experimental
+detail~\citep{gundersen2018state,raff2019step,pineau2021improving,
+gundersen2022sources}. AI agents now implement, execute, and debug
+large-scale experiments and software
+projects~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, which makes them natural candidates for
+autonomous reproduction of ML
+papers~\citep{siegel2024corebench,starace2025paperbench}. Reproduction is
+also a prerequisite for recursively self-improving systems, since a model
+that improves itself must first re-implement and verify the research it
+builds on~\citep{favaro2026recursive}.
+
 
 \section{Related Work}
 \label{sec:related-work}
