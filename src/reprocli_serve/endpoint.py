@@ -2,8 +2,12 @@
 
 A single small JSON file is the entire cross-repo seam. The server writes it once
 it is healthy; a consumer (the reprocli runner, or anything else) reads ``base_url``
-from it. Keeping the format trivial means the two repos never need to import each
-other — they only agree on these keys.
+from it.
+
+This module is the format's one definition: the writer and the reader sit together
+here, and the consumer side imports ``read_base_url`` instead of re-parsing the
+keys. The dependency only ever points this way — the serving half imports nothing
+from the agent packages (see the package docstring).
 """
 
 from __future__ import annotations

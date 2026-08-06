@@ -29,10 +29,14 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+# The endpoint file is reprocli_serve's published contract, so its env-var name and
+# its reader live there. We are the consumer side and import them rather than
+# re-declaring them (reprocli_serve imports nothing from us, by design).
+from reprocli_serve.config import ENV_ENDPOINT_FILE
+from reprocli_serve.endpoint import read_base_url
 from reprocli_vllm.vllm.retry import with_retries
 
 ENV_SERVER_URL = "REPROCLI_SERVER_URL"
-ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
 ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
@@ -117,16 +121,6 @@ def normalize_server_url(value: str) -> str:
     return url
 
 
-def base_url_from_endpoint_file(path: Path) -> str | None:
-    """Read the ``base_url`` field from a published endpoint JSON file."""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    url = data.get("base_url")
-    return url if isinstance(url, str) and url else None
-
-
 def resolve_server_url(cli_value: str | None) -> str | None:
     """Return the normalized base URL to attach to, or None if none is configured."""
     if cli_value:
@@ -136,7 +130,7 @@ def resolve_server_url(cli_value: str | None) -> str | None:
         return normalize_server_url(env_url)
     endpoint_file = os.environ.get(ENV_ENDPOINT_FILE)
     if endpoint_file:
-        url = base_url_from_endpoint_file(Path(endpoint_file))
+        url = read_base_url(Path(endpoint_file))
         if url:
             return normalize_server_url(url)
     return None

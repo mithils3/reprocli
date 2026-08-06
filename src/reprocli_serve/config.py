@@ -22,7 +22,9 @@ FABRIC_IFACES = ["hsn0", "hsn1", "hsn2", "hsn3"]
 SERVER_STARTUP_TIMEOUT = 1800.0
 HEALTH_POLL_INTERVAL = 5.0
 
-# Matches reprocli_vllm.config.config.MAX_MODEL_LEN.
+# Must match reprocli_vllm.config.config.MAX_MODEL_LEN, and is restated rather than
+# imported: this package must not import the agent packages (see the package
+# docstring), so the dependency can only point the other way. Change both together.
 MAX_MODEL_LEN = 196608
 DEFAULT_GPU_MEMORY_UTILIZATION = 0.95
 

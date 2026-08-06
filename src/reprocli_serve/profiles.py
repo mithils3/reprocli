@@ -11,16 +11,14 @@ client sends, not server launch flags.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from reprocli_serve.config import DEFAULT_GPU_MEMORY_UTILIZATION, MAX_MODEL_LEN
 
 KIMI_K2_6_MODEL = "moonshotai/Kimi-K2.6"
-MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
 MINIMAX_COMPILATION_CONFIG = {"cudagraph_mode": "PIECEWISE"}
-QWEN3_MODEL = "Qwen/Qwen3.6-27B-FP8"
-DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
 # vLLM enables the norm_quant / act_quant custom fusions by default for this model
 # ("Enabled custom fusions: norm_quant, act_quant, allreduce_rms" at startup). They
 # are reported to garble token output for DeepSeek-V4-Flash-0731 on aarch64, at
@@ -32,7 +30,6 @@ DEEPSEEK_V4_FLASH_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
 DEEPSEEK_V4_COMPILATION_CONFIG = {
     "pass_config": {"fuse_norm_quant": False, "fuse_act_quant": False},
 }
-LAGUNA_S21_MODEL = "poolside/Laguna-S-2.1-INT4"
 # Laguna dies at the profiling run without this, behind a misleading async
 # CUBLAS_STATUS_EXECUTION_FAILED. The real crash is vLLM fusing RMSNorm into the
 # all-reduce and letting FlashInfer pick the mnnvl symmetric-memory backend, which
@@ -252,86 +249,72 @@ def laguna_profile() -> Profile:
     )
 
 
-def is_laguna(model: str) -> bool:
-    if "Laguna" in model.rstrip("/"):
-        return True
+@dataclass(frozen=True)
+class _Family:
+    """One rung of the ``resolve_profile`` ladder.
+
+    A model is recognized either by its id/path (``name_matches``) or, for a local
+    checkpoint whose directory name says nothing useful, by the ``architectures``
+    its ``config.json`` declares (``arch_prefix``).
+    """
+
+    name_matches: Callable[[str], bool]
+    arch_prefix: str
+    profile: Callable[[], Profile]
+
+
+def _named(marker: str) -> Callable[[str], bool]:
+    """Match any model id/path containing ``marker``."""
+    return lambda name: marker in name
+
+
+def _is_kimi_name(name: str) -> bool:
+    # Kimi matches the exact repo id / trailing path segment rather than a
+    # substring, so a neighbouring checkpoint directory does not claim it.
+    return name == KIMI_K2_6_MODEL or name.endswith("/Kimi-K2.6")
+
+
+# ORDER IS LOAD-BEARING. The first family that matches wins, and MiniMax-M3 must be
+# tested before the MiniMax fallback below: M3 takes the minimax_m3 parsers and the
+# mandatory --block-size 128, not M2's parsers and cudagraph config.
+_FAMILIES: tuple[_Family, ...] = (
+    _Family(_is_kimi_name, "KimiK25", kimi_profile),
+    _Family(_named("MiniMax-M3"), "MiniMaxM3", minimax_m3_profile),
+    _Family(_named("DeepSeek-V4"), "DeepseekV4", deepseek_v4_profile),
+    _Family(_named("Qwen3"), "Qwen3", qwen3_profile),
+    _Family(_named("Laguna"), "Laguna", laguna_profile),
+)
+
+
+def _architectures(model: str) -> list[str]:
+    """``architectures`` declared by a local checkpoint's config.json.
+
+    Empty for a bare HF id, an absent file, or anything unreadable — the caller
+    then falls through to the next family.
+    """
     config_path = Path(model) / "config.json"
     if not config_path.exists():
-        return False
+        return []
     try:
         config = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("Laguna") for name in architectures)
-
-
-def is_deepseek_v4(model: str) -> bool:
-    if "DeepSeek-V4" in model.rstrip("/"):
-        return True
-    config_path = Path(model) / "config.json"
-    if not config_path.exists():
-        return False
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("DeepseekV4") for name in architectures)
-
-
-def is_qwen3(model: str) -> bool:
-    if "Qwen3" in model.rstrip("/"):
-        return True
-    config_path = Path(model) / "config.json"
-    if not config_path.exists():
-        return False
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("Qwen3") for name in architectures)
-
-
-def is_kimi_k2_6(model: str) -> bool:
-    if model == KIMI_K2_6_MODEL or model.rstrip("/").endswith("/Kimi-K2.6"):
-        return True
-    config_path = Path(model) / "config.json"
-    if not config_path.exists():
-        return False
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("KimiK25") for name in architectures)
-
-
-def is_minimax_m3(model: str) -> bool:
-    if "MiniMax-M3" in model.rstrip("/"):
-        return True
-    config_path = Path(model) / "config.json"
-    if not config_path.exists():
-        return False
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    architectures = config.get("architectures") or []
-    return any(str(name).startswith("MiniMaxM3") for name in architectures)
+        return []
+    return [str(name) for name in config.get("architectures") or []]
 
 
 def resolve_profile(model: str) -> Profile:
-    """Pick the serving profile for ``model`` (a HF id or a local path)."""
-    if is_kimi_k2_6(model):
-        return kimi_profile()
-    if is_minimax_m3(model):
-        return minimax_m3_profile()
-    if is_deepseek_v4(model):
-        return deepseek_v4_profile()
-    if is_qwen3(model):
-        return qwen3_profile()
-    if is_laguna(model):
-        return laguna_profile()
+    """Pick the serving profile for ``model`` (a HF id or a local path).
+
+    config.json is read at most once, lazily: a model recognized by name never
+    touches the disk at all.
+    """
+    name = model.rstrip("/")
+    architectures: list[str] | None = None
+    for family in _FAMILIES:
+        if family.name_matches(name):
+            return family.profile()
+        if architectures is None:
+            architectures = _architectures(model)
+        if any(arch.startswith(family.arch_prefix) for arch in architectures):
+            return family.profile()
     return minimax_profile()

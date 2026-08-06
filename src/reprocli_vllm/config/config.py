@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 
 MINIMAX_M2_MODEL = "MiniMaxAI/MiniMax-M2.7"
@@ -51,6 +52,24 @@ RUN_FILE_MAX_CHARS = 200_000
 RUN_FILE_WRITE_MAX_CHARS = 200_000
 RUN_MANIFEST_MAX_ENTRIES = 200
 BASH_TIMEOUT = 60
+
+
+def bounded(value: Any, default: int, maximum: int) -> int:
+    """Clamp an agent-supplied integer argument, falling back on junk.
+
+    Every tool that takes a ``timeout`` / ``max_chars`` / ``gpus`` from the model
+    runs it through here, so the floor, the ceiling and the "missing or
+    unparseable means default" rule are one decision rather than one per tool.
+    It lives in config because both agents' tool modules already import config —
+    homing it in either one's tool package would drag that whole package into the
+    other's import graph.
+    """
+    if value in (None, ""):
+        return default
+    try:
+        return max(1, min(int(value), maximum))
+    except (TypeError, ValueError):
+        return default
 AUDIT_SYSTEM_MESSAGE = (
     "You are an adversarial reproduction auditor for an ML reproduction "
     "benchmark. You grade ONE agent's attempt to reproduce ONE paper's central "

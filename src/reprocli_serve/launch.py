@@ -11,6 +11,8 @@ import dataclasses
 import json
 import subprocess
 import sys
+from collections.abc import Callable
+from typing import Any
 
 from reprocli_serve.profiles import Profile
 
@@ -46,31 +48,7 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     ]
     if args.trust_remote_code or profile.trust_remote_code:
         command.append("--trust-remote-code")
-    mm_mode = args.mm_encoder_tp_mode or profile.mm_encoder_tp_mode
-    if mm_mode:
-        command.extend(["--mm-encoder-tp-mode", mm_mode])
-    compilation = args.compilation_config or profile.compilation_config
-    if compilation:
-        command.extend(["--compilation-config", _supported_compilation_config(compilation)])
-    # Server-side default for the chat template's render-time switches (thinking on/off,
-    # effort ladders). Per-request REPROCLI_CHAT_TEMPLATE_KWARGS still wins where it is
-    # set; this is the floor for the requests that omit them.
-    template_kwargs = args.default_chat_template_kwargs or profile.default_chat_template_kwargs
-    if template_kwargs:
-        command.extend(["--default-chat-template-kwargs", template_kwargs])
-    if args.distributed_executor_backend:
-        command.extend(["--distributed-executor-backend", args.distributed_executor_backend])
-    kv_cache_dtype = args.kv_cache_dtype or profile.kv_cache_dtype
-    if kv_cache_dtype:
-        command.extend(["--kv-cache-dtype", kv_cache_dtype])
-    block_size = args.block_size or profile.block_size
-    if block_size:
-        command.extend(["--block-size", str(block_size)])
-    swap_space = args.swap_space if args.swap_space is not None else profile.swap_space_gb
-    if swap_space is not None:
-        command.extend(["--swap-space", str(swap_space)])
-    if profile.max_num_seqs:
-        command.extend(["--max-num-seqs", str(profile.max_num_seqs)])
+    command.extend(_coalesced_flags(args, profile))
     if args.enable_expert_parallel or profile.enable_expert_parallel:
         command.append("--enable-expert-parallel")
     if args.tokenizer_mode:
@@ -213,6 +191,69 @@ def _known_pass_config_fields() -> set[str] | None:
         return {field.name for field in dataclasses.fields(PassConfig)}
     except Exception:
         return None
+
+
+@dataclasses.dataclass(frozen=True)
+class _Flag:
+    """A ``vllm serve`` flag whose value is the CLI arg falling back to the profile.
+
+    ``arg`` and ``profile`` name the attribute on the argparse namespace and on the
+    Profile; either is None for a flag only one side carries. ``render`` turns the
+    coalesced value into its command-line token. ``keep_zero`` switches both the
+    fallback and the emit test from truthiness to ``is not None``, so an explicit 0
+    is passed through instead of being read as "unset".
+    """
+
+    flag: str
+    arg: str | None = None
+    profile: str | None = None
+    render: Callable[[Any], str] = str
+    keep_zero: bool = False
+
+
+# ORDER IS LOAD-BEARING: this is the order the flags appear in the launched command,
+# and the tests assert on it.
+_COALESCED_FLAGS: tuple[_Flag, ...] = (
+    _Flag("--mm-encoder-tp-mode", arg="mm_encoder_tp_mode", profile="mm_encoder_tp_mode"),
+    _Flag(
+        "--compilation-config",
+        arg="compilation_config",
+        profile="compilation_config",
+        # Rewritten against the installed vLLM's PassConfig on the way out.
+        render=_supported_compilation_config,
+    ),
+    # Server-side default for the chat template's render-time switches (thinking on/off,
+    # effort ladders). Per-request REPROCLI_CHAT_TEMPLATE_KWARGS still wins where it is
+    # set; this is the floor for the requests that omit them.
+    _Flag(
+        "--default-chat-template-kwargs",
+        arg="default_chat_template_kwargs",
+        profile="default_chat_template_kwargs",
+    ),
+    _Flag("--distributed-executor-backend", arg="distributed_executor_backend"),
+    _Flag("--kv-cache-dtype", arg="kv_cache_dtype", profile="kv_cache_dtype"),
+    _Flag("--block-size", arg="block_size", profile="block_size"),
+    # 0 GiB is a real setting here (it disables the host offload tier), not "unset".
+    _Flag("--swap-space", arg="swap_space", profile="swap_space_gb", keep_zero=True),
+    _Flag("--max-num-seqs", profile="max_num_seqs"),
+)
+
+
+def _coalesced_flags(args: argparse.Namespace, profile: Profile) -> list[str]:
+    """Emit every table flag the CLI or the profile sets, in table order."""
+    tokens: list[str] = []
+    for spec in _COALESCED_FLAGS:
+        from_args = getattr(args, spec.arg) if spec.arg else None
+        from_profile = getattr(profile, spec.profile) if spec.profile else None
+        if spec.keep_zero:
+            value = from_args if from_args is not None else from_profile
+            present = value is not None
+        else:
+            value = from_args or from_profile
+            present = bool(value)
+        if present:
+            tokens.extend([spec.flag, spec.render(value)])
+    return tokens
 
 
 def _dataparallel_flags(args: argparse.Namespace) -> list[str]:

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_serve import launch
 from reprocli_serve.args import parse_args
 from reprocli_serve.launch import build_serve_command
-from reprocli_serve.profiles import resolve_profile
+from reprocli_serve.profiles import Profile, resolve_profile
 
 
 def command_for(argv: list[str]) -> list[str]:
@@ -268,6 +268,79 @@ class PassthroughTests(unittest.TestCase):
         cmd = command_for(["--model", "MiniMaxAI/MiniMax-M2.7"])
         for flag in ("--pipeline-parallel-size", "--nnodes", "--node-rank", "--headless"):
             self.assertNotIn(flag, cmd)
+
+
+class CoalescedFlagTests(unittest.TestCase):
+    """The CLI-over-profile flag table: fallback, the 0 rule, and emission order."""
+
+    def test_profile_swap_space_of_zero_still_emits_the_flag(self) -> None:
+        # 0 GiB disables the host offload tier; it must not be read as "unset".
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc",
+            reasoning_parser="rp", swap_space_gb=0,
+        )
+        cmd = build_serve_command(parse_args(["--model", "m"]), profile)
+        self.assertEqual(value_after(cmd, "--swap-space"), "0")
+
+    def test_cli_swap_space_of_zero_overrides_a_nonzero_profile(self) -> None:
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc",
+            reasoning_parser="rp", swap_space_gb=16,
+        )
+        cmd = build_serve_command(parse_args(["--model", "m", "--swap-space", "0"]), profile)
+        self.assertEqual(value_after(cmd, "--swap-space"), "0.0")
+
+    def test_cli_value_wins_over_the_profile_default(self) -> None:
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc",
+            reasoning_parser="rp", kv_cache_dtype="fp8", block_size=128,
+            mm_encoder_tp_mode="data",
+        )
+        cmd = build_serve_command(
+            parse_args(["--model", "m", "--kv-cache-dtype", "auto", "--block-size", "32"]),
+            profile,
+        )
+        self.assertEqual(value_after(cmd, "--kv-cache-dtype"), "auto")
+        self.assertEqual(value_after(cmd, "--block-size"), "32")
+        self.assertEqual(value_after(cmd, "--mm-encoder-tp-mode"), "data")
+
+    def test_max_num_seqs_comes_only_from_the_profile(self) -> None:
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc",
+            reasoning_parser="rp", max_num_seqs=32,
+        )
+        cmd = build_serve_command(parse_args(["--model", "m"]), profile)
+        self.assertEqual(value_after(cmd, "--max-num-seqs"), "32")
+
+    def test_unset_options_emit_no_flag(self) -> None:
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc", reasoning_parser="rp"
+        )
+        cmd = build_serve_command(parse_args(["--model", "m"]), profile)
+        for flag in (
+            "--mm-encoder-tp-mode", "--compilation-config", "--default-chat-template-kwargs",
+            "--distributed-executor-backend", "--kv-cache-dtype", "--block-size",
+            "--swap-space", "--max-num-seqs",
+        ):
+            self.assertNotIn(flag, cmd)
+
+    def test_flags_are_emitted_in_table_order(self) -> None:
+        # vLLM does not care, but pinning the order keeps the table honest.
+        profile = Profile(
+            name="t", tensor_parallel_size=1, tool_call_parser="tc", reasoning_parser="rp",
+            mm_encoder_tp_mode="data", compilation_config='{"cudagraph_mode":"PIECEWISE"}',
+            default_chat_template_kwargs='{"enable_thinking":true}', kv_cache_dtype="fp8",
+            block_size=128, max_num_seqs=32, swap_space_gb=8,
+        )
+        cmd = build_serve_command(
+            parse_args(["--model", "m", "--distributed-executor-backend", "mp"]), profile
+        )
+        expected = [
+            "--mm-encoder-tp-mode", "--compilation-config", "--default-chat-template-kwargs",
+            "--distributed-executor-backend", "--kv-cache-dtype", "--block-size",
+            "--swap-space", "--max-num-seqs",
+        ]
+        self.assertEqual([token for token in cmd if token in expected], expected)
 
 
 if __name__ == "__main__":

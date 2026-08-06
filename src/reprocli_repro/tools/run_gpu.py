@@ -43,7 +43,7 @@ import shlex
 from pathlib import Path
 from typing import Any
 
-from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
+from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, bounded, function_tool
 
 from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
@@ -297,13 +297,6 @@ RUN_GPU_HANDLERS = {"run_gpu": run_gpu}
 # sessions on exactly the semantics these spell out (``minutes`` on a reuse call
 # does NOT extend the hold), so each message states the semantics and the recovery
 # action, not just the failure.
-def bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default
 
 
 def clamp_note(requested: Any, effective: int, cap: int) -> str | None:
