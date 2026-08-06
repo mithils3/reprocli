@@ -83,11 +83,30 @@ def append_trajectory(evidence_dir: Path, row: dict) -> None:
     append_jsonl_row(evidence_paths(evidence_dir).trajectory, row, truncate=False)
 
 
+# Next sequence number for each numbered sink, keyed by (resolved dir, glob). Counting
+# the directory again on every call is quadratic in the episode's steps, and a long run
+# writes hundreds of patches and GPU step logs. The first call for a directory seeds
+# from the glob — so a resumed episode continues its own numbering instead of
+# overwriting — and later calls just increment. Keyed by directory, so a fresh episode
+# in the same process starts from its own count.
+_NEXT_SEQ: dict[tuple[str, str], int] = {}
+
+
+def _next_seq(directory: Path, pattern: str) -> int:
+    """The sequence number this call owns; the count advances whether or not it lands."""
+    key = (str(directory), pattern)
+    seq = _NEXT_SEQ.get(key)
+    if seq is None:
+        seq = sum(1 for _ in directory.glob(pattern))
+    _NEXT_SEQ[key] = seq + 1
+    return seq
+
+
 def save_patch(evidence_dir: Path, diff: str, *, name: str | None = None) -> Path:
     """Persist a diff under ``patches/`` with a zero-padded sequence prefix."""
     paths = evidence_paths(evidence_dir)
     paths.patches_dir.mkdir(parents=True, exist_ok=True)
-    seq = sum(1 for _ in paths.patches_dir.glob("*.diff"))
+    seq = _next_seq(paths.patches_dir.resolve(), "*.diff")
     slug = _slug(name) if name else "patch"
     target = paths.patches_dir / f"{seq:04d}-{slug}.diff"
     target.write_text(diff if diff.endswith("\n") else diff + "\n", encoding="utf-8")
@@ -103,7 +122,7 @@ def next_gpu_log(evidence_dir: Path) -> Path:
     """
     paths = evidence_paths(evidence_dir)
     paths.root.mkdir(parents=True, exist_ok=True)
-    seq = sum(1 for _ in paths.root.glob("gpu_step_*.log"))
+    seq = _next_seq(paths.root.resolve(), "gpu_step_*.log")
     return paths.root / f"gpu_step_{seq:04d}.log"
 
 

@@ -81,40 +81,97 @@ def _find_venvs(workspace: Path) -> list[Path]:
     return venvs
 
 
-def _dir_sizes(workspace: Path) -> dict[str, int]:
-    """Recursive byte size of every directory under (and including) ``workspace``.
+def _dir_sizes(
+    workspace: Path, threshold: int | None = None
+) -> tuple[dict[str, int], list[tuple[Path, int]]]:
+    """Recursive byte size of every directory under (and including) ``workspace``, plus
+    every regular file larger than ``threshold`` bytes.
 
-    Bottom-up accumulation (``topdown=False`` visits children first) so each dir's
-    total is its own regular files plus its already-summed immediate subdirs.
-    Symlinks — files and dirs — are skipped, never followed.
+    One walk serves both size passes. Totalling the directories has to stat every file
+    anyway, so the oversized files are picked up on the way through instead of costing a
+    second full stat-walk of the tree on the finalize path. The walk is top-down (the
+    order the oversized files are reported and deleted in) and the totals are
+    accumulated children-first afterwards, so each dir's total is its own regular files
+    plus its already-summed immediate subdirs. Symlinks — files and dirs — are skipped,
+    never followed.
     """
-    sizes: dict[str, int] = {}
-    for dirpath, dirnames, filenames in os.walk(workspace, topdown=False, followlinks=False):
+    own: dict[str, int] = {}
+    children: dict[str, list[str]] = {}
+    oversized: list[tuple[Path, int]] = []
+    top: str | None = None
+    for dirpath, dirnames, filenames in os.walk(workspace, followlinks=False):
+        if top is None:
+            top = dirpath
         total = 0
         for name in filenames:
             fp = os.path.join(dirpath, name)
             if os.path.islink(fp):
                 continue
             try:
-                total += os.path.getsize(fp)
+                size = os.path.getsize(fp)
             except OSError:
                 continue
-        for name in dirnames:
-            sub = os.path.join(dirpath, name)
-            if os.path.islink(sub):
-                continue
-            total += sizes.get(sub, 0)
-        sizes[dirpath] = total
-    return sizes
+            total += size
+            if threshold is not None and size > threshold:
+                oversized.append((Path(fp), size))
+        own[dirpath] = total
+        children[dirpath] = [
+            sub
+            for sub in (os.path.join(dirpath, name) for name in dirnames)
+            if not os.path.islink(sub)
+        ]
+    sizes: dict[str, int] = {}
+    for dirpath in _children_first(top, children) if top is not None else ():
+        sizes[dirpath] = own[dirpath] + sum(sizes.get(sub, 0) for sub in children[dirpath])
+    return sizes, oversized
 
 
-def _deepest_big_dirs(workspace: Path, threshold: int) -> list[tuple[Path, int]]:
+def _children_first(top: str, children: dict[str, list[str]]) -> list[str]:
+    """``top``'s subtree with every directory after its own children.
+
+    The order ``os.walk(topdown=False)`` yields, rebuilt from the single top-down walk:
+    the size accumulation needs each dir summed before its parent, and the prune log
+    reports big directories in this order. Dirs the walk never yielded (unreadable) are
+    skipped, exactly as ``os.walk`` skips them.
+    """
+    order: list[str] = []
+    stack: list[tuple[str, bool]] = [(top, False)]
+    while stack:
+        node, summed = stack.pop()
+        if summed:
+            order.append(node)
+            continue
+        stack.append((node, True))
+        for sub in reversed(children[node]):
+            if sub in children:
+                stack.append((sub, False))
+    return order
+
+
+def _discount(sizes: dict[str, int], path: Path, root: Path, size: int) -> None:
+    """Take a just-deleted file's bytes off every directory total that counted it.
+
+    Keeps ``sizes`` describing the tree as it stands *now*, which is what the
+    deepest-big-dir pass needs: it runs once the oversized files are already gone.
+    """
+    for parent in path.parents:
+        key = str(parent)
+        if key in sizes:
+            sizes[key] -= size
+        if parent == root:
+            break
+
+
+def _deepest_big_dirs(
+    sizes: dict[str, int], workspace: Path, threshold: int
+) -> list[tuple[Path, int]]:
     """Subdirectories whose total exceeds ``threshold`` and that contain no such
     subdirectory themselves — the tightest big subtree along each path.
 
-    Excludes ``workspace`` itself: we prune its contents, never the root.
+    ``sizes`` comes from :func:`_dir_sizes`, discounted for whatever the oversized-file
+    pass already deleted. Excludes ``workspace`` itself: we prune its contents, never
+    the root.
     """
-    sizes = _dir_sizes(workspace)
     root = str(workspace)
     qualifying = [d for d, size in sizes.items() if d != root and size > threshold]
     quals = set(qualifying)
@@ -159,22 +216,18 @@ def prune_workspace(
 
     if threshold_mb > 0:
         threshold = int(threshold_mb * 1024 * 1024)
+        # One walk feeds both size passes (it stats every file either way), and each
+        # deleted file is discounted from its parents so step 3 still sees the tree as
+        # it stands after step 2.
+        sizes, oversized = _dir_sizes(root, threshold)
         # Step 2: individual oversized files (anywhere in the tree, symlinks skipped).
-        for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
-            for name in filenames:
-                fp = Path(dirpath) / name
-                try:
-                    if fp.is_symlink():
-                        continue
-                    size = fp.stat().st_size
-                except OSError:
-                    continue
-                if size > threshold:
-                    if _remove(fp, is_dir=False, tag=tag, log=log):
-                        deleted.append((fp, size))
+        for fp, size in oversized:
+            if _remove(fp, is_dir=False, tag=tag, log=log):
+                deleted.append((fp, size))
+                _discount(sizes, fp, root, size)
 
         # Step 3: tightest subdirs still over threshold once big files are gone.
-        for path, size in _deepest_big_dirs(root, threshold):
+        for path, size in _deepest_big_dirs(sizes, root, threshold):
             if _remove(path, is_dir=True, tag=tag, log=log):
                 deleted.append((path, size))
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shlex
 import subprocess
 import sys
 import unittest
@@ -10,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.cluster import Cluster, resolve_cluster
 from reprocli_repro.slurm import (
+    STREAM_KEEP_BYTES,
     SlurmConfigError,
     StepResult,
     acquire_session,
@@ -19,6 +21,7 @@ from reprocli_repro.slurm import (
     run_in_session,
     session_lost,
 )
+from reprocli_repro.tools import output
 
 
 class BuildAcquireTests(unittest.TestCase):
@@ -204,6 +207,52 @@ class RunInSessionTests(unittest.TestCase):
             self.assertIn("before-kill", result.stdout)
             self.assertIn("exceeded timeout", result.stderr)
             self.assertIn("before-kill", log.read_text())  # survived the kill on disk
+
+    def test_output_under_the_retention_cap_round_trips_byte_for_byte(self):
+        # Anything short enough to fit the head buffer must come back exactly as
+        # printed — the bounded capture only ever drops the middle of a huge stream.
+        payload = "".join(f"line {i:04d} {'x' * 40}\n" for i in range(200))
+        result = self._run(f"printf '%s' {shlex.quote(payload)}")
+        self.assertTrue(result.ok, result.stderr)
+        self.assertEqual(result.stdout, payload)
+
+    def test_huge_output_is_bounded_but_keeps_head_and_tail(self):
+        """A step printing far more than the cap costs fixed RAM, not its whole output.
+
+        The complete stream is still teed to the evidence log (that is the record the
+        auditor and the agent read); memory only has to carry what the callers slice
+        back out — ``output.shape``'s 40k-char window and ``output.tail``'s 4k — so the
+        head and the tail both have to survive.
+        """
+        import tempfile
+
+        spam = 8 * STREAM_KEEP_BYTES  # ~2 MB, well past both retention regions
+        script = (
+            f"{shlex.quote(sys.executable)} -c "
+            + shlex.quote(
+                "import sys\n"
+                "sys.stdout.write('HEAD-MARK\\n')\n"
+                f"sys.stdout.write('x' * {spam})\n"
+                "sys.stdout.write('\\nTAIL-MARK\\n')\n"
+            )
+        )
+        with tempfile.TemporaryDirectory() as d:
+            log = Path(d) / "gpu_step_0000.log"
+            result = self._run(script, log_path=log)
+            self.assertTrue(result.ok, result.stderr)
+            # The tee is complete: everything printed is on disk.
+            self.assertGreaterEqual(log.stat().st_size, spam)
+            # What we hold in RAM is not: two capped regions plus at most one chunk.
+            self.assertLess(len(result.stdout), 2 * STREAM_KEEP_BYTES + 65536 + 4096)
+            self.assertGreaterEqual(len(result.stdout), 2 * STREAM_KEEP_BYTES)
+            # Both ends survive, so everything downstream reads the same chars it
+            # would have read from the unbounded buffer.
+            self.assertTrue(result.stdout.startswith("HEAD-MARK\n"))
+            self.assertTrue(result.stdout.endswith("\nTAIL-MARK\n"))
+            shaped, clipped = output.shape(result.stdout, 40_000)
+            self.assertTrue(clipped)
+            self.assertTrue(shaped.startswith("HEAD-MARK\n"))
+            self.assertIn("TAIL-MARK", output.tail(result.stdout, 4_000))
 
     def test_srun_argv_is_unbuffered(self):
         argv = build_srun(resolve_cluster("deltaai"), "/ws", "python t.py", jobid="9")

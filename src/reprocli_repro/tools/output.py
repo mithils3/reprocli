@@ -51,9 +51,22 @@ def clip(text: str, limit: int, *, note: str = "") -> tuple[str, bool]:
 
 
 def tail(text: str, limit: int) -> str:
-    """The last ``limit`` chars, progress spam stripped (for kill/expiry paths)."""
-    shaped = strip_progress(text)
-    return shaped[-limit:]
+    """The last ``limit`` chars, progress spam stripped (for kill/expiry paths).
+
+    Slice first, strip second. ``strip_progress`` rewrites the whole string (a full
+    ``.replace()`` plus a split/join), and this runs on the kill path where ``text`` is
+    a whole captured stream and memory is already tight — so we strip an over-slice of
+    the end instead. Redraws are per-line, so stripping a suffix gives a *suffix* of
+    stripping everything: once the stripped window is ``limit`` chars long its last
+    ``limit`` chars are exactly what the full strip would have yielded. The window grows
+    only while spam has eaten it (heavy tqdm output), and stops at the whole string.
+    """
+    window = limit * 4
+    while True:
+        shaped = strip_progress(text[-window:])
+        if len(shaped) >= limit or window >= len(text):
+            return shaped[-limit:]
+        window *= 4
 
 
 def shape(text: str | None, limit: int, *, note: str = "") -> tuple[str, bool]:

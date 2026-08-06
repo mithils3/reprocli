@@ -24,6 +24,7 @@ from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
 from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
+from reprocli_repro.slurm import decode
 from reprocli_repro.tools import output as output_mod
 from reprocli_repro.tools.run_gpu import bounded
 
@@ -54,8 +55,8 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
         )
     except subprocess.TimeoutExpired as exc:
         _log(ctx, command, None, workspace, time.time() - start)
-        out, _ = output_mod.shape(_decode(exc.stdout), RUN_FILE_DEFAULT_CHARS)
-        err, _ = output_mod.shape(_decode(exc.stderr), RUN_FILE_DEFAULT_CHARS)
+        out, _ = output_mod.shape(decode(exc.stdout), RUN_FILE_DEFAULT_CHARS)
+        err, _ = output_mod.shape(decode(exc.stderr), RUN_FILE_DEFAULT_CHARS)
         return {
             "ok": False,
             "command": command,
@@ -67,8 +68,8 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
         return {"ok": False, "command": command, "error": f"{type(exc).__name__}: {exc}"}
     duration = time.time() - start
     _log(ctx, command, proc.returncode, workspace, duration)
-    stdout, t_out = output_mod.shape(_decode(proc.stdout), RUN_FILE_DEFAULT_CHARS)
-    stderr, t_err = output_mod.shape(_decode(proc.stderr), RUN_FILE_DEFAULT_CHARS)
+    stdout, t_out = output_mod.shape(decode(proc.stdout), RUN_FILE_DEFAULT_CHARS)
+    stderr, t_err = output_mod.shape(decode(proc.stderr), RUN_FILE_DEFAULT_CHARS)
     return {
         "ok": proc.returncode == 0,
         "command": command,
@@ -78,14 +79,6 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
         "stderr": stderr,
         "truncated": t_out or t_err,
     }
-
-
-def _decode(blob: bytes | str | None) -> str:
-    if blob is None:
-        return ""
-    if isinstance(blob, str):
-        return blob
-    return blob.decode("utf-8", errors="replace")
 
 
 def _log(ctx: ExecutionContext, command: str, rc: int | None, cwd: Path, duration: float) -> None:

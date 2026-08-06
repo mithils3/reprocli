@@ -36,9 +36,11 @@ this host (or no image is configured) rather than letting a step run unconfined.
 
 from __future__ import annotations
 
+import functools
 import os
 import shutil
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable
@@ -158,6 +160,24 @@ CONTAINER_REFERENCE = "/repro/reference"
 CONTAINER_EVIDENCE = "/repro/evidence"
 
 
+@functools.lru_cache(maxsize=None)
+def _which_cached(name: str, _lookup: Callable[[str], str | None]) -> str | None:
+    return _lookup(name)
+
+
+def which_tool(name: str) -> str | None:
+    """``shutil.which(name)`` for a host binary, resolved once per process.
+
+    Every sandboxed step wraps itself with a ``uv`` lookup and (when capped) a
+    ``taskset`` lookup — roughly a thousand tool calls per episode, each paying a full
+    PATH scan of tens of ``stat`` calls — and neither binary can appear, move, or vanish
+    while a run is in flight, so the scan happens once and the answer is reused. The
+    lookup function is part of the cache key, so a caller that swaps ``shutil.which``
+    out is never served an earlier lookup's answer.
+    """
+    return _which_cached(name, shutil.which)
+
+
 @dataclass(frozen=True)
 class Bind:
     """One ``apptainer --bind`` spec: ``src`` on the host → ``dst`` in the container."""
@@ -226,7 +246,7 @@ class Sandbox:
         # The agent image bundles its own `uv` + `python3.12`, so this bind is just an
         # override: when the host has a (newer) `uv`, mount it over the image's copy
         # (aarch64, runs fine in the container); otherwise the baked-in `uv` is used.
-        uv = shutil.which("uv")
+        uv = which_tool("uv")
         if uv:
             argv += ["--bind", f"{uv}:/usr/local/bin/uv"]
         argv.append(self.image)
@@ -335,7 +355,7 @@ def taskset_argv(cpus: int) -> list[str]:
     runnable threads across the machine regardless), the only thing that matters is
     that ``nproc`` inside the taskset slice reports *cpus*.
     """
-    if cpus <= 0 or not shutil.which("taskset"):
+    if cpus <= 0 or not which_tool("taskset"):
         return []
     try:
         allowed = sorted(os.sched_getaffinity(0))

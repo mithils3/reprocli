@@ -36,6 +36,7 @@ import signal
 import subprocess
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -55,6 +56,16 @@ if TYPE_CHECKING:
 # GPU count and a 1-GPU step is never charged as a fraction of the whole node.
 MEM_GB_PER_GPU = 100
 CPUS_PER_GPU = 60
+
+# Bytes of each stream a step keeps in RAM. The *complete* stream is on disk (the teed
+# ``log_path``), and the agent is handed that path, so memory only has to cover what the
+# caller actually reads back: ``output.shape`` keeps 40k chars (head 25% / tail 75%) and
+# ``output.tail`` 4k. We retain a head and a tail region of this size each — over 60k
+# chars apiece even for 4-byte UTF-8 — and let the middle go, which ``shape`` was going
+# to elide anyway. A training step can print hundreds of MB, and the buffer used to hold
+# every byte of it for the life of the step on a node shared with the sweep's vLLM
+# worker (job 2602811: the node OOM-killed that worker).
+STREAM_KEEP_BYTES = 256 * 1024
 
 # salloc prints "... allocation <jobid>" (Pending then Granted share the number).
 _JOBID_RE = re.compile(r"allocation (\d+)")
@@ -173,7 +184,7 @@ def build_srun(
     ]
 
 
-def _decode(blob: bytes | str | None) -> str:
+def decode(blob: bytes | str | None) -> str:
     """Text of a captured stream, whether the caller got str or raw bytes.
 
     ``subprocess.run(..., text=True)`` only decodes on the *normal* return path: the
@@ -182,6 +193,9 @@ def _decode(blob: bytes | str | None) -> str:
     how a queue-wait timeout used to take down the whole ``run_gpu`` call — the agent
     got a bare type error instead of "salloc timed out", so it could not tell a
     starved queue from a broken command and blind-retried the step.
+
+    ``workspace_bash`` captures in binary for the same reason (text mode's universal
+    newlines would turn every progress redraw into its own line) and decodes here too.
     """
     if blob is None:
         return ""
@@ -207,7 +221,7 @@ def acquire_session(
         # <id>" line and the QOS/reservation reason are the only signal the agent gets
         # about *why* the queue never granted a node.
         printed = "\n".join(
-            part for part in (_decode(exc.stdout), _decode(exc.stderr)) if part.strip()
+            part for part in (decode(exc.stdout), decode(exc.stderr)) if part.strip()
         )
         waited = f" after {exc.timeout:.0f}s" if exc.timeout else ""
         return SessionHandle(
@@ -216,12 +230,12 @@ def acquire_session(
             stderr=f"{printed}\n[salloc timed out{waited} waiting for the allocation]".lstrip("\n"),
             command=argv,
         )
-    found = _JOBID_RE.findall(_decode(proc.stdout) + "\n" + _decode(proc.stderr))
+    found = _JOBID_RE.findall(decode(proc.stdout) + "\n" + decode(proc.stderr))
     jobid = found[-1] if found else None
     return SessionHandle(
         ok=jobid is not None and proc.returncode == 0,
         jobid=jobid,
-        stderr=_decode(proc.stderr),
+        stderr=decode(proc.stderr),
         command=argv,
     )
 
@@ -243,6 +257,9 @@ def run_in_session(
     our timeout, the --time wall, scancel — everything printed up to the kill is on
     disk and in the returned (partial) ``StepResult`` instead of dying in a pipe
     buffer with the process.
+
+    Only the head and tail of each stream are kept in memory (``STREAM_KEEP_BYTES``
+    each); the log file is the complete record.
     """
     argv = build_srun(cluster, workspace, cmd, jobid=jobid, sandbox=sandbox)
     start = time.monotonic()
@@ -259,8 +276,8 @@ def run_in_session(
         )
     log = open(log_path, "ab", buffering=0) if log_path else None
     try:
-        out_buf: list[bytes] = []
-        err_buf: list[bytes] = []
+        out_buf = _StreamCapture()
+        err_buf = _StreamCapture()
         pumps = [
             threading.Thread(target=_pump, args=(proc.stdout, out_buf, log), daemon=True),
             threading.Thread(target=_pump, args=(proc.stderr, err_buf, log), daemon=True),
@@ -279,8 +296,8 @@ def run_in_session(
     finally:
         if log is not None:
             log.close()
-    stdout = b"".join(out_buf).decode("utf-8", errors="replace")
-    stderr = b"".join(err_buf).decode("utf-8", errors="replace")
+    stdout = out_buf.text()
+    stderr = err_buf.text()
     if timed_out:
         stderr += "\n[step exceeded timeout]"
     return StepResult(
@@ -301,18 +318,58 @@ def _kill_tree(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-def _pump(pipe: IO[bytes] | None, buf: list[bytes], log: IO[bytes] | None) -> None:
-    """Drain one pipe: collect chunks in memory and tee them to the evidence log.
+class _StreamCapture:
+    """The head and the tail of one streamed pipe, each bounded to ``keep`` bytes.
+
+    The head fills first and then freezes; every later chunk lands in a deque that
+    evicts from the front once it holds ``keep`` bytes. So a step that prints far more
+    than the cap costs a fixed ~2x``keep`` of RAM instead of its whole output, and what
+    ran through the middle is on disk (the teed log) only — the same middle
+    ``output.shape`` elides before the agent ever sees it.
+    """
+
+    __slots__ = ("keep", "_head", "_head_len", "_tail", "_tail_len")
+
+    def __init__(self, keep: int = STREAM_KEEP_BYTES) -> None:
+        self.keep = keep
+        self._head: list[bytes] = []
+        self._head_len = 0
+        self._tail: deque[bytes] = deque()
+        self._tail_len = 0
+
+    def add(self, chunk: bytes) -> None:
+        if self._head_len < self.keep:
+            room = self.keep - self._head_len
+            self._head.append(chunk[:room])
+            self._head_len += min(room, len(chunk))
+            chunk = chunk[room:]
+            if not chunk:
+                return
+        self._tail.append(chunk)
+        self._tail_len += len(chunk)
+        # Drop whole chunks from the front while the rest still covers ``keep`` bytes;
+        # the newest chunk is never dropped, however large it is.
+        while len(self._tail) > 1 and self._tail_len - len(self._tail[0]) >= self.keep:
+            self._tail_len -= len(self._tail.popleft())
+
+    def text(self) -> str:
+        """Everything retained, decoded once (chars the agent may still read)."""
+        return (b"".join(self._head) + b"".join(self._tail)).decode("utf-8", errors="replace")
+
+
+def _pump(pipe: IO[bytes] | None, buf: _StreamCapture, log: IO[bytes] | None) -> None:
+    """Drain one pipe: retain the head/tail in memory and tee every chunk to the log.
 
     The log write happens per-chunk (unbuffered handle), so the on-disk file is
     current the moment the process is killed; both streams share one log in arrival
-    order — the interleaving a terminal would have shown.
+    order — the interleaving a terminal would have shown. Only the retained window is
+    bounded; the tee is always complete.
     """
     if pipe is None:
         return
     try:
         for chunk in iter(lambda: pipe.read1(65536), b""):
-            buf.append(chunk)
+            buf.add(chunk)
             if log is not None:
                 try:
                     log.write(chunk)
