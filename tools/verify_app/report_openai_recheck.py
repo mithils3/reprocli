@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-import time
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -20,43 +19,6 @@ from reprocli_openai import recheck  # noqa: E402
 BASE_EXTRACTED = REPO / "outputs/v5/audit_pool_extracted.jsonl"
 RECHECK_DIR = REPO / "outputs/v5/openai_hard_recheck_gpt55_low"
 REPORT = RECHECK_DIR / "comparison_report.md"
-
-
-def wait_for_recheck(poll_seconds: int) -> None:
-    total = len(recheck.hard_no_code_ids(recheck.POOL))
-    raw_path = RECHECK_DIR / recheck.RAW_NAME
-    while True:
-        done = 0
-        if raw_path.exists():
-            done = sum(
-                1
-                for body in recheck.raw_rows(raw_path).values()
-                if body.get("status") == "completed"
-            )
-        print(f"recheck progress: {done}/{total}", flush=True)
-        if done >= total:
-            return
-        time.sleep(poll_seconds)
-
-
-def collect_results(allow_partial: bool) -> Path:
-    total = len(recheck.hard_no_code_ids(recheck.POOL))
-    raw_path = RECHECK_DIR / recheck.RAW_NAME
-    done = sum(
-        1
-        for body in recheck.raw_rows(raw_path).values()
-        if body.get("status") == "completed"
-    )
-    if done < total and not allow_partial:
-        raise SystemExit(f"recheck is incomplete: {done}/{total}")
-    if done < total:
-        print(f"recheck is incomplete; reporting partial results: {done}/{total}", flush=True)
-    recheck.collect(RECHECK_DIR)
-    extracted = RECHECK_DIR / "recheck_extracted.jsonl"
-    errors = [row for row in recheck.iter_jsonl(extracted) if "error" in row]
-    if errors:
-        raise SystemExit(f"{len(errors)} recheck rows have extraction errors")
-    return extracted
 
 
 def code_value(row: dict[str, Any]) -> bool | None:
@@ -150,14 +112,12 @@ def report(extracted_path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--poll-seconds", type=int, default=60)
-    parser.add_argument("--no-wait", action="store_true")
-    parser.add_argument("--allow-partial", action="store_true")
+    recheck.add_recheck_args(parser)
     args = parser.parse_args()
 
     if not args.no_wait:
-        wait_for_recheck(args.poll_seconds)
-    extracted = collect_results(args.allow_partial)
+        recheck.wait_for_recheck(RECHECK_DIR, args.poll_seconds)
+    extracted = recheck.collect_recheck(RECHECK_DIR, args.allow_partial)
     text = report(extracted)
     REPORT.write_text(text, encoding="utf-8")
     print(text, flush=True)

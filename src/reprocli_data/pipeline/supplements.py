@@ -20,9 +20,8 @@ import time
 import urllib.parse
 import zipfile
 from collections.abc import Iterable
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from itertools import islice
 from pathlib import Path
 from typing import Any
 
@@ -252,25 +251,18 @@ def download_supplements(
     workers: int,
 ) -> list[DownloadResult]:
     results: list[DownloadResult] = []
-    pending_jobs = iter(jobs)
     throttle = RequestThrottle(delay)
+    # Submit everything: the pool caps concurrency at `workers` and the throttle
+    # paces the OpenReview calls, so drip-feeding submissions bought nothing.
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        futures = {
+        futures = [
             pool.submit(download_supplement_one, api_base, job, output_dir, retries, overwrite, throttle)
-            for job in islice(pending_jobs, max(1, workers))
-        }
-        while futures:
-            done_futures, futures = wait(futures, return_when=FIRST_COMPLETED)
-            for future in done_futures:
-                result = future.result()
-                results.append(result)
-                print(progress_line(len(results), len(jobs), result), file=sys.stderr)
-                for job in islice(pending_jobs, 1):
-                    futures.add(
-                        pool.submit(
-                            download_supplement_one, api_base, job, output_dir, retries, overwrite, throttle
-                        )
-                    )
+            for job in jobs
+        ]
+        for done, future in enumerate(as_completed(futures), start=1):
+            result = future.result()
+            results.append(result)
+            print(progress_line(done, len(jobs), result), file=sys.stderr)
     return sorted(results, key=lambda item: item.index)
 
 

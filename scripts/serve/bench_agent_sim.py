@@ -26,82 +26,29 @@ at EOS and per-turn output sizes will vary.
 from __future__ import annotations
 
 import argparse
-import json
 import random
 import statistics
 import sys
 import threading
 import time
-import urllib.error
 
-from bench_serve import Config, Result, _filler, _post, count_tokens, wait_for_server
-
-
-def stream_turn(cfg: Config, messages: list[dict], max_tokens: int) -> tuple[Result, str]:
-    """Like bench_serve.stream_once, but also returns the generated text.
-
-    The text is appended to the transcript so the next turn's prefix covers
-    the tokens the server just generated (and already holds in cache), which
-    is exactly what a real agent harness does.
-    """
-    payload = {
-        "model": cfg.model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": 1.0,
-        "stream": True,
-        "stream_options": {"include_usage": True},
-        "ignore_eos": True,
-    }
-    start = time.perf_counter()
-    ttft = 0.0
-    prompt_tokens = completion_tokens = cached = 0
-    content: list[str] = []
-    reasoning: list[str] = []
-    try:
-        with _post(cfg, "/chat/completions", payload) as resp:
-            for raw in resp:
-                line = raw.decode().strip()
-                if not line.startswith("data: "):
-                    continue
-                body = line[6:]
-                if body == "[DONE]":
-                    break
-                chunk = json.loads(body)
-                for choice in chunk.get("choices") or []:
-                    delta = choice.get("delta") or {}
-                    if delta.get("content") or delta.get("reasoning_content"):
-                        if ttft == 0.0:
-                            ttft = time.perf_counter() - start
-                    if delta.get("content"):
-                        content.append(delta["content"])
-                    if delta.get("reasoning_content"):
-                        reasoning.append(delta["reasoning_content"])
-                if usage := chunk.get("usage"):
-                    prompt_tokens = usage.get("prompt_tokens", 0)
-                    completion_tokens = usage.get("completion_tokens", 0)
-                    details = usage.get("prompt_tokens_details") or {}
-                    cached = details.get("cached_tokens") or 0
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
-        return Result(0.0, 0.0, 0, 0, error=str(exc)), ""
-    result = Result(ttft, time.perf_counter() - start, prompt_tokens, completion_tokens, cached)
-    # Reasoning-only turns still need SOMETHING appended, or the next prompt
-    # would not cover the generated tokens and the cache comparison skews.
-    return result, "".join(content) or "".join(reasoning)
+from bench_serve import Config, Result, _filler, calibrate, count_tokens, stream_text, wait_for_server
 
 
 def build_system_prompt(cfg: Config, target: int) -> str:
     """A shared system prompt of ~`target` tokens, calibrated via /tokenize."""
     rng = random.Random(0)
-    words = max(64, int(target * 0.75))
-    text = ""
-    for _ in range(4):
-        text = f"You reproduce ML papers. Harness rules:\n{_filler(rng, words)}"
-        got = count_tokens(cfg, [{"role": "system", "content": text}])
-        if abs(got - target) <= max(128, target * 0.05):
-            break
-        words = max(64, int(words * target / max(got, 1)))
-    return text
+
+    def build(words: int) -> list[dict]:
+        return [
+            {
+                "role": "system",
+                "content": f"You reproduce ML papers. Harness rules:\n{_filler(rng, words)}",
+            }
+        ]
+
+    messages = calibrate(cfg, target, build, min_words=64, tol_floor=128, tol_frac=0.05)
+    return messages[0]["content"]
 
 
 def run_agent(
@@ -122,7 +69,7 @@ def run_agent(
         },
     ]
     for turn in range(args.turns):
-        result, text = stream_turn(cfg, messages, args.max_output)
+        result, text = stream_text(cfg, messages, args.max_output)
         with lock:
             records.append((agent, turn, result))
         if result.error:

@@ -25,12 +25,18 @@ import json
 import os
 import re
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
-from collections.abc import Iterator
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
+SRC = REPO / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from reprocli_openai.recheck import iter_jsonl as _iter_jsonl  # noqa: E402
+
 DEFAULT_BASE = REPO / "outputs/v5/audit_pool"
 
 TITLE_RE = re.compile(r"^title:\s*(.+)$", re.MULTILINE)
@@ -42,18 +48,10 @@ ARG_CLIP = 6000
 
 
 def iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
-    if not path.exists():
-        print(f"  ! missing {path}", file=sys.stderr)
-        return
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line_no, line in enumerate(handle, 1):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError as exc:
-                print(f"  ! {path.name}:{line_no} bad json: {exc.msg}", file=sys.stderr)
+    """The shared reader in its forgiving mode: a missing file or a torn line is
+    reported on stderr and skipped, because one bad line in a 220 MB dump must
+    not lose the other 100k rows."""
+    return _iter_jsonl(path, on_error="report")
 
 
 def clip(value: Any, limit: int) -> Any:

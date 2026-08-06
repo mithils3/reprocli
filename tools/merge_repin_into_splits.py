@@ -27,23 +27,20 @@ Then upload each file with tools/upload_audit_pool_hf.py.
 from __future__ import annotations
 
 import argparse
-import json
+import sys
 from pathlib import Path
+
+SRC = Path(__file__).resolve().parent.parent / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from reprocli_openai.recheck import iter_jsonl, write_jsonl  # noqa: E402
 
 # Only these classifier fields are overlaid; everything else on the frozen row is
 # preserved verbatim so the selection and its bands cannot drift.
 OVERLAY_FIELDS = ("central_claim", "claim_evidence", "mre_config", "agent_task", "match_target")
 MATCH_TARGET_KEYS = ("config", "metric", "value", "scope", "match_bar_kind")
 ID_FIELD = "custom_id"
-
-
-def _read_jsonl(path: Path) -> list[dict]:
-    rows = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            rows.append(json.loads(line))
-    return rows
 
 
 def _row_id(row: dict) -> str | None:
@@ -86,7 +83,7 @@ def _download_base(repo: str, out_dir: Path) -> tuple[Path, Path]:
 
 
 def _merge_one(base_path: Path, repin: dict[str, dict], out_path: Path) -> dict:
-    base_rows = _read_jsonl(base_path)
+    base_rows = list(iter_jsonl(base_path))
     merged: list[dict] = []
     missing_ids: list[str] = []
     warnings: list[str] = []
@@ -104,10 +101,7 @@ def _merge_one(base_path: Path, repin: dict[str, dict], out_path: Path) -> dict:
             warnings.extend(_check_match_target(rid, new.get("match_target")))
             overlaid += 1
         merged.append(new)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w", encoding="utf-8") as fh:
-        for row in merged:
-            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    write_jsonl(out_path, merged)
     return {
         "base": str(base_path),
         "out": str(out_path),
@@ -120,7 +114,7 @@ def _merge_one(base_path: Path, repin: dict[str, dict], out_path: Path) -> dict:
 
 def main() -> int:
     args = parse_args()
-    repin = _index_repin(_read_jsonl(args.repin))
+    repin = _index_repin(list(iter_jsonl(args.repin)))
     print(f"Loaded {len(repin)} re-pinned rows from {args.repin}")
 
     if args.splits_repo:

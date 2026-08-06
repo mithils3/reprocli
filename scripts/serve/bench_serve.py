@@ -32,6 +32,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8000/v1"
@@ -133,8 +134,13 @@ def count_tokens(cfg: Config, messages: list[dict]) -> int:
         return json.load(resp)["count"]
 
 
-def stream_once(cfg: Config, messages: list[dict], max_tokens: int) -> Result:
-    """Fire one streaming completion, timing first token and last."""
+def stream_text(cfg: Config, messages: list[dict], max_tokens: int) -> tuple[Result, str]:
+    """Fire one streaming completion; return its timings and the generated text.
+
+    The text matters to the agent simulator, which appends it to the transcript
+    so the next turn's prefix covers the tokens the server just generated (and
+    already holds in cache), exactly as a real agent harness does.
+    """
     payload = {
         "model": cfg.model,
         "messages": messages,
@@ -147,6 +153,8 @@ def stream_once(cfg: Config, messages: list[dict], max_tokens: int) -> Result:
     start = time.perf_counter()
     ttft = 0.0
     prompt_tokens = completion_tokens = cached = 0
+    content: list[str] = []
+    reasoning: list[str] = []
     try:
         with _post(cfg, "/chat/completions", payload) as resp:
             for raw in resp:
@@ -171,14 +179,26 @@ def stream_once(cfg: Config, messages: list[dict], max_tokens: int) -> Result:
                     )
                     if any(payload_fields) and ttft == 0.0:
                         ttft = time.perf_counter() - start
+                    if delta.get("content"):
+                        content.append(delta["content"])
+                    if delta.get("reasoning_content"):
+                        reasoning.append(delta["reasoning_content"])
                 if usage := chunk.get("usage"):
                     prompt_tokens = usage.get("prompt_tokens", 0)
                     completion_tokens = usage.get("completion_tokens", 0)
                     details = usage.get("prompt_tokens_details") or {}
                     cached = details.get("cached_tokens") or 0
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
-        return Result(0.0, 0.0, 0, 0, error=str(exc))
-    return Result(ttft, time.perf_counter() - start, prompt_tokens, completion_tokens, cached)
+        return Result(0.0, 0.0, 0, 0, error=str(exc)), ""
+    result = Result(ttft, time.perf_counter() - start, prompt_tokens, completion_tokens, cached)
+    # A reasoning-only turn still needs SOMETHING appended, or the next prompt
+    # would not cover the generated tokens and the cache comparison skews.
+    return result, "".join(content) or "".join(reasoning)
+
+
+def stream_once(cfg: Config, messages: list[dict], max_tokens: int) -> Result:
+    """Fire one streaming completion, timing first token and last."""
+    return stream_text(cfg, messages, max_tokens)[0]
 
 
 def stream_many(cfg: Config, jobs: list[tuple[list[dict], int]]) -> tuple[list[Result], float]:
@@ -201,6 +221,34 @@ def _filler(rng: random.Random, n_words: int) -> str:
     return " ".join(rng.choice(WORDS) for _ in range(n_words))
 
 
+def calibrate(
+    cfg: Config,
+    target: int,
+    build: Callable[[int], list[dict]],
+    *,
+    min_words: int,
+    tol_floor: int,
+    tol_frac: float,
+    rounds: int = 4,
+) -> list[dict]:
+    """Search for the filler size that makes `build(words)` ~`target` prompt tokens.
+
+    Word counts only approximate token counts, so each round measures the real
+    thing through vLLM's /tokenize and rescales. Give up after `rounds` and
+    return the last attempt -- these are benchmark prompts, and the measured
+    size is printed anyway.
+    """
+    words = max(min_words, int(target * 0.75))  # ~1.3 tok/word for this vocabulary
+    messages: list[dict] = []
+    for _ in range(rounds):
+        messages = build(words)
+        got = count_tokens(cfg, messages)
+        if abs(got - target) <= max(tol_floor, target * tol_frac):
+            break
+        words = max(min_words, int(words * target / max(got, 1)))
+    return messages
+
+
 def build_transcript(cfg: Config, target: int, nonce: str, seed: int = 0) -> list[dict]:
     """A synthetic agent transcript of ~`target` prompt tokens.
 
@@ -209,20 +257,17 @@ def build_transcript(cfg: Config, target: int, nonce: str, seed: int = 0) -> lis
     guarantees a hit.
     """
     rng = random.Random(seed)
-    words = max(256, int(target * 0.75))  # ~1.3 tok/word for this vocabulary
-    for _ in range(4):  # calibrate against the real tokenizer
-        messages = [
+
+    def build(words: int) -> list[dict]:
+        return [
             {"role": "system", "content": f"Session {nonce}. You reproduce ML papers."},
             {"role": "user", "content": "Reproduce the paper in ./work. Report the anchor metric."},
             {"role": "assistant", "content": f"Reading the repo.\n\n{_filler(rng, words // 2)}"},
             {"role": "user", "content": f"Tool output:\n{_filler(rng, words // 2)}"},
             {"role": "user", "content": "Continue. What is the next step?"},
         ]
-        got = count_tokens(cfg, messages)
-        if abs(got - target) <= max(512, target * 0.02):
-            return messages
-        words = max(256, int(words * target / max(got, 1)))
-    return messages
+
+    return calibrate(cfg, target, build, min_words=256, tol_floor=512, tol_frac=0.02)
 
 
 def fmt(results: list[Result]) -> str:

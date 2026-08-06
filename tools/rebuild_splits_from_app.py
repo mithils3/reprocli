@@ -30,6 +30,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from reprocli_openai.recheck import write_jsonl as write_jsonl_rows
 from reprocli_vllm.audit.h100 import h100_band
 from reprocli_vllm.audit.select_pool import (
     BAND_ORDER,
@@ -191,11 +192,8 @@ def pick_dev(kept: list[dict[str, Any]], eval_ids: set[str]) -> list[dict[str, A
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]], split: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps({**row, "split": split}, ensure_ascii=False) + "\n")
-    print(f"Wrote {len(rows)} rows -> {path}")
+    count = write_jsonl_rows(path, ({**row, "split": split} for row in rows))
+    print(f"Wrote {count} rows -> {path}")
 
 
 def composition(rows: list[dict[str, Any]]) -> dict[str, Any]:
