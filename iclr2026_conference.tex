@@ -76,7 +76,12 @@ survive a provenance audit of their execution evidence, which we call the
 self-claim gap. We analyze the recurring failure modes behind these
 numbers, including environment drift, where the authors' stack no longer
 builds as documented, and error compounding, where an early unvalidated
-mistake propagates into the final number.
+mistake propagates into the final number. By contrast, the runs that
+succeed behave like careful engineers. They smoke test on small
+configurations before committing to long jobs, read the released
+documentation rather than assume interfaces, and exploit the full set of
+artifacts and tools available to them. We detail both the failure and the
+success patterns in Section~\ref{sec:analysis}.
 
 
 \section{Related Work}
