@@ -69,10 +69,10 @@ class DeepseekV4ServeCommandTests(unittest.TestCase):
         self.assertEqual(value_after(self.cmd, "--tool-call-parser"), "deepseek_v4")
         self.assertEqual(value_after(self.cmd, "--reasoning-parser"), "deepseek_v4")
         self.assertEqual(value_after(self.cmd, "--kv-cache-dtype"), "fp8")
-        # The checkpoint's full 1M window, not the 393216 Think Max floor: the repro
-        # harness takes its input ceiling from whatever this serves, so serving the
-        # floor capped the agent at the floor.
-        self.assertEqual(value_after(self.cmd, "--max-model-len"), "1048576")
+        # 400*1024, over the 393216 Think Max floor but well under the checkpoint's
+        # 1M: the repro harness takes its input ceiling from whatever this serves, so
+        # the floor is not the target -- and 1M does not fit at TP=2 (job 2889476).
+        self.assertEqual(value_after(self.cmd, "--max-model-len"), "409600")
         self.assertIn("--enable-auto-tool-choice", self.cmd)
 
     def test_parser_override_is_the_sbatch_escape_hatch(self) -> None:

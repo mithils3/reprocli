@@ -159,12 +159,19 @@ def deepseek_v4_profile() -> Profile:
     #   - the CPU KV-offload tier and the DeepGEMM LD_LIBRARY_PATH +
     #     VLLM_USE_FLASHINFER_SAMPLER=0 exports live in the sbatch, not here
     #     (they are launch-env, not serve flags).
-    # max_model_len is the checkpoint's full 1M window. Think Max requires >= 393216
-    # (AA index 40 = Max Effort, the rung that separates V4-Flash from Qwen3.6-27B's
-    # 37), so 393216 was the floor, not the target; the repro harness now takes its
-    # input ceiling from whatever this serves, so serving the floor capped the agent
-    # there. If startup fails the KV check at 1M, that error reports the capacity --
-    # set max_model_len just under it, or go TP=4 on the full node. The Think Max kwargs themselves
+    # max_model_len 409600 = 400*1024, a whole number of 256-token blocks, just over
+    # the 393216 Think Max floor (AA index 40 = Max Effort, the rung that separates
+    # V4-Flash from Qwen3.6-27B's 37). The floor is not the target: the repro harness
+    # takes its input ceiling from whatever this serves, so serving 393216 exactly
+    # left the agent nothing above the floor.
+    # NOT the checkpoint's full 1M: at TP=2 the weights take 74 of 95 GiB and GPU KV
+    # gets ~10.9, while V4's sparse-MLA workspace scales with max_model_len. 1048576
+    # killed the engine mid-prefill in job 2889476 -- an aten::new_empty inside
+    # fused_deepseek_v4_qnorm_rope_kv_rope_quant_insert, surfaced through the torch
+    # stable-ABI dispatcher as an opaque call failure. Same vLLM 0.26.0 served 393216
+    # fine for 27 runs in 2883229, so the window is the variable, not the engine.
+    # For an honest 1M, go TP=4 on the full node: ~39 GiB of weights per GPU leaves
+    # ~45 GiB for KV instead of 10.9. The Think Max kwargs themselves
     # ride REPROCLI_CHAT_TEMPLATE_KWARGS (client apply_chat_template_kwargs), not a
     # serve flag. The parsers follow notes/References/Model Selection Notes.md
     # ("parser deepseek_v4"). No --tokenizer-mode: vLLM 0.25.1 already logs
@@ -185,7 +192,7 @@ def deepseek_v4_profile() -> Profile:
         tensor_parallel_size=2,
         tool_call_parser="deepseek_v4",
         reasoning_parser="deepseek_v4",
-        max_model_len=1048576,
+        max_model_len=409600,
         kv_cache_dtype="fp8",
         block_size=256,
         compilation_config=json.dumps(

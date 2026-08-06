@@ -92,7 +92,12 @@ extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "max"
   rides it onto every request and never clobbers a per-request override.
 - Sampling: temperature 1.0, top_p 0.95 (0731's agentic recommendation; both
   loops here are agentic). The preview's flat 1.0 is a confound across the swap.
-- Needs max-model-len >= 393216; the profile's 1M satisfies it with room to spare.
+- Needs max-model-len >= 393216; the profile serves 409600 (400*1024, a whole
+  number of 256-token blocks). NOT 1M: that killed the engine mid-prefill in job
+  2889476 (`aten::new_empty` inside the fused qnorm/rope/KV-insert op, reported
+  through the torch stable-ABI dispatcher). At TP=2 weights take 74 of 95 GiB and
+  GPU KV gets ~10.9, and V4's sparse-MLA workspace scales with the window. The
+  same vLLM 0.26.0 served 393216 for 27 runs in 2883229. For a real 1M, TP=4.
 - Budget: Max measured 2.5x average verbosity on the AA index (230M vs 92M
   tokens); size round budgets and wall-clock caps accordingly.
 

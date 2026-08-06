@@ -17,7 +17,7 @@
 # Defaults to the eval split's 33 Hard papers, MAX_PARALLEL=10, and RESUME=1 so
 # re-submits after the 48h cap skip papers that already wrote a verdict. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
-# per-sequence KV small even at max_model_len 1048576, so 10 papers plus one audit
+# per-sequence KV small even at max_model_len 409600, so 10 papers plus one audit
 # stream sit far inside the brain; what binds at this width is ghx4 queue pressure
 # from 10 concurrent JIT allocations, not the brain.
 # Worst-case compute budget is ~1184 H100-h (16x8 + 9x32 + 8x96); actual spend is
@@ -26,7 +26,8 @@
 # burns faster than the round budget suggests -- expect a re-submit to finish the
 # tail. That verbosity fed V4's unbounded prior-turn CoT replay and killed 16 of
 # 27 scored runs in sweep 2883229 on context_budget; the fix is the 1M ceiling
-# above (~8x the headroom those runs had), not a lower rung. Max is the AA
+# above (409600 served, 376832 to the agent vs the old flat 128000), not a lower
+# rung. 1M was tried and killed the engine (job 2889476). Max is the AA
 # Intelligence Index 40 anchor, so keeping it keeps the capability axis.
 #
 #SBATCH -J repro_hard_dsv4
@@ -68,7 +69,7 @@ TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
-MAX_MODEL_LEN="${MAX_MODEL_LEN:-1048576}" # the checkpoint's full 1M window; matches the deepseek_v4 profile default
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-409600}" # 400*1024, just over the Think Max floor; matches the deepseek_v4 profile default
 # The auditor is a URL-only client with no served-window lookup of its own, so its
 # input ceiling is derived here: the served window less the 32768 it reserves for the
 # verdict. The repro agent needs no equivalent -- it reads the window off /v1/models.
@@ -189,7 +190,7 @@ nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
 # TP=${TP} on the allocated GH200s (deepseek_v4 profile: fp8 KV, deepseek_v4 parsers,
-# max_model_len 1048576). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
+# max_model_len 409600). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
 # (native OffloadingConnector, total across TP ranks) so multi-agent transcripts
 # don't thrash the thin GPU KV. Parsers are passed explicitly so TOOL_PARSER /
 # REASONING_PARSER can override the profile without a code edit.

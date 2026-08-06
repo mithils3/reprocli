@@ -44,12 +44,15 @@
 #     reasoning while tools are in the request, so every round's CoT is re-rendered
 #     into the next prompt, and Max's ~2.5x verbosity made that replay 49-72% of the
 #     128K ceiling -- 16 of 27 scored runs died on context_budget. The fix is the
-#     ceiling, not the rung: the profile now serves the checkpoint's full 1M and the
-#     repro agent takes its input ceiling from that, which is ~8x the headroom those
-#     runs had. Keep Max and watch context_budget; if it still bites at 1M the next
-#     lever is dropping prior-turn reasoning from the replay, not lowering the rung.
+#     ceiling, not the rung: the profile serves 409600 and the repro agent takes its
+#     input ceiling from that, so it runs at 376832 against the old flat 128000. 1M
+#     was tried and killed the engine mid-prefill (job 2889476) -- at TP=2 the KV
+#     cache is only ~10.9 GiB and V4's sparse-MLA workspace scales with the window.
+#     Elide-compact now also drops prior-turn reasoning, which is what actually
+#     attacks the replay. If context_budget still bites, go TP=4 for a real 1M
+#     rather than lowering the rung.
 #     Think Max also
-#     needs max-model-len >= 393216 (well under the profile's 1M) and DeepSeek's recommended
+#     needs max-model-len >= 393216 (the profile's 409600 clears it) and DeepSeek's recommended
 #     temperature 1.0 / top_p 1.0 (audit sends them explicitly; the repro agent
 #     reads it from REPROCLI_TOP_P). 0731's card recommends top_p 0.95 for agentic
 #     scenarios and 1.0 otherwise, and both loops here are agentic, so this sweep runs
@@ -67,7 +70,7 @@
 #     roster even though it is matched across every dsv4 sweep.
 # Defaults to the eval split's Easy papers, MAX_PARALLEL=10, RESUME=1. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
-# per-sequence KV small even at max_model_len 1048576, so 10 papers plus one audit
+# per-sequence KV small even at max_model_len 409600, so 10 papers plus one audit
 # stream sit far inside the brain; what binds at this width is ghx4 queue pressure
 # from 10 concurrent JIT allocations, not the brain.
 #
@@ -114,7 +117,7 @@ MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1
 # SWEEP_DIR with the job that lost the papers even while that job is still alive.
 ONLY_IDS="${ONLY_IDS:-}"
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
-MAX_MODEL_LEN="${MAX_MODEL_LEN:-1048576}" # the checkpoint's full 1M window; matches the deepseek_v4 profile default
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-409600}" # 400*1024, just over the Think Max floor; matches the deepseek_v4 profile default
 # The auditor is a URL-only client with no served-window lookup of its own, so its
 # input ceiling is derived here: the served window less the 32768 it reserves for the
 # verdict. The repro agent needs no equivalent -- it reads the window off /v1/models.
@@ -278,7 +281,7 @@ nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
 # TP=${TP} on the allocated GH200s (deepseek_v4 profile: fp8 KV, deepseek_v4 parsers,
-# max_model_len 1048576). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
+# max_model_len 409600). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
 # (native OffloadingConnector, total across TP ranks) so multi-agent transcripts
 # don't thrash the thin GPU KV. Parsers are passed explicitly so TOOL_PARSER /
 # REASONING_PARSER can override the profile without a code edit.

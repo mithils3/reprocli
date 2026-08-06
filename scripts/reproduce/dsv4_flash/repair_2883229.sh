@@ -18,8 +18,9 @@
 # have, and would make the sweep's own before/after comparison meaningless.
 #
 # WHAT CHANGED UNDER IT since 2883229 (all three land in this run):
-#   a4f1153  input ceiling comes from the served window (1M here), not a flat 128000
-#   399c3fc  serve the checkpoint's full 1048576, Think Max retained
+#   a4f1153  input ceiling comes from the served window (376832 here), not a flat 128000
+#   399c3fc  Think Max retained; the window it set (1048576) killed the engine in
+#            job 2889476 and is now 409600 -- see the deepseek_v4 profile
 #   0cb89aa  elide-compact drops prior-turn reasoning, and the guards finally count it
 #
 # So this is NOT a like-for-like retry -- it is the same papers under a fixed harness.
