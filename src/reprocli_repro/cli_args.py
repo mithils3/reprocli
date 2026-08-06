@@ -44,10 +44,14 @@ REPRO_FINAL_NO_TOOLS_MESSAGE = (
 # Sampling is left unset for every model: the request builder omits unset fields,
 # so the served model's own generation_config defaults apply (vLLM recipe style).
 MAX_TOKENS = 32768
-MAX_INPUT_TOKENS = 128000
+# No harness-side input ceiling constant: __main__ reads the attached brain's own window
+# off /v1/models and reserves MAX_TOKENS of it for the completion. This was a flat 128000
+# for every model, which capped a 1M-context brain at 128K and made elide-compact fire
+# against a ceiling the server had no part in -- DeepSeek-V4-Flash-0731 serves 1M and
+# still died on context_budget in 16 of 27 runs of sweep 2883229.
 REQUEST_WORKERS = 8
 # Context management (guardrails in loop.py): tool stdout stays verbatim until elide-compact
-# fires once COMPACT_THRESHOLD of MAX_INPUT_TOKENS is crossed, then it shrinks the old
+# fires once COMPACT_THRESHOLD of the resolved input ceiling is crossed, then shrinks the old
 # span's bulky tool results in place to an on-disk pointer, keeping COMPACT_KEEP_TOKENS of
 # recent turns — plus all assistant reasoning — verbatim. The full output stays recoverable
 # under evidence/, so an elided number is re-read, not re-computed.
@@ -254,7 +258,9 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.top_k = _env_int("REPROCLI_TOP_K")
     args.min_p = None
     args.max_tokens = MAX_TOKENS
-    args.max_input_tokens = MAX_INPUT_TOKENS
+    # Set from the attached brain's advertised window in __main__; a dry run attaches to
+    # no server and issues no requests, so it stays None there.
+    args.max_input_tokens = None
     args.request_workers = REQUEST_WORKERS
     args.compact_enabled = COMPACT_ENABLED
     args.compact_keep_tokens = COMPACT_KEEP_TOKENS

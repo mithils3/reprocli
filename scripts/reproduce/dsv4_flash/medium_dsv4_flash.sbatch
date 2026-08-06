@@ -17,7 +17,7 @@
 # Defaults to the eval split's 32 Medium papers, MAX_PARALLEL=10, and RESUME=1 so
 # re-submits after the 48h cap skip papers that already wrote a verdict. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
-# per-sequence KV small even at max_model_len 393216, so 10 papers plus one audit
+# per-sequence KV small even at max_model_len 1048576, so 10 papers plus one audit
 # stream sit far inside the brain; what binds at this width is ghx4 queue pressure
 # from 10 concurrent JIT allocations, not the brain.
 # Worst-case compute budget is ~920 H100-h (15x8 + 13x32 + 4x96); actual spend is
@@ -65,7 +65,11 @@ TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
-MAX_MODEL_LEN="${MAX_MODEL_LEN:-393216}" # Think Max floor; matches the deepseek_v4 profile default
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-1048576}" # the checkpoint's full 1M window; matches the deepseek_v4 profile default
+# The auditor is a URL-only client with no served-window lookup of its own, so its
+# input ceiling is derived here: the served window less the 32768 it reserves for the
+# verdict. The repro agent needs no equivalent -- it reads the window off /v1/models.
+AUDIT_MAX_INPUT_TOKENS=$(( MAX_MODEL_LEN - 32768 ))
 # DeepSeek's agentic-scenario recommendation for 0731 (the card's other value, 1.0, is
 # for non-agentic use). Applied to the repro agent via REPROCLI_TOP_P and to the
 # auditor via --top-p, so one knob moves both loops.
@@ -182,7 +186,7 @@ nvidia-smi topo -m || true
 
 # --- Step 1: serve the brain (background), wait for /health ------------------
 # TP=${TP} on the allocated GH200s (deepseek_v4 profile: fp8 KV, deepseek_v4 parsers,
-# max_model_len 393216). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
+# max_model_len 1048576). --kv-offloading-* adds a 100 GiB Grace-RAM CPU KV tier
 # (native OffloadingConnector, total across TP ranks) so multi-agent transcripts
 # don't thrash the thin GPU KV. Parsers are passed explicitly so TOOL_PARSER /
 # REASONING_PARSER can override the profile without a code edit.
@@ -366,7 +370,7 @@ run_one() {
     --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
     --temperature 1.0 \
     --top-p "${TOP_P}" \
-    --max-input-tokens 128000 \
+    --max-input-tokens "${AUDIT_MAX_INPUT_TOKENS}" \
     --max-tokens 32768 \
     --max-model-len "${MAX_MODEL_LEN}" \
     --output "${SWEEP_DIR}/audit_${pid}.jsonl" \

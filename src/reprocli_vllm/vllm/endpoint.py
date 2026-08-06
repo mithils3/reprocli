@@ -142,8 +142,8 @@ def resolve_server_url(cli_value: str | None) -> str | None:
     return None
 
 
-def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
-    """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
+def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[dict]:
+    """Return the raw ``/v1/models`` entries the server advertises (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
 
     def _do() -> dict:
@@ -156,11 +156,41 @@ def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) ->
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"could not list models at {url}: {exc}") from exc
     entries = data.get("data") if isinstance(data, dict) else None
+    return [entry for entry in entries or [] if isinstance(entry, dict)]
+
+
+def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
+    """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     return [
         entry["id"]
-        for entry in entries or []
-        if isinstance(entry, dict) and isinstance(entry.get("id"), str) and entry["id"]
+        for entry in fetch_model_cards(base_url, timeout)
+        if isinstance(entry.get("id"), str) and entry["id"]
     ]
+
+
+def fetch_served_context_length(
+    base_url: str,
+    model_id: str | None = None,
+    timeout: float = MODELS_FETCH_TIMEOUT,
+) -> int:
+    """Context window the server advertises for ``model_id``.
+
+    vLLM's model card carries ``max_model_len``; OpenAI-compatible proxies (OpenRouter)
+    carry ``context_length``, so we read either. Raises rather than guessing a default:
+    the served window is the harness's input ceiling, and inventing one is how a
+    1M-context brain ends up capped at some number the server never agreed to.
+    """
+    for entry in fetch_model_cards(base_url, timeout):
+        if model_id and entry.get("id") != model_id:
+            continue
+        for field in ("max_model_len", "context_length"):
+            value = entry.get(field)
+            if isinstance(value, int) and value > 0:
+                return value
+    raise RuntimeError(
+        f"{base_url}/v1/models advertised no context window for {model_id!r}; "
+        f"cannot resolve the input ceiling."
+    )
 
 
 def resolve_served_model(

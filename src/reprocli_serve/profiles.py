@@ -159,9 +159,12 @@ def deepseek_v4_profile() -> Profile:
     #   - the CPU KV-offload tier and the DeepGEMM LD_LIBRARY_PATH +
     #     VLLM_USE_FLASHINFER_SAMPLER=0 exports live in the sbatch, not here
     #     (they are launch-env, not serve flags).
-    # max_model_len is 393216 because the sweep pins Think Max reasoning (AA index
-    # 40 = Max Effort, the rung that separates V4-Flash from Qwen3.6-27B's 37), and
-    # Think Max requires max-model-len >= 393216. The Think Max kwargs themselves
+    # max_model_len is the checkpoint's full 1M window. Think Max requires >= 393216
+    # (AA index 40 = Max Effort, the rung that separates V4-Flash from Qwen3.6-27B's
+    # 37), so 393216 was the floor, not the target; the repro harness now takes its
+    # input ceiling from whatever this serves, so serving the floor capped the agent
+    # there. If startup fails the KV check at 1M, that error reports the capacity --
+    # set max_model_len just under it, or go TP=4 on the full node. The Think Max kwargs themselves
     # ride REPROCLI_CHAT_TEMPLATE_KWARGS (client apply_chat_template_kwargs), not a
     # serve flag. The parsers follow notes/References/Model Selection Notes.md
     # ("parser deepseek_v4"). No --tokenizer-mode: vLLM 0.25.1 already logs
@@ -182,7 +185,7 @@ def deepseek_v4_profile() -> Profile:
         tensor_parallel_size=2,
         tool_call_parser="deepseek_v4",
         reasoning_parser="deepseek_v4",
-        max_model_len=393216,
+        max_model_len=1048576,
         kv_cache_dtype="fp8",
         block_size=256,
         compilation_config=json.dumps(

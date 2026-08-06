@@ -16,6 +16,7 @@ from reprocli_vllm.vllm.endpoint import (
     ENV_SERVED_MODEL,
     ENV_SERVER_URL,
     auth_headers,
+    fetch_served_context_length,
     normalize_server_url,
     openrouter_provider_routing,
     resolve_api_key,
@@ -151,6 +152,43 @@ class ProviderRoutingTests(unittest.TestCase):
                 openrouter_provider_routing(),
                 {"order": ["deepseek", "novita"], "allow_fallbacks": False},
             )
+
+
+class FetchServedContextLengthTests(unittest.TestCase):
+    """The input ceiling comes from the server, so a wrong read caps or overruns the run."""
+
+    def _patch_cards(self, cards: list[dict]):
+        return patch(
+            "reprocli_vllm.vllm.endpoint.fetch_model_cards",
+            return_value=cards,
+        )
+
+    def test_reads_vllm_max_model_len(self) -> None:
+        with self._patch_cards([{"id": "m", "max_model_len": 1048576}]):
+            self.assertEqual(fetch_served_context_length("http://b", "m"), 1048576)
+
+    def test_reads_openai_proxy_context_length(self) -> None:
+        with self._patch_cards([{"id": "m", "context_length": 262144}]):
+            self.assertEqual(fetch_served_context_length("http://b", "m"), 262144)
+
+    def test_picks_the_named_model_not_the_first(self) -> None:
+        cards = [
+            {"id": "other", "max_model_len": 8192},
+            {"id": "wanted", "max_model_len": 393216},
+        ]
+        with self._patch_cards(cards):
+            self.assertEqual(fetch_served_context_length("http://b", "wanted"), 393216)
+
+    def test_raises_rather_than_guessing_a_window(self) -> None:
+        # Inventing a default here is exactly how a 1M-context brain got capped at 128K.
+        with self._patch_cards([{"id": "m"}]):
+            with self.assertRaises(RuntimeError):
+                fetch_served_context_length("http://b", "m")
+
+    def test_ignores_a_nonsense_window(self) -> None:
+        with self._patch_cards([{"id": "m", "max_model_len": 0}]):
+            with self.assertRaises(RuntimeError):
+                fetch_served_context_length("http://b", "m")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,11 @@ from __future__ import annotations
 
 import sys
 
-from reprocli_vllm.vllm.endpoint import resolve_served_model, resolve_server_url
+from reprocli_vllm.vllm.endpoint import (
+    fetch_served_context_length,
+    resolve_served_model,
+    resolve_server_url,
+)
 
 from reprocli_repro import gpu_session, sandbox, supabase_sink
 from reprocli_repro.cli_args import parse_args
@@ -80,9 +84,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"sandbox: {contexts[0].sandbox.status()}" if contexts else "sandbox: apptainer", file=sys.stderr)
 
     model_id = resolve_served_model(server_url, args.served_model_name)
+    # The input ceiling is the served window less the completion reservation -- the
+    # ceiling gates the prompt, while the server's limit covers prompt + completion.
+    context_length = fetch_served_context_length(server_url, model_id)
+    args.max_input_tokens = context_length - args.max_tokens
     print(
         f"Attached to brain at {server_url} (model {model_id!r}); "
-        f"cluster={args.cluster_profile.name} hw={args.cluster_profile.hw}",
+        f"cluster={args.cluster_profile.name} hw={args.cluster_profile.hw}; "
+        f"context={context_length} in={args.max_input_tokens} out={args.max_tokens}",
         file=sys.stderr,
     )
     # Opt-in live upload to Supabase (no-op unless SUPABASE_URL + SUPABASE_SERVICE_KEY
