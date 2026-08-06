@@ -38,10 +38,13 @@
 # would silently no-op the exact papers this sweep exists to re-run.
 set -euo pipefail
 
-# DeltaAI charge account, confirmed 2026-08-06. The other sweeps run betw-dtai-gh;
-# this sweep is charged to bfvr instead. Override with ACCOUNT=... if that changes --
-# a wrong -A is rejected at submit, so it fails fast rather than burning queue.
-ACCOUNT="${ACCOUNT:-bfvr}"
+# DeltaAI charge account, confirmed 2026-08-06 against `accounts` and a successful
+# submit (job 2889476). NOTE the two names: the PROJECT is bfvr, the SLURM ACCOUNT
+# string is bfvr-dtai-gh -- the same -dtai-gh suffix the other sweeps carry on
+# betw-dtai-gh. Passing the bare project code is rejected with "Invalid account or
+# account/partition combination specified". Override with ACCOUNT=... if that
+# changes; a wrong -A fails at submit rather than burning queue.
+ACCOUNT="${ACCOUNT:-bfvr-dtai-gh}"
 
 # 16 context_budget deaths + 7 queue-wedged runs, from the 2026-08-06T16:23Z snapshot.
 ONLY_IDS="${ONLY_IDS:-\
