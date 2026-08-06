@@ -37,9 +37,10 @@
 # would silently no-op the exact papers this sweep exists to re-run.
 set -euo pipefail
 
-# DeltaAI charge account. The other sweeps run betw-dtai-gh; this defaults to the
-# bfvr project as asked. VERIFY IT: a wrong -A is rejected at submit, not at run.
-ACCOUNT="${ACCOUNT:-bfvr-dtai-gh}"
+# DeltaAI charge account, confirmed 2026-08-06. The other sweeps run betw-dtai-gh;
+# this sweep is charged to bfvr instead. Override with ACCOUNT=... if that changes --
+# a wrong -A is rejected at submit, so it fails fast rather than burning queue.
+ACCOUNT="${ACCOUNT:-bfvr}"
 
 # 16 context_budget deaths + 7 queue-wedged runs, from the 2026-08-06T16:23Z snapshot.
 ONLY_IDS="${ONLY_IDS:-\
