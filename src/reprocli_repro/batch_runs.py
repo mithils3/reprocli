@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from reprocli_repro import postgrest
+from reprocli_repro.event_sink import service_key_from_env
 
 HTTP_TIMEOUT = 20.0
 SELECT = (
@@ -45,10 +46,6 @@ class Run:
     budget: float | None
     audit_score: int | None
     bundle: Path | None = None
-
-
-def _service_key() -> str | None:
-    return os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 
 def fetch_runs(base_url: str, key: str, batch_id: str) -> list[dict[str, Any]]:
@@ -113,11 +110,17 @@ def _started(row: dict[str, Any]) -> str:
 
 
 def bundle_for(runs_dir: Path, arxiv_id: str, run_id: str) -> Path | None:
-    """The bundle directory this run wrote: ``<runs-dir>/<arxiv_id>/**/<run_id>``."""
+    """The bundle directory this run wrote: ``<runs-dir>/<arxiv_id>/<budget>h/<run_id>``.
+
+    The budget dir is the only level between the paper and the run, so this globs
+    that one level rather than walking the bundle (a finished workspace is a full
+    clone plus checkpoints, and recursing it to find a path we already know costs
+    minutes).
+    """
     paper_dir = Path(runs_dir) / arxiv_id
     if not paper_dir.is_dir():
         return None
-    for candidate in sorted(paper_dir.rglob(run_id)):
+    for candidate in sorted(paper_dir.glob(f"*/{run_id}")):
         if candidate.is_dir():
             return candidate
     return None
@@ -128,15 +131,18 @@ def newest_bundle(runs_dir: Path, arxiv_id: str) -> Path | None:
 
     Used when the caller names papers rather than a batch: with no ``run_id`` to
     match, the newest bundle that actually holds a run record (``report.json`` or
-    ``stats.json``) is the only defensible choice.
+    ``stats.json``) is the only defensible choice. Only bundle roots are looked at
+    (``<budget>h/<run_id>/``), so a report.json the agent happened to clone into its
+    workspace is not mistaken for a run record.
     """
     paper_dir = Path(runs_dir) / arxiv_id
     if not paper_dir.is_dir():
         return None
     marked = [
         path.parent
-        for path in paper_dir.rglob("*")
-        if path.name in ("report.json", "stats.json") and path.is_file()
+        for name in ("report.json", "stats.json")
+        for path in paper_dir.glob(f"*/*/{name}")
+        if path.is_file()
     ]
     if not marked:
         return None
@@ -169,7 +175,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    base, key = (args.supabase_url or "").rstrip("/"), _service_key()
+    base, key = (args.supabase_url or "").rstrip("/"), service_key_from_env()
     if not base or not key:
         print("batch_runs: set SUPABASE_URL (or --supabase-url) and SUPABASE_SERVICE_KEY",
               file=sys.stderr)

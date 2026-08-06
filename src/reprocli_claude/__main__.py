@@ -34,6 +34,7 @@ from typing import Any
 from reprocli_claude import agent
 from reprocli_repro import batch_runs, postgrest
 from reprocli_repro.audit_upload import audit_fields
+from reprocli_repro.event_sink import service_key_from_env
 from reprocli_vllm.audit.inputs import build_audit_prompt_for_dir, load_audit_rubric
 from reprocli_vllm.config.config import AUDIT_PROMPT_FILE, AUDIT_RUBRIC_FILE, CLAIM_PLACEHOLDER
 from reprocli_vllm.runtime.audit_sink import AuditSink, SinkConfig
@@ -103,7 +104,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def select_runs(args: argparse.Namespace) -> list[batch_runs.Run]:
     """The runs to grade, each already bound to the bundle it wrote."""
     if args.batch:
-        base, key = (os.environ.get("SUPABASE_URL") or "").rstrip("/"), _service_key()
+        base, key = (os.environ.get("SUPABASE_URL") or "").rstrip("/"), service_key_from_env()
         if not base or not key:
             raise SystemExit("--batch needs SUPABASE_URL + SUPABASE_SERVICE_KEY to look up the sweep")
         runs = batch_runs.select_runs(
@@ -138,10 +139,6 @@ def _paper_ids(args: argparse.Namespace) -> list[str]:
     if args.paper_ids_file:
         ids += [line.strip() for line in args.paper_ids_file.read_text().splitlines() if line.strip()]
     return ids
-
-
-def _service_key() -> str | None:
-    return os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 
 def audit_run(
@@ -240,7 +237,7 @@ def _narrate(paper_id: str, kind: str, round_index: int, payload: dict[str, Any]
 
 
 def _upload(run_id: str, verdict: dict[str, Any], model: str) -> None:
-    base, key = (os.environ.get("SUPABASE_URL") or "").rstrip("/"), _service_key()
+    base, key = (os.environ.get("SUPABASE_URL") or "").rstrip("/"), service_key_from_env()
     if not base or not key:
         print("  (upload skipped: no SUPABASE_URL / SUPABASE_SERVICE_KEY)", file=sys.stderr)
         return

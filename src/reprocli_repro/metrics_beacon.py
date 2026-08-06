@@ -30,6 +30,7 @@ import time
 from typing import Any, Callable
 
 from reprocli_repro import postgrest
+from reprocli_repro.event_sink import credentials_from_env
 
 HTTP_TIMEOUT = 8.0
 NVSMI_TIMEOUT = 10.0
@@ -255,12 +256,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.role == "run" and not args.run_id:
         parser.error("--run-id is required when --role run")
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # scancel/trap kill -> clean exit
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    if not args.dry_run and (not url or not key):
+    creds = credentials_from_env()
+    if not args.dry_run and creds is None:
         # Opt-in telemetry: unset env is the normal off state, never an error.
         print("metrics_beacon: SUPABASE_URL / SUPABASE_SERVICE_KEY unset -> telemetry off", flush=True)
         return 0
+    url, key = creds or (None, None)   # --dry-run prints rows instead of POSTing
     beacon = Beacon(args, url, key)
     while True:
         try:

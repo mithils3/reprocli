@@ -5,9 +5,8 @@ granted; ``release``/``drop_lost`` call ``stop``. The beacon is one detached
 ``srun --overlap`` step into the held jobid running
 ``python -m reprocli_repro.metrics_beacon --role run``, so the run's JIT GPU
 node shows up in the viewer's host panel while the agent works. Same opt-in as
-``supabase_sink`` (SUPABASE_URL + SUPABASE_SERVICE_KEY, checked directly so
-this stays import-light) and the same discipline: every entry point swallows
-everything — telemetry may never break a run or a test.
+``supabase_sink`` (``event_sink.credentials_from_env``) and the same discipline:
+every entry point swallows everything — telemetry may never break a run or a test.
 
 The live ``srun`` client Popens live in a module registry keyed by jobid
 (rather than on ``GpuSession``) so ``context.py`` stays plumbing-free. ``stop``
@@ -17,17 +16,12 @@ remote step itself; we just must not leave the client lingering.
 
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 
+from reprocli_repro.event_sink import credentials_from_env
+
 _BEACONS: dict[str, subprocess.Popen] = {}
-
-
-def _enabled() -> bool:
-    """Same two env vars as ``SinkConfig.from_env``, checked without the import."""
-    return bool(os.environ.get("SUPABASE_URL")) and bool(
-        os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
 
 
 def start(ctx, jobid: str) -> None:
@@ -38,7 +32,7 @@ def start(ctx, jobid: str) -> None:
     ``sys.executable`` resolves on the worker node too.
     """
     try:
-        if not _enabled() or jobid in _BEACONS:
+        if credentials_from_env() is None or jobid in _BEACONS:
             return
         from reprocli_repro.supabase_sink import run_id_of
         run_id = run_id_of(ctx)

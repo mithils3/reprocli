@@ -28,22 +28,14 @@ import argparse
 import json
 import os
 import sys
-import time
 import urllib.parse
 from pathlib import Path
 from typing import Any
 
 from reprocli_repro import postgrest
+from reprocli_repro.event_sink import now_iso, service_key_from_env
 
 HTTP_TIMEOUT = 15.0
-
-
-def _now_iso() -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-
-def _service_key() -> str | None:
-    return os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 
 def _request(method: str, url: str, key: str, body: Any = None) -> tuple[int, str]:
@@ -96,7 +88,7 @@ def audit_fields(row: dict[str, Any], model: str | None) -> dict[str, Any]:
         "audit_has_high_cheat_flag": row.get("has_high_cheat_flag"),
         "audit_flags": row.get("cheat_flags") or [],
         "audit_rationale": row.get("rationale"),
-        "audited_at": _now_iso(),
+        "audited_at": now_iso(),
     }
     if model:
         fields["audit_model"] = model
@@ -146,7 +138,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     base = (args.supabase_url or "").rstrip("/")
-    key = _service_key()
+    key = service_key_from_env()
     if not base or not key:
         print("audit_upload: set SUPABASE_URL (or --supabase-url) and SUPABASE_SERVICE_KEY",
               file=sys.stderr)
