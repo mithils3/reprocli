@@ -109,6 +109,10 @@ BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from th
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
 MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
+# Targeted retry: a space-separated list of paper ids to run INSTEAD of the whole
+# tier. Everything a retry writes is scoped to its own job id, so it can share a
+# SWEEP_DIR with the job that lost the papers even while that job is still alive.
+ONLY_IDS="${ONLY_IDS:-}"
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-1048576}" # the checkpoint's full 1M window; matches the deepseek_v4 profile default
 # The auditor is a URL-only client with no served-window lookup of its own, so its
@@ -199,7 +203,13 @@ export REPRO_BATCH_ID="${REPRO_BATCH_ID:-slurm-${OUTER_JOB}}"
 export REPRO_BATCH_LABEL="${REPRO_BATCH_LABEL:-${SLURM_JOB_NAME:-repro_sweep} #${OUTER_JOB}}"
 SWEEP_DIR="${SWEEP_DIR:-${REPRO_WORK_ROOT}/easy_sweeps/${OUTER_JOB}}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-${SWEEP_DIR}/brain_endpoint.${OUTER_JOB}.json}"
-IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
+if [[ -n "${ONLY_IDS}" ]]; then
+  IDS_FILE="${SWEEP_DIR}/easy_ids.${OUTER_JOB}.txt"
+  LOG_SUFFIX=".retry_${OUTER_JOB}"
+else
+  IDS_FILE="${SWEEP_DIR}/easy_ids.txt"
+  LOG_SUFFIX=""
+fi
 mkdir -p "${SWEEP_DIR}"
 
 # Sweep-wall countdown surfaced to the agent every tool round (transcript.py reads
@@ -352,6 +362,25 @@ PY
 if [[ "${#PAPER_IDS[@]}" -eq 0 ]]; then
   echo "no ${TIER}-tier papers found in ${LOCKFILE} split=${SPLIT}" >&2; exit 1
 fi
+# Narrow to the requested ids, keeping tier order. An id that is not in the tier is
+# a typo, and silently running 22 papers when 23 were asked for is exactly the quiet
+# shortfall a repair sweep exists to clean up -- so fail loudly.
+if [[ -n "${ONLY_IDS}" ]]; then
+  declare -A in_tier=()
+  for pid in "${PAPER_IDS[@]}"; do in_tier["${pid}"]=1; done
+  declare -A want=()
+  for pid in ${ONLY_IDS}; do
+    [[ -n "${in_tier[${pid}]:-}" ]] || {
+      echo "ONLY_IDS: '${pid}' is not a ${TIER} paper in split '${SPLIT}'" >&2; exit 1; }
+    want["${pid}"]=1
+  done
+  RETRY_IDS=()
+  for pid in "${PAPER_IDS[@]}"; do
+    if [[ -n "${want[${pid}]:-}" ]]; then RETRY_IDS+=("${pid}"); fi
+  done
+  PAPER_IDS=("${RETRY_IDS[@]}")
+  echo "ONLY_IDS -> retrying ${#PAPER_IDS[@]} paper(s): ${PAPER_IDS[*]}"
+fi
 printf '%s\n' "${PAPER_IDS[@]}" > "${IDS_FILE}"
 echo "split '${SPLIT}' tier '${TIER}' has ${#PAPER_IDS[@]} papers: ${PAPER_IDS[*]}"
 echo "ids -> ${IDS_FILE}"
@@ -364,7 +393,11 @@ export SLURM_EXPORT_ENV=ALL
 # --- Step 4: reproduce + audit every Easy paper, PAIRED on one bundle --------
 # Per paper: reproduce with a pinned run id, symlink <grade-root>/<id> to that
 # exact bundle, audit it, then PATCH the verdict onto the same repro_runs row.
-STATUS_FILE="${SWEEP_DIR}/status.tsv"
+if [[ -n "${ONLY_IDS}" ]]; then
+  STATUS_FILE="${SWEEP_DIR}/status.${OUTER_JOB}.tsv"   # the live job owns status.tsv
+else
+  STATUS_FILE="${SWEEP_DIR}/status.tsv"
+fi
 
 # The brain can be reachable at sweep start and gone later (node loss, OOM kill,
 # a requeue of the serve step). A paper dispatched against a dead address dies in
@@ -387,7 +420,7 @@ wait_for_brain() {
 
 run_one() {
   local pid="$1"
-  local log="${SWEEP_DIR}/repro_${pid}.log"
+  local log="${SWEEP_DIR}/repro_${pid}${LOG_SUFFIX}.log"
   local verdicts="${SWEEP_DIR}/audit_${pid}_extracted.jsonl"
 
   # Resume only unfinished papers after a wall-time cap.
