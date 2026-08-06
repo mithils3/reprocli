@@ -17,12 +17,14 @@ import argparse
 import os
 from pathlib import Path
 
+from reprocli_vllm.audit.h100 import band_ladder_text
 from reprocli_vllm.config.config import DEFAULT_MODEL
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
 from reprocli_repro.cluster import from_args as resolve_cluster
 from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
+from reprocli_repro.inputs import DEFAULT_UNBANDED_BUDGET_H100_HOURS
 from reprocli_repro.report import REPORT_RESPONSE_FORMAT
 from reprocli_repro.tools import build_repro_tools
 
@@ -198,8 +200,8 @@ def _add_loop_limits(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="Flat per-episode compute ceiling in H100-equiv hours, applied to every "
         "paper. Omit to use the default: each paper's ceiling is derived from its "
-        "selection_band upper edge (0-8 -> 8h, 8-32 -> 32h, 32-96 -> 96h, "
-        "96-192 -> 192h), falling back to 8h for unbanded rows.",
+        f"selection_band upper edge ({band_ladder_text()}), falling back to "
+        f"{DEFAULT_UNBANDED_BUDGET_H100_HOURS:g}h for unbanded rows.",
     )
 
 

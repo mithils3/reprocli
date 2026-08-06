@@ -34,12 +34,12 @@ from pathlib import Path
 from typing import Any
 from collections.abc import Iterator
 
-from reprocli_vllm.audit.h100 import as_number, h100_band
+from reprocli_vllm.audit.h100 import as_number, band_labels, h100_band
 
 EVAL_TIERS = ("Easy", "Medium", "Hard")
-BAND_ORDER = ("0-8", "8-32", "32-96")
-BAND_WEIGHTS = {"0-8": 10, "8-32": 7, "32-96": 8}  # per 25 selected
 H100_CAP = 96.0
+BAND_ORDER = band_labels(max_hours=H100_CAP)  # the ladder, truncated at the cap
+BAND_WEIGHTS = {"0-8": 10, "8-32": 7, "32-96": 8}  # per 25 selected
 # Stated hours adjudicated correct by hand despite an arithmetic mismatch flag
 # (fields captured one of two stages; see the v5 H100 audit).
 MANUAL_KEEP_STATED = {"2511.08214"}

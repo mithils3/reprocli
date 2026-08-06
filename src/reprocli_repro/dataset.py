@@ -21,6 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
+from reprocli_vllm.audit import h100
 from reprocli_vllm.runtime.mre_records import load_mre_records
 
 DEFAULT_LOCKFILE_DATASET = "Mithilss/reprobench-splits"
@@ -97,9 +98,19 @@ def band_of(row: dict) -> str:
 
 def band_max_hours(row: dict) -> float | None:
     """Upper edge of the row's compute band in H100-h (e.g. ``'96-192'`` -> 192.0,
-    ``'0-8'`` -> 8.0). Returns ``None`` when the band is unspecified/unparseable."""
+    ``'0-8'`` -> 8.0). Returns ``None`` when the band is unspecified/unparseable.
+
+    The ladder itself lives in ``reprocli_vllm.audit.h100`` (which assigns the
+    labels), so the edges are read from it rather than recovered from the label
+    text. A label off that ladder still falls back to reading its trailing edge, so
+    a lockfile carrying a band this build does not know about keeps working.
+    """
+    label = band_of(row)
+    edge = h100.band_max_hours(label)
+    if edge is not None:
+        return edge
     try:
-        return float(band_of(row).split("-")[-1])
+        return float(label.split("-")[-1])
     except (ValueError, IndexError):
         return None
 
