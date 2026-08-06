@@ -73,34 +73,18 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash \
   set `--max-model-len` just under the capacity the error reports.
 - First request after startup stalls while DeepGEMM JIT-compiles kernels.
 
-## Reasoning effort
+## Reasoning effort (sweep requirement)
 
-**2026-08-06: the sweeps run `high`, not `max`.** This reverses the requirement
-below, deliberately and with a known cost. Read both halves before changing it.
-
-Why High now. V4's encoder does not drop prior-turn reasoning while tools are in
-the request (`encoding_dsv4.py`: `effective_drop_thinking = False` when any
-message carries tools), so every round's chain of thought is re-rendered into the
-next prompt with no turn-age limit. Max's 2.5x verbosity turned that replay into
-49-72% of the input ceiling in sweep 2883229 (median 61%), and 16 of the 27
-scored runs died on `context_budget` — against 1 of 34 for Qwen3.6 and 3 of 34
-for MiniMax-M2.7 on the same papers. The 1M ceiling buys headroom back, but High
-attacks the growth rate rather than the wall. 0731 also re-cut the ladder so
-`high` IS the prompt the preview shipped as `max`, so this rung matches what the
-preview sweeps effectively ran.
-
-What it costs. AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max
-Effort** variant, and the roster ladder cites that number. At High the model
-scores 37, tying Qwen3.6-27B exactly — so the published index no longer separates
-them and the capability axis is not anchored to it. Any cross-model claim must
-name the rung that ran (same class of trap as MiniMax AWQ-reported-as-upstream).
-Sweeps 2818716, 2856192, 2869802 and 2883229 ran Max; everything after runs High,
-so effort is a comparability confound across that boundary.
+AA's Intelligence Index 40 for V4 Flash is the **Reasoning, Max Effort** variant.
+The roster ladder cites that number, so eval-100 sweeps MUST run Think Max or the
+capability axis is confounded (same trap as MiniMax AWQ-reported-as-upstream).
+Max is also load-bearing for the ladder: at High Effort the model scores 37,
+tying Qwen3.6-27B exactly; Max (+3 -> 40) is what makes it a distinct rung.
 
 Effort is per-request, not a serve flag — the brain client sends:
 
 ```python
-extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}}
+extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "max"}}
 ```
 
 - Plumbed via `REPROCLI_CHAT_TEMPLATE_KWARGS`, pinned in each dsv4 sbatch's
@@ -110,8 +94,38 @@ extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high
   loops here are agentic). The preview's flat 1.0 is a confound across the swap.
 - Needs max-model-len >= 393216; the profile's 1M satisfies it with room to spare.
 - Budget: Max measured 2.5x average verbosity on the AA index (230M vs 92M
-  tokens), so High-effort sweeps burn round and wall-clock budget slower than
-  the four Max sweeps above.
+  tokens); size round budgets and wall-clock caps accordingly.
+
+### Max is what fed the 2883229 context deaths — the ceiling is the fix, not the rung
+
+V4's encoder does not drop prior-turn reasoning while tools are in the request
+(`encoding_dsv4.py`: `effective_drop_thinking = False` when any message carries
+tools), so every round's chain of thought is re-rendered into the next prompt
+with no turn-age limit. Under Max's 2.5x verbosity that replay measured 49-72%
+of the old 128K input ceiling (median 61%), and 16 of the 27 scored runs in
+sweep 2883229 died on `context_budget` — against 1 of 34 for Qwen3.6 and 3 of 34
+for MiniMax-M2.7 on the same easy papers. `compact.py` cannot help: it elides
+only `role:"tool"` contents and keeps assistant turns verbatim by design, so the
+one model whose context is majority reasoning is the one compaction cannot reach.
+
+Effort was briefly dropped to `high` on 2026-08-06 and reverted the same day.
+Max stays. The ceiling is what changed: the profile serves the checkpoint's full
+1M and the repro agent reads its input ceiling off `/v1/models`, so runs now get
+roughly 8x the headroom those deaths happened in.
+
+**If `context_budget` still bites at 1M, the next lever is dropping prior-turn
+reasoning from the replay, not lowering the rung.** `conversation_for_round`
+(`src/reprocli_repro/transcript.py`) is already the request-only view, so the
+full CoT would still reach the logs. Note that this deviates from DeepSeek's
+intended agentic format — V4-Flash is designed to see its own reasoning history
+in tool loops — so it is a benchmark-design decision, not a silent bug fix.
+The same change is already wanted for Laguna (`serve-laguna-s21-vllm-gh200.md`).
+
+**Cross-model caveat:** the `qwen3_27b` and `minimax_m2` sbatches set no thinking
+or reasoning kwargs at all, so those brains run their checkpoint defaults while
+this one is pinned to its top rung. Effort is matched across every dsv4 sweep but
+NOT across the roster, so a DeepSeek-vs-Qwen capability claim carries an unmatched
+effort setting on top of the parameter-count gap.
 
 ## Benchmark
 

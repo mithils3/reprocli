@@ -9,7 +9,7 @@
 # Hard-tier sibling of easy_dsv4_flash.sbatch (see that header for the full serve
 # rationale: DeepSeek-V4-Flash-0731 on 2xGH200 at TP=2, ~155 GiB of weights, the
 # REQUIRED kv_cache_dtype fp8 + DeepGEMM LD_LIBRARY_PATH +
-# VLLM_USE_FLASHINFER_SAMPLER=0, Think High pinned via REPROCLI_CHAT_TEMPLATE_KWARGS,
+# VLLM_USE_FLASHINFER_SAMPLER=0, Think Max pinned via REPROCLI_CHAT_TEMPLATE_KWARGS,
 # and top_p 0.95 on both loops because both are agentic). If vLLM refuses to start
 # for want of KV blocks, rerun on the whole node:
 # sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
@@ -22,12 +22,12 @@
 # from 10 concurrent JIT allocations, not the brain.
 # Worst-case compute budget is ~1184 H100-h (16x8 + 9x32 + 8x96); actual spend is
 # typically well under the per-paper band caps since the agent stops when it
-# converges. This sweep runs Think High, not Max (deliberate, 2026-08-06): Max's
-# ~2.5x verbosity fed V4's unbounded prior-turn CoT replay and killed 16 of 27
-# scored runs in sweep 2883229 on context_budget. High still burns wall clock
-# faster than the round budget suggests -- expect a re-submit to finish the tail.
-# Cross-model claims must name the rung: Max was the AA Intelligence Index 40
-# anchor, High is not.
+# converges. Max Effort measured ~2.5x verbosity on the AA index, so wall clock
+# burns faster than the round budget suggests -- expect a re-submit to finish the
+# tail. That verbosity fed V4's unbounded prior-turn CoT replay and killed 16 of
+# 27 scored runs in sweep 2883229 on context_budget; the fix is the 1M ceiling
+# above (~8x the headroom those runs had), not a lower rung. Max is the AA
+# Intelligence Index 40 anchor, so keeping it keeps the capability axis.
 #
 #SBATCH -J repro_hard_dsv4
 #SBATCH -A betw-dtai-gh
@@ -79,12 +79,12 @@ AUDIT_MAX_INPUT_TOKENS=$(( MAX_MODEL_LEN - 32768 ))
 TOP_P="${TOP_P:-0.95}"
 export REPROCLI_TOP_P="${TOP_P}"
 
-# Pin Think High on every request (repro loop + auditor tool loop). The client's
+# Pin Think Max on every request (repro loop + auditor tool loop). The client's
 # apply_chat_template_kwargs reads this and never clobbers a per-request override.
 # The default is held in its own variable: bash ends a ${VAR:-...} default at the
 # first unescaped "}", so an inline JSON default silently appends a stray brace to
 # any operator override, and the unparseable value is dropped whole (endpoint.py).
-CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "high"}'
+CHAT_TEMPLATE_KWARGS_DEFAULT='{"thinking": true, "reasoning_effort": "max"}'
 export REPROCLI_CHAT_TEMPLATE_KWARGS="${REPROCLI_CHAT_TEMPLATE_KWARGS:-${CHAT_TEMPLATE_KWARGS_DEFAULT}}"
 
 # Audit against the same canonical lockfile claim the agent targeted.
@@ -327,7 +327,7 @@ run_one() {
 
   # (1) Reproduce this paper; the brain URL comes from REPROCLI_ENDPOINT_FILE.
   # Sampling stays unset so the agent defers to DeepSeek's generation_config
-  # (temp 1.0 / top_p 1.0 for Think High); the effort itself rides
+  # (temp 1.0 / top_p 1.0 for Think Max); the effort itself rides
   # REPROCLI_CHAT_TEMPLATE_KWARGS.
   python -m reprocli_repro \
     --paper-id "${pid}" \
