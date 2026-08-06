@@ -382,6 +382,7 @@ def elide_compaction(
     if stats["compacted"]:
         print(
             f"elide-compact {custom_id}: elided {stats['elided_messages']} tool result(s), "
+            f"dropped reasoning on {stats['dropped_reasoning']} turn(s), "
             f"{stats['chars_before']}->{stats['chars_after']} chars",
             file=sys.stderr,
         )
@@ -393,6 +394,7 @@ def elide_compaction(
                     "mode": "elide",
                     "custom_id": custom_id,
                     "elided_messages": stats["elided_messages"],
+                    "dropped_reasoning": stats["dropped_reasoning"],
                     "chars_before": stats["chars_before"],
                     "chars_after": stats["chars_after"],
                 },

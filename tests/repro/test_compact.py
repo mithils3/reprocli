@@ -103,7 +103,7 @@ class ElideCompactTests(unittest.TestCase):
         snapshot = [dict(m) for m in messages]
         stats = elide_compact(messages, keep_recent_tokens=10)
         self.assertFalse(stats["compacted"])
-        self.assertEqual(stats["reason"], "no-bulk-tool-output")
+        self.assertEqual(stats["reason"], "no-bulk-tool-output-or-reasoning")
         self.assertEqual(messages, snapshot)
 
     def test_idempotent_across_repeated_passes(self):
@@ -115,6 +115,63 @@ class ElideCompactTests(unittest.TestCase):
         self.assertFalse(stats["compacted"])
         self.assertEqual(messages, after_first)
         self.assertLess(len(messages[3]["content"]), ELIDE_MIN_CHARS)
+
+
+class DropOldReasoningTests(unittest.TestCase):
+    """Old CoT is the un-elidable floor that killed 16 of 27 runs in sweep 2883229."""
+
+    def _convo(self) -> list[dict]:
+        return [
+            {"role": "system", "content": "S"},
+            {"role": "user", "content": "TASK"},
+            {"role": "assistant", "content": "old", "reasoning": "R" * 5000,
+             "tool_calls": [_bash_call()]},
+            _tool("x" * 4000, "c2"),
+            {"role": "assistant", "content": "recent", "reasoning": "K" * 200},
+        ]
+
+    def test_drops_reasoning_from_the_old_span(self) -> None:
+        messages = self._convo()
+        stats = elide_compact(messages, keep_recent_tokens=10)
+        self.assertTrue(stats["compacted"])
+        self.assertEqual(stats["dropped_reasoning"], 1)
+        self.assertNotIn("reasoning", messages[2])
+
+    def test_keeps_content_and_tool_calls_of_the_stripped_turn(self) -> None:
+        # Losing *how* it reasoned must not lose *what* it concluded or did.
+        messages = self._convo()
+        elide_compact(messages, keep_recent_tokens=10)
+        self.assertEqual(messages[2]["content"], "old")
+        self.assertEqual(len(messages[2]["tool_calls"]), 1)
+
+    def test_never_touches_the_recent_tail(self) -> None:
+        messages = self._convo()
+        elide_compact(messages, keep_recent_tokens=10)
+        self.assertEqual(messages[-1]["reasoning"], "K" * 200)
+
+    def test_never_touches_the_pinned_head(self) -> None:
+        messages = self._convo()
+        messages[1]["reasoning"] = "PINNED"
+        elide_compact(messages, keep_recent_tokens=10)
+        self.assertEqual(messages[1]["reasoning"], "PINNED")
+
+    def test_compacts_on_reasoning_alone_when_no_bulky_stdout(self) -> None:
+        # A reasoning-heavy run with small tool output still has space to reclaim.
+        # This is the DeepSeek-V4 shape: the CoT is the bulk, the stdout is not.
+        messages = [
+            {"role": "system", "content": "S"},
+            {"role": "user", "content": "TASK"},
+            {"role": "assistant", "content": "a", "reasoning": "R" * 9000},
+            _tool("ok", "c2"),
+            {"role": "assistant", "content": "b", "reasoning": "R" * 9000},
+            _tool("ok", "c2"),
+            {"role": "assistant", "content": "c"},
+        ]
+        stats = elide_compact(messages, keep_recent_tokens=10)
+        self.assertTrue(stats["compacted"])
+        self.assertEqual(stats["elided_messages"], 0)
+        self.assertGreaterEqual(stats["dropped_reasoning"], 1)
+        self.assertLess(stats["chars_after"], stats["chars_before"])
 
 
 if __name__ == "__main__":
