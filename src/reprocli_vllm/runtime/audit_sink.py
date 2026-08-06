@@ -15,26 +15,16 @@ set by the pipeline), so the app can pair the audit with its run.
 
 from __future__ import annotations
 
-import json
 import os
-import queue
 import socket
-import threading
-import time
 from dataclasses import dataclass
 from typing import Any
 
-from reprocli_repro import postgrest  # shared PostgREST transport (repro pkg on PYTHONPATH)
+from reprocli_repro import live_log  # shared tool-call argument decoder
+from reprocli_repro.event_sink import PostgrestEventSink, credentials_from_env, now_iso
 from reprocli_vllm.runtime import live_events
 
-QUEUE_MAX = 4000
-BATCH_MAX = 50
-HTTP_TIMEOUT = 8.0
 STDOUT_CAP = 8000  # chars per stdout/stderr/text cell
-
-
-def _now_iso() -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 # ---- pure PostgREST row builders ---------------------------------------------
@@ -52,17 +42,6 @@ def cap(text: Any, limit: int = STDOUT_CAP) -> tuple[str, bool]:
     return s[:limit] + f"\n…(+{len(s) - limit} chars truncated)", True
 
 
-def arguments(call: dict[str, Any]) -> dict[str, Any]:
-    fn = call.get("function") or {}
-    args = fn.get("arguments")
-    if isinstance(args, str):
-        try:
-            args = json.loads(args)
-        except (ValueError, TypeError):
-            return {"_raw": args}
-    return args if isinstance(args, dict) else {}
-
-
 def message_row(base: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
     msg = payload.get("message") or {}
     reasoning, _ = cap(msg.get("reasoning") or msg.get("reasoning_content"), STDOUT_CAP * 2)
@@ -74,7 +53,7 @@ def message_row(base: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]
 
 
 def call_row(base: dict[str, Any], call: dict[str, Any]) -> dict[str, Any]:
-    args = arguments(call)
+    args = live_log.call_arguments(call)
     base["tool_name"] = str((call.get("function") or {}).get("name") or "?")
     if "command" in args:
         base.update(detail_kind="command", command=str(args["command"]))
@@ -115,29 +94,33 @@ class SinkConfig:
 
     @classmethod
     def from_env(cls, model: str | None = None) -> "SinkConfig | None":
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-        if not url or not key:
+        creds = credentials_from_env()
+        if creds is None:
             return None
-        return cls(url=url.rstrip("/"), service_key=key,
+        url, key = creds
+        return cls(url=url, service_key=key,
                    graded_run_id=os.environ.get("REPROCLI_GRADED_RUN_ID") or None,
                    model=model, host=socket.gethostname())
 
 
-class AuditSink:
+class AuditSink(PostgrestEventSink):
+    LABEL = "audit_sink"
+    ID_COLUMN = "audit_run_id"
+    # Idempotent on (audit_run_id, seq), like the run upsert below. A plain insert
+    # makes ONE duplicate row fatal to the whole batch: PostgREST rejects the
+    # statement, so up to BATCH_MAX-1 perfectly good events are lost with it.
+    # Duplicates are not hypothetical -- two graders launched in the same second
+    # derive the same attempt stamp, hence the same audit_run_id, and the second
+    # one collides on every seq it allocates. ignore-duplicates keeps the
+    # transcript already on the page and lets the rest of the batch land.
+    EVENTS_PATH = "/rest/v1/audit_events?on_conflict=audit_run_id,seq"
+    EVENTS_PREFER = "resolution=ignore-duplicates,return=minimal"
+
     def __init__(self, cfg: SinkConfig) -> None:
         self.cfg = cfg
-        self.q: "queue.Queue[tuple[str, Any]]" = queue.Queue(maxsize=QUEUE_MAX)
-        self._lock = threading.Lock()
-        self._seq: dict[str, int] = {}
-        self._round: dict[str, int | None] = {}
-        self._rounds_seen: dict[str, int] = {}
         self._seen: set[str] = set()
-        self._base = _now_iso()
-        self.dropped = self.failed = 0
-        self._stop = threading.Event()
-        self._worker = threading.Thread(target=self._run, name="audit-sink", daemon=True)
-        self._worker.start()
+        self._base = now_iso()
+        super().__init__(cfg.url, cfg.service_key)
 
     # ---- identity -----------------------------------------------------------
     def _audit_run_id(self, custom_id: str) -> str:
@@ -154,28 +137,12 @@ class AuditSink:
             self._put("run_upsert", {
                 "audit_run_id": aid, "graded_run_id": self.cfg.graded_run_id,
                 "arxiv_id": custom_id, "model": self.cfg.model, "status": "running",
-                "host": self.cfg.host, "started_at": _now_iso(), "updated_at": _now_iso(),
+                "host": self.cfg.host, "started_at": now_iso(), "updated_at": now_iso(),
                 "score": None, "verdict": None, "reproduced": None,
                 "has_high_cheat_flag": None, "exit_reason": None, "finished_at": None,
                 "tool_rounds_used": 0,
             })
         return aid
-
-    # ---- enqueue (called from loop / tool threads; never blocks) ------------
-    def _put(self, kind: str, payload: Any) -> None:
-        try:
-            self.q.put_nowait((kind, payload))
-        except queue.Full:
-            self.dropped += 1
-
-    def _next_seq(self, aid: str) -> int:
-        with self._lock:
-            n = self._seq.get(aid, 0)
-            self._seq[aid] = n + 1
-            return n
-
-    def _row_base(self, aid: str, kind: str, idx: int | None) -> dict[str, Any]:
-        return {"audit_run_id": aid, "seq": self._next_seq(aid), "kind": kind, "round_index": idx}
 
     def on_event(self, kind: str, meta: dict[str, Any], payload: dict[str, Any]) -> None:
         custom_id = meta.get("custom_id")
@@ -184,9 +151,7 @@ class AuditSink:
         aid = self._ensure_run(custom_id)
         idx = meta.get("round_index")
         if kind in ("round_open", "final"):
-            self._round[aid] = idx
-            if isinstance(idx, int):
-                self._rounds_seen[aid] = max(self._rounds_seen.get(aid, 0), idx + 1)
+            self._note_round(aid, idx)
             self._put("events", message_row(self._row_base(aid, kind, idx), payload))
             if kind == "final":
                 self._finish(aid, payload)
@@ -202,61 +167,17 @@ class AuditSink:
             "score": v.get("score"), "verdict": v.get("verdict"),
             "reproduced": v.get("reproduced"), "has_high_cheat_flag": v.get("has_high_cheat_flag"),
             "tool_rounds_used": self._rounds_seen.get(aid, 0),
-            "finished_at": _now_iso(), "updated_at": _now_iso(),
+            "finished_at": now_iso(), "updated_at": now_iso(),
         }))
 
-    # ---- worker / HTTP ------------------------------------------------------
-    def _run(self) -> None:
-        while not self._stop.is_set() or not self.q.empty():
-            try:
-                item = self.q.get(timeout=0.3)
-            except queue.Empty:
-                continue
-            batch = [item]
-            while len(batch) < BATCH_MAX:
-                try:
-                    batch.append(self.q.get_nowait())
-                except queue.Empty:
-                    break
-            self._flush(batch)
-            for _ in batch:
-                self.q.task_done()
-
-    def _flush(self, batch: list[tuple[str, Any]]) -> None:
-        events = []
-        for kind, payload in batch:
-            if kind == "events":
-                events.append(payload)
-            elif kind == "run_upsert":
-                self._post("POST", "/rest/v1/audit_runs?on_conflict=audit_run_id", [payload],
-                           prefer="resolution=merge-duplicates,return=minimal")
-            elif kind == "run_patch":
-                self._post("PATCH", f"/rest/v1/audit_runs?audit_run_id=eq.{payload[0]}", payload[1],
-                           prefer="return=minimal")
-        if events:  # bulk insert needs identical keys per row -> pad to the union
-            ks = set().union(*(e.keys() for e in events))
-            # Idempotent on (audit_run_id, seq), like the run upsert above. A plain
-            # insert makes ONE duplicate row fatal to the whole batch: PostgREST
-            # rejects the statement, so up to BATCH_MAX-1 perfectly good events are
-            # lost with it. Duplicates are not hypothetical -- two graders launched
-            # in the same second derive the same attempt stamp, hence the same
-            # audit_run_id, and the second one collides on every seq it allocates.
-            # ignore-duplicates keeps the transcript already on the page and lets
-            # the rest of the batch land.
-            self._post("POST", "/rest/v1/audit_events?on_conflict=audit_run_id,seq",
-                       [{k: e.get(k) for k in ks} for e in events],
-                       prefer="resolution=ignore-duplicates,return=minimal")
-
-    def _post(self, method: str, path: str, body: Any, *, prefer: str | None = None) -> None:
-        try:
-            code, text = postgrest.request(
-                self.cfg.url + path, service_key=self.cfg.service_key, method=method,
-                body=body, prefer=prefer, timeout=HTTP_TIMEOUT)
-        except Exception as exc:  # noqa: BLE001 — best-effort; never propagate
-            self._note_failure(f"{type(exc).__name__}: {exc}")
-            return
-        if not code or code >= 300:
-            self._note_failure(f"HTTP {code} {text[:200]}")
+    # ---- worker-side item handling ------------------------------------------
+    def _handle(self, kind: str, payload: Any) -> None:
+        if kind == "run_upsert":
+            self._post("POST", "/rest/v1/audit_runs?on_conflict=audit_run_id", [payload],
+                       prefer="resolution=merge-duplicates,return=minimal")
+        elif kind == "run_patch":
+            self._post("PATCH", f"/rest/v1/audit_runs?audit_run_id=eq.{payload[0]}", payload[1],
+                       prefer="return=minimal")
 
     def _note_failure(self, detail: str) -> None:
         """Count a failed write, and say so the FIRST time.
@@ -269,12 +190,6 @@ class AuditSink:
         if self.failed == 1:
             print(f"audit_sink: write rejected ({detail}); the Audits page will be incomplete",
                   flush=True)
-
-    def close(self, timeout: float = 12.0) -> None:
-        self._stop.set()
-        self._worker.join(timeout=timeout)
-        if self.dropped or self.failed:
-            print(f"audit_sink: {self.dropped} dropped, {self.failed} failed POSTs", flush=True)
 
 
 def install(cfg: SinkConfig | None) -> "AuditSink | None":

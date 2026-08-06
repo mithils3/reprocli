@@ -10,32 +10,24 @@ on-disk ``agent.full.log`` stays the source of truth. Fed via
 ``usage`` is summed onto the run row; on ``final`` the full log and a detailed
 ``stats.json`` are optionally pushed to Storage.
 
-This module holds it all: the pure PostgREST row builders, the per-run token
-bookkeeping (``RunStats``), and the queue + worker + HTTP plumbing.
+This module holds the reproduce-specific half: the pure PostgREST row builders and
+the per-run token bookkeeping (``RunStats``). The queue + worker + HTTP plumbing it
+shares with the auditor's sink lives in ``event_sink.PostgrestEventSink``.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import queue
 import socket
-import threading
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from reprocli_repro import gpu_usage, live_log, postgrest
+from reprocli_repro import gpu_usage, live_log
+from reprocli_repro.event_sink import PostgrestEventSink, credentials_from_env, now_iso
 
-QUEUE_MAX = 4000           # events; beyond this we drop rather than block the loop
-BATCH_MAX = 50
-HTTP_TIMEOUT = 8.0
 BUCKET = "repro-logs"
-
-
-def _now_iso() -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 # ---- pure PostgREST row builders -------------------------------------------
@@ -141,7 +133,7 @@ class RunStats:
             self.tokens[k] += f[k]
         self.rounds.append({
             "round_index": round_index, "kind": kind or "round",
-            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **f,
+            "ts": now_iso(), **f,
         })
 
     def add_tool_call(self) -> None:
@@ -179,10 +171,10 @@ class SinkConfig:
 
     @classmethod
     def from_env(cls) -> "SinkConfig | None":
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-        if not url or not key:
+        creds = credentials_from_env()
+        if creds is None:
             return None
+        url, key = creds
         full = os.environ.get("REPRO_UPLOAD_FULL_LOG", "").lower() in ("1", "true", "yes")
         # stats.json is tiny and the whole point of enabling the sink, so it's on
         # by default whenever the sink is active; set REPRO_UPLOAD_STATS=0 to skip.
@@ -195,43 +187,23 @@ class SinkConfig:
             slurm_job = os.environ.get("SLURM_JOB_ID") or None
             batch_id = f"slurm-{slurm_job}" if slurm_job else None
         batch_label = os.environ.get("REPRO_BATCH_LABEL") or None
-        return cls(url=url.rstrip("/"), service_key=key, host=socket.gethostname(),
+        return cls(url=url, service_key=key, host=socket.gethostname(),
                    upload_full_log=full, upload_stats=stats,
                    batch_id=batch_id, batch_label=batch_label)
 
 
-class SupabaseSink:
+class SupabaseSink(PostgrestEventSink):
+    LABEL = "supabase_sink"
+    CLOSE_NOTE = " (local agent.full.log is the complete record)"
+    ID_COLUMN = "run_id"
+    EVENTS_PATH = "/rest/v1/repro_events"
+
     def __init__(self, cfg: SinkConfig) -> None:
         self.cfg = cfg
-        self.q: "queue.Queue[tuple[str, Any]]" = queue.Queue(maxsize=QUEUE_MAX)
-        self._lock = threading.Lock()
-        self._seq: dict[str, int] = {}
-        self._round: dict[str, int | None] = {}
-        self._rounds_seen: dict[str, int] = {}
         self._total: dict[str, float | None] = {}
         self._lastpatch: dict[str, tuple] = {}
         self._stats: dict[str, RunStats] = {}
-        self.dropped = 0
-        self.failed = 0
-        self._stop = threading.Event()
-        self._worker = threading.Thread(target=self._run, name="supabase-sink", daemon=True)
-        self._worker.start()
-
-    # ---- enqueue (called from the loop / tool threads; never blocks) ----------
-    def _put(self, kind: str, payload: Any) -> None:
-        try:
-            self.q.put_nowait((kind, payload))
-        except queue.Full:
-            self.dropped += 1
-
-    def _next_seq(self, run_id: str) -> int:
-        with self._lock:
-            n = self._seq.get(run_id, 0)
-            self._seq[run_id] = n + 1
-            return n
-
-    def _row_base(self, run_id: str, kind: str, idx: int | None) -> dict[str, Any]:
-        return {"run_id": run_id, "seq": self._next_seq(run_id), "kind": kind, "round_index": idx}
+        super().__init__(cfg.url, cfg.service_key)
 
     def _stats_for(self, run_id: str) -> RunStats:
         s = self._stats.get(run_id)
@@ -249,7 +221,7 @@ class SupabaseSink:
             "run_id": run_id, "arxiv_id": getattr(ctx, "arxiv_id", None), "model": model,
             "status": status, "host": self.cfg.host, "budget": total,
             "total_h100": total, "remaining_h100": remaining, "spent_h100": 0,
-            "tool_rounds_used": 0, "started_at": _now_iso(), "updated_at": _now_iso(),
+            "tool_rounds_used": 0, "started_at": now_iso(), "updated_at": now_iso(),
             "batch_id": self.cfg.batch_id, "batch_label": self.cfg.batch_label,
         })
 
@@ -259,16 +231,14 @@ class SupabaseSink:
             return
         if kind == "round_open" or kind == "final":
             idx = payload.get("round_index")
-            self._round[run_id] = idx
-            if isinstance(idx, int):
-                self._rounds_seen[run_id] = max(self._rounds_seen.get(run_id, 0), idx + 1)
+            self._note_round(run_id, idx)
             self._put("events", message_row(self._row_base(run_id, kind, idx), payload))
             if kind == "final":
                 self._finish(ctx, run_id, payload.get("exit_reason") or "")
         elif kind == "usage":
             self._stats_for(run_id).add_usage(
                 payload.get("round_index"), payload.get("kind"), payload.get("usage"))
-            self._put("run_patch", (run_id, {**self._stats_for(run_id).run_fields(), "updated_at": _now_iso()}))
+            self._put("run_patch", (run_id, {**self._stats_for(run_id).run_fields(), "updated_at": now_iso()}))
         elif kind == "call_start":
             self._stats_for(run_id).add_tool_call()
             self._put("events", call_row(self._row_base(run_id, "call_start", self._round.get(run_id)), payload["call"]))
@@ -286,7 +256,7 @@ class SupabaseSink:
         if self._lastpatch.get(run_id) == key:
             return
         self._lastpatch[run_id] = key
-        fields = {"remaining_h100": round(rem, 4), "tool_rounds_used": rounds, "updated_at": _now_iso()}
+        fields = {"remaining_h100": round(rem, 4), "tool_rounds_used": rounds, "updated_at": now_iso()}
         total = self._total.get(run_id)
         if total is not None:
             fields["spent_h100"] = round(total - rem, 4)
@@ -297,7 +267,7 @@ class SupabaseSink:
         that must not run on this event thread) then patches + uploads."""
         total, remaining = budget_of(ctx)
         fields = {"status": "finished", "exit_reason": exit_reason or None,
-                  "finished_at": _now_iso(), "updated_at": _now_iso(),
+                  "finished_at": now_iso(), "updated_at": now_iso(),
                   "tool_rounds_used": self._rounds_seen.get(run_id, 0)}
         fields.update(self._stats_for(run_id).run_fields())
         if total is not None and remaining is not None:
@@ -314,7 +284,7 @@ class SupabaseSink:
         total, remaining = budget_of(ctx)
         return {
             "run_id": run_id, "arxiv_id": getattr(ctx, "arxiv_id", None), "host": self.cfg.host,
-            "exit_reason": exit_reason or None, "generated_at": _now_iso(),
+            "exit_reason": exit_reason or None, "generated_at": now_iso(),
             "budget_h100": total, "remaining_h100": remaining,
             "spent_h100": (round(total - remaining, 4) if total is not None and remaining is not None else None),
             "tool_rounds_used": self._rounds_seen.get(run_id, 0),
@@ -334,48 +304,14 @@ class SupabaseSink:
         if log_path:
             self._do_storage(run_id, log_path, f"{run_id}.log", "text/plain", "full_log_url")
 
-    # ---- worker / HTTP -------------------------------------------------------
-    def _run(self) -> None:
-        while not self._stop.is_set() or not self.q.empty():
-            try:
-                item = self.q.get(timeout=0.3)
-            except queue.Empty:
-                continue
-            batch = [item]
-            while len(batch) < BATCH_MAX:
-                try:
-                    batch.append(self.q.get_nowait())
-                except queue.Empty:
-                    break
-            self._flush(batch)
-            for _ in batch:
-                self.q.task_done()
-
-    def _flush(self, batch):
-        events = []
-        for kind, payload in batch:
-            if kind == "events":
-                events.append(payload)
-            elif kind == "run_upsert":
-                self._upsert_run(payload)
-            elif kind == "run_patch":
-                self._patch_run(payload[0], payload[1])
-            elif kind == "finalize":
-                self._finalize(*payload)
-        if events:  # PostgREST bulk insert needs identical keys per row -> pad to union
-            ks = set().union(*(e.keys() for e in events))
-            self._post("POST", "/rest/v1/repro_events", [{k: e.get(k) for k in ks} for e in events], prefer="return=minimal")
-
-    def _post(self, method, path, body, *, prefer=None, raw=None, content="application/json"):
-        try:
-            code, _ = postgrest.request(
-                self.cfg.url + path, service_key=self.cfg.service_key, method=method,
-                body=body, raw=raw, prefer=prefer, content=content, timeout=HTTP_TIMEOUT)
-        except Exception:  # noqa: BLE001 — best-effort; never propagate
-            self.failed += 1
-            return
-        if not code or code >= 300:
-            self.failed += 1
+    # ---- worker-side item handling -------------------------------------------
+    def _handle(self, kind, payload):
+        if kind == "run_upsert":
+            self._upsert_run(payload)
+        elif kind == "run_patch":
+            self._patch_run(payload[0], payload[1])
+        elif kind == "finalize":
+            self._finalize(*payload)
 
     def _upsert_run(self, row):
         self._post("POST", "/rest/v1/repro_runs?on_conflict=run_id", [row],
@@ -394,13 +330,6 @@ class SupabaseSink:
                    content=content, prefer=None)
         url = f"{self.cfg.url}/storage/v1/object/public/{BUCKET}/{object_name}"
         self._patch_run(run_id, {url_field: url})
-
-    def close(self, timeout: float = 12.0) -> None:
-        self._stop.set()
-        self._worker.join(timeout=timeout)
-        if self.dropped or self.failed:
-            print(f"supabase_sink: {self.dropped} dropped, {self.failed} failed POSTs "
-                  f"(local agent.full.log is the complete record)", flush=True)
 
 
 def install(cfg: SinkConfig | None) -> "SupabaseSink | None":
