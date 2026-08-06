@@ -63,15 +63,28 @@ also a prerequisite for recursively self-improving systems, since a model
 that improves itself must first re-implement and verify the research it
 builds on~\citep{favaro2026recursive}.
 
+We introduce RECLAIM, a benchmark that measures whether an agent can
+reproduce a published result end to end, starting from the artifacts the
+paper's authors actually released and graded against the execution
+evidence the run produces. We find that success is gated by artifact
+availability. When the authors released a complete artifact stack, agents
+recover the target result on X\% of papers, but as the release thins
+toward reimplementation from the paper alone, the rate drops sharply to
+X\%. We call this drop the availability cliff. The agents' own reports
+also overstate success. Of the X runs that claim a reproduction, only X
+survive a provenance audit of their execution evidence, which we call the
+self-claim gap. We analyze the recurring failure modes behind these
+numbers, including environment drift, where the authors' stack no longer
+builds as documented, and error compounding, where an early unvalidated
+mistake propagates into the final number.
+
 
 \section{Related Work}
 \label{sec:related-work}
 
-RECLAIM measures whether an agent can reproduce a published result end to
-end, starting from the artifacts the paper's authors actually released and
-graded against the execution evidence the run produces. Existing
-benchmarks each cover a part of this setting and leave a different part
-unmeasured.
+RECLAIM asks an agent to turn a paper and whatever its authors released
+into a runnable experiment and a verified number. Existing benchmarks
+each cover a part of this setting and leave a different part unmeasured.
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
