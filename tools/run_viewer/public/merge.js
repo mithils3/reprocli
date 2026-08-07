@@ -24,9 +24,6 @@
     // those attempts, so the merged roster is 2883229's 11 natural exits plus the
     // repair's re-runs.
     "slurm-2889575": "slurm-2883229",
-    // First submit of that repair: its 1M served window killed the engine at
-    // launch (fixed in 399c3fc). 8 zero-round rows, all re-run by 2889575.
-    "slurm-2889476": "slurm-2883229",
   };
   // canonical batch_id -> label for the merged group (the parent's own label names
   // only one of the jobs, so a merged group states both).
