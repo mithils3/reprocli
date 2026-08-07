@@ -18,11 +18,21 @@
     // ONLY_IDS retry of the six papers 2698678 left stuck mid-run when the harness
     // fault killed their drivers (commit 1a66837). Same roster, same brain.
     "slurm-2759663": "slurm-2698678",
+    // Repair of the 23 papers 2883229 did not fairly measure — 16 killed by the
+    // old flat 128K input ceiling (exit context_budget) and 7 wedged on an
+    // unreturned run_gpu acquire (repair_2883229.sh). Folding it in supersedes
+    // those attempts, so the merged roster is 2883229's 11 natural exits plus the
+    // repair's re-runs.
+    "slurm-2889575": "slurm-2883229",
+    // First submit of that repair: its 1M served window killed the engine at
+    // launch (fixed in 399c3fc). 8 zero-round rows, all re-run by 2889575.
+    "slurm-2889476": "slurm-2883229",
   };
   // canonical batch_id -> label for the merged group (the parent's own label names
   // only one of the jobs, so a merged group states both).
   const LABEL = {
     "slurm-2698678": "repro_medium_qwen3 #2698678 +2759663",
+    "slurm-2883229": "repro_easy_dsv4 #2883229 +2889575",
   };
 
   const startedMs = (run) => {
