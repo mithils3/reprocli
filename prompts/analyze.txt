@@ -1,0 +1,28 @@
+Analyze repro-agent run `<20260623T205351Z-d267c8
+>` in depth. First pull its full trajectory from
+Supabase (project rjnkpoxwdslkgxjliakq, tables repro_runs + repro_events filtered by
+that run_id, ordered by seq; SUPABASE_SERVICE_KEY is in ~/.bashrc) and reconstruct the
+rounds, tool calls, results, and final structured object.
+
+Then independently gather the PRIMARY SOURCES — do not take the agent's word for
+anything. Fetch and read the actual arXiv paper (WebFetch/WebSearch the abstract +
+the specific table/section behind the claim; download the PDF if needed) to confirm
+the exact target number, the table it lives in, the metric definition, the units, and
+the experimental setup. Browse the GitHub repo at the commit the agent cloned (read the
+eval script, README, setup/deps, and check Issues/PRs for the bug or version conflict it
+hit) and verify the HuggingFace model/dataset actually exist and match what the paper
+describes. Cross-check EVERY claim in the agent's final object against these sources —
+target value, paper quote, dataset_is_standard, code/weights availability, and the
+h100 estimate — and call out any misquote, mislabel, or number that doesn't reconcile.
+
+Independently judge difficulty (was a port from the paper required, or just "run the
+authors' eval"?) and reproduction faithfulness, then write the report matching the
+existing notes/Analysis/Repro-Agent Run — *.md files exactly: thin-harness framing
+(attribution defaults to the model), TL;DR with the measured-vs-paper result + verdict,
+§A model competence, §B genuine obstacles cleared (don't grow the harness), §C
+difficulty/tiering caveat, Paper-B watch-items/takeaways — anchoring compute on the
+measured scoring run, not the agent's self-estimate. Save to notes/Analysis/ as
+`Repro-Agent Run — <Method> <Variant> (success|failure analysis).md` with the
+Connections wikilink header, cross-linking the sibling analyses.
+
+Key additions over the last version: (1) read the real paper to confirm the target number/table/metric/units yourself; (2) inspect the GitHub repo at the pinned commit + its Issues/PRs (catches things like the read_meta bug being a known upstream defect, or a version pin); (3) verify the HF weights/dataset exist; (4) adversarially cross-check every field of the agent's final object and flag discrepancies — this is what catches an agent misquoting the paper, mislabeling dataset_is_standard, or reporting a bogus h100 multiplier.

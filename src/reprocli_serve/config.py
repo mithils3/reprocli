@@ -1,8 +1,7 @@
 """Serving defaults shared across the launcher modules.
 
-These mirror the values the reprocli runner already uses for the same models, so
-a server stood up here behaves identically to the runner's embedded fallback —
-only now it is a standalone, network-routable service.
+These are the defaults the standalone, network-routable ``vllm serve`` uses for
+each model; there is no in-process server left to mirror.
 """
 
 from __future__ import annotations
@@ -23,7 +22,9 @@ FABRIC_IFACES = ["hsn0", "hsn1", "hsn2", "hsn3"]
 SERVER_STARTUP_TIMEOUT = 1800.0
 HEALTH_POLL_INTERVAL = 5.0
 
-# Matches reprocli_vllm.config.config.MAX_MODEL_LEN.
+# Must match reprocli_vllm.config.config.MAX_MODEL_LEN, and is restated rather than
+# imported: this package must not import the agent packages (see the package
+# docstring), so the dependency can only point the other way. Change both together.
 MAX_MODEL_LEN = 196608
 DEFAULT_GPU_MEMORY_UTILIZATION = 0.95
 
@@ -33,4 +34,3 @@ DEFAULT_ENDPOINT_FILENAME = "vllm_endpoint.json"
 
 # Environment-variable names that form the cross-repo seam.
 ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
-ENV_SERVER_URL = "REPROCLI_SERVER_URL"

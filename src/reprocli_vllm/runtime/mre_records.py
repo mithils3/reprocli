@@ -1,11 +1,12 @@
-"""Load the already-chosen MRE rows and render them for the curator prompt.
+"""Load MRE records from a JSONL source and index them by paper id.
 
-Verification targets must grade the *same* MRE the dataset points the agent
-at, so each paper's classifier row (central_claim, mre_config, agent_task,
-verified_links, tier) is injected into the prompt next to the paper text.
+Each line is one JSON record; rows are keyed by the first present of
+``custom_id`` / ``paper_id`` / ``arxiv_id``. Consumers today are the audit
+runner (``--claims``) and the repro lockfile loader, which both read whatever
+fields their prompt needs off the returned row.
 
 The source may be a local JSONL path or an HF reference of the form
-``hf://datasets/<owner>/<name>/<file>`` so a cluster run can pull the audit
+``hf://datasets/<owner>/<name>/<file>`` so a cluster run can pull the record
 pool straight from the Hub.
 """
 
@@ -42,9 +43,15 @@ def _resolve_records_path(source) -> Path:
 
 
 def _parse_hf_spec(spec: str) -> tuple[str, str] | None:
-    if not spec.startswith("hf://"):
+    # A Path() round-trip (argparse type=Path on --claims) collapses the "hf://"
+    # double slash to "hf:/", so accept both forms. Check "hf://" first: it also
+    # starts with "hf:/", and matching the longer prefix keeps `rest` correct.
+    for prefix in ("hf://", "hf:/"):
+        if spec.startswith(prefix):
+            rest = spec[len(prefix) :]
+            break
+    else:
         return None
-    rest = spec[len("hf://") :]
     if rest.startswith("datasets/"):
         rest = rest[len("datasets/") :]
     segments = [segment for segment in rest.split("/") if segment]

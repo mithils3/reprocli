@@ -93,7 +93,13 @@ def _head(text: str, prefix: str, *, full: bool = False) -> list[str]:
     return shown
 
 
-def _arguments(call: dict[str, Any]) -> dict[str, Any]:
+def call_arguments(call: dict[str, Any]) -> dict[str, Any]:
+    """Decode a tool call's ``function.arguments`` (JSON string or dict) to a dict.
+
+    Public so row builders (``supabase_rows``) share one parse of the call payload
+    instead of reaching into a private helper. A non-JSON string degrades to
+    ``{"_raw": <string>}``; anything non-dict-like becomes ``{}``.
+    """
     fn = call.get("function") or {}
     args = fn.get("arguments")
     if isinstance(args, str):
@@ -107,7 +113,7 @@ def _arguments(call: dict[str, Any]) -> dict[str, Any]:
 def _call_summary(call: dict[str, Any], *, full: bool = False) -> tuple[str, str]:
     """(tool name, the single most useful argument rendered for a human)."""
     name = str((call.get("function") or {}).get("name") or "?")
-    args = _arguments(call)
+    args = call_arguments(call)
     if "command" in args:
         detail = "$ " + str(args["command"])
     elif "diff" in args:
@@ -187,12 +193,17 @@ def log_round_open(
     message: dict[str, Any],
     *,
     round_index: int | None = None,
+    finish_reason: str | None = None,
 ) -> None:
     """Open a round: flush the model's reasoning/text before any tool runs."""
     rnd = f"round {round_index}" if round_index is not None else "round"
     header = f" {rnd} · {getattr(ctx, 'arxiv_id', '?')} · {_stamp()}"
+    if finish_reason and finish_reason != "stop":
+        header += f" · finish={finish_reason}"
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full)])
-    _notify("round_open", ctx, {"round_index": round_index, "message": message})
+    _notify("round_open", ctx, {
+        "round_index": round_index, "message": message, "finish_reason": finish_reason,
+    })
 
 
 def log_call_start(ctx: ExecutionContext, call: dict[str, Any]) -> None:
@@ -221,11 +232,35 @@ def log_final(
     *,
     round_index: int | None = None,
     exit_reason: str = "",
+    finish_reason: str | None = None,
 ) -> None:
     """Append the episode's terminal submission (final assistant turn)."""
     rnd = f" (round {round_index})" if round_index is not None else ""
     header = (
         f" ✅ FINAL{rnd} · {getattr(ctx, 'arxiv_id', '?')} · exit={exit_reason} · {_stamp()}"
     )
+    if finish_reason and finish_reason != "stop":
+        header += f" · finish={finish_reason}"
     _emit(ctx, lambda full: [RULE, header, RULE, *_message_lines(message, full=full), ""])
-    _notify("final", ctx, {"round_index": round_index, "message": message, "exit_reason": exit_reason})
+    _notify("final", ctx, {
+        "round_index": round_index, "message": message,
+        "exit_reason": exit_reason, "finish_reason": finish_reason,
+    })
+
+
+def log_usage(
+    ctx: ExecutionContext,
+    usage: dict[str, Any] | None,
+    *,
+    round_index: int | None = None,
+    kind: str = "round",
+) -> None:
+    """Forward one model response's token ``usage`` to the structured sink.
+
+    No file write — the human transcript stays clean; the usage is summed onto the
+    Supabase run row and the uploaded ``stats.json``. Best-effort and a no-op when
+    no sink is registered or ``usage`` is empty, exactly like the writers above.
+    """
+    if not usage:
+        return
+    _notify("usage", ctx, {"round_index": round_index, "kind": kind, "usage": usage})

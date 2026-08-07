@@ -5,7 +5,7 @@ keyless search endpoints), but it CAN fetch a public URL it already knows or can
 construct: the PyTorch install docs / wheel index to work out the right
 aarch64+CUDA torch build, a raw README / requirements file, a release-notes page.
 
-This reuses the classifier's ``fetch_url`` (urllib + HTML→text) verbatim; the only
+This reuses the shared ``fetch_url`` (urllib + HTML→text) from ``reprocli_vllm``; the only
 adapter is the ``(arguments, ctx)`` handler signature the repro loop dispatches
 through — ``fetch_url`` itself needs no episode context.
 """
@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from reprocli_vllm.config.config import TOOL_MAX_CHARS, function_tool
-from reprocli_vllm.tools.web_tools import fetch_url_tool
+from reprocli_vllm.tools.web_fetch import fetch_url_tool
 
 from reprocli_repro.context import ExecutionContext
 

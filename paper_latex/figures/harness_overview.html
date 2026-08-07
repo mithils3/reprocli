@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Regular.ttf');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Medium.ttf');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Bold.ttf');
+  font-weight: 700;
+}
+@page { size: 880px 348px; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 880px; height: 348px; }
+body {
+  font-family: 'Inter', sans-serif;
+  color: #1f2328;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 14px 14px 14px 14px;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'JBMono', monospace; }
+
+/* ---------- shared card ---------- */
+.card {
+  background: #fff;
+  border: 1.5px solid #d0d7de;
+  border-radius: 11px;
+  box-shadow: 0 1px 2px rgba(31,35,40,.06);
+}
+.col-title {
+  display: flex; align-items: baseline; gap: 7px;
+  font-size: 13.5px; font-weight: 650; letter-spacing: -0.1px;
+}
+.col-title .sub { font-size: 10.5px; font-weight: 500; color: #656d76; letter-spacing: 0; }
+.grouplab { font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #8b949e; }
+
+.arrow-col { display: flex; align-items: center; justify-content: center; flex: none; width: 26px; }
+
+/* ---------- inputs ---------- */
+.inputs {
+  flex: none; width: 160px;
+  padding: 12px 12px;
+  display: flex; flex-direction: column;
+}
+.inputs .col-title { color: #1f2328; }
+.inrow {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; color: #424a53;
+  padding: 10px 0; border-bottom: 1px solid #eaeef2;
+}
+.inrow svg { flex: none; }
+.inputs .first { margin-top: 10px; }
+.target {
+  margin-top: auto;
+  background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 7px;
+  padding: 8px 9px;
+}
+.target .lab { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #656d76; }
+.target .val { font-family: 'JBMono', monospace; font-size: 10px; color: #1f2328; margin-top: 4px; line-height: 1.55; }
+.target .noconf { display: block; color: #bc4c00; margin-top: 3px; font-weight: 500; }
+
+/* ---------- agent (dark) ---------- */
+.agent {
+  flex: none; width: 334px;
+  background: #24292f; border-radius: 11px;
+  color: #fff; padding: 13px 13px 12px 13px;
+  display: flex; flex-direction: column;
+}
+.agent .head { display: flex; align-items: baseline; gap: 8px; }
+.agent .head .t { font-size: 13.5px; font-weight: 650; }
+.agent .head .s { font-size: 10.5px; font-weight: 500; color: #8b949e; }
+.tgroup { margin-top: 12px; }
+.tgroup .grouplab { color: #8b949e; margin-bottom: 6px; }
+.trow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4.5px 0;
+}
+.tchip {
+  font-family: 'JBMono', monospace; font-size: 10.5px; font-weight: 500;
+  color: #e6edf3; background: #2f363d; border: 1px solid #444c56;
+  border-radius: 6px; padding: 2.5px 7px; white-space: nowrap; flex: none;
+}
+.tdesc { font-size: 10.5px; color: #a7b0ba; line-height: 1.35; }
+.agent .note {
+  margin-top: auto;
+  font-size: 9.5px; color: #8b949e; line-height: 1.45;
+  border-top: 1px solid #363c44; padding-top: 8px; margin-top: 11px;
+}
+
+/* ---------- right column ---------- */
+.right { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+
+/* output card */
+.output {
+  flex: 1;
+  border-color: #c297ff;
+  padding: 12px 12px 11px 12px;
+  display: flex; flex-direction: column;
+}
+.output .col-title { color: #8250df; }
+.output .col-title svg { flex: none; }
+.schema {
+  margin-top: 9px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.field {
+  font-family: 'JBMono', monospace; font-size: 10px; line-height: 1.3;
+  padding: 3px 0; color: #1f2328;
+}
+.field .k { font-weight: 500; color: #1f2328; }
+.field .braces { color: #656d76; }
+.field .fsub { display: block; color: #656d76; padding-left: 12px; font-size: 9px; margin-top: 1px; }
+.field .enum { color: #0969da; }
+.evidence {
+  margin-top: 9px;
+  background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 7px;
+  padding: 7px 9px;
+  display: flex; align-items: center; gap: 7px;
+}
+.evidence svg { flex: none; }
+.evidence .etxt { font-size: 9.5px; color: #57606a; }
+.evidence .etxt b { font-family: 'JBMono', monospace; font-weight: 600; color: #1f2328; font-size: 9.5px; }
+.evidence .efiles { font-family: 'JBMono', monospace; color: #57606a; font-size: 9.5px; }
+
+/* auditor terminal chip */
+.auditor {
+  flex: none;
+  background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 8px;
+  padding: 9px 10px;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.auditor .dot { flex: none; margin-top: 2px; }
+.auditor .atxt .at { font-size: 11px; font-weight: 650; color: #1f2328; display: flex; align-items: center; gap: 6px; }
+.auditor .atxt .as { font-size: 9.5px; color: #57606a; line-height: 1.42; margin-top: 3px; }
+.auditor .atxt .as .verd { font-family: 'JBMono', monospace; color: #1a7f37; font-weight: 500; }
+.auditor .atxt .as .cap { font-family: 'JBMono', monospace; color: #cf222e; font-weight: 500; }
+
+/* small feedback arrow into auditor */
+.loopwrap { display: flex; align-items: center; gap: 6px; }
+.looplab { font-size: 8.5px; color: #8b949e; font-family: 'JBMono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- ===== 1. task inputs ===== -->
+<div class="card inputs">
+  <div class="col-title">Task inputs</div>
+  <div class="inrow first">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="#656d76"><path d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 13.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V6H10.75A1.75 1.75 0 0 1 9 4.25V1.5H3.75a.25.25 0 0 0-.25.25Zm7-.188V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914Z"/></svg>
+    paper LaTeX source
+  </div>
+  <div class="inrow">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="#656d76"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25Z"/></svg>
+    OpenReview supplement
+  </div>
+  <div class="inrow">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="#656d76"><path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25Zm-2.16 6.71a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25Z"/></svg>
+    verified artifact links
+  </div>
+  <div class="target">
+    <div class="lab">match target</div>
+    <div class="val">metric &#183; value &#183; scope
+      <span class="noconf">no config given</span>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-col"><svg width="21" height="14" viewBox="0 0 21 14"><path d="M0 7h13" stroke="#24292f" stroke-width="2.4"/><path d="M11 2 19 7l-8 5z" fill="#24292f"/></svg></div>
+
+<!-- ===== 2. agent (dark) ===== -->
+<div class="agent">
+  <div class="head">
+    <span class="t">ReAct tool loop</span>
+    <span class="s">any chat model, tools-only</span>
+  </div>
+
+  <div class="tgroup">
+    <div class="grouplab">workspace &#183; login node, CPU</div>
+    <div class="trow"><span class="tchip">workspace_bash</span><span class="tdesc">cwd-confined shell</span></div>
+    <div class="trow"><span class="tchip">write_file / edit_file</span><span class="tdesc">author code &amp; configs</span></div>
+    <div class="trow"><span class="tchip">update_plan</span><span class="tdesc">running checklist</span></div>
+    <div class="trow"><span class="tchip">fetch_url</span><span class="tdesc">public URLs only</span></div>
+  </div>
+
+  <div class="tgroup">
+    <div class="grouplab">cluster &#183; Slurm</div>
+    <div class="trow"><span class="tchip">list_partitions</span><span class="tdesc">node pools via sinfo</span></div>
+    <div class="trow">
+      <span class="tchip">run_gpu</span><span class="tdesc">only path to a GPU: salloc hold, srun steps, wall clock metered vs the H100-h grant</span>
+    </div>
+  </div>
+
+  <div class="note">~500&#8202;GB scratch &#183; round + H100-h budgets harness-enforced</div>
+</div>
+
+<div class="arrow-col"><svg width="21" height="14" viewBox="0 0 21 14"><path d="M0 7h13" stroke="#24292f" stroke-width="2.4"/><path d="M11 2 19 7l-8 5z" fill="#24292f"/></svg></div>
+
+<!-- ===== 3. right column: output + auditor ===== -->
+<div class="right">
+
+  <div class="card output">
+    <div class="col-title">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="#8250df"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914Z"/></svg>
+      report.json
+      <span class="sub" style="align-self:center">schema-constrained final pass</span>
+    </div>
+    <div class="schema">
+      <div class="field"><span class="k">paper_id</span>, <span class="k">claim</span>, <span class="k">what_ran</span>, <span class="k">scoring_command</span></div>
+      <div class="field"><span class="k">measurements[]</span> <span class="braces">{metric, observed_value, reference_value, scope, evidence}</span></div>
+      <div class="field"><span class="k">agent_assessment</span> <span class="braces">&#8712;</span> <span class="enum">{reproduced, partial, not_reproduced, could_not_run}</span></div>
+      <div class="field"><span class="k">changes_made</span>, <span class="k">blockers</span>, <span class="k">evidence_files</span></div>
+    </div>
+    <div class="evidence">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="#57606a"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg>
+      <span class="etxt"><b>evidence/</b> &nbsp;<span class="efiles">REPORT.md &#183; commands.log &#183; plan.md &#183; run stdout</span></span>
+    </div>
+  </div>
+
+  <div class="loopwrap">
+    <svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6h11" stroke="#8b949e" stroke-width="2"/><path d="M9 2 16 6l-7 4z" fill="#8b949e"/></svg>
+    <span class="looplab">report + evidence</span>
+  </div>
+
+  <div class="auditor">
+    <svg class="dot" width="15" height="15" viewBox="0 0 16 16" fill="#656d76"><path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.4a.25.25 0 0 0 .219.37h1.694a1.516 1.516 0 0 1 1.205 2.436l-4.42 5.79a1.516 1.516 0 0 1-2.706-1.117l.808-3.887a.25.25 0 0 0-.245-.301H5.283a1.516 1.516 0 0 1-1.19-2.454L8.5.855a1.516 1.516 0 0 1 1.004-.424Z"/></svg>
+    <div class="atxt">
+      <div class="at">provenance auditor</div>
+      <div class="as">grades report + evidence &#8594; <span class="verd">reproduced / partial / not_reproduced / unverifiable</span>; echoed numbers <span class="cap">capped to 0</span></div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

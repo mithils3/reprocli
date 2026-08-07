@@ -10,8 +10,9 @@ priority order:
 3. an endpoint file named by ``REPROCLI_ENDPOINT_FILE`` (the JSON that
    reprocli_serve publishes; we read its ``base_url`` field).
 
-If none is set, the resolver returns ``None`` and the runner falls back to its
-embedded local server exactly as before — so default behavior is unchanged.
+If none is set, the resolver returns ``None``: there is no embedded server, so the
+repro harness renders prompts as a dry run and the auditor runner exits with an
+error pointing at ``reprocli_serve``.
 
 Which model id to send in each request is resolved the same way: ask the server
 what it serves (``GET /v1/models``) and use the single advertised model, unless an
@@ -26,11 +27,20 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Any
+
+# The endpoint file is reprocli_serve's published contract, so its env-var name and
+# its reader live there. We are the consumer side and import them rather than
+# re-declaring them (reprocli_serve imports nothing from us, by design).
+from reprocli_serve.config import ENV_ENDPOINT_FILE
+from reprocli_serve.endpoint import read_base_url
+from reprocli_vllm.vllm.retry import with_retries
 
 ENV_SERVER_URL = "REPROCLI_SERVER_URL"
-ENV_ENDPOINT_FILE = "REPROCLI_ENDPOINT_FILE"
 ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
+ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
+ENV_CHAT_TEMPLATE_KWARGS = "REPROCLI_CHAT_TEMPLATE_KWARGS"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -53,6 +63,56 @@ def auth_headers(cli_value: str | None = None) -> dict[str, str]:
     return {"Authorization": f"Bearer {key}"} if key else {}
 
 
+def openrouter_provider_routing() -> dict[str, Any] | None:
+    """OpenRouter ``provider`` routing block that pins one or more upstream providers.
+
+    Set ``REPROCLI_OPENROUTER_PROVIDER`` to an OpenRouter provider slug (e.g.
+    ``deepseek``) to force every request to that provider with fallbacks off — so a
+    cache-read-dominated run is billed at that provider's own cache pricing and can't
+    be silently rerouted to a pricier host. A comma-separated list sets a preference
+    order (first available wins, still no fallback beyond the list). Unset/empty ->
+    ``None`` and no ``provider`` field is sent: OpenRouter keeps its default routing,
+    and a local vLLM (which ignores the field) is unaffected either way.
+    """
+    raw = (os.environ.get(ENV_OPENROUTER_PROVIDER) or "").strip()
+    providers = [slug.strip() for slug in raw.split(",") if slug.strip()]
+    if not providers:
+        return None
+    return {"order": providers, "allow_fallbacks": False}
+
+
+def chat_template_kwargs() -> dict[str, Any] | None:
+    """Per-request ``chat_template_kwargs`` to attach to every completion, or None.
+
+    Set ``REPROCLI_CHAT_TEMPLATE_KWARGS`` to a JSON object and it rides on every
+    chat-completion body (repro loop, auditor/classifier tool loop). This is how a
+    model's chat template is told to render a non-default mode that no sampling
+    field can express — e.g. DeepSeek-V4-Flash Think Max, which the AA index rung
+    depends on:
+
+        REPROCLI_CHAT_TEMPLATE_KWARGS='{"thinking": true, "reasoning_effort": "max"}'
+
+    Unset/empty or unparseable -> ``None`` and no field is sent, so every other
+    model (and a plain vLLM that ignores the field) is unaffected.
+    """
+    raw = (os.environ.get(ENV_CHAT_TEMPLATE_KWARGS) or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        print(
+            f"[chat_template_kwargs] ignoring unparseable {ENV_CHAT_TEMPLATE_KWARGS} "
+            f"(not JSON): {raw!r}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return None
+    if not isinstance(parsed, dict) or not parsed:
+        return None
+    return parsed
+
+
 def normalize_server_url(value: str) -> str:
     """Strip a trailing slash and a trailing ``/v1`` so callers can append paths."""
     url = value.strip().rstrip("/")
@@ -61,18 +121,8 @@ def normalize_server_url(value: str) -> str:
     return url
 
 
-def base_url_from_endpoint_file(path: Path) -> str | None:
-    """Read the ``base_url`` field from a published endpoint JSON file."""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    url = data.get("base_url")
-    return url if isinstance(url, str) and url else None
-
-
 def resolve_server_url(cli_value: str | None) -> str | None:
-    """Return the normalized base URL to attach to, or None for the embedded server."""
+    """Return the normalized base URL to attach to, or None if none is configured."""
     if cli_value:
         return normalize_server_url(cli_value)
     env_url = os.environ.get(ENV_SERVER_URL)
@@ -80,27 +130,61 @@ def resolve_server_url(cli_value: str | None) -> str | None:
         return normalize_server_url(env_url)
     endpoint_file = os.environ.get(ENV_ENDPOINT_FILE)
     if endpoint_file:
-        url = base_url_from_endpoint_file(Path(endpoint_file))
+        url = read_base_url(Path(endpoint_file))
         if url:
             return normalize_server_url(url)
     return None
 
 
-def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
-    """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
+def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[dict]:
+    """Return the raw ``/v1/models`` entries the server advertises (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
-    request = urllib.request.Request(url, headers=auth_headers(), method="GET")
-    try:
+
+    def _do() -> dict:
+        request = urllib.request.Request(url, headers=auth_headers(), method="GET")
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            data = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
+
+    try:
+        data = with_retries(_do, what=f"GET {url}")
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"could not list models at {url}: {exc}") from exc
     entries = data.get("data") if isinstance(data, dict) else None
+    return [entry for entry in entries or [] if isinstance(entry, dict)]
+
+
+def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
+    """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     return [
         entry["id"]
-        for entry in entries or []
-        if isinstance(entry, dict) and isinstance(entry.get("id"), str) and entry["id"]
+        for entry in fetch_model_cards(base_url, timeout)
+        if isinstance(entry.get("id"), str) and entry["id"]
     ]
+
+
+def fetch_served_context_length(
+    base_url: str,
+    model_id: str | None = None,
+    timeout: float = MODELS_FETCH_TIMEOUT,
+) -> int:
+    """Context window the server advertises for ``model_id``.
+
+    vLLM's model card carries ``max_model_len``; OpenAI-compatible proxies (OpenRouter)
+    carry ``context_length``, so we read either. Raises rather than guessing a default:
+    the served window is the harness's input ceiling, and inventing one is how a
+    1M-context brain ends up capped at some number the server never agreed to.
+    """
+    for entry in fetch_model_cards(base_url, timeout):
+        if model_id and entry.get("id") != model_id:
+            continue
+        for field in ("max_model_len", "context_length"):
+            value = entry.get(field)
+            if isinstance(value, int) and value > 0:
+                return value
+    raise RuntimeError(
+        f"{base_url}/v1/models advertised no context window for {model_id!r}; "
+        f"cannot resolve the input ceiling."
+    )
 
 
 def resolve_served_model(

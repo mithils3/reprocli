@@ -49,7 +49,11 @@ def tool_call_signature(call: dict) -> tuple[str, str]:
 def conversation_chars(messages: list[dict[str, Any]]) -> int:
     chars = 0
     for message in messages:
+        # ``reasoning`` counts: it is replayed to the server in the assistant message
+        # (trace_io.assistant_message) and occupies real context there, so leaving it
+        # out under-measured a reasoning model's prompt by more than half.
         chars += len(str(message.get("content") or ""))
+        chars += len(str(message.get("reasoning") or ""))
         for call in message.get("tool_calls") or []:
             function = call.get("function") or {}
             chars += len(str(function.get("arguments") or ""))

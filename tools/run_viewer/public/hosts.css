@@ -1,0 +1,66 @@
+/* hosts.css — cluster telemetry: per-host cards on the Fleet board (hosts.js)
+   and the per-run GPU strip in the run detail (hoststrip.js). All colour goes
+   through the styles.css / theme.css custom properties, so dark mode is free.
+   The 6px bar grammar matches the run cards' micro fuel bar (live.css .mfuel). */
+
+/* ---- Cluster section on the Fleet board ----------------------------------- */
+.cluster { margin-bottom: 26px; }
+.hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.hcard { display: flex; flex-direction: column; gap: 7px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); min-width: 0; }
+.hcard.stale { opacity: .55; }
+.hc-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hc-name { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--txt);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-role { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600;
+  padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--panel2); color: var(--muted); flex: none; }
+.hc-role.master { background: var(--accent-tint); color: var(--accent-strong); border-color: var(--accent); }
+.hc-ago { margin-left: auto; flex: none; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.hc-ago.live { color: var(--accent-strong); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+
+/* ---- meters (RAM + GPU util/mem bars) -------------------------------------- */
+.hbar { position: relative; flex: 1; min-width: 24px; height: 6px; border-radius: 3px; background: var(--panel2);
+  overflow: hidden; border: 1px solid var(--line); }
+.hbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px 0 0 3px; }
+.hbar.mem i { background: var(--predicted); }
+.hbar.hot i { background: var(--no); }
+.hmeter { display: flex; align-items: center; gap: 9px; }
+.hm-l { flex: none; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.hm-v { flex: none; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.hc-sys { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+
+/* ---- nvitop-flavoured GPU rows --------------------------------------------- */
+.hgpus { display: flex; flex-direction: column; gap: 4px; }
+.hg-row { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; color: var(--muted); min-width: 0; }
+.hg-i { flex: none; width: 10px; text-align: right; color: var(--txt); font-weight: 600; }
+.hg-v { flex: none; width: 30px; }
+.hg-v.wide { width: 68px; }
+.hg-x { flex: none; margin-left: auto; text-align: right; white-space: nowrap; }
+
+/* ---- sparklines -------------------------------------------------------------- */
+.hsparks { display: flex; gap: 14px; align-items: center; }
+.hs-one { display: inline-flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.hs-l { flex: none; font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.hspark { flex: 1; min-width: 0; height: 22px; display: block; }
+.hspark polyline { stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hspark.ram polyline { stroke: var(--predicted); }
+
+/* ---- master's vLLM log tail -------------------------------------------------- */
+.hc-log summary { font-family: var(--mono); font-size: 10.5px; color: var(--muted); cursor: pointer; user-select: none; }
+.hc-log summary:hover { color: var(--accent-strong); }
+.hc-log pre { margin: 6px 0 0; max-height: 16rem; overflow: auto; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--txt);
+  white-space: pre-wrap; word-break: break-word; }
+
+/* ---- per-run GPU strip (run detail, sits right after .run-top) --------------- */
+.hoststrip { margin: 14px 0 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.hoststrip.stale { opacity: .7; }
+.hs-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hs-t { flex: none; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.hs-body { display: flex; gap: 18px; flex-wrap: wrap; }
+.hs-col { display: flex; flex-direction: column; gap: 6px; flex: 1 1 220px; min-width: 0; }
+.hs-col.grow { flex: 2 1 280px; }

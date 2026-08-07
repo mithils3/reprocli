@@ -17,4 +17,9 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://rjnkpoxwdslkgxjliakq.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqbmtwb3h3ZHNsa2d4amxpYWtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTQzNTYsImV4cCI6MjA5NjU5MDM1Nn0.-fVclxUX9I5xnY6QudwHQ51P8PTUjDWF5HjFXHhINdU",
   FULL_LOG_BASE_URL: "https://rjnkpoxwdslkgxjliakq.supabase.co/storage/v1/object/public/repro-logs",
+
+  // A run still marked 'running' but with no update for this many hours is shown
+  // as "dead" (the harness died / the job was killed before it could finalize).
+  // Derived in the browser — the anon key is read-only, so the DB row is unchanged.
+  DEAD_AFTER_HOURS: 12,
 };

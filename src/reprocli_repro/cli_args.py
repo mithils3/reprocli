@@ -1,15 +1,14 @@
 """reprocli_repro CLI — its own argparse (deliberately not ``resolve_mode_settings``).
 
 The reproduction agent attaches to an already-served brain (the same vLLM
-endpoint the classifier/auditor use) and runs one paper's experiment under a
+endpoint the auditor uses) and runs one paper's experiment under a
 metered compute budget. ``parse_args`` returns a fully-resolved Namespace: repro
 defaults applied (system/final messages, tool + response-format seams) and all
 cross-argument validation enforced.
 
-Phase 0 ships the stable surface the forked tool loop and the context-management
-tiers need. Run-selection flags (``--paper-id`` / ``--lockfile`` / ``--runs-dir``
-/ ``--prompt-file`` / ``--num-prompts``) are accepted now so the CLI shape is
-stable; they are consumed by the input pipeline starting in Phase 1.
+``validate`` enforces the cross-argument rules and ``apply_defaults`` resolves the
+repro defaults (system/final messages, the JIT-allocation cluster profile, the
+advertised toolset, the trace path).
 """
 
 from __future__ import annotations
@@ -18,14 +17,52 @@ import argparse
 import os
 from pathlib import Path
 
-from reprocli_vllm.config.config import DEFAULT_MODEL, MAX_MODEL_LEN
+from reprocli_vllm.audit.h100 import band_ladder_text
+from reprocli_vllm.config.config import DEFAULT_MODEL
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
-from reprocli_repro.budget import HW_MULTIPLIER
-from reprocli_repro.cluster import DEFAULT_CLUSTER, cluster_names, from_args as resolve_cluster
-from reprocli_repro.inputs import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
-from reprocli_repro.reference import DEFAULT_DATASET as DEFAULT_BUNDLE_DATASET
+from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
+from reprocli_repro.cluster import from_args as resolve_cluster
+from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
+from reprocli_repro.inputs import DEFAULT_UNBANDED_BUDGET_H100_HOURS
+from reprocli_repro.report import REPORT_RESPONSE_FORMAT
 from reprocli_repro.tools import build_repro_tools
+
+REPRO_SYSTEM_MESSAGE = (
+    "You are a reproduction agent. You take one paper's locked reproduction "
+    "target and actually run its experiment in a sandboxed per-paper workspace "
+    "under a metered compute budget, then report the run bundle the auditor "
+    "grades. Spend budget deliberately; write durable evidence as you go."
+)
+REPRO_FINAL_NO_TOOLS_MESSAGE = (
+    "The tool phase is over. Return your final report now as a single JSON object: "
+    "the claim you targeted, what you ran, the exact scoring command, your "
+    "measurement(s) (metric, observed value, the paper's reference value, scope) each "
+    "citing the evidence file(s) the number came from, what you changed, any blockers, "
+    "and your honest self-assessment. This is your account of the run, not the verdict "
+    "-- the auditor grades it. Return only the JSON object."
+)
+
+# Sampling is left unset for every model: the request builder omits unset fields,
+# so the served model's own generation_config defaults apply (vLLM recipe style).
+MAX_TOKENS = 32768
+# No harness-side input ceiling constant: __main__ reads the attached brain's own window
+# off /v1/models and reserves MAX_TOKENS of it for the completion. This was a flat 128000
+# for every model, which capped a 1M-context brain at 128K and made elide-compact fire
+# against a ceiling the server had no part in -- DeepSeek-V4-Flash-0731 serves 1M and
+# still died on context_budget in 16 of 27 runs of sweep 2883229.
+REQUEST_WORKERS = 8
+# Context management (guardrails in loop.py): tool stdout stays verbatim until elide-compact
+# fires once COMPACT_THRESHOLD of the resolved input ceiling is crossed, then shrinks the old
+# span's bulky tool results in place to an on-disk pointer, keeping COMPACT_KEEP_TOKENS of
+# recent turns — plus all assistant reasoning — verbatim. The full output stays recoverable
+# under evidence/, so an elided number is re-read, not re-computed.
+COMPACT_ENABLED = True
+COMPACT_KEEP_TOKENS = 20000
+COMPACT_THRESHOLD = 0.70
+
+# The reproduction prompt template is a fixed repo asset (was --prompt-file).
+DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 
 # Run bundles + outputs land on the NVMe work filesystem, not the repo working
 # dir — they get large and are scratch. Override the root with $REPRO_WORK_ROOT,
@@ -33,23 +70,7 @@ from reprocli_repro.tools import build_repro_tools
 # repo asset.
 DEFAULT_WORK_ROOT = Path(os.environ.get("REPRO_WORK_ROOT", "/work/nvme/bfvr/msalunkhe/reprocli"))
 DEFAULT_OUTPUT = DEFAULT_WORK_ROOT / "reproduce.jsonl"
-DEFAULT_PROMPT_FILE = Path("prompts/prompt_reproduce.txt")
 DEFAULT_RUNS_DIR = DEFAULT_WORK_ROOT / "agent_runs"
-
-# Phase 0 placeholders; Phase 1 swaps in the real operating prompt file and
-# Phase 5 the structured submission contract. The loop reads these off ``args``.
-REPRO_SYSTEM_MESSAGE = (
-    "You are a reproduction agent. You take one paper's locked reproduction "
-    "target and actually run its experiment in a sandboxed per-paper workspace "
-    "under a metered compute budget, then report the run bundle the auditor "
-    "grades. Spend budget deliberately; write durable evidence as you go. "
-    "(Phase 0 placeholder operating prompt; the full toolset and instructions "
-    "land in later phases.)"
-)
-REPRO_FINAL_NO_TOOLS_MESSAGE = (
-    "The tool phase is finished. Produce the final structured submission now "
-    "from the evidence gathered above. Return only the requested object."
-)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -58,20 +79,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     _add_workspace(parser)
     _add_cluster(parser)
     _add_endpoint(parser)
-    _add_sampling(parser)
-    _add_context_management(parser)
+    _add_loop_limits(parser)
     _add_outputs(parser)
     args = parser.parse_args(argv)
-    _validate(parser, args)
-    _apply_defaults(args)
+    validate(parser, args)
+    apply_defaults(args)
     return args
 
 
 def _add_run_selection(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("run selection (consumed starting Phase 1)")
+    group = parser.add_argument_group("run selection")
     group.add_argument("--paper-id", help="arXiv id of the single paper to reproduce.")
-    group.add_argument("--num-prompts", type=int, help="Reproduce a random N papers instead of one.")
-    group.add_argument("--seed", type=int, default=0, help="Sampling seed for --num-prompts (default: 0).")
     group.add_argument(
         "--run-id",
         help="Pin the run id (default: a fresh time+random id, so re-runs never collide).",
@@ -90,15 +108,9 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
         default=DEFAULT_LOCKFILE_SPLIT,
         help=(
             "Which published split of the lockfile dataset to load: 'test' (the "
-            "100-paper frozen benchmark, default) or 'validation' (the dev-15 split); "
+            "100-paper frozen benchmark, default) or 'validation' (the 14-paper dev split); "
             "aliases 'eval'/'dev' are accepted. Ignored for a local .jsonl / hf:// file."
         ),
-    )
-    group.add_argument(
-        "--prompt-file",
-        type=Path,
-        default=DEFAULT_PROMPT_FILE,
-        help=f"Reproduction prompt template (default: {DEFAULT_PROMPT_FILE}).",
     )
     group.add_argument(
         "--runs-dir",
@@ -114,64 +126,42 @@ def _add_run_selection(parser: argparse.ArgumentParser) -> None:
 def _add_workspace(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("workspace + reference (Phase 2)")
     group.add_argument(
-        "--bundle-dataset",
-        default=DEFAULT_BUNDLE_DATASET,
-        help=f"Paper-bundle dataset the read-only reference/ is materialized from "
-        f"(default: {DEFAULT_BUNDLE_DATASET}).",
-    )
-    group.add_argument(
         "--reference",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Materialize the read-only reference/ copy at setup (default: on).",
     )
     group.add_argument(
-        "--build-venv",
+        "--prune-workspace-threshold-mb",
+        type=float,
+        default=DEFAULT_PRUNE_THRESHOLD_MB,
+        help="When an episode finishes, delete workspace files larger than this many "
+        "MB and workspace subdirectories whose total exceeds it, reclaiming accidental "
+        "dataset downloads on the NVMe scratch. reference/ and evidence/ are never "
+        f"touched; 0 disables (default: {DEFAULT_PRUNE_THRESHOLD_MB:g}).",
+    )
+    group.add_argument(
+        "--prune-workspace-venv",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Build the empty per-paper uv venv at setup (default: on).",
+        help="When an episode finishes, delete the agent's Python venv(s) from the "
+        "workspace whole (the multi-GB CUDA torch install is the biggest single "
+        "reclaim). Applies even when the size threshold is 0 (default: on).",
     )
-    group.add_argument("--venv-python", help="Python version/path passed to `uv venv --python`.")
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("cluster / JIT GPU substrate")
+    group = parser.add_argument_group("cluster / JIT GPU substrate (deltaai)")
     group.add_argument(
-        "--cluster",
-        choices=cluster_names(),
-        default=DEFAULT_CLUSTER,
-        help=f"Built-in cluster profile (account/partition/hw/modules) the agent's "
-        f"JIT salloc uses (default: {DEFAULT_CLUSTER}). Override individual fields below.",
-    )
-    group.add_argument("--account", help="SLURM account (salloc -A); overrides the profile.")
-    group.add_argument("--partition", help="SLURM partition (salloc -p); overrides the profile.")
-    group.add_argument(
-        "--gpus-per-node",
-        type=int,
-        help="Upper bound on a single step's --gpus; overrides the profile.",
-    )
-    group.add_argument(
-        "--hw",
-        choices=tuple(sorted(HW_MULTIPLIER)),
-        help="Node hardware keying the H100-equiv budget multiplier; overrides the profile.",
-    )
-    group.add_argument(
-        "--scratch-root",
-        help="NVMe root for per-paper workspaces (Phase 7); overrides the profile.",
+        "--partition",
+        help="SLURM partition (salloc -p); overrides the deltaai profile's default (ghx4).",
     )
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
-        help="Opt-in NGC base .sif every step runs inside (apptainer exec --nv); the "
-        "venv inherits its CUDA PyTorch. Off by default — the agent installs a CUDA "
-        "torch into the venv instead. Set this (or $REPRO_APPTAINER_SIF) to use the "
-        "container path.",
-    )
-    group.add_argument(
-        "--modules",
-        default="",
-        help="Space-separated `module load` names prepended to each JIT GPU step; "
-        "overrides the profile's modules.",
+        help="Base .sif that backs the MANDATORY Apptainer sandbox — every agent step "
+        "runs inside this read-only image. Defaults to the deltaai profile's pinned "
+        "raw CUDA image (the agent installs torch itself); overrides it / $REPRO_APPTAINER_SIF.",
     )
 
 
@@ -196,94 +186,96 @@ def _add_endpoint(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_sampling(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("sampling and loop limits")
-    group.add_argument("--max-tokens", type=int, default=8192)
-    group.add_argument("--max-input-tokens", type=int, default=128000)
-    group.add_argument("--max-model-len", type=int, default=MAX_MODEL_LEN)
-    group.add_argument("--temperature", type=float, default=1.0)
-    group.add_argument("--top-p", type=float, default=0.95)
-    group.add_argument("--top-k", type=int, default=40)
+def _add_loop_limits(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_argument_group("loop limits")
     group.add_argument(
         "--tool-rounds",
         type=int,
-        default=150,
-        help="Max model turns; the compute-budget guardrail is the real bound (default: 150).",
+        default=300,
+        help="Max model turns; the compute-budget guardrail is the real bound (default: 300).",
     )
-    group.add_argument("--request-workers", type=int, default=8)
     group.add_argument(
         "--budget-h100-hours",
         type=float,
-        default=8.0,
-        help="Per-episode compute ceiling in H100-equiv hours the loop guardrail enforces.",
-    )
-
-
-def _add_context_management(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("context management")
-    group.add_argument(
-        "--microcompact",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Elide stale tool results once the soft threshold is crossed (default: on).",
-    )
-    group.add_argument(
-        "--microcompact-keep",
-        type=int,
-        default=3,
-        help="Number of most-recent tool results kept verbatim when compacting (default: 3).",
-    )
-    group.add_argument(
-        "--microcompact-threshold",
-        type=float,
-        default=0.8,
-        help="Soft threshold as a fraction of --max-input-tokens (default: 0.8).",
+        default=None,
+        help="Flat per-episode compute ceiling in H100-equiv hours, applied to every "
+        "paper. Omit to use the default: each paper's ceiling is derived from its "
+        f"selection_band upper edge ({band_ladder_text()}), falling back to "
+        f"{DEFAULT_UNBANDED_BUDGET_H100_HOURS:g}h for unbanded rows.",
     )
 
 
 def _add_outputs(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("outputs")
     group.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    group.add_argument("--trace-output", type=Path)
     group.add_argument("--save-round-jsonl", action="store_true")
 
 
-def _validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+def validate(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
-    if args.request_workers < 1:
-        parser.error("--request-workers must be >= 1")
-    if args.max_input_tokens < 1:
-        parser.error("--max-input-tokens must be >= 1")
-    if args.top_k is not None and args.top_k < 1:
-        parser.error("--top-k must be >= 1")
-    if args.microcompact_keep < 0:
-        parser.error("--microcompact-keep must be >= 0")
-    if not 0 < args.microcompact_threshold <= 1:
-        parser.error("--microcompact-threshold must be in (0, 1]")
-    if args.budget_h100_hours < 0:
+    if args.budget_h100_hours is not None and args.budget_h100_hours < 0:
         parser.error("--budget-h100-hours must be >= 0")
-    if args.gpus_per_node is not None and args.gpus_per_node < 1:
-        parser.error("--gpus-per-node must be >= 1")
-    if args.max_input_tokens + args.max_tokens > args.max_model_len:
-        parser.error("--max-input-tokens + --max-tokens must fit within --max-model-len")
 
 
-def _apply_defaults(args: argparse.Namespace) -> None:
+def _env_float(name: str) -> float | None:
+    """Read an optional float override from the environment; unset/blank -> None."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be a number, got {raw!r}") from exc
+
+
+def _env_int(name: str) -> int | None:
+    """Read an optional int override from the environment; unset/blank -> None."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be an integer, got {raw!r}") from exc
+
+
+def apply_defaults(args: argparse.Namespace) -> None:
     args.system_message = REPRO_SYSTEM_MESSAGE
     args.final_no_tools_message = REPRO_FINAL_NO_TOOLS_MESSAGE
     args.use_tools = True
-    args.response_format = None
+    args.prompt_file = DEFAULT_PROMPT_FILE
+    # Sampling stays unset (the request builder omits None fields, deferring to the
+    # served model's generation_config). REPROCLI_TOP_P is the one escape hatch: a
+    # brain whose card recommends a different top_p for AGENTIC use than its
+    # generation_config ships (DeepSeek-V4-Flash-0731: 0.95 agentic vs 1.0 in the
+    # checkpoint) needs the agentic value, and this loop is that agentic case.
+    # REPROCLI_TOP_K is the same hatch for a NON-OpenAI sampling field: top_k is not
+    # an OpenAI chat-completions param, so a brain whose generation_config pins one
+    # (Laguna-S-2.1: top_k 20) has it silently dropped by an OpenAI-compatible client
+    # and runs off-distribution. Deferring to generation_config is not enough here --
+    # vLLM only applies it to fields the request omits, and the omission is the bug.
+    args.temperature = None
+    args.top_p = _env_float("REPROCLI_TOP_P")
+    args.top_k = _env_int("REPROCLI_TOP_K")
+    args.min_p = None
+    args.max_tokens = MAX_TOKENS
+    # Set from the attached brain's advertised window in __main__; a dry run attaches to
+    # no server and issues no requests, so it stays None there.
+    args.max_input_tokens = None
+    args.request_workers = REQUEST_WORKERS
+    args.compact_enabled = COMPACT_ENABLED
+    args.compact_keep_tokens = COMPACT_KEEP_TOKENS
+    args.compact_threshold = COMPACT_THRESHOLD
+    # Phase 5: the forced final pass (tools off) is schema-constrained to the agent's
+    # report.json -- its account of the run, which the loop persists to the bundle for
+    # the auditor to grade. build_chat_completion_request sends tools XOR this format.
+    args.response_format = REPORT_RESPONSE_FORMAT
     # Resolve the JIT-allocation substrate once: the named profile merged with any
     # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
     args.cluster_profile = resolve_cluster(args)
     # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
-    # per-node size, so the model picks a valid GPU count for this substrate. The
-    # structured submission contract (response_format) lands in Phase 5; until then
-    # the final tools-off turn falls back to the classifier's default format.
+    # per-node size, so the model picks a valid GPU count for this substrate.
     args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
-    if args.trace_output is None:
-        args.trace_output = trace_output_path(args.output)
+    args.trace_output = trace_output_path(args.output)

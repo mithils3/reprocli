@@ -1,1 +1,1 @@
-"""vLLM server lifecycle, client, batch IO, and cache plumbing."""
+"""URL-only client seam to a served brain: endpoint resolution, client, batch IO, retry."""

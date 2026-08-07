@@ -18,12 +18,15 @@ import random
 import sys
 import threading
 import time
-from collections.abc import Iterable
+from collections import Counter
+from collections.abc import Iterable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 from reprocli_vllm.config.config import PLACEHOLDER
 from reprocli_vllm.schema.output import FINAL_JSON_SCHEMA, normalize_score_and_tier
+from reprocli_vllm.vllm.io import append_jsonl_row
 
 MODEL = "gpt-5.5"
 REASONING_EFFORT = "low"
@@ -36,8 +39,45 @@ POOL = Path("outputs/v5/audit_pool_extracted.jsonl")
 TRACE = Path("outputs/v5/audit_pool_trace.jsonl")
 OUT_DIR = Path("outputs/v5/openai_hard_recheck_gpt55_low")
 RAW_NAME = "results_raw.jsonl"
+EXTRACTED_NAME = "recheck_extracted.jsonl"
 PAPER_START = "INPUT PAPER:\n\n"
 PAPER_END = "\n\n" + "=" * 70 + "\nCORE OBJECTIVE"
+
+
+def iter_jsonl(path: Path, *, on_error: str = "raise") -> Iterator[dict[str, Any]]:
+    """Stream the JSON objects of a JSONL file, skipping blank lines.
+
+    This is the one JSONL reader for the recheck pipeline and the tools built on
+    it. ``on_error="raise"`` (the default) lets a missing file and a torn line
+    both blow up, which is what the data-merging paths want. ``on_error="report"``
+    notes each problem on stderr and keeps going, which is what the app builders
+    want when a 200 MB dump has one bad line in it.
+    """
+    if on_error == "report" and not path.exists():
+        print(f"  ! missing {path}", file=sys.stderr)
+        return
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line_no, raw in enumerate(handle, 1):
+            line = raw.strip()
+            if not line:
+                continue
+            try:
+                yield json.loads(line)
+            except json.JSONDecodeError as err:
+                if on_error == "raise":
+                    raise
+                print(f"  ! {path.name}:{line_no} bad json: {err.msg}", file=sys.stderr)
+
+
+def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> int:
+    """Truncate ``path`` and write one JSON object per line. Returns the count."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            count += 1
+    return count
 
 
 def client():
@@ -48,27 +88,18 @@ def client():
 
 def hard_no_code_ids(pool_path: Path) -> list[str]:
     ids = []
-    with pool_path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if not line.strip():
-                continue
-            row = json.loads(line)
-            code = (row.get("signals") or {}).get("code_available") or {}
-            if row.get("tier") == "Hard" and not code.get("value"):
-                ids.append(str(row["custom_id"]))
+    for row in iter_jsonl(pool_path):
+        code = (row.get("signals") or {}).get("code_available") or {}
+        if row.get("tier") == "Hard" and not code.get("value"):
+            ids.append(str(row["custom_id"]))
     return ids
 
 
 def paper_texts_from_trace(trace_path: Path, wanted: set[str]) -> dict[str, str]:
     texts: dict[str, str] = {}
-    with trace_path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if not line.strip():
-                continue
-            row = json.loads(line)
-            custom_id = str(row.get("custom_id"))
-            if custom_id not in wanted or custom_id in texts:
-                continue
+    for row in iter_jsonl(trace_path):
+        custom_id = str(row.get("custom_id"))
+        if custom_id in wanted and custom_id not in texts:
             user = next(
                 (m for m in row.get("messages") or [] if m.get("role") == "user"), None
             )
@@ -127,22 +158,20 @@ def call_with_retry(api, prompt: str):
     raise RuntimeError(f"gave up after {MAX_RETRIES} attempts")
 
 
-def iter_jsonl(path: Path) -> Iterable[dict]:
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if line.strip():
-                yield json.loads(line)
-
-
 def raw_rows(raw_path: Path) -> dict[str, dict]:
-    rows: dict[str, dict] = {}
-    if raw_path.exists():
-        with raw_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                if line.strip():
-                    row = json.loads(line)
-                    rows[str(row["custom_id"])] = row["body"]
-    return rows
+    """Every recorded response body, keyed by custom_id. Empty until the run starts."""
+    if not raw_path.exists():
+        return {}
+    return {str(row["custom_id"]): row["body"] for row in iter_jsonl(raw_path)}
+
+
+def completed(rows: dict[str, dict]) -> dict[str, dict]:
+    """The subset whose API call actually finished; the rest are retryable."""
+    return {cid: body for cid, body in rows.items() if body.get("status") == "completed"}
+
+
+def completed_raw_rows(raw_path: Path) -> dict[str, dict]:
+    return completed(raw_rows(raw_path))
 
 
 def run(api, directory: Path) -> None:
@@ -157,7 +186,7 @@ def run(api, directory: Path) -> None:
 
     directory.mkdir(parents=True, exist_ok=True)
     raw_path = directory / RAW_NAME
-    done = {cid for cid, body in raw_rows(raw_path).items() if body.get("status") == "completed"}
+    done = set(completed_raw_rows(raw_path))
     todo = [i for i in ids if i not in done]
     print(f"{len(ids)} papers total, {len(done)} already done, {len(todo)} to go", flush=True)
 
@@ -168,10 +197,7 @@ def run(api, directory: Path) -> None:
         response = call_with_retry(api, template.replace(PLACEHOLDER, texts[custom_id]))
         body = response.model_dump(mode="json")
         with lock:
-            with raw_path.open("a", encoding="utf-8") as handle:
-                handle.write(
-                    json.dumps({"custom_id": custom_id, "body": body}, ensure_ascii=False) + "\n"
-                )
+            append_jsonl_row(raw_path, {"custom_id": custom_id, "body": body}, truncate=False)
             finished[0] += 1
             count = finished[0]
         searches = sum(1 for i in body.get("output") or [] if i.get("type") == "web_search_call")
@@ -226,19 +252,15 @@ def collect(directory: Path) -> None:
         parse_result(cid, body)
         for cid, body in sorted(raw_rows(directory / RAW_NAME).items())
     ]
-    out = directory / "recheck_extracted.jsonl"
-    with out.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    out = directory / EXTRACTED_NAME
+    write_jsonl(out, rows)
     parsed = [r for r in rows if "error" not in r]
     found = [
         r["custom_id"]
         for r in parsed
         if (r.get("signals") or {}).get("code_available", {}).get("value")
     ]
-    tiers: dict[str, int] = {}
-    for row in parsed:
-        tiers[row.get("tier") or "?"] = tiers.get(row.get("tier") or "?", 0) + 1
+    tiers = dict(Counter(row.get("tier") or "?" for row in parsed))
     print(f"Wrote {len(rows)} rows to {out} ({len(rows) - len(parsed)} errors)", flush=True)
     print(f"code_available now true for {len(found)}: {found}", flush=True)
     print(f"Recomputed tiers: {tiers}", flush=True)
@@ -247,9 +269,57 @@ def collect(directory: Path) -> None:
 def status(directory: Path) -> int:
     total = len(hard_no_code_ids(POOL))
     rows = raw_rows(directory / RAW_NAME)
-    done = sum(1 for body in rows.values() if body.get("status") == "completed")
+    done = len(completed(rows))
     print(f"{done}/{total} papers completed ({len(rows) - done} non-completed responses)")
     return 0 if done == total else 1
+
+
+def add_recheck_args(parser: argparse.ArgumentParser) -> None:
+    """The three flags every downstream recheck consumer shares."""
+    parser.add_argument("--poll-seconds", type=int, default=60)
+    parser.add_argument("--no-wait", action="store_true")
+    parser.add_argument("--allow-partial", action="store_true")
+
+
+def wait_for_recheck(directory: Path, poll_seconds: int) -> None:
+    """Block until every hard/no-code paper has a completed response."""
+    total = len(hard_no_code_ids(POOL))
+    raw_path = directory / RAW_NAME
+    while True:
+        done = len(completed_raw_rows(raw_path))
+        print(f"recheck progress: {done}/{total}", flush=True)
+        if done >= total:
+            return
+        time.sleep(poll_seconds)
+
+
+def collect_recheck(
+    directory: Path,
+    allow_partial: bool,
+    *,
+    incomplete: str = "recheck is incomplete: {done}/{total}",
+    partial: str = "recheck is incomplete; reporting partial results: {done}/{total}",
+    row_errors: str = "{count} recheck rows have extraction errors",
+) -> Path:
+    """Extract the raw responses and return the path to the extracted rows.
+
+    Exits when the run is short of ``hard_no_code_ids`` without ``allow_partial``,
+    or when any extracted row carries an error. The three messages are the
+    caller's own wording so each operational script keeps the output its operator
+    reads.
+    """
+    total = len(hard_no_code_ids(POOL))
+    done = len(completed_raw_rows(directory / RAW_NAME))
+    if done < total and not allow_partial:
+        raise SystemExit(incomplete.format(done=done, total=total))
+    if done < total:
+        print(partial.format(done=done, total=total), flush=True)
+    collect(directory)
+    extracted = directory / EXTRACTED_NAME
+    errors = [row for row in iter_jsonl(extracted) if "error" in row]
+    if errors:
+        raise SystemExit(row_errors.format(count=len(errors)))
+    return extracted
 
 
 def main() -> int:

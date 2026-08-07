@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
@@ -108,3 +109,20 @@ def test_dispatch_audit_tool_without_run_dir_errors():
     result = execute_tool_call(call, paper=paper)
     assert result["ok"] is False
     assert "run directory" in result["error"]
+
+
+def test_bash_timeout_kills_the_whole_process_group(tmp_path):
+    """A backgrounded child must not hold the pipe open past the timeout.
+
+    subprocess.run's timeout kills only the direct child; a grandchild that
+    inherited stdout keeps the reap blocked forever, so the tool hangs even though
+    it "timed out" -- which stalls the entire audit on one shell command.
+    """
+    started = time.monotonic()
+    result = run_bash(
+        {"command": "sleep 60 & echo spawned; sleep 60", "timeout": 1}, tmp_path
+    )
+    elapsed = time.monotonic() - started
+    assert result["ok"] is False
+    assert "timed out" in result["error"]
+    assert elapsed < 20, f"run_bash blocked for {elapsed:.1f}s after its 1s timeout"

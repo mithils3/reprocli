@@ -38,7 +38,7 @@ Once sources and supplements are downloaded, rebuild the Parquet bundle and push
 it to the Hub in one step (replaces any existing bundle output):
 
 ```bash
-PYTHONPATH=src python3 -m reprocli_data.publish_bundle --data-dir data
+PYTHONPATH=src python3 -m reprocli_data.build_dataset --stages bundle,upload --force
 ```
 
 ## Notes

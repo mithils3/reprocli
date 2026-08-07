@@ -18,9 +18,11 @@ const RemoteSource = {
 
   async listRuns() {
     const { data, error } = await this.client.from("repro_runs")
-      .select("*").order("updated_at", { ascending: false }).limit(300);
+      .select("*").order("updated_at", { ascending: false }).limit(2000);
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    if (window.Freeze) window.Freeze.setRuns(rows);
+    return rows;
   },
 
   async loadRun(runId) {
@@ -52,6 +54,135 @@ const RemoteSource = {
 
   unsubscribe(ch) { if (ch && this.client) this.client.removeChannel(ch); },
 
+  // ---- S7 auditor runs (audit_runs / audit_events) -------------------------
+  // audit_events share repro_events' shape, so rowsToRounds/render just work. We
+  // alias audit_run_id -> run_id and verdict -> audit_verdict so the run renderer
+  // and Verdict.ofRun (which reads audit_verdict) light up unchanged.
+  _auditRun(r) {
+    if (!r) return r;
+    return { ...r, run_id: r.audit_run_id, audit_verdict: r.verdict,
+      audit_reproduced: r.reproduced, audit_score: r.score };
+  },
+  async listAudits() {
+    const { data, error } = await this.client.from("audit_runs")
+      .select("*").order("updated_at", { ascending: false }).limit(2000);
+    if (error) throw error;
+    return (data || []).map((r) => this._auditRun(r));
+  },
+  async loadAudit(auditRunId) {
+    const [runRes, evRes] = await Promise.all([
+      this.client.from("audit_runs").select("*").eq("audit_run_id", auditRunId).limit(1),
+      this.client.from("audit_events").select("*").eq("audit_run_id", auditRunId).order("seq", { ascending: true }),
+    ]);
+    if (evRes.error) throw evRes.error;
+    const run = this._auditRun((runRes.data && runRes.data[0]) || { audit_run_id: auditRunId, arxiv_id: "" });
+    const events = evRes.data || [];
+    return { run, events, rounds: this.rowsToRounds(events) };
+  },
+  subscribeAudit(auditRunId, onEvent, onRunPatch) {
+    return this.client.channel("audit:" + auditRunId)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_events",
+        filter: `audit_run_id=eq.${auditRunId}` }, (p) => onEvent(p.new))
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_runs",
+        filter: `audit_run_id=eq.${auditRunId}` }, (p) => onRunPatch(this._auditRun(p.new)))
+      .subscribe();
+  },
+  subscribeAuditList(onChange) {
+    return this.client.channel("audits")
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_runs" },
+        (p) => onChange(this._auditRun(p.new || p.old), p.eventType))
+      .subscribe();
+  },
+
+  // ---- cluster telemetry (host_status / host_metrics; anon read-only) ------
+  // The tables may not exist yet — callers (hosts.js / hoststrip.js) catch and
+  // degrade silently. gpus is jsonb: [{i,util,mem,mem_total,power,temp}, ...].
+  async listHosts() {
+    const { data, error } = await this.client.from("host_status")
+      .select("*").order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  subscribeHosts(cb) {
+    return this.client.channel("hosts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "host_status" }, (p) => cb(p.new))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "host_status" }, (p) => cb(p.new))
+      .subscribe();
+  },
+  async loadHostMetrics({ host, run_id, sinceMinutes = 45 } = {}) {
+    let q = this.client.from("host_metrics").select("*")
+      .gte("created_at", new Date(Date.now() - sinceMinutes * 60e3).toISOString());
+    if (host) q = q.eq("host", host);
+    if (run_id) q = q.eq("run_id", run_id);
+    const { data, error } = await q.order("created_at", { ascending: true }).limit(200);
+    if (error) throw error;
+    return data || [];
+  },
+  subscribeMetrics(cb) {
+    // one channel for all hosts/runs — callers filter rows by host / run_id
+    return this.client.channel("host-metrics")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "host_metrics" }, (p) => cb(p.new))
+      .subscribe();
+  },
+
+  // ---- user-authored run tags (repro_tags: anon read + write) --------------
+  async listTags() {
+    if (!this.client) return [];
+    const { data, error } = await this.client.from("repro_tags").select("run_id,tags");
+    if (error) throw error;
+    return data || [];
+  },
+  async setTags(runId, tags) {
+    if (!this.client) throw new Error("offline");
+    if (!tags.length) {
+      const { error } = await this.client.from("repro_tags").delete().eq("run_id", runId);
+      if (error) throw error;
+      return;
+    }
+    const { error } = await this.client.from("repro_tags")
+      .upsert({ run_id: runId, tags }, { onConflict: "run_id" });
+    if (error) throw error;
+  },
+  subscribeTags(onChange) {
+    return this.client.channel("tags")
+      .on("postgres_changes", { event: "*", schema: "public", table: "repro_tags" },
+        (p) => onChange(p.new || p.old, p.eventType))
+      .subscribe();
+  },
+
+  // ---- sweep dissections (repro_sweeps / repro_analyses; anon read-only) ----
+  // Curated write-once artifact from .claude/skills/analyze-sweep/upload.py: one
+  // repro_sweeps header + one repro_analyses row per paper. loadSweep also pulls
+  // the batch's repro_runs so the detail can show real meters + deep-link the run.
+  async listSweeps() {
+    if (!this.client) return [];
+    const { data, error } = await this.client.from("repro_sweeps")
+      .select("*").order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  async loadSweep(slug) {
+    const [sw, an] = await Promise.all([
+      this.client.from("repro_sweeps").select("*").eq("slug", slug).limit(1),
+      this.client.from("repro_analyses").select("*").eq("sweep_slug", slug)
+        .order("audit_score", { ascending: false, nullsFirst: false }),
+    ]);
+    if (an.error) throw an.error;
+    const sweep = (sw.data && sw.data[0]) || { slug };
+    const runsById = {};
+    if (sweep.batch_id) {
+      // A sweep stores one batch_id, but an ONLY_IDS retry is the same sweep under a
+      // second job id (merge.js), so expand to the whole group before fetching.
+      const ids = window.Merge ? window.Merge.batchIds(sweep.batch_id) : [sweep.batch_id];
+      const { data: runs } = await this.client.from("repro_runs").select("*").in("batch_id", ids);
+      (runs || []).forEach((r) => { runsById[r.run_id] = r; });
+    }
+    // the full per-run dissection is the jsonb `data`; the sibling columns are just
+    // denormalized keys for the list query, so hand the renderers the data object.
+    const analyses = (an.data || []).map((r) => r.data || r);
+    return { sweep, analyses, runsById };
+  },
+
   // event key → which Round a row belongs to (mirrors render.js's data-key)
   roundKey(e) { return (e.kind === "final" ? "final:" : "round:") + e.round_index; },
 
@@ -62,7 +193,7 @@ const RemoteSource = {
       let r = byKey.get(key);
       if (!r) {
         r = { round_index: idx, kind, arxiv_id: null, ts: null, exit_reason: null,
-          reasoning: "", content: "", calls: [] };
+          finish_reason: null, reasoning: "", content: "", calls: [] };
         byKey.set(key, r); order.push(r);
       }
       return r;
@@ -72,6 +203,7 @@ const RemoteSource = {
         const r = ensure(e.kind === "final" ? "final" : "round", e.round_index);
         if (e.reasoning) r.reasoning = e.reasoning;
         if (e.content) r.content = e.content;
+        if (e.finish_reason) r.finish_reason = e.finish_reason;
         if (e.kind === "final") r.exit_reason = e.exit_reason || r.exit_reason;
         if (!r.ts && e.created_at) r.ts = e.created_at;
       } else if (e.kind === "call_start") {

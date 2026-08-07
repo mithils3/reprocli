@@ -9,13 +9,11 @@ OpenAI Responses traces, rebuilds ``public/papers.json``, bundles traces into
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Any
 from collections.abc import Iterable
@@ -42,49 +40,14 @@ SELECTION_FIELDS = (
 )
 
 
-def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> int:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    count = 0
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-            count += 1
-    return count
-
-
-def completed_raw_rows(raw_path: Path) -> dict[str, dict[str, Any]]:
-    return {
-        cid: body
-        for cid, body in recheck.raw_rows(raw_path).items()
-        if body.get("status") == "completed"
-    }
-
-
-def wait_for_recheck(directory: Path, poll_seconds: int) -> None:
-    total = len(recheck.hard_no_code_ids(recheck.POOL))
-    raw_path = directory / recheck.RAW_NAME
-    while True:
-        done = len(completed_raw_rows(raw_path)) if raw_path.exists() else 0
-        print(f"recheck progress: {done}/{total}", flush=True)
-        if done >= total:
-            return
-        time.sleep(poll_seconds)
-
-
 def collect_recheck(directory: Path, allow_partial: bool) -> Path:
-    total = len(recheck.hard_no_code_ids(recheck.POOL))
-    done = len(completed_raw_rows(directory / recheck.RAW_NAME))
-    if done < total and not allow_partial:
-        raise SystemExit(f"recheck is incomplete: {done}/{total} completed")
-    if done < total:
-        print(f"recheck is incomplete; publishing partial replacements: {done}/{total}", flush=True)
-    recheck.collect(directory)
-    extracted = directory / "recheck_extracted.jsonl"
-    rows = list(recheck.iter_jsonl(extracted))
-    errors = [row for row in rows if "error" in row]
-    if errors:
-        raise SystemExit(f"{len(errors)} recheck rows have errors; refusing to publish")
-    return extracted
+    return recheck.collect_recheck(
+        directory,
+        allow_partial,
+        incomplete="recheck is incomplete: {done}/{total} completed",
+        partial="recheck is incomplete; publishing partial replacements: {done}/{total}",
+        row_errors="{count} recheck rows have errors; refusing to publish",
+    )
 
 
 def merge_extracted(base: Path, updates_path: Path, out_base: Path) -> set[str]:
@@ -106,7 +69,7 @@ def merge_extracted(base: Path, updates_path: Path, out_base: Path) -> set[str]:
             replaced.add(cid)
             yield merged
 
-    count = write_jsonl(Path(f"{out_base}_extracted.jsonl"), rows())
+    count = recheck.write_jsonl(Path(f"{out_base}_extracted.jsonl"), rows())
     missing = set(updates) - replaced
     if missing:
         raise SystemExit(f"{len(missing)} recheck rows were not in the v5 pool: {sorted(missing)}")
@@ -173,7 +136,7 @@ def openai_trace_row(custom_id: str, body: dict[str, Any]) -> dict[str, Any]:
 
 
 def merge_traces(base: Path, directory: Path, replaced: set[str], out_base: Path) -> None:
-    raw = completed_raw_rows(directory / recheck.RAW_NAME)
+    raw = recheck.completed_raw_rows(directory / recheck.RAW_NAME)
     replacements = {
         cid: openai_trace_row(cid, raw[cid])
         for cid in replaced
@@ -193,7 +156,7 @@ def merge_traces(base: Path, directory: Path, replaced: set[str], out_base: Path
             else:
                 yield old
 
-    count = write_jsonl(Path(f"{out_base}_trace.jsonl"), rows())
+    count = recheck.write_jsonl(Path(f"{out_base}_trace.jsonl"), rows())
     missing = replaced - seen
     if missing:
         raise SystemExit(f"{len(missing)} trace rows were not in the v5 pool: {sorted(missing)}")
@@ -259,15 +222,13 @@ def deploy() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--poll-seconds", type=int, default=60)
-    parser.add_argument("--no-wait", action="store_true")
-    parser.add_argument("--allow-partial", action="store_true")
+    recheck.add_recheck_args(parser)
     parser.add_argument("--trace-target", choices=("bundle", "supabase", "none"), default="bundle")
     parser.add_argument("--deploy", action="store_true")
     args = parser.parse_args()
 
     if not args.no_wait:
-        wait_for_recheck(RECHECK_DIR, args.poll_seconds)
+        recheck.wait_for_recheck(RECHECK_DIR, args.poll_seconds)
     extracted = collect_recheck(RECHECK_DIR, args.allow_partial)
     replaced = merge_extracted(BASE, extracted, MERGED_BASE)
     merge_traces(BASE, RECHECK_DIR, replaced, MERGED_BASE)

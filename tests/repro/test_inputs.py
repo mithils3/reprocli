@@ -26,6 +26,13 @@ ROW = {
     "claim_evidence": "Table 4 shows 8.56 kB vs 63 kB.",
     "mre_config": "Run analysis_optimization.py; peak_mem within 5%.",
     "agent_task": "Clone repo, install numpy, run the optimizer.",
+    "match_target": {
+        "config": "MBV2-w0.35, P1 unconstrained",
+        "metric": "Peak RAM usage",
+        "value": "8.56 kB",
+        "scope": "MBV2-w0.35 model",
+        "match_bar_kind": "point_estimate",
+    },
     "paper_kind": "empirical",
     "tier": "Easy",
     "selection_band": "0-8",
@@ -51,8 +58,6 @@ def _args(tmp: Path, **over) -> argparse.Namespace:
         lockfile=str(_write_jsonl(tmp, [ROW])),
         runs_dir=tmp / "runs",
         paper_id="2505.11483",
-        num_prompts=None,
-        seed=0,
         run_id="RID",
         budget_h100_hours=8.0,
     )
@@ -70,24 +75,17 @@ class LoadAndSelectTests(unittest.TestCase):
 
     def test_select_by_paper_id(self):
         rows = {"2505.11483": ROW, "2401.00002": dict(ROW, custom_id="2401.00002")}
-        picked = select_episode_rows(rows, paper_id="2505.11483", num_prompts=None)
+        picked = select_episode_rows(rows, paper_id="2505.11483")
         self.assertEqual(len(picked), 1)
         self.assertEqual(picked[0]["custom_id"], "2505.11483")
 
     def test_select_missing_paper_id_errors(self):
         with self.assertRaises(SystemExit):
-            select_episode_rows({"a": ROW}, paper_id="nope", num_prompts=None)
+            select_episode_rows({"a": ROW}, paper_id="nope")
 
-    def test_select_requires_a_mode(self):
+    def test_select_requires_a_paper_id(self):
         with self.assertRaises(SystemExit):
-            select_episode_rows({"a": ROW}, paper_id=None, num_prompts=None)
-
-    def test_num_prompts_sampling_is_seeded(self):
-        rows = {str(i): dict(ROW, custom_id=str(i)) for i in range(10)}
-        a = select_episode_rows(rows, paper_id=None, num_prompts=3, seed=7)
-        b = select_episode_rows(rows, paper_id=None, num_prompts=3, seed=7)
-        self.assertEqual([r["custom_id"] for r in a], [r["custom_id"] for r in b])
-        self.assertEqual(len(a), 3)
+            select_episode_rows({"a": ROW}, paper_id=None)
 
 
 class RunPathTests(unittest.TestCase):
@@ -110,8 +108,68 @@ class RenderTests(unittest.TestCase):
         prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
         self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
         self.assertIn("2505.11483", prompt)
-        self.assertIn("8 H100-equivalent hours", prompt)
+        self.assertIn("8 H100-hours total", prompt)
         self.assertIn("https://github.com/TinyPART/msf-CNN", prompt)
+
+    def test_target_seeded_but_config_and_recipe_withheld(self):
+        # Policy: the anchor target (metric / value / scope / bar shape) IS seeded; the
+        # run CONFIG, the MRE recipe, and the step-by-step task stay OUT — the agent
+        # derives those from the paper.
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        # Target fields ARE now rendered.
+        self.assertIn("Peak RAM usage", prompt)     # match_target['metric']
+        self.assertIn("MBV2-w0.35 model", prompt)   # match_target['scope']
+        self.assertIn("point_estimate", prompt)     # match_target['match_bar_kind']
+        # Config / recipe / task stay OUT.
+        self.assertNotIn("P1 unconstrained", prompt)         # match_target['config']
+        self.assertNotIn("analysis_optimization.py", prompt)  # mre_config
+        self.assertNotIn("install numpy", prompt)            # agent_task
+        # The central claim is still the anchor.
+        self.assertIn("msf-CNN uses 50% less RAM", prompt)
+
+    def test_signals_block_renders_when_present(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        row = dict(
+            ROW,
+            signals={
+                "code_available": {
+                    "value": False,
+                    "verification": "tool_verified",
+                    "evidence": "Repo is a release-pending TODO stub.",
+                },
+                "dataset_available": {
+                    "value": True,
+                    "verification": "paper_text_only",
+                    "evidence": "D-NeRF is public.",
+                },
+                "weights_available": {
+                    "value": False,
+                    "verification": "not_applicable",
+                    "evidence": "No checkpoints released.",
+                },
+                "dataset_is_standard": {
+                    "value": True,
+                    "verification": "paper_text_only",
+                    "evidence": "Standard benchmark.",
+                },
+            },
+        )
+        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
+        self.assertIn("Code: no (classifier verification: tool_verified)", prompt)
+        self.assertIn("Repo is a release-pending TODO stub.", prompt)
+        self.assertIn("Dataset: yes", prompt)
+        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
+
+    def test_signals_block_falls_back_when_absent(self):
+        template = PROMPT_FILE.read_text(encoding="utf-8")
+        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
+        # ROW carries no `signals` (a pre-signals lockfile row); the block must still fill.
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        self.assertIn("No pre-assessed availability recorded", prompt)
+        self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
 
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):

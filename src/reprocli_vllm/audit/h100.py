@@ -8,6 +8,33 @@ H100_BANDS = ((0.0, 8.0, "0-8"), (8.0, 32.0, "8-32"), (32.0, 96.0, "32-96"), (96
 OVER_CAP_BAND = ">192"
 MISMATCH_TOLERANCE = 0.2
 
+# The ladder above is the one source of truth for it. Everything downstream — the
+# per-episode compute ceiling, the CLI help that documents it, the selection pool's
+# eligible bands — derives from it here rather than restating the numbers.
+BAND_MAX_HOURS = {label: high for _, high, label in H100_BANDS}
+
+
+def band_max_hours(label: Any) -> float | None:
+    """Upper edge of a band label in H100-h (``'96-192'`` -> 192.0).
+
+    ``None`` for anything not on the ladder, including ``OVER_CAP_BAND``, which has
+    no upper edge by construction.
+    """
+    if not isinstance(label, str):
+        return None
+    return BAND_MAX_HOURS.get(label.strip())
+
+
+def band_labels(*, max_hours: float | None = None) -> tuple[str, ...]:
+    """Ladder labels, optionally only those whose upper edge is within a cap."""
+    return tuple(label for _, high, label in H100_BANDS
+                 if max_hours is None or high <= max_hours)
+
+
+def band_ladder_text() -> str:
+    """The ladder as prose for CLI help: ``'0-8 -> 8h, 8-32 -> 32h, …'``."""
+    return ", ".join(f"{label} -> {high:g}h" for _, high, label in H100_BANDS)
+
 
 def h100_band(hours: Any) -> str | None:
     value = as_number(hours)

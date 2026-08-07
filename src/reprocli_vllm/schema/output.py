@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from reprocli_vllm.schema.audit import MATCH_BAR_KINDS
+
 
 SIGNAL_NAMES = (
     "code_available",
@@ -24,11 +26,33 @@ H100_BASIS_KINDS = (
     "comparable_experiment",
     "compute_unspecified",
 )
-# NOTE: the success bar ("how close counts as a match") is NO LONGER pinned by the
-# classifier. The Stage-7 auditor owns and derives it at grading time from the
-# claim + reported numbers (see MATCH_BAR_KINDS in schema/audit.py and rubric C1).
-# The classifier still records the anchor metric / reference values via
-# central_claim, claim_evidence, and mre_config — just not the tolerance.
+# NOTE: the classifier PINS one coherent success-bar tuple per paper in
+# `match_target` — (config, metric, value, scope, match_bar_kind) — where running
+# `config` and measuring `metric` over `scope` can actually yield `value`. The
+# Stage-7 auditor ADOPTS this tuple verbatim and sets only `op` / `tolerance` to
+# match the pinned `match_bar_kind` (see MATCH_BAR_KINDS in schema/audit.py and
+# rubric C1). The classifier still does not pin op/tolerance.
+
+
+def match_target_schema() -> dict:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["config", "metric", "value", "scope", "match_bar_kind"],
+        "properties": {
+            # The exact runnable configuration that PRODUCES `value`.
+            "config": {"type": "string"},
+            # Anchor metric name, units explicit.
+            "metric": {"type": "string"},
+            # Paper's reported value for `metric` under `config` + `scope`. A string
+            # so it tolerates "2.37x", "76.5%", "8.56 kB", or a range.
+            "value": {"type": "string"},
+            # Dataset / split / benchmark-SET the value is measured over.
+            "scope": {"type": "string"},
+            # Shape of the bar; the auditor sets op/tolerance to match it.
+            "match_bar_kind": {"type": "string", "enum": list(MATCH_BAR_KINDS)},
+        },
+    }
 
 
 def signal_schema() -> dict:
@@ -81,6 +105,7 @@ FINAL_RESPONSE_FORMAT = {
                 "claim_evidence",
                 "paper_kind",
                 "mre_config",
+                "match_target",
                 "verified_links",
                 "signals",
                 "agent_task",
@@ -91,6 +116,7 @@ FINAL_RESPONSE_FORMAT = {
                 "claim_evidence": {"type": "string"},
                 "paper_kind": {"type": "string", "enum": list(PAPER_KINDS)},
                 "mre_config": {"type": "string"},
+                "match_target": match_target_schema(),
                 "verified_links": {
                     "type": "object",
                     "additionalProperties": False,

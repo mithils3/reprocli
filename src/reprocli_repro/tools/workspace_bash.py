@@ -2,14 +2,14 @@
 
 The agent does its CPU-side work here: ``git clone`` the released code, inspect and
 edit files, build the venv, install pure-Python deps. This runs on the
-orchestrator/login node, which has **no GPU** — the metered ``run_gpu`` tool is
-where the GPU, the CUDA toolkit, and the CUDA-torch install + experiment run live.
-The shell's cwd is pinned to ``ctx.workspace`` (the same root the file tools
-confine to) and every command is appended to ``evidence/commands.log`` so the
-auditor can re-trace exactly what ran. Commands run through the env seam
-(``env.exec_argv`` with ``on_gpu=False``): a plain ``cd <ws> && <cmd>``, a *clean*
-shell with no ``module load`` — loading the CUDA modules here would shadow the
-system ``git``'s libcurl and break ``git clone``, and CPU setup needs no CUDA libs.
+orchestrator/login node, which has **no GPU** — the metered ``run_gpu`` tool is where
+the GPU and the experiment run live. The shell's cwd is pinned to ``ctx.workspace``
+(the same root the file tools confine to) and every command is appended to
+``evidence/commands.log`` so the auditor can re-trace exactly what ran. Commands run
+through the env seam (``env.exec_argv`` with ``on_gpu=False``): a plain
+``cd <ws> && <cmd>`` body wrapped in the episode's Apptainer container
+(``ctx.sandbox``) — without ``--nv``, since the login node has no GPU to pass through.
+The container supplies git/Python/CUDA, so there is no host ``module load``.
 """
 
 from __future__ import annotations
@@ -24,6 +24,9 @@ from reprocli_vllm.config.config import RUN_FILE_DEFAULT_CHARS, function_tool
 from reprocli_repro import env
 from reprocli_repro.context import ExecutionContext
 from reprocli_repro import evidence
+from reprocli_repro.slurm import decode
+from reprocli_repro.tools import output as output_mod
+from reprocli_repro.tools.run_gpu import bounded
 
 # Setup steps (clone, dependency installs) routinely run for minutes, so the
 # default is far longer than the auditor's 60s; metered GPU steps get their own
@@ -39,46 +42,48 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
     command = str(arguments.get("command") or "").strip()
     if not command:
         return {"ok": False, "error": "Missing bash command."}
-    timeout = _bounded(arguments.get("timeout"), WORKSPACE_BASH_TIMEOUT, WORKSPACE_BASH_MAX_TIMEOUT)
+    timeout = bounded(arguments.get("timeout"), WORKSPACE_BASH_TIMEOUT, WORKSPACE_BASH_MAX_TIMEOUT)
     start = time.time()
+    # Binary capture, decoded by hand: text mode's universal newlines turn every \r
+    # of a progress-bar redraw into its own line, which defeats the spam stripper.
     try:
         proc = subprocess.run(
-            env.exec_argv(ctx.cluster, workspace, command),
+            env.exec_argv(workspace, command, sandbox=ctx.sandbox),
             cwd=str(workspace),
             capture_output=True,
-            text=True,
             timeout=timeout,
         )
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         _log(ctx, command, None, workspace, time.time() - start)
-        return {"ok": False, "command": command, "error": f"bash timed out after {timeout}s"}
+        out, _ = output_mod.shape(decode(exc.stdout), RUN_FILE_DEFAULT_CHARS)
+        err, _ = output_mod.shape(decode(exc.stderr), RUN_FILE_DEFAULT_CHARS)
+        return {
+            "ok": False,
+            "command": command,
+            "error": f"bash timed out after {timeout}s",
+            "stdout": out,
+            "stderr": err,
+        }
     except OSError as exc:
         return {"ok": False, "command": command, "error": f"{type(exc).__name__}: {exc}"}
     duration = time.time() - start
     _log(ctx, command, proc.returncode, workspace, duration)
+    stdout, t_out = output_mod.shape(decode(proc.stdout), RUN_FILE_DEFAULT_CHARS)
+    stderr, t_err = output_mod.shape(decode(proc.stderr), RUN_FILE_DEFAULT_CHARS)
     return {
         "ok": proc.returncode == 0,
         "command": command,
         "returncode": proc.returncode,
         "duration_s": round(duration, 1),
-        "stdout": proc.stdout[:RUN_FILE_DEFAULT_CHARS],
-        "stderr": proc.stderr[:RUN_FILE_DEFAULT_CHARS],
-        "truncated": len(proc.stdout) > RUN_FILE_DEFAULT_CHARS or len(proc.stderr) > RUN_FILE_DEFAULT_CHARS,
+        "stdout": stdout,
+        "stderr": stderr,
+        "truncated": t_out or t_err,
     }
 
 
 def _log(ctx: ExecutionContext, command: str, rc: int | None, cwd: Path, duration: float) -> None:
     if ctx.evidence is not None:
         evidence.log_command(ctx.evidence, command, returncode=rc, cwd=cwd, duration_s=duration)
-
-
-def _bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default
 
 
 WORKSPACE_BASH_TOOL = function_tool(

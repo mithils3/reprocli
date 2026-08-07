@@ -12,10 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
     ENV_ENDPOINT_FILE,
+    ENV_OPENROUTER_PROVIDER,
     ENV_SERVED_MODEL,
     ENV_SERVER_URL,
     auth_headers,
+    fetch_served_context_length,
     normalize_server_url,
+    openrouter_provider_routing,
     resolve_api_key,
     resolve_served_model,
     resolve_server_url,
@@ -123,6 +126,69 @@ class AuthHeaderTests(unittest.TestCase):
         with patch.dict("os.environ", {"OPENAI_API_KEY": "sk-openai"}, clear=True):
             self.assertIsNone(resolve_api_key())
             self.assertEqual(auth_headers(), {})
+
+
+class ProviderRoutingTests(unittest.TestCase):
+    def test_none_when_unset(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(openrouter_provider_routing())
+
+    def test_blank_is_treated_as_unset(self) -> None:
+        with patch.dict("os.environ", {ENV_OPENROUTER_PROVIDER: "  ,  "}, clear=True):
+            self.assertIsNone(openrouter_provider_routing())
+
+    def test_single_provider_pins_with_no_fallback(self) -> None:
+        with patch.dict("os.environ", {ENV_OPENROUTER_PROVIDER: "deepseek"}, clear=True):
+            self.assertEqual(
+                openrouter_provider_routing(),
+                {"order": ["deepseek"], "allow_fallbacks": False},
+            )
+
+    def test_comma_list_keeps_order(self) -> None:
+        with patch.dict(
+            "os.environ", {ENV_OPENROUTER_PROVIDER: "deepseek, novita"}, clear=True
+        ):
+            self.assertEqual(
+                openrouter_provider_routing(),
+                {"order": ["deepseek", "novita"], "allow_fallbacks": False},
+            )
+
+
+class FetchServedContextLengthTests(unittest.TestCase):
+    """The input ceiling comes from the server, so a wrong read caps or overruns the run."""
+
+    def _patch_cards(self, cards: list[dict]):
+        return patch(
+            "reprocli_vllm.vllm.endpoint.fetch_model_cards",
+            return_value=cards,
+        )
+
+    def test_reads_vllm_max_model_len(self) -> None:
+        with self._patch_cards([{"id": "m", "max_model_len": 1048576}]):
+            self.assertEqual(fetch_served_context_length("http://b", "m"), 1048576)
+
+    def test_reads_openai_proxy_context_length(self) -> None:
+        with self._patch_cards([{"id": "m", "context_length": 262144}]):
+            self.assertEqual(fetch_served_context_length("http://b", "m"), 262144)
+
+    def test_picks_the_named_model_not_the_first(self) -> None:
+        cards = [
+            {"id": "other", "max_model_len": 8192},
+            {"id": "wanted", "max_model_len": 393216},
+        ]
+        with self._patch_cards(cards):
+            self.assertEqual(fetch_served_context_length("http://b", "wanted"), 393216)
+
+    def test_raises_rather_than_guessing_a_window(self) -> None:
+        # Inventing a default here is exactly how a 1M-context brain got capped at 128K.
+        with self._patch_cards([{"id": "m"}]):
+            with self.assertRaises(RuntimeError):
+                fetch_served_context_length("http://b", "m")
+
+    def test_ignores_a_nonsense_window(self) -> None:
+        with self._patch_cards([{"id": "m", "max_model_len": 0}]):
+            with self.assertRaises(RuntimeError):
+                fetch_served_context_length("http://b", "m")
 
 
 if __name__ == "__main__":

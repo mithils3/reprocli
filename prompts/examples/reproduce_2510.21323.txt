@@ -120,17 +120,21 @@ Integrity rules (the auditor enforces these — violating them fails the run):
   "reproduced".
 
 ======================================================================
-WHAT TO SUBMIT
+HOW TO FINISH — WRITE YOUR REPORT
 ======================================================================
 
-End by writing the reproduction contract the harness re-executes and grades:
+End by writing a report an independent auditor will grade — your own account of the
+run, NOT a verdict:
 
-- A scoring entrypoint (a single command the harness can re-run clean) that runs
-  the MRE and prints the target metric.
-- The measured metric value, with the exact evidence file and line it was read from.
+- The measured metric value, with the exact evidence file and line it came from.
+- The exact scoring command you ran (a single command that reproduces that number
+  from a clean state), so the auditor can re-run it itself if it chooses.
+- A short, honest summary: what ran, what you changed, and where the number lands
+  against the target.
 
-You do NOT write the pass/fail verdict yourself. After your loop ends the harness
-runs your scoring entrypoint once more from a clean state, parses the metric,
-applies the target's tolerance, and records the result. Your job is to make that
-re-execution reproduce your number. Make every command, path, and metric in your
-submission reconstructable from the evidence directory.
+You do NOT write the verdict, and no deterministic tolerance check decides it. After
+your loop ends, an adversarial auditor reads your report and evidence, may re-run your
+scoring command itself to confirm the number, traces every value back to your evidence,
+and decides for itself how close counts. A number that cannot be reproduced from your
+evidence is treated as unsupported. So make every command, path, and metric
+reconstructable from the evidence directory.

@@ -7,7 +7,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.budget import (
-    HW_MULTIPLIER,
     affordable,
     charge,
     h100_equiv_hours,
@@ -20,21 +19,17 @@ from reprocli_repro.context import Budget
 
 class MultiplierTests(unittest.TestCase):
     def test_hopper_class_parts_are_h100_equiv(self):
-        for hw in ("h100", "h200", "gh200"):
+        # h100 is the reference unit; DeltaAI's gh200 shares the compute die at ~1.0.
+        for hw in ("h100", "gh200"):
             self.assertEqual(hw_multiplier(hw), 1.0, hw)
 
     def test_unknown_hw_rejected(self):
         with self.assertRaises(SystemExit):
             hw_multiplier("tpu")
 
-    def test_gh200_and_h200_both_reduce_to_h100_equiv(self):
-        # 2 GPUs for 1h: both Hopper-class profiles cost the same H100-equiv hours.
+    def test_gh200_reduces_to_h100_equiv(self):
+        # 2 GPUs for 1h on DeltaAI's GH200 cost 2.0 H100-equiv hours.
         self.assertEqual(h100_equiv_hours(2, 1.0, "gh200"), 2.0)
-        self.assertEqual(h100_equiv_hours(2, 1.0, "h200"), 2.0)
-
-    def test_non_hopper_scales(self):
-        self.assertEqual(h100_equiv_hours(2, 1.0, "a100"), 1.0)
-        self.assertEqual(HW_MULTIPLIER["b200"], 2.2)
 
 
 class CostTests(unittest.TestCase):

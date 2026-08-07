@@ -250,9 +250,38 @@ A valid MRE must identify:
 4. The anchor metric used to verify the claim, and the paper's reported value(s)
    for it (capture these in `central_claim` / `claim_evidence`).
 
-Do NOT pin a match tolerance ("how close counts as a match"). The Stage-7 auditor
-owns and derives the success bar at grading time; your job is only to name the
-metric and record the reported number(s).
+Then pin ONE coherent success-bar tuple in `match_target`:
+
+- `config` — the exact runnable configuration that PRODUCES the value below.
+- `metric` — the anchor metric (units explicit).
+- `value` — the paper's reported value for `metric` under this `config` + `scope`
+  (a string, so "2.37x", "76.5%", "8.56 kB", or a range are all fine).
+- `scope` — the dataset / split / benchmark-SET the value is measured over.
+- `match_bar_kind` — the bar's shape: `point_estimate` (land near `value`),
+  `threshold` (`value` is a floor/ceiling), `direction` (beat a baseline),
+  `magnitude` (the size of a delta is the target), or `none` (no checkable scalar,
+  e.g. theoretical/position papers).
+
+COHERENCE INVARIANT — the tuple must be internally consistent: running `config`
+and measuring `metric` over `scope` must be able to yield `value`. Before you
+emit, re-read the tuple and confirm BOTH:
+  (a) config↔value — the config can structurally reach the value;
+  (b) config↔scope — the value's scope matches the config's scope.
+If a paper's headline number comes from a config or scope you are not pinning,
+pin the (config, value, scope) that actually go together — never a value the
+pinned config/scope cannot produce.
+
+  Negative example 1 (config↔value): `config = "K=1"` with `value = "2.37x"` is
+  INVALID — K=1 cannot reach a 2.37x speedup. Either pin the config that produces
+  2.37x, or pin the value that K=1 actually yields.
+  Negative example 2 (config↔scope): `config = "ImageNet-only run"` with
+  `value = "19-benchmark average"` is INVALID — the value's scope is 19 benchmarks,
+  not ImageNet. Either pin `scope = "ImageNet"` with the ImageNet value, or pin the
+  19-benchmark config with the average value.
+
+Do NOT pin a match tolerance or `op` ("how close counts as a match" / the
+inequality). The Stage-7 auditor ADOPTS your `match_target` tuple verbatim and sets
+only `op` / `tolerance` to match the `match_bar_kind` you classified.
 
 All artifact checks are scoped to this MRE, not to every experiment in the paper.
 
@@ -463,6 +492,13 @@ Return exactly one JSON object with these fields:
   "claim_evidence": "Abstract sentence/line plus Table/Figure/Section evidence.",
   "paper_kind": "empirical",
   "mre_config": "...",
+  "match_target": {
+    "config": "The exact runnable config that produces `value` (e.g. 'MagCache K=5, 50 steps').",
+    "metric": "Anchor metric with units (e.g. 'end-to-end latency speedup').",
+    "value": "Paper's reported value for metric under config+scope (e.g. '2.37x').",
+    "scope": "Dataset/split/benchmark-set the value is measured on (e.g. 'OpenSora 480p').",
+    "match_bar_kind": "point_estimate"
+  },
   "verified_links": {
     "paper_or_project": ["..."],
     "code": ["..."],
@@ -517,3 +553,6 @@ Final validation checklist:
 - `h100_estimate.hours` is numeric and agrees with the filled arithmetic
   fields; unknown arithmetic fields are null, never 0 or invented.
 - All artifact booleans are scoped to the MRE, not to unrelated artifacts.
+- `match_target` is coherent: running `config` and measuring `metric` over `scope`
+  can yield `value` (config↔value and config↔scope both check out); `op`/`tolerance`
+  are NOT pinned, only `match_bar_kind`.

@@ -9,14 +9,13 @@ episode writes a durable record under ``evidence/`` as it works:
   - ``patches/``        -- every diff the agent applied, saved verbatim.
 
 These are *primitives*: ``init_evidence`` lays the files down at setup; the tools
-(``workspace_bash``, ``apply_patch``) and the loop append to them as the episode
+(``workspace_bash``, ``edit_file``) and the loop append to them as the episode
 runs. Microcompact can safely elide stale tool output from the conversation
 precisely because the ground truth lives here, not in the model's context.
 """
 
 from __future__ import annotations
 
-import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -84,32 +83,57 @@ def append_trajectory(evidence_dir: Path, row: dict) -> None:
     append_jsonl_row(evidence_paths(evidence_dir).trajectory, row, truncate=False)
 
 
+# Next sequence number for each numbered sink, keyed by (resolved dir, glob). Counting
+# the directory again on every call is quadratic in the episode's steps, and a long run
+# writes hundreds of patches and GPU step logs. The first call for a directory seeds
+# from the glob — so a resumed episode continues its own numbering instead of
+# overwriting — and later calls just increment. Keyed by directory, so a fresh episode
+# in the same process starts from its own count.
+_NEXT_SEQ: dict[tuple[str, str], int] = {}
+
+
+def _next_seq(directory: Path, pattern: str) -> int:
+    """The sequence number this call owns; the count advances whether or not it lands."""
+    key = (str(directory), pattern)
+    seq = _NEXT_SEQ.get(key)
+    if seq is None:
+        seq = sum(1 for _ in directory.glob(pattern))
+    _NEXT_SEQ[key] = seq + 1
+    return seq
+
+
 def save_patch(evidence_dir: Path, diff: str, *, name: str | None = None) -> Path:
     """Persist a diff under ``patches/`` with a zero-padded sequence prefix."""
     paths = evidence_paths(evidence_dir)
     paths.patches_dir.mkdir(parents=True, exist_ok=True)
-    seq = sum(1 for _ in paths.patches_dir.glob("*.diff"))
+    seq = _next_seq(paths.patches_dir.resolve(), "*.diff")
     slug = _slug(name) if name else "patch"
     target = paths.patches_dir / f"{seq:04d}-{slug}.diff"
     target.write_text(diff if diff.endswith("\n") else diff + "\n", encoding="utf-8")
     return target
 
 
-def write_env_lock(
-    evidence_dir: Path, *, venv: Path | None = None, uv_bin: str = "uv"
-) -> dict:
-    """Freeze the resolved environment into ``env.lock`` via ``uv pip freeze``."""
+def next_gpu_log(evidence_dir: Path) -> Path:
+    """Allocate the next ``gpu_step_<n>.log`` path (the streamed output of one GPU step).
+
+    ``run_gpu`` tees each step's stdout/stderr here as it arrives, so a step SLURM
+    kills at the --time wall still leaves its output on disk — for the agent (the
+    file is visible in the container at ``/repro/evidence``) and for the auditor.
+    """
     paths = evidence_paths(evidence_dir)
-    cmd = [uv_bin, "pip", "freeze"]
-    if venv is not None:
-        cmd += ["--python", str(Path(venv) / "bin" / "python")]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    except (OSError, subprocess.SubprocessError) as exc:
-        paths.env_lock.write_text("", encoding="utf-8")
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}", "path": str(paths.env_lock)}
-    paths.env_lock.write_text(proc.stdout, encoding="utf-8")
-    return {"ok": proc.returncode == 0, "path": str(paths.env_lock), "stderr": proc.stderr}
+    paths.root.mkdir(parents=True, exist_ok=True)
+    seq = _next_seq(paths.root.resolve(), "gpu_step_*.log")
+    return paths.root / f"gpu_step_{seq:04d}.log"
+
+
+def save_plan(evidence_dir: Path, rendered: str) -> Path:
+    """Snapshot the agent's current plan to ``plan.md`` (overwritten each update)."""
+    paths = evidence_paths(evidence_dir)
+    paths.root.mkdir(parents=True, exist_ok=True)
+    target = paths.root / "plan.md"
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    target.write_text(f"# Plan (updated {stamp})\n\n{rendered}\n", encoding="utf-8")
+    return target
 
 
 def _slug(name: str) -> str:

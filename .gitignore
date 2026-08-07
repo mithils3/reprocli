@@ -1,12 +1,9 @@
 data/
 .codex/
 .agents/
-.claude/
+.claude/*
+!.claude/skills/
 __pycache__/
 *.pyc
 outputs/
 notes
-
-# Docs site
-.venv-docs/
-site/

@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
+from reprocli_vllm.schema.audit import MATCH_BAR_KINDS
 from reprocli_vllm.schema.output import (
     FINAL_JSON_SCHEMA,
     deterministic_score_and_tier,
@@ -33,11 +34,21 @@ class OutputSchemaTests(unittest.TestCase):
         self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["required"])
         self.assertNotIn("web_verification", FINAL_JSON_SCHEMA["properties"])
 
-    def test_model_schema_omits_match_bar(self) -> None:
-        # The classifier no longer pins the success bar; the Stage-7 auditor owns
-        # and derives it (see tests/audit and schema/audit.py).
-        self.assertNotIn("match_bar", FINAL_JSON_SCHEMA["required"])
-        self.assertNotIn("match_bar", FINAL_JSON_SCHEMA["properties"])
+    def test_model_schema_pins_coherent_match_target(self) -> None:
+        # The classifier now pins one coherent success-bar tuple; the Stage-7
+        # auditor adopts it and sets only op/tolerance (see schema/audit.py).
+        self.assertIn("match_target", FINAL_JSON_SCHEMA["required"])
+        target = FINAL_JSON_SCHEMA["properties"]["match_target"]
+        self.assertEqual(
+            target["required"],
+            ["config", "metric", "value", "scope", "match_bar_kind"],
+        )
+        # value is a string so "2.37x" / "76.5%" / "8.56 kB" all fit
+        self.assertEqual(target["properties"]["value"]["type"], "string")
+        # the pinned kind is the single source of truth shared with the auditor
+        self.assertEqual(
+            target["properties"]["match_bar_kind"]["enum"], list(MATCH_BAR_KINDS)
+        )
 
     def test_signals_require_verification_state(self) -> None:
         signal = FINAL_JSON_SCHEMA["properties"]["signals"]["properties"]["code_available"]

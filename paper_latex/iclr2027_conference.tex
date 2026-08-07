@@ -1,0 +1,915 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2027_conference,times}
+
+% Common packages. These do not change the ICLR style parameters.
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+
+% Verbatim prompt/message listings (Appendix A). Long lines soft-wrap; content
+% is never edited to fit.
+\lstset{
+  basicstyle=\scriptsize\ttfamily,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  aboveskip=8pt,
+  belowskip=8pt,
+  % The prompt file is UTF-8; map its non-ASCII characters for pdflatex.
+  literate={—}{{---}}1 {–}{{--}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
+           {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1,
+}
+
+\title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
+
+% ICLR submissions must be anonymous. Do not include author names,
+% affiliations, acknowledgments, or identifying links in the submission version.
+\author{Anonymous Authors}
+
+% Uncomment only for the camera-ready version after acceptance.
+% \iclrfinalcopy
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Write a concise summary of the problem, method, main results, and significance.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Reproducibility, the ability to obtain results consistent with those the
+authors of a paper report, is the bedrock of science. Research advances by
+building on published results, so those results must be recoverable by
+someone other than their authors. In machine learning they often are not,
+and independent studies attribute the shortfall to missing code, missing
+data, and underspecified experimental
+detail~\citep{gundersen2018state,raff2019step,pineau2021improving,
+gundersen2022sources}. AI agents now implement, execute, and debug
+large-scale experiments and software
+projects~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, which makes them natural candidates for
+autonomous reproduction of ML
+papers~\citep{siegel2024corebench,starace2025paperbench}. Reproduction is
+also a prerequisite for recursively self-improving systems, since a model
+that improves itself must first re-implement and verify the research it
+builds on~\citep{favaro2026recursive}.
+
+We introduce RECLAIM, a benchmark that measures whether an agent can
+reproduce a published result end to end, starting from the artifacts the
+paper's authors actually released and graded against the execution
+evidence the run produces. We find that success is gated by artifact
+availability. When the authors released a complete artifact stack, agents
+recover the target result on X\% of papers, but as the release thins
+toward reimplementation from the paper alone, the rate drops sharply to
+X\%. We call this drop the availability cliff. The agents' own reports
+also overstate success. Of the X runs that claim a reproduction, only X
+survive a provenance audit of their execution evidence, which we call the
+self-claim gap. We analyze the recurring failure modes behind these
+numbers, including environment drift, where the authors' stack no longer
+builds as documented, and error compounding, where an early unvalidated
+mistake propagates into the final number. By contrast, the runs that
+succeed behave like careful engineers. They smoke test on small
+configurations before committing to long jobs, read the released
+documentation rather than assume interfaces, and exploit the full set of
+artifacts and tools available to them. We detail both the failure and the
+success patterns in Section~\ref{sec:analysis}.
+
+
+\section{Related Work}
+\label{sec:related-work}
+
+RECLAIM asks an agent to turn a paper and whatever its authors released
+into a runnable experiment and a verified number. Existing benchmarks
+each cover a part of this setting and leave a different part unmeasured.
+
+\paragraph{Repository and terminal agents.}
+Agent evaluations have moved from isolated code generation to long-horizon
+work in real repositories and
+terminals~\citep{jimenez2024swebench,merrill2026terminalbench,
+miserendino2025swelancer,deng2025swebenchpro,lu2026frontiercode}. SWE-bench
+grades patches for real GitHub issues with the repository's own
+tests~\citep{jimenez2024swebench}, and Terminal-Bench 2.0 poses diverse
+command-line tasks in containers with executable
+checks~\citep{merrill2026terminalbench}. These benchmarks start from an
+explicit objective, a prepared environment, and a verifier written in
+advance, so they do not measure whether an agent can turn a paper and its
+release state into a runnable experiment.
+
+\paragraph{ML engineering and experimentation.}
+A second family targets the machine-learning workflow itself, from model
+development to research engineering~\citep{huang2024mlagentbench,
+nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench has
+agents build and iteratively refine pipelines for Kaggle competitions under
+a fixed compute budget, scoring submissions against historical
+leaderboards~\citep{chan2024mlebench}. These benchmarks leave the choice of
+method to the agent, so they do not measure whether it can adapt a
+prescribed method and configuration to a new environment and recover the
+specific result the authors report.
+
+\paragraph{Scientific reproduction.}
+A growing line of benchmarks measures how well agents reproduce published
+research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
+xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
+edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}.
+CORE-Bench asks agents to rerun the released code of computationally
+reproducible papers and recover known
+artifacts~\citep{siegel2024corebench}, a setting frontier models have since
+effectively saturated~\citep{favaro2026recursive}. PaperBench has agents
+replicate 20 ICML 2024 papers from scratch without the authors' released
+code, graded against author-developed hierarchical
+rubrics~\citep{starace2025paperbench}. EXP-Bench withholds the paper
+itself, giving the agent a research question and starter code from which it
+must design, execute, and analyze the experiments~\citep{kon2025expbench}.
+Each benchmark fixes the release state before the run begins, and most fix
+it by selecting papers whose code is already public and already runs. The
+stricter selections go further. They keep only papers replicable from the
+text on a single machine without closed-source dependencies, or draw from a
+pool already verified to rerun, on the stated reasoning that irreproducible
+papers are not worth including. None of these benchmarks
+samples papers across the release states they are published in, so none
+measures reproduction under the conditions reproducers actually face.
+
+\section{RECLAIM}
+\label{sec:reclaim}
+
+RECLAIM (Reproducing Claims in Machine Learning) evaluates whether an
+autonomous agent can reproduce the central
+empirical result of a machine learning paper from whatever artifacts its
+authors actually released. Each of the 100 papers in the benchmark poses one
+task, and the agent must recover a single pinned result within a stated
+tolerance.
+\subsection{Features of RECLAIM}
+\label{subsec:features}
+
+\paragraph{End-to-end reproduction.} Each task hands the agent a recent
+paper and a target. No scripted pipeline or prepared environment is
+provided. The agent plans the reproduction, installs the paper's stack and
+reconciles its dependency errors, debugs failures, and manages its own GPU
+allocations, the same work a researcher faces when reproducing a paper. One
+open-ended task therefore exercises planning, coding, and resource
+management together. RECLAIM complements prior computational-reproducibility
+benchmarks~\citep{siegel2024corebench} by evaluating the less structured case
+in which an agent must recover and execute an experiment from the paper and its
+naturally released artifacts.
+
+\paragraph{Natural artifact availability.} We stratify papers by the artifacts
+their authors released, so each tier reflects a reproduction setting that
+actually occurs in the field, and no difficulty is manufactured by
+withholding resources. This choice also limits contamination.
+Reimplement-tier papers never released code, so no reference implementation
+exists for a model to absorb during training, and across all tiers our
+cluster seldom matches the authors' hardware and software stack exactly, so
+replaying memorized artifacts is rarely enough.
+
+\paragraph{Sufficient compute.} Each paper carries a GPU grant estimated from
+its minimal reproducible experiment, with additional capacity for iteration. As
+reported in Section~\ref{subsec:results}, most agent runs do not exhaust their
+assigned compute. Although this does not establish sufficiency for every task,
+it indicates that the compute cap is not the binding constraint for most runs.
+
+\paragraph{Provenance-audited grading.} The benchmark records what the
+agent claims and grades what the evidence shows. Every reported number is
+traced to execution evidence, and deterministic checks zero out any number
+that was echoed from the paper and never measured. Because the audit checks how
+the number was produced, the
+agent is free to reach the result by any faithful route, and a novel
+reproduction strategy scores as well as the authors' own. Recording the
+claim and the audited outcome side by side is what lets us measure how far
+agent self-reports diverge from verified reproductions.
+
+\paragraph{Refresh at low human cost.} An agent classifier reads and
+verifies the candidate papers, and humans audit only the selected pool
+(Section~\ref{subsec:construction}). Each conference cycle supplies fresh
+peer-reviewed targets, so the benchmark can be rebuilt yearly from new
+NeurIPS, ICML, and ICLR submissions. The pool tracks the research frontier
+and resists saturation as agents improve.
+
+\subsection{Task definition}
+\label{subsec:task}
+
+Each paper carries one reproduction target, which we call the \emph{match
+target} and fix before any agent runs. The match target is the cheapest
+configuration the authors report that still establishes the paper's central
+empirical claim, together with the value that configuration produces. Papers
+usually headline their largest model or their full benchmark suite, but the
+same claim typically rests on a smaller supporting experiment, and we pin that
+one. Pinning the smallest supporting configuration bounds the compute a task
+can demand while still exercising the paper's method end to end.
+
+A match target records the configuration that produces the value, the metric,
+the reported value, the scope the value is measured over, and the bar a run
+must clear, most often a point estimate within a stated or default tolerance.
+Appendix~\ref{app:dataset-schema} details the bar kinds and the tolerance
+rule.
+
+As a running example, SharpZO (arXiv 2506.20990) claims that a two-stage
+zeroth-order method improves prompt tuning for vision-language models using
+forward passes alone. Its match target pins a test accuracy of 79.42\% on the
+EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
+reports. A run matches when it produces that accuracy, within tolerance, from
+an experiment it actually executed.
+
+The agent receives the paper, the metric, the target value, the scope, and
+the bar shape. It does not receive the configuration. The agent must
+therefore design the experiment itself, deciding from the paper and the
+released artifacts what to run, retrain, or reimplement. Because the agent
+knows the number it must hit, a bare value match proves nothing. An LLM
+auditor therefore traces every claimed result to execution
+evidence in the run directory, and deterministic checks force the score to
+zero when a number was echoed from the paper and never measured.
+
+\subsection{Benchmark construction}
+\label{subsec:construction}
+
+We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that carry an
+arXiv identifier, collected in the \emph{ai-conferences}
+corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
+(Figure~\ref{fig:funnel}).
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/construction_funnel}
+\end{center}
+\caption{The construction funnel. A tool-verified classifier reduces a
+1,000-paper sample of the 3,414 NeurIPS 2025 submissions to 620 eligible
+papers, a 96 H100-hour compute cap and stratified sampling yield a 200-paper
+audit pool, and a human audit of every availability call and compute estimate
+produces the released benchmark.}
+\label{fig:funnel}
+\end{figure}
+
+\textbf{Stage I: Artifact-verified classification.} For each submission we
+retrieved the raw \LaTeX{} source together with any OpenReview supplementary
+material, since some authors ship code only in the supplement.
+A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
+extracted its central empirical claim, pinned its match target, and audited four
+artifact signals: released code, released datasets, released model weights, and
+whether the required datasets are standard public benchmarks. An artifact counts
+as available only when a tool call is able to access it. An artifact the paper
+promises but never publishes counts as missing, as does one behind a paywall, a
+sign-up form, or a permission request. We ran the classifier on a 1,000-paper
+sample, and it fully verified 687 papers. Removing non-empirical papers and
+papers with blocked artifacts leaves 620 eligible for evaluation.
+
+Artifact availability assigns each paper to a tier that records how much of
+the result the agent must rebuild. Run papers
+release code, data, and weights, and the agent need only execute or evaluate them.
+Retrain papers withhold the weights, and the agent must train the model before
+evaluating. Reimplement papers withhold the code as well, and the agent must
+rebuild the method from the paper alone. Compute cost is
+derived from the paper's text if mentioned, or estimated from the MRE config.
+The tiers also describe the venue as a whole. Among
+the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
+Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
+
+\textbf{Stage II: Compute capping and stratified selection.} We estimated the
+compute each match target requires in H100-hours, taking the paper's reported
+hardware and wall-clock time where stated and deriving the estimate from the
+pinned configuration otherwise. We dropped every paper estimated above 96
+H100-hours before pooling. From the remainder we sampled a 200-paper audit
+pool stratified by tier and compute band. We allocate the pool equally across
+tiers because tier is the variable under test, and equal cells measure each
+tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
+dozen papers, and the venue proportions reported above let readers reweight
+any rate back to the venue level.
+
+\textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
+opening the evidence behind each availability call and re-deriving each compute
+estimate. Papers whose artifacts proved inaccessible or that depended on paid
+third-party APIs failed the audit and were replaced from the audited pool. We
+exclude paid APIs so that reproduction cost stays bounded and
+GPU-denominated. Only 19 of
+the 100 shipped compute estimates could be taken directly from the paper. We
+derived the rest from the pinned configuration. The need to reconstruct these
+estimates is one instance of the broader documentation gaps that impede
+reproduction in AI research~\citep{gundersen2018state}.
+\section{Auditing}
+\label{sec:auditing}
+
+Every finished run is graded by an LLM auditor that reads the
+run's evidence directory and transcript and assigns the 0--10 score of
+Appendix~\ref{app:rubric}, from which the categorical verdict is derived
+deterministically. We fix Claude Sonnet 5 as the auditor for every run of
+every agent, and we froze the rubric before grading began, so scores are
+comparable across models and no agent grades its own family. The auditor is
+adversarial by instruction. It treats the agent's final report as a set of
+unverified claims and grades what the evidence shows. It traces every
+reported number to the execution that produced it, checks the executed
+protocol, split, and scale against the pinned configuration, and
+cross-checks the agent's measurements against the paper's reported values.
+When the recorded evidence does not settle a claim, it writes and executes
+its own scoring scripts over the run's saved outputs and recomputes
+metrics directly from the raw artifacts. It inspects
+and recomputes but never re-runs the reproduction, so a grade reflects the
+evidence the run actually produced.
+
+The auditor's discretion is bounded in code. Every violation it finds is
+recorded as a typed anti-cheat flag with a severity, and the scoring code
+applies the integrity adjustment of Appendix~\ref{app:rubric}. A
+high-severity flag, such as a number echoed
+from the paper, a hardcoded constant, or a proxy value in the target slot,
+forces the score to zero, and a genuine artifact wall caps the score at 3.
+Grading by evidence also preserves the agent's creativity, since any
+faithful route to the pinned number earns full credit, including
+strategies the authors never used. An
+LLM auditor reads far more material per run than a human grader can,
+working through hundreds of tool rounds, logs, and saved outputs in
+minutes, which is what makes auditing every run of every sweep feasible.
+On a held-out set of runs, the auditor's verdicts agree with expert human
+graders at XX. % TODO(auditor-validation): replace XX with the
+% human-vs-auditor agreement metric (F1 or kappa) and add injected-cheat
+% flag recall once the validation study runs.
+
+\section{Experiments}
+\label{sec:experiments}
+
+Describe your experimental setup, baselines, metrics, and implementation details.
+
+\subsection{Experimental Setup}
+\label{subsec:experimental-setup}
+
+\paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
+loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
+minimal but general. A workspace shell and a metered GPU session express the
+same workflows a human reproducer runs on a cluster, and the harness adds no
+guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
+supplement, the verified links to the released artifacts, and the match
+target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
+GPU, holding a Slurm allocation whose wall clock is metered against the
+run's fixed H100-hour grant. The agent chooses its own partitions,
+allocation sizes, and session lengths, so every run also exercises the
+budgeting and scheduling decisions that real reproduction work demands.
+Each run ends with a structured report in which the agent states what it
+ran, what it measured, and whether it believes the result reproduced. This
+self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
+prompts, tool schemas, and session mechanics.
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/harness_overview}
+\end{center}
+\caption{The agent harness. The agent receives the paper and its match
+target, acts through a ReAct tool loop over a workspace shell and a metered
+Slurm GPU session with 500\,GB of scratch storage, and ends with a
+schema-constrained \texttt{report.json} whose claims the auditor
+grades against the run's \texttt{evidence/} directory.}
+\label{fig:harness}
+\end{figure}
+
+\paragraph{Models.} We evaluate open-weight and API-served models under
+identical conditions.
+% TODO: finalize the model list with pinned versions, e.g.
+% Qwen3.6-27B (open-weight) and MiniMax-M2.7 (API-served).
+Open-weight models are served on the cluster and API models are accessed
+through their public endpoints. Every model runs the same harness, prompts,
+and per-paper budgets, so results differ only in the model.
+Appendix~\ref{app:models} records pinned versions, serving configuration,
+and decoding settings.
+
+\paragraph{Metrics.} Our primary metric is the mean reproduction score, an
+integer grade from 0 to 10 that the auditor assigns each run
+under the rubric of Appendix~\ref{app:rubric}. We also report the
+reproduction rate, the fraction of papers whose runs score 8 or higher and
+are therefore graded reproduced. Alongside both we report each model's token
+usage and total benchmark cost, the sum of its API pricing and its GPU time
+at \$2 per H100-hour.
+
+\subsection{Results}
+\label{subsec:results}
+
+Present your main results.
+
+\section{Analysis}
+\label{sec:analysis}
+
+% Placeholder section: ablations, error analysis, qualitative results.
+
+\paragraph{Failure rises with the scale of the required experiment.}
+Reproduction scores fall as the paper's compute band grows, even though no
+band comes close to exhausting the grant we assign it
+(Table~\ref{tab:band-compute}). The gradient tracks the scale of the
+experiment the paper demands.
+Agents handle short evaluation-style experiments well. They load a released
+checkpoint, run an inference pass, and recompute a metric. They do not
+launch and see through a full training run. When the pinned claim requires
+training at scale, the agent substitutes a miniature of the experiment and
+reports the shortfall, so end-to-end reproduction breaks down exactly where
+the experiment stops being short.
+% TODO(scale-narrative): add numbers when final grades land. Band means,
+% budget-spent fractions per band, and the miniature examples (46M params
+% for 1.96B, 256px for 512px) from the medium-2690187 dissection.
+
+\begin{table}[h]
+\caption{Reproduction score and compute use by compute band.
+% TODO(band-table): fill from final grades. Optionally add a per-tier
+% breakdown or swap for a grouped bar figure if space allows.
+}
+\label{tab:band-compute}
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Band (H100-h) & Papers & Mean score & Grant spent (\%) \\
+\midrule
+8 & XX & XX & XX \\
+32 & XX & XX & XX \\
+96 & XX & XX & XX \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{Limitations}
+\label{sec:limitations}
+
+Discuss limitations honestly. This can include dataset limitations, compute constraints, assumptions, failure cases, or scope boundaries.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Summarize the paper and its implications.
+
+\bibliography{iclr2027_conference}
+\bibliographystyle{iclr2027_conference}
+
+\appendix
+
+\section{Harness Details}
+\label{app:harness}
+
+The harness is a plain ReAct tool loop over the seven tools of
+Table~\ref{tab:tools}. This appendix records the loop mechanics, the tool semantics, the
+GPU session and billing model, the sandbox, and the report format. The values given here are the defaults used for every run in
+the paper.
+
+\subsection{Tool loop}
+\label{app:tool-loop}
+
+Each episode runs one paper with one model. The conversation opens with a
+fixed system message and a task prompt rendered from the paper's dataset row
+(Appendix~\ref{app:prompts}), then alternates model turns with tool results.
+A turn may batch several tool calls, and the prompt encourages batching
+because each turn consumes one round. A tool result is trimmed to 40{,}000
+characters before it enters the conversation, and a transient tool failure
+is retried once before its error is returned to the model.
+
+Episodes are capped at 300 rounds. Every request carries an ephemeral status
+line stating the current round and the rounds remaining, appended to the
+request and never stored, since the model has no other way to observe the
+turn budget. The cap is a backstop. The binding limit is the compute budget
+of Appendix~\ref{app:gpu-metering}, and in practice runs end by the agent's
+own choice long before either bound (Section~\ref{subsec:results}).
+
+An episode ends when the model stops calling tools, when it hits the round
+cap, when its compute budget is exhausted, or when its context window is
+full with nothing left to compact. In every
+case the loop issues one final request with the tools removed and the
+response constrained to the report schema of
+Appendix~\ref{app:report-format}, so every run ends with a machine-readable
+account.
+
+\subsection{Toolset}
+\label{app:toolset}
+
+\begin{table}[h]
+\caption{The seven tools advertised to the model.}
+\label{tab:tools}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.6cm}@{}}
+\toprule
+Tool & Function \\
+\midrule
+\texttt{workspace\_bash} & Bash in the episode workspace on a CPU node with
+no GPU. Cloning, installs, edits, inspection. Default timeout 900\,s,
+maximum 3{,}600\,s. \\
+\texttt{write\_file} & Write a UTF-8 file under the workspace or evidence
+roots. \\
+\texttt{edit\_file} & Replace one exact string in an existing file. The
+match must be unique unless \texttt{replace\_all} is set. \\
+\texttt{update\_plan} & Replace the agent's checklist of steps and statuses,
+with at most one step in progress. \\
+\texttt{fetch\_url} & Fetch a public http(s) URL and reduce HTML to text.
+There is no web search. \\
+\texttt{list\_partitions} & List the cluster's Slurm partitions with node
+counts, walltime caps, and GPU resources. Read-only. \\
+\texttt{run\_gpu} & Run one command on the held GPU allocation
+(Appendix~\ref{app:gpu-metering}). The only path to a GPU. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Every tool leaves a durable trace. Each shell command is appended to
+\texttt{evidence/commands.log} with its exit code, duration, and working
+directory. Each applied \texttt{edit\_file} change is saved verbatim as a
+unified diff under \texttt{evidence/patches/}. Each \texttt{update\_plan}
+call overwrites \texttt{evidence/plan.md} with the current checklist, and
+because the plan is harness state it survives context compaction. The write tools
+resolve every path against the workspace and evidence roots, canonicalize
+symlinks, and reject traversal, so the read-only reference copy of the paper
+cannot be modified.
+
+\subsection{GPU sessions and compute metering}
+\label{app:gpu-metering}
+
+\texttt{run\_gpu} holds one Slurm allocation across calls. The first call
+acquires it, and the agent may wait in the queue once. Every later call runs
+on the same node with no new queue wait, so installing, smoke-testing, and
+running the experiment utlizes the same allocation, and the node-local scratch
+persists between calls until release. Calls block until the command returns.
+There is no background execution.
+
+Three parameters are set on the call that starts a session and are fixed
+until it is released. \texttt{gpus} (default 1) is capped at the node size,
+four on our cluster. \texttt{minutes} (default 30, maximum 1{,}440) becomes
+the allocation's Slurm \texttt{--time} cap, so a step still running at the
+wall is killed. \texttt{partition} selects the node pool, and the agent can
+enumerate the pools with \texttt{list\_partitions}. Setting
+\texttt{release=true} frees the allocation after the call, and the harness
+releases any session still held when the episode ends.
+
+The meter charges held wall clock, GPUs times held hours times a hardware
+multiplier, in H100-equivalent hours. Each GH200 GPU carries a multiplier of
+1.0.
+Queue wait is not billed. Idle time on a held node is billed, including the
+time the model spends reasoning between commands, and the loop bills accrued
+wall clock between rounds, so a held node depletes the budget even when no
+command is running. Two checks enforce the ceiling. Before a session starts,
+the harness refuses an allocation whose worst case, GPUs times
+\texttt{minutes} times the multiplier, exceeds the remaining budget. Between
+rounds, once the accrued charge exhausts the budget, the loop releases the
+session and forces the final report pass. Each paper's ceiling is the upper
+edge of its compute band, 8, 32, or 96 H100-hours.
+
+Each step's stdout and stderr stream to a numbered log under
+\texttt{evidence/} while the step runs, so a job killed at the
+\texttt{--time} wall still leaves everything it printed on disk, and the
+tool result names the log and returns the output tail.
+Every result also reports the accrued cost, the remaining budget, and the
+seconds left on the allocation. A warning fires within two minutes of the
+wall, and a command launched onto an allocation with under two minutes left
+is moved onto a fresh allocation in the same call.
+
+\subsection{Sandbox}
+\label{app:sandbox}
+
+Every shell step, in \texttt{workspace\_bash} and in \texttt{run\_gpu}, runs
+inside an Apptainer container, and the harness refuses to start when it
+cannot sandbox. The container image is the read-only root filesystem, a
+CUDA 12.9 and cuDNN development image with git, \texttt{uv}, compilers, and
+common media libraries layered in. PyTorch is not preinstalled. The agent
+builds its own virtual environment and installs a CUDA-enabled torch as its
+first action.
+
+Only bound paths are visible inside the container. The episode's workspace
+and evidence directories are bound read-write, the reference copy of the
+paper read-only, and the node-local scratch (at least 500\,GB of NVMe at
+\texttt{/tmp}) and the shared package caches read-write, so a downloaded
+dataset or built wheel is reused across papers. The host home directory and
+every other host path are not mounted. The container environment is scrubbed
+with \texttt{--cleanenv} and \texttt{--no-home}, and an explicit allowlist
+(the Hugging Face token, cache locations, proxy settings) is forwarded
+through Apptainer's environment mechanism so no token appears on a command
+line. GPU steps add \texttt{--nv} to pass the device and driver through. The
+long per-run host paths are remapped to fixed short container paths
+(\texttt{/repro/workspace}, \texttt{/repro/reference},
+\texttt{/repro/evidence}), so the prompt and the agent's commands are
+identical across papers.
+
+\subsection{Evidence bundle and report format}
+\label{app:report-format}
+
+Each run writes a self-contained bundle with three parts. The
+\texttt{workspace/} holds the agent's clones, environment, and scripts and
+is editable. The \texttt{reference/} holds the paper's \LaTeX{} source and
+its OpenReview supplement and is read-only. The \texttt{evidence/} directory
+is the durable record the auditor reads. It accumulates
+\texttt{commands.log} (every shell command with exit codes),
+\texttt{trajectory.jsonl} (one structured row per tool step with its cost),
+\texttt{env.lock} (the resolved package environment), \texttt{patches/}
+(every applied diff), the streamed per-step GPU logs, \texttt{plan.md}, and
+whatever the agent writes itself, including the \texttt{REPORT.md} the
+prompt requires. The auditor grades \texttt{report.json} and
+\texttt{evidence/} and never reads the workspace.
+
+The final tools-off pass constrains the model's output to a JSON schema, and
+the returned object is persisted as \texttt{report.json}.
+Table~\ref{tab:report-schema} lists its fields. Each entry of
+\texttt{measurements} carries the metric name, the observed value, the
+paper's reference value, the scope the value was measured over, and
+citations into \texttt{evidence/} backing the observed value, so a number
+without a cited evidence file is identifiable as unsupported.
+The \texttt{agent\_assessment} field is the agent's own verdict on its run.
+It is the self-claimed outcome that Section~\ref{subsec:results} compares
+against the audited grade, and nothing in the pipeline treats it as ground
+truth.
+
+\begin{table}[h]
+\caption{Schema of \texttt{report.json}.}
+\label{tab:report-schema}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+Field & Content \\
+\midrule
+\texttt{paper\_id} & The paper's arXiv identifier. \\
+\texttt{claim} & The agent's restatement of the claim it worked toward. \\
+\texttt{what\_ran} & What was actually executed, from environment to run. \\
+\texttt{scoring\_command} & One command that reproduces the measured number
+from a clean state. Empty when nothing ran. \\
+\texttt{measurements} & The measured metrics, each citing evidence files. \\
+\texttt{agent\_assessment} & \texttt{reproduced}, \texttt{partial},
+\texttt{not\_reproduced}, or \texttt{could\_not\_run}. \\
+\texttt{changes\_made} & Deviations from the released reference. \\
+\texttt{blockers} & What blocked a full reproduction, empty when nothing
+did. \\
+\texttt{evidence\_files} & The files under \texttt{evidence/} the auditor
+should open first. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Prompts}
+\label{app:prompts}
+
+The system message and the final-turn instruction are fixed strings, shown
+in Listing~\ref{lst:system-message} and Listing~\ref{lst:final-message}. The
+task prompt is rendered per paper from a fixed template, shown in full in
+Listing~\ref{lst:task-prompt}. Rendering substitutes the paper's central
+claim, its reported numbers, the pinned match target, the verified artifact
+links, the availability signals, the tier and compute band, the H100-hour
+budget, and the fixed container paths of Appendix~\ref{app:sandbox}. The
+template is the product of failure-driven revision on the development split,
+and several of its instructions name specific observed failure modes, such
+as blind re-runs of wall-killed jobs and validation-free reimplementation.
+It was validated against other models' successful runs before adoption so
+that fixes for one model's failures do not overfit the prompt to that model.
+
+\begin{lstlisting}[caption={The system message.},label={lst:system-message}]
+You are a reproduction agent. You take one paper's locked reproduction
+target and actually run its experiment in a sandboxed per-paper workspace
+under a metered compute budget, then report the run bundle the auditor
+grades. Spend budget deliberately; write durable evidence as you go.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={The final-turn instruction, sent with tools
+removed and the response constrained to the report
+schema.},label={lst:final-message}]
+The tool phase is over. Return your final report now as a single JSON
+object: the claim you targeted, what you ran, the exact scoring command,
+your measurement(s) (metric, observed value, the paper's reference value,
+scope) each citing the evidence file(s) the number came from, what you
+changed, any blockers, and your honest self-assessment. This is your
+account of the run, not the verdict -- the auditor grades it. Return only
+the JSON object.
+\end{lstlisting}
+
+\lstinputlisting[caption={The task prompt template, rendered per paper by
+substituting the \texttt{\{PLACEHOLDER\}} fields from the paper's dataset
+row.},label={lst:task-prompt}]{prompts/prompt_reproduce.txt}
+
+\section{Models and Serving}
+\label{app:models}
+
+% TODO(models): pinned model versions, serving configuration, decoding
+% settings, per-model token usage and cost.
+
+\section{Audit Rubric}
+\label{app:rubric}
+
+The auditor grades every run on a 0--10 integer scale in two
+steps. It first places the run in the highest quality band whose conditions
+the cited execution evidence meets, then applies an integrity adjustment
+that can only lower the score. Honesty sets the floor and reproduction
+quality sets the ceiling, so an honest failure always outscores a dishonest
+one.
+
+Table~\ref{tab:rubric} gives the quality bands and the categorical verdict
+each score maps to.
+
+\begin{table}[h]
+\caption{The audit rubric. The auditor assigns the highest band whose
+conditions the cited execution evidence meets, and the verdict is derived
+deterministically from the score.}
+\label{tab:rubric}
+\begin{center}
+\small
+\begin{tabular}{c l p{6.3cm} l}
+\toprule
+Score & Band & Conditions & Verdict \\
+\midrule
+10 & Faithful, exact & Right experiment executed, match bar met, zero
+flags, correct protocol, split, and scale; stochastic metrics seeded or
+averaged. & \texttt{reproduced} \\
+9 & Faithful, single draw & As 10, but one unseeded draw of a stochastic
+metric that still lands inside the bar. & \texttt{reproduced} \\
+8 & Minor caveats & Bar met with sound provenance; only minor deviations
+that demonstrably do not change the measured quantity. The bar is never
+loosened at grade time. & \texttt{reproduced} \\
+\midrule
+7 & Near-reproduction & Authors' own pipeline, clean provenance, but the
+result lands just outside the bar or an unresolved protocol deviation
+blocks a clean pass. & \texttt{partial} \\
+6 & Clear partial & Right experiment with sound provenance, but the result
+clearly misses the bar. & \texttt{partial} \\
+\midrule
+5 & Honest off-target & No evaluation pipeline was released; the agent
+reconstructed the protocol in good faith at full coverage, disclosed the
+result, and it diverged from the target. & \texttt{not\_reproduced} \\
+4 & Weak attempt & Executed, but substantially off with a significant
+non-cheating deviation, underpowered coverage, or an unvalidated
+reimplementation. & \texttt{not\_reproduced} \\
+\midrule
+3 & Honest blocked & No valid number was producible behind a genuine
+artifact wall, such as a gated dataset or an unobtainable checkpoint, and
+the agent diagnosed the wall and declined without substituting a proxy or
+claiming success. & \texttt{blocked} \\
+\midrule
+2 & Failed execution & Code ran but never produced the metric, or addressed
+the wrong task, reported honestly. & \texttt{not\_reproduced} \\
+1 & Non-attempt & No execution evidence or no checkable target, with no
+success claim the run did not earn. & \texttt{unverifiable} \\
+0 & Integrity break & Any high-severity anti-cheat flag, a verdict that
+contradicts its own evidence, or a proxy substituted into the target slot.
+& \texttt{disqualified} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\paragraph{Integrity adjustment.} The adjustment only moves scores down. Any
+high-severity anti-cheat flag forces the score to 0, as does a report whose
+categorical verdict contradicts its own evidence, for example a
+\texttt{reproduced} claim over blank or placeholder value fields, and as
+does a proxy value substituted into the target slot, even when the
+substitution is disclosed in prose. A genuine artifact wall caps the score
+at 3, and the run reaches 3 only if the agent stayed honest at the wall.
+Separating \texttt{blocked} from \texttt{not\_reproduced} distinguishes
+papers no agent could reproduce from papers the agent failed to reproduce,
+and \texttt{disqualified} separates dishonesty from honest failure.
+
+\section{Dataset Schema}
+\label{app:dataset-schema}
+
+We release the audited benchmark as a Hugging Face dataset. The repository URL
+is withheld for anonymous review and provided in the camera-ready version. The
+dataset publishes two named splits. The \texttt{test} split holds the
+100-paper frozen benchmark and carries \texttt{split="eval"} in each row. The
+\texttt{validation} split holds the disjoint 14-paper development set and
+carries \texttt{split="dev"}. There is no \texttt{train} split. Each row is
+one paper, keyed by its arXiv identifier in \texttt{custom\_id}. The row
+records the paper's central claim, the audited artifact-availability signals,
+the reproduction task handed to the agent, the pinned match target, and the
+compute estimate that placed the paper in its band.
+
+% TODO(data): one eval-100 row currently has a null match_bar_kind; the
+% "remaining 3" count below assumes it resolves to magnitude or range.
+\paragraph{Match bars and tolerance.} For 65 of the 100 evaluation papers the
+match bar is a point estimate. For 19 the run must beat a stated baseline,
+for 13 it must clear a reported threshold, and for the remaining 3 it must
+recover a magnitude or fall inside a reported range. A point estimate matches
+when the run lands within the authors' stated tolerance, or within 5\%
+relative of the reported value when the paper states none.
+
+Table~\ref{tab:schema-toplevel} lists the top-level fields. Four of them are
+nested objects, expanded in
+Tables~\ref{tab:schema-links}--\ref{tab:schema-h100}.
+
+\begin{table}[t]
+\caption{Top-level fields of each dataset row.}
+\label{tab:schema-toplevel}
+\begin{center}
+\small
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{custom\_id} & string & arXiv id, the primary key. \\
+\texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
+\texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
+\texttt{paper\_kind} & string & Paper type. All rows are \texttt{empirical}. \\
+\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim. \\
+\texttt{agent\_task} & string & The reproduction instruction handed to the agent. \\
+\texttt{verified\_links} & object & Tool-confirmed artifact URLs (Table~\ref{tab:schema-links}). \\
+\texttt{signals} & object & Per-artifact availability audit (Table~\ref{tab:schema-signals}). \\
+\texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
+\texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
+\texttt{score} & int & Artifact-availability score, 0 (all present) to 3 (most missing). \\
+\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard} in the released lockfile, corresponding to the Run, Retrain, and Reimplement tiers; derived from \texttt{score}. \\
+\texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
+\texttt{selection\_band} & string & Compute band used for stratified selection. \\
+\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}. \\
+\texttt{h100\_hours\_estimate} & float & Estimated H100-hours to run the match target. \\
+\texttt{h100\_estimate\_basis} & string & Free-text justification for the estimate. \\
+\texttt{audited\_h100\_hours} & float & Human-adjudicated H100-hours. \\
+\texttt{h100\_recomputed\_hours} & float or null & Recomputed hours when the estimate was revised. \\
+\texttt{h100\_arithmetic\_mismatch} & bool or null & Flag set when estimate arithmetic disagreed. \\
+\texttt{h100\_hours\_adjudicated} & bool & Whether a human adjudicated the compute figure. \\
+\texttt{h100\_needs\_human\_review} & bool & Whether the estimate was flagged for review. \\
+\texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
+\texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
+\texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each
+field is a list of strings and is empty when no artifact of that kind was
+located.}
+\label{tab:schema-links}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{paper\_or\_project} & Paper or project-page URLs. \\
+\texttt{code} & Code repository URLs. \\
+\texttt{dataset} & Dataset URLs. \\
+\texttt{weights} & Model-weight URLs. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{signals}: the per-artifact availability audit. The four
+audited signals are \texttt{code\_available}, \texttt{dataset\_available},
+\texttt{weights\_available}, and \texttt{dataset\_is\_standard}. Each signal
+is an object with the three fields below. A signal is true only when its
+\texttt{verification} field is \texttt{tool\_verified}, so every available
+artifact is backed by a successful tool call.}
+\label{tab:schema-signals}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{value} & bool & Whether the artifact is present. \\
+\texttt{verification} & string & \texttt{tool\_verified}, \texttt{tool\_searched\_not\_found}, or \texttt{not\_applicable}. \\
+\texttt{evidence} & string & The tool observation supporting the value. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{match\_target}: the quantity a reproduction run must recover
+to count as a match.}
+\label{tab:schema-matchtarget}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.8cm}@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{config} & Experimental configuration that produces the target value. \\
+\texttt{metric} & The reported metric name. \\
+\texttt{value} & The target value to match. \\
+\texttt{scope} & The model, dataset, or setting the value applies to. \\
+\texttt{match\_bar\_kind} & Match criterion: \texttt{point\_estimate}, \texttt{direction}, \texttt{threshold}, \texttt{magnitude}, or \texttt{range}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{h100\_estimate}: the compute estimate that placed each paper
+in its band.}
+\label{tab:schema-h100}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}llp{6.8cm}@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{hours} & float & Estimated H100-hours for the match target. \\
+\texttt{basis\_kind} & string & \texttt{derived\_from\_config}, \texttt{paper\_reported}, \texttt{comparable\_experiment}, or \texttt{compute\_unspecified}. \\
+\texttt{gpu\_count} & int or null & GPU count the paper reports. \\
+\texttt{gpu\_type} & string & GPU type the paper reports. \\
+\texttt{wallclock\_hours} & float or null & Reported wall-clock hours, before H100 normalization. \\
+\texttt{h100\_equivalent\_multiplier} & float or null & Factor converting the reported GPU to H100-equivalent hours. \\
+\texttt{basis} & string & Free-text justification for the estimate. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\end{document}

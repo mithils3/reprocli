@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Any
@@ -17,13 +18,16 @@ from reprocli_vllm.vllm.io import (
     tool_result_message,
 )
 from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
-from reprocli_vllm.hf_upload import OUTPUT_WRITE_LOCK
 from reprocli_vllm.runtime.loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
+from reprocli_vllm.runtime import live_events
 from reprocli_vllm.papers.papers import Paper
 from reprocli_vllm.runtime.run_health import loop_telemetry
 from reprocli_vllm.tools.web_tools import execute_tool_call
 from reprocli_vllm.runtime.trace_io import append_trace_row, assistant_message
 from reprocli_vllm.vllm.client import post_chat_completion_row, response_row
+
+# Serializes output appends so concurrent workers never interleave half-written lines.
+OUTPUT_WRITE_LOCK = threading.Lock()
 
 
 def run_tool_loop(
@@ -33,8 +37,8 @@ def run_tool_loop(
     server_url: str,
     model_id: str | None = None,
 ) -> None:
-    # Embedded server is addressed by --model (its weights path); an attached
-    # server is addressed by the id it advertises, resolved by the caller.
+    # The attached server is addressed by the id it advertises (resolved by the
+    # caller); fall back to --model when the caller didn't resolve one.
     request_model = model_id or args.model
     conversations = {
         paper.arxiv_id: initial_messages(prompt, args.system_message)
@@ -169,6 +173,7 @@ def handle_request_done(
             return
         if round_index + 1 >= args.tool_rounds:
             exit_reasons[custom_id] = "round_limit"
+        live_events.round_open(custom_id, round_index, message)
         tool_future = tools.submit(
             append_tool_results,
             conversations[custom_id],
@@ -176,6 +181,8 @@ def handle_request_done(
             tool_calls,
             papers_by_id[custom_id],
             tool_call_counts[custom_id],
+            custom_id,
+            round_index,
         )
         tool_futures[tool_future] = state
         return
@@ -204,6 +211,8 @@ def handle_request_done(
     )
     final_rows[custom_id] = row
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
+    live_events.final(custom_id, round_index, message, exit_reason,
+                      extracted_response(custom_id, row, args.mode))
 
 
 def prepare_incremental_outputs(args: argparse.Namespace) -> None:
@@ -259,10 +268,14 @@ def append_tool_results(
     tool_calls: list[dict],
     paper: Paper,
     counts: Counter,
+    custom_id: str = "",
+    round_index: int = 0,
 ) -> None:
     messages.append(assistant_message(message, tool_calls))
     for call in tool_calls:
+        live_events.call_start(custom_id, round_index, call)
         result = execute_tool_call(call, paper=paper)
+        live_events.call_result(custom_id, round_index, result)
         record_tool_call(counts, call, result)
         messages.append(tool_result_message(call, result))
 

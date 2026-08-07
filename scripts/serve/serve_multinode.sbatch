@@ -11,8 +11,8 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=4
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=256G
+#SBATCH --cpus-per-task=288
+#SBATCH --mem=440G
 #SBATCH --time=12:00:00
 #SBATCH -o slurm-serve-mn-%j.out
 #SBATCH -e slurm-serve-mn-%j.err

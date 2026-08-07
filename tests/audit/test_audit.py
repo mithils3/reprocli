@@ -33,44 +33,100 @@ def _score_row(score, flags=None, execution_verified=True) -> dict:
 
 def test_high_flag_caps_score_to_zero():
     flags = [{"kind": "hardcoded_constant", "evidence": "print(86.7) in eval.py:40", "severity": "high"}]
-    row = finalize_audit_row(_score_row(5, flags), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(10, flags), {"exit_reason": "natural"})
     assert row["score"] == 0
-    assert row["reported_score"] == 5
-    assert row["verdict"] == "not_reproduced"
+    assert row["reported_score"] == 10
+    assert row["verdict"] == "disqualified"
     assert row["reproduced"] is False
     assert row["has_high_cheat_flag"] is True
     assert row["verification_status"] == "verified"
 
 
-def test_score_5_is_reproduced():
-    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
+def test_score_10_is_reproduced():
+    row = finalize_audit_row(_score_row(10), {"exit_reason": "natural"})
     assert row["verdict"] == "reproduced"
     assert row["reproduced"] is True
     assert "reported_score" not in row
 
 
-def test_score_4_is_reproduced_boundary():
-    row = finalize_audit_row(_score_row(4), {"exit_reason": "natural"})
+def test_score_8_is_reproduced_boundary():
+    row = finalize_audit_row(_score_row(8), {"exit_reason": "natural"})
     assert row["verdict"] == "reproduced"
     assert row["reproduced"] is True
 
 
-def test_score_3_is_partial():
-    flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
-    row = finalize_audit_row(_score_row(3, flags), {"exit_reason": "natural"})
+def test_score_7_is_partial_boundary():
+    row = finalize_audit_row(_score_row(7), {"exit_reason": "natural"})
     assert row["verdict"] == "partial"
     assert row["reproduced"] is False
-    assert row["score"] == 3  # low flag does not cap
 
 
-def test_score_0_no_execution_is_unverifiable():
-    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+def test_score_6_is_partial():
+    flags = [{"kind": "cherry_picked_metric", "evidence": "minor", "severity": "low"}]
+    row = finalize_audit_row(_score_row(6, flags), {"exit_reason": "natural"})
+    assert row["verdict"] == "partial"
+    assert row["score"] == 6  # low flag does not cap
+
+
+def test_score_5_is_not_reproduced():
+    row = finalize_audit_row(_score_row(5), {"exit_reason": "natural"})
+    assert row["verdict"] == "not_reproduced"
+    assert row["reproduced"] is False
+
+
+def test_score_3_is_not_reproduced():
+    # Score 3 (post-freeze: right experiment killed before the number; pre-freeze:
+    # availability ceiling) carries no separate verdict since 2026-07-16.
+    row = finalize_audit_row(_score_row(3), {"exit_reason": "natural"})
+    assert row["verdict"] == "not_reproduced"
+    assert row["reproduced"] is False
+
+
+def test_score_2_is_not_reproduced():
+    row = finalize_audit_row(_score_row(2), {"exit_reason": "natural"})
+    assert row["verdict"] == "not_reproduced"
+
+
+def test_high_score_without_execution_is_capped_unverifiable():
+    # The finalizer must not certify a reproduction the auditor says never ran:
+    # execution_verified=False + score 10 is incoherent and caps to unverifiable.
+    row = finalize_audit_row(_score_row(10, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 1
+    assert row["reported_score"] == 10
     assert row["verdict"] == "unverifiable"
     assert row["reproduced"] is False
 
 
+def test_partial_score_without_execution_is_capped_unverifiable():
+    row = finalize_audit_row(_score_row(6, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 1
+    assert row["reported_score"] == 6
+    assert row["reproduced"] is False
+
+
+def test_score_3_without_execution_is_not_capped():
+    # Score 3 (killed before the number) by definition never computed the metric,
+    # so execution_verified=False is coherent; the cap only touches >=6.
+    row = finalize_audit_row(_score_row(3, execution_verified=False), {"exit_reason": "natural"})
+    assert row["score"] == 3
+    assert row["verdict"] == "not_reproduced"
+    assert "reported_score" not in row
+
+
+def test_score_1_no_execution_is_unverifiable():
+    row = finalize_audit_row(_score_row(1, execution_verified=False), {"exit_reason": "natural"})
+    assert row["verdict"] == "unverifiable"
+    assert row["reproduced"] is False
+
+
+def test_score_0_is_disqualified():
+    row = finalize_audit_row(_score_row(0, execution_verified=False), {"exit_reason": "natural"})
+    assert row["verdict"] == "disqualified"
+    assert row["reproduced"] is False
+
+
 def test_out_of_range_score_is_degraded():
-    row = finalize_audit_row(_score_row(9), {"exit_reason": "natural"})
+    row = finalize_audit_row(_score_row(11), {"exit_reason": "natural"})
     assert row["verification_status"] == "degraded"
 
 
@@ -87,23 +143,34 @@ def test_claim_block_uses_central_claim():
     assert "Reported numbers" in block
 
 
-def test_claim_block_never_pins_bar_and_asks_auditor_to_derive():
-    # Even if a legacy record carries a match_bar, the auditor owns the bar now:
-    # claim_block must not present it as a frozen target to adopt verbatim.
+def test_claim_block_adopts_pinned_match_target():
+    # The classifier now pins a coherent tuple; the auditor adopts it verbatim and
+    # sets only op/tolerance — it does not re-derive the bar.
     block = claim_block(
         {
             "central_claim": "86.7% on ALFWorld",
-            "match_bar": {"kind": "point_estimate", "reference_value": 86.7},
+            "match_target": {
+                "config": "ReAct, GPT-4o",
+                "metric": "success_rate",
+                "value": "86.7%",
+                "scope": "ALFWorld test",
+                "match_bar_kind": "point_estimate",
+            },
         }
     )
-    assert "Pinned match bar" not in block
-    assert "Derive the C1 match bar" in block
-    assert "match_bar_kind" in block
+    assert "Pinned success bar" in block
+    assert "adopt verbatim" in block.lower()
+    # the pinned tuple's fields are present for the auditor to copy
+    for token in ("ReAct, GPT-4o", "86.7%", "ALFWorld test", "point_estimate"):
+        assert token in block, token
+    # it must NOT tell the auditor to re-derive the bar
+    assert "Derive the C1 match bar" not in block
 
 
-def test_claim_block_asks_auditor_to_derive_when_absent():
+def test_claim_block_falls_back_to_derive_when_no_tuple_pinned():
+    # Legacy rows without a pinned match_target still ask the auditor to derive.
     block = claim_block({"central_claim": "A beats B", "claim_evidence": {"x": 1}})
-    assert "Pinned match bar" not in block
+    assert "Pinned success bar" not in block
     assert "Derive the C1 match bar" in block
 
 

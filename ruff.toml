@@ -1,0 +1,12 @@
+extend-exclude = [
+    "data",
+    "notes",
+    "site",
+    "outputs",
+    "docs",
+    "tools/run_viewer/public",
+    "tools/verify_app/public",
+]
+
+[lint]
+select = ["E9", "F"]

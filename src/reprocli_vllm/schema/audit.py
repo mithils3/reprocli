@@ -10,11 +10,12 @@ citations alone (see audit.py for the deterministic post-processing).
 from __future__ import annotations
 
 
-# Shape of the central claim's success bar. The auditor OWNS and derives this at
-# grading time (it is no longer pinned by the classifier into the lockfile): it
-# classifies the bar kind, then sets op/reference_value/tolerance per rubric C1.
-# TODO(final-audits): during the final per-paper audit pass, review/freeze the
-# derived bars so headline reproduction rates are reported against a stable ruler.
+# Shape of the central claim's success bar. The classifier PINS the coherent tuple
+# (config, metric, value, scope, match_bar_kind) into the lockfile's `match_target`;
+# the auditor ADOPTS it verbatim and sets only op / tolerance to match the pinned
+# match_bar_kind, per rubric C1 (it no longer re-derives the bar).
+# TODO(final-audits): during the final per-paper audit pass, human-review the pinned
+# tuples so headline reproduction rates are reported against a stable ruler.
 MATCH_BAR_KINDS = (
     "point_estimate",  # land near reference_value; op abs_rel_within, tolerance set
     "threshold",       # reference_value is a floor/ceiling; op >= or <=, tolerance null
@@ -24,7 +25,7 @@ MATCH_BAR_KINDS = (
 )
 
 # Granular reproduction score the auditor assigns (anchors in rubric_audit.md).
-SCORE_MIN, SCORE_MAX = 0, 5
+SCORE_MIN, SCORE_MAX = 0, 10
 FLAG_KINDS = (
     "hardcoded_constant",
     "echoed_prose_number",
@@ -32,6 +33,8 @@ FLAG_KINDS = (
     "wrong_split_scale_dataset",
     "cherry_picked_metric",
     "stale_artifact",
+    "retrieved_benchmark_answer",  # run consulted the benchmark split/lockfile answer key
+    "other_provenance_break",      # open-ended: novel cheats are still cheats (rubric C4)
 )
 SEVERITIES = ("low", "med", "high")
 
@@ -63,12 +66,13 @@ def _flag_item() -> dict:
 AUDIT_JSON_SCHEMA = _obj(
     {
         "paper_id": _STR,
-        # C1: the auditor's restatement of the claim as a checkable target. The
-        # auditor derives the whole bar here (kind first, then op/value/tolerance);
-        # it is not adopted from a pinned lockfile value.
+        # C1: the checkable target. The auditor ADOPTS the pinned match_target tuple
+        # (match_bar_kind / target_metric / reference_value / target_scope from the
+        # lockfile) verbatim and sets only op / tolerance to match the pinned kind.
         "central_claim": _STR,
         "match_bar_kind": {"type": "string", "enum": list(MATCH_BAR_KINDS)},
         "target_metric": _STR,
+        "target_scope": _STR,
         "reference_value": _NUM_OR_NULL,
         "op": _STR,
         "tolerance": _NUM_OR_NULL,
@@ -83,8 +87,10 @@ AUDIT_JSON_SCHEMA = _obj(
         # C5/C6: the comparison and experiment fidelity.
         "value_comparison": _STR,
         "methodology_notes": _STR,
-        # granular 0-5 reproduction score; verdict is derived from it downstream.
+        # granular 0-10 reproduction score; verdict is derived from it downstream.
         "score": {"type": "integer", "minimum": SCORE_MIN, "maximum": SCORE_MAX},
+        # auditor's own 0-1 confidence; < 0.6 routes the verdict to human spot-audit.
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "rationale": _STR,
     },
     [
@@ -92,6 +98,7 @@ AUDIT_JSON_SCHEMA = _obj(
         "central_claim",
         "match_bar_kind",
         "target_metric",
+        "target_scope",
         "reference_value",
         "op",
         "tolerance",
@@ -103,6 +110,7 @@ AUDIT_JSON_SCHEMA = _obj(
         "value_comparison",
         "methodology_notes",
         "score",
+        "confidence",
         "rationale",
     ],
 )

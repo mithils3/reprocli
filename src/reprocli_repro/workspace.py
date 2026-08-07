@@ -6,35 +6,25 @@ fresh time+random ``run_id`` so re-runs of the same paper never collide) and
 materializes everything the agent needs *before* the loop starts:
 
   - the directory layout (``workspace/`` rw, ``reference/`` ro, ``evidence/``),
-  - an **empty per-paper** ``uv`` venv at ``workspace/.venv`` -- the
-    reproducibility-isolation boundary; never the repo's shared ``.venv``,
   - the read-only ``reference/`` copy (paper LaTeX + every supplement file),
   - the durable ``evidence/`` sinks.
 
-It deliberately does **not** clone the paper's code or install its dependencies:
-that is the agent's job. It clones via ``workspace_bash`` and installs into this
-venv — including a CUDA-enabled torch — inside a ``run_gpu`` step (see
-``prompts/prompt_reproduce.txt``). The venv is created **clean** (no
-``--system-site-packages``) so nothing from the host/login site-packages leaks
-onto ``sys.path`` and shadows what the agent installs.
+It deliberately does **not** clone the paper's code, install its dependencies, or
+build a venv: that is the agent's job. The agent builds its venv as its first
+setup step, inside the Apptainer container (see ``prompts/prompt_reproduce.txt``),
+and installs a GH200 (aarch64) CUDA ``torch`` into it from the PyTorch wheel index
+— the raw CUDA image has no prebuilt torch to inherit.
 """
 
 from __future__ import annotations
 
-import shlex
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from reprocli_repro import env
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import reference as reference_mod
 from reprocli_repro.evidence import EvidencePaths
-from reprocli_repro.inputs import RunPaths, resolve_run_paths
-
-if TYPE_CHECKING:
-    from reprocli_repro.cluster import Cluster
+from reprocli_repro.inputs import RunPaths
 
 
 @dataclass
@@ -43,7 +33,6 @@ class WorkspaceResult:
 
     run_paths: RunPaths
     evidence: EvidencePaths
-    venv: dict | None = None
     reference: dict | None = None
 
 
@@ -53,64 +42,16 @@ def create_layout(run_paths: RunPaths) -> None:
         Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def build_venv(
-    workspace: Path,
-    *,
-    cluster: "Cluster | None" = None,
-    system_site_packages: bool = False,
-    python: str | None = None,
-    seed: bool = True,
-    uv_bin: str = "uv",
-) -> dict:
-    """Create an empty, **clean** per-paper ``uv`` venv at ``workspace/.venv``.
-
-    Built through the env seam (``env.exec_argv``) on the CPU-setup path. ``--system-
-    site-packages`` is **off**: inheriting the host/login site-packages is exactly
-    how a CPU ``torch`` (or the user's ``~/.local`` packages) leaks onto ``sys.path``
-    and shadows what the agent installs. The venv starts empty and the agent installs
-    everything it needs — including a CUDA-enabled torch from the matching PyTorch
-    index, inside a ``run_gpu`` step (see ``prompts/prompt_reproduce.txt``).
-
-    ``--seed`` is **on by default** so the venv ships with ``pip``/``setuptools``/
-    ``wheel`` already present: agents (and build backends that shell out to pip)
-    otherwise hit a venv with no ``pip`` and waste rounds bootstrapping it via
-    ``ensurepip``.
-    """
-    venv_path = Path(workspace) / ".venv"
-    parts = [uv_bin, "venv", shlex.quote(str(venv_path))]
-    if system_site_packages:
-        parts.append("--system-site-packages")
-    if seed:
-        parts.append("--seed")
-    if python:
-        parts += ["--python", shlex.quote(python)]
-    argv = env.exec_argv(cluster, workspace, " ".join(parts))
-    try:
-        proc = subprocess.run(argv, cwd=str(workspace), capture_output=True, text=True, timeout=600)
-    except (OSError, subprocess.SubprocessError) as exc:
-        return {"ok": False, "venv": str(venv_path), "error": f"{type(exc).__name__}: {exc}"}
-    return {
-        "ok": proc.returncode == 0,
-        "venv": str(venv_path),
-        "returncode": proc.returncode,
-        "stderr": proc.stderr,
-    }
-
-
 def prepare_workspace(
     run_paths: RunPaths,
     *,
     arxiv_id: str,
     bundle_dataset: str = reference_mod.DEFAULT_DATASET,
-    make_venv: bool = True,
     materialize_ref: bool = True,
-    cluster: "Cluster | None" = None,
-    system_site_packages: bool = False,
-    venv_python: str | None = None,
     overwrite_reference: bool = False,
     reference_row: dict | None = None,
 ) -> WorkspaceResult:
-    """Lay down one episode's bundle: dirs, evidence sinks, reference, venv."""
+    """Lay down one episode's bundle: dirs, evidence sinks, and the reference copy."""
     create_layout(run_paths)
     evidence = evidence_mod.init_evidence(run_paths.evidence)
     reference = None
@@ -122,25 +63,4 @@ def prepare_workspace(
             overwrite=overwrite_reference,
             row=reference_row,
         )
-    venv = None
-    if make_venv:
-        venv = build_venv(
-            run_paths.workspace,
-            cluster=cluster,
-            system_site_packages=system_site_packages,
-            python=venv_python,
-        )
-    return WorkspaceResult(run_paths=run_paths, evidence=evidence, venv=venv, reference=reference)
-
-
-def resolve_and_prepare(
-    runs_dir: Path,
-    arxiv_id: str,
-    budget: float,
-    *,
-    run_id: str | None = None,
-    **kwargs,
-) -> WorkspaceResult:
-    """Convenience: resolve the run layout (the directory maker), then prepare it."""
-    run_paths = resolve_run_paths(runs_dir, arxiv_id, budget, run_id)
-    return prepare_workspace(run_paths, arxiv_id=arxiv_id, **kwargs)
+    return WorkspaceResult(run_paths=run_paths, evidence=evidence, reference=reference)

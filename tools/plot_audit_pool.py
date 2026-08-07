@@ -18,21 +18,23 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+SRC = Path(__file__).resolve().parent.parent / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from reprocli_openai.recheck import iter_jsonl  # noqa: E402
 
 TIERS = ("Easy", "Medium", "Hard")
 TIER_COLORS = {"Easy": "#00795A", "Medium": "#D08700", "Hard": "#C44A00"}
 BAND_LABELS = ("0–8", "8–32", "32–96", "96–192")
 AGENT_BUDGETS = (4, 16, 64, 192)
 ECDF_FLOOR = 0.1  # hours below this (incl. zero) plot at the axis floor
-
-
-def load_pool(path: Path) -> list[dict]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def tier_hours(rows: list[dict], tier: str) -> np.ndarray:
@@ -125,7 +127,7 @@ def main() -> None:
     parser.add_argument("--pool", type=Path, default=Path("outputs/v5/audit_pool_extracted.jsonl"))
     parser.add_argument("--out", type=Path, default=Path("notes/figures/audit_pool_tier_hours"))
     args = parser.parse_args()
-    plot(load_pool(args.pool), args.out)
+    plot(list(iter_jsonl(args.pool)), args.out)
 
 
 if __name__ == "__main__":

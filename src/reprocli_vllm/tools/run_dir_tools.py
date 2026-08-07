@@ -20,6 +20,8 @@ citable. ``run_dir_manifest`` builds the file listing injected into the prompt.
 
 from __future__ import annotations
 
+import os
+import signal
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -30,6 +32,7 @@ from reprocli_vllm.config.config import (
     RUN_FILE_MAX_CHARS,
     RUN_FILE_WRITE_MAX_CHARS,
     RUN_MANIFEST_MAX_ENTRIES,
+    bounded as _bounded,
     function_tool,
 )
 
@@ -83,24 +86,57 @@ def run_bash(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         return {"ok": False, "error": f"Run dir does not exist: {run_dir}"}
     timeout = _bounded(arguments.get("timeout"), BASH_TIMEOUT, BASH_TIMEOUT)
     try:
-        proc = subprocess.run(
+        # Own process group, so the timeout can kill the whole tree. `subprocess.run`
+        # kills only the direct child: a command that backgrounds or spawns anything
+        # (`python eval.py &`, a server, a pool) leaves grandchildren holding the
+        # inherited stdout pipe, and the reap after the timeout blocks on a read that
+        # never ends -- the timeout expires and the tool hangs anyway, stalling the
+        # whole audit on one shell command.
+        proc = subprocess.Popen(
             ["bash", "-lc", command],
             cwd=str(run_dir),
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
+            start_new_session=True,
         )
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "command": command, "error": f"bash timed out after {timeout}s"}
     except OSError as exc:
         return {"ok": False, "command": command, "error": f"{type(exc).__name__}: {exc}"}
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        stdout, stderr = _kill_group(proc)
+        return {
+            "ok": False,
+            "command": command,
+            "error": f"bash timed out after {timeout}s (process group killed)",
+            "stdout": stdout,
+            "stderr": stderr,
+        }
     return {
         "ok": proc.returncode == 0,
         "command": command,
         "returncode": proc.returncode,
-        "stdout": proc.stdout,
-        "stderr": proc.stderr,
+        "stdout": stdout,
+        "stderr": stderr,
     }
+
+
+def _kill_group(proc: "subprocess.Popen[str]") -> tuple[str, str]:
+    """SIGKILL the timed-out command's whole process group; return what it printed.
+
+    The second wait is itself bounded: if something survives the kill (an
+    unkillable D-state child on a network filesystem), we abandon the output
+    rather than block the auditor forever.
+    """
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        proc.kill()
+    try:
+        return proc.communicate(timeout=5)
+    except (subprocess.TimeoutExpired, ValueError):
+        return "", ""
 
 
 def write_run_file(arguments: dict[str, Any], run_dir: Path) -> dict[str, Any]:
@@ -253,24 +289,53 @@ def _resolve_within(run_dir: Path, rel: Any) -> dict[str, Any]:
 
 
 def _walk(target: Path, run_dir: Path, *, recursive: bool) -> list[dict[str, Any]]:
-    try:
-        children = target.rglob("*") if recursive else target.iterdir()
-        items = sorted(children, key=str)
-    except OSError:
+    """List ``target``, recursively or not, with SKIP_DIRS subtrees left out.
+
+    A recursive walk prunes SKIP_DIRS as it descends instead of listing everything
+    and filtering afterwards: an unpruned run bundle's ``.venv`` is 50-100k files,
+    and this runs once per audit prompt plus on every recursive ``list_run_files``.
+    Entries are still sorted by full path, and every entry is still collected, so
+    the manifest listing and the caller's count/truncation are unchanged.
+    """
+    if any(part in SKIP_DIRS for part in _rel_parts(target, run_dir)):
         return []
-    entries = []
-    for child in items:
-        if any(part in SKIP_DIRS for part in child.relative_to(run_dir).parts):
-            continue
-        is_dir = child.is_dir()
-        entries.append(
-            {
-                "path": _rel(child, run_dir),
-                "type": "dir" if is_dir else "file",
-                "size": 0 if is_dir else _size(child),
-            }
-        )
-    return entries
+    if recursive:
+        found = _descendants(target)
+    else:
+        try:
+            found = [(child, child.is_dir()) for child in target.iterdir()]
+        except OSError:
+            return []
+        found = [
+            item for item in found
+            if not any(part in SKIP_DIRS for part in _rel_parts(item[0], run_dir))
+        ]
+    return [
+        {
+            "path": _rel(child, run_dir),
+            "type": "dir" if is_dir else "file",
+            "size": 0 if is_dir else _size(child),
+        }
+        for child, is_dir in sorted(found, key=lambda item: str(item[0]))
+    ]
+
+
+def _descendants(target: Path) -> list[tuple[Path, bool]]:
+    """Every descendant of ``target`` as (path, is_dir), SKIP_DIRS pruned in place."""
+    found: list[tuple[Path, bool]] = []
+    for dirpath, dirnames, filenames in os.walk(target, topdown=True):
+        dirnames[:] = [name for name in dirnames if name not in SKIP_DIRS]
+        base = Path(dirpath)
+        found.extend((base / name, True) for name in dirnames)
+        found.extend((base / name, False) for name in filenames)
+    return found
+
+
+def _rel_parts(path: Path, run_dir: Path) -> tuple[str, ...]:
+    try:
+        return path.relative_to(run_dir).parts
+    except ValueError:
+        return ()
 
 
 def _rel(path: Path, run_dir: Path) -> str:
@@ -287,10 +352,3 @@ def _size(path: Path) -> int:
         return 0
 
 
-def _bounded(value: Any, default: int, maximum: int) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        return max(1, min(int(value), maximum))
-    except (TypeError, ValueError):
-        return default

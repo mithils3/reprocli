@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Regular.ttf');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Medium.ttf');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'JBMono';
+  src: url('fonts/ttf/JetBrainsMono-Bold.ttf');
+  font-weight: 700;
+}
+@page { size: 880px 390px; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 880px; height: 390px; }
+body {
+  font-family: 'Inter', sans-serif;
+  color: #1f2328;
+  display: flex;
+  align-items: stretch;
+  padding: 13px 2px 2px 2px;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- shared ---------- */
+.card {
+  background: #fff;
+  border: 1.5px solid #d0d7de;
+  border-radius: 11px;
+  box-shadow: 0 1px 2px rgba(31,35,40,.06);
+}
+.stage-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13.5px; font-weight: 650; letter-spacing: -0.1px;
+}
+.badge {
+  width: 18px; height: 18px; border-radius: 50%;
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.mono { font-family: 'JBMono', monospace; }
+.flowcount {
+  font-family: 'JBMono', monospace;
+  font-size: 11px; font-weight: 500; color: #1f2328;
+  background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px;
+  padding: 3px 7px; white-space: nowrap;
+}
+.arrow-col { display: flex; align-items: center; justify-content: center; flex: none; width: 27px; }
+
+/* ---------- corpus (dark) ---------- */
+.corpus {
+  flex: none; width: 148px;
+  background: #24292f; border-radius: 11px;
+  color: #fff; padding: 13px 12px;
+  display: flex; flex-direction: column;
+}
+.corpus .head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650; }
+.corpus .big { font-size: 27px; font-weight: 700; letter-spacing: -0.5px; margin-top: 10px; }
+.corpus .big-sub { font-size: 11.5px; color: #a7b0ba; margin-top: 1px; }
+.claimbox {
+  margin-top: 11px; background: #2f363d; border-radius: 7px; padding: 8px 9px;
+}
+.claimlab { font-size: 9px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: #8b949e; }
+.claimtxt { font-family: 'JBMono', monospace; font-size: 10.5px; color: #e6edf3; margin-top: 3px; line-height: 1.5; }
+.claimid { font-family: 'JBMono', monospace; font-size: 9.5px; color: #8b949e; margin-bottom: 5px; }
+.axiom {
+  margin-top: 8px; background: #2f363d; border-radius: 7px; padding: 6px 8px;
+  font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 550; color: #a7b0ba; text-align: center;
+}
+.corpus .lines { margin-top: auto; display: flex; flex-direction: column; gap: 5px; }
+.corpus .line { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #c9d1d9; }
+.corpus .line svg { flex: none; }
+
+/* ---------- container ---------- */
+.container {
+  flex: 1; position: relative;
+  background: #faf9fd; border: 1.5px solid #ddd3f0; border-radius: 13px;
+  padding: 24px 11px 11px 11px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.container-pill {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: #8250df; color: #fff;
+  font-size: 12px; font-weight: 650; letter-spacing: 0.1px;
+  padding: 3px 13px; border-radius: 7px; white-space: nowrap;
+}
+.stage { padding: 9px 11px 9px 11px; display: flex; flex-direction: column; gap: 7px; }
+.stage .foot { display: flex; justify-content: flex-end; margin-top: auto; }
+.bottom-row { display: flex; gap: 9px; flex: 1; align-items: stretch; }
+.bottom-row .stage { flex: 1; }
+
+/* stage colors */
+.s1 .badge { background: #1a7f37; } .s1 .stage-title { color: #1a7f37; }
+.s2 .badge { background: #0969da; } .s2 .stage-title { color: #0969da; }
+.s3 .badge { background: #bc4c00; } .s3 .stage-title { color: #bc4c00; }
+
+/* ---------- terminal ---------- */
+.term {
+  background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 7px;
+  padding: 7px 9px; font-family: 'JBMono', monospace; font-size: 12px;
+  line-height: 1.58; color: #1f2328; white-space: pre;
+}
+.term .dim { color: #656d76; }
+.term .ok { color: #1a7f37; font-weight: 700; }
+.term .bad { color: #cf222e; font-weight: 700; }
+.term .kw { color: #8250df; font-weight: 500; }
+
+/* ---------- stratification grid ---------- */
+.strat { border-collapse: collapse; margin: 0 auto; }
+.strat td, .strat th { text-align: center; padding: 0; }
+.strat th { color: #656d76; font-weight: 550; font-family: 'JBMono', monospace; font-size: 9.5px; padding-bottom: 2px; }
+.strat .rowlab { color: #656d76; font-weight: 550; padding-right: 6px; text-align: right; font-size: 11px; }
+.strat .n { color: #656d76; font-weight: 550; text-align: left; padding-left: 7px; font-size: 11px; font-family: 'JBMono', monospace; }
+.cell {
+  width: 31px; height: 19px; border-radius: 4px;
+  background: #cfe4fb; margin: 1.5px;
+}
+.capnote { font-size: 11px; color: #57606a; }
+.capnote .mono { font-weight: 500; color: #cf222e; }
+
+/* ---------- audit checklist ---------- */
+.rubric { display: flex; flex-direction: column; gap: 4px; }
+.check {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff8f2; border: 1px solid #f0d8c3; border-radius: 6px;
+  padding: 3px 7px; font-size: 11px; color: #57606a;
+}
+.check .mk { font-weight: 700; font-size: 10.5px; flex: none; width: 11px; text-align: center; }
+.mk.ok { color: #1a7f37; } .mk.bad { color: #cf222e; }
+.check b { color: #1f2328; font-weight: 600; }
+
+/* ---------- result ---------- */
+.result {
+  flex: none; width: 172px;
+  border-color: #c297ff;
+  padding: 12px 12px;
+  display: flex; flex-direction: column;
+}
+.result .head {
+  font-size: 14px; font-weight: 700; color: #8250df; letter-spacing: -0.1px;
+  display: flex; align-items: center; gap: 6px;
+}
+.tree { margin-top: 9px; display: flex; flex-direction: column; }
+.tree .row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8.5px 0; border-bottom: 1px solid #eaeef2;
+  font-size: 11.5px;
+}
+.tree .name { font-family: 'JBMono', monospace; font-size: 11px; font-weight: 500; }
+.tree .val { margin-left: auto; color: #656d76; font-size: 10.5px; white-space: nowrap; }
+.tree .sub { font-size: 9.5px; color: #656d76; padding: 3px 0 8px 14px; border-bottom: 1px solid #eaeef2; }
+.result .total {
+  margin-top: auto; text-align: center;
+  font-family: 'JBMono', monospace; font-size: 11px; font-weight: 700; color: #1f2328;
+  background: #fbefff; border: 1px solid #e3c7f7; border-radius: 6px; padding: 6px 5px;
+}
+</style>
+</head>
+<body>
+
+<!-- corpus -->
+<div class="corpus">
+  <div class="head">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="#fff"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914Z"/></svg>
+    NeurIPS 2025
+  </div>
+  <div class="big">3,414</div>
+  <div class="big-sub">submissions</div>
+  <div class="claimbox">
+    <div class="claimid">arXiv 2506.20990</div>
+    <div class="claimlab">central claim, pinned</div>
+    <div class="claimtxt">&#8220;79.42% on EuroSAT, 16-shot CLIP ViT-B/16&#8221;</div>
+    <div class="claimlab" style="margin-top:6px">match bar</div>
+    <div class="claimtxt">point est. &#177; tolerance</div>
+  </div>
+  <div class="axiom">1 paper &#183; 1 claim &#183; 1 match target</div>
+  <div class="lines">
+    <div class="line"><svg width="10" height="10" viewBox="0 0 16 16" fill="#8b949e"><path d="M4.72 3.22a.75.75 0 0 1 1.06 1.06L2.06 8l3.72 3.72a.75.75 0 1 1-1.06 1.06L.47 8.53a.75.75 0 0 1 0-1.06Zm6.56 0a.75.75 0 1 0-1.06 1.06L13.94 8l-3.72 3.72a.75.75 0 1 0 1.06 1.06l4.25-4.25a.75.75 0 0 0 0-1.06Z"/></svg>arXiv LaTeX source</div>
+    <div class="line"><svg width="10" height="10" viewBox="0 0 16 16" fill="#8b949e"><path d="M3.5 1.75v11.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.748 1.748 0 0 1 2 13.25V1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 13.25 15h-.5a.75.75 0 0 1 0-1.5h.5a.25.25 0 0 0 .25-.25V6H10.75A1.75 1.75 0 0 1 9 4.25V1.5H3.75a.25.25 0 0 0-.25.25Zm7-.188V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914ZM5.72 6.72a.75.75 0 0 0 0 1.06l1.47 1.47-1.47 1.47a.75.75 0 1 0 1.06 1.06l2-2a.75.75 0 0 0 0-1.06l-2-2a.75.75 0 0 0-1.06 0Z"/></svg>OpenReview supplement</div>
+  </div>
+</div>
+
+<div class="arrow-col"><svg width="22" height="14" viewBox="0 0 22 14"><path d="M0 7h14" stroke="#24292f" stroke-width="2.4"/><path d="M12 2 20 7l-8 5z" fill="#24292f"/></svg></div>
+
+<!-- pipeline container -->
+<div class="container">
+  <div class="container-pill">Benchmark construction</div>
+
+  <!-- stage 1 -->
+  <div class="card stage s1">
+    <div class="stage-title"><span class="badge">1</span>Artifact-verified classification</div>
+    <div style="display:flex; gap:9px; align-items:stretch;">
+      <div class="term" style="flex:1"><span class="dim">[classifier]</span> pin claim + match target
+<span class="kw">&gt; GET</span> github.com/&#8230;/repo    <span class="ok">&#10003; code</span>
+<span class="kw">&gt; GET</span> hf.co/&#8230;/dataset      <span class="ok">&#10003; data</span>
+<span class="kw">&gt; GET</span> &#8230;/weights.ckpt       <span class="bad">&#10007; absent</span>
+<span class="dim">&#8594;</span> tier = <b>Retrain</b> <span class="dim">(weights withheld)</span></div>
+      <div style="display:flex; flex-direction:column; justify-content:flex-end; gap:5px;">
+        <div class="flowcount">1,000 sampled</div>
+        <div class="flowcount">687 verified</div>
+        <div class="flowcount">&#8594; 620 eligible</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <!-- stage 2 -->
+    <div class="card stage s2">
+      <div class="stage-title"><span class="badge">2</span>Cap &amp; stratify</div>
+      <div class="capnote">drop above <span class="mono">96 H100-h</span></div>
+      <table class="strat">
+        <tr><th></th><th>0&#8211;8</th><th>8&#8211;32</th><th>32&#8211;96</th><th class="n">n</th></tr>
+        <tr><td class="rowlab">Run</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
+        <tr><td class="rowlab">Retrain</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
+        <tr><td class="rowlab">Reimpl.</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">66</td></tr>
+      </table>
+      <div class="foot"><div class="flowcount">620 &#8594; 200 pool</div></div>
+    </div>
+
+    <!-- stage 3 -->
+    <div class="card stage s3">
+      <div class="stage-title"><span class="badge">3</span>Human audit</div>
+      <div class="rubric">
+        <div class="check"><span class="mk ok">&#10003;</span>re-opened every call</div>
+        <div class="check"><span class="mk ok">&#10003;</span>re-derived compute</div>
+        <div class="check"><span class="mk bad">&#10007;</span><b>6</b>&#8202;inaccessible &#8594; replaced</div>
+        <div class="check"><span class="mk bad">&#10007;</span><b>15</b>&#8202;paid-API &#8594; replaced</div>
+      </div>
+      <div class="foot"><div class="flowcount">200 &#8594; 100 + 14</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-col"><svg width="22" height="14" viewBox="0 0 22 14"><path d="M0 7h14" stroke="#24292f" stroke-width="2.4"/><path d="M12 2 20 7l-8 5z" fill="#24292f"/></svg></div>
+
+<!-- result -->
+<div class="card result">
+  <div class="head">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="#8250df"><path d="M2.5 3.5c0-.966.784-1.75 1.75-1.75h7.5c.966 0 1.75.784 1.75 1.75v9a1.75 1.75 0 0 1-1.75 1.75h-7.5a1.75 1.75 0 0 1-1.75-1.75Zm1.75-.25a.25.25 0 0 0-.25.25v9c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-9a.25.25 0 0 0-.25-.25ZM5.5 5.75A.75.75 0 0 1 6.25 5h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1-.75-.75Zm0 2.5A.75.75 0 0 1 6.25 7.5h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1-.75-.75Z"/></svg>
+    RECLAIM
+  </div>
+  <div class="tree">
+    <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg><span class="name">test/</span><span class="val">100 papers</span></div>
+    <div class="sub">34 Run &#183; 33 Retrain &#183; 33 Reimplement</div>
+    <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg><span class="name">dev/</span><span class="val">14 papers</span></div>
+    <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25ZM11.75 3a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5a.75.75 0 0 1 .75-.75Zm-8.25.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0ZM8 3a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 8 3Z"/></svg><span class="name">bands</span><span class="val">57 &#183; 29 &#183; 14</span></div>
+    <div class="sub">0&#8211;8 &#183; 8&#8211;32 &#183; 32&#8211;96 H100-h</div>
+    <div class="row"><svg width="12" height="12" viewBox="0 0 16 16" fill="#8b949e"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.75.75 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z"/></svg><span class="name">cap</span><span class="val">96 H100-h max</span></div>
+  </div>
+  <div class="total">&#931; 1,259 H100-hours</div>
+</div>
+
+</body>
+</html>

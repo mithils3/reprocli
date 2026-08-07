@@ -29,24 +29,37 @@ from typing import Iterable
 
 from reprocli_repro import budget as budget_mod
 from reprocli_repro import evidence as evidence_mod
-from reprocli_repro import slurm
+from reprocli_repro import run_beacon, slurm
 from reprocli_repro.context import ExecutionContext, GpuSession
 
 
 def ensure_session(
-    ctx: ExecutionContext, *, gpus: int, minutes: int, timeout: float | None = None
+    ctx: ExecutionContext,
+    *,
+    gpus: int,
+    minutes: int,
+    timeout: float | None = None,
+    partition: str | None = None,
 ) -> tuple[GpuSession | None, str | None]:
     """Return the live held session, acquiring one if none is held.
 
     On success the budget clock starts *now* (the allocation is granted; the queue
-    wait that ``acquire_session`` just blocked through is not billed). Returns
-    ``(session, None)`` or ``(None, error)``.
+    wait that ``acquire_session`` just blocked through is not billed). ``partition``
+    overrides the profile's default pool for this allocation (``None`` keeps it).
+    Returns ``(session, None)`` or ``(None, error)``.
     """
     if ctx.session is not None:
         return ctx.session, None
     if ctx.cluster is None:
         return None, "no cluster profile bound for this episode"
-    handle = slurm.acquire_session(ctx.cluster, gpus=gpus, minutes=minutes, timeout=timeout)
+    try:
+        handle = slurm.acquire_session(
+            ctx.cluster, gpus=gpus, minutes=minutes, timeout=timeout, partition=partition
+        )
+    except slurm.SlurmConfigError as exc:
+        # Unusable substrate (no account/partition, bad gpu count): a clean acquire
+        # failure surfaced to the model, not a library-level process crash.
+        return None, str(exc)
     if not handle.ok or not handle.jobid:
         return None, _acquire_error(handle)
     now = time.monotonic()
@@ -57,9 +70,12 @@ def ensure_session(
         hw=ctx.cluster.hw,
         started=now,
         last_charged=now,
+        partition=partition or ctx.cluster.partition,
     )
     ctx.session = session
     ctx.allocation = handle.jobid
+    # Telemetry sidecar into the fresh allocation; no-op unless SUPABASE env is set.
+    run_beacon.start(ctx, handle.jobid)
     return session, None
 
 
@@ -88,6 +104,8 @@ def charge_accrued(ctx: ExecutionContext) -> float:
 def drop_lost(ctx: ExecutionContext) -> None:
     """Clear a session whose allocation is already gone (expired/cancelled) — no scancel."""
     charge_accrued(ctx)
+    if ctx.session is not None:
+        run_beacon.stop(ctx.session.jobid)  # the step died with the allocation; drop the client
     ctx.session = None
     ctx.allocation = None
 
@@ -99,10 +117,12 @@ def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
         return None
     final_charge = charge_accrued(ctx)
     slurm.release_session(session.jobid)
+    run_beacon.stop(session.jobid)  # scancel killed the step; don't leave the srun client
     record = {
         "jobid": session.jobid,
         "gpus": session.gpus,
         "hw": session.hw,
+        "partition": session.partition,
         "held_seconds": round(held_seconds(session), 1),
         "final_charge_h100_hours": round(final_charge, 4),
         "reason": reason,
