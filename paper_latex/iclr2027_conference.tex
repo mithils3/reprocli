@@ -552,27 +552,34 @@ grading stage reproducible from our artifacts where the rollout stage is not.
 Large language models are the object of study in this work. The agent models
 under evaluation and the model that grades their reports are described in
 Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
-property of the benchmark rather than author assistance. Beyond that, we used
-generative AI tools for tasks that require disclosure in the following ways.
-We used them to extract and normalize the per-paper metadata that forms the
-released dataset, including the artifact-availability signals and the pinned
-match targets, and every extracted field was reviewed by an author before the
-dataset was frozen. We used them to implement parts of the harness, the
-serving stack, and the analysis scripts. We used them to grade agent reports
-and to assign failure modes, which is a methodological choice, and
-Appendix~\ref{app:auditor-validation} exists because that choice needs
-validating rather than asserting. We did not use generative AI tools to
-generate synthetic datasets, to develop theoretical models, to formulate or
-prove mathematical claims, or for translation. The hypotheses this paper
-tests, the availability-tiered design of the benchmark, and the audit protocol
-are the authors' own, and generative AI tools did not propose or refine them.
-Among the tasks for which disclosure is recommended, we used generative AI
-tools to draft and edit sections of this paper, to produce the plotting code
-behind its figures, and to search and summarize related literature. Every
-citation was checked against the cited paper by an author. We have reviewed
-all AI-assisted work, and we
-take responsibility for the final content of this paper, including text,
-claims, and artifacts produced with the aid of generative AI.
+property of the benchmark rather than author assistance. Our own use of
+generative AI tools was as follows.
+
+\begin{itemize}
+\item \textbf{Dataset.} We used them to extract and normalize the per-paper
+metadata that forms the released dataset, including the artifact-availability
+signals and the pinned match targets. Every extracted field was reviewed by an
+author before the dataset was frozen.
+\item \textbf{Implementation.} We used them to implement parts of the harness,
+the serving stack, and the analysis scripts.
+\item \textbf{Grading.} We used them to grade agent reports and to assign
+failure modes. That is a methodological choice, and
+Appendix~\ref{app:auditor-validation} exists because it needs validating
+rather than asserting.
+\item \textbf{Writing and figures.} We used them to draft and edit sections of
+this paper, to produce the plotting code behind its figures, and to search and
+summarize related literature. Every citation was checked against the cited
+paper by an author.
+\item \textbf{Not used.} We did not use generative AI tools to generate
+synthetic datasets, to develop theoretical models, to formulate or prove
+mathematical claims, or for translation. The hypotheses this paper tests, the
+availability-tiered design of the benchmark, and the audit protocol are the
+authors' own, and generative AI tools did not propose or refine them.
+\end{itemize}
+
+We have reviewed all AI-assisted work, and we take responsibility for the
+final content of this paper, including text, claims, and artifacts produced
+with the aid of generative AI.
 
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
