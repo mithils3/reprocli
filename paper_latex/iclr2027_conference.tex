@@ -86,39 +86,31 @@ pattern in Section~\ref{sec:analysis}.
 \section{Related Work}
 \label{sec:related-work}
 
-RECLAIM asks an agent to turn a paper and the artifacts its authors
-happened to release into a runnable experiment and a verified number, which
-makes only part of the task a coding problem: the rest is working out what
-can be recovered from an incomplete release at all. Existing benchmarks
-each cover a piece of that setting, and each one fixes in advance a
-variable we deliberately leave free.
+Existing agent benchmarks each cover a piece of the reproduction setting,
+and each one fixes in advance the variable RECLAIM leaves free, which is
+the state of the release an agent starts from.
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
-work inside real repositories and terminals, where a model has to locate
-the relevant code, edit across files, run the project's own tooling, and
-iterate until the change holds~\citep{jimenez2024swebench,
+work inside real repositories and terminals~\citep{jimenez2024swebench,
 merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
 lu2026frontiercode}. SWE-bench grades patches for real GitHub issues using
 the tests the repository already ships~\citep{jimenez2024swebench}, and
-Terminal-Bench 2.0 poses diverse command-line tasks inside prepared
-containers with executable checks written in
-advance~\citep{merrill2026terminalbench}. Both designs scale precisely
-because the objective, the environment, and the verifier can all be fixed
-before the agent starts, but that same property removes the first half of a
-reproduction: an agent working from a paper has to decide which experiment
-establishes the claim and build an environment that can run it before it
-can produce a number anyone is in a position to check. MirrorCode pushes
-the long-horizon setting furthest and asks agents to rebuild entire
-programs from behavior alone, with a black-box reference implementation
-available to query throughout the
-attempt~\citep{adamczewski2026mirrorcode}. That oracle is the operative
-difference between its setting and ours. An executable reference is a
-feedback signal an agent can spend test-time compute against, so more
-effort converts into more progress, whereas an agent reproducing a paper
-has nothing to check itself against until it has already built the
-experiment, which is the condition under which we observe agents stop
-spending long before their budget binds
+Terminal-Bench 2.0 poses command-line tasks inside prepared containers with
+executable checks written in advance~\citep{merrill2026terminalbench}. Both
+designs scale precisely because the objective, the environment, and the
+verifier are all fixed before the agent starts, but that same property
+removes the first half of a reproduction, where an agent has to decide
+which experiment establishes the claim and build an environment that can
+run it before any number exists to check. MirrorCode pushes the setting
+furthest and asks agents to rebuild entire programs from behavior alone,
+with a black-box reference implementation available to query
+throughout~\citep{adamczewski2026mirrorcode}. That oracle is the operative
+difference between its setting and ours, because an executable reference is
+a feedback signal an agent can spend test-time compute against, whereas an
+agent reproducing a paper has nothing to check itself against until the
+experiment already runs, which is the condition under which we observe
+agents stop spending long before their budget binds
 (Section~\ref{subsec:results}).
 % TODO(mirrorcode): if their token-scaling result is stated as a figure or
 % headline number, cite it explicitly here so the reconciliation reads as
@@ -129,15 +121,15 @@ A second family targets the machine-learning workflow itself, from model
 development through research engineering~\citep{huang2024mlagentbench,
 nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
 wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench is
-representative: agents build and iteratively refine pipelines for Kaggle
-competitions under a fixed compute budget, and each submission is scored
+representative, with agents building and refining pipelines for Kaggle
+competitions under a fixed compute budget and each submission scored
 against the historical leaderboard for that
 competition~\citep{chan2024mlebench}. Because the method is the agent's to
-choose and success is defined as a position on that leaderboard rather than
-a specific published quantity, these benchmarks reward finding any solution
-that scores well, and they leave open whether an agent can carry a
-prescribed method and configuration into an environment its authors never
-used and land on the number those authors reported.
+choose and success is a leaderboard position rather than a specific
+published quantity, these benchmarks reward any solution that scores well
+and leave open whether an agent can carry a prescribed method and
+configuration into an environment its authors never used and land on the
+number they reported.
 
 \paragraph{Scientific reproduction.}
 A growing line of benchmarks measures how well agents reproduce published
@@ -152,19 +144,16 @@ effectively saturated~\citep{favaro2026recursive}. PaperBench sits at the
 opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
 with the authors' code withheld, grading the attempt against hierarchical
 rubrics the original authors wrote~\citep{starace2025paperbench}.
-EXP-Bench withholds the paper itself, handing the agent a research question
-and starter code from which it must design, execute, and analyze the
-experiments~\citep{kon2025expbench}. What all three share is that the
-release state is settled before the run begins, and it is usually settled
-by selection: most keep only papers whose code is already public and
-already runs, and the stricter protocols narrow further to papers
-replicable from the text on a single machine without closed-source
-dependencies, or draw from a pool already verified to rerun, on the stated
-reasoning that an irreproducible paper is not worth including. That is a
-defensible way to build a clean coding task, but it removes the variable
-RECLAIM exists to measure, because a benchmark assembled only from papers
-that shipped working code cannot say what happens on the papers that did
-not, and those are the papers a reproducer spends most of their time on.
+EXP-Bench withholds the paper itself and hands the agent a research
+question and starter code to design and run the experiments
+from~\citep{kon2025expbench}. In all three the release state is settled
+before the run begins, usually by selection, since most keep only papers
+whose code is already public and already runs, and the stricter protocols
+exclude the rest on the stated reasoning that an irreproducible paper is
+not worth including. That builds a clean coding task, but it fixes the
+variable RECLAIM exists to measure, and a benchmark assembled only from
+papers that shipped working code cannot say what happens on the papers that
+did not.
 
 \section{RECLAIM}
 \label{sec:reclaim}
