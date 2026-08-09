@@ -6,6 +6,7 @@
 
 # Writing the paper (`paper_latex/`)
 
-- Before editing anything under `paper_latex/`, read `notes/Writing/ICLR Accepted-Paper Writing Lessons.md` — the example-driven playbook distilled from 25 accepted ICLR papers (companion to `notes/Writing/Paper Writing Guide.md` and the doc of record `notes/Writing/ReproBench Paper.md`).
+- Before editing anything under `paper_latex/`, invoke the `m-paper` skill. It is the pre-flight: claim before prose, the evidence gate, section anatomy, the house register, and the Iron Law that no unfrozen or self-graded number enters the paper.
+- Also read `notes/Writing/ICLR Accepted-Paper Writing Lessons.md` — the example-driven playbook distilled from 25 accepted ICLR papers (companion to `notes/Writing/Paper Writing Guide.md` and the doc of record `notes/Writing/ReproBench Paper.md`).
 - For the section you are drafting, pull that chapter's `→ ReproBench` moves and apply them; then run the note's TL;DR checklist against the draft before considering the section done.
 - Keep the paper finding-first (the *availability cliff* and the *self-claim gap*), carry the one signature claimed-vs-audited pair unchanged across abstract/intro/results, and answer validity objections inline at the claim site rather than deferring them to Limitations.
