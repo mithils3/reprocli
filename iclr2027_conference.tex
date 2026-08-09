@@ -521,6 +521,57 @@ Discuss limitations honestly. This can include dataset limitations, compute cons
 
 Summarize the paper and its implications.
 
+\subsection*{Reproducibility statement}
+
+Every component needed to rerun this benchmark is specified in the appendices
+and released with the paper. Appendix~\ref{app:harness} documents the agent
+harness in full, covering the tool loop, the semantics of each of the seven
+tools, the round cap, the compute budget and how it is enforced, the sandbox,
+and the report schema, and it reproduces the system and task prompts as
+verbatim listings rather than as description. Appendix~\ref{app:models} pins
+every evaluated model to a served revision and records the serving stack and
+its version, the tensor-parallel degree, the quantization actually served, and
+the decoding settings; the batch scripts that launched each sweep are included
+in the supplementary material, so a serving configuration can be recovered
+from the job that produced it. Appendix~\ref{app:rubric} gives the complete
+audit rubric, which was frozen before any reported sweep was graded, and
+Appendix~\ref{app:auditor-validation} reports how far the auditor agrees with
+itself across repeated passes over the same runs and with human grades on a
+labelled sample, so a reader can bound how much of a reported score is grader
+noise. Appendix~\ref{app:dataset-schema} documents every field of the released
+dataset and both split definitions. One limit applies to all of it. An agent
+rollout is sampled and interacts with a live machine, so a rerun does not
+recover our transcripts turn for turn, and we therefore release the complete
+evidence bundle for every run, which makes the grading stage of the pipeline
+reproducible from our artifacts even where the rollout stage is not.
+
+\subsection*{AI use statement}
+
+% TODO(ai-use): every claim below is an assertion about what the authors did
+% and needs the authors' sign-off before submission. Non-disclosure of
+% significant LLM use is grounds for desk rejection at ICLR 2027.
+Large language models are the object of study in this work. The agent models
+under evaluation and the model that grades their reports are described in
+Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
+property of the benchmark rather than author assistance. Beyond that, we used
+generative AI tools for tasks that require disclosure in the following ways.
+We used them to extract and normalize the per-paper metadata that forms the
+released dataset, including the artifact-availability signals and the pinned
+match targets, and every extracted field was reviewed by an author before the
+dataset was frozen. We used them to implement parts of the harness, the
+serving stack, and the analysis scripts. We used them to grade agent reports
+and to assign failure modes, which is a methodological choice, and
+Appendix~\ref{app:auditor-validation} exists because that choice needs
+validating rather than asserting. We did not use generative AI tools to
+generate synthetic datasets, to develop theoretical models, to formulate or
+prove mathematical claims, or for translation. Among the tasks for which
+disclosure is recommended, we used generative AI tools to draft and edit
+sections of this paper, to produce the plotting code behind its figures, and
+to search and summarize related literature; every citation was checked against
+the cited paper by an author. We have reviewed all AI-assisted work, and we
+take responsibility for the final content of this paper, including text,
+claims, and artifacts produced with the aid of generative AI.
+
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
@@ -842,6 +893,18 @@ at 3, and the run reaches 3 only if the agent stayed honest at the wall.
 Separating \texttt{blocked} from \texttt{not\_reproduced} distinguishes
 papers no agent could reproduce from papers the agent failed to reproduce,
 and \texttt{disqualified} separates dishonesty from honest failure.
+
+\section{Auditor Validation}
+\label{app:auditor-validation}
+
+% TODO(auditor-validation): the load-bearing appendix. Three things, in this
+% order. (1) Test-retest: two identical passes of the pinned auditor over the
+% same sweep, agreement rate, and which part of the score is unstable (the
+% high-flag zero cap, not the quality band). (2) Human agreement on a labelled
+% sample, which is the number sec:auditing promises at tex:330. (3) The
+% auditor-swap check: which conclusions survive replacing the grader and which
+% do not. Report all three even where they are unflattering; the point of the
+% appendix is to bound grader noise, not to clear the auditor.
 
 \section{Dataset Schema}
 \label{app:dataset-schema}
