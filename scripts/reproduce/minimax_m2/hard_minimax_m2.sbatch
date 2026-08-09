@@ -10,10 +10,11 @@
 # brain is the 4-bit AWQ W4A16 quant (cyankiwi/MiniMax-M2.7-AWQ-4bit, ~131GB)
 # which fits on 2 GH200s at TP=2, freeing the node's other 2 GPUs; 64GB of CPU
 # RAM backs the KV cache (native offloading connector, the V1 replacement for
-# --swap-space). Defaults to the eval split's Hard papers, MAX_PARALLEL=6 (Hard
-# rows pull the biggest per-paper budgets, so don't raise this casually), and
-# RESUME=1 so re-submits after the 48h cap skip papers that already wrote a
-# verdict. Every `run_gpu` experiment step still JIT-`salloc`s a SEPARATE ghx4
+# --swap-space). Defaults to the eval split's Hard papers, MAX_PARALLEL=12 (12
+# saturates this job's 144 cores at the 12-core per-agent sandbox cap in
+# cluster.py, so widening past it would need that cap lowered; the 220G request
+# is the other ceiling, since 64G of it is already the KV offload), and RESUME=1
+# so re-submits after the 48h cap skip papers that already wrote a verdict. Every `run_gpu` experiment step still JIT-`salloc`s a SEPARATE ghx4
 # node and releases it on exit; the orchestrator + auditor are cheap CPU
 # processes sharing this brain node.
 #
@@ -48,7 +49,7 @@ LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-6}"        # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-12}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 
 # Audit against the same canonical lockfile claim the agent targeted.

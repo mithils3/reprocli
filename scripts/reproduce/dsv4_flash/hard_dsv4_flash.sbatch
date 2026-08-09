@@ -14,12 +14,14 @@
 # for want of KV blocks, rerun on the whole node:
 # sbatch --gpus-per-node=4 --export=ALL,TP=4 <this file>.
 #
-# Defaults to the eval split's 33 Hard papers, MAX_PARALLEL=10, and RESUME=1 so
+# Defaults to the eval split's 33 Hard papers, MAX_PARALLEL=12, and RESUME=1 so
 # re-submits after the 48h cap skip papers that already wrote a verdict. The
 # deepseek_v4 profile pins no max_num_seqs (vLLM's 256 default) and V4's MLA keeps
-# per-sequence KV small even at max_model_len 409600, so 10 papers plus one audit
+# per-sequence KV small even at max_model_len 409600, so 12 papers plus one audit
 # stream sit far inside the brain; what binds at this width is ghx4 queue pressure
-# from 10 concurrent JIT allocations, not the brain.
+# from 12 concurrent JIT allocations, not the brain. 12 also saturates this job's
+# 144 cores at the 12-core per-agent sandbox cap (cluster.py), so widening past
+# it would need the cap lowered too.
 # Worst-case compute budget is ~1184 H100-h (16x8 + 9x32 + 8x96); actual spend is
 # typically well under the per-paper band caps since the agent stops when it
 # converges. Max Effort measured ~2.5x verbosity on the AA index, so wall clock
@@ -67,7 +69,7 @@ LOCKFILE="${LOCKFILE:-Mithilss/reprobench-splits}"
 BUDGET_H100_HOURS="${BUDGET_H100_HOURS:-}"   # empty -> per-paper budget from the selection band
 TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent tool rounds
 AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"  # auditor's run-dir exploration rounds
-MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight at once; each adds 1 JIT ghx4 node
+MAX_PARALLEL="${MAX_PARALLEL:-12}"       # papers in flight at once; each adds 1 JIT ghx4 node
 RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict on disk
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-409600}" # 400*1024, just over the Think Max floor; matches the deepseek_v4 profile default
 # The auditor is a URL-only client with no served-window lookup of its own, so its
