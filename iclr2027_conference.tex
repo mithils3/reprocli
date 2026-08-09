@@ -74,7 +74,10 @@ X\%. We call this drop the availability cliff. Agents also over-report
 their own success. Of the X runs that report a reproduction, only X
 survive a provenance audit of the execution evidence they leave behind, a
 discrepancy we call the self-claim gap. A small set of recurring failure
-modes accounts for the unsuccessful runs. The two most frequent are
+modes accounts for the unsuccessful runs. 
+
+This should go into ANalysis I'll remove this aftwards
+The two most frequent are
 environment drift, where the authors' released stack no longer builds as
 documented, and error compounding, where an unvalidated early decision
 propagates into the reported number. Successful runs share a consistent
@@ -88,58 +91,71 @@ the failure and the success patterns in Section~\ref{sec:analysis}.
 \section{Related Work}
 \label{sec:related-work}
 
-RECLAIM asks an agent to turn a paper and whatever its authors released
-into a runnable experiment and a verified number. Existing benchmarks
-each cover a part of this setting and leave a different part unmeasured.
+RECLAIM asks an agent to turn a paper and the artifacts its authors
+happened to release into a runnable experiment and a verified number, which
+makes only part of the task a coding problem: the rest is working out what
+can be recovered from an incomplete release at all. Existing benchmarks
+each cover a piece of that setting, and each one fixes in advance a
+variable we deliberately leave free.
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
-work in real repositories and
-terminals~\citep{jimenez2024swebench,merrill2026terminalbench,
-miserendino2025swelancer,deng2025swebenchpro,lu2026frontiercode}. SWE-bench
-grades patches for real GitHub issues with the repository's own
-tests~\citep{jimenez2024swebench}, and Terminal-Bench 2.0 poses diverse
-command-line tasks in containers with executable
-checks~\citep{merrill2026terminalbench}. These benchmarks start from an
-explicit objective, a prepared environment, and a verifier written in
-advance, so they do not measure whether an agent can turn a paper and its
-release state into a runnable experiment.
+work inside real repositories and terminals, where a model has to locate
+the relevant code, edit across files, run the project's own tooling, and
+iterate until the change holds~\citep{jimenez2024swebench,
+merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
+lu2026frontiercode}. SWE-bench grades patches for real GitHub issues using
+the tests the repository already ships~\citep{jimenez2024swebench}, and
+Terminal-Bench 2.0 poses diverse command-line tasks inside prepared
+containers with executable checks written in
+advance~\citep{merrill2026terminalbench}. Both designs scale precisely
+because the objective, the environment, and the verifier can all be fixed
+before the agent starts, but that same property removes the first half of a
+reproduction: an agent working from a paper has to decide which experiment
+establishes the claim and build an environment that can run it before it
+can produce a number anyone is in a position to check.
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
-development to research engineering~\citep{huang2024mlagentbench,
+development through research engineering~\citep{huang2024mlagentbench,
 nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
-wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench has
-agents build and iteratively refine pipelines for Kaggle competitions under
-a fixed compute budget, scoring submissions against historical
-leaderboards~\citep{chan2024mlebench}. These benchmarks leave the choice of
-method to the agent, so they do not measure whether it can adapt a
-prescribed method and configuration to a new environment and recover the
-specific result the authors report.
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench is
+representative: agents build and iteratively refine pipelines for Kaggle
+competitions under a fixed compute budget, and each submission is scored
+against the historical leaderboard for that
+competition~\citep{chan2024mlebench}. Because the method is the agent's to
+choose and success is defined as a position on that leaderboard rather than
+a specific published quantity, these benchmarks reward finding any solution
+that scores well, and they leave open whether an agent can carry a
+prescribed method and configuration into an environment its authors never
+used and land on the number those authors reported.
 
 \paragraph{Scientific reproduction.}
 A growing line of benchmarks measures how well agents reproduce published
 research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
 xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
 edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
-wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}.
-CORE-Bench asks agents to rerun the released code of computationally
-reproducible papers and recover known
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}, and
+three of them bracket the design space. CORE-Bench asks agents to rerun the
+released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive}. PaperBench has agents
-replicate 20 ICML 2024 papers from scratch without the authors' released
-code, graded against author-developed hierarchical
-rubrics~\citep{starace2025paperbench}. EXP-Bench withholds the paper
-itself, giving the agent a research question and starter code from which it
-must design, execute, and analyze the experiments~\citep{kon2025expbench}.
-Each benchmark fixes the release state before the run begins, and most fix
-it by selecting papers whose code is already public and already runs. The
-stricter selections go further. They keep only papers replicable from the
-text on a single machine without closed-source dependencies, or draw from a
-pool already verified to rerun, on the stated reasoning that irreproducible
-papers are not worth including. None of these benchmarks
-samples papers across the release states they are published in, so none
-measures reproduction under the conditions reproducers actually face.
+effectively saturated~\citep{favaro2026recursive}. PaperBench sits at the
+opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
+with the authors' code withheld, grading the attempt against hierarchical
+rubrics the original authors wrote~\citep{starace2025paperbench}.
+EXP-Bench withholds the paper itself, handing the agent a research question
+and starter code from which it must design, execute, and analyze the
+experiments~\citep{kon2025expbench}. What all three share is that the
+release state is settled before the run begins, and it is usually settled
+by selection: most keep only papers whose code is already public and
+already runs, and the stricter protocols narrow further to papers
+replicable from the text on a single machine without closed-source
+dependencies, or draw from a pool already verified to rerun, on the stated
+reasoning that an irreproducible paper is not worth including. That is a
+defensible way to build a clean coding task, but it removes the variable
+RECLAIM exists to measure, because a benchmark assembled only from papers
+that shipped working code cannot say what happens on the papers that did
+not, and those are the papers a reproducer spends most of their time on.
 
 \section{RECLAIM}
 \label{sec:reclaim}
