@@ -523,27 +523,19 @@ Summarize the paper and its implications.
 
 \subsection*{Reproducibility statement}
 
-Every component needed to rerun this benchmark is specified in the appendices
-and released with the paper. Appendix~\ref{app:harness} documents the agent
-harness in full, covering the tool loop, the semantics of each of the seven
-tools, the round cap, the compute budget and how it is enforced, the sandbox,
-and the report schema, and it reproduces the system and task prompts as
-verbatim listings rather than as description. Appendix~\ref{app:models} pins
-every evaluated model to a served revision and records the serving stack and
-its version, the tensor-parallel degree, the quantization actually served, and
-the decoding settings; the batch scripts that launched each sweep are included
-in the supplementary material, so a serving configuration can be recovered
-from the job that produced it. Appendix~\ref{app:rubric} gives the complete
-audit rubric, which was frozen before any reported sweep was graded, and
-Appendix~\ref{app:auditor-validation} reports how far the auditor agrees with
-itself across repeated passes over the same runs and with human grades on a
-labelled sample, so a reader can bound how much of a reported score is grader
-noise. Appendix~\ref{app:dataset-schema} documents every field of the released
-dataset and both split definitions. One limit applies to all of it. An agent
-rollout is sampled and interacts with a live machine, so a rerun does not
-recover our transcripts turn for turn, and we therefore release the complete
-evidence bundle for every run, which makes the grading stage of the pipeline
-reproducible from our artifacts even where the rollout stage is not.
+Appendix~\ref{app:harness} specifies the harness, including the tool loop,
+budget enforcement, the sandbox, and the prompts as verbatim listings.
+Appendix~\ref{app:models} pins each evaluated model to a served revision and
+states the serving configuration it ran under. Appendix~\ref{app:rubric} gives
+the audit rubric, frozen before any reported sweep was graded, and
+Appendix~\ref{app:auditor-validation} bounds how much of a reported score is
+grader noise. Appendix~\ref{app:dataset-schema} documents the dataset and its
+splits. Code, batch scripts, and the per-run evidence bundles are submitted as
+anonymized supplementary material. The repository and dataset URLs are
+withheld for review and given in the camera-ready version. An agent rollout is
+sampled and interacts with a live machine, so a rerun does not recover our
+transcripts turn for turn. The evidence bundles make the grading stage
+reproducible from our artifacts where the rollout stage is not.
 
 \subsection*{AI use statement}
 
