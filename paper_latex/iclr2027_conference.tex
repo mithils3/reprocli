@@ -70,18 +70,19 @@ evidence the run produces. We find that success is gated by artifact
 availability. When the authors released a complete artifact stack, agents
 recover the target result on X\% of papers, but as the release thins
 toward reimplementation from the paper alone, the rate drops sharply to
-X\%. We call this drop the availability cliff. The agents' own reports
-also overstate success. Of the X runs that claim a reproduction, only X
-survive a provenance audit of their execution evidence, which we call the
-self-claim gap. We analyze the recurring failure modes behind these
-numbers, including environment drift, where the authors' stack no longer
-builds as documented, and error compounding, where an early unvalidated
-mistake propagates into the final number. By contrast, the runs that
-succeed behave like careful engineers. They smoke test on small
-configurations before committing to long jobs, read the released
-documentation rather than assume interfaces, and exploit the full set of
-artifacts and tools available to them. We detail both the failure and the
-success patterns in Section~\ref{sec:analysis}.
+X\%. We call this drop the availability cliff. Agents also over-report
+their own success. Of the X runs that report a reproduction, only X
+survive a provenance audit of the execution evidence they leave behind, a
+discrepancy we call the self-claim gap. A small set of recurring failure
+modes accounts for the unsuccessful runs. The two most frequent are
+environment drift, where the authors' released stack no longer builds as
+documented, and error compounding, where an unvalidated early decision
+propagates into the reported number. Successful runs share a consistent
+procedure. They smoke-test reduced configurations before committing
+compute to full-length jobs, consult the released documentation instead
+of inferring interfaces, and reuse every artifact and tool the authors
+released rather than reimplementing from the paper text. We quantify both
+the failure and the success patterns in Section~\ref{sec:analysis}.
 
 
 \section{Related Work}
