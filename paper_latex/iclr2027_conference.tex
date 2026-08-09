@@ -74,18 +74,13 @@ X\%. We call this drop the availability cliff. Agents also over-report
 their own success. Of the X runs that report a reproduction, only X
 survive a provenance audit of the execution evidence they leave behind, a
 discrepancy we call the self-claim gap. A small set of recurring failure
-modes accounts for the unsuccessful runs. 
-
-This should go into ANalysis I'll remove this aftwards
-The two most frequent are
-environment drift, where the authors' released stack no longer builds as
-documented, and error compounding, where an unvalidated early decision
-propagates into the reported number. Successful runs share a consistent
-procedure. They smoke-test reduced configurations before committing
-compute to full-length jobs, consult the released documentation instead
-of inferring interfaces, and reuse every artifact and tool the authors
-released rather than reimplementing from the paper text. We quantify both
-the failure and the success patterns in Section~\ref{sec:analysis}.
+modes accounts for the unsuccessful runs, led by environment fights and
+reimplementation without validation, and the runs that do recover the
+result share a
+procedural signature the failures lack: they smoke-test before they commit
+compute, and they read what the authors released instead of inferring it.
+We define the taxonomy, report the per-mode counts, and detail the success
+pattern in Section~\ref{sec:analysis}.
 
 
 \section{Related Work}
@@ -113,7 +108,21 @@ because the objective, the environment, and the verifier can all be fixed
 before the agent starts, but that same property removes the first half of a
 reproduction: an agent working from a paper has to decide which experiment
 establishes the claim and build an environment that can run it before it
-can produce a number anyone is in a position to check.
+can produce a number anyone is in a position to check. MirrorCode pushes
+the long-horizon setting furthest and asks agents to rebuild entire
+programs from behavior alone, with a black-box reference implementation
+available to query throughout the
+attempt~\citep{adamczewski2026mirrorcode}. That oracle is the operative
+difference between its setting and ours. An executable reference is a
+feedback signal an agent can spend test-time compute against, so more
+effort converts into more progress, whereas an agent reproducing a paper
+has nothing to check itself against until it has already built the
+experiment, which is the condition under which we observe agents stop
+spending long before their budget binds
+(Section~\ref{subsec:results}).
+% TODO(mirrorcode): if their token-scaling result is stated as a figure or
+% headline number, cite it explicitly here so the reconciliation reads as
+% retro-explaining a published trend rather than as our own framing.
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
@@ -411,6 +420,61 @@ Present your main results.
 \label{sec:analysis}
 
 % Placeholder section: ablations, error analysis, qualitative results.
+
+\paragraph{Failure taxonomy.}
+We label every unsuccessful run with one primary failure mode and report the
+distribution in Table~\ref{tab:failure-modes}. The two most frequent
+process failures are environment fights, where the authors' released stack
+no longer builds on the machine the agent is given and the run is consumed
+reconciling toolchain and dependency errors the agent did not create, and
+reimplementation without validation, where the agent writes its own version
+of the method after failing to run the released code and reports a number
+from that version without ever checking it against the reference the
+authors shipped. The remaining modes are substitution failures, in which a
+blocked agent runs something adjacent to the pinned experiment and reports
+the result as the reproduction, and one negative-result mode, honest
+shortfall, where the agent executes the released pipeline correctly,
+measures a real number, misses the target, and says so.
+% TODO(taxonomy): fill counts from the final graded sweeps. Keep the mode
+% names identical to the dissection slugs. Note for the environment-fights
+% row: on GH200 a large share of those runs are aarch64 wheel gaps in our
+% own cluster rather than author-side drift, so either separate that column
+% or state the confound here before a reviewer finds it.
+
+\begin{table}[h]
+\caption{Primary failure mode by availability tier.
+% TODO(failure-table): one row per mode, counts per tier, totals in the last
+% column. Keep the mode set identical across tiers so the comparison is by
+% construction.
+}
+\label{tab:failure-modes}
+\begin{center}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Failure mode & Easy & Medium & Hard & All \\
+\midrule
+Environment fights & XX & XX & XX & XX \\
+Reimplementation without validation & XX & XX & XX & XX \\
+Scope substitution & XX & XX & XX & XX \\
+Evaluation-protocol shopping & XX & XX & XX & XX \\
+Availability wall & XX & XX & XX & XX \\
+Procrastination and wall kill & XX & XX & XX & XX \\
+Honest shortfall & XX & XX & XX & XX \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\paragraph{What the successful runs do.}
+The runs that recover the target result share a procedure that the failures
+lack. They smoke-test a reduced configuration before committing compute to a
+full-length job, they consult the released documentation instead of inferring
+interfaces from names, and they reuse every artifact and tool the authors
+released rather than reimplementing from the paper text.
+% TODO(success-pattern): attach counts. How many successful runs show each
+% behavior, and how often the same behavior appears in the failures, so the
+% pattern reads as a discriminator rather than a description.
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
