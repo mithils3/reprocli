@@ -86,9 +86,11 @@ pattern in Section~\ref{sec:analysis}.
 \section{Related Work}
 \label{sec:related-work}
 
-Existing agent benchmarks each cover a piece of the reproduction setting,
-and each one fixes in advance the variable RECLAIM leaves free, which is
-the state of the release an agent starts from.
+Each benchmark below settles what the agent has to work with before the run
+begins, either by handing it a prepared environment and a verifier or by
+admitting only papers whose code is already public and already runs.
+RECLAIM leaves that release state free and keeps the papers whose authors
+released nothing runnable at all.
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
