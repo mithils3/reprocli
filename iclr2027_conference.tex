@@ -523,19 +523,26 @@ Summarize the paper and its implications.
 
 \subsection*{Reproducibility statement}
 
-Appendix~\ref{app:harness} specifies the harness, including the tool loop,
+\begin{itemize}
+\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the tool loop,
 budget enforcement, the sandbox, and the prompts as verbatim listings.
-Appendix~\ref{app:models} pins each evaluated model to a served revision and
-states the serving configuration it ran under. Appendix~\ref{app:rubric} gives
-the audit rubric, frozen before any reported sweep was graded, and
+\item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
+served revision and states the serving configuration it ran under.
+\item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
+frozen before any reported sweep was graded, and
 Appendix~\ref{app:auditor-validation} bounds how much of a reported score is
-grader noise. Appendix~\ref{app:dataset-schema} documents the dataset and its
-splits. Code, batch scripts, and the per-run evidence bundles are submitted as
-anonymized supplementary material. The repository and dataset URLs are
-withheld for review and given in the camera-ready version. An agent rollout is
-sampled and interacts with a live machine, so a rerun does not recover our
-transcripts turn for turn. The evidence bundles make the grading stage
-reproducible from our artifacts where the rollout stage is not.
+grader noise.
+\item \textbf{Dataset.} Appendix~\ref{app:dataset-schema} documents every field
+and both splits.
+\item \textbf{Artifacts.} Code, batch scripts, and the per-run evidence bundles
+are submitted as anonymized supplementary material. The repository and dataset
+URLs are withheld for anonymous review and provided in the camera-ready
+version.
+\end{itemize}
+
+An agent rollout is sampled and interacts with a live machine, so a rerun does
+not recover our transcripts turn for turn. The evidence bundles make the
+grading stage reproducible from our artifacts where the rollout stage is not.
 
 \subsection*{AI use statement}
 
