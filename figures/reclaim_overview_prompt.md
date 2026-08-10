@@ -1,312 +1,243 @@
-# Image-gen prompt: RECLAIM overview figure (Figure 1)
+# Image-gen prompt: RECLAIM overview figure
 
-Target style reference: PaperCoder Figure 2. Intended replacement for
-`harness_overview` as the one-diagram summary of the paper.
+One diagram that summarizes the benchmark: construction, task, run, audit, and the
+two quantities it measures. Style register is the modern ML technical-report system
+diagram (airy, borderless tinted panels, desaturated palette), not a boxed
+flowchart and not a cute infographic.
 
 ---
 
 ## PROMPT
 
-Create a clean, flat **vector-style academic figure** for a machine learning
-conference paper (ICLR two-column, full text width). Landscape, aspect ratio
-16:9, very high resolution, pure white background, no border frame around the
-whole image. The look is a friendly hand-drawn-infographic: rounded rectangles
-with thin 1.5px medium-gray strokes, soft pastel fills, small doodle-style line
-icons, and a light playful feel while staying publication-serious. No
-photorealism, no 3D, no gradients, no heavy drop shadows, no glow, no textures.
+A wide landscape technical system diagram for a machine learning research paper,
+aspect ratio 2:1, very high resolution, pure white background, no outer frame, no
+caption, no figure number.
 
-**Color system.** White page. Card fills: pale warm yellow `#FDF3D0` for stage
-1, near-black `#1E1E20` for stage 2, pale blue `#E4EDFB` for stage 3, pale green
-`#E6F3E6` for the outcome strip, light gray `#F2F2F3` for the left rail and for
-all icon trays. Strokes and body text charcoal `#2B2B2E`. Monospace code text
-purple `#6B3FA0` and teal `#0F7B7B`. One accent red `#D93025` used only for
-failure marks and for the two hard scoring rules. One accent green `#1E8E3E`
-used only for the success check.
+**Visual register.** Modern LLM technical-report figure: airy, editorial, and
+restrained. Panels are defined by **soft tinted fills with no visible borders**,
+generous internal padding, and 14px corner radii. Whitespace does the separating.
+Flat 2D vector rendering only. No 3D, no isometric, no gradients, no drop shadows,
+no glow, no textures, no skeuomorphism, no rounded speech bubbles, no doodles, no
+mascot, no clipart, no dark background.
 
-**Typography.** Headings and labels in a clean geometric sans-serif (Inter or
-Nunito), bold for headings. All identifiers, field names, and values in a
-monospace font (JetBrains Mono or Menlo). Render **every string below exactly as
-written**, including underscores, punctuation, arrows, and capitalization.
-Spelling accuracy matters more than decoration. Do not invent, translate,
-paraphrase, or add any text that is not listed here.
+**Palette.** Page white `#FFFFFF`. Ink `#0F172A` for headings, slate `#475569` for
+body text, light slate `#94A3B8` for arrows and secondary labels. Panel tints, each
+paired with its own accent used only for that panel's heading, glyph, and rules:
+indigo accent `#4C5FD5` on tint `#EEF0FC`; teal accent `#17807A` on tint `#E6F2F1`;
+amber accent `#B8791F` on tint `#FBF1E0`; violet accent `#7A4FD5` on tint `#F1ECFD`.
+A single rose `#B4453F` reserved for hard scoring rules. Colors stay desaturated and
+low-contrast against white; nothing neon, nothing saturated.
 
-### Overall layout
+**Typography.** A clean grotesque sans-serif throughout (Inter or Helvetica Neue).
+Panel headings bold 1.5x body size in the panel's accent color. Section sublabels in
+small uppercase with wide letterspacing, light slate. All identifiers, field names,
+and values in a monospace face (IBM Plex Mono). Body text left-aligned and generously
+line-spaced. **Render every string below exactly as written**, including
+underscores, arrows, and capitalization. Add no text that is not listed.
 
-A narrow **left rail** occupying about 20% of the width, separated from the rest
-by a single thin vertical gray rule. The remaining 80% on the right holds the
-RECLAIM pipeline as three numbered stage groups: stage 1 spans the full width of
-the right region on the top row, stages 2 and 3 sit side by side on the bottom
-row (stage 2 about 45% of the right region, stage 3 about 55%), and a slim
-outcome strip runs along the very bottom of the right region.
+**Icons.** Minimal geometric line glyphs, 1.5px uniform stroke, single accent color,
+no fills, one small glyph per panel heading only.
 
----
+### Layout
 
-### LEFT RAIL — the naive setup
-
-Header at the top of the rail, bold sans, black: `Self-report`
-
-Below it, a light-gray rounded card containing, top to bottom:
-
-1. A doodle icon of a stack of paper sheets, with the label `Paper` beside it.
-2. A small white card with a thin border showing, in serif, centered, stacked:
-   `SharpZO`, then a thin horizontal rule, then `EuroSAT, 16-shot` and
-   `test accuracy 79.42%`.
-3. A downward black arrow.
-4. A small gray pill labeled `Agent`.
-5. A downward black arrow.
-6. A white card with a thin border, monospace, left aligned:
-   `report.json`, then `agent_assessment:` and on the next line, indented,
-   `"reproduced"`, then `observed_value: 79.42`.
-   A red circled ✗ badge overlaps the top-right corner of this card.
-7. Two soft-yellow rounded callout pills stacked below the card, bold black
-   text: `Number echoed from the paper!` and `No execution evidence!`
+Four tinted panels in a single row across the top three quarters of the canvas,
+equal height, separated by whitespace and joined by thin light-slate arrows with
+small solid triangular heads. Below them, a full-width band split into two tiles.
+Nothing overlaps; arrows never cross text.
 
 ---
 
-### RIGHT REGION — header
+**PANEL 1 — indigo tint.** Glyph: a funnel. Sublabel `STAGE 1`. Heading:
+`Construction`
 
-Top-left of the right region: a cute hand-drawn doodle mascot of a single paper
-document sheet holding a large magnifying glass over a small printed number, with
-a tiny GPU card doodle tucked beside it. To its right, in large bold rounded
-sans-serif: `RECLAIM`
+A vertical funnel of six horizontal bars in indigo, each narrower than the one
+above, each with its monospace count on the left and its sans label to the right:
+
+```
+3,414   NeurIPS 2025 submissions
+1,000   sampled
+  687   verified
+  620   eligible
+  200   audit pool
+  100   benchmark
+```
+
+Between consecutive bars, small light-slate italic gate labels:
+`agent classifier, artifact signals checked by tool call`, then
+`empirical and unblocked`, then `<= 96 H100-h, stratified`, then `human audit`.
+
+Under the funnel, a horizontal row of three indigo-outlined pills connected left to
+right by a thin arrow, each with a small slate sublabel beneath it:
+
+```
+Run           execute or evaluate
+Retrain       weights withheld
+Reimplement   code withheld
+```
+
+A small slate caption under the arrow: `artifact availability`
 
 ---
 
-### STAGE 1 — top row, full width of the right region
+**PANEL 2 — teal tint.** Glyph: a target with a pin. Sublabel `STAGE 2`. Heading:
+`Task`
 
-A large light-gray rounded container. Centered at its top edge, straddling the
-border, a white pill with a black outline and bold black text: `1. Construction`
+Three input rows at the top, each a small line glyph plus a sans label:
+`paper LaTeX source`, `OpenReview supplement`, `verified artifact links`.
 
-Inside, three pale-yellow rounded cards left to right, equal width, each with a
-small line icon and a bold heading at its top, and a white inner card holding the
-body text.
-
-**Card 1.1** — icon: a document with a pin. Heading: `1.1 Match Target`
-White inner card, monospace, left aligned, one item per line:
+Below them a white inset block, monospace, aligned in two columns:
 
 ```
-claim:  zeroth-order prompt tuning
-        beats the baseline
-metric: test accuracy
-value:  79.42
-scope:  EuroSAT test set
-bar:    within tolerance
+metric   test accuracy
+value    79.42
+scope    EuroSAT test set
+bar      within tolerance
 ```
 
-Then a red monospace line at the bottom of the inner card:
-`config withheld from the agent`
-
-**Card 1.2** — icon: a small checklist with a magnifying glass. Heading:
-`1.2 Availability Audit`
-White inner card with four rows, each a checkbox and a monospace label:
-
-```
-[x] code
-[x] data
-[ ] weights
-[x] standard benchmark
-```
-
-A small gray stamp badge to the right of the rows reading `tool-verified`.
-Below the rows, a horizontal three-step ladder of small rounded chips, connected
-left to right by a thin gray arrow: `Run` then `Retrain` then `Reimplement`.
-Under the arrow, in small gray italic sans: `more for the agent to rebuild`
-
-**Card 1.3** — icon: a funnel. Heading: `1.3 Cap and Select`
-White inner card holding a vertical funnel of five stacked bars, each narrower
-than the one above it, each labeled in monospace on its right:
-
-```
-3,414 NeurIPS 2025 submissions
-1,000 sampled
-687 verified
-620 eligible
-200 audit pool
-100 released
-```
-
-Two small gray tags pinned to the funnel's side, at the level of the third and
-fifth bars: `<= 96 H100-h` and `human audit`
-
-Thin dashed gray arrows run from the top of the stage 1 container down into each
-of the three cards, and short gray icon trays sit above each card showing the
-inputs accumulating: above 1.1 a paper icon; above 1.2 a paper icon plus a link
-icon; above 1.3 a paper icon plus a link icon plus a GPU icon.
+Directly under the block, one rose monospace line: `configuration withheld`
+Under that, a slate sans line: `the agent designs the experiment itself`
 
 ---
 
-### STAGE 2 — bottom row, left
+**PANEL 3 — amber tint.** Glyph: a terminal prompt. Sublabel `STAGE 3`. Heading:
+`Run`
 
-A light-gray rounded container. Centered at its top edge, a white pill with a
-black outline and bold black text: `2. Run`
+Under the heading, a slate line: `ReAct tool loop, any chat model, tools only`
 
-Inside, one large near-black rounded card with white text. At its top, bold
-white: `ReAct tool loop`, and to the right in smaller gray: `any chat model, tools-only`
+A small circular loop arrow sits to the right of that line to signal iteration.
 
-Below, a small-caps gray section label: `WORKSPACE - CPU NODE`, and under it a
-vertical list of dark rounded pills with white monospace labels, each followed by
-a short gray sans gloss on the same line:
+Sublabel `WORKSPACE, CPU`, then four monospace pills laid out compactly:
 
 ```
-workspace_bash    cwd-confined shell
-write_file / edit_file    author code and configs
-update_plan    running checklist
-fetch_url    public URLs only
+workspace_bash    write_file / edit_file
+update_plan       fetch_url
 ```
 
-Then a second small-caps gray section label: `CLUSTER - SLURM`, and under it:
+Sublabel `CLUSTER, SLURM`, then two monospace pills:
 
 ```
-list_partitions    node pools via sinfo
-run_gpu    the only path to a GPU; wall clock metered
-           against the H100-h grant
+list_partitions
+run_gpu
 ```
 
-The `run_gpu` pill is outlined in accent red to mark it as the metered tool.
+The `run_gpu` pill is outlined in rose. Beside it, a short slate sans gloss on two
+lines: `the only path to a GPU, wall clock metered` / `against the run's H100-h grant`
 
-At the bottom of the dark card, a thin gray monospace footer line:
-`~500 GB scratch - round and H100-h budgets harness-enforced`
+At the bottom of the panel, a slate footer line:
+`~500 GB scratch, round and compute budgets enforced by the harness`
+
+To the right edge of the panel, a small white inset tag in monospace:
+`report.json + evidence/`
 
 ---
 
-### STAGE 3 — bottom row, right
+**PANEL 4 — violet tint.** Glyph: a magnifying glass over a document. Sublabel
+`STAGE 4`. Heading: `Audit`
 
-A light-gray rounded container. Centered at its top edge, a white pill with a
-black outline and bold black text: `3. Audit`
+Slate line under the heading: `one pinned auditor, rubric frozen before grading`
 
-Inside, two pale-blue rounded cards side by side.
-
-**Left card** — icon: a folder. Heading: `report.json + evidence/`
-White inner card, monospace, left aligned:
-
-```
-paper_id, claim, what_ran, scoring_command
-measurements[] {metric, observed_value,
-  reference_value, scope, evidence}
-agent_assessment in {reproduced, partial,
-  not_reproduced, could_not_run}
-```
-
-Below it a small gray sub-card with a folder icon:
-`evidence/  REPORT.md - commands.log - plan.md - run stdout`
-
-**Right card** — icon: a lightning bolt inside a shield. Heading:
-`Provenance auditor`
-Small gray line under the heading: `Claude Sonnet 5, pinned; rubric frozen`
-White inner card with three short bullet lines in sans:
+Three short sans bullets:
 
 ```
 traces every number to the execution that produced it
-checks protocol, split, and scale against the pinned config
+checks protocol, split, and scale against the pinned configuration
 recomputes metrics from the run's raw outputs
 ```
 
-Below, a horizontal score ruler: a thin bar segmented from `0` on the left to
-`10` on the right with tick labels, and verdict chips sitting under their
-segments, left to right:
-`disqualified`, `unverifiable`, `not_reproduced`, `blocked`, `partial`,
-`reproduced`. The `disqualified` chip is filled accent red, the `reproduced`
-chip is filled accent green, the rest are light gray.
-
-Under the ruler, two short red monospace rules on their own lines:
+Below, a horizontal score ruler: a slim rounded bar with eleven tick marks labeled
+`0` through `10` in monospace, shaded from very light violet at the left to full
+violet at the right. Verdict labels sit under their segments in small monospace:
 
 ```
-high-severity flag  ->  score 0
+0  disqualified
+1  unverifiable
+2  not_reproduced
+3  blocked
+4-5  not_reproduced
+6-7  partial
+8-10  reproduced
+```
+
+Beneath the ruler, two rose monospace rules on separate lines:
+
+```
+high-severity flag  ->  0
 genuine artifact wall  ->  capped at 3
 ```
 
 ---
 
-### OUTCOME STRIP — bottom of the right region
+**BOTTOM BAND — very light slate tint `#F6F7F9`, full width, split into two tiles
+by whitespace.** Small uppercase letterspaced label above the band:
+`WHAT RECLAIM MEASURES`
 
-A slim pale-green rounded band spanning the full width of the right region,
-split into two halves by a thin vertical gray rule.
+Left tile. Bold ink heading: `Availability cliff`. Beneath it, one slate sans line:
+`reproduction rate across Run, Retrain, and Reimplement`. To its right, a schematic
+of three descending indigo bars labeled `Run`, `Retrain`, `Reimplement` on the
+x-axis. **Draw no numbers on the bars, no y-axis values, and no gridlines.**
 
-**Left half.** Bold sans heading: `Availability cliff`. Beside it a tiny bar
-chart of three descending bars with the x-axis labels `Run`, `Retrain`,
-`Reimplement` and the y-axis label `reproduction rate`. **Draw no numbers on or
-near the bars and no y-axis tick values.**
-
-**Right half.** Bold sans heading: `Self-claim gap`. Beside it a tiny bar chart
-of exactly two bars, a tall one labeled `claimed` and a much shorter one labeled
-`audited`, with a bracket between their tops labeled `gap`. **Draw no numbers on
-or near the bars and no y-axis tick values.**
-
-A green circled ✓ badge sits at the far right end of the strip, visually
-answering the red ✗ badge in the left rail.
+Right tile. Bold ink heading: `Self-claim gap`. Beneath it, one slate sans line:
+`runs that claim reproduced against runs the audit confirms`. To its right, a
+schematic of two bars, a tall one labeled `claimed` and a short one labeled
+`audited`, with a thin bracket between their tops labeled `gap`. **Draw no numbers
+on the bars, no y-axis values, and no gridlines.**
 
 ---
 
-### Connectors
-
-Solid black arrows carry the main flow: from the stage 1 container down and right
-into stage 2, and from stage 2 right into stage 3, and from stage 3 down into the
-outcome strip. Thin dashed gray arrows carry the secondary flow: from the left
-rail's paper card across the vertical rule into stage 1, and from stage 1's card
-1.1 down into stage 3's auditor card. Arrows must not cross any text.
-
 ### Hard constraints
 
-Every card and every label must be fully legible at 100% zoom. Nothing may
-overflow or clip its container. No lorem ipsum, no placeholder squiggles standing
-in for words, no repeated or duplicated labels, no extra panels, no caption text
-under the figure, no figure number, no title bar, no watermark, no signature, no
-UI chrome, no browser window, no photographic elements, no people, no cartoon
-faces on the mascot beyond simple line features.
+Every label legible at 100% zoom. Nothing clipped, nothing overflowing its panel,
+no text touching a panel edge. Consistent left alignment inside each panel.
+Consistent panel heights. No placeholder squiggles standing in for words, no
+duplicated labels, no invented tool names, no extra panels.
 
 ---
 
 ## NEGATIVE PROMPT
 
-photorealistic, 3D render, isometric, glossy, gradient mesh, neon, dark mode
-background, textured paper, watercolor, sketchy crosshatching, blurry text,
-garbled text, misspelled labels, lorem ipsum, squiggle placeholder text,
-duplicated panels, overlapping text, clipped text, cramped margins, drop shadows,
-bevels, stock-photo icons, corporate clipart, human figures, faces, logos,
-watermark, signature, caption, figure number, page number, border frame,
-screenshot, browser chrome, numeric values on the outcome bar charts
+photorealistic, 3D, isometric, glossy, gradient, neon, saturated, dark background,
+heavy borders, thick outlines, drop shadow, bevel, texture, watercolor, sketchy,
+hand-drawn, doodle, cartoon, mascot, emoji, clipart, stock icons, human figures,
+faces, logo, watermark, signature, caption text, figure number, page number, border
+frame, browser window, screenshot, UI chrome, garbled text, misspelled labels, lorem
+ipsum, squiggle placeholder text, overlapping text, clipped text, cramped spacing,
+numeric values on the bottom bar charts, gridlines
 
 ---
 
 ## SHORT VARIANT
 
-For models that truncate long prompts, use this and expect to regenerate panels
-separately.
+For models that truncate. Expect to regenerate panels separately.
 
-> Flat vector academic figure for an ML paper, 16:9, white background, rounded
-> rectangle cards with thin gray strokes, pastel fills, doodle line icons, sans
-> headings and monospace code labels. Left narrow rail titled `Self-report`: a
-> paper icon, an `Agent` pill, and a `report.json` card claiming
-> `agent_assessment: "reproduced"` with a red ✗ and two yellow callouts
-> `Number echoed from the paper!` and `No execution evidence!`. Right side titled
-> `RECLAIM` with a doodle of a paper sheet holding a magnifying glass over a
-> number, laid out as three numbered stages in white outlined pills:
-> `1. Construction` (three pale-yellow cards: `1.1 Match Target` with
-> metric/value/scope and a red `config withheld from the agent`;
-> `1.2 Availability Audit` with checkboxes for code, data, weights, standard
-> benchmark and a `Run -> Retrain -> Reimplement` ladder; `1.3 Cap and Select`
-> with a funnel 3,414 to 1,000 to 687 to 620 to 200 to 100 and tags
-> `<= 96 H100-h` and `human audit`), `2. Run` (one near-black card titled
-> `ReAct tool loop` listing tool pills `workspace_bash`, `write_file / edit_file`,
-> `update_plan`, `fetch_url`, `list_partitions`, and a red-outlined `run_gpu`
-> marked as the only metered path to a GPU), and `3. Audit` (two pale-blue cards:
-> a `report.json + evidence/` schema card, and a `Provenance auditor` card with a
-> 0 to 10 score ruler whose chips read disqualified, unverifiable,
-> not_reproduced, blocked, partial, reproduced, plus red rules
-> `high-severity flag -> score 0` and `genuine artifact wall -> capped at 3`).
-> A pale-green bottom strip shows two tiny unlabeled-value bar charts,
-> `Availability cliff` with three descending bars Run, Retrain, Reimplement, and
-> `Self-claim gap` with a tall `claimed` bar next to a short `audited` bar, ending
-> in a green ✓. Render all text exactly as written.
+> Wide flat vector system diagram for an ML paper, 2:1, white background, four
+> borderless soft-tinted rounded panels in a row joined by thin gray arrows, airy
+> modern tech-report style, desaturated indigo / teal / amber / violet tints, Inter
+> headings and IBM Plex Mono identifiers, minimal 1.5px line glyphs.
+> Panel 1 `Construction`, indigo, a six-bar funnel reading 3,414 NeurIPS 2025
+> submissions, 1,000 sampled, 687 verified, 620 eligible, 200 audit pool, 100
+> benchmark, with gate notes `<= 96 H100-h, stratified` and `human audit`, and a
+> pill row `Run` / `Retrain` / `Reimplement` under the label `artifact availability`.
+> Panel 2 `Task`, teal, inputs `paper LaTeX source`, `OpenReview supplement`,
+> `verified artifact links`, and a monospace block `metric test accuracy`,
+> `value 79.42`, `scope EuroSAT test set`, `bar within tolerance`, with a rose line
+> `configuration withheld`.
+> Panel 3 `Run`, amber, `ReAct tool loop` with a small loop arrow and monospace tool
+> pills `workspace_bash`, `write_file / edit_file`, `update_plan`, `fetch_url`,
+> `list_partitions`, and a rose-outlined `run_gpu` glossed as the only metered path
+> to a GPU, ending in a tag `report.json + evidence/`.
+> Panel 4 `Audit`, violet, a pinned auditor with a 0 to 10 score ruler whose labels
+> read disqualified, unverifiable, not_reproduced, blocked, partial, reproduced, and
+> two rose rules `high-severity flag -> 0` and `genuine artifact wall -> capped at 3`.
+> A light bottom band `WHAT RECLAIM MEASURES` holds two schematic charts with no
+> numeric values: `Availability cliff` as three descending bars Run, Retrain,
+> Reimplement, and `Self-claim gap` as a tall `claimed` bar beside a short `audited`
+> bar. Render all text exactly as written.
 
 ---
 
 ## NOTES
 
-- The outcome-strip bar charts deliberately carry **no numeric values**. The
-  reproduction rates and the claimed-vs-audited pair are not frozen yet, and the
-  paper still writes them as `X`. Add the numbers only when the sweeps that back
-  them are final.
-- The construction numbers (3,414 / 1,000 / 687 / 620 / 200 / 100, the 96 H100-h
-  cap) and the SharpZO match target match Section 3 of
-  `iclr2027_conference.tex` as of this writing. Re-check them before shipping.
+- The bottom-band charts carry **no numbers**. The reproduction rates and the
+  claimed-vs-audited pair are not frozen; the paper still writes them as `X`.
+- Construction counts and the SharpZO match target track Section 3 of
+  `iclr2027_conference.tex`. Re-check before shipping.
