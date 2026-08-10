@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family:'JBMono'; src:url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight:400; }
+@font-face { font-family:'JBMono'; src:url('fonts/ttf/JetBrainsMono-Medium.ttf');  font-weight:500; }
+@font-face { font-family:'JBMono'; src:url('fonts/ttf/JetBrainsMono-Bold.ttf');    font-weight:700; }
+
+@page { size: 764px 440px; margin: 0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:764px; height:440px; }
+body {
+  font-family:'Inter', sans-serif;
+  color:#1f2328; background:#fff;
+  padding:13px 12px 12px 12px;
+  -webkit-font-smoothing:antialiased;
+}
+.mono { font-family:'JBMono', monospace; }
+
+/* ---------- outer frame + name tab ---------- */
+.frame {
+  position:relative; height:100%;
+  border:1.5px solid #c8cfd8; border-radius:12px;
+  padding:22px 12px 12px 12px;
+  display:flex; align-items:stretch;
+}
+.nametab {
+  position:absolute; top:-10px; left:15px;
+  background:#3d4f9e; color:#fff;
+  font-size:13px; font-weight:700; letter-spacing:.01em;
+  padding:2px 10px; border-radius:6px;
+}
+.srclab {
+  position:absolute; top:-10px; right:15px;
+  background:#fff; color:#6b7684;
+  font-size:11px; padding:1px 8px;
+  border:1px dashed #c2c9d2; border-radius:6px;
+}
+.stagelab {
+  position:absolute; top:-9px; left:0; background:#fff;
+  font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:#5a6472; padding:0 6px 0 2px;
+}
+
+/* ---------- shared ---------- */
+.col { position:relative; display:flex; flex-direction:column; flex:none; width:222px; }
+.panel { border:1.2px solid #dbe0e6; border-radius:9px; background:#fff; padding:9px 10px; }
+.ptitle { font-size:12.5px; font-weight:650; margin-bottom:6px; }
+.arrow { flex:none; width:24px; display:flex; align-items:center; justify-content:center; }
+.k  { font-family:'JBMono',monospace; font-size:11px; color:#68717e; }
+.v  { font-family:'JBMono',monospace; font-size:11px; color:#1f2328; }
+.ok { color:#2f7d4f; font-weight:700; }
+.no { color:#b4453f; font-weight:700; }
+.rose { color:#b4453f; }
+
+.finding { margin-top:7px; display:flex; gap:6px; align-items:flex-start; }
+.ftick { flex:none; width:10px; height:10px; margin-top:5px;
+         border-left:1.3px solid #b4453f; border-top:1.3px solid #b4453f; border-top-left-radius:4px; }
+.fname { font-size:12.5px; font-weight:700; color:#b4453f; letter-spacing:-.1px; }
+.fsub  { font-size:10.5px; color:#78828f; line-height:1.35; margin-top:1px; }
+
+/* ---------- 1 task ---------- */
+.target { border-color:#c9d3ea; background:#fafbfe; }
+.trow { display:flex; gap:7px; line-height:1.72; }
+.trow .k { flex:none; width:44px; }
+.tt { width:100%; border-collapse:collapse; table-layout:fixed; }
+.tt col.n { width:96px; }
+.tt col.m { width:34px; }
+.tt th { font-family:'JBMono',monospace; font-size:9.5px; font-weight:400; color:#98a1ae;
+         text-align:center; padding:0 0 3px 0; }
+.tt td { font-size:11.5px; padding:3.4px 0; border-top:1px solid #eef1f4; }
+.tt td.l { font-weight:650; }
+.tt td.c { text-align:center; font-family:'JBMono',monospace; font-size:11.5px; }
+.tcap { font-size:10px; color:#78828f; line-height:1.35; margin-top:6px; }
+
+/* ---------- 2 run ---------- */
+.chips { display:flex; flex-wrap:wrap; gap:3.5px; margin-bottom:7px; }
+.chip { font-family:'JBMono',monospace; font-size:9.5px; color:#4a5361;
+        background:#f5f7f9; border:1px solid #dde2e8; border-radius:4px; padding:1.5px 4.5px; }
+.chip.hot { color:#b4453f; border-color:#e8c8c6; background:#fdf6f5; }
+.term { background:#fbfcfd; border:1px solid #e3e7ec; border-radius:6px; padding:7px 8px;
+        font-family:'JBMono',monospace; font-size:10px; line-height:1.66; color:#3f4753; }
+.term .p  { color:#98a1ae; }
+.term .c1 { color:#2f4f8f; }
+.term .er { color:#b4453f; }
+.term .ok2{ color:#2f7d4f; }
+.tree { margin-top:7px; font-family:'JBMono',monospace; font-size:10px; line-height:1.62; color:#4a5361; }
+.tree b { color:#1f2328; font-weight:600; }
+.note { font-size:10.5px; color:#78828f; line-height:1.42; }
+
+/* ---------- 3 audit ---------- */
+.claim { border:1.2px solid #dbe0e6; border-radius:7px; padding:6px 8px; }
+.lab { font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#98a1ae; }
+.chk { display:flex; gap:6px; font-size:11px; color:#4a5361; line-height:1.42; padding:2.4px 0; }
+.chk .m { flex:none; width:10px; font-family:'JBMono',monospace; font-size:11.5px; }
+.flags { font-family:'JBMono',monospace; font-size:10px; color:#5a6472;
+         background:#fbfcfd; border:1px solid #e3e7ec; border-radius:5px; padding:5px 7px; }
+.verdict { margin-top:6px; border:1.2px solid #c9d3ea; background:#f7f9fe; border-radius:7px; padding:6px 8px; }
+.rule { font-family:'JBMono',monospace; font-size:10px; color:#b4453f; line-height:1.6; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <span class="nametab">RECLAIM</span>
+  <span class="srclab">one peer-reviewed paper per task</span>
+
+  <!-- ================= 1 task ================= -->
+  <div class="col">
+    <span class="stagelab">1 &nbsp;Task</span>
+
+    <div class="panel target">
+      <div class="ptitle mono" style="font-size:11.5px; color:#3d4f9e;">match_target</div>
+      <div class="trow"><span class="k">metric</span><span class="v">test accuracy</span></div>
+      <div class="trow"><span class="k">scope</span><span class="v">EuroSAT test set</span></div>
+      <div class="trow"><span class="k">bar</span><span class="v">within tolerance</span></div>
+      <div class="trow"><span class="k">config</span><span class="v rose">withheld</span></div>
+    </div>
+
+    <div class="panel" style="margin-top:8px;">
+      <div class="ptitle">Artifact availability</div>
+      <table class="tt">
+        <colgroup><col class="n"><col class="m"><col class="m"><col class="m"></colgroup>
+        <tr><th></th><th>code</th><th>data</th><th>wts</th></tr>
+        <tr><td class="l">Run</td>
+            <td class="c ok">&#10003;</td><td class="c ok">&#10003;</td><td class="c ok">&#10003;</td></tr>
+        <tr><td class="l">Retrain</td>
+            <td class="c ok">&#10003;</td><td class="c ok">&#10003;</td><td class="c no">&#10007;</td></tr>
+        <tr><td class="l">Reimplement</td>
+            <td class="c no">&#10007;</td><td class="c ok">&#10003;</td><td class="c no">&#10007;</td></tr>
+      </table>
+      <div class="tcap">the tier records how much of the result the agent must rebuild</div>
+    </div>
+
+    <div class="finding" style="margin-top:auto; padding-top:8px;">
+      <div class="ftick"></div>
+      <div>
+        <div class="fname">availability cliff</div>
+        <div class="fsub">reproduction falls away as the release thins</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><svg width="19" height="12" viewBox="0 0 19 12"><path d="M0 6h12" stroke="#8b95a3" stroke-width="1.7"/><path d="M10.5 2 17 6l-6.5 4z" fill="#8b95a3"/></svg></div>
+
+  <!-- ================= 2 run ================= -->
+  <div class="col">
+    <span class="stagelab">2 &nbsp;Run</span>
+    <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+      <div class="chips">
+        <span class="chip">workspace_bash</span><span class="chip">write_file</span><span class="chip">edit_file</span>
+        <span class="chip">update_plan</span><span class="chip">fetch_url</span><span class="chip">list_partitions</span>
+        <span class="chip hot">run_gpu</span>
+      </div>
+
+      <div class="term">
+<span class="p">[plan]</span> locate released code<br>
+<span class="c1">$ git clone</span> .../SharpZO<br>
+<span class="c1">$ pip install</span> -r reqs.txt<br>
+&nbsp;&nbsp;<span class="er">ERROR</span> no match: flash-attn<br>
+<span class="p">[plan]</span> retry, eager attn<br>
+<span class="c1">$ run_gpu</span> python eval.py<br>
+&nbsp;&nbsp;<span class="ok2">wrote</span> evidence/eval.log
+      </div>
+
+      <div class="tree">
+<b>report.json</b><br>
+<b>evidence/</b><br>
+&nbsp;&nbsp;REPORT.md&nbsp;&nbsp;plan.md<br>
+&nbsp;&nbsp;eval.log&nbsp;&nbsp;&nbsp;commands.log
+      </div>
+
+      <div class="note" style="margin-top:auto; padding-top:8px;">
+        A ReAct loop over a workspace shell and a metered Slurm session.
+        <span class="mono" style="font-size:10px;">run_gpu</span> is the only path to a GPU and its wall clock
+        is charged against the run's grant.
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><svg width="19" height="12" viewBox="0 0 19 12"><path d="M0 6h12" stroke="#8b95a3" stroke-width="1.7"/><path d="M10.5 2 17 6l-6.5 4z" fill="#8b95a3"/></svg></div>
+
+  <!-- ================= 3 audit ================= -->
+  <div class="col">
+    <span class="stagelab">3 &nbsp;Audit</span>
+    <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+
+      <div class="claim">
+        <div class="lab">the run claims</div>
+        <div class="mono" style="font-size:11.5px; margin-top:2px;">agent_assessment: <b>reproduced</b></div>
+      </div>
+
+      <div style="margin:7px 0 7px 0;">
+        <div class="chk"><span class="m ok">&#10003;</span><span>each number traced to its execution</span></div>
+        <div class="chk"><span class="m no">&#10007;</span><span>protocol, split, and scale match the pinned config</span></div>
+        <div class="chk"><span class="m ok">&#10003;</span><span>metric recomputed from raw outputs</span></div>
+      </div>
+
+      <div class="flags">flags &nbsp;scope-substitution &nbsp;<span class="rose">medium</span></div>
+
+      <div class="verdict">
+        <div class="lab">the evidence supports</div>
+        <div class="mono" style="font-size:11.5px; margin-top:2px;"><b>partial</b></div>
+      </div>
+
+      <div class="rule">
+        high-severity flag &#8594; disqualified<br>
+        artifact wall &#8594; capped at blocked
+      </div>
+
+      <div class="finding" style="margin-top:auto; padding-top:8px;">
+        <div class="ftick"></div>
+        <div>
+          <div class="fname">self-claim gap</div>
+          <div class="fsub">what the run claims against what its evidence supports</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
