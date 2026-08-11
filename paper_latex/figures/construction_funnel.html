@@ -27,7 +27,7 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
-.wrap { display: flex; align-items: stretch; width: 1720px; padding: 36px 16px 16px 16px; }
+.wrap { display: flex; align-items: stretch; width: 1720px; padding: 36px 16px 18px 16px; }
 
 /* kicker badges (Figure 1 language) */
 .zone { position: relative; display: flex; min-width: 0; }
@@ -48,7 +48,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .card-hdr .sub { font-size: 16px; color: var(--gray); font-weight: 500; margin-top: 2px; }
 
 /* funnel foot chip */
-.foot { margin-top: auto; }
+.foot { margin-top: auto; padding-top: 10px; }
 .count-chip { display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--greenbg); border: 1.5px solid var(--green); border-radius: 9px;
   padding: 5px 10px; font-family: 'JBMono', monospace; font-size: 17px; font-weight: 500; color: #2A6B40; white-space: nowrap; }
@@ -60,18 +60,18 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 
 /* ---- corpus zone ---- */
 .z-corpus { width: 296px; flex: none; }
-.deck { position: relative; flex: 1; display: flex; margin-bottom: 18px; }
+.deck { position: relative; flex: 1; display: flex; }
 .deck .stack1, .deck .stack2 { position: absolute; border-radius: 14px; background: #fff; border: 2px solid rgba(31,58,95,.5); }
-.deck .stack1 { left: 10px; right: 10px; top: 14px; bottom: -8px; z-index: -1; }
-.deck .stack2 { left: 20px; right: 20px; top: 28px; bottom: -16px; border-color: rgba(31,58,95,.28); z-index: -2; }
+.deck .stack1 { left: 10px; right: 10px; top: 14px; bottom: -7px; z-index: -1; }
+.deck .stack2 { left: 20px; right: 20px; top: 28px; bottom: -14px; border-color: rgba(31,58,95,.28); z-index: -2; }
 .bigstat { display: flex; align-items: baseline; gap: 9px; }
 .bigstat .n { font-size: 42px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
 .bigstat .lab { font-size: 18px; color: var(--gray); font-weight: 500; }
-.srcrow { display: flex; align-items: center; gap: 11px; margin-top: 9px; }
+.srcrow { display: flex; align-items: center; gap: 11px; margin-top: 12px; }
 .srcrow img { width: 46px; height: 60px; border-radius: 4px; border: 1px solid #C9D0DA; }
 .src-lines { font-family: 'JBMono', monospace; font-size: 16.5px; color: var(--gray); line-height: 1.65; }
 .src-lines .b { color: var(--teal); }
-.claimbox { margin-top: 10px; background: #F4F7FB; border: 1.5px solid #C9D0DA; border-radius: 10px; padding: 9px 11px; }
+.claimbox { margin-top: 14px; background: #F4F7FB; border: 1.5px solid #C9D0DA; border-radius: 10px; padding: 11px 11px; }
 .claimbox .lab { font-size: 13px; font-weight: 600; letter-spacing: 1.3px; color: #99A0AA; }
 .claimbox .txt { font-family: 'JBMono', monospace; font-size: 17px; color: var(--ink); line-height: 1.45; margin-top: 3px; }
 .claimbox .id { font-family: 'JBMono', monospace; font-size: 15px; color: var(--cgray); margin-top: 5px; }
@@ -99,34 +99,34 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 
 /* ---- stratify zone ---- */
 .z-strat { width: 330px; flex: none; }
-.capnote { display: flex; align-items: center; gap: 8px; font-family: 'JBMono', monospace; font-size: 17px; color: var(--ink); margin-bottom: 10px; }
+.capnote { display: flex; align-items: center; gap: 8px; font-family: 'JBMono', monospace; font-size: 17px; color: var(--ink); margin-bottom: 12px; }
 .capnote img { width: 30px; height: 30px; }
 .capnote .r { color: var(--red); font-weight: 700; }
-.strat { border-collapse: collapse; margin: 0 auto; }
-.strat th { font-family: 'JBMono', monospace; font-size: 15px; color: var(--cgray); font-weight: 500; padding-bottom: 4px; text-align: center; }
-.strat .rowlab { font-family: 'JBMono', monospace; font-size: 16px; color: var(--gray); font-weight: 500; padding-right: 8px; text-align: right; }
-.strat .n { font-family: 'JBMono', monospace; font-size: 16px; color: var(--navy); font-weight: 700; text-align: left; padding-left: 8px; }
-.cell { width: 46px; height: 30px; border-radius: 5px; background: var(--tealbg); border: 1.5px solid rgba(62,142,140,.45); margin: 2.5px; }
-.strat-note { font-size: 16px; color: var(--gray); text-align: center; line-height: 1.45; margin-top: 9px; }
+.strat { border-collapse: collapse; width: 100%; }
+.strat th { font-family: 'JBMono', monospace; font-size: 15px; color: var(--cgray); font-weight: 500; padding-bottom: 6px; text-align: center; }
+.strat .rowlab { font-family: 'JBMono', monospace; font-size: 16px; color: var(--gray); font-weight: 500; text-align: left; width: 74px; }
+.strat .n { font-family: 'JBMono', monospace; font-size: 16px; color: var(--navy); font-weight: 700; text-align: right; width: 36px; }
+.cell { width: 52px; height: 36px; border-radius: 5px; background: var(--tealbg); border: 1.5px solid rgba(62,142,140,.45); margin: 3px auto; }
+.strat-note { font-size: 16px; color: var(--gray); text-align: center; line-height: 1.5; margin-top: 12px; }
 .strat-note b { color: var(--navy); font-weight: 600; }
 
 /* ---- audit zone ---- */
 .z-audit { width: 300px; flex: none; }
 .z-audit .card { background: #FBF8F1; }
 .stamp-img { position: absolute; right: -10px; top: -14px; width: 46px; height: 46px; transform: rotate(-12deg); z-index: 4; }
-.check { display: flex; gap: 9px; font-size: 17.5px; color: var(--ink); line-height: 1.3; margin-top: 8px; }
+.check { display: flex; gap: 9px; font-size: 17.5px; color: var(--ink); line-height: 1.3; margin-top: 11px; }
 .check .g { font-weight: 700; flex: none; width: 16px; }
 .g.ok { color: var(--green); }
 .g.bad { color: var(--red); }
 .check b { color: var(--navy); font-weight: 700; }
-.audit-note { font-size: 16.5px; color: var(--gray); font-style: italic; line-height: 1.4; margin-top: 10px; }
+.audit-note { font-size: 16.5px; color: var(--gray); font-style: italic; line-height: 1.4; margin-top: 14px; }
 
 /* ---- release zone ---- */
 .z-release { width: 252px; flex: none; }
-.filetree { font-family: 'JBMono', monospace; font-size: 17px; line-height: 1.55; color: var(--ink); }
+.filetree { font-family: 'JBMono', monospace; font-size: 17px; line-height: 1.62; color: var(--ink); }
 .filetree .f { color: var(--navy); font-weight: 700; }
-.filetree .sub { font-size: 15px; color: var(--cgray); margin: 0 0 5px 0; line-height: 1.4; }
-.total-chip { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: auto;
+.filetree .sub { font-size: 15px; color: var(--cgray); margin: 0 0 7px 0; line-height: 1.4; }
+.total-chip { display: flex; align-items: center; justify-content: center; gap: 7px;
   background: var(--goldbg); border: 1.5px solid var(--gold); border-radius: 9px; padding: 5px 10px;
   font-family: 'JBMono', monospace; font-size: 17px; font-weight: 700; color: var(--goldtx); white-space: nowrap; }
 </style>
@@ -151,7 +151,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
           <div class="txt">&#8220;79.42% on EuroSAT,<br>16-shot CLIP ViT-B/16&#8221;</div>
           <div class="id">arXiv 2506.20990<br>match bar: &plusmn;tolerance</div>
         </div>
-        <div class="foot axiom">one pinned <b>claim</b> per paper</div>
+        <div class="foot"><div class="axiom">one pinned <b>claim</b> per paper</div></div>
       </div>
     </div>
   </div>
@@ -180,7 +180,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
       <div class="tier"><span class="tn">&nbsp;&nbsp;Run</span><span>all artifacts live</span></div>
       <div class="tier on"><span class="tn">&#9656; Retrain</span><span>weights withheld</span></div>
       <div class="tier"><span class="tn">&nbsp;&nbsp;Reimplement</span><span>code withheld too</span></div>
-      <div class="foot count-chip" style="margin-top:10px;">1,000 sampled &#8594; <b>620 eligible</b></div>
+      <div class="foot"><div class="count-chip">1,000 sampled &#8594; <b>620 eligible</b></div></div>
     </div>
   </div>
 
@@ -193,13 +193,13 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
       <div class="card-hdr"><img src="icons/scale.png"><span class="t">Stratified selection</span></div>
       <div class="capnote"><img src="icons/gpu.png">drop above <span class="r">96 H100-h</span></div>
       <table class="strat">
-        <tr><th></th><th>0&#8211;8</th><th>8&#8211;32</th><th>32&#8211;96</th><th style="text-align:left; padding-left:8px;">n</th></tr>
+        <tr><th></th><th>0&#8211;8</th><th>8&#8211;32</th><th>32&#8211;96</th><th style="text-align:right;">n</th></tr>
         <tr><td class="rowlab">Run</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
         <tr><td class="rowlab">Retrain</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">67</td></tr>
         <tr><td class="rowlab">Reimpl.</td><td><div class="cell"></div></td><td><div class="cell"></div></td><td><div class="cell"></div></td><td class="n">66</td></tr>
       </table>
       <div class="strat-note"><b>equal tier cells</b>, equal precision<br>reweight to venue: 33 / 44 / 13%</div>
-      <div class="foot count-chip">620 &#8594; <b>200 audit pool</b></div>
+      <div class="foot"><div class="count-chip">620 &#8594; <b>200 audit pool</b></div></div>
     </div>
   </div>
 
@@ -219,7 +219,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
       <div class="check"><span class="g bad">&#10007;</span><span><b>6</b> inaccessible &#8594; replaced</span></div>
       <div class="check"><span class="g bad">&#10007;</span><span><b>15</b> paid-API &#8594; replaced</span></div>
       <div class="audit-note">only 19 of 100 compute estimates appear in the paper</div>
-      <div class="foot count-chip" style="margin-top:10px;">200 &#8594; <b>100 + 14</b></div>
+      <div class="foot"><div class="count-chip">200 &#8594; <b>100 + 14</b></div></div>
     </div>
   </div>
 
@@ -243,7 +243,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
         <span class="f">cap</span>&nbsp;&nbsp;&nbsp;&nbsp;96 H100-h
         <div class="sub">per-paper ceiling</div>
       </div>
-      <div class="total-chip">&#931; 1,259 H100-hours</div>
+      <div class="foot"><div class="total-chip">&#931; 1,259 H100-hours</div></div>
     </div>
   </div>
 
