@@ -42,24 +42,20 @@
 \begin{abstract}
 Reproduction is the smallest complete unit of machine learning research, so
 agents that can automate it are a first step toward agents that automate
-research. Existing benchmarks tend to prepare the environment or to
-withhold the released artifacts, so they rarely place an agent where a human
-replicator stands, with the paper and whatever its authors published. We
-introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
-allocation, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence, where reproduction follows how much the authors released, falling from XX\% at Run tier to XX\% at Retrain and XX\% at
-Reimplement, a gradient we call the availability cliff. Beneath it, stronger agents achieve partial reproduction more
-often, reaching a verified partial result on XX\% of Retrain-tier runs and
-showing a nascent ability to close the loop of reproduction, while full recovery
-of the number holds at XX\% across the three agents we evaluate. We
-define a failure taxonomy separating modes that recede with agent capability from
-modes belonging to the papers, and find that compute does not bind, since the 96
-GPU-hour band yields no reproductions at XX\% of allocation spent. Agents therefore reproduce reliably where the authors shipped
-a runnable artifact, less often where the code exists but the experiments must
-still be carried out, and least often where the method has to be built from the
-paper alone, so progress at operating a computer now needs to be matched by
-progress at running experiments and turning implemented code into a working
-artifact.
+research. Existing benchmarks tend to prepare the environment or to withhold the
+released artifacts, so they rarely place an agent where a human replicator
+stands. We introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real
+GPU allocation, a frozen target claim, a numeric tolerance, and a pinned auditor
+over its execution evidence. Reproduction falls from XX\% at Run tier to XX\% at
+Retrain and XX\% at Reimplement, a gradient we call the availability cliff, and
+compute does not drive it, since the 96 GPU-hour band yields no reproductions at
+XX\% of allocation spent. Stronger agents reach a verified partial result on
+XX\% of Retrain-tier runs while full recovery of the number holds at XX\% across
+the three agents we evaluate. Agents reproduce reliably where the authors
+shipped a runnable artifact, less often where the experiments must still be run,
+and least often where the method must be built from the paper alone, so progress
+at operating a computer needs matching progress at generating the artifact
+itself.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
