@@ -63,34 +63,31 @@ also a prerequisite for recursively self-improving systems, since a model
 that improves itself must first re-implement and verify the research it
 builds on~\citep{favaro2026recursive}.
 
-We introduce RECLAIM, a benchmark that measures whether an agent can
-reproduce a published result end to end, starting from the artifacts the
-paper's authors actually released and graded against the execution
-evidence the run produces. We find that success is gated by artifact
-availability. When the authors released a complete artifact stack, agents
-recover the target result on X\% of papers, but as the release thins
-toward reimplementation from the paper alone, the rate drops sharply to
-X\%. We call this drop the availability cliff. Agents also over-report
-their own success. Of the X runs that report a reproduction, only X
-survive a provenance audit of the execution evidence they leave behind, a
-discrepancy we call the self-claim gap. A small set of recurring failure
-modes accounts for the unsuccessful runs, led by environment fights and
-reimplementation without validation, and the runs that do recover the
-result share a
-procedural signature the failures lack: they smoke-test before they commit
-compute, and they read what the authors released instead of inferring it.
-We define the taxonomy, report the per-mode counts, and detail the success
-pattern in Section~\ref{sec:analysis}.
+We introduce RECLAIM, a benchmark that measures whether an agent can reproduce a
+published result end to end, starting from the artifacts the paper's authors
+actually released and graded against the execution evidence the run produces. We
+find that success is gated by artifact availability. When the authors released a
+complete artifact stack, agents recover the target result on X\% of papers, but
+as the release thins toward reimplementation from the paper alone, the rate
+drops sharply to X\%. We call this drop the availability cliff. Moreover, of the
+X runs that report a reproduction, only X survive a provenance audit of the
+execution evidence they leave behind, a discrepancy we call the self-claim gap.
+A small set of recurring failure modes accounts for the unsuccessful runs, led
+by environment fights and reimplementation without validation, and the runs that
+do recover the result share a procedural signature the failures lack: they
+smoke-test before they commit compute, and they read what the authors released
+instead of inferring it. We define the taxonomy, report the per-mode counts, and
+detail the success pattern in Section~\ref{sec:analysis}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/reclaim_overview}
-\caption{Overview of RECLAIM and its evaluation pipeline. Each task withholds
-the configuration behind its pinned \mbox{\emph{match target}}, so the agent
-must rebuild the claimed number from what the authors released under a fixed
-GPU budget. An adversarial audit then re-derives the verdict from the run's
-logged evidence (Section~\ref{sec:auditing}). The figure shows an example run
-with DeepSeek-V4 on the CQ-DINO paper.}
+\caption{Overview of RECLAIM and its evaluation pipeline. Each paper enters at
+the availability tier its release supports (run, retrain, or reimplement), and
+the agent must rebuild the pinned \mbox{\emph{match target}} from those
+artifacts under a fixed GPU budget. An adversarial audit then re-derives the
+verdict from the run's logged evidence (Section~\ref{sec:auditing}). The
+figure shows an example run with DeepSeek-V4 on the CQ-DINO paper.}
 \label{fig:overview}
 \end{figure}
 

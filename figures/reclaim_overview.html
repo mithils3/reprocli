@@ -26,7 +26,7 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
-.wrap { position: relative; width: 1720px; padding: 10px 16px 14px 20px; }
+.wrap { position: relative; width: 1720px; padding: 10px 16px 88px 20px; }
 
 /* header */
 .header { display: flex; align-items: baseline; gap: 18px; margin: 0 0 36px 4px; }
@@ -77,12 +77,18 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .chip-withheld img { width: 30px; height: 30px; }
 
 .chips { display: flex; gap: 10px; margin: 2px 0 10px 0; }
-.tier-lab { font-size: 16px; font-weight: 600; letter-spacing: 1.4px; color: #99A0AA; margin: 10px 0 4px 0; }
-.tiers { margin: 0 0 10px 0; }
-.tier { display: flex; align-items: baseline; gap: 12px; font-family: 'JBMono', monospace; font-size: 19px; color: var(--gray); padding: 4px 8px; }
-.tier .tn { width: 154px; font-weight: 500; flex: none; }
-.tier.on { background: var(--greenbg); border-radius: 7px; color: #2A6B40; }
-.tier.on .tn { font-weight: 700; }
+.tier-lab { font-size: 16px; font-weight: 600; letter-spacing: 1.4px; color: #99A0AA; margin: 10px 0 6px 0; }
+.cliff { display: flex; flex-direction: column; align-items: flex-start; margin: 0 0 12px 0; }
+.step { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: 'JBMono', monospace;
+  font-size: 18px; color: var(--gray); background: #fff; border: 1.5px solid #C9D0DA; border-radius: 8px; padding: 5px 10px; }
+.step .tn { font-weight: 500; flex: none; }
+.step img { width: 22px; height: 22px; }
+.step.on { background: var(--greenbg); border-color: var(--green); color: #2A6B40; }
+.step.on .tn { font-weight: 700; }
+.step.s2 { margin: 6px 0 0 26px; }
+.step.s3 { margin: 6px 0 0 52px; }
+.cliff-note { margin-top: 10px; font-size: 19px; color: var(--red); line-height: 1.35; }
+.cliff-note b { font-weight: 700; }
 .avail { font-family: 'JBMono', monospace; font-size: 20px; font-weight: 500; color: #2A6B40;
   background: var(--greenbg); border: 1.5px solid var(--green); border-radius: 9px; padding: 6px 15px; }
 .tier-note { font-size: 19px; color: var(--gray); margin-bottom: 10px; }
@@ -167,7 +173,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .v-audit .lab { color: #DFEEE4; }
 .vs { font-size: 19px; font-weight: 600; color: var(--gray); }
 .stamp-img { position: absolute; right: -8px; top: -16px; width: 50px; height: 50px; transform: rotate(-12deg); }
-.gap-note { font-size: 18px; font-weight: 500; color: var(--red); margin-top: 12px; line-height: 1.35; }
+.gap-note { font-family: 'JBMono', monospace; font-size: 19px; font-style: italic; color: var(--gray); margin-top: 12px; }
 
 /* arrows overlay */
 svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
@@ -211,10 +217,11 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
           <div class="card-hdr"><img src="icons/download.png"><span class="t">What the authors released</span></div>
           <div class="chips"><span class="avail">&#10003; data</span><span class="avail">&#10003; code</span><span class="avail">&#10003; weights</span></div>
           <div class="tier-lab">AVAILABILITY TIER</div>
-          <div class="tiers">
-            <div class="tier on"><span class="tn">&#9656; Run</span><span>execute what shipped</span></div>
-            <div class="tier"><span class="tn">&nbsp;&nbsp;Retrain</span><span>weights withheld</span></div>
-            <div class="tier"><span class="tn">&nbsp;&nbsp;Reimplement</span><span>code withheld too</span></div>
+          <div class="cliff">
+            <div class="step on s1"><span class="tn">&#9656; Run</span><span>execute what shipped</span></div>
+            <div class="step s2"><span class="tn">Retrain</span><img src="icons/lock.png"><span>weights withheld</span></div>
+            <div class="step s3"><span class="tn">Reimplement</span><img src="icons/lock.png"><span>code withheld too</span></div>
+            <div class="cliff-note"><b>the availability cliff</b><br>success falls as the release thins</div>
           </div>
           <div class="band-row"><img src="icons/gpu.png">budget 8 H100-h</div>
         </div>
@@ -307,7 +314,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
               <span class="vs">vs</span>
               <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">AP 46.3 &#10003;</div></div>
             </div>
-            <div class="gap-note">RECLAIM scores the audited verdict.<br>Across runs, claimed and audited diverge.</div>
+            <div class="gap-note">RECLAIM scores the audited verdict</div>
           </div>
         </div>
       </div>
@@ -323,13 +330,14 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
                cx: (r.left + r.right) / 2 - w.left, cy: (r.top + r.bottom) / 2 - w.top }; };
     const svg = q('#arrows');
     const NS = 'http://www.w3.org/2000/svg';
-    svg.innerHTML = '<defs><marker id="arr" markerWidth="7" markerHeight="7" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#1F3A5F"/></marker></defs>';
-    const line = (x1, y1, x2, y2, dashed) => {
+    svg.innerHTML = '<defs><marker id="arr" markerWidth="7" markerHeight="7" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#1F3A5F"/></marker>' +
+      '<marker id="arr-red" markerWidth="7" markerHeight="7" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#C2483B"/></marker></defs>';
+    const line = (x1, y1, x2, y2, dashed, red) => {
       const l = document.createElementNS(NS, 'line');
       l.setAttribute('x1', x1); l.setAttribute('y1', y1);
       l.setAttribute('x2', x2); l.setAttribute('y2', y2);
-      l.setAttribute('stroke', '#1F3A5F'); l.setAttribute('stroke-width', '3.5');
-      l.setAttribute('marker-end', 'url(#arr)');
+      l.setAttribute('stroke', red ? '#C2483B' : '#1F3A5F'); l.setAttribute('stroke-width', '3.5');
+      l.setAttribute('marker-end', red ? 'url(#arr-red)' : 'url(#arr)');
       if (dashed) l.setAttribute('stroke-dasharray', '11 8');
       svg.appendChild(l);
     };
@@ -347,6 +355,9 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     line(term.r + 4, out.cy, out.l - 8, out.cy);
     // output -> audit (vertical = handoff to auditor)
     line(out.cx, out.b + 2, out.cx, audit.t - 28);
+    // the availability cliff: falling arrow beside the tier steps
+    const s1 = box(q('.step.s1')), s3 = box(q('.step.s3'));
+    line(s3.r + 16, s1.t + 6, s3.r + 16, s3.b - 2, false, true);
     // label
     const lbl = document.createElement('div');
     lbl.className = 'arrow-label';
