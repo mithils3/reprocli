@@ -53,9 +53,8 @@ their allocation. Stronger agents reach a verified partial result on XX\% of
 Retrain-tier runs while matching the reported number within tolerance stays at
 XX\% across the three agents we evaluate. Agents reproduce reliably where the authors
 shipped a runnable artifact, less often where the experiments must still be run,
-and least often where the method must be built from the paper alone, so progress
-at operating a computer needs matching progress at generating the artifact
-itself.
+and least often where the method must be built from the paper alone, so they are
+improving as operators of a computer but not yet as research scientists.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
@@ -76,6 +75,14 @@ itself.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
 %     reproduced. Small-sample zero; the body must carry n. No longer cited in
 %     the abstract, keep for the compute section.
+% TODO(claim) the closing "improving as operators but not yet as research
+%   scientists" is a trajectory claim read across three agents, not one agent
+%   over time. The body must carry the decomposition that licenses it: attempt
+%   rate (ran the right experiment) climbs 34% -> 35% -> 86% across MiniMax-M2.7,
+%   Qwen3.6-27B, DSv4, while conversion (attempts that land the number) goes
+%   45% -> 67% -> 38% and does not improve. Gains are in operating the machine,
+%   not in the science. Numbers are pinned-auditor but the attempt rate is
+%   dissection-derived, so state its provenance where it appears.
 % TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
 %   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
 %   undissected, so there is no per-mechanism account of the drop-off at the
