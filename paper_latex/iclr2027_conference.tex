@@ -40,7 +40,35 @@
 \maketitle
 
 \begin{abstract}
-Write a concise summary of the problem, method, main results, and significance.
+Reproducing a published result is the smallest complete unit of machine learning
+research, and it is the unit labs most want to automate. We introduce RECLAIM, a
+benchmark of 100 NeurIPS papers whose code, weights, and data we verified
+retrievable by direct host probe, paired with a harness that gives an autonomous
+agent a real GPU allocation, a frozen target claim, and a numeric tolerance.
+Grading every run with a pinned auditor, we find that the strongest agent we
+evaluate reproduces only 32\% of Retrain-tier claims, and that it fails in a
+specific place: it puts the paper's own artifact on the paper's own data in 86\%
+of runs, and lands the reported number in 32\%.
+% TODO(provenance): the 86% is derived from the per-run dissection labels
+% (reproduced-clean + near-miss-partial, 24/28 on sweep 2896059), NOT from the
+% pinned auditor. The auditor-grounded proxy is audit_score >= 6, which gives
+% 22/28 = 79%. Decide which one the abstract carries before submission; the
+% dissection-derived figure needs the vocabulary unification across the MiniMax
+% and Qwen sweeps to be defensible cross-model.
+Across three agents spanning a nearly twofold range in audit score, the rate at
+which correct attempts convert into landed numbers does not improve. Compute is
+not the constraint, since agents reproduce nothing at all in the 96 GPU-hour band
+while spending 13\% of that allocation. The residual failures trace to papers
+whose released artifacts do not determine the reported configuration, a property
+that stronger agents expose more clearly as their own errors recede.
+% TODO(evidence gate): the final sentence rests on `under-determined-target`,
+% which is provisional. Five runs, asserted by the LLM dissection and confirmed
+% by the LLM auditor, zero hand-verified. m-paper keeps it out of the paper until
+% the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1 vs
+% appendix rs=8.5/lr=2.0, 7.66pt swing) is the fifteen-minute check.
+% TODO(numbers): 32% and the 96h-band 0/11 are pinned-auditor post-freeze and
+% clear the Iron Law. No hard-tier (Reimplement) number appears here because both
+% hard sweeps are self-graded; re-audit 2918306 pinned before adding one.
 \end{abstract}
 
 \section{Introduction}
