@@ -46,22 +46,21 @@ research. Existing benchmarks either prepare the environment or
 withhold the released artifacts, so neither puts an agent where a human
 replicator stands, with the paper and whatever its authors published. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
-allocation, a frozen target claim, a numeric tolerance, and a pinned auditor that
-grades its execution evidence, where reproduction rate follows how much the
-authors released, falling from XX\% of Run-tier papers to XX\% at Retrain and
-XX\% at Reimplement, a gradient we call the availability cliff. Beneath it,
-stronger agents achieve partial
-reproduction far more often, reaching a verified partial result on XX\% of
-Retrain-tier runs and showing a nascent ability to close the loop of
-reproduction, while full recovery of the reported number holds at XX\% and does
-not improve across the three agents we evaluate. We
+allocation, a frozen target claim, a numeric tolerance, and a pinned auditor over its
+execution evidence, where reproduction rate follows how much the authors
+released, falling from XX\% at Run tier to XX\% at Retrain and XX\% at
+Reimplement, a gradient we call the availability cliff. Beneath it, stronger agents achieve partial reproduction far
+more often, reaching a verified partial result on XX\% of Retrain-tier runs and
+showing a nascent ability to close the loop of reproduction, while full recovery
+of the reported number holds at XX\% across the three agents we evaluate. We
 define a failure taxonomy separating modes that recede with agent capability from
 modes belonging to the papers, and find that compute does not bind, since the 96
-GPU-hour band yields no reproductions at XX\% of allocation spent. Current agents can therefore design and execute a
-paper's experiment end to end while the last step of confirming the reported
-number stays out of reach, so RECLAIM is far from saturated at any tier, and
-reproduction more broadly gives a gradeable measure of progress toward agents
-that do research on their own.
+GPU-hour band yields no reproductions at XX\% of allocation spent. The gradient is therefore a statement about capability:
+agents execute what the authors shipped, falter when the experiments must still
+be run, and fall away when the method has to be built from the paper alone, so
+RECLAIM is far from saturated at any tier
+and reproduction gives a gradeable measure of progress toward agents that do
+research on their own.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
@@ -73,6 +72,15 @@ that do research on their own.
 %   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
 %     reproduced. Small-sample zero; the body must carry n.
+% TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
+%   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
+%   undissected, so there is no per-mechanism account of the drop-off at the
+%   tier where the code is genuinely unavailable and the method must be derived
+%   from the paper. That drop-off is the paper's sharpest capability claim and
+%   currently has zero mechanism evidence behind it. Owed: pinned re-audit of
+%   2918306 via --upload, then a full dissection, then a per-mode table for
+%   Reimplement set against Run and Retrain. Until then the closing sentence's
+%   "fall away" clause is carried by the rate alone.
 % TODO(evidence gate) "modes belonging to the papers themselves" rests on
 %   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
 %   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
