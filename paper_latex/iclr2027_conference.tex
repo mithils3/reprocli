@@ -41,34 +41,42 @@
 
 \begin{abstract}
 Reproducing a published result is the smallest complete unit of machine learning
-research, and it is the unit labs most want to automate. We introduce RECLAIM, a
-benchmark of 100 NeurIPS papers whose code, weights, and data we verified
-retrievable by direct host probe, paired with a harness that gives an autonomous
-agent a real GPU allocation, a frozen target claim, and a numeric tolerance.
-Grading every run with a pinned auditor, we find that the strongest agent we
-evaluate reproduces only 32\% of Retrain-tier claims, and that it fails in a
-specific place: it puts the paper's own artifact on the paper's own data in 86\%
-of runs, and lands the reported number in 32\%.
-% TODO(provenance): the 86% is derived from the per-run dissection labels
-% (reproduced-clean + near-miss-partial, 24/28 on sweep 2896059), NOT from the
-% pinned auditor. The auditor-grounded proxy is audit_score >= 6, which gives
-% 22/28 = 79%. Decide which one the abstract carries before submission; the
-% dissection-derived figure needs the vocabulary unification across the MiniMax
-% and Qwen sweeps to be defensible cross-model.
-Across three agents spanning a nearly twofold range in audit score, the rate at
-which correct attempts convert into landed numbers does not improve. Compute is
-not the constraint, since agents reproduce nothing at all in the 96 GPU-hour band
-while spending 13\% of that allocation. The residual failures trace to papers
-whose released artifacts do not determine the reported configuration, a property
-that stronger agents expose more clearly as their own errors recede.
-% TODO(evidence gate): the final sentence rests on `under-determined-target`,
-% which is provisional. Five runs, asserted by the LLM dissection and confirmed
-% by the LLM auditor, zero hand-verified. m-paper keeps it out of the paper until
-% the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1 vs
-% appendix rs=8.5/lr=2.0, 7.66pt swing) is the fifteen-minute check.
-% TODO(numbers): 32% and the 96h-band 0/11 are pinned-auditor post-freeze and
-% clear the Iron Law. No hard-tier (Reimplement) number appears here because both
-% hard sweeps are self-graded; re-audit 2918306 pinned before adding one.
+research, and is key to creating systems that can automate it. Existing benchmarks either hand an agent a prepared
+environment or withhold the paper entirely, so neither separates an incapable
+agent from an underspecified one.
+We introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
+allocation, a frozen target claim, and a numeric tolerance, with every run graded
+by a pinned auditor on its execution evidence. Reproduction rate follows how much
+the authors released, falling from XX\% of Run-tier papers to XX\% at Retrain and
+XX\% at Reimplement, a gradient we call the availability cliff. Beneath that
+ceiling agents reach the right experiment far more often than they land it,
+running the paper's own artifact on its own data in XX\% of Retrain-tier runs and
+recovering the reported number in only XX\%, a conversion rate that does not
+improve across three agents spanning an XX-fold range in audit score. We define a
+failure taxonomy separating modes that recede with agent capability from modes
+belonging to the papers themselves. Compute does not bind: the 96 GPU-hour band
+produces no reproductions while spending XX\% of its allocation. That attempt
+rate is itself a capability result, since agents can already design and execute a
+paper's experiment end to end, and the missing step is closing the loop,
+establishing that the run they built recovers the number the paper reported.
+RECLAIM is far from saturated at any tier, and the headroom sits in that final
+step.
+% TODO(numbers) every XX above, with its source:
+%   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
+%     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
+%     NO pinned number: 2672018 (Qwen) and 2918306 (DSv4) are both self-graded.
+%     Re-audit 2918306 via --upload, then fill all three.
+%   right-experiment rate (XX% of Retrain runs) -- 24/28=86% from the dissection
+%     labels reproduced-clean + near-miss-partial, NOT auditor-derived. The
+%     auditor-grounded proxy is audit_score>=6, giving 22/28=79%. Pick one.
+%   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
+%   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
+%     reproduced. Small-sample zero; the body must carry n.
+% TODO(evidence gate) "modes belonging to the papers themselves" rests on
+%   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
+%   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
+%   until the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1
+%   against appendix rs=8.5/lr=2.0, a 7.66pt swing) is the fifteen-minute check.
 \end{abstract}
 
 \section{Introduction}
@@ -93,19 +101,48 @@ builds on~\citep{favaro2026recursive}.
 
 We introduce RECLAIM, a benchmark that measures whether an agent can reproduce a
 published result end to end, starting from the artifacts the paper's authors
-actually released and graded against the execution evidence the run produces. We
-find that success is gated by artifact availability. When the authors released a
-complete artifact stack, agents recover the target result on X\% of papers, but
-as the release thins toward reimplementation from the paper alone, the rate
-drops sharply to X\%. We call this drop the availability cliff. Moreover, of the
-X runs that report a reproduction, only X survive a provenance audit of the
-execution evidence they leave behind, a discrepancy we call the self-claim gap.
-A small set of recurring failure modes accounts for the unsuccessful runs, led
-by environment fights and reimplementation without validation, and the runs that
-do recover the result share a procedural signature the failures lack: they
-smoke-test before they commit compute, and they read what the authors released
-instead of inferring it. We define the taxonomy, report the per-mode counts, and
-detail the success pattern in Section~\ref{sec:analysis}.
+actually released and graded against the execution evidence the run produces.
+Reproduction rate follows how much the authors released. The strongest agent we
+evaluate recovers the target result on XX\% of Run-tier papers, where code,
+data, and weights all ship, on XX\% of Retrain-tier papers, where the weights
+are withheld and the model must be trained before it can be evaluated, and on
+XX\% of Reimplement-tier papers, where the code is withheld as well. We call
+this gradient the availability cliff, and it is the axis the benchmark is
+constructed to vary.
+% TODO(numbers): Run 14/29=48% and Retrain 9/28=32%, DeepSeek-V4-Flash, pinned
+% claude-sonnet-5, post-freeze, both Iron-Law clean. Reimplement has no pinned
+% number; re-audit 2918306 via --upload before filling any of the three.
+
+The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
+Run tier the authors released every artifact the claim requires and we verified
+each one retrievable by direct host probe, and more than half of those claims
+still do not come back. Three properties of that residual organize the rest of
+this paper. Agents reach the right experiment far more often than they land it:
+on Retrain-tier papers the strongest agent puts the paper's own artifact on the
+paper's own data in XX\% of runs and reports the paper's number in XX\%. Across
+three agents spanning an XX-fold range in mean audit score, the rate at which a
+correct attempt converts into a landed number does not improve, so the gain
+between agent generations shows up almost entirely in how often an agent reaches
+the experiment. Compute does not bind either, since no run in the 96 GPU-hour
+band reproduces its claim while runs in that band spend XX\% of the allocation
+they were given.
+
+A small set of recurring failure modes accounts for the residual, and the modes
+separate by whose defect they encode. Modes that belong to the agent recede as
+capability rises: reimplementation without validation falls from XX of XX runs
+to XX of XX across the agents we evaluate, and environment fights disappear as a
+primary cause while remaining a large tax on rounds. Modes that belong to the
+papers hold steady, led by releases whose own configuration files disagree with
+the configuration the paper reports. We define the taxonomy, report the per-mode
+counts, and give the transcript evidence in Section~\ref{sec:analysis}. Agent
+self-reports track none of this reliably, so we carry claimed and audited counts
+as background data rather than as a result.
+% TODO(evidence gate): "modes that belong to the papers hold steady" rests on
+% under-determined-target, provisional at 5 runs and zero hand-verified. Same
+% gate as the abstract's closing sentence. Verify before this sentence ships.
+% TODO(vocabulary): the 7-of-32 to 1-of-28 comparison remaps MiniMax's
+% dissection vocabulary onto the current slugs. Unify the MiniMax and Qwen
+% analyses.json mode names before this cross-model count is defensible.
 
 \begin{figure}[t]
 \centering
