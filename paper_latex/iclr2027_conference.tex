@@ -369,7 +369,7 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
-loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
+loop~\citep{yao2023react}. The toolset is
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
@@ -383,18 +383,6 @@ Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, tool schemas, and session mechanics.
-
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/harness_overview}
-\end{center}
-\caption{The agent harness. The agent receives the paper and its match
-target, acts through a ReAct tool loop over a workspace shell and a metered
-Slurm GPU session with 500\,GB of scratch storage, and ends with a
-schema-constrained \texttt{report.json} whose claims the auditor
-grades against the run's \texttt{evidence/} directory.}
-\label{fig:harness}
-\end{figure}
 
 \paragraph{Models.} We evaluate open-weight and API-served models under
 identical conditions.
