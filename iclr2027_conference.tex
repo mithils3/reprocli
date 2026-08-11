@@ -45,22 +45,31 @@ Existing benchmarks tend to prepare the environment or to withhold the released
 artifacts, so they rarely place an agent where a human replicator stands. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
 budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence. Reproduction falls from XX\% at Run tier, where the authors
-shipped a runnable artifact, to XX\% at Retrain, where the experiments must be
-rerun, and XX\% at Reimplement, where the method must be built from the paper
-alone. Compute does not drive the fall, since runs that fail to reproduce spend
-only XX\% of their allocation. We label each analysed run with a failure
-mechanism read from its transcript. At Retrain tier, XX of XX misses executed the
-specified experiment and landed outside tolerance, and the matched-number rate
-stays at XX\% across the three agents we evaluate. These agents are competent
+execution evidence. Reproduction falls from XX\% at Run tier to XX\% at Retrain
+and XX\% at Reimplement, where the method must be built from the paper alone. A
+released artifact rarely runs as shipped, and on XX of XX Run-tier successes the
+agent diagnosed and repaired the environment first. Compute does not
+drive the fall, since runs that fail to reproduce spend only XX\% of their
+allocation. We label each analysed run with a failure mechanism, and at Retrain
+tier XX of XX misses executed the specified experiment and missed tolerance,
+while the matched-number rate stays at XX\% across the three agents we evaluate. These agents are competent
 executors and weak research scientists, and the judgment that turns an executed
-experiment into a confirmed number is the step that separates them from agents
-that automate research.
+experiment into a confirmed number is what separates them from agents that
+automate research.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
 %     NO pinned number: 2672018 (Qwen) and 2918306 (DSv4) are both self-graded.
 %     Re-audit 2918306 via --upload, then fill all three.
+%   Run-tier successes needing environment repair (XX of XX) -- source is the
+%     pinned DSv4 easy sweeps (2883229+2889575, analysis set n=29, 14 reproduced).
+%     NO stored field answers this directly. The nearest existing cut is the
+%     environment-fights label intersected with the reproduced runs, which
+%     undercounts, since repair inside an otherwise clean run is not labelled a
+%     fight. Owed: a transcript pass over the 14 reproduced easy runs counting
+%     those with a dependency, config, or missing-file repair before first
+%     successful execution. If that pass is not run, cut the clause rather than
+%     softening it, and keep the repair evidence as a body figure.
 %   Retrain misses that executed the experiment (XX of XX) -- near-miss-partial
 %     is 15 of 28 runs on the pinned DSv4 medium sweep 2896059, against 19 misses
 %     (28 minus the 9 reproduced), so 15 of 19. DISSECTION-derived, not auditor-
