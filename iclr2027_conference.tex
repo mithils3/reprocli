@@ -48,10 +48,10 @@ stands. We introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a meter
 GPU-hour budget, a frozen target claim, a numeric tolerance, and a pinned auditor
 over its execution evidence. Reproduction falls from XX\% at Run tier to XX\% at
 Retrain and XX\% at Reimplement, a gradient we call the availability cliff, and
-compute does not drive it, since the 96 GPU-hour band yields no reproductions at
-XX\% of allocation spent. Stronger agents reach a verified partial result on
-XX\% of Retrain-tier runs while full recovery of the number holds at XX\% across
-the three agents we evaluate. Agents reproduce reliably where the authors
+compute does not drive it, since runs that fail to reproduce spend only XX\% of
+their allocation. Stronger agents reach a verified partial result on XX\% of
+Retrain-tier runs while matching the reported number within tolerance stays at
+XX\% across the three agents we evaluate. Agents reproduce reliably where the authors
 shipped a runnable artifact, less often where the experiments must still be run,
 and least often where the method must be built from the paper alone, so progress
 at operating a computer needs matching progress at generating the artifact
@@ -65,8 +65,17 @@ itself.
 %     labels reproduced-clean + near-miss-partial, NOT auditor-derived. The
 %     auditor-grounded proxy is audit_score>=6, giving 22/28=79%. Pick one.
 %   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
+%   failed-run spend (XX% of their allocation) -- 48.1% mean / 37.0% median over
+%     the 34 non-reproduced runs pooled across the two pinned DSv4 sweeps
+%     (easy analysis set n=29, medium 2896059-fresh n=28). WARNING: reproduced
+%     runs spend LESS, 32.3% mean / 21.6% median over n=23, so the sentence may
+%     only claim failures leave budget unused in absolute terms. It may NOT imply
+%     failures are cheaper than successes. Recompute once Reimplement is pinned,
+%     since 96h-band runs die on session wall-clock with compute still unspent
+%     and that is a separate mechanism the body must name.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
-%     reproduced. Small-sample zero; the body must carry n.
+%     reproduced. Small-sample zero; the body must carry n. No longer cited in
+%     the abstract, keep for the compute section.
 % TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
 %   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
 %   undissected, so there is no per-mechanism account of the drop-off at the
