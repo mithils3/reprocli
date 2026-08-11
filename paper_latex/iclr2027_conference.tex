@@ -41,26 +41,26 @@
 
 \begin{abstract}
 Reproducing a published result is the smallest complete unit of machine learning
-research, and is key to creating systems that can automate it. Existing benchmarks either hand an agent a prepared
-environment or withhold the paper entirely, so neither separates an incapable
-agent from an underspecified one.
-We introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
+research, and is key to creating systems that can automate it. Existing
+benchmarks either hand an agent a prepared environment or withhold the paper
+entirely, so neither separates an incapable agent from an underspecified one. We
+introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
 allocation, a frozen target claim, and a numeric tolerance, with every run graded
-by a pinned auditor on its execution evidence. Reproduction rate follows how much
-the authors released, falling from XX\% of Run-tier papers to XX\% at Retrain and
-XX\% at Reimplement, a gradient we call the availability cliff. Beneath that
-ceiling agents reach the right experiment far more often than they land it,
-running the paper's own artifact on its own data in XX\% of Retrain-tier runs and
-recovering the reported number in only XX\%, a conversion rate that does not
-improve across three agents spanning an XX-fold range in audit score. We define a
-failure taxonomy separating modes that recede with agent capability from modes
-belonging to the papers themselves. Compute does not bind: the 96 GPU-hour band
-produces no reproductions while spending XX\% of its allocation. That attempt
-rate is itself a capability result, since agents can already design and execute a
-paper's experiment end to end, and the missing step is closing the loop,
-establishing that the run they built recovers the number the paper reported.
-RECLAIM is far from saturated at any tier, and the headroom sits in that final
-step.
+by a pinned auditor on its execution evidence, and find that
+reproduction rate follows how much the authors released, falling from XX\% of
+Run-tier papers to XX\% at Retrain and XX\% at Reimplement, a gradient we call
+the availability cliff. Beneath that ceiling, stronger agents achieve partial
+reproduction far more often, reaching a verified partial result on XX\% of
+Retrain-tier runs and showing a nascent ability to close the loop of
+reproduction, while full recovery of the reported number holds at XX\% and does
+not improve across three agents spanning an XX-fold range in audit score. We
+define a failure taxonomy separating modes that recede with agent capability from
+modes belonging to the papers themselves, and find that compute does not bind,
+since the 96 GPU-hour band produces no reproductions while spending XX\% of its
+allocation. Current agents can therefore design and execute a
+paper's experiment end to end, and what remains missing is the final step of
+establishing that the run recovers the number the paper reported, a step on which
+RECLAIM is far from saturated at any tier.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
@@ -115,17 +115,17 @@ constructed to vary.
 
 The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
 Run tier the authors released every artifact the claim requires and we verified
-each one retrievable by direct host probe, and more than half of those claims
-still do not come back. Three properties of that residual organize the rest of
-this paper. Agents reach the right experiment far more often than they land it:
-on Retrain-tier papers the strongest agent puts the paper's own artifact on the
-paper's own data in XX\% of runs and reports the paper's number in XX\%. Across
-three agents spanning an XX-fold range in mean audit score, the rate at which a
-correct attempt converts into a landed number does not improve, so the gain
-between agent generations shows up almost entirely in how often an agent reaches
-the experiment. Compute does not bind either, since no run in the 96 GPU-hour
-band reproduces its claim while runs in that band spend XX\% of the allocation
-they were given.
+each one retrievable by direct host probe, and many of those claims still do not
+come back. Three properties of that residual organize the rest of this paper.
+Stronger agents achieve partial reproduction far more often: on Retrain-tier
+papers the strongest agent reaches a verified partial result on XX\% of runs,
+which is a nascent ability to close the loop of reproduction. Full recovery of
+the reported number is where progress stalls, holding at XX\% and not improving
+across three agents spanning an XX-fold range in mean audit score, so the gain
+between agent generations shows up almost entirely in how far into the
+reproduction an agent gets. Compute does not bind either, since no run in the 96
+GPU-hour band reproduces its claim while runs in that band spend XX\% of the
+allocation they were given.
 
 A small set of recurring failure modes accounts for the residual, and the modes
 separate by whose defect they encode. Modes that belong to the agent recede as
