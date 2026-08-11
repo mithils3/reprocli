@@ -106,7 +106,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .ln.e::before { background: var(--red); border-color: var(--red); }
 .ln.g::before { background: var(--teal); border-color: var(--teal); width: 13px; height: 13px; }
 .phase { display: flex; align-items: center; gap: 10px; margin: 5px 0 1px -32px; }
-.phase .pt { font-size: 16px; font-weight: 600; letter-spacing: 1.6px; color: #99A0AA; white-space: nowrap; background: #F7F6F3; position: relative; z-index: 1; padding: 0 6px 0 4px; }
+.phase .pt { font-size: 18px; font-weight: 600; letter-spacing: 1.6px; color: #8A919C; white-space: nowrap; background: #F7F6F3; position: relative; z-index: 1; padding: 0 6px 0 4px; }
 .phase .pr { flex: 1; height: 1.5px; background: #E4E7EB; }
 .phase:first-child { margin-top: 0; }
 .legend { display: flex; gap: 22px; font-family: 'JBMono', monospace; font-size: 18px; color: var(--cgray); margin-top: 6px; padding-left: 4px; }
@@ -142,9 +142,9 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .check .g { font-weight: 600; flex: none; }
 .g.ok { color: var(--green); }
 .g.fl { color: #C9A02E; }
-.verdicts { display: flex; align-items: center; gap: 16px; margin-top: 10px; position: relative; }
-.verdict { border-radius: 10px; padding: 8px 18px 10px 18px; text-align: center; }
-.verdict .lab { font-size: 16px; font-weight: 600; color: var(--gray); letter-spacing: .6px; }
+.verdicts { display: flex; align-items: center; gap: 10px; margin-top: 10px; position: relative; }
+.verdict { border-radius: 10px; padding: 8px 14px 10px 14px; text-align: center; }
+.verdict .lab { font-size: 17px; font-weight: 600; color: var(--gray); letter-spacing: .6px; white-space: nowrap; }
 .verdict .val { font-family: 'JBMono', monospace; font-size: 22px; font-weight: 500; margin-top: 2px; }
 .v-claim { background: #fff; border: 2px solid var(--navy); }
 .v-claim .val { color: var(--navy); }
@@ -152,7 +152,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .v-audit .val { color: #fff; }
 .v-audit .lab { color: #DFEEE4; }
 .vs { font-size: 19px; font-weight: 600; color: var(--gray); }
-.stamp-img { position: absolute; right: 10px; top: -24px; width: 50px; height: 50px; transform: rotate(-12deg); }
+.stamp-img { position: absolute; right: -10px; top: -30px; width: 50px; height: 50px; transform: rotate(-12deg); }
 .gap-note { font-size: 18px; font-weight: 500; color: var(--red); margin-top: 7px; line-height: 1.3; }
 
 /* arrows overlay */
@@ -184,6 +184,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
 
         <div class="card">
           <div class="card-hdr"><img src="icons/target.png"><span class="t">Match target</span></div>
+          <div class="tier-note">cheapest config that proves the paper&rsquo;s claim</div>
           <div class="spec">
             <span class="k">metric</span>AP / AP50 / AP75<br>
             <span class="k">scope</span>V3Det val &middot; 29,821 imgs<br>
@@ -195,7 +196,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
         <div class="card">
           <div class="card-hdr"><img src="icons/download.png"><span class="t">What the authors released</span></div>
           <div class="chips"><span class="avail">&#10003; data</span><span class="avail">&#10003; code</span><span class="avail">&#10003; weights</span></div>
-          <div class="band-row"><img src="icons/gpu.png">budget 8 H100-h</div>
+          <div class="band-row"><img src="icons/gpu.png">tier easy &middot; budget 8 H100-h</div>
         </div>
       </div>
       <div class="count-tag">&times;100 papers</div>
@@ -236,12 +237,14 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="ln"><span class="p">$</span><span class="cmd">pip install mmcv==2.2.0</span></div>
             <div class="ln e"><span class="err">  ERROR: no aarch64 wheel</span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 pip install -e mmcv/</span></div>
-            <div class="phase"><span class="pt">RUN &middot; r64</span><span class="pr"></span></div>
+            <div class="phase"><span class="pt">RUN &middot; r62&ndash;64</span><span class="pr"></span></div>
             <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu tools/test.py</span><span class="cm"># 29,821 imgs</span><span class="gpu">GPU</span></div>
             <div class="ln e"><span class="err">  srun: task 0: Out Of Memory</span></div>
             <div class="phase"><span class="pt">RESCUE &amp; SCORE &middot; r65&ndash;92</span><span class="pr"></span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/results.bbox.json evidence/</span></div>
             <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu chunked_eval.py</span><span class="cm"># score them</span><span class="gpu">GPU</span></div>
+            <div class="phase"><span class="pt">VERIFY &amp; REPORT &middot; r93&ndash;107</span><span class="pr"></span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">write_file report.json</span><span class="cm"># scorers agree</span></div>
           </div>
         </div>
         <div class="result"><span class="num">bbox_mAP 0.463 0.515 0.484</span><span class="match">= paper&rsquo;s 46.3 / 51.5 / 48.4 &#10003;</span></div>
@@ -280,7 +283,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
               <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">reproduced</div></div>
               <img class="stamp-img" src="icons/stamp.png">
             </div>
-            <div class="gap-note">RECLAIM scores the audited verdict;<br>across runs, claimed and audited diverge.</div>
+            <div class="gap-note">RECLAIM scores the audited verdict.<br>Across runs, claimed and audited diverge.</div>
           </div>
         </div>
       </div>
