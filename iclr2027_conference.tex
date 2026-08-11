@@ -47,20 +47,19 @@ withhold the released artifacts, so neither puts an agent where a human
 replicator stands, with the paper and whatever its authors published. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a real GPU
 allocation, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence, where reproduction rate follows how much the authors
-released, falling from XX\% at Run tier to XX\% at Retrain and XX\% at
+execution evidence, where reproduction follows how much the authors released, falling from XX\% at Run tier to XX\% at Retrain and XX\% at
 Reimplement, a gradient we call the availability cliff. Beneath it, stronger agents achieve partial reproduction far
 more often, reaching a verified partial result on XX\% of Retrain-tier runs and
 showing a nascent ability to close the loop of reproduction, while full recovery
-of the reported number holds at XX\% across the three agents we evaluate. We
+of the number holds at XX\% across the three agents we evaluate. We
 define a failure taxonomy separating modes that recede with agent capability from
 modes belonging to the papers, and find that compute does not bind, since the 96
 GPU-hour band yields no reproductions at XX\% of allocation spent. Agents therefore succeed where the authors shipped a
 runnable artifact, falter where the code exists but the experiments must still
 be carried out, and struggle most where the method has to be built from the
-paper alone, so RECLAIM remains far from saturated at every tier, and
-reproduction offers a gradeable measure of progress toward agents that do
-research on their own.
+paper alone, so the strides agents have made at operating a computer have not
+reached the work of running experiments and turning implemented code into an
+artifact that produces the reported number.
 % TODO(numbers) every XX above, with its source:
 %   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
 %     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
