@@ -505,10 +505,11 @@ ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, tool schemas, and session mechanics.
 
-\paragraph{Models.} We evaluate open-weight and API-served models under
-identical conditions.
-% TODO: finalize the model list with pinned versions, e.g.
-% Qwen3.6-27B (open-weight) and MiniMax-M2.7 (API-served).
+\paragraph{Models.} We evaluate three models under identical conditions:
+DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
+Qwen3.6-27B~\citep{qwen3.6-27b}, and MiniMax-M2.7~\citep{minimax2026m2}.
+% TODO(app:models): pin exact variants and serving before camera-ready
+% (DSv4 Flash vs Pro naming; MiniMax AWQ-on-cluster vs API confound).
 Open-weight models are served on the cluster and API models are accessed
 through their public endpoints. Every model runs the same harness, prompts,
 and per-paper budgets, so results differ only in the model.
