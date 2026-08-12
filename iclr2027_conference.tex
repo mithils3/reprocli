@@ -135,31 +135,33 @@ automate research.
 \section{Introduction}
 \label{sec:introduction}
 
-Reproducibility, the ability to obtain results consistent with those the
-authors of a paper report, is the bedrock of science. Research advances by
-building on published results, so those results must be recoverable by
-someone other than their authors. In machine learning they often are not,
-and independent studies attribute the shortfall to missing code, missing
-data, and underspecified experimental
-detail~\citep{gundersen2018state,raff2019step,pineau2021improving,
-gundersen2022sources}. AI agents now implement, execute, and debug
-large-scale experiments and software
-projects~\citep{jimenez2024swebench,chan2024mlebench,
-merrill2026terminalbench}, which makes them natural candidates for
-autonomous reproduction of ML
-papers~\citep{siegel2024corebench,starace2025paperbench}. Reproduction is
-also a prerequisite for recursively self-improving systems, since a model
-that improves itself must first re-implement and verify the research it
-builds on~\citep{favaro2026recursive}.
+AI agents now implement, execute, and debug large-scale experiments and
+software projects~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, and they are increasingly deployed on this work
+in the real world. Evaluating them calls for benchmarks that recreate the
+workflows they are deployed into. Reproducing a published ML paper,
+obtaining results consistent with those its authors report, is an ideal
+ground for that evaluation, both for its direct value to the field and for
+its difficulty~\citep{siegel2024corebench,starace2025paperbench}. In ML
+research, published results are often not easy to reproduce. One sustained
+replication effort reproduced only 162 of 255 attempted papers without
+using the authors' code~\citep{raff2019step}, and independent studies
+attribute the shortfall to missing code, missing data, and underspecified
+experimental detail~\citep{gundersen2018state,pineau2021improving,
+gundersen2022sources}. Reproduction is also a prerequisite for recursively
+self-improving systems, since a model that improves itself must first
+re-implement and verify the research it builds
+on~\citep{favaro2026recursive}.
 
-We introduce RECLAIM, a benchmark that measures whether an agent can reproduce a
-published result end to end, starting from the artifacts the paper's authors
-actually released and graded against the execution evidence the run produces.
-Reproduction rate follows how much the authors released. The strongest agent we
-evaluate recovers the target result on XX\% of Run-tier papers, where code,
-data, and weights all ship, on XX\% of Retrain-tier papers, where the weights
-are withheld and the model must be trained before it can be evaluated, and on
-XX\% of Reimplement-tier papers, where the code is withheld as well. We call
+To support this evaluation, we introduce RECLAIM, a benchmark that measures
+whether an agent can reproduce a published result end to end, starting from the
+artifacts the paper's authors actually released and graded against the
+execution evidence the run produces. Our results show that reproduction rate
+follows how much the authors release. The strongest agent we evaluate recovers
+the target result on XX\% of Run-tier papers (code, data, and weights all
+released), XX\% of Retrain-tier papers (no released weights, so the model must
+be trained first), and XX\% of Reimplement-tier papers (no released code
+either). We call
 this gradient the availability cliff, and it is the axis the benchmark is
 constructed to vary.
 % TODO(numbers): Run 14/29=48% and Retrain 9/28=32%, DeepSeek-V4-Flash, pinned
@@ -172,7 +174,8 @@ each one retrievable by direct host probe, and many of those claims still do not
 come back. Three properties of that residual organize the rest of this paper.
 Stronger agents achieve partial reproduction far more often: on Retrain-tier
 papers the strongest agent reaches a verified partial result on XX\% of runs,
-which is a nascent ability to close the loop of reproduction. Full recovery of
+which provides evidence of an emerging ability to close the loop of
+reproduction. Full recovery of
 the reported number is where progress stalls, holding at XX\% and not improving
 across three agents spanning an XX-fold range in mean audit score, so the gain
 between agent generations shows up almost entirely in how far into the
