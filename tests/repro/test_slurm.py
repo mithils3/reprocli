@@ -31,7 +31,7 @@ class BuildAcquireTests(unittest.TestCase):
         # --no-shell holds the allocation and returns once granted (no step runs yet).
         self.assertIn("--no-shell", argv)
         self.assertIn("-A", argv)
-        self.assertIn("betw-dtai-gh", argv)
+        self.assertIn("bfvr-dtai-gh", argv)
         self.assertIn("-p", argv)
         self.assertIn("ghx4", argv)
         self.assertIn("--gpus=4", argv)
@@ -50,7 +50,7 @@ class BuildAcquireTests(unittest.TestCase):
         )
         self.assertIn("ghx4-interactive", argv)
         self.assertNotIn("ghx4", [a for a in argv if a == "ghx4"])  # default not used
-        self.assertIn("betw-dtai-gh", argv)  # account still the profile's
+        self.assertIn("bfvr-dtai-gh", argv)  # account still the profile's
 
     def test_partition_override_satisfies_a_profile_without_a_default(self):
         # A bare cluster (no pinned partition) is allocatable once the model names one.

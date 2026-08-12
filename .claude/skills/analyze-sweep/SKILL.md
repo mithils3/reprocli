@@ -8,6 +8,21 @@ description: Analyze a repro-agent sweep (sbatch batch) from Supabase — dump r
 Paths are relative to the repo root. The driver is read-only against the
 run-viewer Supabase project (`repro_runs` / `repro_events` / `repro_tags`).
 
+## Narrative rules (standing, 2026-08-11)
+
+- The frozen eval-100 is host-probed wall-free. Agent-reported walls are agent-side
+  retrieval or usage failures, never dataset properties. No dissection, report, or
+  analyses.json entry may carry an availability-wall label or unavailability prose;
+  relabel from the run's own evidence (artifact-provenance-mismatch,
+  environment-fights, reimplement-without-validating, scope-substitution,
+  stale-artifact-reliance, near-miss-partial, killed-before-the-number).
+- Claimed and audited counts are background data: one factual line each, no
+  self-claim-gap or honesty narrative anywhere in reports or analyses.
+- Every report leads with the mechanism question: why can't agents reproduce papers.
+- Audit scores, verdicts, and flags are never edited; raw dumps are never edited.
+- Verbatim transcript quotes are never altered; if a quote asserts unavailability,
+  it may stay only where it clearly reads as the agent's own claim.
+
 ## Prerequisites
 
 The service key lives in `~/.bashrc` (do NOT source the whole bashrc):
@@ -29,8 +44,11 @@ If the user says "the latest sbatch", it is the newest `slurm-*` batch here.
 
 ```bash
 source <(grep -E 'SUPABASE_SERVICE_KEY' ~/.bashrc)
-python3 .claude/skills/analyze-sweep/driver.py --batch slurm-2672018 --out "$SCRATCHPAD/sweep-2672018"
+python3 .claude/skills/analyze-sweep/driver.py --batch slurm-2672018 --out ~/sweeps/2672018
 ```
+
+Dump to a durable path like `~/sweeps/<jobid>`, never `$SCRATCHPAD` (wiped at
+session rollover).
 
 Runs with `status=running` are **excluded by default** (add `--include-running`
 to keep them; usually you should not — their scores are NULL). Output:
@@ -53,11 +71,16 @@ and ask for a per-run dissection:
 
 - what the paper needed (code/weights/data availability) and what the agent found;
 - timeline of what the agent actually did (cite round numbers, quote key events);
-- failure-mode classification — use the standing taxonomy (reimplement-without-
-  validating, availability wall, environment fights, procrastination/wall-kill,
-  killed-before-the-number) but let agents propose new modes with evidence;
+- failure-mode classification — use the standing agent-side taxonomy
+  (reproduced-clean, near-miss-partial, reimplement-without-validating,
+  environment-fights, artifact-provenance-mismatch, scope-substitution,
+  stale-artifact-reliance, procrastination/wall-kill, killed-before-the-number);
+  agents may propose new modes with evidence from at least two runs; wall labels
+  are banned per the narrative rules;
 - self-claim vs audit verdict (read the `final` event's report vs `audit_verdict`
-  and `audit_rationale`) — this feeds the self-claim-gap finding;
+  and `audit_rationale`) — record as data fields only, and check the final
+  report's slot integrity (serialization corruption is a mechanism; report it
+  as one);
 - for `disqualified` runs: which `audit_flags` fired and whether the flag looks
   legitimate from the transcript (auditor false-positives are paper-relevant);
 - compute behavior: `spent_h100` vs band, GPU util fields, idle-allocation waste.
@@ -80,7 +103,14 @@ date-prefixed, e.g. `2026-07-20 Hard Sweep 2672018.md`). It must contain:
 - headline numbers: mean audit score overall and **per budget band** (8h/32h/96h),
   verdict counts, disqualification rate, reproduced count;
 - failure-mode table with per-run assignments and counts;
-- self-claim gap: claimed-success vs audited-success counts;
+- claimed and audited counts, one data line, no gap narrative;
+- a mechanism synthesis section titled "Why agents can't reproduce papers":
+  per-mechanism counts plus the single strongest transcript-cited example, using
+  the standing template — validation discipline, shipped-code defects, artifact
+  provenance, protocol reconstruction, compute non-bindingness, report
+  serialization, environment adaptation. Name a new mechanism only with evidence
+  from at least two runs. Add a cross-model standing table when prior sweeps of
+  the tier exist;
 - compute: spent vs budgeted H100-h, utilization, waste patterns;
 - novel insights section — anything not already in the standing taxonomy;
 - a "caveats for the paper" section (pre/post-freeze status — dataset froze

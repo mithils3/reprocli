@@ -40,7 +40,96 @@
 \maketitle
 
 \begin{abstract}
-Write a concise summary of the problem, method, main results, and significance.
+Reproduction is the smallest complete unit of machine learning research.
+Existing benchmarks tend to prepare the environment or to withhold the released
+artifacts, so they rarely place an agent where a human replicator stands. We
+introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
+budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
+execution evidence. Reproduction falls from XX\% at Run tier to XX\% at Retrain
+and XX\% at Reimplement, where the method must be built from the paper alone. A
+released artifact rarely runs as shipped, and on XX of XX Run-tier successes the
+agent diagnosed and repaired the environment first. Compute does not
+drive the fall, since runs that fail to reproduce spend only XX\% of their
+allocation. We label each analysed run with a failure mechanism, and at Retrain
+tier XX of XX misses executed the specified experiment and missed tolerance,
+while the matched-number rate stays at XX\% across the three agents we evaluate. These agents are competent
+executors and weak research scientists, and the judgment that turns an executed
+experiment into a confirmed number is what separates them from agents that
+automate research.
+% TODO(numbers) every XX above, with its source:
+%   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
+%     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
+%     NO pinned number: 2672018 (Qwen) and 2918306 (DSv4) are both self-graded.
+%     Re-audit 2918306 via --upload, then fill all three.
+%   Run-tier successes needing environment repair (XX of XX) -- source is the
+%     pinned DSv4 easy sweeps (2883229+2889575, analysis set n=29, 14 reproduced).
+%     NO stored field answers this directly. The nearest existing cut is the
+%     environment-fights label intersected with the reproduced runs, which
+%     undercounts, since repair inside an otherwise clean run is not labelled a
+%     fight. Owed: a transcript pass over the 14 reproduced easy runs counting
+%     those with a dependency, config, or missing-file repair before first
+%     successful execution. If that pass is not run, cut the clause rather than
+%     softening it, and keep the repair evidence as a body figure.
+%   Retrain misses that executed the experiment (XX of XX) -- near-miss-partial
+%     is 15 of 28 runs on the pinned DSv4 medium sweep 2896059, against 19 misses
+%     (28 minus the 9 reproduced), so 15 of 19. DISSECTION-derived, not auditor-
+%     derived, and the body must say so where it appears. This replaces the older
+%     right-experiment rate framing (24/28=86% dissection vs 22/28=79% from
+%     audit_score>=6), which left the estimand undefined. If the body reuses that
+%     rate, pick one there and state which.
+%   matched-number rate across the three agents (XX%) -- DSv4 is 9/28 (2896059,
+%     pinned Sonnet-5). The Qwen (2698678+2759663) and MiniMax (2690187) medium
+%     sweeps have pinned-auditor analyses in the vault; re-pull both numerators
+%     AND denominators before writing a single XX%, and give a range if the three
+%     do not agree. This is the flat-across-agents claim, so it must survive the
+%     comparability confounds listed in the vault cross-model note.
+%   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
+%   failed-run spend (XX% of their allocation) -- 48.1% mean / 37.0% median over
+%     the 34 non-reproduced runs pooled across the two pinned DSv4 sweeps
+%     (easy analysis set n=29, medium 2896059-fresh n=28). WARNING: reproduced
+%     runs spend LESS, 32.3% mean / 21.6% median over n=23, so the sentence may
+%     only claim failures leave budget unused in absolute terms. It may NOT imply
+%     failures are cheaper than successes. Recompute once Reimplement is pinned,
+%     since 96h-band runs die on session wall-clock with compute still unspent
+%     and that is a separate mechanism the body must name.
+%   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
+%     reproduced. Small-sample zero; the body must carry n. No longer cited in
+%     the abstract, keep for the compute section.
+% TODO(headroom) the abstract carries NO union-over-agents headroom number. A
+%   sentence of the form "no agent reproduces more than XX of the 100 papers"
+%   was drafted and cut: it needs the per-paper union of reproduced verdicts
+%   across all three agents, which needs the Reimplement tier pinned first, and
+%   its denominator would be the full 100 while every pinned analysis set is
+%   n=28-29 after exclusions. Headroom is currently carried by the tier rates in
+%   sentence 4. Revisit once Reimplement is pinned; if the union is computable,
+%   state it with the exclusion count.
+% TODO(claim) the closing "competent executors and weak research scientists" is
+%   a claim about CAPABILITY LEVEL, deliberately not about trend. Do not restate
+%   it as a trajectory: DSv4 leads on reproduction rate, mean audit score and
+%   attempt rate simultaneously, so there is no single axis on which agents are
+%   improving while another stalls. The body licenses the level claim with the
+%   within-agent split on the best agent, DSv4 at Retrain tier: it runs the right
+%   experiment on 24/28 runs and matches the reported number on 9/28. Execution
+%   is close to solved at that tier, and the judgment that turns an executed
+%   experiment into a confirmed number is not. Frame the agent-side failure modes
+%   (under-determined-target, reimplement-without-validating, scope-substitution)
+%   as judgment failures so the taxonomy and this sentence are one argument.
+%   The 24/28 is dissection-derived, so state its provenance where it appears.
+% TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
+%   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
+%   undissected, so there is no per-mechanism account of the drop-off at the
+%   tier where the code is genuinely unavailable and the method must be derived
+%   from the paper. That drop-off is the paper's sharpest capability claim and
+%   currently has zero mechanism evidence behind it. Owed: pinned re-audit of
+%   2918306 via --upload, then a full dissection, then a per-mode table for
+%   Reimplement set against Run and Retrain. Until then the Reimplement tier is
+%   carried by its rate alone, and the failure-mechanism sentence is licensed by
+%   the Run and Retrain dissections only.
+% TODO(evidence gate) "modes belonging to the papers themselves" rests on
+%   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
+%   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
+%   until the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1
+%   against appendix rs=8.5/lr=2.0, a 7.66pt swing) is the fifteen-minute check.
 \end{abstract}
 
 \section{Introduction}
@@ -63,82 +152,137 @@ also a prerequisite for recursively self-improving systems, since a model
 that improves itself must first re-implement and verify the research it
 builds on~\citep{favaro2026recursive}.
 
-We introduce RECLAIM, a benchmark that measures whether an agent can
-reproduce a published result end to end, starting from the artifacts the
-paper's authors actually released and graded against the execution
-evidence the run produces. We find that success is gated by artifact
-availability. When the authors released a complete artifact stack, agents
-recover the target result on X\% of papers, but as the release thins
-toward reimplementation from the paper alone, the rate drops sharply to
-X\%. We call this drop the availability cliff. The agents' own reports
-also overstate success. Of the X runs that claim a reproduction, only X
-survive a provenance audit of their execution evidence, which we call the
-self-claim gap. We analyze the recurring failure modes behind these
-numbers, including environment drift, where the authors' stack no longer
-builds as documented, and error compounding, where an early unvalidated
-mistake propagates into the final number. By contrast, the runs that
-succeed behave like careful engineers. They smoke test on small
-configurations before committing to long jobs, read the released
-documentation rather than assume interfaces, and exploit the full set of
-artifacts and tools available to them. We detail both the failure and the
-success patterns in Section~\ref{sec:analysis}.
+We introduce RECLAIM, a benchmark that measures whether an agent can reproduce a
+published result end to end, starting from the artifacts the paper's authors
+actually released and graded against the execution evidence the run produces.
+Reproduction rate follows how much the authors released. The strongest agent we
+evaluate recovers the target result on XX\% of Run-tier papers, where code,
+data, and weights all ship, on XX\% of Retrain-tier papers, where the weights
+are withheld and the model must be trained before it can be evaluated, and on
+XX\% of Reimplement-tier papers, where the code is withheld as well. We call
+this gradient the availability cliff, and it is the axis the benchmark is
+constructed to vary.
+% TODO(numbers): Run 14/29=48% and Retrain 9/28=32%, DeepSeek-V4-Flash, pinned
+% claude-sonnet-5, post-freeze, both Iron-Law clean. Reimplement has no pinned
+% number; re-audit 2918306 via --upload before filling any of the three.
+
+The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
+Run tier the authors released every artifact the claim requires and we verified
+each one retrievable by direct host probe, and many of those claims still do not
+come back. Three properties of that residual organize the rest of this paper.
+Stronger agents achieve partial reproduction far more often: on Retrain-tier
+papers the strongest agent reaches a verified partial result on XX\% of runs,
+which is a nascent ability to close the loop of reproduction. Full recovery of
+the reported number is where progress stalls, holding at XX\% and not improving
+across three agents spanning an XX-fold range in mean audit score, so the gain
+between agent generations shows up almost entirely in how far into the
+reproduction an agent gets. Compute does not bind either, since no run in the 96
+GPU-hour band reproduces its claim while runs in that band spend XX\% of the
+allocation they were given.
+
+A small set of recurring failure modes accounts for the residual, and the modes
+separate by whose defect they encode. Modes that belong to the agent recede as
+capability rises: reimplementation without validation falls from XX of XX runs
+to XX of XX across the agents we evaluate, and environment fights disappear as a
+primary cause while remaining a large tax on rounds. Modes that belong to the
+papers hold steady, led by releases whose own configuration files disagree with
+the configuration the paper reports. We define the taxonomy, report the per-mode
+counts, and give the transcript evidence in Section~\ref{sec:analysis}. Agent
+self-reports track none of this reliably, so we carry claimed and audited counts
+as background data rather than as a result.
+% TODO(evidence gate): "modes that belong to the papers hold steady" rests on
+% under-determined-target, provisional at 5 runs and zero hand-verified. Same
+% gate as the abstract's closing sentence. Verify before this sentence ships.
+% TODO(vocabulary): the 7-of-32 to 1-of-28 comparison remaps MiniMax's
+% dissection vocabulary onto the current slugs. Unify the MiniMax and Qwen
+% analyses.json mode names before this cross-model count is defensible.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/reclaim_overview}
+\caption{Overview of RECLAIM and its evaluation pipeline. Each paper enters at
+the availability tier its release supports (run, retrain, or reimplement), and
+the agent must rebuild the pinned \mbox{\emph{match target}} from those
+artifacts under a fixed GPU budget. An adversarial audit then re-derives the
+verdict from the run's logged evidence (Section~\ref{sec:auditing}). The
+figure shows an example run with DeepSeek-V4 on the CQ-DINO paper.}
+\label{fig:overview}
+\end{figure}
 
 
 \section{Related Work}
 \label{sec:related-work}
 
-RECLAIM asks an agent to turn a paper and whatever its authors released
-into a runnable experiment and a verified number. Existing benchmarks
-each cover a part of this setting and leave a different part unmeasured.
+Each benchmark below settles what the agent has to work with before the run
+begins, either by handing it a prepared environment and a verifier or by
+admitting only papers whose code is already public and already runs.
+RECLAIM leaves that release state free and keeps the papers whose authors
+released nothing runnable at all.
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
-work in real repositories and
-terminals~\citep{jimenez2024swebench,merrill2026terminalbench,
-miserendino2025swelancer,deng2025swebenchpro,lu2026frontiercode}. SWE-bench
-grades patches for real GitHub issues with the repository's own
-tests~\citep{jimenez2024swebench}, and Terminal-Bench 2.0 poses diverse
-command-line tasks in containers with executable
-checks~\citep{merrill2026terminalbench}. These benchmarks start from an
-explicit objective, a prepared environment, and a verifier written in
-advance, so they do not measure whether an agent can turn a paper and its
-release state into a runnable experiment.
+work inside real repositories and terminals~\citep{jimenez2024swebench,
+merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
+lu2026frontiercode}. SWE-bench grades patches for real GitHub issues using
+the tests the repository already ships~\citep{jimenez2024swebench}, and
+Terminal-Bench 2.0 poses command-line tasks inside prepared containers with
+executable checks written in advance~\citep{merrill2026terminalbench}. Both
+designs scale precisely because the objective, the environment, and the
+verifier are all fixed before the agent starts, but that same property
+removes the first half of a reproduction, where an agent has to decide
+which experiment establishes the claim and build an environment that can
+run it before any number exists to check. MirrorCode pushes the setting
+furthest and asks agents to rebuild entire programs from behavior alone,
+with a black-box reference implementation available to query
+throughout~\citep{adamczewski2026mirrorcode}. That reference implementation
+is the operative difference between its setting and ours, because an agent
+can query it for the correct output on any input it likes and turn more
+test-time compute into more progress, whereas an agent reproducing a paper
+has nothing to check itself against until the experiment already runs,
+which is the condition under which we observe agents stop spending long
+before their budget binds (Section~\ref{subsec:results}).
+% TODO(mirrorcode): if their token-scaling result is stated as a figure or
+% headline number, cite it explicitly here so the reconciliation reads as
+% retro-explaining a published trend rather than as our own framing.
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
-development to research engineering~\citep{huang2024mlagentbench,
+development through research engineering~\citep{huang2024mlagentbench,
 nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
-wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench has
-agents build and iteratively refine pipelines for Kaggle competitions under
-a fixed compute budget, scoring submissions against historical
-leaderboards~\citep{chan2024mlebench}. These benchmarks leave the choice of
-method to the agent, so they do not measure whether it can adapt a
-prescribed method and configuration to a new environment and recover the
-specific result the authors report.
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench is
+representative, with agents building and refining pipelines for Kaggle
+competitions under a fixed compute budget and each submission scored
+against the historical leaderboard for that
+competition~\citep{chan2024mlebench}. Because the method is the agent's to
+choose and success is a leaderboard position rather than a specific
+published quantity, these benchmarks reward any solution that scores well
+and leave open whether an agent can carry a prescribed method and
+configuration into an environment its authors never used and land on the
+number they reported.
 
 \paragraph{Scientific reproduction.}
 A growing line of benchmarks measures how well agents reproduce published
 research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
 xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
 edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
-wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}.
-CORE-Bench asks agents to rerun the released code of computationally
-reproducible papers and recover known
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}, and
+three of them bracket the design space. CORE-Bench asks agents to rerun the
+released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive}. PaperBench has agents
-replicate 20 ICML 2024 papers from scratch without the authors' released
-code, graded against author-developed hierarchical
-rubrics~\citep{starace2025paperbench}. EXP-Bench withholds the paper
-itself, giving the agent a research question and starter code from which it
-must design, execute, and analyze the experiments~\citep{kon2025expbench}.
-Each benchmark fixes the release state before the run begins, and most fix
-it by selecting papers whose code is already public and already runs. The
-stricter selections go further. They keep only papers replicable from the
-text on a single machine without closed-source dependencies, or draw from a
-pool already verified to rerun, on the stated reasoning that irreproducible
-papers are not worth including. None of these benchmarks
-samples papers across the release states they are published in, so none
-measures reproduction under the conditions reproducers actually face.
+effectively saturated~\citep{favaro2026recursive}. PaperBench sits at the
+opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
+with the authors' code withheld, grading the attempt against hierarchical
+rubrics the original authors wrote~\citep{starace2025paperbench}.
+EXP-Bench withholds the paper itself and hands the agent a research
+question and starter code to design and run the experiments
+from~\citep{kon2025expbench}. In all three the release state is settled
+before the run begins, usually by selection, since most keep only papers
+whose code is already public and already runs, and the stricter protocols
+exclude the rest on the stated reasoning that an irreproducible paper is
+not worth including. That builds a clean coding task, but it fixes the
+variable RECLAIM exists to measure, and a benchmark assembled only from
+papers that shipped working code cannot say what happens on the papers that
+did not.
 
 \section{RECLAIM}
 \label{sec:reclaim}
@@ -241,11 +385,9 @@ corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 \begin{center}
 \includegraphics[width=\textwidth]{figures/construction_funnel}
 \end{center}
-\caption{The construction funnel. A tool-verified classifier reduces a
-1,000-paper sample of the 3,414 NeurIPS 2025 submissions to 620 eligible
-papers, a 96 H100-hour compute cap and stratified sampling yield a 200-paper
-audit pool, and a human audit of every availability call and compute estimate
-produces the released benchmark.}
+\caption{The construction funnel. Three stages narrow 3,414 NeurIPS 2025
+submissions to the released 100-paper benchmark, with every availability call
+and compute estimate audited by hand.}
 \label{fig:funnel}
 \end{figure}
 
@@ -340,7 +482,7 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
-loop~\citep{yao2023react}, shown in Figure~\ref{fig:harness}. The toolset is
+loop~\citep{yao2023react}. The toolset is
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
@@ -354,18 +496,6 @@ Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, tool schemas, and session mechanics.
-
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/harness_overview}
-\end{center}
-\caption{The agent harness. The agent receives the paper and its match
-target, acts through a ReAct tool loop over a workspace shell and a metered
-Slurm GPU session with 500\,GB of scratch storage, and ends with a
-schema-constrained \texttt{report.json} whose claims the auditor
-grades against the run's \texttt{evidence/} directory.}
-\label{fig:harness}
-\end{figure}
 
 \paragraph{Models.} We evaluate open-weight and API-served models under
 identical conditions.
@@ -394,6 +524,61 @@ Present your main results.
 \label{sec:analysis}
 
 % Placeholder section: ablations, error analysis, qualitative results.
+
+\paragraph{Failure taxonomy.}
+We label every unsuccessful run with one primary failure mode and report the
+distribution in Table~\ref{tab:failure-modes}. The two most frequent
+process failures are environment fights, where the authors' released stack
+no longer builds on the machine the agent is given and the run is consumed
+reconciling toolchain and dependency errors the agent did not create, and
+reimplementation without validation, where the agent writes its own version
+of the method after failing to run the released code and reports a number
+from that version without ever checking it against the reference the
+authors shipped. The remaining modes are substitution failures, in which a
+blocked agent runs something adjacent to the pinned experiment and reports
+the result as the reproduction, and one negative-result mode, honest
+shortfall, where the agent executes the released pipeline correctly,
+measures a real number, misses the target, and says so.
+% TODO(taxonomy): fill counts from the final graded sweeps. Keep the mode
+% names identical to the dissection slugs. Note for the environment-fights
+% row: on GH200 a large share of those runs are aarch64 wheel gaps in our
+% own cluster rather than author-side drift, so either separate that column
+% or state the confound here before a reviewer finds it.
+
+\begin{table}[h]
+\caption{Primary failure mode by availability tier.
+% TODO(failure-table): one row per mode, counts per tier, totals in the last
+% column. Keep the mode set identical across tiers so the comparison is by
+% construction.
+}
+\label{tab:failure-modes}
+\begin{center}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Failure mode & Easy & Medium & Hard & All \\
+\midrule
+Environment fights & XX & XX & XX & XX \\
+Reimplementation without validation & XX & XX & XX & XX \\
+Scope substitution & XX & XX & XX & XX \\
+Evaluation-protocol shopping & XX & XX & XX & XX \\
+Availability wall & XX & XX & XX & XX \\
+Procrastination and wall kill & XX & XX & XX & XX \\
+Honest shortfall & XX & XX & XX & XX \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\paragraph{What the successful runs do.}
+The runs that recover the target result share a procedure that the failures
+lack. They smoke-test a reduced configuration before committing compute to a
+full-length job, they consult the released documentation instead of inferring
+interfaces from names, and they reuse every artifact and tool the authors
+released rather than reimplementing from the paper text.
+% TODO(success-pattern): attach counts. How many successful runs show each
+% behavior, and how often the same behavior appears in the failures, so the
+% pattern reads as a discriminator rather than a description.
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
@@ -439,6 +624,66 @@ Discuss limitations honestly. This can include dataset limitations, compute cons
 \label{sec:conclusion}
 
 Summarize the paper and its implications.
+
+\subsection*{Reproducibility statement}
+
+\begin{itemize}
+\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the tool loop,
+budget enforcement, the sandbox, and the prompts as verbatim listings.
+\item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
+served revision and states the serving configuration it ran under.
+\item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
+frozen before any reported sweep was graded, and
+Appendix~\ref{app:auditor-validation} bounds how much of a reported score is
+grader noise.
+\item \textbf{Dataset.} Appendix~\ref{app:dataset-schema} documents every field
+and both splits.
+\item \textbf{Artifacts.} Code, batch scripts, and the per-run evidence bundles
+are submitted as anonymized supplementary material. The repository and dataset
+URLs are withheld for anonymous review and provided in the camera-ready
+version.
+\end{itemize}
+
+An agent rollout is sampled and interacts with a live machine, so a rerun does
+not recover our transcripts turn for turn. The evidence bundles make the
+grading stage reproducible from our artifacts where the rollout stage is not.
+
+\subsection*{AI use statement}
+
+% TODO(ai-use): every claim below is an assertion about what the authors did
+% and needs the authors' sign-off before submission. Non-disclosure of
+% significant LLM use is grounds for desk rejection at ICLR 2027.
+Large language models are the object of study in this work. The agent models
+under evaluation and the model that grades their reports are described in
+Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
+property of the benchmark rather than author assistance. Our own use of
+generative AI tools was as follows.
+
+\begin{itemize}
+\item \textbf{Dataset.} We used them to extract and normalize the per-paper
+metadata that forms the released dataset, including the artifact-availability
+signals and the pinned match targets. Every extracted field was reviewed by an
+author before the dataset was frozen.
+\item \textbf{Implementation.} We used them to implement parts of the harness,
+the serving stack, and the analysis scripts.
+\item \textbf{Grading.} We used them to grade agent reports and to assign
+failure modes. That is a methodological choice, and
+Appendix~\ref{app:auditor-validation} exists because it needs validating
+rather than asserting.
+\item \textbf{Writing and figures.} We used them to draft and edit sections of
+this paper, to produce the plotting code behind its figures, and to search and
+summarize related literature. Every citation was checked against the cited
+paper by an author.
+\item \textbf{Not used.} We did not use generative AI tools to generate
+synthetic datasets, to develop theoretical models, to formulate or prove
+mathematical claims, or for translation. The hypotheses this paper tests, the
+availability-tiered design of the benchmark, and the audit protocol are the
+authors' own, and generative AI tools did not propose or refine them.
+\end{itemize}
+
+We have reviewed all AI-assisted work, and we take responsibility for the
+final content of this paper, including text, claims, and artifacts produced
+with the aid of generative AI.
 
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
@@ -761,6 +1006,18 @@ at 3, and the run reaches 3 only if the agent stayed honest at the wall.
 Separating \texttt{blocked} from \texttt{not\_reproduced} distinguishes
 papers no agent could reproduce from papers the agent failed to reproduce,
 and \texttt{disqualified} separates dishonesty from honest failure.
+
+\section{Auditor Validation}
+\label{app:auditor-validation}
+
+% TODO(auditor-validation): the load-bearing appendix. Three things, in this
+% order. (1) Test-retest: two identical passes of the pinned auditor over the
+% same sweep, agreement rate, and which part of the score is unstable (the
+% high-flag zero cap, not the quality band). (2) Human agreement on a labelled
+% sample, which is the number sec:auditing promises at tex:330. (3) The
+% auditor-swap check: which conclusions survive replacing the grader and which
+% do not. Report all three even where they are unflattering; the point of the
+% appendix is to bound grader noise, not to clear the auditor.
 
 \section{Dataset Schema}
 \label{app:dataset-schema}

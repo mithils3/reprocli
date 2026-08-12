@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.otf'); font-weight: 400; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.otf'); font-weight: 500; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.otf'); font-weight: 600; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.otf'); font-weight: 800; }
+
+:root {
+  --navy: #1F3A5F;
+  --teal: #3E8E8C;
+  --gold: #E3B341;
+  --goldbg: #FCF3D9;
+  --goldtx: #8C6B1F;
+  --red: #C2483B;
+  --green: #3C8252;
+  --greenbg: #E6F3EA;
+  --ink: #2E3440;
+  --gray: #6B7280;
+  --cgray: #8C939E;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
+.wrap { position: relative; width: 1720px; padding: 10px 16px 14px 20px; }
+
+/* header */
+.header { display: flex; align-items: baseline; gap: 18px; margin: 0 0 36px 4px; }
+.brand { background: var(--navy); color: #fff; font-weight: 800; font-size: 31px; letter-spacing: 1.5px; padding: 6px 17px 8px 17px; border-radius: 11px; }
+.question { font-size: 27px; font-weight: 500; color: #47536B; }
+
+/* kicker badges */
+.kicker { position: absolute; top: -25px; left: -12px; display: flex; align-items: center; gap: 0; z-index: 6; }
+.kicker .num { width: 46px; height: 46px; border-radius: 50%; background: var(--navy); color: #fff;
+  font-weight: 600; font-size: 25px; display: flex; align-items: center; justify-content: center;
+  border: 3px solid #fff; box-shadow: 0 0 0 1.5px var(--navy); z-index: 2; }
+.kicker .word { background: #fff; border: 1.5px solid var(--navy); color: var(--navy); font-weight: 600;
+  font-size: 16px; letter-spacing: 1.8px; padding: 4px 14px 4px 20px; border-radius: 0 9px 9px 0; margin-left: -12px; }
+
+/* grid */
+.grid { display: grid; grid-template-columns: 486px 1fr; column-gap: 50px; align-items: start; }
+.right-stack { display: grid; grid-template-columns: 656px 1fr; column-gap: 38px; row-gap: 20px; }
+.span2 { grid-column: 1 / span 2; }
+
+/* task group */
+.col-task { position: relative; margin-top: 16px; }
+.task-group { position: relative; border: 2.5px dashed var(--navy); border-radius: 18px; background: #F4F7FB; padding: 16px 16px 16px 16px; }
+.stack1, .stack2 { position: absolute; border-radius: 18px; background: #fff; }
+.stack1 { left: 14px; right: 14px; top: 20px; bottom: -12px; border: 2px solid rgba(31,58,95,.55); z-index: -1; }
+.stack2 { left: 28px; right: 28px; top: 40px; bottom: -24px; border: 2px solid rgba(31,58,95,.3); z-index: -2; }
+.count-tag { position: absolute; right: 34px; bottom: -52px; font-size: 20px; font-weight: 600; color: var(--navy); opacity: .85; }
+
+.card { background: #fff; border: 2px solid var(--navy); border-radius: 14px; padding: 12px 18px; }
+.card + .card { margin-top: 11px; }
+.card-hdr { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.card-hdr img { width: 42px; height: 42px; }
+.card-hdr .t { font-weight: 600; font-size: 25px; color: var(--navy); }
+
+.paper-card { display: flex; gap: 16px; align-items: center; padding: 11px 18px; }
+.paper-card img.page { width: 74px; height: 96px; border-radius: 4px; border: 1px solid #C9D0DA; }
+.paper-title { font-weight: 600; font-size: 22px; line-height: 1.3; color: var(--navy); }
+.paper-venue { font-weight: 500; font-size: 19px; color: var(--gray); margin-top: 6px; }
+
+.spec { font-family: 'JBMono', monospace; font-size: 21px; color: var(--ink); line-height: 1.52; }
+.spec .k { color: var(--teal); font-weight: 500; display: inline-block; width: 92px; }
+.chip-withheld { display: inline-flex; align-items: center; gap: 9px; background: var(--goldbg); border: 1.5px solid var(--gold);
+  border-radius: 10px; padding: 7px 14px; margin-top: 10px; font-family: 'JBMono', monospace; font-size: 19px; font-weight: 500; color: var(--goldtx); }
+.chip-withheld img { width: 30px; height: 30px; }
+
+.chips { display: flex; gap: 10px; margin: 2px 0 10px 0; }
+.tier-lab { font-size: 16px; font-weight: 600; letter-spacing: 1.4px; color: #99A0AA; margin: 10px 0 6px 0; }
+.cliff { display: flex; flex-direction: column; align-items: flex-start; margin: 0 0 12px 0; }
+.step { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: 'JBMono', monospace;
+  font-size: 18px; color: var(--gray); background: #fff; border: 1.5px solid #C9D0DA; border-radius: 8px; padding: 5px 10px; }
+.step .tn { font-weight: 500; flex: none; }
+.step img { width: 22px; height: 22px; }
+.step.on { background: var(--greenbg); border-color: var(--green); color: #2A6B40; }
+.step.on .tn { font-weight: 700; }
+.step.s2 { margin: 6px 0 0 26px; }
+.step.s3 { margin: 6px 0 0 52px; }
+.cliff-note { margin-top: 10px; font-size: 19px; color: var(--red); line-height: 1.35; }
+.cliff-note b { font-weight: 700; }
+.avail { font-family: 'JBMono', monospace; font-size: 20px; font-weight: 500; color: #2A6B40;
+  background: var(--greenbg); border: 1.5px solid var(--green); border-radius: 9px; padding: 6px 15px; }
+.tier-note { font-size: 19px; color: var(--gray); margin-bottom: 10px; }
+.band-row { display: flex; align-items: center; gap: 10px; font-family: 'JBMono', monospace; font-size: 21px; color: var(--ink); }
+.band-row img { width: 34px; height: 34px; }
+
+/* agent bar spans the top right */
+.agent-wrap { position: relative; }
+.agent-bar { display: flex; align-items: center; gap: 14px; background: #EEF1F5; border: 2px solid var(--navy); border-radius: 14px; padding: 10px 18px; }
+.agent-bar img.robot { width: 60px; height: 60px; }
+.agent-bar .t { font-weight: 600; font-size: 28px; color: var(--navy); white-space: nowrap; }
+.model-chip { font-family: 'JBMono', monospace; font-size: 19px; font-weight: 500; color: var(--navy);
+  background: #fff; border: 1.5px solid rgba(31,58,95,.5); border-radius: 9px; padding: 5px 12px; white-space: nowrap; }
+.tool-chips { display: flex; gap: 9px; margin-left: auto; }
+.tool { font-family: 'JBMono', monospace; font-size: 17px; color: #4A4F56; background: #F7F6F3;
+  border: 1px solid #BFBFBB; border-radius: 8px; padding: 5px 10px; white-space: nowrap; }
+.tool.hot { display: inline-flex; align-items: center; gap: 7px; background: #E7F0EF; border: 2px solid var(--teal); color: #2C6866; font-weight: 500; }
+.tool.hot img { width: 24px; height: 24px; }
+
+/* terminal */
+.term-wrap { position: relative; }
+.term { background: #F7F6F3; border: 2px solid var(--navy); border-radius: 14px; overflow: hidden; }
+.term-bar { display: flex; align-items: center; gap: 9px; background: #E6E9ED; padding: 9px 16px; }
+.dot { width: 15px; height: 15px; border-radius: 50%; }
+.term-bar .title { font-family: 'JBMono', monospace; font-size: 18px; color: var(--gray); margin-left: 8px; }
+.term-body { position: relative; padding: 12px 16px 18px 50px; font-family: 'JBMono', monospace; font-size: 21px; line-height: 1.5; font-feature-settings: 'liga' 0, 'calt' 0; }
+.term-body::before { content: ''; position: absolute; left: 27px; top: 16px; bottom: 16px; width: 2.5px; background: #D8DCE1; }
+.ln { position: relative; }
+.ln::before { content: ''; position: absolute; left: -25px; top: 50%; transform: translate(-50%, -50%);
+  width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 2.5px solid var(--teal); z-index: 1; }
+.ln.pl::before { background: var(--navy); border-color: var(--navy); }
+.ln.e::before { background: var(--red); border-color: var(--red); }
+.ln.g::before { background: var(--teal); border-color: var(--teal); width: 13px; height: 13px; }
+.phase { display: flex; align-items: center; gap: 10px; margin: 5px 0 1px -32px; }
+.phase .pt { font-size: 18px; font-weight: 600; letter-spacing: 1.6px; color: #8A919C; white-space: nowrap; background: #F7F6F3; position: relative; z-index: 1; padding: 0 6px 0 4px; }
+.phase .pr { flex: 1; height: 1.5px; background: #E4E7EB; }
+.phase:first-child { margin-top: 0; }
+.legend { display: flex; gap: 15px; font-family: 'JBMono', monospace; font-size: 17px; color: var(--cgray); margin-top: 6px; padding-left: 4px; }
+.legend span { white-space: nowrap; }
+.legend .gpu { margin-left: 0; }
+.ln { display: flex; align-items: center; gap: 11px; white-space: pre; }
+.p { color: var(--teal); font-weight: 500; }
+.cmd { color: var(--ink); }
+.cm { color: var(--cgray); }
+.err { color: var(--red); font-weight: 500; }
+.plan { color: var(--navy); font-weight: 500; }
+.think { color: var(--navy); font-style: italic; }
+.ln.th::before { background: #fff; border-color: var(--navy); }
+.gpu { margin-left: auto; font-size: 16px; font-weight: 500; color: var(--teal); background: #E7F0EF;
+  border: 1px solid var(--teal); border-radius: 6px; padding: 2px 9px; }
+.result { display: flex; align-items: center; gap: 14px; background: var(--greenbg); border: 1.5px solid var(--green);
+  border-radius: 9px; padding: 7px 13px; margin-top: 14px; font-size: 19px; font-family: 'JBMono', monospace; white-space: nowrap; }
+.result .num { color: var(--navy); font-weight: 700; }
+.result .match { color: var(--green); font-weight: 700; }
+
+/* right stack cards */
+.side { position: relative; }
+.out-card { background: #fff; border: 2px solid var(--navy); border-radius: 14px; padding: 22px 20px 14px 20px; }
+.filetree { font-family: 'JBMono', monospace; font-size: 20px; line-height: 1.6; color: var(--ink); }
+.filetree .f { color: var(--navy); font-weight: 500; }
+.claim-chip { display: inline-block; font-family: 'JBMono', monospace; font-size: 19px; font-weight: 500; color: var(--goldtx);
+  background: var(--goldbg); border: 1.5px solid var(--gold); border-radius: 7px; padding: 3px 11px; margin-left: 12px; }
+.out-foot { font-family: 'JBMono', monospace; font-size: 19px; color: var(--gray); margin-top: 7px; font-style: italic; }
+
+.audit-card { position: relative; background: #FBF8F1; border: 2px solid var(--navy); border-radius: 14px; padding: 16px 20px; }
+.audit-hdr { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
+.audit-hdr img { width: 52px; height: 52px; }
+.audit-hdr .t { font-weight: 600; font-size: 25px; color: var(--navy); }
+.audit-sub { font-size: 19px; color: var(--gray); margin-top: 1px; }
+.check { display: flex; gap: 11px; font-size: 20px; color: var(--ink); line-height: 1.35; margin-top: 9px; }
+.check .g { font-weight: 600; flex: none; }
+.g.ok { color: var(--green); }
+.g.fl { color: #C9A02E; }
+.verdicts { display: flex; align-items: center; gap: 10px; margin-top: 15px; position: relative; }
+.verdict { border-radius: 10px; padding: 8px 14px 10px 14px; text-align: center; }
+.verdict .lab { font-size: 17px; font-weight: 600; color: var(--gray); letter-spacing: .6px; white-space: nowrap; }
+.verdict .val { font-family: 'JBMono', monospace; font-size: 22px; font-weight: 500; margin-top: 2px; }
+.v-claim { background: #fff; border: 2px solid var(--navy); }
+.v-claim .val { color: var(--navy); }
+.v-audit { background: var(--green); border: 2px solid var(--green); }
+.v-audit .val { color: #fff; }
+.v-audit .lab { color: #DFEEE4; }
+.vs { font-size: 19px; font-weight: 600; color: var(--gray); }
+.stamp-img { position: absolute; right: -8px; top: -16px; width: 50px; height: 50px; transform: rotate(-12deg); }
+.gap-note { font-family: 'JBMono', monospace; font-size: 19px; font-style: italic; color: var(--gray); margin-top: 12px; }
+
+/* arrows overlay */
+svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+.arrow-label { position: absolute; font-size: 18px; font-weight: 600; color: #47536B; background: #fff; padding: 0 6px; z-index: 6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">RECLAIM</div>
+    <div class="question">can an agent reproduce a paper&rsquo;s central claim from what its authors released?</div>
+  </div>
+
+  <div class="grid">
+    <!-- ① THE TASK -->
+    <div class="col-task">
+      <div class="kicker"><div class="num">1</div><div class="word">THE TASK</div></div>
+      <div class="task-group">
+        <div class="stack1"></div><div class="stack2"></div>
+
+        <div class="card paper-card">
+          <img class="page" src="icons/pg-01.png">
+          <div>
+            <div class="paper-title" style="font-size:21px;">CQ-DINO: Mitigating Gradient Dilution via Category Queries&hellip;</div>
+            <div class="paper-venue">NeurIPS 2025 &middot; arXiv 2503.18430</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><img src="icons/target.png"><span class="t">Match target</span></div>
+          <div class="tier-note">cheapest config that proves the paper&rsquo;s claim</div>
+          <div class="spec">
+            <span class="k">metric</span>AP / AP50 / AP75<br>
+            <span class="k">scope</span>V3Det val &middot; 29,821 imgs<br>
+            <span class="k">target</span>46.3 / 51.5 / 48.4 &plusmn;5%
+          </div>
+          <div class="chip-withheld"><img src="icons/lock.png">configuration withheld</div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><img src="icons/download.png"><span class="t">What the authors released</span></div>
+          <div class="chips"><span class="avail">&#10003; data</span><span class="avail">&#10003; code</span><span class="avail">&#10003; weights</span></div>
+          <div class="tier-lab">AVAILABILITY TIER</div>
+          <div class="cliff">
+            <div class="step on s1"><span class="tn">&#9656; Run</span><span>execute what shipped</span></div>
+            <div class="step s2"><span class="tn">Retrain</span><img src="icons/lock.png"><span>weights withheld</span></div>
+            <div class="step s3"><span class="tn">Reimplement</span><img src="icons/lock.png"><span>code withheld too</span></div>
+            <div class="cliff-note"><b>the availability cliff</b><br>success falls as the release thins</div>
+          </div>
+          <div class="band-row"><img src="icons/gpu.png">budget 8 H100-h</div>
+        </div>
+      </div>
+      <div class="count-tag">&times;100 papers</div>
+    </div>
+
+    <!-- right side: agent bar over terminal + output/audit -->
+    <div class="right-stack">
+      <!-- ② THE RUN : agent bar spanning both right columns -->
+      <div class="agent-wrap span2">
+        <div class="kicker"><div class="num">2</div><div class="word">THE RUN</div></div>
+        <div class="agent-bar">
+          <img class="robot" src="icons/robot.png">
+          <span class="t">Reproduction agent</span>
+          <span class="model-chip">deepseek-v4</span>
+          <div class="tool-chips">
+            <span class="tool">workspace_bash</span><span class="tool">write_file</span>
+            <span class="tool">fetch_url</span>
+            <span class="tool hot"><img src="icons/gpu.png">run_gpu</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="term-wrap">
+        <div class="term">
+          <div class="term-bar">
+            <span class="dot" style="background:#DF7065;"></span>
+            <span class="dot" style="background:#EEC252;"></span>
+            <span class="dot" style="background:#6BB770;"></span>
+            <span class="title">run 2889575 &middot; 107 rounds &middot; 6.0 of 8 H100-h</span>
+          </div>
+          <div class="term-body">
+            <div class="phase"><span class="pt">PLAN &middot; r0&ndash;4</span><span class="pr"></span></div>
+            <div class="ln pl"><span class="plan">[plan]</span><span class="cmd">AP 46.3 on V3Det &middot; design eval, run it</span></div>
+            <div class="phase"><span class="pt">FETCH &middot; r5&ndash;8</span><span class="pr"></span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">git clone github.com/&hellip;/CQ-DINO</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">gdown &hellip;swinb1k_v3det.pth</span><span class="cm"># 1.89 GB</span></div>
+            <div class="phase"><span class="pt">BUILD &middot; r9&ndash;61</span><span class="pr"></span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">pip install mmcv==2.2.0</span></div>
+            <div class="ln e"><span class="err">  ERROR: no aarch64 wheel</span></div>
+            <div class="ln th"><span class="think">AH! no aarch64 wheel. build it from source</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 pip install -e mmcv/</span></div>
+            <div class="phase"><span class="pt">RUN &middot; r62&ndash;64</span><span class="pr"></span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu tools/test.py</span><span class="cm"># 29,821 imgs</span><span class="gpu">GPU</span></div>
+            <div class="ln e"><span class="err">  srun: task 0: Out Of Memory</span></div>
+            <div class="phase"><span class="pt">RESCUE &amp; SCORE &middot; r65&ndash;92</span><span class="pr"></span></div>
+            <div class="ln th"><span class="think">OOM again, but the preds survived in /tmp</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/results.bbox.json evidence/</span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu chunked_eval.py</span><span class="cm"># score them</span><span class="gpu">GPU</span></div>
+            <div class="phase"><span class="pt">VERIFY &amp; REPORT &middot; r93&ndash;107</span><span class="pr"></span></div>
+            <div class="ln th"><span class="think">my scorer agrees with COCOeval, twice</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">write_file report.json</span></div>
+          </div>
+        </div>
+        <div class="result"><span class="num">bbox_mAP 0.463 0.515 0.484</span><span class="match">= paper&rsquo;s 46.3 / 51.5 / 48.4 &#10003;</span></div>
+        <div class="legend"><span><span style="color:#1F3A5F;">&#9679;</span> plan</span><span><span style="color:#1F3A5F;">&#9675;</span> <i>thought</i></span><span><span style="color:#3E8E8C;">&#9675;</span> step</span><span><span style="color:#3E8E8C;">&#9679;</span> GPU run</span><span><span style="color:#C2483B;">&#9679;</span> error</span><span><span class="p">$</span> agent command</span></div>
+      </div>
+
+      <!-- ③ output + ④ audit -->
+      <div>
+        <div class="side" style="margin-top: 30px;">
+          <div class="kicker"><div class="num">3</div><div class="word">THE REPORT</div></div>
+          <div class="out-card">
+            <div class="filetree">
+              <span class="f">report.json</span><span class="claim-chip">claims: "reproduced"</span><br>
+              <span class="f">evidence/</span> eval.log &middot; commands.log<br>
+              &nbsp;&nbsp;results.bbox.json &middot; patches/
+            </div>
+            <div class="out-foot">every number traces to a logged run</div>
+          </div>
+        </div>
+
+        <div class="side" style="margin-top: 82px;">
+          <div class="kicker"><div class="num">4</div><div class="word">THE AUDIT</div></div>
+          <div class="audit-card">
+            <img class="stamp-img" src="icons/stamp.png">
+            <div class="audit-hdr">
+              <img src="icons/detective.png">
+              <div><div class="t">Adversarial audit</div>
+              <div class="audit-sub">re-derives the verdict from the evidence</div></div>
+            </div>
+            <div class="check"><span class="g ok">&#10003;</span><span>metric recomputed from raw predictions</span></div>
+            <div class="check"><span class="g ok">&#10003;</span><span>exact checkpoint, sibling rows ruled out</span></div>
+            <div class="check"><span class="g ok">&#10003;</span><span>AP<sub>S/M/L</sub> values not in the paper: no echo</span></div>
+            <div class="check"><span class="g fl">&#9873;</span><span>training arm untested (released ckpt only)</span></div>
+            <div class="verdicts">
+              <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">AP 46.3 &#10003;</div></div>
+              <span class="vs">vs</span>
+              <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">AP 46.3 &#10003;</div></div>
+            </div>
+            <div class="gap-note">RECLAIM scores the audited verdict</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <svg class="overlay" id="arrows"></svg>
+  <script>
+    // draw arrows after layout so they track real element positions
+    const q = (s) => document.querySelector(s);
+    const box = (el) => { const r = el.getBoundingClientRect(), w = q('.wrap').getBoundingClientRect();
+      return { l: r.left - w.left, t: r.top - w.top, r: r.right - w.left, b: r.bottom - w.top,
+               cx: (r.left + r.right) / 2 - w.left, cy: (r.top + r.bottom) / 2 - w.top }; };
+    const svg = q('#arrows');
+    const NS = 'http://www.w3.org/2000/svg';
+    svg.innerHTML = '<defs><marker id="arr" markerWidth="7" markerHeight="7" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#1F3A5F"/></marker>' +
+      '<marker id="arr-red" markerWidth="7" markerHeight="7" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#C2483B"/></marker></defs>';
+    const line = (x1, y1, x2, y2, dashed, red) => {
+      const l = document.createElementNS(NS, 'line');
+      l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+      l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+      l.setAttribute('stroke', red ? '#C2483B' : '#1F3A5F'); l.setAttribute('stroke-width', '3.5');
+      l.setAttribute('marker-end', red ? 'url(#arr-red)' : 'url(#arr)');
+      if (dashed) l.setAttribute('stroke-dasharray', '11 8');
+      svg.appendChild(l);
+    };
+    const task = box(q('.task-group'));
+    const agent = box(q('.agent-bar'));
+    const term = box(q('.term-wrap .term'));
+    const out = box(q('.out-card'));
+    const audit = box(q('.audit-card'));
+    const result = box(q('.term-wrap .result'));
+    // task -> agent bar (from group's top right to bar's left, at bar height)
+    line(task.r + 6, agent.cy, agent.l - 8, agent.cy);
+    // agent bar -> terminal (vertical, at terminal center x)
+    line(term.cx, agent.b + 2, term.cx, term.t - 6);
+    // terminal -> report (horizontal at report card height)
+    line(term.r + 4, out.cy, out.l - 8, out.cy);
+    // output -> audit (vertical = handoff to auditor)
+    line(out.cx, out.b + 2, out.cx, audit.t - 28);
+    // the availability cliff: falling arrow beside the tier steps
+    const s1 = box(q('.step.s1')), s3 = box(q('.step.s3'));
+    line(s3.r + 16, s1.t + 6, s3.r + 16, s3.b - 2, false, true);
+    // label
+    const lbl = document.createElement('div');
+    lbl.className = 'arrow-label';
+    lbl.textContent = 'report + evidence';
+    document.querySelector('.wrap').appendChild(lbl);
+    lbl.style.left = (out.cx + 14) + 'px';
+    lbl.style.top = (out.b + 12) + 'px';
+  </script>
+</div>
+</body>
+</html>

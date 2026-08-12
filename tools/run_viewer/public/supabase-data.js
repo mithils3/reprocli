@@ -16,11 +16,56 @@ const RemoteSource = {
     } catch (e) { return false; }
   },
 
+  // ---- retired agent models (APP_CONFIG.EXCLUDED_MODELS) -------------------
+  // Excluded models are dropped here, at the only door every remote tab reads
+  // through, rather than in each renderer — Live, the overview matrix, stats,
+  // graders and the sweep list then agree on the roster for free. Audit rows
+  // name their GRADER in `model`, not the agent, so they are matched instead by
+  // graded_run_id against the ids of the runs we dropped.
+  _exRunIds: null,       // Set<run_id> of excluded-model runs (null = not resolved)
+  _exRunIdsPromise: null,
+
+  excludedModels() { return (window.APP_CONFIG || {}).EXCLUDED_MODELS || []; },
+  isExcludedModel(model) { return this.excludedModels().includes(model); },
+
+  // Split a freshly fetched page of runs; the dropped ids become the authority
+  // the audit filter consults.
+  _keepRuns(rows) {
+    if (!this.excludedModels().length) return rows;
+    const ids = new Set(), keep = [];
+    for (const r of rows) {
+      if (this.isExcludedModel(r && r.model)) ids.add(r.run_id);
+      else keep.push(r);
+    }
+    this._exRunIds = ids; this._exRunIdsPromise = null;
+    return keep;
+  },
+  // A Realtime row for an excluded model never reaches the list, and its id
+  // joins the drop set so an audit insert arriving later for it goes too.
+  _keepRun(row) {
+    if (!row || !this.isExcludedModel(row.model)) return true;
+    if (row.run_id) (this._exRunIds || (this._exRunIds = new Set())).add(row.run_id);
+    return false;
+  },
+  // The Audits tab can open cold, before any listRuns() has run, so resolve the
+  // drop set on its own with one narrow query and reuse it afterwards.
+  async _excludedRunIds() {
+    if (!this.excludedModels().length) return new Set();
+    if (this._exRunIds) return this._exRunIds;
+    if (!this._exRunIdsPromise) {
+      this._exRunIdsPromise = this.client.from("repro_runs")
+        .select("run_id").in("model", this.excludedModels())
+        .then(({ data }) => new Set((data || []).map((r) => r.run_id)))
+        .catch(() => new Set());
+    }
+    return this._exRunIdsPromise;
+  },
+
   async listRuns() {
     const { data, error } = await this.client.from("repro_runs")
       .select("*").order("updated_at", { ascending: false }).limit(2000);
     if (error) throw error;
-    const rows = data || [];
+    const rows = this._keepRuns(data || []);
     if (window.Freeze) window.Freeze.setRuns(rows);
     return rows;
   },
@@ -48,7 +93,7 @@ const RemoteSource = {
   subscribeRunList(onChange) {
     return this.client.channel("runs")
       .on("postgres_changes", { event: "*", schema: "public", table: "repro_runs" },
-        (p) => onChange(p.new || p.old, p.eventType))
+        (p) => { const row = p.new || p.old; if (this._keepRun(row)) onChange(row, p.eventType); })
       .subscribe();
   },
 
@@ -67,7 +112,8 @@ const RemoteSource = {
     const { data, error } = await this.client.from("audit_runs")
       .select("*").order("updated_at", { ascending: false }).limit(2000);
     if (error) throw error;
-    return (data || []).map((r) => this._auditRun(r));
+    const dropped = await this._excludedRunIds();
+    return (data || []).filter((r) => !dropped.has(r.graded_run_id)).map((r) => this._auditRun(r));
   },
   async loadAudit(auditRunId) {
     const [runRes, evRes] = await Promise.all([
@@ -90,7 +136,11 @@ const RemoteSource = {
   subscribeAuditList(onChange) {
     return this.client.channel("audits")
       .on("postgres_changes", { event: "*", schema: "public", table: "audit_runs" },
-        (p) => onChange(this._auditRun(p.new || p.old), p.eventType))
+        (p) => {
+          const row = p.new || p.old;
+          if (this._exRunIds && this._exRunIds.has(row && row.graded_run_id)) return;
+          onChange(this._auditRun(row), p.eventType);
+        })
       .subscribe();
   },
 
@@ -159,7 +209,7 @@ const RemoteSource = {
     const { data, error } = await this.client.from("repro_sweeps")
       .select("*").order("updated_at", { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data || []).filter((s) => !this.isExcludedModel(s && s.model));
   },
   async loadSweep(slug) {
     const [sw, an] = await Promise.all([

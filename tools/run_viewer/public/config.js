@@ -22,4 +22,13 @@ window.APP_CONFIG = {
   // as "dead" (the harness died / the job was killed before it could finalize).
   // Derived in the browser — the anon key is read-only, so the DB row is unchanged.
   DEAD_AFTER_HOURS: 12,
+
+  // Agent models retired from the viewer. supabase-data.js drops their runs,
+  // their audit passes and their sweep dissections before anything renders, so
+  // every tab agrees on the roster. The DB rows are untouched — empty this list
+  // to bring a model back.
+  EXCLUDED_MODELS: [
+    "poolside/Laguna-S-2.1-INT4",
+    "zai-org/GLM-5.2",
+  ],
 };
