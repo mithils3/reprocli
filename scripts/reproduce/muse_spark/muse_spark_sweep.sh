@@ -42,7 +42,6 @@ ATTEMPTS="${ATTEMPTS:-3}"
 RETRY_BACKOFF="${RETRY_BACKOFF:-60}"           # seconds; multiplied by the attempt number
 ONLY_IDS="${ONLY_IDS:-}"                       # space-separated ids to run INSTEAD of the tier
 RESUME="${RESUME:-1}"                          # 1 -> skip papers that already have a verdict
-WALL_HOURS="${WALL_HOURS:-48}"                 # advisory countdown shown to the agent
 
 # The Meta Model API takes the key as a bearer token; the harness reads
 # $REPROCLI_API_KEY (endpoint.py) and sends it on both loops.
@@ -131,9 +130,12 @@ else
   STATUS_FILE="${SWEEP_DIR}/status.tsv"
 fi
 
-# Advisory wall countdown surfaced to the agent each tool round (transcript.py).
-# No scheduler owns this process, so it is just now + WALL_HOURS.
-export REPRO_WALL_DEADLINE_EPOCH="$(( $(date +%s) + WALL_HOURS * 3600 ))"
+# No wall countdown. The sbatch sweeps set REPRO_WALL_DEADLINE_EPOCH because SLURM
+# really does kill the job hosting them; nothing kills this one, so an invented
+# deadline would only push the agent to finalize early against a wall that does not
+# exist. transcript.py omits the countdown when the var is unset, and it is cleared
+# here in case the launching shell carried one in.
+unset REPRO_WALL_DEADLINE_EPOCH
 
 BUDGET_ARG=()
 [[ -n "${BUDGET_H100_HOURS}" ]] && BUDGET_ARG=(--budget-h100-hours "${BUDGET_H100_HOURS}")
