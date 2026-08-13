@@ -10,6 +10,7 @@ from reprocli_vllm.vllm.endpoint import (
     auth_headers,
     chat_template_kwargs,
     openrouter_provider_routing,
+    reasoning_effort,
     resolve_api_key,
 )
 from reprocli_vllm.vllm.retry import with_retries
@@ -41,6 +42,18 @@ def apply_chat_template_kwargs(body: dict[str, Any]) -> None:
     kwargs = chat_template_kwargs()
     if kwargs is not None:
         body.setdefault("chat_template_kwargs", kwargs)
+
+
+def apply_reasoning_effort(body: dict[str, Any]) -> None:
+    """Attach the env-configured ``reasoning_effort`` in-place, if any.
+
+    Same chokepoint and same never-clobber contract as the two above, so one env var
+    sets the depth for the repro loop, the auditor tool loop, and compaction alike.
+    No-op when unset (every local-vLLM sweep).
+    """
+    effort = reasoning_effort()
+    if effort is not None:
+        body.setdefault("reasoning_effort", effort)
 
 
 def prepare_structured_output(body: dict[str, Any]) -> None:
@@ -84,6 +97,7 @@ def post_chat_completion_row(
 ) -> Any:
     apply_provider_routing(row["body"])
     apply_chat_template_kwargs(row["body"])
+    apply_reasoning_effort(row["body"])
     prepare_structured_output(row["body"])
     if stream:
         return stream_chat_completion(base_url, row, timeout)

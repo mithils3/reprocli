@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
+    ENV_CONTEXT_LENGTH,
     ENV_ENDPOINT_FILE,
     ENV_OPENROUTER_PROVIDER,
     ENV_SERVED_MODEL,
@@ -189,6 +190,27 @@ class FetchServedContextLengthTests(unittest.TestCase):
         with self._patch_cards([{"id": "m", "max_model_len": 0}]):
             with self.assertRaises(RuntimeError):
                 fetch_served_context_length("http://b", "m")
+
+    def test_env_override_wins_over_a_card(self) -> None:
+        with self._patch_cards([{"id": "m", "max_model_len": 8192}]):
+            with patch.dict("os.environ", {ENV_CONTEXT_LENGTH: "1000000"}, clear=True):
+                self.assertEqual(fetch_served_context_length("http://b", "m"), 1000000)
+
+    def test_env_override_rescues_a_card_with_no_window(self) -> None:
+        # The Meta Model API advertises only id/object/created/owned_by.
+        with self._patch_cards([{"id": "muse-spark-1.2-contributor"}]):
+            with patch.dict("os.environ", {ENV_CONTEXT_LENGTH: "1000000"}, clear=True):
+                self.assertEqual(
+                    fetch_served_context_length("http://b", "muse-spark-1.2-contributor"),
+                    1000000,
+                )
+
+    def test_env_override_must_be_a_positive_int(self) -> None:
+        for bad in ("not-a-number", "0", "-5"):
+            with self._patch_cards([{"id": "m"}]):
+                with patch.dict("os.environ", {ENV_CONTEXT_LENGTH: bad}, clear=True):
+                    with self.assertRaises(RuntimeError):
+                        fetch_served_context_length("http://b", "m")
 
 
 if __name__ == "__main__":

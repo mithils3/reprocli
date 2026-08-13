@@ -46,12 +46,33 @@ WALL_HOURS="${WALL_HOURS:-48}"                 # advisory countdown shown to the
 
 # The Meta Model API takes the key as a bearer token; the harness reads
 # $REPROCLI_API_KEY (endpoint.py) and sends it on both loops.
-export REPROCLI_API_KEY="${REPROCLI_API_KEY:-${META_MODEL_KEY:-}}"
-if [[ -z "${REPROCLI_API_KEY}" ]]; then
+#
+# META_MODEL_KEY WINS over an inherited REPROCLI_API_KEY. The login shell that runs
+# the OpenRouter/vLLM sweeps already exports REPROCLI_API_KEY, and deferring to it
+# here sends an OpenRouter key to api.meta.ai, which 401s and surfaces as an
+# unreachable endpoint. This sweep only ever talks to Meta, so the Meta key is the
+# only correct value.
+if [[ -z "${META_MODEL_KEY:-}" ]]; then
   echo "META_MODEL_KEY is unset -- generate a key at dev.meta.ai and export it" >&2
   echo "  (it lives in ~/.bashrc: source <(grep META_MODEL_KEY ~/.bashrc))" >&2
   exit 1
 fi
+if [[ -n "${REPROCLI_API_KEY:-}" && "${REPROCLI_API_KEY}" != "${META_MODEL_KEY}" ]]; then
+  echo "note: overriding an inherited REPROCLI_API_KEY with META_MODEL_KEY for this sweep." >&2
+fi
+export REPROCLI_API_KEY="${META_MODEL_KEY}"
+# OpenRouter-only knob; a stray value in the login env would put a 'provider' block
+# on every request to Meta, which does not understand it.
+unset REPROCLI_OPENROUTER_PROVIDER
+
+# Reasoning depth. Chat Completions takes this top-level as reasoning_effort (the
+# Responses API nests it as reasoning.effort, which this harness never posts).
+# Muse Spark documents xhigh as maximum depth; it defaults to high server-side.
+export REPROCLI_REASONING_EFFORT="${REASONING_EFFORT:-xhigh}"
+# Muse Spark's model cards carry no context_length, so the window cannot be read
+# off /v1/models the way a vLLM or OpenRouter card allows. State it explicitly for
+# both loops; reprocli_repro resolves its input ceiling through the same env var.
+export REPROCLI_CONTEXT_LENGTH="${MAX_MODEL_LEN:-1000000}"
 
 # Repo root, so src/ and outputs/ resolve wherever this is launched from.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -111,15 +132,25 @@ BUDGET_ARG=()
 [[ -n "${BUDGET_H100_HOURS}" ]] && BUDGET_ARG=(--budget-h100-hours "${BUDGET_H100_HOURS}")
 
 # --- Step 1: preflight the API ----------------------------------------------
-# Never invent a context window: the auditor is a URL-only client with no served-window
-# lookup, so its ceiling is derived from what /v1/models actually advertises. The repro
-# agent reads the same field itself. Fail loudly rather than guess.
-api_ready() {
-  curl -fsS --max-time 15 -H "Authorization: Bearer ${REPROCLI_API_KEY}" \
-    "${ENDPOINT%/v1}/v1/models" >/dev/null 2>&1
+# Report the status code. A bare `curl -f` collapses "key rejected" and "no route to
+# the host" into one indistinguishable failure, which is exactly the confusion this
+# preflight exists to prevent.
+api_status() {
+  curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
+    -H "Authorization: Bearer ${REPROCLI_API_KEY}" \
+    "${ENDPOINT%/v1}/v1/models" 2>/dev/null
 }
-if ! api_ready; then
-  echo "Muse Spark unreachable at ${ENDPOINT%/v1}/v1/models (check META_MODEL_KEY)" >&2
+api_ready() { [[ "$(api_status)" == "200" ]]; }
+
+preflight_status="$(api_status)"
+if [[ "${preflight_status}" != "200" ]]; then
+  echo "preflight failed: GET ${ENDPOINT%/v1}/v1/models -> http=${preflight_status:-000}" >&2
+  case "${preflight_status}" in
+    401|403) echo "  key rejected. Regenerate at dev.meta.ai, and check nothing else in" >&2
+             echo "  the login env is shadowing it (this sweep forces META_MODEL_KEY)." >&2 ;;
+    000)     echo "  no HTTP response: DNS, egress, or timeout from this node." >&2 ;;
+    *)       echo "  body: curl -sS -H \"Authorization: Bearer \$META_MODEL_KEY\" ${ENDPOINT%/v1}/v1/models" >&2 ;;
+  esac
   exit 1
 fi
 # "Muse Spark 1.2 Contributor" is the console's display name; the request wants its
@@ -137,19 +168,16 @@ if served and sys.argv[2] not in served:
     raise SystemExit(1)
 PY
 fi
-if [[ -z "${MAX_MODEL_LEN:-}" ]]; then
-  MAX_MODEL_LEN="$(python3 - "${ENDPOINT}" "${MODEL}" <<'PY'
-import sys
-from reprocli_vllm.vllm.endpoint import fetch_served_context_length, normalize_server_url
-print(fetch_served_context_length(normalize_server_url(sys.argv[1]), sys.argv[2]))
-PY
-  )" || { echo "could not read the context window for ${MODEL} at ${ENDPOINT}" >&2; exit 1; }
-fi
+# Stated, never probed: Meta's model cards carry no window field, so
+# fetch_served_context_length would raise for every run. REPROCLI_CONTEXT_LENGTH
+# (exported above) is what both loops resolve their ceiling through.
+MAX_MODEL_LEN="${REPROCLI_CONTEXT_LENGTH}"
 # The auditor reserves 32768 tokens for its verdict, so its input ceiling is the rest.
 AUDIT_MAX_INPUT_TOKENS="${AUDIT_MAX_INPUT_TOKENS:-$(( MAX_MODEL_LEN - 32768 ))}"
 
 echo "sweep_dir=${SWEEP_DIR}  split=${SPLIT}  tier=${TIER}  model=${MODEL}"
-echo "endpoint=${ENDPOINT}  window=${MAX_MODEL_LEN}  rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}"
+echo "endpoint=${ENDPOINT}  window=${MAX_MODEL_LEN}  effort=${REPROCLI_REASONING_EFFORT}"
+echo "rounds=${TOOL_ROUNDS}  parallel=${MAX_PARALLEL}  attempts=${ATTEMPTS}"
 
 # --- Step 2: enumerate the tier ---------------------------------------------
 mapfile -t PAPER_IDS < <(

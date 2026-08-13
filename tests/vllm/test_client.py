@@ -14,12 +14,52 @@ from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
     ENV_CHAT_TEMPLATE_KWARGS,
     ENV_OPENROUTER_PROVIDER,
+    ENV_REASONING_EFFORT,
 )
 
 JSON_SCHEMA_RF = {
     "type": "json_schema",
     "json_schema": {"name": "v", "schema": {"type": "object"}},
 }
+
+
+class ApplyReasoningEffortTests(unittest.TestCase):
+    def test_noop_when_unset(self) -> None:
+        body = {"model": "muse-spark-1.2-contributor", "messages": []}
+        with patch.dict("os.environ", {}, clear=True):
+            client.apply_reasoning_effort(body)
+        self.assertNotIn("reasoning_effort", body)
+
+    def test_attaches_top_level_field(self) -> None:
+        body = {"model": "muse-spark-1.2-contributor", "messages": []}
+        with patch.dict("os.environ", {ENV_REASONING_EFFORT: "xhigh"}, clear=True):
+            client.apply_reasoning_effort(body)
+        self.assertEqual(body["reasoning_effort"], "xhigh")
+
+    def test_does_not_clobber_existing(self) -> None:
+        body = {"reasoning_effort": "low"}
+        with patch.dict("os.environ", {ENV_REASONING_EFFORT: "xhigh"}, clear=True):
+            client.apply_reasoning_effort(body)
+        self.assertEqual(body["reasoning_effort"], "low")
+
+    def test_ignores_whitespace_only(self) -> None:
+        body = {"model": "m", "messages": []}
+        with patch.dict("os.environ", {ENV_REASONING_EFFORT: "   "}, clear=True):
+            client.apply_reasoning_effort(body)
+        self.assertNotIn("reasoning_effort", body)
+
+    def test_reaches_body_through_post_row(self) -> None:
+        row = {"custom_id": "c1", "body": {"model": "m", "messages": []}}
+        seen: dict = {}
+
+        def _fake_post(base_url, body, timeout):
+            seen["body"] = body
+            return {"choices": []}
+
+        with patch.dict("os.environ", {ENV_REASONING_EFFORT: "xhigh"}, clear=True):
+            with patch.object(client, "post_vllm_chat_completion", _fake_post):
+                client.post_chat_completion_row("http://h:8000", row, 30.0)
+        self.assertEqual(seen["body"]["reasoning_effort"], "xhigh")
 
 
 class ApplyProviderRoutingTests(unittest.TestCase):

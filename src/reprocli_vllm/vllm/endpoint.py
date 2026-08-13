@@ -41,6 +41,8 @@ ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
 ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
 ENV_CHAT_TEMPLATE_KWARGS = "REPROCLI_CHAT_TEMPLATE_KWARGS"
+ENV_REASONING_EFFORT = "REPROCLI_REASONING_EFFORT"
+ENV_CONTEXT_LENGTH = "REPROCLI_CONTEXT_LENGTH"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -113,6 +115,23 @@ def chat_template_kwargs() -> dict[str, Any] | None:
     return parsed
 
 
+def reasoning_effort() -> str | None:
+    """Per-request ``reasoning_effort`` for every completion, or None.
+
+    The OpenAI-compatible spelling of the knob ``chat_template_kwargs`` covers for a
+    locally-served model: a hosted reasoning API takes the depth as a top-level body
+    field instead of a chat-template flag. Set ``REPROCLI_REASONING_EFFORT`` to the
+    value the provider documents (Muse Spark accepts ``xhigh`` for maximum depth;
+    OpenAI-style backends take low/medium/high) and it rides on every chat-completion
+    body.
+
+    Unset/empty -> ``None`` and no field is sent, so a local vLLM sweep and every
+    non-reasoning model are unaffected.
+    """
+    value = (os.environ.get(ENV_REASONING_EFFORT) or "").strip()
+    return value or None
+
+
 def normalize_server_url(value: str) -> str:
     """Strip a trailing slash and a trailing ``/v1`` so callers can append paths."""
     url = value.strip().rstrip("/")
@@ -173,7 +192,24 @@ def fetch_served_context_length(
     carry ``context_length``, so we read either. Raises rather than guessing a default:
     the served window is the harness's input ceiling, and inventing one is how a
     1M-context brain ends up capped at some number the server never agreed to.
+
+    ``REPROCLI_CONTEXT_LENGTH`` overrides the lookup for a server whose model cards
+    carry no window at all (the Meta Model API advertises only id/object/created/
+    owned_by, so Muse Spark cannot be resolved from its card). That is the operator
+    stating the ceiling, which is different from this function inventing one, so an
+    unset env var still raises rather than falling back to a number nobody chose.
     """
+    override = (os.environ.get(ENV_CONTEXT_LENGTH) or "").strip()
+    if override:
+        try:
+            value = int(override)
+        except ValueError:
+            raise RuntimeError(
+                f"{ENV_CONTEXT_LENGTH}={override!r} is not an integer."
+            ) from None
+        if value <= 0:
+            raise RuntimeError(f"{ENV_CONTEXT_LENGTH}={value} must be positive.")
+        return value
     for entry in fetch_model_cards(base_url, timeout):
         if model_id and entry.get("id") != model_id:
             continue
@@ -183,7 +219,8 @@ def fetch_served_context_length(
                 return value
     raise RuntimeError(
         f"{base_url}/v1/models advertised no context window for {model_id!r}; "
-        f"cannot resolve the input ceiling."
+        f"cannot resolve the input ceiling. Set {ENV_CONTEXT_LENGTH} to the window "
+        f"the provider documents if its model cards omit it."
     )
 
 
