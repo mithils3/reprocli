@@ -107,7 +107,10 @@ def parse_json_content(content: str) -> Any | None:
 
 
 def response_message(row: dict[str, Any]) -> dict[str, Any]:
-    choices = row.get("response", {}).get("body", {}).get("choices") or []
+    # ``body`` is explicitly None on a failed-model-call row, so default-to-{} is not
+    # enough: .get("body", {}) returns the None that is actually there.
+    body = (row.get("response") or {}).get("body") or {}
+    choices = body.get("choices") or []
     if not choices:
         return {}
     return choices[0].get("message") or {}

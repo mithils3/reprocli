@@ -151,7 +151,21 @@ def handle_request_done(
     state = request_futures.pop(future)
     custom_id = str(state["custom_id"])
     round_index = int(state["round_index"])
-    row = response_row(custom_id, future.result())
+    try:
+        completion = future.result()
+    except Exception as exc:  # noqa: BLE001 — a failed model call must not strand the run
+        # The round's model call failed after the retry budget (a non-retryable 4xx, or
+        # a hang that exhausted timeout+retries). Letting it propagate unwinds the whole
+        # loop: the paper never reaches final_rows, the run exits non-zero with no
+        # verdict written, and its Supabase row is left at status="running" forever.
+        # Mirror reprocli_repro.loop and finalize just this paper as an error terminal,
+        # so it still gets a (degraded) verdict row and its siblings keep running.
+        finalize_failed_request(
+            custom_id, round_index, exc, conversations, final_rows,
+            tool_rounds_used, exit_reasons, args,
+        )
+        return
+    row = response_row(custom_id, completion)
     message = response_message(row)
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
@@ -213,6 +227,49 @@ def handle_request_done(
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
     live_events.final(custom_id, round_index, message, exit_reason,
                       extracted_response(custom_id, row, args.mode))
+
+
+def finalize_failed_request(
+    custom_id: str,
+    round_index: int,
+    exc: BaseException,
+    conversations: dict[str, list[dict]],
+    final_rows: dict[str, dict],
+    tool_rounds_used: dict[str, int],
+    exit_reasons: dict[str, str],
+    args: argparse.Namespace,
+) -> None:
+    """Terminate one paper on a dead model call, degraded but accounted for.
+
+    Writes the same row shape reprocli_repro.loop uses for its error terminal
+    (``status_code`` 0, no body, the error string), which ``extracted_response``
+    already funnels to ``degraded_row``. Landing in ``final_rows`` is what keeps the
+    end-of-loop ``missing`` check from turning one paper's failure into a SystemExit
+    for the whole batch.
+    """
+    print(
+        f"request {custom_id}: model call failed at round {round_index}: {exc}",
+        file=sys.stderr,
+        flush=True,
+    )
+    exit_reasons[custom_id] = "error"
+    row: dict[str, Any] = {
+        "custom_id": custom_id,
+        "response": {"status_code": 0, "body": None, "error": str(exc)},
+        "tool_loop": {
+            "tool_rounds_used": tool_rounds_used[custom_id],
+            "max_tool_rounds": args.tool_rounds,
+            "hit_tool_round_limit": False,
+            "exit_reason": "error",
+            "telemetry": loop_telemetry(conversations[custom_id], args.max_input_tokens),
+        },
+    }
+    final_rows[custom_id] = row
+    append_completed_outputs(custom_id, row, conversations[custom_id], args)
+    live_events.final(
+        custom_id, round_index, {}, "error",
+        extracted_response(custom_id, row, args.mode),
+    )
 
 
 def prepare_incremental_outputs(args: argparse.Namespace) -> None:
