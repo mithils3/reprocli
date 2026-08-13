@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
+    is_openrouter,
     ENV_CONTEXT_LENGTH,
     ENV_ENDPOINT_FILE,
     ENV_OPENROUTER_PROVIDER,
@@ -211,6 +212,18 @@ class FetchServedContextLengthTests(unittest.TestCase):
                 with patch.dict("os.environ", {ENV_CONTEXT_LENGTH: bad}, clear=True):
                     with self.assertRaises(RuntimeError):
                         fetch_served_context_length("http://b", "m")
+
+
+class IsOpenRouterTests(unittest.TestCase):
+    def test_openrouter_urls(self) -> None:
+        for url in ("https://openrouter.ai/api/v1", "https://openrouter.ai",
+                    "https://gateway.openrouter.ai/api/v1"):
+            self.assertTrue(is_openrouter(url), url)
+
+    def test_everything_else(self) -> None:
+        for url in ("https://api.meta.ai/v1", "http://gh001:8000",
+                    "https://api.openai.com/v1", "https://notopenrouter.ai/v1", ""):
+            self.assertFalse(is_openrouter(url), url)
 
 
 if __name__ == "__main__":

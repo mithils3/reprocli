@@ -9,9 +9,9 @@ from typing import Any
 from reprocli_vllm.vllm.endpoint import (
     auth_headers,
     chat_template_kwargs,
+    is_openrouter,
     openrouter_provider_routing,
     reasoning_effort,
-    resolve_api_key,
     truncate_prompt_disabled,
 )
 from reprocli_vllm.vllm.retry import with_retries
@@ -21,13 +21,19 @@ from reprocli_vllm.vllm.retry import with_retries
 JSON_OBJECT_RESPONSE_FORMAT = {"type": "json_object"}
 
 
-def apply_provider_routing(body: dict[str, Any]) -> None:
+def apply_provider_routing(body: dict[str, Any], base_url: str) -> None:
     """Pin the OpenRouter upstream provider in-place when one is configured.
 
     Single chokepoint for every chat-completion path (repro loop, classifier/auditor
     tool loop, context compaction), so the pin applies uniformly. No-op when unset,
     and never clobbers a ``provider`` block a caller already placed on the body.
+
+    Gated on the endpoint being OpenRouter, because ``provider`` is its field alone
+    and a strict backend 400s on the unknown key. A stray env var in a login shell
+    can no longer aim it at the wrong host.
     """
+    if not is_openrouter(base_url):
+        return
     provider = openrouter_provider_routing()
     if provider is not None:
         body.setdefault("provider", provider)
@@ -72,7 +78,7 @@ def drop_truncate_prompt_tokens(body: dict[str, Any]) -> None:
         body.pop("truncate_prompt_tokens", None)
 
 
-def prepare_structured_output(body: dict[str, Any]) -> None:
+def prepare_structured_output(body: dict[str, Any], base_url: str) -> None:
     """Make a ``json_schema`` response_format actually enforceable on OpenRouter.
 
     OpenRouter only *enforces* structured outputs on upstreams that advertise the
@@ -84,11 +90,16 @@ def prepare_structured_output(body: dict[str, Any]) -> None:
     routing docs). If none is reachable it 404s, which the request path degrades
     to ``json_object`` rather than failing the run.
 
-    Gated on an API key being configured: a self-hosted vLLM needs no key and
-    enforces ``json_schema`` natively, so we leave its body untouched (and never
-    hand it a ``provider`` block it doesn't understand).
+    Gated on the endpoint being OpenRouter, since both halves of this (``strict``
+    plus ``provider.require_parameters``) exist only to steer OpenRouter's router.
+    Everyone else gets the caller's ``response_format`` untouched: a self-hosted
+    vLLM enforces ``json_schema`` natively, and a hosted API that rejects unknown
+    keys must never be handed a ``provider`` block. This gate read
+    ``resolve_api_key() is not None`` until 2026-08-13, which meant every keyed
+    backend was treated as OpenRouter and the Meta Model API took a 400 on the
+    tools-off final pass of every run.
     """
-    if resolve_api_key() is None:
+    if not is_openrouter(base_url):
         return
     response_format = body.get("response_format")
     if not isinstance(response_format, dict) or response_format.get("type") != "json_schema":
@@ -111,11 +122,11 @@ def post_chat_completion_row(
     *,
     stream: bool = False,
 ) -> Any:
-    apply_provider_routing(row["body"])
+    apply_provider_routing(row["body"], base_url)
     apply_chat_template_kwargs(row["body"])
     apply_reasoning_effort(row["body"])
     drop_truncate_prompt_tokens(row["body"])
-    prepare_structured_output(row["body"])
+    prepare_structured_output(row["body"], base_url)
     if stream:
         return stream_chat_completion(base_url, row, timeout)
     return post_vllm_chat_completion(base_url, row["body"], timeout)

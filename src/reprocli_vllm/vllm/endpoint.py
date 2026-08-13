@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -153,6 +154,26 @@ def truncate_prompt_disabled() -> bool:
     """
     value = (os.environ.get(ENV_NO_TRUNCATE_PROMPT) or "").strip().lower()
     return value not in ("", "0", "false", "no")
+
+
+OPENROUTER_HOST = "openrouter.ai"
+
+
+def is_openrouter(base_url: str) -> bool:
+    """Whether ``base_url`` is OpenRouter, and so understands a ``provider`` block.
+
+    ``provider`` is OpenRouter's own body field for upstream routing. Every other
+    backend either ignores an unknown key (a self-hosted vLLM) or rejects the whole
+    request: the Meta Model API answers 400 ``unknown parameter `provider```, which
+    killed the tools-off final pass of both loops on 2026-08-13 while every tool
+    round before it succeeded.
+
+    Presence of an API key used to stand in for "this is OpenRouter". That proxy
+    holds only while OpenRouter is the sole keyed backend, and it silently stopped
+    being true the moment a second hosted API arrived. Ask the URL instead.
+    """
+    host = (urllib.parse.urlparse(base_url).hostname or "").lower()
+    return host == OPENROUTER_HOST or host.endswith(f".{OPENROUTER_HOST}")
 
 
 def normalize_server_url(value: str) -> str:
