@@ -12,6 +12,7 @@ from reprocli_vllm.vllm.endpoint import (
     openrouter_provider_routing,
     reasoning_effort,
     resolve_api_key,
+    truncate_prompt_disabled,
 )
 from reprocli_vllm.vllm.retry import with_retries
 
@@ -56,6 +57,21 @@ def apply_reasoning_effort(body: dict[str, Any]) -> None:
         body.setdefault("reasoning_effort", effort)
 
 
+def drop_truncate_prompt_tokens(body: dict[str, Any]) -> None:
+    """Strip the vLLM-only ``truncate_prompt_tokens`` in-place when configured.
+
+    Inverse direction to the three above and the same chokepoint: ``io.py`` puts the
+    field on every body it builds, and a strictly-validating hosted API 400s on it.
+    Removing it here covers the repro loop, the auditor tool loop, and compaction with
+    one env var, and leaves the builder honest about what it wants.
+
+    No-op unless ``REPROCLI_NO_TRUNCATE_PROMPT`` is set, so a vLLM sweep keeps its
+    server-side truncation.
+    """
+    if truncate_prompt_disabled():
+        body.pop("truncate_prompt_tokens", None)
+
+
 def prepare_structured_output(body: dict[str, Any]) -> None:
     """Make a ``json_schema`` response_format actually enforceable on OpenRouter.
 
@@ -98,6 +114,7 @@ def post_chat_completion_row(
     apply_provider_routing(row["body"])
     apply_chat_template_kwargs(row["body"])
     apply_reasoning_effort(row["body"])
+    drop_truncate_prompt_tokens(row["body"])
     prepare_structured_output(row["body"])
     if stream:
         return stream_chat_completion(base_url, row, timeout)

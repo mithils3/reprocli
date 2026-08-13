@@ -13,6 +13,7 @@ from reprocli_vllm.vllm import client
 from reprocli_vllm.vllm.endpoint import (
     ENV_API_KEY,
     ENV_CHAT_TEMPLATE_KWARGS,
+    ENV_NO_TRUNCATE_PROMPT,
     ENV_OPENROUTER_PROVIDER,
     ENV_REASONING_EFFORT,
 )
@@ -60,6 +61,65 @@ class ApplyReasoningEffortTests(unittest.TestCase):
             with patch.object(client, "post_vllm_chat_completion", _fake_post):
                 client.post_chat_completion_row("http://h:8000", row, 30.0)
         self.assertEqual(seen["body"]["reasoning_effort"], "xhigh")
+
+
+class DropTruncatePromptTokensTests(unittest.TestCase):
+    def test_kept_when_unset(self) -> None:
+        body = {"model": "m", "messages": [], "truncate_prompt_tokens": 967232}
+        with patch.dict("os.environ", {}, clear=True):
+            client.drop_truncate_prompt_tokens(body)
+        self.assertEqual(body["truncate_prompt_tokens"], 967232)
+
+    def test_dropped_when_set(self) -> None:
+        body = {"model": "m", "messages": [], "truncate_prompt_tokens": 967232}
+        with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: "1"}, clear=True):
+            client.drop_truncate_prompt_tokens(body)
+        self.assertNotIn("truncate_prompt_tokens", body)
+
+    def test_kept_for_falsey_spellings(self) -> None:
+        for value in ("0", "false", "no", "", "  "):
+            body = {"truncate_prompt_tokens": 42}
+            with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: value}, clear=True):
+                client.drop_truncate_prompt_tokens(body)
+            self.assertEqual(body["truncate_prompt_tokens"], 42, value)
+
+    def test_absent_field_is_not_an_error(self) -> None:
+        body = {"model": "m", "messages": []}
+        with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: "1"}, clear=True):
+            client.drop_truncate_prompt_tokens(body)
+        self.assertNotIn("truncate_prompt_tokens", body)
+
+    def test_reaches_body_through_post_row(self) -> None:
+        row = {
+            "custom_id": "c1",
+            "body": {"model": "m", "messages": [], "truncate_prompt_tokens": 967232},
+        }
+        seen: dict = {}
+
+        def _fake_post(base_url, body, timeout):
+            seen["body"] = body
+            return {"choices": []}
+
+        with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: "1"}, clear=True):
+            with patch.object(client, "post_vllm_chat_completion", _fake_post):
+                client.post_chat_completion_row("http://h:8000", row, 30.0)
+        self.assertNotIn("truncate_prompt_tokens", seen["body"])
+
+    def test_streamed_body_is_stripped_too(self) -> None:
+        row = {
+            "custom_id": "c1",
+            "body": {"model": "m", "messages": [], "truncate_prompt_tokens": 967232},
+        }
+        seen: dict = {}
+
+        def _fake_stream(base_url, body, timeout):
+            seen["body"] = body
+            return {"choices": []}
+
+        with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: "1"}, clear=True):
+            with patch.object(client, "post_streaming_chat_completion", _fake_stream):
+                client.post_chat_completion_row("http://h:8000", row, 30.0, stream=True)
+        self.assertNotIn("truncate_prompt_tokens", seen["body"])
 
 
 class ApplyProviderRoutingTests(unittest.TestCase):

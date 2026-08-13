@@ -43,6 +43,7 @@ ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
 ENV_CHAT_TEMPLATE_KWARGS = "REPROCLI_CHAT_TEMPLATE_KWARGS"
 ENV_REASONING_EFFORT = "REPROCLI_REASONING_EFFORT"
 ENV_CONTEXT_LENGTH = "REPROCLI_CONTEXT_LENGTH"
+ENV_NO_TRUNCATE_PROMPT = "REPROCLI_NO_TRUNCATE_PROMPT"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
@@ -130,6 +131,28 @@ def reasoning_effort() -> str | None:
     """
     value = (os.environ.get(ENV_REASONING_EFFORT) or "").strip()
     return value or None
+
+
+def truncate_prompt_disabled() -> bool:
+    """Whether to strip ``truncate_prompt_tokens`` from every chat-completion body.
+
+    ``truncate_prompt_tokens`` is a vLLM extension: the server clips an over-long
+    prompt to the input ceiling instead of erroring. A self-hosted vLLM owns the
+    field and OpenRouter tolerates it, so it has ridden on every body since the
+    harness was written. A strictly-validating hosted API rejects the unknown
+    parameter with a 400 on the first call of both loops (the Meta Model API answers
+    ``unknown parameter `truncate_prompt_tokens```), and the preflight never catches
+    it because that probe only does a GET on /v1/models.
+
+    Set ``REPROCLI_NO_TRUNCATE_PROMPT=1`` for such a backend. The prompt ceiling then
+    rests entirely on the harness's own compaction, so pair it with a context length
+    the provider actually documents.
+
+    Unset/empty/0/false/no -> ``False`` and the field is sent, so every vLLM and
+    OpenRouter sweep is unaffected.
+    """
+    value = (os.environ.get(ENV_NO_TRUNCATE_PROMPT) or "").strip().lower()
+    return value not in ("", "0", "false", "no")
 
 
 def normalize_server_url(value: str) -> str:

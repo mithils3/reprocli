@@ -73,6 +73,13 @@ export REPROCLI_REASONING_EFFORT="${REASONING_EFFORT:-xhigh}"
 # off /v1/models the way a vLLM or OpenRouter card allows. State it explicitly for
 # both loops; reprocli_repro resolves its input ceiling through the same env var.
 export REPROCLI_CONTEXT_LENGTH="${MAX_MODEL_LEN:-1000000}"
+# truncate_prompt_tokens is a vLLM extension that io.py puts on every body. Meta
+# validates strictly and 400s on the unknown parameter at round 0 of BOTH loops,
+# which reads as repro_rc=0 (the repro loop finalizes a failed call as an error
+# terminal) plus audit_rc=1. Preflight cannot catch it: that probe only GETs
+# /v1/models. Dropping it also drops server-side prompt clipping, so the window
+# stated above and the harness's own compaction are the only ceiling left.
+export REPROCLI_NO_TRUNCATE_PROMPT=1
 
 # Repo root, so src/ and outputs/ resolve wherever this is launched from.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
