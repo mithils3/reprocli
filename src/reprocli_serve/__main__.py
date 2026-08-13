@@ -64,6 +64,19 @@ def main(argv: list[str] | None = None) -> int:
 def _serve_env(args) -> dict[str, str] | None:
     """Extra env for the vLLM subprocess, or None to inherit ours unchanged.
 
+    Every serve: ``VLLM_USE_FLASHINFER_SAMPLER=0``. vLLM defaults that env to
+    True on CUDA, and ``flashinfer_sampler_supported()`` imports the FlashInfer
+    attention backend before it checks anything else, so a venv without
+    ``flashinfer`` kills every worker in ``Sampler.__init__`` with
+    ``ModuleNotFoundError`` and the engine never reaches ready (job 2933896,
+    MiniMax Hard on 2xGH200). Installed, the kernel is the other half of the
+    problem: the DeepSeek-V4-Flash and Laguna runbooks both record it crashing
+    the profile run here (``TopKMaskLogits: invalid resource handle``). The
+    native torch sampler is what every verified GH200 serve has run, so this is
+    the launcher's default instead of an export three of the eight sbatch
+    scripts remembered to carry. Export ``VLLM_USE_FLASHINFER_SAMPLER=1`` to opt
+    back in on a box that fixed both.
+
     Multi-node only: pin ``VLLM_HOST_IP`` to this node's own fabric IP so vLLM's
     internal RPC / multiproc message queue lands on the same fabric as NCCL.
     Otherwise vLLM's ``get_ip()`` guesses the public VLAN, and remote workers
@@ -72,16 +85,18 @@ def _serve_env(args) -> dict[str, str] | None:
     fails with a stack instead of an indefinite hang. An explicit value set in
     the environment (e.g. by the launch runbook) always wins.
     """
-    if not (args.nnodes and args.nnodes > 1):
-        return None
-    overrides: dict[str, str] = {}
-    if not os.environ.get("VLLM_HOST_IP"):
-        ip = network.fabric_ipv4(args.iface)
-        if ip:
-            overrides["VLLM_HOST_IP"] = ip
-    overrides.setdefault("TORCH_NCCL_ASYNC_ERROR_HANDLING", os.environ.get("TORCH_NCCL_ASYNC_ERROR_HANDLING", "1"))
-    if not overrides:
-        return None
+    overrides: dict[str, str] = {
+        "VLLM_USE_FLASHINFER_SAMPLER": os.environ.get("VLLM_USE_FLASHINFER_SAMPLER", "0")
+    }
+    if args.nnodes and args.nnodes > 1:
+        if not os.environ.get("VLLM_HOST_IP"):
+            ip = network.fabric_ipv4(args.iface)
+            if ip:
+                overrides["VLLM_HOST_IP"] = ip
+        overrides.setdefault(
+            "TORCH_NCCL_ASYNC_ERROR_HANDLING",
+            os.environ.get("TORCH_NCCL_ASYNC_ERROR_HANDLING", "1"),
+        )
     env = dict(os.environ)
     env.update(overrides)
     print(
