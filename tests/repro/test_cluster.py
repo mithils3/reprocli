@@ -21,7 +21,7 @@ class ResolveClusterTests(unittest.TestCase):
     def test_deltaai_is_the_only_profile(self):
         c = resolve_cluster(DEFAULT_CLUSTER)
         self.assertEqual(c.name, "deltaai")
-        self.assertEqual(c.account, "bfvr-dtai-gh")
+        self.assertEqual(c.account, "betw-dtai-gh")
         self.assertEqual(c.partition, "ghx4")
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.gpus_per_node, 4)
@@ -38,7 +38,7 @@ class ResolveClusterTests(unittest.TestCase):
         self.assertEqual(c.partition, "ghx4-interactive")
         self.assertEqual(c.apptainer_image, "/my/image.sif")
         # Everything else stays pinned to the profile, including the CPU cap.
-        self.assertEqual(c.account, "bfvr-dtai-gh")
+        self.assertEqual(c.account, "betw-dtai-gh")
         self.assertEqual(c.gpus_per_node, 4)
         self.assertEqual(c.hw, "gh200")
         self.assertEqual(c.sandbox_cpus, 12)
@@ -56,7 +56,7 @@ class ClusterDefaultsTests(unittest.TestCase):
     def test_exposes_default_partition_per_known_cluster(self):
         defaults = cluster_defaults()
         self.assertEqual(defaults["deltaai"]["default_partition"], "ghx4")
-        self.assertEqual(defaults["deltaai"]["account"], "bfvr-dtai-gh")
+        self.assertEqual(defaults["deltaai"]["account"], "betw-dtai-gh")
         # Every known cluster is represented, with the fields list_partitions surfaces.
         self.assertEqual(set(defaults), set(cluster_names()))
         for entry in defaults.values():
@@ -73,7 +73,7 @@ class FromArgsTests(unittest.TestCase):
 
     def test_from_args_uses_profile_when_unset(self):
         c = from_args(self._args())
-        self.assertEqual(c.account, "bfvr-dtai-gh")
+        self.assertEqual(c.account, "betw-dtai-gh")
         self.assertEqual(c.partition, "ghx4")
 
     def test_from_args_applies_partition_and_image(self):
