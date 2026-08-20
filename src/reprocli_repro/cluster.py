@@ -10,9 +10,9 @@ hard lifetime, billed as wall clock in ``budget.py``).
 
 DeltaAI is the only profile. The two per-run overrides are ``--partition`` (pick a
 different node pool) and ``--apptainer-image`` (swap the sandbox .sif); everything else
-is pinned here. The pinned partition and account both match the live
-``scripts/*.sbatch``: GPU steps charge ``betw-dtai-gh``, the same account the sbatch
-jobs that serve the brain carry.
+is pinned here. The pinned partition matches the live ``scripts/*.sbatch``; the account
+deliberately does not — GPU steps charge ``bfvr-dtai-gh`` while the sbatch jobs that
+serve the brain charge ``betw-dtai-gh``.
 """
 
 from __future__ import annotations
@@ -62,15 +62,15 @@ _PROFILES: dict[str, Cluster] = {
         name="deltaai",
         hw="gh200",
         gpus_per_node=4,
-        # The agent's JIT GPU steps charge betw, the same account the sbatch jobs
-        # carry, so a sweep's brain/orchestrator node and every run_gpu hold come out
-        # of one balance. NOTE the two names — the PROJECT is betw, the SLURM ACCOUNT
-        # string is betw-dtai-gh (the bare project code is rejected at submit with
-        # "Invalid account or account/partition combination specified"). The QOS
-        # string tracks the account string on DeltaAI and the two settle one update
-        # apart, so a queued job issued under the old account parks in InvalidQOS
-        # until it is resubmitted.
-        account="betw-dtai-gh",
+        # The agent's JIT GPU steps charge bfvr, not the betw account the sbatch jobs
+        # carry: the two are billed separately, so a sweep's brain/orchestrator node
+        # comes out of betw while every run_gpu hold comes out of bfvr. NOTE the two
+        # names — the PROJECT is bfvr, the SLURM ACCOUNT string is bfvr-dtai-gh (the
+        # bare project code is rejected at submit with "Invalid account or
+        # account/partition combination specified"). The QOS string tracks the account
+        # string on DeltaAI and the two settle one update apart, so a queued job issued
+        # under the old account parks in InvalidQOS until it is resubmitted.
+        account="bfvr-dtai-gh",
         # ``ghx4`` (the 48 h batch pool) is the default; the faster-queueing
         # ``ghx4-interactive`` (≤4 nodes, 2 h) is one of the partitions the agent can
         # discover via the ``list_partitions`` tool and select per-step by passing
