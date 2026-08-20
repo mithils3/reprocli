@@ -52,6 +52,15 @@ def workspace_bash(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str
             cwd=str(workspace),
             capture_output=True,
             timeout=timeout,
+            # The step is never interactive. Without these two, a tool that wants input
+            # reaches the *launcher's* terminal: a private/404 `git clone` prompts for a
+            # GitHub username, and because a nohup'd sweep is a background process group,
+            # that read raises SIGTTIN and STOPS the whole sweep — every worker frozen,
+            # GPU holds still billing. stdin closes the inherited fd; start_new_session
+            # drops the controlling terminal, so /dev/tty (which is what git actually
+            # prompts on, ignoring stdin) cannot be opened at all.
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
         )
     except subprocess.TimeoutExpired as exc:
         _log(ctx, command, None, workspace, time.time() - start)

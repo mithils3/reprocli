@@ -135,6 +135,11 @@ def forward_env() -> None:
         if value is not None:
             os.environ.setdefault(f"APPTAINERENV_{var}", value)
     os.environ.setdefault("APPTAINERENV_UV_PYTHON_PREFERENCE", "system")
+    # A clone of a private or deleted repo must fail, not ask. git prompts on /dev/tty
+    # rather than stdin, so closing the step's stdin is not enough on its own; this makes
+    # the failure immediate and legible ("terminal prompts disabled") in the tool result,
+    # which the agent can act on. Paired with the tty-free session in workspace_bash.
+    os.environ.setdefault("APPTAINERENV_GIT_TERMINAL_PROMPT", "0")
     cache = Path.home() / ".cache"
     home_write_defaults = {
         "UV_PYTHON_INSTALL_DIR": cache / "uv" / "python",

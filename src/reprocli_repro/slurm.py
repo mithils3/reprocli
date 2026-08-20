@@ -267,7 +267,8 @@ def run_in_session(
         # Own process group: a timeout kill must take out srun's whole tree, or an
         # orphan keeps the pipes open and the pumps block long past the kill.
         proc = subprocess.Popen(
-            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True
+            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL, start_new_session=True,
         )
     except OSError as exc:
         return StepResult(
