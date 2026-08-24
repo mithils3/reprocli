@@ -47,64 +47,54 @@ published paper, the smallest complete unit of research, places an agent where
 a human replicator stands. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
 budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence. Reproduction falls from XX\% at Run tier to XX\% at Retrain
-and XX\% at Reimplement, where the method must be built from the paper alone. A
-released artifact rarely runs as shipped, and on XX of XX Run-tier successes the
-agent diagnosed and repaired the environment first. Compute does not
-drive the fall, since runs that fail to reproduce spend only XX\% of their
-allocation. We label each analysed run with a failure mechanism. At Retrain
-tier XX of XX misses executed the specified experiment and missed tolerance,
-and the matched-number rate stays at XX\% across the three agents we evaluate. These agents are competent
+execution evidence. For the strongest of the three agents we evaluate,
+reproduction falls from 48\% at Run tier to 32\% at Retrain and 13\% at
+Reimplement, where the method must be built from the paper alone. A released
+artifact rarely runs as shipped. Compute does not drive the fall, since runs
+that fail to reproduce spend only 45\% of their allocation. We label each
+analysed run with a failure mechanism. At Retrain tier 15 of the strongest
+agent's 19 misses executed the specified experiment and missed tolerance, and
+the matched-number rate stays between 16\% and 32\% across the three agents. These agents are competent
 executors and weak research scientists, and the judgment that turns an executed
 experiment into a confirmed number is what separates them from agents that
 automate research.
-% TODO(numbers) every XX above, with its source:
-%   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
-%     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
-%     NO pinned number: 2672018 (Qwen) and 2918306 (DSv4) are both self-graded.
-%     Re-audit 2918306 via --upload, then fill all three.
-%   Run-tier successes needing environment repair (XX of XX) -- source is the
-%     pinned DSv4 easy sweeps (2883229+2889575, analysis set n=29, 14 reproduced).
-%     NO stored field answers this directly. The nearest existing cut is the
-%     environment-fights label intersected with the reproduced runs, which
-%     undercounts, since repair inside an otherwise clean run is not labelled a
-%     fight. Owed: a transcript pass over the 14 reproduced easy runs counting
-%     those with a dependency, config, or missing-file repair before first
-%     successful execution. If that pass is not run, cut the clause rather than
-%     softening it, and keep the repair evidence as a body figure.
-%   Retrain misses that executed the experiment (XX of XX) -- near-miss-partial
-%     is 15 of 28 runs on the pinned DSv4 medium sweep 2896059, against 19 misses
-%     (28 minus the 9 reproduced), so 15 of 19. DISSECTION-derived, not auditor-
-%     derived, and the body must say so where it appears. This replaces the older
-%     right-experiment rate framing (24/28=86% dissection vs 22/28=79% from
-%     audit_score>=6), which left the estimand undefined. If the body reuses that
-%     rate, pick one there and state which.
-%   matched-number rate across the three agents (XX%) -- DSv4 is 9/28 (2896059,
-%     pinned Sonnet-5). The Qwen (2698678+2759663) and MiniMax (2690187) medium
-%     sweeps have pinned-auditor analyses in the vault; re-pull both numerators
-%     AND denominators before writing a single XX%, and give a range if the three
-%     do not agree. This is the flat-across-agents claim, so it must survive the
-%     comparability confounds listed in the vault cross-model note.
-%   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
-%   failed-run spend (XX% of their allocation) -- 48.1% mean / 37.0% median over
-%     the 34 non-reproduced runs pooled across the two pinned DSv4 sweeps
-%     (easy analysis set n=29, medium 2896059-fresh n=28). WARNING: reproduced
-%     runs spend LESS, 32.3% mean / 21.6% median over n=23, so the sentence may
-%     only claim failures leave budget unused in absolute terms. It may NOT imply
-%     failures are cheaper than successes. Recompute once Reimplement is pinned,
-%     since 96h-band runs die on session wall-clock with compute still unspent
-%     and that is a separate mechanism the body must name.
+% numbers of record, filled 2026-08-24. All pinned claude-sonnet-5, post-freeze:
+%   tier fall 48/32/13 -- DSv4-Flash easy 14/29 (2883229+2889575), medium 9/28
+%     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
+%     which cleared the old "Reimplement has no pinned number" blocker). Scoped
+%     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
+%   Run-tier environment-repair clause -- CUT, per the prior TODO: the transcript
+%     pass over the 14 reproduced easy runs was never run, and the instruction
+%     was to cut rather than soften. Repair evidence stays in the body (five
+%     shipped-code defects, easy dissection section 2).
+%   failed-run spend 45% -- mean spent_h100/total_h100 over the 60 non-reproduced
+%     runs pooled across the three pinned DSv4 sweeps (15 easy + 19 medium + 26
+%     hard), recomputed 2026-08-24 from the sibling runs JSONs in notes/Analysis;
+%     the easy+medium subset reproduces the previously recorded 48.1%/37.0%
+%     exactly. Median 27.4%. Absolute claim only: reproduced runs spend LESS
+%     (32.3% mean over the old n=23), so never imply failures are cheaper.
+%   Retrain misses 15 of 19 -- near-miss-partial 15 of 28 on 2896059 against 19
+%     misses (28 minus 9 reproduced). DISSECTION-derived, not auditor-derived,
+%     and the body must say so where it appears. If the body reuses the older
+%     right-experiment rate (24/28 dissection vs 22/28 audit_score>=6), pick one
+%     there and state which.
+%   matched-number range 16-32% -- Retrain tier, pinned Sonnet-5: DSv4 9/28=32%,
+%     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187). The three
+%     do not agree, so the sentence carries the range per the prior TODO, and
+%     the flat "stays at" claim is retired.
+%   XX-fold audit-score range (intro, tex ~185) -- 3.41 (MiniMax) to 6.43 (DSv4)
+%     is 1.9x. Still unfilled there.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
 %     reproduced. Small-sample zero; the body must carry n. No longer cited in
 %     the abstract, keep for the compute section.
 % TODO(headroom) the abstract carries NO union-over-agents headroom number. A
 %   sentence of the form "no agent reproduces more than XX of the 100 papers"
 %   was drafted and cut: it needs the per-paper union of reproduced verdicts
-%   across all three agents, which needs the Reimplement tier pinned first, and
-%   its denominator would be the full 100 while every pinned analysis set is
-%   n=28-29 after exclusions. Headroom is currently carried by the tier rates in
-%   sentence 4. Revisit once Reimplement is pinned; if the union is computable,
-%   state it with the exclusion count.
+%   across all three agents. DSv4 Reimplement is pinned as of 2026-08-12, so the
+%   union is now computable in principle, but Qwen hard (2672018) is still
+%   self-graded and every pinned analysis set is n=26-30 after exclusions, so
+%   the denominator policy must be stated with the exclusion count. Headroom is
+%   currently carried by the tier rates in sentence 4.
 % TODO(claim) the closing "competent executors and weak research scientists" is
 %   a claim about CAPABILITY LEVEL, deliberately not about trend. Do not restate
 %   it as a trajectory: DSv4 leads on reproduction rate, mean audit score and
@@ -117,16 +107,12 @@ automate research.
 %   (under-determined-target, reimplement-without-validating, scope-substitution)
 %   as judgment failures so the taxonomy and this sentence are one argument.
 %   The 24/28 is dissection-derived, so state its provenance where it appears.
-% TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
-%   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
-%   undissected, so there is no per-mechanism account of the drop-off at the
-%   tier where the code is genuinely unavailable and the method must be derived
-%   from the paper. That drop-off is the paper's sharpest capability claim and
-%   currently has zero mechanism evidence behind it. Owed: pinned re-audit of
-%   2918306 via --upload, then a full dissection, then a per-mode table for
-%   Reimplement set against Run and Retrain. Until then the Reimplement tier is
-%   carried by its rate alone, and the failure-mechanism sentence is licensed by
-%   the Run and Retrain dissections only.
+% TODO(analysis) Reimplement-tier mechanism evidence, updated 2026-08-24: DSv4
+%   2918306 is pinned AND dissected (2026-08-12 vault note), and MiniMax hard
+%   2936132 is pinned (2026-08-16), so the drop-off now has a per-mechanism
+%   account for the strongest agent. Qwen hard (2672018) remains self-graded.
+%   Still owed: the per-mode Reimplement table in the body, set against Run and
+%   Retrain.
 % TODO(evidence gate) "modes belonging to the papers themselves" rests on
 %   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
 %   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
