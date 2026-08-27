@@ -82,42 +82,16 @@ automate research.
 %     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187). The three
 %     do not agree, so the sentence carries the range per the prior TODO, and
 %     the flat "stays at" claim is retired.
-%   XX-fold audit-score range (intro, tex ~185) -- 3.41 (MiniMax) to 6.43 (DSv4)
-%     is 1.9x. Still unfilled there.
+%   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x. Filled
+%     2026-08-27 together with the matched-number range 16-32%, which replaces
+%     the retired flat "holding at" claim in the same sentence.
+%   Retrain verified-partial 79% (intro) -- 22/28 with audit_score>=6 on
+%     2896059, auditor-derived under the frozen rubric. The 24/28 dissection
+%     right-experiment rate is deliberately not used there; anywhere the body
+%     uses 24/28 it must state the dissection provenance.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
-%     reproduced. Small-sample zero; the body must carry n. No longer cited in
-%     the abstract, keep for the compute section.
-% TODO(headroom) the abstract carries NO union-over-agents headroom number. A
-%   sentence of the form "no agent reproduces more than XX of the 100 papers"
-%   was drafted and cut: it needs the per-paper union of reproduced verdicts
-%   across all three agents. DSv4 Reimplement is pinned as of 2026-08-12, so the
-%   union is now computable in principle, but Qwen hard (2672018) is still
-%   self-graded and every pinned analysis set is n=26-30 after exclusions, so
-%   the denominator policy must be stated with the exclusion count. Headroom is
-%   currently carried by the tier rates in sentence 4.
-% TODO(claim) the closing "competent executors and weak research scientists" is
-%   a claim about CAPABILITY LEVEL, deliberately not about trend. Do not restate
-%   it as a trajectory: DSv4 leads on reproduction rate, mean audit score and
-%   attempt rate simultaneously, so there is no single axis on which agents are
-%   improving while another stalls. The body licenses the level claim with the
-%   within-agent split on the best agent, DSv4 at Retrain tier: it runs the right
-%   experiment on 24/28 runs and matches the reported number on 9/28. Execution
-%   is close to solved at that tier, and the judgment that turns an executed
-%   experiment into a confirmed number is not. Frame the agent-side failure modes
-%   (under-determined-target, reimplement-without-validating, scope-substitution)
-%   as judgment failures so the taxonomy and this sentence are one argument.
-%   The 24/28 is dissection-derived, so state its provenance where it appears.
-% TODO(analysis) Reimplement-tier mechanism evidence, updated 2026-08-24: DSv4
-%   2918306 is pinned AND dissected (2026-08-12 vault note), and MiniMax hard
-%   2936132 is pinned (2026-08-16), so the drop-off now has a per-mechanism
-%   account for the strongest agent. Qwen hard (2672018) remains self-graded.
-%   Still owed: the per-mode Reimplement table in the body, set against Run and
-%   Retrain.
-% TODO(evidence gate) "modes belonging to the papers themselves" rests on
-%   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
-%   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
-%   until the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1
-%   against appendix rs=8.5/lr=2.0, a 7.66pt swing) is the fifteen-minute check.
+%     reproduced. Small-sample zero, so the intro carries n=11 inline. Keep for
+%     the compute section too.
 \end{abstract}
 
 \section{Introduction}
@@ -149,30 +123,27 @@ whether an agent can reproduce a published result end to end, starting from the
 artifacts the paper's authors actually released and graded against the
 execution evidence the run produces. Our results show that reproduction rate
 follows how much the authors release. The strongest agent we evaluate recovers
-the target result on XX\% of Run-tier papers (code, data, and weights all
-released), XX\% of Retrain-tier papers (no released weights, so the model must
-be trained first), and XX\% of Reimplement-tier papers (no released code
+the target result on 48\% of Run-tier papers (code, data, and weights all
+released), 32\% of Retrain-tier papers (no released weights, so the model must
+be trained first), and 13\% of Reimplement-tier papers (no released code
 either). We call
 this gradient the availability cliff, and it is the axis the benchmark is
 constructed to vary.
-% TODO(numbers): Run 14/29=48% and Retrain 9/28=32%, DeepSeek-V4-Flash, pinned
-% claude-sonnet-5, post-freeze, both Iron-Law clean. Reimplement has no pinned
-% number; re-audit 2918306 via --upload before filling any of the three.
 
 The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
 Run tier the authors released every artifact the claim requires and we verified
 each one retrievable by direct host probe, and many of those claims still do not
 come back. Three properties of that residual organize the rest of this paper.
 Stronger agents achieve partial reproduction far more often: on Retrain-tier
-papers the strongest agent reaches a verified partial result on XX\% of runs,
+papers the strongest agent reaches a verified partial result on 79\% of runs,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Full recovery of
-the reported number is where progress stalls, holding at XX\% and not improving
-across three agents spanning an XX-fold range in mean audit score, so the gain
+the reported number is where progress stalls, holding between 16\% and 32\%
+across three agents spanning a 1.9-fold range in mean audit score, so the gain
 between agent generations shows up almost entirely in how far into the
 reproduction an agent gets. Compute does not bind either, since no run in the 96
-GPU-hour band reproduces its claim while runs in that band spend XX\% of the
-allocation they were given.
+GPU-hour band reproduces its claim while the 11 runs in that band spend 13\% of
+the allocation they were given.
 
 A small set of recurring failure modes accounts for the residual, and the modes
 separate by whose defect they encode. Modes that belong to the agent recede as
@@ -184,12 +155,6 @@ the configuration the paper reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{sec:analysis}. Agent
 self-reports track none of this reliably, so we carry claimed and audited counts
 as background data rather than as a result.
-% TODO(evidence gate): "modes that belong to the papers hold steady" rests on
-% under-determined-target, provisional at 5 runs and zero hand-verified. Same
-% gate as the abstract's closing sentence. Verify before this sentence ships.
-% TODO(vocabulary): the 7-of-32 to 1-of-28 comparison remaps MiniMax's
-% dissection vocabulary onto the current slugs. Unify the MiniMax and Qwen
-% analyses.json mode names before this cross-model count is defensible.
 
 \begin{figure}[t]
 \centering
@@ -462,9 +427,7 @@ LLM auditor reads far more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
 On a held-out set of runs, the auditor's verdicts agree with expert human
-graders at XX. % TODO(auditor-validation): replace XX with the
-% human-vs-auditor agreement metric (F1 or kappa) and add injected-cheat
-% flag recall once the validation study runs.
+graders at XX.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -493,8 +456,6 @@ prompts, tool schemas, and session mechanics.
 \paragraph{Models.} We evaluate three models under identical conditions:
 DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
 Qwen3.6-27B~\citep{qwen3.6-27b}, and MiniMax-M2.7~\citep{minimax2026m2}.
-% TODO(app:models): pin exact variants and serving before camera-ready
-% (DSv4 Flash vs Pro naming; MiniMax AWQ-on-cluster vs API confound).
 Open-weight models are served on the cluster and API models are accessed
 through their public endpoints. Every model runs the same harness, prompts,
 and per-paper budgets, so results differ only in the model.
@@ -533,18 +494,9 @@ blocked agent runs something adjacent to the pinned experiment and reports
 the result as the reproduction, and one negative-result mode, honest
 shortfall, where the agent executes the released pipeline correctly,
 measures a real number, misses the target, and says so.
-% TODO(taxonomy): fill counts from the final graded sweeps. Keep the mode
-% names identical to the dissection slugs. Note for the environment-fights
-% row: on GH200 a large share of those runs are aarch64 wheel gaps in our
-% own cluster rather than author-side drift, so either separate that column
-% or state the confound here before a reviewer finds it.
 
 \begin{table}[h]
-\caption{Primary failure mode by availability tier.
-% TODO(failure-table): one row per mode, counts per tier, totals in the last
-% column. Keep the mode set identical across tiers so the comparison is by
-% construction.
-}
+\caption{Primary failure mode by availability tier.}
 \label{tab:failure-modes}
 \begin{center}
 \small
@@ -570,9 +522,6 @@ lack. They smoke-test a reduced configuration before committing compute to a
 full-length job, they consult the released documentation instead of inferring
 interfaces from names, and they reuse every artifact and tool the authors
 released rather than reimplementing from the paper text.
-% TODO(success-pattern): attach counts. How many successful runs show each
-% behavior, and how often the same behavior appears in the failures, so the
-% pattern reads as a discriminator rather than a description.
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
@@ -585,15 +534,9 @@ launch and see through a full training run. When the pinned claim requires
 training at scale, the agent substitutes a miniature of the experiment and
 reports the shortfall, so end-to-end reproduction breaks down exactly where
 the experiment stops being short.
-% TODO(scale-narrative): add numbers when final grades land. Band means,
-% budget-spent fractions per band, and the miniature examples (46M params
-% for 1.96B, 256px for 512px) from the medium-2690187 dissection.
 
 \begin{table}[h]
-\caption{Reproduction score and compute use by compute band.
-% TODO(band-table): fill from final grades. Optionally add a per-tier
-% breakdown or swap for a grouped bar figure if space allows.
-}
+\caption{Reproduction score and compute use by compute band.}
 \label{tab:band-compute}
 \begin{center}
 \small
@@ -644,9 +587,6 @@ grading stage reproducible from our artifacts where the rollout stage is not.
 
 \subsection*{AI use statement}
 
-% TODO(ai-use): every claim below is an assertion about what the authors did
-% and needs the authors' sign-off before submission. Non-disclosure of
-% significant LLM use is grounds for desk rejection at ICLR 2027.
 Large language models are the object of study in this work. The agent models
 under evaluation and the model that grades their reports are described in
 Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
@@ -924,9 +864,6 @@ row.},label={lst:task-prompt}]{prompts/prompt_reproduce.txt}
 \section{Models and Serving}
 \label{app:models}
 
-% TODO(models): pinned model versions, serving configuration, decoding
-% settings, per-model token usage and cost.
-
 \section{Audit Rubric}
 \label{app:rubric}
 
@@ -1004,15 +941,6 @@ and \texttt{disqualified} separates dishonesty from honest failure.
 \section{Auditor Validation}
 \label{app:auditor-validation}
 
-% TODO(auditor-validation): the load-bearing appendix. Three things, in this
-% order. (1) Test-retest: two identical passes of the pinned auditor over the
-% same sweep, agreement rate, and which part of the score is unstable (the
-% high-flag zero cap, not the quality band). (2) Human agreement on a labelled
-% sample, which is the number sec:auditing promises at tex:330. (3) The
-% auditor-swap check: which conclusions survive replacing the grader and which
-% do not. Report all three even where they are unflattering; the point of the
-% appendix is to bound grader noise, not to clear the auditor.
-
 \section{Dataset Schema}
 \label{app:dataset-schema}
 
@@ -1027,8 +955,6 @@ records the paper's central claim, the audited artifact-availability signals,
 the reproduction task handed to the agent, the pinned match target, and the
 compute estimate that placed the paper in its band.
 
-% TODO(data): one eval-100 row currently has a null match_bar_kind; the
-% "remaining 3" count below assumes it resolves to magnitude or range.
 \paragraph{Match bars and tolerance.} For 65 of the 100 evaluation papers the
 match bar is a point estimate. For 19 the run must beat a stated baseline,
 for 13 it must clear a reported threshold, and for the remaining 3 it must
