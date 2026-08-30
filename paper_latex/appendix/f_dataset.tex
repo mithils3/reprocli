@@ -1,0 +1,243 @@
+\section{Dataset Schema}
+\label{app:dataset-schema}
+
+This section records the schema of the frozen lockfile, the artifact the
+selection pipeline of Section~\ref{subsec:construction} writes and every run
+reads.
+
+% src: outputs/v6/app_rebuild/eval_100.jsonl, outputs/v6/app_rebuild/dev_split.jsonl,
+%      outputs/v6/app_rebuild/splits_summary.json, notes/DATASET.md 8,
+%      paper_latex/tables/gen_eval100.py (summary output)
+We submit the audited benchmark as anonymized supplementary material, packaged
+so that the \texttt{datasets} library loads it by name. The dataset carries two
+splits and there is no \texttt{train} split. The \texttt{test} split holds the 100-paper
+frozen benchmark and carries \texttt{split="eval"} in every row, 34 papers at
+Run tier, 33 at Retrain, and 33 at Reimplement. The \texttt{validation} split
+holds the 14-paper development set and carries \texttt{split="dev"}, 5 at Run,
+4 at Retrain, and 5 at Reimplement. No arXiv identifier appears in both splits.
+Each row is one paper with 25 top-level fields, keyed by its arXiv identifier
+in \texttt{custom\_id}. The row records the paper's central claim, the audited
+artifact-availability signals, the reproduction task handed to the agent, the
+pinned match target, and the compute estimate that placed the paper in its
+band.
+
+% src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
+Table~\ref{tab:schema-toplevel} lists the top-level fields. Four of them are
+nested objects, expanded in
+Tables~\ref{tab:schema-links}--\ref{tab:schema-h100}. Together they fix the
+claim, the artifact evidence, the success bar, and the compute budget before
+any agent starts, so a score from one agent is measured against the same ruler
+as a score from another.
+
+\begin{table}[t]
+\caption{Top-level fields of each dataset row.}
+\label{tab:schema-toplevel}
+\begin{center}
+\small
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{custom\_id} & string & arXiv id, the primary key. \\
+\texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
+\texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
+\texttt{paper\_kind} & string & Paper type. All rows are \texttt{empirical}. \\
+\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim. \\
+\texttt{agent\_task} & string & The reproduction instruction handed to the agent. \\
+\texttt{verified\_links} & object & Tool-confirmed artifact URLs (Table~\ref{tab:schema-links}). \\
+\texttt{signals} & object & Per-artifact availability audit (Table~\ref{tab:schema-signals}). \\
+\texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
+\texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
+\texttt{score} & int & Artifact-availability score derived from the four signals. Shipped rows carry 0 to 3. \\
+\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard} in the released lockfile, corresponding to the Run, Retrain, and Reimplement tiers; derived from \texttt{score}. \\
+\texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
+\texttt{selection\_band} & string & Compute band used for stratified selection. \\
+\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}. \\
+\texttt{h100\_hours\_estimate} & float & Estimated H100-hours to run the match target. \\
+\texttt{h100\_estimate\_basis} & string & Free-text justification for the estimate. \\
+\texttt{audited\_h100\_hours} & float & Adjudicated H100-hours: the recomputed product when the arithmetic audit flagged the stated hours and the selection code accepted the recompute (Appendix~\ref{app:selection}), otherwise the stated estimate. \\
+\texttt{h100\_recomputed\_hours} & float or null & Recomputed hours when the estimate was revised. \\
+\texttt{h100\_arithmetic\_mismatch} & bool or null & Flag set when estimate arithmetic disagreed. \\
+\texttt{h100\_hours\_adjudicated} & bool & Whether the recompute replaced the stated estimate. \\
+\texttt{h100\_needs\_human\_review} & bool & Whether the estimate was flagged for review. \\
+\texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
+\texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
+\texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each
+field is a list of strings and is empty when no artifact of that kind was
+located.}
+\label{tab:schema-links}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{paper\_or\_project} & Paper or project-page URLs. \\
+\texttt{code} & Code repository URLs. \\
+\texttt{dataset} & Dataset URLs. \\
+\texttt{weights} & Model-weight URLs. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{signals}: the per-artifact availability audit. The four
+audited signals are \texttt{code\_available}, \texttt{dataset\_available},
+\texttt{weights\_available}, and \texttt{dataset\_is\_standard}. Each signal
+is an object with the three fields below.}
+\label{tab:schema-signals}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{value} & bool & Whether the artifact is present. \\
+\texttt{verification} & string & \texttt{tool\_verified}, \texttt{tool\_searched\_not\_found}, or \texttt{not\_applicable}. \\
+\texttt{evidence} & string & The tool observation supporting the value. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{match\_target}: the quantity a reproduction run must recover
+to count as a match.}
+\label{tab:schema-matchtarget}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9.8cm}@{}}
+\toprule
+Field & Description \\
+\midrule
+\texttt{config} & Experimental configuration that produces the target value. \\
+\texttt{metric} & The reported metric name. \\
+\texttt{value} & The target value to match. \\
+\texttt{scope} & The model, dataset, or setting the value applies to. \\
+\texttt{match\_bar\_kind} & Match criterion. The released rows use \texttt{point\_estimate}, \texttt{direction}, \texttt{threshold}, \texttt{magnitude}, and \texttt{range}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[t]
+\caption{\texttt{h100\_estimate}: the compute estimate that placed each paper
+in its band.}
+\label{tab:schema-h100}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}llp{6.8cm}@{}}
+\toprule
+Field & Type & Description \\
+\midrule
+\texttt{hours} & float & Estimated H100-hours for the match target. \\
+\texttt{basis\_kind} & string & \texttt{derived\_from\_config}, \texttt{paper\_reported}, \texttt{comparable\_experiment}, or \texttt{compute\_unspecified}. \\
+\texttt{gpu\_count} & int or null & GPU count the paper reports. \\
+\texttt{gpu\_type} & string or null & GPU type the paper reports. \\
+\texttt{wallclock\_hours} & float or null & Reported wall-clock hours, before H100 normalization. \\
+\texttt{h100\_equivalent\_multiplier} & float or null & Factor converting the reported GPU to H100-equivalent hours. \\
+\texttt{basis} & string & Free-text justification for the estimate. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: notes/DATASET.md 5.1 (score -> tier), outputs/v6/app_rebuild/eval_100.jsonl,
+%      paper_latex/tables/gen_eval100.py (summary output)
+Four schema invariants hold across the released rows, and a reader can check
+each one from the file. The tier is a function of the score. Score 0 maps to
+Run, score 1 maps to Retrain, and scores 2 and 3 map to Reimplement.
+\texttt{selection\_band} and \texttt{h100\_band} agree on every row, so the
+band a paper was sampled in is the band its audited estimate falls in.
+\texttt{audited\_h100\_hours} departs from \texttt{h100\_estimate.hours} on
+exactly the 6 rows, 3 in each split, whose \texttt{h100\_hours\_adjudicated}
+flag is set. Of the
+400 signal entries in the evaluation split, 388 record a tool call and 12 are
+\texttt{not\_applicable}. Every signal set true is backed by a successful tool
+call, with one exception. On 2503.02809 the pinned configuration runs on
+synthetic data, so \texttt{dataset\_available} is true and
+\texttt{not\_applicable} at once. Across both splits 13 signals are
+\texttt{not\_applicable}, 12 of them with a false value, and 10 of those 12 are
+\texttt{weights\_available} on papers whose pinned configuration needs no
+released checkpoint.
+
+% src: outputs/v6/app_rebuild/eval_100.jsonl (row 2506.20990),
+%      paper_latex/tables/gen_example_row.py
+Listing~\ref{lst:example-row} shows one evaluation row, the SharpZO paper
+introduced as the running example in Section~\ref{subsec:task}. The
+prose fields are cut for length and the rest of the row is verbatim. The row
+scores 0 because a tool call reached the code, the dataset, and the weights,
+which places the paper at Run tier, and its audited estimate of 0.07
+H100-hours places it in the \texttt{0-8} band. Its \texttt{match\_target} pins
+a test accuracy of 79.42\% over the EuroSAT test set, under a 16-shot CLIP
+ViT-B/16 configuration, with a point-estimate bar. The
+\texttt{h100\_estimate.basis} field records how the number was derived and why
+released weights did not make the task eval-only, since the released
+checkpoint is the frozen CLIP backbone.
+
+\codefile[lst:example-row]{json}{One evaluation row, arXiv 2506.20990. The
+prose fields \texttt{central\_claim}, \texttt{claim\_evidence},
+\texttt{mre\_config}, \texttt{agent\_task}, the two basis strings, and the four
+signal evidence strings are truncated for length. Every other field is
+verbatim.}{prompts/example_row.json}
+
+% src: rubric_audit.md:35-86 (criterion C1), outputs/v6/app_rebuild/eval_100.jsonl,
+%      outputs/v6/app_rebuild/splits_summary.json,
+%      paper_latex/tables/gen_eval100.py (summary output)
+\paragraph{Match bars and tolerance.} For 62 of the 100 evaluation papers the
+match bar is a point estimate. For 21 the run must beat a stated baseline, for
+14 it must clear a reported threshold, for 1 it must recover the size of a
+reported delta, and for 1 it must land inside a reported range. One row,
+2505.10475, entered the split as a late replacement and carries no
+\texttt{match\_bar\_kind} field. The \texttt{range} kind is also absent from
+the auditor's output enumeration, which admits point estimate, threshold,
+direction, magnitude, and none, so the auditor records that row's bar under the
+nearest admitted kind. A point estimate matches when the run lands within the authors'
+stated tolerance, or within 5\% relative of the reported value when the paper
+states none. A direction bar is a strict inequality and admits no tolerance
+band, so a one-point win in the stated direction counts.
+
+% src: notes/DATASET.md 8 (last paragraph), outputs/v6/app_rebuild/eval_100.jsonl
+\paragraph{Loading the dataset.} Listing~\ref{lst:load-dataset} loads both
+splits and prints the pinned match target of the running example. The
+identifier is masked for anonymous review. The rows carry metadata and links,
+so a load returns the fields of Table~\ref{tab:schema-toplevel} and no paper
+text. A replicator fetches the paper and the artifacts from the URLs in
+\texttt{verified\_links}.
+
+\begin{codebox}[lst:load-dataset]{Python}{Loading the two splits and reading one pinned match target. The dataset identifier is masked for anonymous review.}
+from datasets import load_dataset
+
+eval100 = load_dataset("<anonymized>/reclaim", split="test")
+dev14 = load_dataset("<anonymized>/reclaim", split="validation")
+
+row = eval100.filter(lambda r: r["custom_id"] == "2506.20990")[0]
+print(row["tier"], row["h100_band"], row["audited_h100_hours"])
+print(row["match_target"])
+\end{codebox}
+
+% src: outputs/v6/app_rebuild/eval_100.jsonl, outputs/v6/app_rebuild/dev_split.jsonl,
+%      outputs/v6/app_rebuild/splits_summary.json, notes/DATASET.md 8,
+%      paper_latex/tables/gen_eval100.py
+\paragraph{Per-paper anchors.} Table~\ref{tab:eval100} lists the 100
+evaluation papers with the anchor each one is graded against, and
+Table~\ref{tab:dev14} does the same for the 14 development papers. The
+evaluation split totals 1{,}153.8 audited H100-hours, 142.71 at Run
+tier, 380.91 at Retrain, and 630.18 at Reimplement, and the development split
+totals 26.89. Within a tier the compute bands run 27, 7, and 0 papers at Run,
+16, 13, and 4 at Retrain, and 16, 9, and 8 at Reimplement, reading the
+\texttt{0-8}, \texttt{8-32}, and \texttt{32-96} bands in order. Eight of the 12
+evaluation papers in the \texttt{32-96} band sit at Reimplement tier, so the
+tier that asks for the most work also asks for the most compute. A reader can
+recompute any per-tier or per-band figure we report from these two tables and
+the run records in the supplementary material.
+
+\input{tables/eval100}

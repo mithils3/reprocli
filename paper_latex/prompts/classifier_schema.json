@@ -1,0 +1,123 @@
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "repro_artifact_classification",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["central_claim", "claim_evidence", "paper_kind", "mre_config", "match_target", "verified_links", "signals", "agent_task", "h100_estimate"],
+      "properties": {
+        "central_claim": {"type": "string"},
+        "claim_evidence": {"type": "string"},
+        "paper_kind": {
+          "type": "string",
+          "enum": ["empirical", "theoretical", "position", "survey"]
+        },
+        "mre_config": {"type": "string"},
+        "match_target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["config", "metric", "value", "scope", "match_bar_kind"],
+          "properties": {
+            "config": {"type": "string"},
+            "metric": {"type": "string"},
+            "value": {"type": "string"},
+            "scope": {"type": "string"},
+            "match_bar_kind": {
+              "type": "string",
+              "enum": ["point_estimate", "threshold", "direction", "magnitude", "none"]
+            }
+          }
+        },
+        "verified_links": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paper_or_project", "code", "dataset", "weights"],
+          "properties": {
+            "paper_or_project": {"type": "array", "items": {"type": "string"}},
+            "code": {"type": "array", "items": {"type": "string"}},
+            "dataset": {"type": "array", "items": {"type": "string"}},
+            "weights": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "signals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code_available", "dataset_available", "weights_available", "dataset_is_standard"],
+          "properties": {
+            "code_available": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "verification", "evidence"],
+              "properties": {
+                "value": {"type": "boolean"},
+                "verification": {
+                  "type": "string",
+                  "enum": ["tool_verified", "tool_searched_not_found", "tool_failed", "paper_text_only", "not_applicable"]
+                },
+                "evidence": {"type": "string"}
+              }
+            },
+            "dataset_available": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "verification", "evidence"],
+              "properties": {
+                "value": {"type": "boolean"},
+                "verification": {
+                  "type": "string",
+                  "enum": ["tool_verified", "tool_searched_not_found", "tool_failed", "paper_text_only", "not_applicable"]
+                },
+                "evidence": {"type": "string"}
+              }
+            },
+            "weights_available": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "verification", "evidence"],
+              "properties": {
+                "value": {"type": "boolean"},
+                "verification": {
+                  "type": "string",
+                  "enum": ["tool_verified", "tool_searched_not_found", "tool_failed", "paper_text_only", "not_applicable"]
+                },
+                "evidence": {"type": "string"}
+              }
+            },
+            "dataset_is_standard": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "verification", "evidence"],
+              "properties": {
+                "value": {"type": "boolean"},
+                "verification": {
+                  "type": "string",
+                  "enum": ["tool_verified", "tool_searched_not_found", "tool_failed", "paper_text_only", "not_applicable"]
+                },
+                "evidence": {"type": "string"}
+              }
+            }
+          }
+        },
+        "agent_task": {"type": "string"},
+        "h100_estimate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hours", "basis_kind", "gpu_count", "gpu_type", "wallclock_hours", "h100_equivalent_multiplier", "basis"],
+          "properties": {
+            "hours": {"type": "number"},
+            "basis_kind": {
+              "type": "string",
+              "enum": ["paper_reported", "derived_from_config", "comparable_experiment", "compute_unspecified"]
+            },
+            "gpu_count": {"type": ["number", "null"]},
+            "gpu_type": {"type": ["string", "null"]},
+            "wallclock_hours": {"type": ["number", "null"]},
+            "h100_equivalent_multiplier": {"type": ["number", "null"]},
+            "basis": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+\section{Auditor Validation}
+\label{app:auditor-validation}
+
+This appendix records what is known about grader noise in the audit scores of
+Section~\ref{sec:auditing}, measured by re-grading sweeps that had already been
+graded once.
+
+\subsection{What pinning the auditor fixes}
+
+% src: src/reprocli_claude/__main__.py:1-19,74-81,265-276, src/reprocli_vllm/config/config.py:42-43, rubric_audit.md:1-15, src/reprocli_vllm/audit/audit.py:35-63
+Four inputs are held constant across every grade of record. The grader model id
+is one command-line argument, and it is written onto every verdict row it
+produces. The rubric is loaded from a single file that carries its own freeze
+date of 16 July 2026, and the audit prompt is a template rendered per run with
+that rubric text, the pinned claim, and the run's file manifest. The finalizer
+that turns a graded response into a row is shared with the in-sweep auditor, so
+the integrity adjustment of Appendix~\ref{app:rubric} is applied by one piece of
+code for every pass. Appendix~\ref{app:models} gives the grading client, its
+tools, and its decoding settings.
+
+% src: src/reprocli_claude/__main__.py:193-201,282-295, src/reprocli_vllm/runtime/audit_sink.py:85-104,124-129, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:18-28
+A grading pass also carries an identity of its own, the grader model name joined
+to a UTC timestamp, and every row and transcript event the pass writes is keyed
+by it. That tag is what makes a second pass observable at all. Without it a
+re-grade resolves to the first pass's row, inherits the older verdict, and loses
+its own transcript to key collisions on the events already there. The verdict
+store therefore holds one row per run and grader, while the run row holds a
+single headline verdict that a later pass overwrites only when the pass is asked
+to upload.
+
+\subsection{Protocols}
+
+% src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:9-11, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:9-10,18-27, notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:18-20, notes/Analysis/easy-sweep-2687371-qwen3-runs.json, notes/Analysis/medium-sweep-2690187-minimax-runs.json, rubric_audit.md:1-5
+Two validations re-grade runs that had already been graded. No run is
+re-executed in either of them, so the evidence bundles, the pinned claims, the
+frozen rubric text, and the score scale are identical in both arms of each
+comparison. Both change grader identity, pairing the sweep's original grades
+against a later pass by the pinned auditor. Both sweeps ran after the 13 July
+2026 dataset freeze, the pinned arm of each is graded by Claude Sonnet 5, and
+one amendment to the audit prompt separates the two arms of the first
+comparison.
+
+% src: iclr2027_conference.tex:385-390, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:12-16,25-27
+The other arm of each comparison is a grade the agent model produced
+over its own family's runs, and it is not a result of this paper. Every score
+reported in Section~\ref{subsec:results} is a pinned-auditor grade, because we
+fix one grader for every run of every agent and no agent grades its own family
+(Section~\ref{sec:auditing}). Those earlier grades are kept here because they
+are the only second reading of the same transcripts that exists, which is what
+makes them usable as a measurement of grader spread. Table~\ref{tab:auditor-validation}
+summarizes the two comparisons.
+
+\begin{table}[h]
+\caption{The two auditor validations. Arm A is the sweep's original grader and
+arm B is the pinned auditor. Reproduced and disqualified are counts of runs over
+the paired set of size $n$.}
+\label{tab:auditor-validation}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}lcp{3.6cm}cccccc@{}}
+\toprule
+& & & \multicolumn{2}{c}{Reproduced} & \multicolumn{2}{c}{Disqualified} &
+\multicolumn{2}{c}{Mean score} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Validation & $n$ & Graders & A & B & A & B & A & B \\
+\midrule
+Replay, easy sweep & 32 & A self-graded by Qwen3.6-27B, B pinned & 5 & 5 & 2 & 6
+& 4.66 & 3.97 \\
+\addlinespace
+Re-audit, medium sweep & 32 & A self-graded by MiniMax-M2.7, B pinned & 6 & 5 &
+10 & 10 & 3.91 & 3.41 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Changing the grader on an easy-tier sweep}
+
+% src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:9-11,107-118
+An easy-tier sweep of Qwen3.6-27B was graded by that model during the sweep and
+re-graded by the pinned auditor on 23 July 2026, 34 runs of 34. Both graders
+scored 32 of those runs, and the paired comparison uses that set. The mean score
+is 4.66 under the sweep's own grader and 3.97 under the pinned auditor. The
+sweep's grader scored higher on 10 runs, equal on 20, and lower on 2, and the
+mean difference of 0.69 carries a Wilcoxon $p = 0.0108$. Across all 34 pinned
+audits the mean is 3.91.
+
+% src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:109-114,132-142,147-158
+The reproduced count does not move. Five runs are graded reproduced under each
+grader, and the membership of that set moves by two, with one run losing the
+verdict and one gaining it. The disqualified count moves from 2 to 6, and the
+count of runs carrying a high-severity flag moves with it from 2 to 6. All four
+added disqualifications are flagged \texttt{other\_provenance\_break} or
+\texttt{wrong\_split\_scale\_dataset}, and each cites a specific break, such as
+a report claiming a 2{,}427-sample evaluation whose only backed value comes from
+a 5-sample probe.
+
+% src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:120-131, prompts/prompt_audit.txt:88-101
+One thing besides grader identity separates the two arms of this comparison. The
+audit prompt's severity rules were amended on 22 July 2026 to rule that a
+released results file which the agent consumes and discloses caps the score band
+without raising a flag. 32 of the 33 grades in the first arm predate that
+amendment and all 34 pinned audits postdate it, so grader identity and prompt
+version moved together. Reading the flag payloads separates them. The amended
+rule fired on exactly one run of 34 and it fired at low severity, which does not
+reach the score-0 cap, so the rest of the difference is attributable to the
+grader.
+
+\subsection{Changing the grader on a medium-tier sweep}
+
+% src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:9-10,25-27,266-277, notes/Analysis/medium-sweep-2690187-minimax-runs.json
+A medium-tier sweep of MiniMax-M2.7 was graded the same way and re-graded by the
+pinned auditor on 3 August 2026, 32 runs of 32. Six runs are graded reproduced
+by the sweep's own grader and 5 by the pinned auditor, and the pinned set is a
+subset of the earlier one with no run promoted into it. Both graders disqualify
+exactly 10 runs and they agree on 4 of those. Six papers are disqualified only
+by the sweep's grader and six only by the pinned auditor.
+
+% src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:277-284
+The mean score moves from 3.91 to 3.41 over the same 32 transcripts. The verdict
+changes on 16 of the 32 runs and the score changes on 20. Score correlation
+across all 32 is $r = 0.657$. Across the 16 runs where neither grader applied
+the score-0 cap it is $r = 0.863$, with subset means of 6.12 and 5.69.
+
+\subsection{Where the disagreement sits}
+
+% src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:286-291, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:147-158, notes/Analysis/2026-08-13 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:456
+The two measurements put the disagreement in one place. The continuous score
+is reliable where the cap does not fire, at $r = 0.863$ over the runs neither
+grader capped. The top of the scale is stable, with 5 of the 6 earlier
+reproductions surviving the swap as a strict subset and no run promoted into it.
+The score-0 cap is the unstable part, shared on 4 of 10 disqualifications when
+the grader changes. No second pass of the pinned auditor over one sweep is on
+record, so the within-grader stability of the cap is unmeasured.
+
+% src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:293-300,332-335
+Two reporting rules follow, and we apply both. We report a disqualification
+count as a rubric behaviour with this instability attached, since 4 of 10
+disqualifications are shared between the two graders of the medium-tier sweep.
+We compare a mean audit score only within one grader, since the grader swap
+alone moves this sweep's mean by 0.5 points over identical transcripts.
+
+\subsection{Human validation}
+
+% src: iclr2027_conference.tex:413-415, notes/Writing/Section Pointers.md:20, notes/TODO List.md:86-87
+The expert-grader study is pending and its result is the agreement figure quoted
+in Section~\ref{sec:auditing}. The design on file is to have expert human
+graders score a held-out sample of runs alongside cases carrying injected
+provenance breaks, and to report agreement as a kappa and an F1 against the
+human labels together with recall on the injected cases. Until that study runs,
+the code-enforced cap is evidence that a flagged run cannot pass and is no
+evidence about a flag the auditor missed or a score it set too harshly.
+
+\subsection{Which statistics survive}
+
+% src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:147-158, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:293-300
+A reader of Section~\ref{subsec:results} should treat the reproduced count as
+the statistic that survives a change of grader. It is identical under both
+graders of the easy-tier sweep, and it loses one run as a strict subset under
+the medium-tier swap. The disqualification count is the statistic that does not
+survive, moving from 2 to 6 on one sweep and holding its total while exchanging
+six of its ten members on the other. The mean score sits between them and carries a grader effect of
+0.69 and 0.5 points on the two sweeps, so we read it within one grader
+only.

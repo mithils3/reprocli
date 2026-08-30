@@ -1,0 +1,239 @@
+\section{Models and Serving}
+\label{app:models}
+
+This appendix records how each agent model and the grader were served and
+decoded, taken from the launch scripts, the serve profiles, and the grader
+client in the harness.
+
+\subsection{Serving topology}
+
+% src: README.md:44-56, src/reprocli_serve/profiles.py:1-9, src/reprocli_repro/cli_args.py:168-187, src/reprocli_repro/__main__.py:86-95
+The reproduction agent holds no model weights. It attaches to an endpoint that
+is already serving a model, sends chat completions to it, and takes only a base
+URL and a model id on its command line. Each roster model is served with vLLM on
+GH200 nodes of our cluster, and the serving flags live in a per-model profile
+that the launcher expands into one \texttt{vllm serve} command. The agent reads
+the served context window off the server's model listing and sets its own input
+ceiling to that window less the 32{,}768 tokens it reserves for the completion,
+so the same client code runs against every model.
+
+% src: scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330
+One batch job per model per tier drives a whole tier. The job launches the
+server in the background and waits for the endpoint file, which the launcher
+writes once the server's health endpoint answers. It then runs the tier's papers
+as CPU-side processes on that same node, several at a time. Each paper's
+first \texttt{run\_gpu} call acquires its own Slurm allocation, later steps
+reuse it, and it is released at rotation or at the end of the episode
+(Appendix~\ref{app:harness}), so the agent's compute is allocated and metered
+apart from the brain that is answering it. A job refuses an endpoint file published under a different job id,
+because attaching to an address whose server is gone would spend papers against
+nothing.
+
+% src: src/reprocli_repro/__main__.py:86-105, src/reprocli_serve/endpoint.py
+Serving is separable from the harness in the record as well. The run row carries
+the model id the server advertised for the run, and the endpoint file carries
+the base URL and the job that published it. A reader checking which checkpoint
+answered a given run reads those two fields rather than inferring the model from
+the sweep name.
+
+\subsection{Agent models}
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:96-137, scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:41-51, scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:33-43, src/reprocli_serve/profiles.py:65-198
+Table~\ref{tab:models} gives the served configuration of the three agent models.
+Every value is the default the launch script or the serve profile sets, and
+where the two disagree the launch script wins, since it is what ran. The
+DeepSeek-V4 row serves the Flash-0731 checkpoint. The MiniMax row serves a
+third-party 4-bit AWQ requantization under the upstream model's name, so the
+name recorded with a run is the advertised name and the weights that answered it
+are the requantized ones. W4A16 quantization is lossy by construction, and the
+harness makes no correction for it.
+
+% src: src/reprocli_repro/cli_args.py:46-53,246-262, src/reprocli_repro/__main__.py:86-95, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:39-70,120-137
+Sampling is left unset for every model, so the request builder omits the field
+and the served checkpoint's own generation configuration applies. The one
+exception is \texttt{top\_p} for DeepSeek-V4-Flash, which the launch script
+exports as $0.95$ on the ground that the checkpoint's card recommends that value
+for agentic use. Reasoning effort is pinned only for DeepSeek-V4-Flash, through
+chat-template kwargs that ride every request. The Qwen and MiniMax scripts set
+no thinking or reasoning kwargs, so those two brains render their checkpoint
+defaults.
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reprocli_serve/profiles.py:65-74,116-143,146-198; src/reprocli_serve/config.py:28; src/reprocli_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100
+\begin{table}[h]
+\caption{Served configuration of the three agent models. Values come from the
+tier launch scripts and the serve profiles. ``not set'' means the file leaves
+the field unset and the server or the checkpoint supplies it.}
+\label{tab:models}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}p{3.0cm}p{3.35cm}p{2.45cm}p{3.2cm}@{}}
+\toprule
+Setting & DeepSeek-V4 & Qwen3.6-27B & MiniMax-M2.7 \\
+\midrule
+Served checkpoint &
+\texttt{deepseek-ai/\allowbreak{}DeepSeek-V4-Flash-0731} &
+\texttt{Qwen/\allowbreak{}Qwen3.6-27B-FP8} &
+\texttt{cyankiwi/\allowbreak{}MiniMax-M2.7-AWQ-4bit} \\
+Advertised name & same as checkpoint & same as checkpoint &
+\texttt{MiniMaxAI/\allowbreak{}MiniMax-M2.7} \\
+Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) \\
+KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set \\
+GPUs per replica & 2 & 1 & 2 \\
+Tensor parallel & 2 & 1 & 2 \\
+Served context & 409{,}600 & 262{,}144 & 196{,}608 \\
+Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 \\
+Reasoning setting & \texttt{thinking} true,\newline
+\texttt{reasoning\_effort} \texttt{max} & checkpoint default &
+checkpoint default \\
+Temperature & not set & not set & not set \\
+\texttt{top\_p} & 0.95 & not set & not set \\
+Tool-call parser & \texttt{deepseek\_v4} & \texttt{qwen3\_coder} &
+\texttt{minimax\_m2} \\
+Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
+\texttt{minimax\_m2} \\
+\texttt{max\_num\_seqs} & not set & 32 & not set \\
+Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 \\
+Tool rounds & 300 & 300 & 300 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: scripts/reproduce/dsv4_flash/{easy,medium,hard}_dsv4_flash.sbatch (MAX_PARALLEL), scripts/reproduce/qwen3_27b/{easy,medium,hard}_qwen3_27b.sbatch, scripts/reproduce/minimax_m2/{easy,medium,hard}_minimax_m2.sbatch, requirements.txt
+The concurrent-paper row is the number of papers the job keeps in flight, given
+for the Run, Retrain, and Reimplement tiers in that order. It is a scheduling
+knob on the sweep, since each paper still gets its own GPU allocation and its
+own compute budget whatever else is in flight.
+
+\subsection{Cross-model comparability}
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70, src/reprocli_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11
+Reasoning effort is matched across the three DeepSeek-V4-Flash sweeps and
+unmatched across the roster, because the other two launch scripts set no
+reasoning kwargs at all. Precision is heterogeneous. A 4-bit AWQ mixture of
+experts runs on two GPUs, an FP8 dense model runs on one, and DeepSeek-V4-Flash
+runs at its native INT8/FP8 on two. Sampling also differs between the
+DeepSeek-V4-Flash sweeps recorded here and the earlier sweeps of its preview
+checkpoint, which ran that card's \texttt{top\_p} of 1.0. The served window
+differs by model as well, so the input ceiling the harness derives from it
+differs by the same amount, and a run that exhausts its context on one model
+would have had more room on another.
+
+\subsection{Serving command}
+
+% src: src/reprocli_serve/launch.py:20-61,216-239, src/reprocli_serve/profiles.py:146-198, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:247-301
+The launcher assembles one command from the profile and the overrides the launch
+script passes. Two exports for this profile are launch environment rather than
+serve flags, and the server does not start correctly without them.
+Listing~\ref{lst:serve-dsv4} shows the invocation and the command it expands
+into, with the paths that identify us replaced.
+
+\begin{codebox}[lst:serve-dsv4]{bash}{Sanitized launch of the \texttt{deepseek\_v4} serve profile}
+# Launch environment required by this checkpoint.
+export LD_LIBRARY_PATH=<venv>/lib/python3.11/site-packages/nvidia/cu13/lib:$LD_LIBRARY_PATH
+export VLLM_USE_FLASHINFER_SAMPLER=0
+
+# What the launch script calls.
+python -m reprocli_serve \
+  --model deepseek-ai/DeepSeek-V4-Flash-0731 \
+  --served-model-name deepseek-ai/DeepSeek-V4-Flash-0731 \
+  --port 8000 \
+  --tensor-parallel-size 2 \
+  --max-model-len 409600 \
+  --tool-call-parser deepseek_v4 \
+  --reasoning-parser deepseek_v4 \
+  --compilation-config '{"pass_config":{"fuse_norm_quant":false,"fuse_act_quant":false}}' \
+  --endpoint-file <sweep-dir>/brain_endpoint.<job-id>.json \
+  -- --kv-offloading-backend native --kv-offloading-size 100
+
+# What the launcher expands it into.
+vllm serve deepseek-ai/DeepSeek-V4-Flash-0731 \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --served-model-name deepseek-ai/DeepSeek-V4-Flash-0731 \
+  --tensor-parallel-size 2 \
+  --max-model-len 409600 \
+  --gpu-memory-utilization 0.95 \
+  --tool-call-parser deepseek_v4 \
+  --reasoning-parser deepseek_v4 \
+  --enable-auto-tool-choice \
+  --enable-prompt-tokens-details \
+  --trust-remote-code \
+  --compilation-config '{"pass_config":{"fuse_norm_quant":false,"fuse_act_quant":false}}' \
+  --kv-cache-dtype fp8 \
+  --block-size 256 \
+  --kv-offloading-backend native --kv-offloading-size 100
+\end{codebox}
+
+% src: src/reprocli_serve/launch.py:44-47,124-178, src/reprocli_serve/profiles.py:22-32
+Two flags in the expansion are added by the launcher for every model.
+\texttt{--enable-auto-tool-choice} turns on tool calling, and
+\texttt{--enable-prompt-tokens-details} is what makes the server's cached-token
+count observable in the usage block. The compilation config is normalized once
+more at launch time against the installed vLLM, which drops any pass the build
+does not carry and forces the FlashInfer all-reduce fusion off.
+The two disabled fusions in the config are disabled because they were observed
+to garble this checkpoint's decoding on this hardware.
+
+\subsection{The pinned auditor}
+
+% src: src/reprocli_claude/__main__.py:1-19,74-81, src/reprocli_claude/agent.py:38-41, README.md:34,50, tasks/medium-tier-mechanism-synthesis.md:22
+Grading of record runs through a separate client on the Anthropic Messages API,
+against the same prompt, the same frozen rubric, the same run-directory tools,
+and the same deterministic finalizer as the in-sweep auditor. The grader model
+is chosen on the command line with \texttt{--model}. The code default in the
+client is a different Claude model, and the sweeps of record pass
+\texttt{claude-sonnet-5} explicitly, which is the value the graded run rows
+carry in their \texttt{audit\_model} field. Grading a batch again with this
+client overwrites whatever audit the batch already had, so a re-graded sweep
+carries one grader rather than a mixture.
+
+% src: src/reprocli_claude/agent.py:192-308, src/reprocli_claude/__main__.py:74-81,282-295
+Each grading pass is one tool loop over one run bundle. Requests carry adaptive
+thinking at a chosen effort, default high, and a cache-control marker at the top
+level of the request, which keeps the cache breakpoint on the last block as the
+conversation grows so each round re-reads the frozen prefix from cache. Requests
+are streamed, because a high-effort round with a large completion budget can
+outlive the non-streaming timeout. The loop is capped at 25 tool rounds by
+default, with a 32{,}000-token completion budget, a 900\,s request timeout, five
+transport retries, and four runs graded concurrently. When the loop ends the
+client sends one further request with tools disabled and the response bound to
+the verdict schema, so the verdict is produced from evidence already gathered.
+
+% src: src/reprocli_claude/agent.py:134-152,311-312, src/reprocli_vllm/tools/run_dir_tools.py:81-140,274-288, src/reprocli_vllm/config/config.py:13
+The grader reaches a run through the four run-directory tools of
+Appendix~\ref{app:rubric}, and their definitions are translated out of the one
+shared declaration rather than restated for this client, so both graders are
+offered the same four capabilities under the same limits. Two of those limits
+bind hardest on a long pass. The shell tool runs each command in its own process
+group, so a timeout kills the whole tree and a command that backgrounds a server
+cannot stall the grading pass. Every tool result is then serialized to JSON and
+trimmed to 40{,}000 characters before it enters the conversation, which is what
+keeps a large log from crowding out the evidence gathered around it.
+
+% src: src/reprocli_claude/__main__.py:193-201,239-250, src/reprocli_repro/audit_upload.py:81-95, src/reprocli_vllm/runtime/audit_sink.py:80-104
+Each grading pass carries its own identity, the grader model name joined to a
+UTC timestamp. Without it a second grader of the same run would land on the
+first audit's row, inherit the older verdict, and lose its transcript to key
+collisions. What the pass writes back to the run's row is the score, the score
+the model reported before the integrity adjustment, the derived verdict, the
+reproduced flag, whether a high-severity flag fired, the typed flags themselves,
+the rationale, the grading timestamp, and the grader model id. The transcript of
+the pass streams to the run viewer under that same identity, so a reader can
+open the rounds behind any grade.
+
+\subsection{Cost accounting inputs}
+
+% src: src/reprocli_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
+Two prices enter the accounting. GPU time is priced at the \$2 per H100-hour
+the metric definition of Section~\ref{subsec:experimental-setup} uses. Grader
+tokens are priced in the grader client, which prices Claude Sonnet 5 by
+request date at \$2 and \$10 per million input and output tokens through 31
+August 2026 and \$3 and \$15 after it, so a cost line does not silently change
+when the introductory rate ends. The same table prices a cache write at
+$1.25\times$ the base input rate and a cache read at $0.1\times$ it. The client
+counts input, output, cache-write, and cache-read tokens separately for every
+request of a pass, prices each at its own rate, and persists the four counters
+and the resulting cost on the raw grading record of the pass.
+
+This research used the DeltaAI advanced computing and data resource, which is supported by the National Science Foundation (award OAC 2320345) and the State of Illinois. DeltaAI is a joint effort of the University of Illinois Urbana-Champaign and its National Center for Supercomputing Applications~\citep{bode2025deltaai}.

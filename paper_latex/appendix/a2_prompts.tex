@@ -1,0 +1,205 @@
+\subsection{Prompts}
+\label{app:prompts}
+
+% src: src/reprocli_repro/cli_args.py:26-42,238-240; src/reprocli_repro/loop.py:66-70;
+% src: src/reprocli_repro/transcript.py:105-107,150-155; src/reprocli_vllm/vllm/io.py (initial_messages)
+The model reads two fixed strings, one rendered template, and a handful of
+short strings the harness inserts between turns. The two fixed strings are
+Python constants applied to every run with no command-line override. The
+system message of Listing~\ref{lst:system-message} opens the conversation and
+is pinned at index 0, where compaction never reaches it. The task prompt
+follows it as the first user turn. The final-turn instruction of
+Listing~\ref{lst:final-message} is appended as a user turn on the closing
+pass, after the tools are removed and the response is constrained to the
+report schema of Appendix~\ref{app:report-format}.
+
+\begin{promptbox}[lst:system-message]{System message (\texttt{cli\_args.py}, \texttt{REPRO\_SYSTEM\_MESSAGE})}
+You are a reproduction agent. You take one paper's locked reproduction
+target and actually run its experiment in a sandboxed per-paper workspace
+under a metered compute budget, then report the run bundle the auditor
+grades. Spend budget deliberately; write durable evidence as you go.
+\end{promptbox}
+
+\begin{promptbox}[lst:final-message]{Final-turn instruction (\texttt{cli\_args.py}, \texttt{REPRO\_FINAL\_NO\_TOOLS\_MESSAGE})}
+The tool phase is over. Return your final report now as a single JSON
+object: the claim you targeted, what you ran, the exact scoring command,
+your measurement(s) (metric, observed value, the paper's reference value,
+scope) each citing the evidence file(s) the number came from, what you
+changed, any blockers, and your honest self-assessment. This is your
+account of the run, not the verdict -- the auditor grades it. Return only
+the JSON object.
+\end{promptbox}
+
+% src: src/reprocli_repro/cli_args.py:33-42; src/reprocli_repro/report/ (REPORT_RESPONSE_FORMAT)
+The final-turn instruction enumerates the report fields, requires an evidence
+citation for every measurement, and tells the agent that the auditor assigns
+the verdict.
+
+\paragraph{Rendering the task prompt.}
+% src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
+% src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165;
+% src: src/reprocli_vllm/audit/h100.py:7-36
+The task prompt is one template carrying fourteen placeholder fields. The
+renderer fills each field from the paper's dataset row
+(Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or
+from the fixed container paths of Appendix~\ref{app:sandbox}. It then scans
+the rendered text for any remaining token matching
+\texttt{\{[A-Z][A-Z0-9\_]*\}} and raises rather than hand the model a prompt
+with a field left unfilled. Every field carries a fallback string, so a row
+missing a value produces a stated absence in place of an empty slot.
+Table~\ref{tab:placeholders} gives the mapping.
+
+\begin{table}[h]
+\caption{The fourteen template fields, the dataset or harness value that
+fills each, and how it is serialized. Row field names are those of
+Appendix~\ref{app:dataset-schema}.}
+\label{tab:placeholders}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}p{3.0cm}p{2.8cm}p{7.2cm}@{}}
+\toprule
+Field & Filled from & Serialization \\
+\midrule
+\texttt{\{ARXIV\_ID\}} & \texttt{custom\_id} & The first non-empty of
+\texttt{custom\_id}, \texttt{paper\_id}, \texttt{arxiv\_id}, stripped. \\
+\texttt{\{PAPER\_KIND\}} & \texttt{paper\_kind} & Verbatim, stripped.
+Fallback \texttt{empirical}. \\
+\texttt{\{TIER\}} & \texttt{tier} & Verbatim, stripped. Fallback
+\texttt{(untiered)}. \\
+\texttt{\{BAND\}} & \texttt{selection\_band} & Verbatim, stripped, falling
+back to \texttt{h100\_band}. The template appends the unit. \\
+\texttt{\{BUDGET\_H100\_HOURS\}} & the episode's ceiling & The band's upper
+edge in H100-hours, printed with \texttt{\%g}. A flat command-line ceiling
+overrides the band. \\
+\texttt{\{CENTRAL\_CLAIM\}} & \texttt{central\_claim} & Verbatim, stripped. \\
+\texttt{\{CLAIM\_EVIDENCE\}} & \texttt{claim\_evidence} & Verbatim,
+stripped. \\
+\texttt{\{MATCH\_TARGET\}} & \texttt{match\_target} & Up to four indented
+\texttt{- Label: value} lines, in the order Metric, Target value, Scope, Bar
+shape, from \texttt{metric}, \texttt{value}, \texttt{scope},
+\texttt{match\_bar\_kind}. Empty fields are dropped.
+\texttt{config} is withheld. \\
+\texttt{\{VERIFIED\_LINKS\}} & \texttt{verified\_links} & One label line per
+non-empty list, in the order Code, Paper / project, Dataset, Weights /
+checkpoints, each followed by its URLs as indented bullets. \\
+\texttt{\{SIGNALS\}} & \texttt{signals} & One indented line per audited
+signal, in the order Code, Dataset, Weights / checkpoints, Dataset is a
+standard benchmark, reading \texttt{yes} or \texttt{no} from \texttt{value},
+then the \texttt{verification} state in parentheses, then the
+\texttt{evidence} string. Signals absent from the row are skipped. \\
+\texttt{\{WORKSPACE\_DIR\}} & \texttt{sandbox.py} & \texttt{/repro/workspace} \\
+\texttt{\{REFERENCE\_DIR\}} & \texttt{sandbox.py} & \texttt{/repro/reference} \\
+\texttt{\{EVIDENCE\_DIR\}} & \texttt{sandbox.py} & \texttt{/repro/evidence} \\
+\texttt{\{RUN\_DIR\}} & \texttt{sandbox.py} & \texttt{/repro} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: src/reprocli_repro/prompt_render.py:47-56,79-88; src/reprocli_repro/sandbox.py:162-165,299-312
+Two entries of the table carry design decisions. The renderer omits
+\texttt{match\_target.config}, the runnable configuration that produces the
+target value, so the agent derives that configuration from the paper. The
+four path fields resolve to short fixed container paths rather than the long
+per-run host directories, so the prompt and the agent's commands read the
+same for every paper.
+
+\paragraph{Strings the harness inserts between turns.}
+% src: src/reprocli_repro/transcript.py:22-26,88-96,128-146; src/reprocli_repro/compact.py:81-82,90-137;
+% src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
+% src: src/reprocli_repro/loop.py:376-380; src/reprocli_repro/live_log.py:71-75;
+% src: scripts/reproduce/dsv4_flash/medium_dsv4_flash.sbatch:133-138
+Five further fixed strings reach the model during an episode. The round
+status line of Listing~\ref{lst:status-line} is appended to every
+tool-bearing request and discarded afterwards, so no stale counter
+accumulates in the conversation (Appendix~\ref{app:tool-loop}). Its wall
+countdown appears only when the sweep batch script exported an absolute
+deadline, and it is recomputed on every request. The note of
+Listing~\ref{lst:budget-note} is prepended to the final-turn instruction when
+the episode ends on an exhausted compute budget or a full context. The nudge
+of Listing~\ref{lst:length-nudge} follows any turn that hit the output-token
+cap before emitting a tool call, and an episode may receive it twice before
+the loop forces the final pass.
+
+\begin{promptbox}[lst:status-line]{Per-round status line, shown as its source format string (\texttt{transcript.py}, \texttt{round\_status\_message}, \texttt{sweep\_wall\_note})}
+Tool round {used}/{max_rounds} · {left} left
+Tool round {used}/{max_rounds} · {left} left · sweep wall ~{h}h{m:02d}m left
+Tool round {used}/{max_rounds} · {left} left · sweep wall EXPIRED — the job hosting this run is being killed; finalize immediately
+\end{promptbox}
+
+\begin{promptbox}[lst:budget-note]{Early-exit note prepended to the final-turn instruction (\texttt{transcript.py}, \texttt{CONTEXT\_BUDGET\_NOTE})}
+The conversation hit its context budget, so the tool phase ended early.
+Finalize from the evidence already written to the run directory rather
+than re-running tools.
+\end{promptbox}
+
+\begin{promptbox}[lst:length-nudge]{Nudge after an output-token truncation (\texttt{transcript.py}, \texttt{length\_nudge\_message})}
+Your previous turn hit the output-token limit before emitting any tool
+call, so it was cut off mid-stream and trimmed above. Do not re-plan from
+scratch. Take the next concrete action with a tool call now, and keep
+reasoning brief.
+\end{promptbox}
+
+% src: src/reprocli_repro/compact.py:57-61,90-137; src/reprocli_repro/loop.py:376-380; src/reprocli_repro/live_log.py:71-75
+Compaction rewrites the conversation in place rather than adding a message.
+It replaces the contents of old tool results longer than 1{,}000 characters
+with the placeholder of Listing~\ref{lst:elided} and strips the chain of
+thought from old turns, keeping each turn's text and tool calls. The pointer
+names the untruncated transcript log the harness writes beside the evidence
+directory.
+
+\begin{promptbox}[lst:elided]{Placeholder left in an elided tool result (\texttt{compact.py}, \texttt{\_placeholder}); the run-directory path is abbreviated}
+[elided {n_chars} chars — on disk at <run_dir>/agent.full.log]
+\end{promptbox}
+
+% src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62; src/reprocli_vllm/config/config.py:13
+Tool failures reach the model as JSON. Listing~\ref{lst:tool-errors} gives
+the shapes. An unknown tool name returns the list of advertised names,
+a handler exception returns its type and message, a retried call is marked,
+and a result over the 40{,}000-character budget carries a truncation note
+after its longest strings are halved (Appendix~\ref{app:tool-loop}).
+
+\begin{schemabox}[lst:tool-errors]{Tool error and truncation fields (\texttt{tools/\_\_init\_\_.py}, \texttt{\_run\_tool\_call}; \texttt{result\_limits.py}, \texttt{TRUNCATION\_NOTE})}
+{"ok": false, "error": "Unknown tool: <name>. Available tools: <names>"}
+{"ok": false, "tool": "<name>", "error": "<ExceptionType>: <message>"}
+{"ok": false, "retried": true, ...}
+{..., "truncated": true, "truncation_note": "Result truncated to fit the tool budget; request a specific file path, path_filter, or smaller range for more."}
+\end{schemabox}
+
+\paragraph{Structure of the template.}
+% src: prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
+The template runs 290 lines under nine headings set off by rule lines. An
+untitled head states the job and warns that an adversarial auditor reads only
+the files in the run directory. \texttt{THE PAPER} carries the identifier,
+tier, band, central claim, and reported numbers. \texttt{THE TARGET} carries
+the match target and the scope rules for choosing an experiment.
+\texttt{RELEASED ARTIFACTS} carries the verified links, the availability
+signals, and the routing rules for using what the authors shipped.
+\texttt{ENVIRONMENT} lists the container paths, what the image holds, the
+packages with no \texttt{aarch64} wheel, and the tools. \texttt{GPU SESSIONS}
+gives the metering formula, the session parameters, and the long-job
+protocol. \texttt{DATA} covers bulk downloads onto node-local scratch.
+\texttt{BUILD THE ENV} pins the CUDA wheel index and the first action.
+\texttt{HOW TO WORK} gives the five-step order and the stopping rules.
+\texttt{HOW TO FINISH} requires a written report in the evidence directory
+before the final turn.
+
+\paragraph{How the template was written.}
+% src: git 05c58a6 (2026-06-28), 5514246 (2026-06-28), 0b26215 (2026-07-01), 3c6954b (2026-07-01),
+% src: f19e28f (2026-07-04), dfc02c0 (2026-07-09), 858e1eb (2026-07-09), 728c663 (2026-07-09), d25c8d4 (2026-07-11)
+The template was revised from transcript dissections of earlier agent runs,
+and its commit history records the run that motivated each rule. The
+2026-07-01 rewrite was written from a dissection of a 14-run development
+batch plus five runs of a second model, and it lists the modes it targets,
+led by \texttt{reimplement-without-validating} (Appendix~\ref{app:taxonomy}).
+Several instructions name behaviour the dissections observed. The long-job
+protocol answers blind re-runs of wall-killed jobs. The re-implementation
+gate admits a port only when it can be validated against something the
+authors shipped. Revisions were checked against other
+models' successful runs before adoption. A cross-model audit on 2026-06-28
+covering 28 runs of one model plus runs of three others removed two rules it
+found specific to one model's behaviour, a push toward more GPUs and a
+budget-fraction test for under-running. The template has not changed since
+2026-07-11. Listing~\ref{lst:task-prompt} gives it in full.
+
+\promptfile[lst:task-prompt]{Task prompt template, rendered per paper by substituting the highlighted \texttt{\{PLACEHOLDER\}} fields from the paper's dataset row}{prompts/prompt_reproduce.txt}

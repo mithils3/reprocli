@@ -1,0 +1,153 @@
+% Appendix typography: highlighted code, prompt, and schema boxes.
+% Loaded from the preamble. tcolorbox + listings only, so the paper compiles
+% without shell escape, locally and on hosted builds.
+\usepackage{xcolor}
+\usepackage[varqu,varl,scaled=0.93]{inconsolata}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage[many]{tcolorbox}
+\tcbuselibrary{listings,breakable,skins}
+
+% Palette. One slate family for prompts and transcripts, neutral gray for
+% shell and Python, muted plum for schemas. Nothing load-bearing is red/green.
+\definecolor{rbPromptFrame}{HTML}{34506B}
+\definecolor{rbPromptBack}{HTML}{F4F6F9}
+\definecolor{rbCodeFrame}{HTML}{3F3F3F}
+\definecolor{rbCodeBack}{HTML}{F7F7F7}
+\definecolor{rbSchemaFrame}{HTML}{5B4B7A}
+\definecolor{rbSchemaBack}{HTML}{F8F6FB}
+\definecolor{rbToolFrame}{HTML}{6E6E6E}
+\definecolor{rbToolBack}{HTML}{FAFAFA}
+\definecolor{rbKeyword}{HTML}{0B4F8A}
+\definecolor{rbString}{HTML}{9A3B2E}
+\definecolor{rbComment}{HTML}{6A737D}
+\definecolor{rbNumber}{HTML}{875F00}
+\definecolor{rbPlaceholder}{HTML}{8A2D6B}
+\definecolor{rbRule}{HTML}{C9CED6}
+
+\lstdefinelanguage{json}{
+  morestring=[b]",
+  morekeywords={true,false,null},
+  sensitive=true,
+  comment=[l]{//},
+}
+
+\lstdefinestyle{rbBase}{
+  basicstyle=\scriptsize\ttfamily,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  upquote=true,
+  tabsize=2,
+  postbreak=\mbox{\textcolor{rbComment}{$\hookrightarrow$}\space},
+  numbers=none,
+  % The prompt files are UTF-8; map non-ASCII characters for pdflatex.
+  literate={—}{{---}}1 {–}{{--}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
+           {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1
+           {≤}{{$\leq$}}1 {≈}{{$\approx$}}1 {…}{{\ldots}}1 {’}{{'}}1
+           {“}{{``}}1 {”}{{''}}1 {✓}{{$\checkmark$}}1 {✗}{{$\times$}}1
+           {•}{{$\bullet$}}1 {←}{{$\leftarrow$}}1 {↔}{{$\leftrightarrow$}}1
+           {≡}{{$\equiv$}}1 {⁻}{{$^-$}}1 {²}{{$^2$}}1 {°}{{$^\circ$}}1
+           {∞}{{$\infty$}}1 {≫}{{$\gg$}}1 {≪}{{$\ll$}}1 {μ}{{$\mu$}}1
+           {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {σ}{{$\sigma$}}1 {Δ}{{$\Delta$}}1
+           {δ}{{$\delta$}}1 {λ}{{$\lambda$}}1 {τ}{{$\tau$}}1 {ε}{{$\epsilon$}}1
+           {ρ}{{$\rho$}}1 {π}{{$\pi$}}1 {γ}{{$\gamma$}}1 {θ}{{$\theta$}}1,
+}
+% Prompt text: verbatim, with the template's {PLACEHOLDER} fields set off in
+% colour. Only the fields the renderers substitute are listed
+% (src/reprocli_repro/prompt_render.py, src/reprocli_vllm/audit/inputs.py).
+\lstdefinestyle{rbPrompt}{
+  style=rbBase,
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{ARXIV_ID}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{PAPER_KIND}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{TIER}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{BAND}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{BUDGET_H100_HOURS}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{CENTRAL_CLAIM}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{CLAIM_EVIDENCE}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{MATCH_TARGET}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{VERIFIED_LINKS}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{SIGNALS}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{WORKSPACE_DIR}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{REFERENCE_DIR}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{EVIDENCE_DIR}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUN_DIR}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUN_BUNDLE}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUBRIC}{\}},
+}
+\lstdefinestyle{rbCode}{
+  style=rbBase,
+  keywordstyle=\color{rbKeyword}\bfseries,
+  stringstyle=\color{rbString},
+  commentstyle=\color{rbComment}\itshape,
+  numberstyle=\tiny\color{rbComment},
+}
+\lstdefinestyle{rbCodeNumbered}{
+  style=rbCode,
+  numbers=left,
+  numbersep=6pt,
+  xleftmargin=1.4em,
+}
+
+% Common frame. Listings are numbered within the appendix section (A.1, A.2).
+\tcbset{
+  rbFrame/.style={
+    halign title=left,
+    enhanced, breakable,
+    boxrule=0.5pt, arc=1.5pt,
+    left=5pt, right=5pt, top=4pt, bottom=4pt,
+    toptitle=2.5pt, bottomtitle=2.5pt,
+    fonttitle=\sffamily\bfseries\footnotesize,
+    coltitle=white,
+    before skip=8pt plus 2pt, after skip=10pt plus 2pt,
+    drop fuzzy shadow=black!25,
+    lefttitle=5pt, righttitle=5pt,
+  },
+}
+
+% \begin{promptbox}[label]{Title} ... \end{promptbox}
+\newtcblisting[auto counter, number within=section, list inside=lol]{promptbox}[2][]{
+  rbFrame, listing only, listing options={style=rbPrompt},
+  colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame,
+  title={Listing~\thetcbcounter: #2}, label={#1},
+}
+% \promptfile[label]{Title}{path}
+\newtcbinputlisting[use counter from=promptbox]{\promptfile}[3][]{
+  rbFrame, listing only, listing options={style=rbPrompt}, listing file={#3},
+  colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame,
+  title={Listing~\thetcbcounter: #2}, label={#1},
+}
+% \begin{codebox}[label]{language}{Title} ... \end{codebox}   language in {bash,Python,json}
+\newtcblisting[use counter from=promptbox]{codebox}[3][]{
+  rbFrame, listing only, listing options={style=rbCode, language=#2},
+  colback=rbCodeBack, colframe=rbCodeFrame, colbacktitle=rbCodeFrame,
+  title={Listing~\thetcbcounter: #3}, label={#1},
+}
+% \begin{schemabox}[label]{Title} ... \end{schemabox}   JSON, plum frame
+\newtcblisting[use counter from=promptbox]{schemabox}[2][]{
+  rbFrame, listing only, listing options={style=rbCode, language=json},
+  colback=rbSchemaBack, colframe=rbSchemaFrame, colbacktitle=rbSchemaFrame,
+  title={Listing~\thetcbcounter: #2}, label={#1},
+}
+% \codefile[label]{language}{Title}{path}
+\newtcbinputlisting[use counter from=promptbox]{\codefile}[4][]{
+  rbFrame, listing only, listing options={style=rbCode, language=#2}, listing file={#4},
+  colback=rbCodeBack, colframe=rbCodeFrame, colbacktitle=rbCodeFrame,
+  title={Listing~\thetcbcounter: #3}, label={#1},
+}
+
+% Transcript excerpts: an agent turn and a tool result, unnumbered, prose-set.
+% \begin{agentturn}{Round 12, agent} ... \end{agentturn}
+\newtcolorbox{agentturn}[1]{
+  rbFrame, colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame,
+  title={#1}, fontupper=\scriptsize\ttfamily,
+}
+\newtcolorbox{toolresult}[1]{
+  rbFrame, colback=rbToolBack, colframe=rbToolFrame, colbacktitle=rbToolFrame,
+  title={#1}, fontupper=\scriptsize\ttfamily,
+}
+
+% Inline code in prose.
+\newcommand{\code}[1]{\texttt{#1}}
