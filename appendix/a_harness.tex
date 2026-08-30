@@ -1,0 +1,457 @@
+\section{Harness Details}
+\label{app:harness}
+
+This appendix records the execution protocol every RECLAIM run follows, from the
+harness component that implements each part: the tool loop, the toolset, the GPU
+session and its compute meter, the sandbox, the evidence bundle and report
+format, and the run telemetry. Every value given here is a code default. The
+launch scripts of Appendix~\ref{app:models} record the values each sweep
+passed where a sweep set one.
+
+\subsection{Tool loop}
+\label{app:tool-loop}
+
+% src: src/reprocli_repro/loop.py:62-160,291-306, src/reprocli_repro/cli_args.py:31-44,243-281, src/reprocli_repro/inputs.py:104-141, prompts/prompt_reproduce.txt:141
+Each episode runs one paper with one model. The conversation opens with a fixed
+system message and a task prompt rendered from the paper's lockfile row
+(Appendix~\ref{app:prompts}), then alternates model turns with tool results.
+Every turn is a chat completion carrying the tool schemas of
+Section~\ref{app:toolset}, and one turn may batch several tool calls. The
+harness executes a turn's calls in order and appends one tool-result message per
+call, so a batched turn costs one round and returns several results. The task
+prompt tells the agent to batch independent calls for that reason. The
+per-episode compute ceiling is the upper edge of the paper's compute band, which
+is 8, 32, or 96 H100-hours for the bands the benchmark carries
+(Section~\ref{subsec:construction}).
+
+% src: src/reprocli_repro/cli_args.py:189-206, src/reprocli_repro/transcript.py:107-145, src/reprocli_repro/loop.py:95-119
+Episodes are capped at 300 rounds. Every request that still carries tools ends
+with an ephemeral status line stating the round used, the round cap, and the
+rounds remaining. The line is rebuilt for each request and never stored in the
+conversation, so stale counters do not accumulate, and it is the only way the
+model can observe its turn budget. When the outer batch job publishes its wall
+deadline the same line appends a countdown to that deadline, recomputed on every
+request.
+
+Listing~\ref{lst:status-line} in Section~\ref{app:prompts} gives the format
+string, and the countdown form appears only when a batch job set a wall
+deadline.
+
+% src: src/reprocli_repro/tools/__init__.py:76-99, src/reprocli_vllm/tools/result_limits.py:8-38,69-73, src/reprocli_vllm/config/config.py:12-17
+A tool result is returned to the model as a JSON object clamped to 40{,}000
+serialized characters. The clamp repeatedly halves the longest string in the
+object until the whole object fits, keeping at least 200 characters of each, and
+marks the result truncated. A tool call whose error text matches a transient
+marker, which covers timeouts, connection resets, disconnects, and rate limits,
+is executed a second time before its error reaches the model, and the result
+records that it was retried. A model request that fails past its own retry
+budget finalizes that episode alone with an error exit, so a sibling episode
+keeps running.
+
+% src: src/reprocli_repro/loop.py:236-264, src/reprocli_repro/transcript.py:38-99, src/reprocli_repro/cli_args.py:48
+The output cap for a turn is 32{,}768 tokens. A turn that hits that cap before
+emitting any tool call is not read as a decision to stop. The harness keeps the
+first 2{,}000 characters of its reasoning, marks the cut, appends a message
+telling the model to act rather than re-plan, and re-issues the turn with tools
+still live. An episode may be nudged this way twice, after which the loop moves
+it to its final pass.
+
+% src: src/reprocli_repro/loop.py:328-424, src/reprocli_repro/compact.py, src/reprocli_repro/cli_args.py:55-62
+Context is managed between rounds by eliding old tool output. The input ceiling
+is the served context window less the completion reservation, and the trigger
+gates on the exact \texttt{prompt\_tokens} the server reported for the last
+response. Once that count crosses 0.70 of the ceiling, the harness walks back
+from the newest message until it has accumulated 20{,}000 tokens of recent
+turns, sized at three characters per token, keeps that tail verbatim, and rewrites the span between the pinned head and that tail. In the
+rewritten span each tool result longer than 1{,}000 characters has its content
+replaced by a placeholder naming the character count and the on-disk file that
+holds the full text, and every message drops its \texttt{reasoning} field. The
+system message and the task prompt are never touched, and no message is dropped
+or reordered, so no tool result is separated from the assistant turn that
+produced it.
+
+% src: src/reprocli_repro/compact.py, src/reprocli_repro/loop.py:368-413, src/reprocli_repro/live_log.py:14-25
+What survives compaction is the agent's own account of the run. Each assistant
+turn keeps its visible content and its \texttt{tool\_calls}, so the conclusion it
+reached and the action it took stay verbatim while the chain of thought behind
+them goes. The elided output and the dropped reasoning both remain on disk in
+the untruncated transcript the placeholder points at, so an elided number can be
+re-read instead of recomputed. Each compaction appends a row to
+\texttt{trajectory.jsonl} recording how many results were elided, how many turns
+lost reasoning, and the character count before and after.
+
+% src: src/reprocli_repro/loop.py:145-155,328-365,441-501, src/reprocli_repro/transcript.py:22-32,102-104,148-157
+An episode ends when the model returns a turn with no tool call, when the round
+cap is reached, when the compute budget is exhausted, when the context crosses
+the hard ceiling while elision frees nothing, or when the loop exits on an
+unrecoverable error. Every path that turns tools off releases any held GPU
+allocation first. In every case the loop issues one more
+request with the tools removed and the response constrained to the report schema
+of Section~\ref{app:report-format}, and the two budget exits prepend a note
+telling the model to finalize from the evidence already written rather than
+re-run tools. Every run therefore ends with a machine-readable account, and the
+harness releases any allocation that survived, writes \texttt{report.json}, and
+then marks the run terminal.
+
+\subsection{Toolset}
+\label{app:toolset}
+
+% src: src/reprocli_repro/tools/__init__.py:1-63
+The model acts through seven tools, listed in Table~\ref{tab:tools}. There is no
+file-reading tool. The agent reads files through the shell with \texttt{grep},
+\texttt{sed}, and \texttt{cat}, which is cheaper than dumping whole files into
+the context. There is also no web search, so the agent fetches only URLs it
+already knows or can construct.
+
+\begin{table}[h]
+\caption{The seven tools advertised to the model, with the code defaults and
+caps each enforces.}
+\label{tab:tools}
+\begin{center}
+\small
+% src: src/reprocli_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
+\begin{tabular}{@{}lp{9.4cm}@{}}
+\toprule
+Tool & Function \\
+\midrule
+\texttt{workspace\_bash} & Bash with the episode workspace as the working
+directory, on the orchestrator node with no GPU passed through. Cloning, installs, edits,
+inspection. Timeout default 900\,s, maximum 3{,}600\,s. Returns stdout, stderr,
+exit code, and duration. \\
+\texttt{write\_file} & Write a UTF-8 file under the workspace or evidence roots,
+up to 200{,}000 characters. \\
+\texttt{edit\_file} & Replace one exact string in an existing file. The match
+must be unique unless \texttt{replace\_all} is set. A bare repo-relative path is
+located by suffix search when it resolves to exactly one file. \\
+\texttt{update\_plan} & Replace the agent's ordered checklist of steps with
+statuses \texttt{pending}, \texttt{in\_progress}, or \texttt{completed}. At most
+one step may be \texttt{in\_progress}. \\
+\texttt{fetch\_url} & Fetch a public http(s) URL and reduce HTML to text,
+default 24{,}000 characters. There is no web search. \\
+\texttt{list\_partitions} & Run \texttt{sinfo} and return each Slurm partition's
+node counts by state, walltime limit, and GPU resources, plus the profile
+default. Read-only. \\
+\texttt{run\_gpu} & Run one command on the held GPU allocation
+(Section~\ref{app:gpu-metering}). The only path to a GPU. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: src/reprocli_repro/tools/workspace_bash.py, files.py:155-172, plan.py:491-494, run_gpu.py:248-287, src/reprocli_repro/evidence.py:58-83,110-141
+Every tool that changes state leaves a durable trace. Each shell command from
+\texttt{workspace\_bash} and each \texttt{run\_gpu} step is appended to
+\texttt{evidence/commands.log} with its exit code, duration, and working
+directory. Each applied \texttt{edit\_file} change is written verbatim as a
+unified diff under \texttt{evidence/patches/} with a zero-padded sequence
+prefix, and a failed edit is logged with its reason. Each \texttt{update\_plan}
+call overwrites \texttt{evidence/plan.md} with the rendered checklist and pins
+the checklist onto harness state, so the plan survives context compaction. Each
+\texttt{run\_gpu} step also appends a structured row to
+\texttt{evidence/trajectory.jsonl}.
+
+% src: src/reprocli_repro/tools/files.py:1-36,207-254
+The two write tools confine their path arguments. A path is rejected outright if
+it contains a \texttt{..} segment, a backslash, or a NUL byte. A leading
+\texttt{/repro} is translated back to the host run directory, a relative path
+resolves against the workspace, symlinks are canonicalized, and the result must
+then fall inside the workspace or evidence root. The read-only reference copy of
+the paper is not a writable root, so it cannot be modified through these tools.
+
+% src: src/reprocli_repro/tools/run_gpu.py:369-436, src/reprocli_repro/tools/workspace_bash.py, paper_latex/tables/gen_tool_schemas.py
+Listings~\ref{lst:tool-run-gpu} and~\ref{lst:tool-workspace-bash} are the two
+schemas the model receives verbatim, dumped from the harness by the generator
+script shipped with the supplementary material. The \texttt{run\_gpu}
+description is where the session semantics are stated to the model, including
+that the allocation is held across calls, that billing is wall clock over the
+whole hold, and that \texttt{minutes} cannot extend a session already held.
+
+\codefile[lst:tool-run-gpu]{json}{The \texttt{run\_gpu} tool schema advertised to the model}{prompts/tool_run_gpu.json}
+
+\codefile[lst:tool-workspace-bash]{json}{The \texttt{workspace\_bash} tool schema advertised to the model}{prompts/tool_workspace_bash.json}
+
+The \texttt{maximum} on \texttt{run\_gpu}'s \texttt{gpus} field is filled in from
+the cluster profile at startup, so the model is never offered a GPU count the
+node cannot satisfy.
+
+\subsection{GPU sessions and compute metering}
+\label{app:gpu-metering}
+
+% src: src/reprocli_repro/gpu_session.py:1-79, src/reprocli_repro/slurm.py:1-30,144-183, src/reprocli_repro/tools/run_gpu.py:1-37
+\texttt{run\_gpu} holds one Slurm allocation across calls. The first call
+acquires it and blocks through the queue wait. Every later call runs into the
+same held job with no new queue wait, so installing, smoke-testing, and running
+the experiment happen on one allocation, and node-local scratch persists between
+calls until the allocation is released. Calls block until the command returns,
+and there is no background execution.
+
+\begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle, sanitized (assembled by \texttt{slurm.py} \texttt{build\_acquire} / \texttt{build\_srun})}
+# acquire once; returns the instant the allocation is granted, then stays up
+$ salloc --no-shell -A <account> -p <partition> --nodes=1 \
+      --gpus=<k> --mem=<100*k>G --cpus-per-gpu=60 --time=<minutes>
+# run each step into the held jobid, with no new queue wait
+$ srun --jobid=<jobid> --ntasks=1 --unbuffered \
+      apptainer exec --nv ... <image> bash -lc 'cd /repro/workspace && <cmd>'
+# release when the agent is done, or at episode teardown
+$ scancel <jobid>
+\end{codebox}
+
+Host memory and cores scale with the GPU request rather than with the
+partition's per-core default, so a dataloader on a one-GPU step is not starved.
+
+% src: src/reprocli_repro/tools/run_gpu.py:55-71,95-150,302-356, src/reprocli_repro/cluster.py:60-87
+Three parameters are set on the call that starts a session and are fixed until
+it is released. \texttt{gpus} defaults to 1 and is clamped to the node size,
+which is four on the GH200 nodes we use, and a clamped request is reported back
+to the model. \texttt{minutes} defaults to 30 with a maximum of 1{,}440 and
+becomes the allocation's Slurm \texttt{--time} cap, so a step still running at
+the wall is killed. \texttt{partition} selects the node pool, and the agent
+enumerates the pools with \texttt{list\_partitions}. Passing a different
+\texttt{gpus} to a call that reuses a live session changes nothing, and the
+result says so. \texttt{minutes} takes effect only when a fresh allocation is
+acquired. Setting \texttt{release=true} frees the allocation after the
+call, and the harness releases any session still held when the episode ends.
+
+% src: src/reprocli_repro/budget.py:1-69, src/reprocli_repro/gpu_session.py:82-101, src/reprocli_repro/context.py:26-47
+The meter charges held wall clock. One charge is the GPU count times the hours
+held since the last charge times a hardware multiplier, denominated in
+H100-equivalent hours. The multiplier table has one entry per node type, and
+both the H100 reference unit and the GH200 nodes we allocate on carry 1.0. Queue
+wait is not billed, because the clock starts when the allocation is granted.
+Idle time on a held node is billed, including the time the model spends
+reasoning between commands, because the loop charges accrued wall clock between
+rounds as well as after each step.
+
+\begin{codebox}[lst:meter]{Python}{The compute meter, excerpt of lines 37--64 of \texttt{budget.py}}
+def h100_equiv_hours(gpus: int, hours: float, hw: str) -> float:
+    """Convert ``gpus`` for ``hours`` on ``hw`` into H100-equivalent hours."""
+    return max(0, gpus) * max(0.0, hours) * hw_multiplier(hw)
+
+
+def step_cost_hours(gpus: int, elapsed_seconds: float, hw: str) -> float:
+    """Actual cost of a finished step (elapsed run time, not queue wait)."""
+    return h100_equiv_hours(gpus, elapsed_seconds / 3600.0, hw)
+
+
+def pre_authorized_cost(gpus: int, minutes: float, hw: str) -> float:
+    """Worst-case cost if a step ran to its full ``--time`` wall cap."""
+    return h100_equiv_hours(gpus, minutes / 60.0, hw)
+
+
+def affordable(budget: Budget, gpus: int, minutes: float, hw: str) -> tuple[bool, str]:
+    """Whether a step's *worst case* fits the remaining budget; reason if not."""
+    if budget.exhausted():
+        return False, "compute budget exhausted"
+    worst = pre_authorized_cost(gpus, minutes, hw)
+    remaining = budget.remaining()
+    if worst > remaining:
+        return False, (
+            f"step would cost up to {worst:.3g} H100-h "
+            f"({gpus} gpu x {minutes:g} min x{hw_multiplier(hw):g} {hw}) "
+            f"> {remaining:.3g} H100-h remaining"
+        )
+    return True, ""
+\end{codebox}
+
+The same arithmetic serves both enforcement points, once over
+\texttt{minutes} as a pre-authorization and once over elapsed seconds as the
+actual charge.
+
+% src: src/reprocli_repro/tools/run_gpu.py:131-139, src/reprocli_repro/loop.py:345-355
+Two checks enforce the ceiling. Before a session is acquired,
+\texttt{affordable} refuses an allocation whose worst case, the GPU count times
+\texttt{minutes} times the multiplier, exceeds the remaining budget, and the
+refusal states the arithmetic and is recorded to the evidence bundle. Between
+rounds, the loop charges the wall held since the last charge and, once the
+budget is exhausted, releases the session and forces the final report pass.
+
+% src: src/reprocli_repro/tools/run_gpu.py:82-92,151-208,312-345, src/reprocli_repro/evidence.py:116-131, src/reprocli_repro/sandbox.py:239-245
+Each step's stdout and stderr stream to a numbered log under \texttt{evidence/}
+while the step runs, and the container forces write-through on GPU steps, so a
+job killed at the \texttt{--time} wall still leaves everything it printed on
+disk. The tool result names that log in the path the agent can reach and returns
+the shaped output, and a killed step returns the last 4{,}000 characters. Every
+result also reports the accrued cost, the remaining budget, and the seconds left
+on the allocation. A warning fires within 120\,s of the wall telling the model to
+checkpoint, and a command launched onto an allocation with less than 120\,s left
+triggers a rotation: the harness releases the spent allocation, acquires a fresh
+one sized to this call's \texttt{minutes}, runs the command on it, and reports
+the rotation in the result.
+
+% src: src/reprocli_repro/tools/run_gpu.py:71-81, src/reprocli_repro/gpu_session.py:36-79
+An acquire that the queue never grants is given up on after the hold's own wall
+cap plus a grace of eight hours by default. The grace is an environment
+override, so a congested cluster can be given a longer one. Because queue wait
+is not billed, a long grace costs job wall clock and no H100-hours.
+
+\subsection{Sandbox}
+\label{app:sandbox}
+
+% src: src/reprocli_repro/sandbox.py:1-35,92-112, src/reprocli_repro/__main__.py:38-46, src/reprocli_repro/cluster.py:25-36, scripts/cluster/build_cuda_sandbox.sh:1-80
+Every shell step, in \texttt{workspace\_bash} and in \texttt{run\_gpu}, runs
+inside an Apptainer container. The harness probes that Apptainer can execute the
+image on the host before any step runs and aborts the run when it cannot, so a
+step never runs unconfined. The image is the read-only root filesystem: a CUDA
+12.9 and cuDNN development image, which supplies \texttt{nvcc} and the host
+compilers, with git, git-lfs, curl, a C and C++ build chain, media libraries,
+\texttt{uv}, and a system Python 3.12 with development headers layered in.
+PyTorch is not preinstalled. The agent builds its own virtual environment and
+installs a CUDA-enabled aarch64 torch into it as its first setup step.
+
+% src: src/reprocli_repro/sandbox.py:14-30,51-59,115-151,280-312
+Only bound paths are visible inside the container. The episode's workspace and
+evidence directories are bound read-write, the reference copy of the paper is
+bound read-only, and the node-local \texttt{/tmp} and the shared package caches
+are bound read-write, so a downloaded dataset or a built wheel is reused across
+papers. The host home directory and every other host path are not mounted. The
+container environment is scrubbed with \texttt{--cleanenv} and \texttt{--no-home},
+and an explicit allowlist covering the Hugging Face token, the cache locations,
+and proxy settings is forwarded through Apptainer's own environment mechanism,
+so no token ever appears on a command line. The same mechanism sets
+\texttt{GIT\_TERMINAL\_PROMPT=0}, and shell steps run with stdin closed and no
+controlling terminal, so a clone of a private or deleted repository fails with a
+legible error instead of blocking on a credential prompt.
+
+\begin{codebox}[lst:apptainer]{bash}{One GPU step's assembled container command, sanitized (\texttt{sandbox.py} \texttt{wrap\_argv} and \texttt{\_apptainer\_prefix})}
+$ apptainer exec --cleanenv --no-home --pwd /repro/workspace \
+      --nv --env PYTHONUNBUFFERED=1 \
+      --bind /tmp \
+      --bind <run_dir>/workspace:/repro/workspace \
+      --bind <run_dir>/evidence:/repro/evidence \
+      --bind <run_dir>/reference:/repro/reference:ro \
+      --bind <cache_dir> \
+      --bind <host_uv>:/usr/local/bin/uv \
+      <image>.sif bash -lc 'cd /repro/workspace && <command>'
+\end{codebox}
+
+% src: src/reprocli_repro/sandbox.py:154-166,216-258,325-409, src/reprocli_repro/cluster.py:80-86, src/reprocli_repro/env.py
+A CPU step is the same command with \texttt{--nv} and the write-through variable
+removed, a \texttt{taskset} prefix pinning it to 12 cores where the tool is
+present, build-parallelism
+variables capping compile fan-out, and a \texttt{ulimit -v} of 16\,GiB on the
+body, because CPU steps share the orchestrator node with the served model. GPU
+steps run on their own allocated node and are never capped this way. The long
+per-run host paths are remapped onto fixed short container paths,
+\texttt{/repro/workspace}, \texttt{/repro/reference}, and
+\texttt{/repro/evidence}, and \texttt{--pwd} lands every step in the workspace,
+so the prompt and the agent's commands are identical across papers.
+
+\subsection{Evidence bundle and report format}
+\label{app:report-format}
+
+% src: src/reprocli_repro/inputs.py:41-49,84-98, src/reprocli_repro/workspace.py:1-66, src/reprocli_repro/reference.py:1-17,110-127, src/reprocli_repro/cleanup.py
+Each run writes a self-contained bundle at
+\texttt{<runs-dir>/<arxiv\_id>/<budget>h/<run\_id>/}, which is the contract the
+auditor reads. The bundle has three directories. The \texttt{workspace/} holds
+the agent's clones, environment, and scripts and is writable. The
+\texttt{reference/} holds the paper's \LaTeX{} sources under \texttt{latex/},
+its OpenReview supplement under \texttt{supplement/}, a file manifest, and an
+\texttt{info.json} of identifiers and file counts, and it is read-only. The
+\texttt{evidence/} directory is the durable record. The harness does not clone
+the paper's code or build an environment, and it never re-executes the agent's
+scoring command, so the bundle records only what the agent did.
+
+% src: src/reprocli_repro/evidence.py:1-19,45-56,110-141, src/reprocli_repro/tools/run_gpu.py:248-287, src/reprocli_repro/loop.py:388-401, src/reprocli_repro/report/report.py:190-214
+Setup lays down four sinks under \texttt{evidence/}: \texttt{commands.log},
+\texttt{trajectory.jsonl}, \texttt{env.lock} for the resolved package
+environment, and a \texttt{patches/} directory. The run then accumulates one
+numbered \texttt{gpu\_step\_<n>.log} per GPU step, streamed as the step runs,
+plus \texttt{plan.md} rewritten on each \texttt{update\_plan} and the numbered
+diffs under \texttt{patches/}. Anything the agent writes itself lands here too,
+including the \texttt{REPORT.md} the task prompt requires. A
+\texttt{commands.log} line is a bracketed header followed by the command, where
+the header carries a UTC timestamp, \texttt{rc=} and the exit code, the duration
+in seconds when known, and \texttt{cwd=} and the working directory when known.
+A \texttt{trajectory.jsonl} row is one JSON object per event, with a
+\texttt{type} field taking the values \texttt{run\_gpu}, \texttt{gpu\_release},
+\texttt{compaction}, and \texttt{report}. A \texttt{run\_gpu} row carries the
+command, the GPU count, the requested minutes, the node type, the exit code, the
+run seconds, the held seconds, the charge in H100-hours, the remaining budget,
+the executed argv, and, when the call was refused, the reason.
+
+% src: src/reprocli_repro/report/report.py:1-24,104-214, src/reprocli_repro/cli_args.py:37-44,270-273, src/reprocli_repro/loop.py:504-515
+The final tools-off pass constrains the model's output to the JSON schema of
+Listing~\ref{lst:report-schema}, and the returned object is persisted as
+\texttt{report.json} next to \texttt{evidence/}.
+Table~\ref{tab:report-schema} reads the fields. The harness adds three fields of
+its own before writing: it overwrites \texttt{paper\_id} with the identifier it
+dispatched, so the model's echo cannot override provenance, and it records a
+\texttt{report\_status} and the loop's \texttt{exit\_reason}. Content that does
+not parse, or that fails the structural check, is written as a
+\texttt{degraded} report carrying the validation errors and a 4{,}000-character
+excerpt of the raw output, so the auditor always has an account to grade rather
+than a missing file.
+
+\codefile[lst:report-schema]{json}{The \texttt{report.json} schema sent as the final pass's \texttt{response\_format}}{prompts/report_schema.json}
+
+\begin{table}[h]
+\caption{Fields of \texttt{report.json}. All nine are required by the schema.}
+\label{tab:report-schema}
+\begin{center}
+\small
+% src: src/reprocli_repro/report/report.py:40-102
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+Field & Content \\
+\midrule
+\texttt{paper\_id} & The paper's arXiv identifier, overwritten by the harness. \\
+\texttt{claim} & The agent's restatement of the claim it worked toward. \\
+\texttt{what\_ran} & What was actually executed, from the environment build to
+the run. \\
+\texttt{scoring\_command} & One command that reproduces the measured number from
+a clean state. Empty when nothing ran. \\
+\texttt{measurements} & Array of measured metrics. Each entry carries the metric
+name with units, the observed value, the paper's reference value or
+\texttt{null}, the scope the value was measured over, and an array of citations
+into \texttt{evidence/} backing the observed value. \\
+\texttt{agent\_assessment} & One of \texttt{reproduced}, \texttt{partial},
+\texttt{not\_reproduced}, \texttt{could\_not\_run}. \\
+\texttt{changes\_made} & Deviations from the released reference. \\
+\texttt{blockers} & What blocked a reproduction, empty when nothing did. \\
+\texttt{evidence\_files} & The files under \texttt{evidence/} the auditor should
+open first. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: src/reprocli_repro/report/report.py:11-14,37-40, src/reprocli_repro/cleanup.py:1-40, prompts/prompt_reproduce.txt:277-290
+Because every measurement carries its own citation array, a number with no cited
+evidence file is identifiable as unsupported without reading the transcript. The
+\texttt{agent\_assessment} field is the agent's own verdict on its run. It is
+the self-claimed outcome that Section~\ref{sec:analysis} compares against the
+audited grade, and nothing in the pipeline treats it as ground truth. The
+auditor grades \texttt{report.json} and \texttt{evidence/}
+(Section~\ref{sec:auditing}), which is why the harness prunes the agent's
+virtual environment and oversized files from the workspace once an episode
+finishes.
+
+\subsection{Run telemetry}
+\label{app:telemetry}
+
+% src: src/reprocli_repro/live_log.py:1-25,191-266, src/reprocli_repro/supabase_sink.py:1-120, src/reprocli_repro/event_sink.py
+Alongside the evidence bundle the harness writes a human-readable transcript in
+two forms. \texttt{agent.log} interleaves, per round, the model's reasoning, its
+visible text, each tool call with its command, and each result, with every block
+head-truncated to 24 lines. \texttt{agent.full.log} is the same transcript with
+nothing truncated by the logger, and it is the file the compaction placeholder
+points at. Both are appended and flushed as each event happens, so a run can be
+followed while it is in flight and reconstructed after it ends.
+
+% src: src/reprocli_repro/supabase_sink.py:29-135, src/reprocli_repro/event_sink.py, src/reprocli_repro/live_log.py:251-266, src/reprocli_repro/run_beacon.py:1-60, src/reprocli_repro/metrics_beacon.py:1-45, src/reprocli_repro/gpu_usage.py
+The same events feed an optional structured sink, enabled only when database
+credentials are present in the environment. It records one row per round, per
+tool call, and per tool result, keyed by run identifier and sequence number, so
+a run's ordering is recoverable. A row carries the round index, the tool name,
+the command or path, the exit code, the duration, the charge and remaining
+budget for a GPU step, and stdout and stderr capped at 8{,}000 characters each.
+Token usage from every model response is summed onto the run row, which is how
+prompt, completion, cached, and reasoning token counts are reconstructed per
+run. A sidecar process inside each held allocation samples GPU utilization,
+memory, and power on a fixed cadence, and those samples are rolled up at run
+finish into average and peak utilization, peak memory, and the fraction of
+samples above an activity threshold. The sink drops events rather than blocking
+the loop and never raises into it, so the on-disk transcript remains the record
+of reference.
+
+\input{appendix/a2_prompts}

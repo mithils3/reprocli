@@ -1,0 +1,510 @@
+\section{Running RECLAIM}
+\label{app:running}
+
+This appendix records what the supplementary material contains and the exact
+commands that serve a model, run one paper, run a tier, grade a run, and
+regenerate the appendix listings.
+
+\subsection{What the supplementary material contains}
+\label{app:running-contents}
+
+% src: README.md:38-56 (Layout table)
+The harness is submitted as anonymized supplementary material. It is one
+repository holding the dataset pipeline, the reproduction agent of
+Appendix~\ref{app:harness}, the auditor of Appendix~\ref{app:rubric}, the
+serving layer both attach to, and this paper's sources.
+Table~\ref{tab:supplement} lists the top-level modules and what each owns. The
+split is by responsibility, so a reader checking one stage of the pipeline
+opens one directory.
+
+% src: README.md:38-56
+\begin{table}[h]
+\caption{Top-level modules of the submitted harness.}
+\label{tab:supplement}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{8.6cm}@{}}
+\toprule
+Path & What it owns \\
+\midrule
+\texttt{src/reprocli\_data/} & Dataset pipeline. arXiv e-print sources and
+OpenReview supplements become one row per paper. \\
+\texttt{src/reprocli\_vllm/} & Auditor core. Prompt and rubric assembly,
+run-directory tools, tool loop, verdict schema, deterministic scoring, the
+H100 band ladder, audit-pool selection. \\
+\texttt{src/run\_arxiv\_prompt\_vllm.py} & Auditor entry point
+(\texttt{--mode audit}) against an OpenAI-compatible endpoint. \\
+\texttt{src/reprocli\_repro/} & Reproduction agent. Episode loop, Apptainer
+sandbox, just-in-time GPU sessions with compute metering, evidence bundle,
+report schema, telemetry. \\
+\texttt{src/reprocli\_claude/} & The same auditor on the Anthropic Messages
+API, with prompt caching and a schema-bound final turn. This is the pinned
+grader. \\
+\texttt{src/reprocli\_openai/} & Web-search re-check of the audit pool's
+no-code Reimplement rows. \\
+\texttt{src/reprocli\_serve/} & vLLM launcher. Per-model serve profiles,
+launch flags, health wait, endpoint publication. \\
+\texttt{scripts/serve/},\newline\texttt{scripts/reproduce/} & Slurm batch
+jobs. Serve a model, and walk a tier's papers through the paired
+reproduce-then-grade flow. \\
+\texttt{scripts/cluster/} & The sandbox image build. \\
+\texttt{tools/verify\_app/} & Static web app for the human verification pass
+over the classifier's artifact verdicts. \\
+\texttt{tools/run\_viewer/} & Static web app for run telemetry, transcripts,
+and audits. \\
+\texttt{tasks/} & Runbooks for serving each model and for the H100 recompute
+pass. \\
+\texttt{prompts/}, \texttt{rubric\_audit.md} & The frozen prompt templates and
+the frozen audit rubric. \\
+\texttt{tests/} & The offline test suite. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: prompts/prompt_reproduce.txt, prompts/prompt_audit.txt, rubric_audit.md,
+% src: paper_latex/prompts/, src/reprocli_repro/inputs.py:42-49,
+% src: src/reprocli_repro/dataset.py:1-32
+Four groups of artifacts back the numbers in this paper. The frozen prompt
+templates and the frozen rubric sit at the repository root under
+\texttt{prompts/} and \texttt{rubric\_audit.md}, and the copies rendered in
+Appendix~\ref{app:prompts} and Appendix~\ref{app:rubric} are the same files
+up to the disclosed substitution of the benchmark's name.
+The Slurm batch scripts under \texttt{scripts/} are the exact jobs that
+produced every sweep. The per-run evidence bundles of
+Appendix~\ref{app:report-format} carry one directory per run with its
+\texttt{report.json}, its \texttt{evidence/}, and its \texttt{stats.json}. The
+dataset splits are packaged for the \texttt{datasets} library with a
+\texttt{test} split of 100 papers and a \texttt{validation} split of 14, and
+the harness loads them by repository id (Appendix~\ref{app:dataset-schema}). A reader can therefore check a
+verdict against the run it graded without rerunning anything.
+
+\subsection{Prerequisites}
+\label{app:running-prereqs}
+
+% src: requirements.txt, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:259,
+% src: scripts/serve/serve_gh200.sbatch:55, scripts/cluster/build_cuda_sandbox.sh:1-30
+Five things have to be in place before any command below runs. The
+orchestrator runs on Python 3.11, the version the batch scripts load, and its
+dependencies install from \texttt{requirements.txt}. Apptainer must be
+installed, and the sandbox image of Appendix~\ref{app:sandbox} must be built
+once with \texttt{scripts/cluster/build\_cuda\_sandbox.sh}, which layers
+\texttt{git}, \texttt{curl}, compilers, \texttt{cmake}, media libraries, a
+Python 3.12 interpreter with its development headers, and \texttt{uv} onto a
+CUDA base image. Slurm must be reachable with at least one GPU partition,
+because \texttt{run\_gpu} allocates nodes from inside the episode. The agent
+model must already be served at an OpenAI-compatible chat-completions URL,
+since every client here is URL-only and hosts no model. The pinned grader
+reads its credential from \texttt{ANTHROPIC\_API\_KEY}.
+
+% src: src/reprocli_repro/cli_args.py:65-69, src/reprocli_repro/cli_args.py:148-153,
+% src: scripts/cluster/build_cuda_sandbox.sh:26-28
+Two environment variables set the defaults everything else inherits.
+\texttt{REPRO\_WORK\_ROOT} moves the run bundles and outputs off the home
+filesystem, and \texttt{REPRO\_APPTAINER\_SIF} names the sandbox image the
+agent's shell steps run inside. Both have flag equivalents
+(\texttt{--runs-dir}, \texttt{--apptainer-image}) that override them per run.
+Listing~\ref{lst:running-prereqs} is the one-time setup.
+
+% src: requirements.txt, scripts/cluster/build_cuda_sandbox.sh:22-28,
+% src: src/reprocli_repro/cli_args.py:65-69, src/reprocli_claude/__main__.py:19-20
+\begin{codebox}[lst:running-prereqs]{bash}{One-time setup (sanitized)}
+$ python3 -m pip install -r requirements.txt
+
+# Build the agent sandbox image once, then point the harness at it.
+$ bash scripts/cluster/build_cuda_sandbox.sh <base-sif> <sandbox-sif>
+$ export REPRO_APPTAINER_SIF=<sandbox-sif>
+
+# Run bundles and outputs land here instead of $HOME.
+$ export REPRO_WORK_ROOT=<work-root>
+
+# Only the pinned grader needs this.
+$ export ANTHROPIC_API_KEY=<key>
+\end{codebox}
+
+% src: scripts/cluster/build_cuda_sandbox.sh:110-126
+The build script ends by compiling and importing a C extension inside the
+finished image, so a missing header is caught at build time rather than in the
+middle of a run.
+
+\subsection{Serving an agent model}
+\label{app:running-serve}
+
+% src: src/reprocli_serve/args.py:20-60, src/reprocli_serve/launch.py:18-60,
+% src: src/reprocli_serve/config.py:12-36, README.md:60-72
+The serving half and the agent half talk only over a URL.
+\texttt{reprocli\_serve} boots vLLM on a GPU node, binds \texttt{0.0.0.0}, and
+publishes the address other nodes reach it at. Per-model launch flags live in
+\texttt{src/reprocli\_serve/profiles.py}, which is the single source of truth
+for tensor-parallel size, context length, KV cache dtype, the tool and
+reasoning parsers, and the compilation config. Any flag passed on the command
+line overrides the profile, and anything after a bare \texttt{--} is forwarded
+to \texttt{vllm serve} after a compatibility filter drops flags the installed
+version does not accept. Appendix~\ref{app:models} records the profile
+values each evaluated model was served with.
+
+% src: src/reprocli_serve/endpoint.py:1-45, src/reprocli_serve/config.py:12-36,
+% src: src/reprocli_serve/args.py:33-56
+Discovery is one small JSON file on a shared filesystem. The launcher waits
+for the server's health endpoint to go green, reads a routable fabric address
+off the interface named by \texttt{--iface}, and atomically writes the payload
+of Listing~\ref{lst:running-endpoint} to the path given by
+\texttt{--endpoint-file}. Clients resolve their base URL in a fixed priority
+order: the explicit \texttt{--vllm-server-url} flag, then
+\texttt{\$REPROCLI\_SERVER\_URL}, then the \texttt{base\_url} field of the
+file named by \texttt{\$REPROCLI\_ENDPOINT\_FILE}. Swapping the model behind
+the benchmark is therefore a change of one URL.
+
+% src: scripts/serve/serve_gh200.sbatch:78-86, src/reprocli_serve/args.py:20-60
+\begin{codebox}[lst:running-serve]{bash}{Serving one model (sanitized)}
+$ PYTHONPATH=src python3 -m reprocli_serve \
+    --model <hf-id-or-path> \
+    --served-model-name <model-id> \
+    --port 8000 \
+    --tensor-parallel-size <tp> \
+    --endpoint-file <endpoint-file>
+
+# Every client on any node then finds it through this one variable.
+$ export REPROCLI_ENDPOINT_FILE=<endpoint-file>
+\end{codebox}
+
+% src: src/reprocli_serve/endpoint.py:22-40
+\begin{schemabox}[lst:running-endpoint]{The published endpoint file (sanitized)}
+{
+  "base_url": "<endpoint-url>",
+  "host": "<host>",
+  "port": 8000,
+  "served_model_name": "<model-id>",
+  "model_path": "<hf-id-or-path>",
+  "node": "<node>",
+  "job_id": "<job-id>",
+  "health": "ready"
+}
+\end{schemabox}
+
+% src: src/reprocli_serve/endpoint.py:22-40, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:316-328
+The \texttt{job\_id} field is what lets a resumed sweep refuse an endpoint a
+dead predecessor published, so papers are not spent against an address nothing
+answers at.
+
+\subsection{Running one paper}
+\label{app:running-one}
+
+% src: src/reprocli_repro/cli_args.py:88-127, src/reprocli_repro/cli_args.py:155-175,
+% src: src/reprocli_repro/dataset.py:28-35
+One invocation runs one paper with one model.
+\texttt{--paper-id} selects the row, and \texttt{--split} selects the
+published split it is read from. The split defaults to \texttt{test}, the
+frozen 100-paper benchmark, and the aliases \texttt{eval} and \texttt{dev} map
+onto \texttt{test} and \texttt{validation}. \texttt{--lockfile} points at the
+dataset the row comes from and accepts a Hugging Face repository id, an
+\texttt{hf://} file reference, or a local JSONL path.
+\texttt{--run-id} pins the run identifier, which is what makes the bundle
+findable afterwards. Omitting it mints a fresh time-stamped identifier, so
+repeat attempts never collide.
+
+% src: src/reprocli_repro/cli_args.py:178-191, src/reprocli_repro/cli_args.py:56-60,
+% src: appendix/a_harness.tex:22-25, appendix/a_harness.tex:104-107
+The loop limits are inherited rather than set per run.
+\texttt{--tool-rounds} carries the round cap and
+\texttt{--budget-h100-hours} carries a flat compute ceiling. Leaving the
+budget flag off is the configuration every sweep in this paper used, and each
+paper's ceiling is then derived from the upper edge of its compute band.
+Appendix~\ref{app:harness} gives both values and the metering rules they
+enforce. Sampling fields are left unset, so the served model's own generation
+configuration applies.
+
+% src: src/reprocli_repro/cli_args.py:88-127, README.md:88-100,
+% src: scripts/reproduce/repro_audit_one.sh:1-20
+\begin{codebox}[lst:running-one]{bash}{Running one paper (sanitized)}
+# One paper of the frozen benchmark, against an already-served model.
+$ PYTHONPATH=src python3 -m reprocli_repro \
+    --paper-id <arxiv-id> \
+    --split eval \
+    --run-id <run-id> \
+    --runs-dir <runs-dir> \
+    --vllm-server-url <endpoint-url> \
+    --served-model-name <model-id>
+
+# The dev split, for a smoke test that is not part of the benchmark.
+$ PYTHONPATH=src python3 -m reprocli_repro \
+    --paper-id 2505.18513 --split dev \
+    --vllm-server-url <endpoint-url>
+
+# Reproduce and grade the same bundle in one step.
+$ scripts/reproduce/repro_audit_one.sh <arxiv-id> eval
+\end{codebox}
+
+% src: src/reprocli_repro/inputs.py:42-49, src/reprocli_repro/batch_runs.py:112-125,
+% src: README.md:102-106
+The run writes its bundle to
+\texttt{<runs-dir>/<arxiv\_id>/<budget>h/<run\_id>/}, holding
+\texttt{report.json}, \texttt{evidence/}, and \texttt{stats.json} alongside
+the \texttt{workspace/} and the read-only \texttt{reference/}.
+Appendix~\ref{app:report-format} describes what each part contains. The budget
+directory is the only level between the paper and the run, so naming a paper
+and a run identifier resolves to exactly one bundle. Naming only a paper does
+not, because a paper attempted more than once has several.
+
+% src: src/reprocli_repro/__main__.py:9-15, src/reprocli_repro/__main__.py:118-131,
+% src: src/reprocli_vllm/vllm/endpoint.py:14-18
+With no endpoint configured the same command becomes a dry run. It still loads
+the lockfile row, prepares the episode's bundle, materializes the reference
+copy, and prints the rendered task prompt, and it issues no requests and
+allocates no GPU. This is how the inputs of Appendix~\ref{app:prompts} are
+inspected offline. The auditor has no dry run and exits with an error instead,
+because there is nothing to grade without a model.
+
+\subsection{Running a tier}
+\label{app:running-tier}
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:58-120,
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:280-300,357-360
+One Slurm job runs one tier with one model. The job asks for a GPU share sized
+to the model, one, two, or four GPUs of a node across the roster, serves the
+model on it, waits for the endpoint file, and then walks the tier's
+papers through the paired flow. Papers are enumerated from the lockfile by
+their \texttt{tier} field and sorted by compute ceiling ascending, so cheap
+papers land results early and an expensive paper meeting the job's wall clock
+wastes less of the allocation. Each paper is dispatched as a background shell
+function, with \texttt{MAX\_PARALLEL} papers in flight at once. Every paper in
+flight adds one just-in-time GPU allocation of its own, so the parallelism
+setting is bounded by queue pressure rather than by the served model.
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:424-525
+Each paper's worker does four things in order: probe the served model and wait
+rather than spend the paper if it is unreachable, reproduce with a pinned run
+identifier, bind a grading root whose single entry is a symbolic link to that
+exact bundle, and grade it. The grading root matters because the auditor's
+contract is \texttt{<runs-dir>/<paper\_id>}, which on the sweep's run tree
+mixes every past attempt at that paper. Each worker appends one row to a status file
+recording the reproduction exit code, the audit exit code, the upload outcome,
+and the run identifier. A paper that produced no bundle is recorded as a
+harness casualty and is not counted as a model failure.
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:119,430-434
+\texttt{RESUME=1} is what makes a killed sweep restartable. The worker skips a
+paper whose verdict file is already on disk and non-empty, so resubmitting the
+job after a wall-clock kill picks up only the tail. Nothing is regraded, and a
+paper that died without writing a verdict is retried. Pointing the resubmitted
+job's sweep directory at its predecessor's is the whole resume protocol.
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:58-120,280-360,424-525 (sanitized excerpt)
+\begin{codebox}[lst:running-tier]{bash}{Sanitized excerpt of one tier's batch script}
+#SBATCH -A <account>
+#SBATCH -p <partition>
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=144
+#SBATCH --gpus-per-node=2
+#SBATCH --gpu-bind=none
+#SBATCH --mem=220G
+#SBATCH --time=48:00:00
+
+SPLIT="${SPLIT:-eval}"                   # eval -> the frozen 100-paper split
+TIER="${TIER:-Easy}"                     # only this tier's rows
+TOOL_ROUNDS="${TOOL_ROUNDS:-300}"        # reproduction agent rounds
+AUDIT_TOOL_ROUNDS="${AUDIT_TOOL_ROUNDS:-40}"   # served in-sweep auditor
+MAX_PARALLEL="${MAX_PARALLEL:-10}"       # papers in flight; each adds one GPU allocation
+RESUME="${RESUME:-1}"                    # 1 -> skip papers that already have a verdict
+
+# --- Step 1: serve the model, wait for the published endpoint --------------
+python -m reprocli_serve \
+  --model "${MODEL}" --served-model-name "${SERVED_NAME}" \
+  --port "${PORT}" --tensor-parallel-size "${TP}" \
+  --endpoint-file "${ENDPOINT_FILE}" &
+export REPROCLI_ENDPOINT_FILE="${ENDPOINT_FILE}"
+
+# --- Step 2: enumerate the tier, smallest compute ceiling first ------------
+mapfile -t PAPER_IDS < <(python - "${LOCKFILE}" "${SPLIT}" "${TIER}" <<'PY'
+...
+PY
+)
+
+# --- Step 3: reproduce + grade each paper, paired on one bundle ------------
+run_one() {
+  local pid="$1"
+  local verdicts="${SWEEP_DIR}/audit_${pid}_extracted.jsonl"
+  if [[ "${RESUME}" == "1" && -s "${verdicts}" ]]; then
+    echo "=== ${pid} already graded -> skip (${verdicts})"
+    return 0
+  fi
+  local rid="${OUTER_JOB}-${pid}-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')"
+  python -m reprocli_repro --paper-id "${pid}" --split "${SPLIT}" \
+    --lockfile "${LOCKFILE}" --run-id "${rid}" \
+    --tool-rounds "${TOOL_ROUNDS}" --served-model-name "${SERVED_NAME}" >"${log}" 2>&1
+  local run_dir
+  run_dir="$(find "${RUNS_DIR}/${pid}" -type d -name "${rid}" -print -quit)"
+  ln -s "${run_dir}" "${grade_root}/${pid}"
+  python3 src/run_arxiv_prompt_vllm.py --mode audit \
+    --vllm-server-url "${BASE_URL}" --served-model-name "${AUDIT_MODEL}" \
+    --runs-dir "${grade_root}" --claims "${CLAIMS}" \
+    --paper-ids-file "${ids_file}" --tool-rounds "${AUDIT_TOOL_ROUNDS}" \
+    --extracted-output "${verdicts}" >>"${log}" 2>&1
+}
+
+inflight=0
+run_pids=()
+for pid in "${PAPER_IDS[@]}"; do
+  run_one "${pid}" &
+  run_pids+=($!)
+  inflight=$((inflight + 1))
+  if (( inflight >= MAX_PARALLEL )); then
+    wait -n
+    inflight=$((inflight - 1))
+  fi
+done
+wait "${run_pids[@]}"
+\end{codebox}
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:58-120,280-360,424-525
+The excerpt keeps the four structural steps and drops the model-specific serve
+environment, the telemetry beacons, and the summary block.
+
+\subsection{Grading a run}
+\label{app:running-grade}
+
+% src: src/reprocli_claude/__main__.py:1-25, src/reprocli_claude/__main__.py:57-104,
+% src: src/reprocli_claude/agent.py:38-41, tasks/medium-tier-mechanism-synthesis.md:22
+Every headline grade in this paper comes from one pinned grader.
+\texttt{reprocli\_claude} runs the auditor of Appendix~\ref{app:rubric} over
+the Anthropic Messages API with \texttt{--model claude-sonnet-5}. Everything
+except the transport is shared with the served auditor: the same prompt
+template, the same frozen rubric, the same pinned success bar from the
+lockfile, the same run-directory tools, and the same finalizer that derives
+the verdict and applies the deterministic caps. Its grader defaults are
+\texttt{--effort high}, \texttt{--tool-rounds 25}, \texttt{--max-tokens
+32000}, and \texttt{--workers 4}.
+
+% src: src/reprocli_repro/batch_runs.py:1-20, src/reprocli_claude/__main__.py:106-140
+Runs are selected by sweep or by paper. \texttt{--batch slurm-<jobid>}
+resolves every run the batch script launched, takes each paper's newest
+attempt, and binds it to the bundle its run identifier wrote.
+Runs still in progress are dropped unless \texttt{--include-running} is
+passed, because a half-written bundle grades the harness. \texttt{--paper-ids}
+and \texttt{--paper-ids-file} name papers instead and fall back to each
+paper's newest bundle that holds a run record. \texttt{--dry-run} prints the
+resolved paper, run identifier, and bundle for each selection and stops.
+
+% src: src/reprocli_claude/__main__.py:96-104, src/reprocli_claude/__main__.py:160-175,
+% src: src/reprocli_claude/__main__.py:186-196, src/reprocli_claude/__main__.py:245-260
+Each graded run produces two rows. \texttt{--output} receives the raw
+response with its tool loop and token usage, and
+\texttt{--extracted-output} receives the finalized verdict row with the score,
+the verdict, the reproduced flag, the rationale, and any cheat flags. Each
+grading pass carries an attempt tag of the grader model name joined to a UTC
+timestamp, which keeps a re-grade of the same run distinct from the first
+pass instead of colliding with rows already written. \texttt{--upload} writes
+the verdict onto the run's row in the telemetry store, overwriting any prior
+audit of that run, and it needs the store's URL and service key in the
+environment. \texttt{--skip-audited} leaves already-graded runs alone, so a
+repair pass only pays for what is missing.
+
+% src: src/reprocli_claude/__main__.py:57-104, src/run_arxiv_prompt_vllm.py:1-60,
+% src: scripts/reproduce/repro_audit_one.sh:83-100
+\begin{codebox}[lst:running-grade]{bash}{Grading with the pinned grader (sanitized)}
+# Re-grade a finished sweep with the pinned grader and file the verdicts.
+$ PYTHONPATH=src python3 -m reprocli_claude \
+    --batch slurm-<jobid> \
+    --runs-dir <runs-dir> \
+    --split eval \
+    --model claude-sonnet-5 \
+    --extracted-output <verdicts.jsonl> \
+    --upload
+
+# Resolve what would be graded, without calling the grader.
+$ PYTHONPATH=src python3 -m reprocli_claude --batch slurm-<jobid> \
+    --runs-dir <runs-dir> --dry-run
+\end{codebox}
+
+% src: src/run_arxiv_prompt_vllm.py:1-60, scripts/reproduce/repro_audit_one.sh:83-100, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:482-500
+The served auditor is the same grading procedure over a vLLM endpoint, run
+with the tier script's \texttt{AUDIT\_TOOL\_ROUNDS} of 40 rounds where the
+pinned grader has 25, invoked as
+\texttt{python3 src/run\_arxiv\_prompt\_vllm.py --mode audit --claims
+<claims-file> --runs-dir <runs-dir> --vllm-server-url <endpoint-url>}, and it
+is what the tier batch scripts call inline while a sweep is still running.
+
+\subsection{Reproducing the tables and listings}
+\label{app:running-tables}
+
+% src: .claude/skills/analyze-sweep/SKILL.md:52-60, .claude/skills/analyze-sweep/driver.py,
+% src: src/reprocli_repro/batch_runs.py:1-20
+Reconstructing a results table needs the per-sweep dumps and the evidence
+bundles. Each sweep dumps to \texttt{runs.json}, one row per run carrying the
+audit score, the verdict, the rationale, the cheat flags, the exit reason, the
+spend against the budget, and the token counts. Alongside it,
+\texttt{events/<run\_id>.jsonl} holds that run's ordered transcript and
+\texttt{aggregates.json} the per-sweep totals. The per-run mechanism labels of
+Appendix~\ref{app:taxonomy} live in \texttt{analyses.json}, one entry per run,
+keyed by the same run identifiers. Together with the evidence bundles on disk,
+those four files are enough to recompute every cell without a model.
+
+% src: paper_latex/tables/gen_tool_schemas.py:1-18, paper_latex/tables/gen_audit_schema.py:1-7,
+% src: paper_latex/tables/gen_audit_finalizer.py:1-11, paper_latex/tables/gen_classifier_schema.py:1-12,
+% src: paper_latex/tables/gen_example_row.py:1-18, paper_latex/tables/gen_eval100.py:1-18
+The appendix listings that quote machine-readable artifacts are generated
+rather than transcribed, so a change in the harness is visible in the paper.
+Each generator names its source paths at the top of the script, reads them
+live from the repository, and writes into \texttt{paper\_latex/prompts/} or
+\texttt{paper\_latex/tables/}. Table~\ref{tab:generators} maps each script to
+what it regenerates. Two of them read the frozen split files rather than the
+source tree, and \texttt{RECLAIM\_LOCKFILE\_DIR} points them at a different
+copy.
+
+% src: paper_latex/tables/gen_tool_schemas.py:1-18, paper_latex/tables/gen_audit_schema.py:1-7,
+% src: paper_latex/tables/gen_audit_finalizer.py:1-11, paper_latex/tables/gen_classifier_schema.py:1-12,
+% src: paper_latex/tables/gen_example_row.py:1-18, paper_latex/tables/gen_eval100.py:1-18
+\begin{table}[h]
+\caption{Generators for the appendix listings and tables.}
+\label{tab:generators}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{8.3cm}@{}}
+\toprule
+Script under \texttt{paper\_latex/tables/} & What it regenerates \\
+\midrule
+\texttt{gen\_tool\_schemas.py} & The advertised \texttt{run\_gpu} and
+\texttt{workspace\_bash} tool schemas and the report schema, read out of the
+harness (Appendix~\ref{app:toolset}, Appendix~\ref{app:report-format}). \\
+\texttt{gen\_audit\_schema.py} & The auditor's structured output schema
+(Appendix~\ref{app:rubric}). \\
+\texttt{gen\_audit\_finalizer.py} & The deterministic verdict finalizer,
+excerpted verbatim from the auditor (Appendix~\ref{app:rubric}). \\
+\texttt{gen\_classifier\_schema.py} & The artifact classifier's strict
+response format for its final tools-off request. \\
+\texttt{gen\_example\_row.py} & One frozen lockfile row, field for field, with
+the prose fields cut at a word boundary
+(Appendix~\ref{app:dataset-schema}). \\
+\texttt{gen\_eval100.py} & The per-paper anchor tables for the frozen
+100-paper split and the 14-paper dev split, plus the tier, band, and match-bar
+counts the prose asserts (Appendix~\ref{app:dataset-schema}). \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: paper_latex/tables/gen_tool_schemas.py:1-18, paper_latex/tables/gen_eval100.py:1-18
+Running a generator and rebuilding the paper is the check that a listing still
+matches the code it was taken from.
+
+\subsection{Tests}
+\label{app:running-tests}
+
+% src: README.md:158-166, verified by running the suite on 2026-08-30
+The test suite exercises the harness offline. It needs no GPU, no network, and
+no served model, and it covers the tool loop, the sandbox argument shapes, the
+GPU session accounting, the report and verdict schemas, the lockfile loaders,
+the serve command builder, and the grader's cost model. Running it is the
+fastest check that a fresh checkout is wired correctly.
+
+% src: verified by running `PYTHONPATH=src python3 -m pytest tests -q` on 2026-08-30
+\begin{codebox}[lst:running-tests]{bash}{Running the suite}
+$ PYTHONPATH=src python3 -m pytest tests -q
+540 passed, 1 skipped
+\end{codebox}
+
+% src: verified by running `PYTHONPATH=src python3 -m pytest tests -q` on 2026-08-30
+The 540 passing tests are the offline contract. Anything that needs a GPU, a
+Slurm allocation, or a served model sits outside the suite and is exercised by
+the commands above.

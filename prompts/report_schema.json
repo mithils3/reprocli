@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paper_id",
+    "claim",
+    "what_ran",
+    "scoring_command",
+    "measurements",
+    "agent_assessment",
+    "changes_made",
+    "blockers",
+    "evidence_files"
+  ],
+  "properties": {
+    "paper_id": {"type": "string"},
+    "claim": {"type": "string"},
+    "what_ran": {"type": "string"},
+    "scoring_command": {"type": "string"},
+    "measurements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "metric",
+          "observed_value",
+          "reference_value",
+          "scope",
+          "evidence"
+        ],
+        "properties": {
+          "metric": {"type": "string"},
+          "observed_value": {"type": "string"},
+          "reference_value": {"type": ["string", "null"]},
+          "scope": {"type": "string"},
+          "evidence": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "agent_assessment": {
+      "type": "string",
+      "enum": ["reproduced", "partial", "not_reproduced", "could_not_run"]
+    },
+    "changes_made": {"type": "string"},
+    "blockers": {"type": "string"},
+    "evidence_files": {"type": "array", "items": {"type": "string"}}
+  }
+}
