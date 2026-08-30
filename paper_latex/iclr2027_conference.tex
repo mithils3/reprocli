@@ -361,9 +361,9 @@ Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
-pinned configuration otherwise. We dropped every paper estimated above 96
-H100-hours before pooling. From the remainder we sampled a 200-paper audit
-pool stratified by tier and compute band. We allocate the pool equally across
+pinned configuration otherwise. We cap the benchmark at 96 H100-hours and
+drop every paper estimated above it. We sampled a 200-paper audit pool
+stratified by tier and compute band. We allocate the pool equally across
 tiers because tier is the variable under test, and equal cells measure each
 tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
 dozen papers, and the venue proportions reported above let readers reweight
@@ -374,7 +374,7 @@ opening the evidence behind each availability call and re-deriving each compute
 estimate. Papers whose artifacts proved inaccessible or that depended on paid
 third-party APIs failed the audit and were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
-GPU-denominated. Only 19 of
+GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
 derived the rest from the pinned configuration. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
@@ -466,40 +466,46 @@ Present your main results.
 % Placeholder section: ablations, error analysis, qualitative results.
 
 \paragraph{Failure taxonomy.}
-We label every unsuccessful run with one primary failure mode and report the
-distribution in Table~\ref{tab:failure-modes}. The two most frequent
-process failures are environment fights, where the authors' released stack
-no longer builds on the machine the agent is given and the run is consumed
-reconciling toolchain and dependency errors the agent did not create, and
-reimplementation without validation, where the agent writes its own version
-of the method after failing to run the released code and reports a number
-from that version without ever checking it against the reference the
-authors shipped. The remaining modes are substitution failures, in which a
-blocked agent runs something adjacent to the pinned experiment and reports
-the result as the reproduction, and one negative-result mode, honest
-shortfall, where the agent executes the released pipeline correctly,
-measures a real number, misses the target, and says so.
+We label every dissected run with one primary mode from the nine-mode
+vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
+tier in Table~\ref{tab:failure-modes}. Two modes are outcomes. A
+reproduced-clean run recovers the pinned number on the authors' released
+artifact, and a near-miss partial runs a faithful pipeline and lands short
+of the bar. The other seven are process failures. The agent reimplements
+the method and validates no stage of its version against a reference it
+did not produce, loses the decisive rounds to build and dependency failures
+in the released stack, measures an artifact other than the one the pinned
+cell names, runs an experiment other than the one the claim is about,
+reports a shipped constant in place of the number it measured, spends its
+rounds on reading and probing until the allocation is cut off largely
+unspent, or ends with no measurement of the pinned quantity at all.
+Appendix~\ref{app:taxonomy} gives each mode's evidence signature and the
+transcript excerpts that anchor it.
 
 \begin{table}[h]
-\caption{Primary failure mode by availability tier.}
+\caption{Primary failure mode by tier over the dissected runs, using the
+vocabulary of Appendix~\ref{app:taxonomy}.}
 \label{tab:failure-modes}
 \begin{center}
 \small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Failure mode & Easy & Medium & Hard & All \\
+Mode & Run & Retrain & Reimplement & All \\
 \midrule
+Reproduced clean & XX & XX & XX & XX \\
+Near-miss partial & XX & XX & XX & XX \\
+Reimplement without validating & XX & XX & XX & XX \\
 Environment fights & XX & XX & XX & XX \\
-Reimplementation without validation & XX & XX & XX & XX \\
+Artifact-provenance mismatch & XX & XX & XX & XX \\
 Scope substitution & XX & XX & XX & XX \\
-Evaluation-protocol shopping & XX & XX & XX & XX \\
-Availability wall & XX & XX & XX & XX \\
+Stale-artifact reliance & XX & XX & XX & XX \\
 Procrastination and wall kill & XX & XX & XX & XX \\
-Honest shortfall & XX & XX & XX & XX \\
+Killed before the number & XX & XX & XX & XX \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
+% TODO(tab:failure-modes): fill from the pooled pinned-Sonnet dissection records of the roster sweeps, remapped onto the nine slugs per Appendix G.
 
 \paragraph{What the successful runs do.}
 The runs that recover the target result share a procedure that the failures

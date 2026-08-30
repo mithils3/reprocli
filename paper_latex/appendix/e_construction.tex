@@ -203,18 +203,17 @@ The compute estimate is audited arithmetically for every row. The extraction
 code recomputes the product of GPU count, wall-clock hours, and the
 H100-equivalent multiplier, and flags a mismatch when the recomputed value
 differs from the stated hours by more than 20\% of the larger of the two. It
-assigns a compute band from the ladder of Listing~\ref{lst:h100-bands}, where a
-value on a boundary lands in the lower band because the first matching interval
-wins. It sets a human-review flag when the basis is
+assigns a compute band from the ladder 0--8, 8--32, 32--96, and above 96
+H100-hours with the interval test of Listing~\ref{lst:h100-bands}, where a
+value on a boundary lands in the lower band because the first matching
+interval wins. It sets a human-review flag when the basis is
 \texttt{compute\_unspecified}, when the arithmetic cannot be recomputed, or
 when the recompute disagrees. The dominant error the flag catches is a stated
 figure that describes the full-paper experiment while the structured fields
 describe the scaled-down minimal experiment.
 
-% src: src/reprocli_vllm/audit/h100.py:7-9,39-68
-\begin{codebox}[lst:h100-bands]{Python}{Compute-band ladder and the arithmetic check (excerpt, lines 7--9 and 39--68 of \texttt{audit/h100.py})}
-H100_BANDS = ((0.0, 8.0, "0-8"), (8.0, 32.0, "8-32"), (32.0, 96.0, "32-96"), (96.0, 192.0, "96-192"))
-OVER_CAP_BAND = ">192"
+% src: src/reprocli_vllm/audit/h100.py:9,39-68
+\begin{codebox}[lst:h100-bands]{Python}{Compute-band assignment and the arithmetic check (excerpt, lines 9 and 39--68 of \texttt{audit/h100.py})}
 MISMATCH_TOLERANCE = 0.2
 
 def h100_band(hours: Any) -> str | None:
@@ -294,11 +293,12 @@ re-judge bands. The selected split's estimates were re-derived afterwards in a
 separate pass (Appendix~\ref{app:recompute}).
 
 % src: notes/DATASET.md:300-304,360-372; src/reprocli_vllm/audit/select_pool.py:40
-Of the 620 verified rows in the three evaluation tiers, 38 sat above the cap
-and were excluded, leaving 582 rows entering selection. Selection ran with the
-cap at 192 H100-hours. The cap was lowered to 96 on 2026-07-09, which removed
-the three papers then sitting in the 96--192 band from the evaluation split and
-is the value the code carries today.
+Of the 620 verified rows in the three evaluation tiers, 38 sat above the
+compute ceiling of the selection pass and were excluded, leaving 582 rows
+entering selection. That ceiling was higher than the benchmark's cap, so 17
+rows of the pool sit above 96 H100-hours. The cap was set to 96 on 2026-07-09,
+which replaced the three evaluation-split papers above it
+(Table~\ref{tab:swaps}), and 96 is the value the selection code carries.
 
 % src: src/reprocli_vllm/audit/select_pool.py:83-134; notes/DATASET.md:305-319
 The selection rule itself is deterministic. The pool target is split equally
@@ -350,7 +350,7 @@ adjudicated, and the summed audited compute.}
 \small
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
-Tier & Selected & 0--8 & 8--32 & 32--96 & 96--192 & Flagged & Adjudicated & $\Sigma$ H100-h \\
+Tier & Selected & 0--8 & 8--32 & 32--96 & $>$96 & Flagged & Adjudicated & $\Sigma$ H100-h \\
 \midrule
 Run (\texttt{Easy})          & 67 & 13 & 35 & 14 & 5 & 14 & 6 & 1,961 \\
 Retrain (\texttt{Medium})    & 67 & 13 & 39 & 11 & 4 & 22 & 3 & 1,754 \\
@@ -512,7 +512,7 @@ Date & Tier & Out & In & Reason class \\
 2026-06-25 & mixed & 12 & 12 & Re-selection from the human verdicts, with 15 paid-API papers excluded from the pool beforehand \\
 2026-07-06 & Run & 4 & 4 & Observed permission wall or artifact never released, net over three commits that also restored four papers whose claimed wall did not hold \\
 2026-07-07 & Run & 1 & 1 & Paid API in the anchor and the label file never released \\
-2026-07-09 & Retrain, Reimplement & 3 & 3 & Compute policy, cap lowered from 192 to 96 H100-hours \\
+2026-07-09 & Retrain, Reimplement & 3 & 3 & Compute policy, cap lowered to 96 H100-hours \\
 2026-07-10 & Run & 1 & 1 & Ground-truth traces for the anchor never released \\
 2026-07-11 & Retrain & 4 & 4 & Never released, self-contradicting artifact, or a dependency with no aarch64 build \\
 2026-07-13 & Reimplement & 2 & 2 & Implementation never released, and a simulator with no aarch64 build \\
