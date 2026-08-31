@@ -34,10 +34,12 @@ repeated-call cutoff, and a context budget, all surfaced in the verification
 status. Only rows whose applicable signals were tool-established and whose loop
 exited naturally enter the pool. A final tool-free turn returns a strict JSON
 record carrying no score or tier, and the saved tool conversation makes every
-call re-openable. Listing~\ref{lst:classifier-prompt} is that prompt in full.
+call re-openable. Listing~\ref{lst:classifier-prompt} is that prompt in full, with
+\texttt{\{PAPER\_TEXT\}} standing for the rendered paper, its supplement
+manifest with text excerpts, and its \LaTeX{} source.
 
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
-\promptfile[lst:classifier-prompt]{Stage-I classifier prompt, complete file, with \texttt{\{PAPER\_TEXT\}} replaced by a rendered document carrying a header, the OpenReview supplement manifest with inlined text excerpts, and the full \LaTeX{} source.}{prompts/prompt_classifier.txt}
+\promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
 
 \subsection{Deterministic extraction}
 \label{app:extraction}

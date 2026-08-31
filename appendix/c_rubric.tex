@@ -117,22 +117,22 @@ retrieved benchmark answer the graded value runs through. &
 \label{app:rubric-finalizer}
 
 % src: src/reprocli_vllm/audit/audit.py:1-12,25-63,74-116
-Listing~\ref{lst:audit-finalizer} is the code that runs after the model returns.
+Listing~\ref{lst:audit-finalizer} is the code that runs after the model returns,
+verbatim except for one section sign written out as a word.
 Every verdict string this paper reports comes from it, and the
 \texttt{reproduced} boolean behind the headline rate uses its threshold of 8.
 
 % src: src/reprocli_vllm/audit/audit.py:35-63,74-90 via paper_latex/tables/gen_audit_finalizer.py
-\codefile[lst:audit-finalizer]{Python}{The deterministic finalizer, an
-excerpt of \texttt{src/reprocli\_vllm/audit/audit.py} lines 35--63 and
-74--90, verbatim except for one section sign written out as a
-word}{prompts/audit_finalizer.py}
+\codefile[lst:audit-finalizer]{Python}{Deterministic finalizer}{prompts/audit_finalizer.py}
 
 \subsection{Auditor prompt and run-directory tools}
 
 % src: prompts/prompt_audit.txt:35-58,79-84; src/reprocli_vllm/tools/run_dir_tools.py:1-19,274-288; src/reprocli_vllm/config/config.py:50-54
 The auditor recomputes from stored predictions and outputs where that is cheap,
 and the 60\,s shell timeout keeps it from re-running training or evaluation.
-Listing~\ref{lst:audit-prompt} is the template rendered per graded run.
+Listing~\ref{lst:audit-prompt} is the template, rendered per graded run from
+the pinned claim, the run-directory manifest, and the rubric text, with the
+benchmark's working name replaced by RECLAIM in one line.
 
 % src: src/reprocli_vllm/tools/run_dir_tools.py:42-247,274-288; src/reprocli_vllm/config/config.py:50-54
 \begin{table}[h]
@@ -166,17 +166,13 @@ It refuses to overwrite an existing file, so agent artifacts stay intact. \\
 \end{table}
 
 % src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reprocli_vllm/audit/inputs.py:30-101
-\promptfile[lst:audit-prompt]{The auditor prompt template, rendered per graded
-run by substituting the highlighted \texttt{\{PLACEHOLDER\}} fields with the
-pinned claim, a manifest of the run directory, and the frozen rubric text. The benchmark's
-internal working name is replaced by RECLAIM in one line, and nothing else is
-edited}{prompts/prompt_audit.txt}
+\promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
 
 \subsection{The frozen rubric}
 
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reprocli_vllm/audit/inputs.py:96-101
-\promptfile[lst:rubric-text]{The frozen audit rubric
-(\texttt{rubric\_audit.md}, frozen 2026-07-16), given to the auditor unedited
-and in full, and reproduced here verbatim except that the benchmark's internal
-working name is replaced by RECLAIM in its title and in one flag
-definition}{prompts/rubric_audit.md}
+Listing~\ref{lst:rubric-text} is the rubric as frozen on 2026-07-16, given to
+the auditor in full, with the working name replaced by RECLAIM in its title and
+in one flag definition.
+
+\promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}

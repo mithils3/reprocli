@@ -14,7 +14,7 @@ gives the three commands that serve a model, run one paper, and grade one run.
 % src: scripts/serve/serve_gh200.sbatch:78-86, src/reprocli_serve/args.py:20-60,
 % src: src/reprocli_repro/cli_args.py:88-127, README.md:88-100,
 % src: src/reprocli_claude/__main__.py:57-104, scripts/reproduce/repro_audit_one.sh:83-100
-\begin{codebox}[lst:running-commands]{bash}{Serving a model, running one paper, and grading a run (sanitized)}
+\begin{codebox}[lst:running-commands]{bash}{Serving, running, and grading}
 # Serve the agent model and publish the address other nodes reach it at.
 $ PYTHONPATH=src python3 -m reprocli_serve \
     --model <hf-id-or-path> \
