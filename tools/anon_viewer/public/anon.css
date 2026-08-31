@@ -1,0 +1,229 @@
+/* anon.css: what this site adds on top of the shared design system: the app
+   shell, the global filter bar, the clickable agent x tier matrix, the score
+   histogram, the papers outcome grid, the run page's audit and dissection cards,
+   and the responsive rules that keep every wide table scrolling inside its own
+   box rather than pushing the page sideways. */
+
+/* ---- app shell ------------------------------------------------------------ */
+html, body { overflow-x: hidden; }
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+.topbar { flex: none; }
+main.view { flex: 1; min-height: 0; display: flex; }
+.detail { flex: 1; min-width: 0; }
+
+/* brand: name, sub-line, run count */
+.brand .b-name b { color: var(--accent-strong); }
+.brand .b-sub { font-family: var(--sans); font-size: 11px; font-weight: 500; color: var(--muted);
+  padding-left: 10px; border-left: 1px solid var(--line-strong); white-space: nowrap; }
+
+/* ---- global filter bar ---------------------------------------------------- */
+.filterbar { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg-side); }
+.filterbar.hidden { display: none !important; }
+.fb-l { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.fb-sel { font: inherit; font-family: var(--mono); font-size: 12px; padding: 4px 9px;
+  border: 1px solid var(--line-strong); border-radius: 7px; background: var(--panel); color: var(--txt); }
+.fb-sel:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.fb-reset { margin-left: auto; }
+
+/* ---- overview: tiles + gauge --------------------------------------------- */
+.ov-tiles { display: grid; grid-template-columns: 1fr 232px; gap: 14px; align-items: stretch; margin: 16px 0; }
+.ov-tilerow { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 12px; align-content: start; }
+.ov-tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 13px 15px; box-shadow: var(--shadow); }
+.ovt-l { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.ovt-v { font-family: var(--display); font-size: 27px; font-weight: 700; line-height: 1.1;
+  margin-top: 4px; color: var(--txt); }
+.ovt-s { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+.ov-tile.accent .ovt-v { color: var(--accent-strong); }
+.ov-tile.yes .ovt-v { color: var(--yes-deep); }
+.ov-grid { margin-top: 14px; }
+.ov-compute { margin-bottom: 24px; }
+.ov-compute .bar-label { text-transform: none; }
+
+/* ---- clickable agent x tier matrix ----------------------------------------- */
+.matrix.mt-big td, .matrix.mt-big th { padding: 8px 10px; }
+.mt-cell.live { cursor: pointer; border-radius: 10px; transition: background .12s, box-shadow .12s; }
+.mt-cell.live:hover, .mt-cell.live:focus-visible { background: var(--panel2); box-shadow: inset 0 0 0 1px var(--accent); outline: none; }
+.mt-mean { display: block; font-family: var(--display); font-size: 20px; font-weight: 700; line-height: 1.1; color: var(--txt); }
+.mt-cell .mt-frac { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.mt-tier { padding-bottom: 10px; }
+
+/* ---- score histogram ------------------------------------------------------ */
+.hgram { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; align-items: end;
+  height: 176px; margin-top: 10px; }
+.hg-col { display: grid; grid-template-rows: 14px 1fr 16px; height: 100%; }
+.hg-n { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; }
+.hg-bar { display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+.hg-bar i { display: block; width: 100%; border-radius: 4px 4px 0 0; min-height: 1px; }
+.hg-k { font-family: var(--mono); font-size: 10.5px; color: var(--muted); text-align: center; padding-top: 3px; }
+
+/* ---- bars: wrap the legend, let labels shrink ----------------------------- */
+.chart-legend { flex-wrap: wrap; row-gap: 5px; }
+.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-card .bars { margin-top: 8px; }
+
+/* ---- wide content scrolls in its own box ---------------------------------- */
+/* a round card is a grid item, so it grows to its widest child unless told
+   otherwise; a long evidence path stays on one line and gets an ellipsis */
+.rounds > * { min-width: 0; }
+.rcard .schip { display: inline-block; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; vertical-align: bottom; }
+
+.tscroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+.tscroll > table { min-width: 720px; }
+/* the paper id is a cell here, not a line inside one, so it keeps cell layout:
+   a block td would drop out of the row and leave a dead strip across it */
+.stats-table td.s-rid { display: table-cell; vertical-align: middle; margin: 0; }
+
+/* ---- runs table ----------------------------------------------------------- */
+.runs-table th, .runs-table td { padding: 8px 7px; }
+.runs-table .pl-claim-cell { min-width: 200px; max-width: 300px; }
+.runs-table .fuel-cell { min-width: 148px; }
+.runs-table .fuel-cell .mfuel { min-width: 138px; gap: 6px; }
+.runs-table .s-model { font-size: 11.5px; }
+.runs-table td.num .an-score { margin-left: 0; }
+.rt-flag { margin-left: 5px; color: var(--no-deep); }
+.s-rid { display: inline-block; margin-top: 0; }
+
+
+/* ---- papers outcome grid --------------------------------------------------- */
+.papers-table .pm-head { text-align: center; }
+.pm-cell { text-align: center; }
+.pm-cell.empty { color: var(--line-strong); }
+.pm-chip { font-family: var(--display); font-weight: 700; font-size: 13px; min-width: 34px;
+  padding: 3px 8px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--panel2); color: var(--muted); transition: transform .1s, box-shadow .1s; }
+.pm-chip.reproduced { color: var(--yes-deep); border-color: var(--yes); background: var(--yes-tint); }
+.pm-chip.miss { color: var(--over-deep); border-color: var(--over); background: var(--over-tint); }
+.pm-chip.fault { color: var(--no-deep); border-color: var(--no); background: var(--no-tint); }
+.pm-chip:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.pm-legend { margin-left: auto; display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+.pm-chip.sw-chip { min-width: 0; padding: 0 6px; font-size: 11px; pointer-events: none; }
+.papers-table .pcell-claim { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.45; }
+.papers-table .s-sub { display: block; margin-top: 3px; }
+
+/* ---- run page -------------------------------------------------------------- */
+.rd-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rd-nav .crumb { margin-bottom: 0; }
+.rd-nav-r { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.rd-pos { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.filt[disabled] { opacity: .4; cursor: default; }
+.rd-head { margin: 16px 0 6px; }
+.rd-head .rt-head { row-gap: 8px; }
+.rt-head .an-score { margin-left: 0; }
+.rt-meta .pid { font-size: 12px; }
+/* second header line: the structured match target, when the record carries one */
+.rt-target { font-family: var(--mono); font-size: 12px; color: var(--txt); margin: 0 0 8px;
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.rt-target-l { font-size: 10px; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.rt-target-v { overflow-wrap: anywhere; }
+
+.rd-audit { margin: 16px 0 0; }
+.rd-audit-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.rd-audit-body { margin-bottom: 12px; }
+.rd-audit-body .block-l, .rd-dissect .block-l { margin-bottom: 5px; }
+.rd-dissect .rprose + .block-l { margin-top: 14px; }
+.rd-flags { display: grid; gap: 9px; }
+.rd-dissect { margin-top: 14px; }
+.rd-dissect + .an-sec, .an-sec + .an-sec { margin-top: 14px; }
+
+.rd-tabs { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 22px 0 10px; }
+.rd-tabs-r { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.rd-tab.active { background: var(--txt); color: var(--bg); border-color: var(--txt); }
+
+/* evidence quote round link doubles as a jump into the transcript; a quote that
+   names no round in this transcript keeps the column but carries no link */
+.an-q-round { background: none; border: 0; text-align: left; cursor: pointer; }
+.an-q-round:hover { text-decoration: underline; }
+.an-q-noround { display: block; }
+.rcard.flash { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+
+/* ---- about ------------------------------------------------------------------ */
+.about-card { margin-bottom: 14px; max-width: 860px; }
+.about-card .rprose { margin: 0 0 10px; }
+.about-card .rprose:last-child { margin-bottom: 0; }
+.about-list { margin: 4px 0 12px; padding-left: 20px; display: grid; gap: 7px; font-size: 13.5px; line-height: 1.55; }
+.about-card code { font-family: var(--mono); font-size: 12px; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+
+/* ---- responsive -------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .ov-tiles { grid-template-columns: 1fr; }
+  .grid2 { grid-template-columns: 1fr; }
+  .thesis { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .topbar { gap: 10px; padding: 9px 14px; flex-wrap: wrap; }
+  .brand .b-sub, .brand .b-count { display: none; }
+  .tabs { flex-wrap: wrap; }
+  .tab { padding: 5px 9px; font-size: 12.5px; }
+  .filterbar { padding: 7px 14px; }
+  .detail { padding: 18px 14px 72px; }
+  .ov-head h1 { font-size: 21px; }
+  .rt-claim { font-size: 20px; }
+  .spec-claim { font-size: 21px; }
+  .bar-row { grid-template-columns: 92px 1fr auto; gap: 7px; }
+  .bar-label { font-size: 11px; }
+  .hgram { height: 148px; }
+  .hg-k { font-size: 9.5px; }
+  .ps-filters { margin-left: 0; width: 100%; }
+  .ps-filters select, .s-search { flex: 1 1 130px; min-width: 0; }
+  .pm-legend { margin-left: 0; width: 100%; }
+  .rd-nav-r { margin-left: 0; }
+  .rd-tabs-r { margin-left: 0; }
+  .itiles { gap: 7px; }
+  .itile { flex: 1 1 44%; padding: 8px 10px; }
+  .about-card { padding: 14px; }
+}
+@media (max-width: 420px) {
+  .tscroll > table { min-width: 560px; }
+  .detail { padding: 14px 10px 64px; }
+}
+
+/* ---- vocabulary: tiers, failure modes ------------------------------------- */
+/* the one colour that the shared palette has no token for: a run that ended on
+   a limit before it had a number. Both themes, so the mode legend never shifts. */
+:root { --mode-killed: #5F6B7A; }
+:root[data-theme="dark"] { --mode-killed: #93A2B5; }
+
+/* the failure-mode pill: fixed colour dot + display name, identical in the
+   legend, the runs table, the papers page and the run header */
+.mchip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px;
+  line-height: 1.35; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line-strong);
+  background: var(--panel2); color: var(--txt); }
+.mchip::before { content: ""; width: 7px; height: 7px; border-radius: 2px; flex: none;
+  background: var(--mc, var(--slate)); }
+.runs-table .mode-cell .mchip { max-width: 150px; }
+.runs-table .mode-cell .mchip, .papers-table .mode-cell .mchip { white-space: normal; }
+
+/* the selected tier's meaning, next to the filter selects */
+.fb-what { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* matrix: the tier column carries its one-line meaning, and cells outside the
+   current filter step back without leaving the grid */
+.mt-what { display: block; margin-top: 4px; font-family: var(--mono); font-size: 10px;
+  font-weight: 400; color: var(--muted); white-space: normal; max-width: 210px; line-height: 1.4; }
+.mt-cell.off { opacity: .42; }
+
+/* budget row: one group per tier, reproduced against the rest */
+.cmp-group { margin-bottom: 12px; }
+.cmp-group:last-child { margin-bottom: 0; }
+.cmp-tier { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.cmp-what { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+
+/* run page: the mode, its definition and the recorded label when it is Other */
+.rd-mode { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.rd-mode-def { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.rd-slug { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.rd-self { margin: 14px 0 0; font-size: 13px; line-height: 1.6; color: var(--txt); }
+.rd-self-l { font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-weight: 600; margin-right: 4px; }
+.rd-dissect .an-quotes { margin-top: 4px; }
+
+/* papers: the gist under the claim, and the columns the agent filter steps back */
+.pcell-gist { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-top: 4px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+.papers-table .pm-head.dim, .papers-table .pm-cell.dim { opacity: .38; }

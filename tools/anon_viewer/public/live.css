@@ -1,0 +1,31 @@
+/* live.css: the run-detail instrument tile strip, the horizontal burn-trace
+   panel, the micro fuel bar reused by the tables, and the timeline round-card
+   controls. All colour goes through the styles.css and theme.css custom-property
+   tokens, so dark mode works for free. */
+
+/* ---- micro fuel bar (spent against budget) -------------------------------- */
+.mfuel { display: flex; align-items: center; gap: 9px; }
+.mfuel-bar { position: relative; flex: 1; min-width: 0; height: 6px; border-radius: 3px; background: var(--panel2); overflow: hidden; border: 1px solid var(--line); }
+.mfuel-fill { display: block; height: 100%; background: var(--accent); border-radius: 3px 0 0 3px; }
+.mfuel-fill.done { background: var(--yes); }
+.mfuel-fill.over { background: var(--over); }
+.mfuel-pred { position: absolute; top: -1px; bottom: -1px; width: 0; border-left: 1.5px dashed var(--predicted); }
+.mfuel-v { flex: none; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+/* ---- run-detail instrument tile strip ------------------------------------- */
+.itiles { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; }
+.itile { flex: 1 1 96px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; box-shadow: var(--shadow); }
+.it-l { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.it-v { font-family: var(--display); font-size: 18px; font-weight: 600; line-height: 1.15; margin-top: 3px; color: var(--txt); display: flex; align-items: center; gap: 6px; }
+.itile.big .it-v { font-size: 23px; font-weight: 700; }
+.itile.live .it-v { color: var(--accent-strong); }
+.it-sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+/* ---- horizontal burn-trace panel (sibling of .run-top) -------------------- */
+.run-trace { margin: 14px 0 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 8px 12px; }
+.run-trace .trace-h { width: 100%; height: auto; display: block; }
+
+/* ---- timeline round-card controls ----------------------------------------- */
+.rounds-ctl { display: flex; gap: 14px; justify-content: flex-end; margin-bottom: -4px; }
+.rounds-ctl .link { font-family: var(--mono); font-size: 11px; }
