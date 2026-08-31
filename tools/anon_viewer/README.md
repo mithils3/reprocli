@@ -11,4 +11,4 @@ Regenerate, after `python3 scrub.py --selftest` passes:
 
 `export.py` reads the database and the dissection records, rewrites `public/data/`, runs the leak gate, and refreshes `manifest.json` and `export_report.md`. `redactions.json` names runs to drop and dotted fields to blank; the exporter reads it on every run and applies it last.
 
-Deploy: `cd public && vercel link --yes --project reprobench-traces && vercel --prod --yes`.
+Deploy: `cd public && vercel link --yes --project reclaim-traces && vercel --prod --yes`.

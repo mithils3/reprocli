@@ -46,8 +46,14 @@ function showView(v) {
     const on = t.dataset.view === v || (v === "run" && t.dataset.view === "runs") || (v === "paper" && t.dataset.view === "papers");
     t.classList.toggle("active", on);
   });
-  const bar = $("#filterbar");
-  if (bar) bar.classList.toggle("hidden", !FILTERED_VIEWS[v]);
+  // About has nothing to filter, but taking the bar out of the page dropped the
+  // heading 44px on the way in and lifted it again on the way out. The bar holds
+  // its height there and states the collection instead of carrying controls.
+  const bar = $("#filterbar"), stat = v === "about";
+  if (bar) {
+    bar.classList.toggle("hidden", !FILTERED_VIEWS[v] && !stat);
+    bar.classList.toggle("fb-static", stat);
+  }
 }
 
 function route() {
@@ -87,11 +93,14 @@ function buildBar() {
   const opt = (v, l, cur) => `<option value="${window.RENDER.esc(v)}"${v === cur ? " selected" : ""}>${window.RENDER.esc(l)}</option>`;
   const agents = [opt("all", "all agents", State.model)].concat(D.models.map((m) => opt(m.key, m.name, State.model))).join("");
   const tiers = [opt("all", "all tiers", State.tier)].concat(D.tiers.map((t) => opt(t.key, t.name, State.tier))).join("");
+  const papers = D.benchmark.papers != null ? D.benchmark.papers : D.papers.length;
   $("#filterbar").innerHTML =
     `<label class="fb-l" for="fb-model">Agent</label><select id="fb-model" class="fb-sel">${agents}</select>` +
     `<label class="fb-l" for="fb-tier">Tier</label><select id="fb-tier" class="fb-sel">${tiers}</select>` +
     `<span class="fb-what" id="fb-what"></span>` +
-    `<button class="filt fb-reset" id="fb-reset" type="button">reset</button>`;
+    `<button class="filt fb-reset" id="fb-reset" type="button">reset</button>` +
+    // the line the bar shows on About, where there is nothing to filter
+    `<span class="fb-note">all ${D.runs.length} runs · ${papers} papers</span>`;
   $("#fb-model").onchange = (e) => { State.model = e.target.value; onBarChange(); };
   $("#fb-tier").onchange = (e) => { State.tier = e.target.value; onBarChange(); };
   $("#fb-reset").onclick = () => { State.model = "all"; State.tier = "all"; State.verdict = "all"; State.mode = "all"; State.q = ""; onBarChange(); };

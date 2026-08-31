@@ -22,7 +22,7 @@ DONE-WHEN       (1) python3 tools/anon_viewer/export.py exits 0, prints 275 runs
                 list returns nothing;
                 (3) Playwright smoke: overview matrix has 9 cells whose n sum to
                 275, a run page renders its transcript, no console errors;
-                (4) deployed on Vercel project reprobench-traces, URL returned.
+                (4) deployed on Vercel project reclaim-traces, URL returned.
 MUST-NOT-CHANGE tools/run_viewer/** (live viewer), the Supabase DB (read only),
                 notes/** (read only), audit scores/verdicts/flags (displayed as
                 stored, never edited).
@@ -303,7 +303,7 @@ palette, Fraunces / Inter / IBM Plex Mono, dark mode.
 
 ## 6. Deploy
 
-`cd tools/anon_viewer/public && vercel link --yes --project reprobench-traces && vercel --prod --yes`.
+`cd tools/anon_viewer/public && vercel link --yes --project reclaim-traces && vercel --prod --yes`.
 `vercel.json`: `X-Robots-Tag: noindex, nofollow` on `/(.*)`. `.vercel/` and
 `data/` gitignored.
 

@@ -7,21 +7,18 @@
 "use strict";
 
 (function () {
-  const R = window.RENDER, esc = R.esc, V = () => window.Verdict;
+  const R = window.RENDER, esc = R.esc, uesc = R.uesc, V = () => window.Verdict;
 
+  // auditor prose and the dissection read go through uesc: a payload that was
+  // JSON-encoded twice otherwise prints a backslash-u escape mid sentence
   function para(t) {
     if (t == null || String(t).trim() === "") return `<p class="muted">·</p>`;
-    return String(t).trim().split(/\n\s*\n/).map((p) => `<p class="rprose">${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+    return String(t).trim().split(/\n\s*\n/).map((p) => `<p class="rprose">${uesc(p).replace(/\n/g, "<br>")}</p>`).join("");
   }
   // the agent's own closing word, printed only when it is one of the four
   // recognised outcomes; anything else is left off the card
   const SELF_REPORT = { reproduced: "reproduced", partial: "partial",
     not_reproduced: "not reproduced", unverifiable: "unverifiable" };
-  // severity, as the auditor recorded it: high, med, low
-  const sevClass = (s) => {
-    const v = String(s || "").toLowerCase();
-    return v === "high" ? "no" : v.startsWith("med") ? "over" : "slate";
-  };
 
   const RunDetail = {
     current: null, view: "agent",
@@ -54,22 +51,18 @@
       const fam = V().auditFamily(run) || "idle";
       const score = a.score == null ? "·" : a.score;
       const band = a.score >= 8 ? "yes" : a.score >= 6 ? "over" : a.score <= 0 ? "no" : "slate";
-      const flags = Array.isArray(a.flags) && a.flags.length
-        ? a.flags.map((raw) => {
-          const f = (raw && typeof raw === "object") ? raw : { kind: String(raw) };
-          const c = sevClass(f.severity);
-          const ev = f.evidence || "";
-          return `<div class="an-flag ${c}"><div class="an-flag-h"><span class="an-flag-kind">${esc(String(f.kind || "flag").replace(/_/g, " "))}</span>` +
-            `${f.severity ? `<span class="badge ${c}">${esc(f.severity)}</span>` : ""}</div>` +
-            `${ev ? `<div class="an-flag-ev">${esc(ev)}</div>` : ""}</div>`;
-        }).join("")
-        : `<p class="muted">No flags fired on this run.</p>`;
+      // one flag renderer for the whole site, so this card and the auditor's own
+      // verdict JSON below can never print a flag two different ways
+      const flags = window.JsonView.flagsHtml(a.flags, "no integrity flags fired on this run");
+      const nflags = Array.isArray(a.flags) ? a.flags.length : 0;
+      const flagCount = nflags ? `<span class="an-sec-note">${nflags} raised</span>` : "";
       return `<section class="panel-card an-sec rd-audit">
         <div class="pc-head"><span class="plate">audit</span><span class="an-sec-note">${esc(window.Data.auditor.name)}</span></div>
         <div class="rd-audit-head"><span class="jv-score ${band} tnum">${esc(score)}<i>/10</i></span>
           ${V().inline(fam, a.verdict ? String(a.verdict).replace(/_/g, " ") : null)}</div>
         <div class="rd-audit-body"><div class="block-l">rationale</div>${para(a.rationale)}</div>
-        <div class="block-l">flags</div><div class="rd-flags">${flags}</div>
+        <div class="block-l an-flags-l">integrity flags${flagCount}</div>
+        <div class="rd-flags">${flags}</div>
       </section>`;
     },
 
@@ -88,7 +81,7 @@
       const quotes = Array.isArray(an.evidence_quotes) && an.evidence_quotes.length
         ? `<div class="block-l">evidence</div><div class="an-quotes">${an.evidence_quotes.map((q) =>
           `<blockquote class="an-q">${roundHtml(q)}` +
-          `<span class="an-q-txt">${esc(q.quote)}</span></blockquote>`).join("")}</div>` : "";
+          `<span class="an-q-txt">${uesc(q.quote)}</span></blockquote>`).join("")}</div>` : "";
       const raw = an.self_report != null ? an.self_report : run.self_report;
       const word = SELF_REPORT[String(raw == null ? "" : raw).trim().toLowerCase()] || null;
       const own = word ? `<p class="rd-self"><span class="rd-self-l">Agent's own report:</span> ${esc(word)}</p>` : "";
@@ -177,11 +170,9 @@
             host.querySelectorAll(".rd-tab").forEach((x) => x.classList.toggle("active", x.dataset.t === "agent"));
             this.paintTranscript(bundle);
           }
-          const card = host.querySelector(`.rcard[data-round="${CSS.escape(String(b.dataset.round))}"]`);
+          // revealRound opens the routine-round group the card may sit inside
+          const card = R.revealRound(host, b.dataset.round);
           if (card) {
-            card.classList.remove("collapsed");
-            const h = card.querySelector(".rcard-h");
-            if (h) h.setAttribute("aria-expanded", "true");
             card.scrollIntoView({ behavior: "smooth", block: "center" });
             card.classList.add("flash");
             setTimeout(() => card.classList.remove("flash"), 1400);

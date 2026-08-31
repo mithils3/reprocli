@@ -40,30 +40,44 @@
 .gauge-cap { text-align: center; } .gauge-cap b { font-family: var(--display); font-size: 13px; }
 .gauge-cap span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
 
-.ledger-card { display: flex; flex-direction: column; gap: 9px; }
-.lc-head { display: flex; align-items: center; gap: 10px; }
 .lc-sub { font-size: 11px; color: var(--muted); }
-.lc-head .stamp { margin-left: auto; }
-.lc-row { display: grid; grid-template-columns: 66px 1fr auto; align-items: center; gap: 12px; }
-.lc-l { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.lc-v { font-family: var(--display); font-weight: 600; font-size: 17px; }
-.lc-predbar { height: 9px; border-radius: 5px; background: var(--predicted-tint); border: 1px solid var(--predicted); opacity: .55; }
-.lc-eff { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.lc-eff b { font-family: var(--display); font-size: 16px; color: var(--txt); margin-left: 4px; }
+
+/* ---- overview hero: the tier legend dims what the filter excludes -------- */
+.ov-tierdef.off { opacity: .42; }
+/* the three tier blocks are one row of chips, so the chips sit on one line: the
+   column starts from the top and the description hangs below it. Centred, the
+   middle chip rode 8px high off its own two-line description. Scoped to the card
+   to outrank the base rule in the later sheet without an !important. */
+.ov-tierdefs .ov-tierdef { justify-content: flex-start; }
 
 /* ---- matrix + scatter ---------------------------------------------------- */
-.grid2 { display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; margin-bottom: 18px; }
+/* two identically chromed peers, so they are the same width: the old 1.05fr left
+   column read as a mistake rather than as a hierarchy */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
 .panel-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px 18px; }
 .pc-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
 .matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
 .matrix th, .matrix td { padding: 6px 8px; text-align: center; }
 .matrix th:first-child, .matrix td:first-child { text-align: left; }
-.mt-model { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; }
+.mt-model { font-family: var(--mono); font-size: 11.5px; font-weight: 500; white-space: nowrap; vertical-align: middle; }
 .mt-score { margin-left: 7px; font-size: 10.5px; font-weight: 600; color: var(--muted); }
 .mt-frac { font-family: var(--mono); font-size: 12px; font-weight: 500; display: block; }
-.mt-bar { display: block; height: 4px; border-radius: 2px; background: var(--panel2); overflow: hidden; margin-top: 3px; }
-.mt-bar i { display: block; height: 100%; background: var(--yes); }
+/* the reproduced share is a chart element, not a hairline: it carries the same
+   weight as the number above it, and a nonzero share never rounds to nothing */
+.mt-bar { display: block; height: 8px; border-radius: var(--r-xs); background: var(--panel2); overflow: hidden; margin-top: 6px; }
+.mt-bar i { display: block; height: 100%; min-width: 4px; border-radius: 4px; background: var(--yes); }
 .mt-cell.empty { color: var(--line-strong); }
+
+/* the matrix table: a head row of tier chips, one row per agent, an all-agents
+   footer. Column rules come from the rows, so the numbers read as a column. */
+.ov-matrix .matrix { min-width: 470px; }
+.matrix thead th { font-weight: 500; vertical-align: bottom; }
+.matrix .mt-corner { width: 150px; }
+.matrix.mt-big tbody tr + tr > *, .matrix.mt-big tfoot > tr > * { border-top: 1px solid var(--line); }
+.matrix.mt-big tfoot > tr > * { border-top-color: var(--line-strong); }
+.matrix.mt-big tfoot .mt-model { color: var(--muted); }
+.matrix.mt-big tfoot .mt-mean { font-size: 18px; color: var(--muted); }
+.matrix.mt-big tfoot .mt-bar i { background: var(--slate); }
 .scatter { width: 100%; height: auto; max-height: 250px; display: block; }
 .sc-grid { stroke: var(--line); } .sc-diag { stroke: var(--predicted); stroke-dasharray: 4 3; opacity: .7; }
 .sc-tick, .sc-axis { fill: var(--muted); font-family: var(--mono); font-size: 9px; }
@@ -154,8 +168,96 @@ select:focus, .s-search:focus { outline: none; border-color: var(--accent); box-
 .seg-prompt, .sw.seg-prompt { background: var(--accent); } .seg-compl, .sw.seg-compl { background: var(--yes); } .seg-compute, .sw.seg-compute { background: var(--over); }
 .bar-val { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; }
 .chart-empty { font-size: 12px; color: var(--muted); padding: 14px 0; text-align: center; }
+/* a column chart whose numerals are unnamed is a puzzle, so the axis says what
+   the row of keys under the columns is */
+.hg-axis { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: .03em;
+  color: var(--faint); text-align: center; margin-top: 7px; }
+
+/* a ten-entry legend read as a paragraph of coloured dots wrapped over four
+   lines. Two columns with the counts in one mono numeral column make it a
+   table, which is also what lets the card's bars keep the room they need. */
+.chart-legend .lg-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-legend .lg-n { margin-left: auto; padding-left: var(--s2); font-family: var(--mono);
+  font-weight: 600; color: var(--txt); font-variant-numeric: tabular-nums; }
+.chart-legend.lg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px; row-gap: 4px; align-items: center; }
+.chart-legend.lg-grid .lg { min-width: 0; }
+.chart-legend .lg.lg-zero { opacity: .45; }
+
+/* a total row is a margin, ruled off and demoted like the matrix footer; a
+   per-tier row under a single agent is subordinate to the agent above it */
+.bars .bar-row.bar-total { padding-top: var(--s2); border-top: 1px solid var(--line-strong); }
+.bars .bar-row.bar-total .bar-label { color: var(--muted); }
+.bars .bar-row:not(.bar-sub) + .bar-row.bar-sub { padding-top: var(--s2); border-top: 1px solid var(--line); }
+.bars .bar-row.bar-sub .bar-label { padding-left: var(--s3); color: var(--muted); }
+
+/* the two overview charts share a grid row: the shorter card fills the row with
+   chart rather than with empty card, so neither one is padded out with nothing */
+.ov-grid > .chart-card { display: flex; flex-direction: column; }
+/* except when the selection leaves it a single bar: a short card at its own
+   height beats a tall card built around a void */
+.ov-grid > .chart-card.ov-modes-thin { align-self: start; }
+.ov-grid .hgram { flex: 1 1 auto; height: auto; min-height: 156px; }
+.ov-grid .bars { flex: 1 1 auto; align-content: center; }
+
+/* the budget panel is the page's one full-width card, so it is read across
+   rather than down: the three tiers stand in three columns ruled apart like the
+   hero legend, and each column's two tracks span it. Stacked down the middle the
+   same six bars left 400px of the panel empty, three times over. */
+.ov-compute .chart-card .bars { grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0; margin-top: var(--s3); }
+.ov-compute .cmp-group { margin: 0; min-width: 0; padding: 0 var(--s4);
+  border-left: 1px solid var(--line); }
+.ov-compute .cmp-group:first-child { padding-left: 0; border-left: 0; }
+.ov-compute .cmp-group:last-child { padding-right: 0; }
+.ov-compute .cmp-group.off { opacity: .42; }
+.ov-compute .cmp-tier { margin-bottom: var(--s3); }
+/* label and value head the track instead of flanking it: at a third of the
+   panel the bar keeps its full measure, so a 21% and a 33% fill read apart */
+.ov-compute .bar-row { grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "l v" "t t"; column-gap: var(--s2); row-gap: 5px; }
+.ov-compute .bar-label { grid-area: l; }
+.ov-compute .bar-val { grid-area: v; min-width: 0; color: var(--txt); }
+.ov-compute .bar-track { grid-area: t; }
+.ov-compute .bar-row + .bar-row { margin-top: var(--s3); }
+.ov-compute .chart-empty { text-align: left; padding: var(--s2) 0; }
 
 @media (max-width: 900px) {
   .thesis { grid-template-columns: 1fr; } .grid2 { grid-template-columns: 1fr; }
   .spec-hero { flex-direction: column; }
+  /* under three readable columns the tiers go back to stacking, ruled off from
+     one another the way the columns were ruled apart */
+  .ov-compute .chart-card .bars { grid-template-columns: 1fr; }
+  .ov-compute .cmp-group { padding: 0; border-left: 0; }
+  .ov-compute .cmp-group + .cmp-group { margin-top: var(--s3); padding-top: var(--s3);
+    border-top: 1px solid var(--line); }
+}
+
+/* one legend column once two would clip the mode names */
+@media (max-width: 620px) {
+  .chart-legend.lg-grid { grid-template-columns: 1fr; }
+}
+
+/* the matrix stops being a table below the width three number columns need, and
+   becomes one block per agent with its three tiers listed down the card. That is
+   what removes the cut-off column and the sideways scroll on a phone. */
+@media (max-width: 620px) {
+  .ov-matrix .matrix, .ov-matrix .tscroll > table { min-width: 0; }
+  .matrix.mt-big thead { display: none; }
+  .matrix.mt-big, .matrix.mt-big tbody, .matrix.mt-big tfoot, .matrix.mt-big tr { display: block; width: 100%; }
+  .matrix.mt-big tr { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+  .matrix.mt-big tr + tr { margin-top: var(--s2); }
+  .matrix.mt-big tbody tr + tr > *, .matrix.mt-big tfoot > tr > * { border-top: 0; }
+  .matrix.mt-big th.mt-model { display: flex; align-items: baseline; justify-content: space-between;
+    background: var(--panel2); padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .matrix.mt-big th.mt-model .mt-score { margin-left: 0; }
+  .matrix.mt-big td.mt-cell { display: grid; grid-template-columns: 92px auto 1fr;
+    align-items: center; column-gap: var(--s2); row-gap: 5px; text-align: left;
+    padding: 9px 12px; border-radius: 0; }
+  .matrix.mt-big td.mt-cell + .mt-cell { border-top: 1px solid var(--line); }
+  .matrix.mt-big td.mt-cell::before { content: attr(data-label); font-family: var(--mono);
+    font-size: 11px; color: var(--muted); }
+  .matrix.mt-big td.mt-cell .mt-mean { font-size: 18px; }
+  .matrix.mt-big td.mt-cell .mt-frac { margin-top: 0; justify-self: start; }
+  .matrix.mt-big td.mt-cell .mt-bar { grid-column: 1 / -1; max-width: none; margin: 0; }
 }

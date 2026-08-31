@@ -28,17 +28,19 @@
     "stale-artifact-reliance", "procrastination/wall-kill",
     "killed-before-the-number", "other",
   ];
+  // ten hues spread around the wheel, not six shades of one warm hue: these have
+  // to stay apart at a 10px legend swatch and inside a stacked bar segment
   const MODE_COLOUR = {
-    "reproduced-clean": "--yes",
-    "near-miss-partial": "--over",
-    "reimplement-without-validating": "--no",
-    "environment-fights": "--accent",
-    "artifact-provenance-mismatch": "--no-deep",
-    "scope-substitution": "--over-deep",
-    "stale-artifact-reliance": "--predicted",
-    "procrastination/wall-kill": "--accent-strong",
+    "reproduced-clean": "--mode-reproduced",
+    "near-miss-partial": "--mode-nearmiss",
+    "reimplement-without-validating": "--mode-reimpl",
+    "environment-fights": "--mode-envfight",
+    "artifact-provenance-mismatch": "--mode-provenance",
+    "scope-substitution": "--mode-scope",
+    "stale-artifact-reliance": "--mode-stale",
+    "procrastination/wall-kill": "--mode-procrast",
     "killed-before-the-number": "--mode-killed",
-    "other": "--slate",
+    "other": "--mode-other",
   };
   const MODE_DEF = {
     "reproduced-clean": "The run measured the claim's number itself and the evidence carries it.",
@@ -85,7 +87,8 @@
     // the mode pill: a fixed colour dot plus the display name, same everywhere
     chip(key, extra) {
       const m = this.get(key);
-      return `<span class="mchip ${extra || ""}" style="--mc:var(${m.colour})">${window.RENDER.esc(m.name)}</span>`;
+      return `<span class="mchip ${extra || ""}" style="--mc:var(${m.colour})">` +
+        `<span class="mchip-t">${window.RENDER.esc(m.name)}</span></span>`;
     },
   };
 

@@ -2,12 +2,16 @@
    was asked to reproduce, the paper id, the agent, the tier, the audit score and
    verdict, the primary failure mode, rounds, spend against budget and tokens.
    The verdict, mode and text filters sit on top of the global Agent and Tier
-   selects, and the resulting order is what the run page's prev and next follow. */
+   selects, and the resulting order is what the run page's prev and next follow.
+
+   Row anatomy is fixed: the claim is clamped to two lines and carries the full
+   text on title, every other cell is a single line, so 275 rows read as one
+   even grid rather than a ragged column of paragraphs. */
 "use strict";
 
 (function () {
   const R = window.RENDER, esc = R.esc, V = () => window.Verdict;
-  const TIER_CLS = { run: "yes", retrain: "over", reimplement: "no" };
+  const TIER_CLS = { run: "tier-run", retrain: "tier-retrain", reimplement: "tier-reimplement" };
 
   const COLS = [
     { k: "claim", l: "claim" },
@@ -36,6 +40,12 @@
   };
   const NUMERIC = { score: 1, rounds: 1, spent: 1, tokens: 1, tier: 1, mode: 1 };
 
+  // a run that did not end on its own says so beside its round count
+  function exitMark(r) {
+    if (!r.exit_label || r.exit_label === "Finished") return "";
+    return `<span class="rt-exit" title="${esc(r.exit_label)}" aria-label="${esc(r.exit_label)}">▣</span>`;
+  }
+
   const Runs = {
     sortKey: "score", sortDir: -1,
 
@@ -59,32 +69,38 @@
 
     rowHtml(r) {
       const fam = V().ofRun(r);
+      const claim = r.claim || r.arxiv_id;
       const score = r.audit_score == null ? "·"
         : `<span class="an-score ${r.audit_score >= 8 ? "yes" : r.audit_score >= 6 ? "over" : r.audit_score <= 0 ? "no" : "slate"}">${esc(r.audit_score)}<span>/10</span></span>`;
       const tok = (r.tokens && r.tokens.total) || null;
+      const mode = window.Modes.name(r.mode);
       return `<tr data-run="${esc(r.id)}" tabindex="0">
-        <td class="pl-claim-cell"><span class="vg vd ${fam}">${V().meta(fam).glyph}</span><span class="pcell-claim">${esc(r.claim || r.arxiv_id)}</span></td>
-        <td class="s-rid">${esc(r.arxiv_id)}</td>
-        <td class="s-model">${esc(r.model_name || r.model)}</td>
-        <td><span class="badge ${TIER_CLS[r.tier] || "slate"}">${esc(window.Data.tierName(r.tier))}</span></td>
-        <td class="num">${score}</td>
-        <td>${V().inline(fam, V().word(r))}</td>
-        <td class="mode-cell">${window.Modes.chip(r.mode)}</td>
-        <td class="num tnum">${r.rounds == null ? "·" : esc(r.rounds)}</td>
-        <td class="fuel-cell">${R.microFuelHtml(r)}</td>
-        <td class="num tnum">${R.fmtTok(tok)}</td>
+        <td class="pl-claim-cell c-claim"><span class="vg vd ${fam}">${V().meta(fam).glyph}</span><span class="pcell-claim" title="${esc(claim)}">${esc(claim)}</span></td>
+        <td class="s-rid c-paper">${esc(r.arxiv_id)}</td>
+        <td class="s-model c-agent">${esc(r.model_name || r.model)}</td>
+        <td class="c-tier"><span class="badge ${TIER_CLS[r.tier] || "slate"}">${esc(window.Data.tierName(r.tier))}</span></td>
+        <td class="num c-score">${score}</td>
+        <td class="c-verdict">${V().inline(fam, V().word(r))}</td>
+        <td class="mode-cell c-mode" title="${esc(mode)}">${window.Modes.chip(r.mode)}</td>
+        <td class="num tnum c-rounds" data-l="rounds">${exitMark(r)}${r.rounds == null ? "·" : esc(r.rounds)}</td>
+        <td class="fuel-cell c-fuel">${R.microFuelHtml(r)}</td>
+        <td class="num tnum c-tokens" data-l="tokens">${R.fmtTok(tok)}</td>
       </tr>`;
     },
 
     bodyHtml(rows) {
-      if (!rows.length) return `<tr><td colspan="${COLS.length}" class="empty small">No runs match these filters.</td></tr>`;
+      if (!rows.length) return `<tr><td colspan="${COLS.length}" class="empty small">No runs match these filters.` +
+        `<span>Clear the search, or widen the verdict and the failure mode.</span></td></tr>`;
       return rows.map((r) => this.rowHtml(r)).join("");
     },
 
     headHtml() {
       return COLS.map((c) => {
         const on = this.sortKey === c.k;
-        return `<th class="${c.num ? "num" : ""} ${on ? "sorted" : ""}" data-k="${c.k}" tabindex="0" role="button">${esc(c.l)}${on ? (this.sortDir < 0 ? " ▼" : " ▲") : ""}</th>`;
+        const dir = this.sortDir < 0 ? "descending" : "ascending";
+        return `<th class="${c.num ? "num" : ""} ${on ? "sorted" : ""}" data-k="${c.k}" tabindex="0" role="button"` +
+          ` aria-sort="${on ? dir : "none"}" title="sort by ${esc(c.l)}">${esc(c.l)}` +
+          `<span class="th-dir">${on ? (this.sortDir < 0 ? "▼" : "▲") : ""}</span></th>`;
       }).join("");
     },
 
@@ -96,19 +112,25 @@
       return `<div class="ps-filters">
         <select id="rn-verdict" aria-label="verdict">${[opt("all", "all verdicts", S.verdict)].concat(verdicts.map((v) => opt(v, v.replace(/_/g, " "), S.verdict))).join("")}</select>
         <select id="rn-mode" aria-label="failure mode">${[opt("all", "all failure modes", S.mode)].concat(modes.map((m) => opt(m.key, m.name, S.mode))).join("")}</select>
-        <input id="rn-q" class="s-search" type="search" placeholder="search claim, paper or agent…" value="${esc(S.q)}" />
+        <input id="rn-q" class="s-search" type="search" placeholder="search runs…" aria-label="search runs" value="${esc(S.q)}" />
       </div>`;
+    },
+
+    countHtml(n) {
+      const all = window.Data.runs.length;
+      return n === all ? `${all} runs` : `${n} of ${all} runs`;
     },
 
     render() {
       const host = this.root();
       if (!host) return;
+      host.classList.add("wide-list");   // ten columns need more than the prose measure
       const rows = this.ordered();
       host.innerHTML = `
         <div class="ov-head">
           <div><h1>Runs</h1><div class="ov-sub">One row per reproduction run. Open a row for the transcript, the audit and the dissection.</div></div>
         </div>
-        <div class="ps-head"><span class="plate">runs</span><span class="ps-count" id="rn-count">${rows.length} of ${window.Data.runs.length}</span>${this.filtersHtml()}</div>
+        <div class="ps-head"><span class="plate">runs</span><span class="ps-count" id="rn-count">${this.countHtml(rows.length)}</span>${this.filtersHtml()}</div>
         <div class="tscroll"><table class="stats-table runs-table"><thead><tr>${this.headHtml()}</tr></thead>
           <tbody id="rn-body">${this.bodyHtml(rows)}</tbody></table></div>`;
       this.wire();
@@ -119,7 +141,7 @@
       const body = document.querySelector("#rn-body");
       const count = document.querySelector("#rn-count");
       if (body) body.innerHTML = this.bodyHtml(rows);
-      if (count) count.textContent = `${rows.length} of ${window.Data.runs.length}`;
+      if (count) count.textContent = this.countHtml(rows.length);
       this.wireRows();
       history.replaceState(null, "", window.runsHash());
     },
