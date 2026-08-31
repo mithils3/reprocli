@@ -1,105 +1,30 @@
 \section{Failure-Mode Taxonomy}
 \label{app:taxonomy}
 
-This appendix records the failure-mode vocabulary of
-Section~\ref{sec:analysis} and the labeling pass that assigns it.
-
 \subsection{Labeling procedure}
 
-% src: .claude/skills/analyze-sweep/SKILL.md:34-70
+% src: .claude/skills/analyze-sweep/SKILL.md:11-24,34-87,113
 A run's primary failure mode is assigned by a transcript dissection that runs
-after the audit and separately from it. The dissection reads a read-only dump
-of the batch. The dump holds one row per run with its audit fields, and one
-ordered event transcript per run written as JSON lines, with a
-\texttt{round\_open}, \texttt{call\_start}, \texttt{call\_result} or
-\texttt{final} record for every event the harness emitted. Runs still
-executing are excluded from the dump by default, because their audit fields
-are still null. The finished runs are split into groups of about five papers
-and one dissecting agent takes each group.
-
-% src: .claude/skills/analyze-sweep/SKILL.md:71-87
-Each dissecting agent works from three inputs per run. It reads the ordered
-event transcript, the final report the agent emitted in the \texttt{final}
-event, and the audit verdict, rationale, and flags carried on the run row. It
-is asked for six things: what the paper's claim needed and what the agent
-found, a timeline of what the agent did with round numbers and quoted events,
-the primary failure mode from the standing slug list, the report's own
-categorical outcome slot set beside the audit verdict as a data field, the
-flags that fired on a disqualified run together with a judgment on whether
-each one looks legitimate from the transcript, and the run's compute
-behaviour against its band. The report's slot integrity is checked in the
-same pass, because a corrupted final report is itself a mechanism.
-
-% src: .claude/skills/analyze-sweep/SKILL.md:11-24,77-79,113
-Standing rules bound the pass. Audit scores, verdicts, and flags are
-never edited by a dissection, and neither are the raw dumps, so a mode label
-never moves a grade. No dissection may carry an availability-wall label or
-unavailability prose, because every artifact in the frozen benchmark is
-retrievable by host probe. A run whose report asserts otherwise is relabelled
-from its own evidence. A new mode enters the vocabulary only on evidence from
-at least two runs, and the same bar applies to a new mechanism heading.
-
-% src: .claude/skills/analyze-sweep/SKILL.md:88-96; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json; notes/Analysis/medium-sweep-2896059-dsv4-analyses.json
-The dissection emits one object per run into a single JSON array.
-Table~\ref{tab:analysis-fields} lists its fields. Three of them are nested
-objects and one is a list of verbatim quotes keyed by round number, so the
-label always ships with the transcript lines it was read from. The array is
-the record the per-paper dissections are published from, and it is the file a
-reader checks a mode assignment against.
-
-% src: .claude/skills/analyze-sweep/SKILL.md:88-96; notes/Analysis/*-analyses.json (field names)
-\begin{table}[h]
-\caption{Fields of one dissection record. One record is emitted per run, and
-the records for a batch are collected into a single JSON array.}
-\label{tab:analysis-fields}
-\begin{center}
-\footnotesize
-\begin{tabular}{@{}lp{9.2cm}@{}}
-\toprule
-Field & What it holds \\
-\midrule
-\texttt{run\_id} & The run's identifier, carrying the batch job id and the arXiv id. \\
-\texttt{arxiv\_id} & The paper the run attempted. \\
-\texttt{paper\_gist} & What the paper claims, in the dissector's own words. \\
-\texttt{target\_claim} & The pinned claim the agent was given, restated from the run's briefing. \\
-\texttt{failure\_mode} & The primary mode slug. One per run. \\
-\texttt{failure\_mode\_detail} & The argument for that assignment, citing rounds. \\
-\texttt{artifact\_availability} & What the agent went looking for and what it retrieved. \\
-\texttt{genuine\_wall} & Object with \texttt{is\_wall} and \texttt{what}, recording whether the transcript shows a host-side refusal rather than an agent-side conclusion. \\
-\texttt{agent\_trajectory\_summary} & Ordered account of what the agent did, by round. \\
-\texttt{agent\_final\_selfclaim} & Object read from the final report, holding \texttt{claimed\_outcome}, \texttt{claimed\_numbers}, and \texttt{honest\_about\_failure}. \\
-\texttt{self\_claim\_gap} & The report's categorical slot set against the audited verdict, carried as data. \\
-\texttt{audit\_summary} & Object with \texttt{score}, \texttt{verdict}, \texttt{cheat\_flags}, and \texttt{rationale\_gist}, copied from the run row. \\
-\texttt{suspected\_grading\_error} & Whether a fired flag or the score is defensible from the transcript. \\
-\texttt{grader\_disagreement} & Present where a dissection reads the transcript differently from the auditor, naming the score or flag it disputes. \\
-\texttt{compute\_pattern} & Spend against band, utilisation, and idle allocation hold. \\
-\texttt{notable\_insights} & Findings the standing taxonomy does not already name. \\
-\texttt{evidence\_quotes} & List of \texttt{round} and \texttt{quote} pairs, verbatim from the transcript. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-% src: .claude/skills/analyze-sweep/SKILL.md:22,84-85; rubric_audit.md:21-23
-The separation of the two passes is what the reader can check. The auditor
-grades execution evidence against the rubric of Appendix~\ref{app:rubric} and
-returns a score. The dissection reads the same transcript for a mechanism and
-returns a label, and it can disagree with the auditor in writing without
-changing the number.
+after the audit and separately from it. The dissection reads the run's ordered
+event transcript, the final report the agent emitted, and the audit verdict,
+rationale, and flags carried on the run row, and it assigns one primary mode
+per run. The modes are not mutually exclusive as mechanisms, and the label
+records the dominant one. Audit scores, verdicts, and flags are never edited by a dissection,
+so a mode label never moves a grade. No dissection carries an
+availability-wall label, because every artifact in the frozen benchmark is
+retrievable by host probe, and a run whose report asserts otherwise is
+relabelled from its own evidence. A new mode enters the vocabulary only on
+evidence from at least two runs.
 
 \subsection{The mode vocabulary}
 
-% src: .claude/skills/analyze-sweep/SKILL.md:74-78
-The vocabulary is nine slugs, and a dissected run carries one primary mode
-that either is one of them or is remapped onto one of them before any count is
-made (Section~\ref{app:taxonomy-retired}). Table~\ref{tab:taxonomy} gives each slug, its
-working definition, the evidence signature a dissector looks for in the
-transcript, and the audit band the mode lands in where the frozen rubric or a
-sweep report states one. The modes are not mutually exclusive as mechanisms,
-so a run often shows two or three and the label records the dominant one. The
-band column is a tendency of the rubric text and never a rule the auditor
-applies, because the auditor grades from the run's evidence and has no access
-to the mode label.
+% src: .claude/skills/analyze-sweep/SKILL.md:74-79; notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:118; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:155-166,231-240
+The vocabulary is nine slugs. Any table that pools sweeps remaps retired
+names, underscore spellings, and sweep-local labels onto the nine slugs before
+it counts anything, and states in its caption that it did so. The band column
+is a tendency of the rubric text and never a rule the auditor applies, because
+the auditor grades from the run's evidence and has no access to the mode
+label.
 
 % Row sources for Table~\ref{tab:taxonomy}:
 %   reproduced-clean            -> SKILL.md:74; notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:380-383; rubric_audit.md:173-183,234
@@ -111,10 +36,9 @@ to the mode label.
 %   stale-artifact-reliance     -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:120; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:231-240; rubric_audit.md:111-114,144-148
 %   procrastination/wall-kill   -> notes/Analysis/medium-sweep-2896059-dsv4-analyses.json (2510.10480); notes/Analysis/hard-sweep-2936132-minimax-analyses.json (2510.25146, 2510.23429)
 %   killed-before-the-number    -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:121; notes/Analysis/easy-sweep-2652648-minimax-analyses.json (2510.21311); rubric_audit.md:197-209
-\clearpage
 \begingroup
 \footnotesize
-\begin{longtable}{@{}p{2.45cm}p{4.3cm}p{4.15cm}p{1.1cm}@{}}
+\begin{longtable}{@{}p{2.9cm}p{3.85cm}p{4.15cm}p{1.1cm}@{}}
 \caption{The failure-mode vocabulary. One primary mode is assigned per run.
 Band entries name the score of Appendix~\ref{app:rubric} the mode tends to
 land in where the frozen rubric text says so, and read -- where no source
@@ -165,7 +89,7 @@ The agent measures a checkpoint, dataset, split, or scale other than the one
 the pinned cell names. &
 A retrieved artifact whose own model card, README, or shipped example
 disagrees with the pinned cell, carrying a measurement taken on it. The
-\texttt{wrong\_split\_scale\_dataset} flag names the same break. &
+\texttt{wrong\_\allowbreak split\_\allowbreak scale\_\allowbreak dataset} flag names the same break. &
 -- \\
 \addlinespace
 \texttt{scope-\allowbreak substitution} &
@@ -184,8 +108,9 @@ flag names the same break. &
 4 or 0 \\
 \addlinespace
 \texttt{procrastination/\allowbreak wall-\allowbreak kill} &
-The agent spends its rounds on reading, retrieval, and probing rather than on
-the pinned pipeline, then stops or is cut off with most of the band unspent. &
+The agent spends its rounds on reading, retrieval, and probing, the pinned
+pipeline never runs, and the run stops or is cut off with most of the band
+unspent. &
 Rounds dominated by search and setup, an own estimate that the pinned run
 fits the band, and an exit with the allocation largely unspent. &
 -- \\
@@ -200,120 +125,11 @@ value for the pinned metric anywhere in the evidence bundle. &
 \end{longtable}
 \endgroup
 
-\subsection{Retired and provisional labels}
-\label{app:taxonomy-retired}
-
-% src: .claude/skills/analyze-sweep/SKILL.md:11-24,74-79; notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:118; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:155-166,231-240
-Earlier sweep analyses used labels that the vocabulary above no longer
-carries. The availability-wall label is retired, because host probes
-established that every artifact in the frozen benchmark is retrievable, so a
-run-level wall report is an agent-side retrieval or usage failure and is
-relabelled from the run's own evidence. The honest-shortfall and
-self-claim-inflation labels are retired as narrative labels, because claimed
-and audited outcomes are carried as data fields and no honesty narrative is
-drawn from them. The \texttt{procrastination-wall-kill} spelling of an early
-report and the \texttt{procrastination} spelling of a later one are the same
-mode as \texttt{procrastination/wall-kill}. The dissection records also carry
-underscore spellings of the vocabulary slugs, a \texttt{success} label on
-runs the auditor graded reproduced, and sweep-local labels such as
-\texttt{scope-collapse}, \texttt{quantitative-miss}, and
-\texttt{report-serialization-fault} that name a single run's failure more
-narrowly than the vocabulary does. Any table that pools sweeps remaps every
-raw label onto the nine slugs before it counts anything, states in its caption
-that it did so, and the per-run mapping lives in the dissection records rather
-than in the report prose.
-
-% src: notes/Analysis/2026-08-11 Medium Sweep 2896059 (DSv4, pinned Sonnet).md:130-159,318-320; notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:264-268,391-395,454-455
-Two proposals sit outside the nine. The \texttt{under-determined-target}
-label was proposed for papers whose released artifacts do not identify the
-configuration that produced the headline number, so several defensible
-readings of the same release give materially different results. It is
-provisional and this paper does not use it. The \texttt{verified-non-attempt}
-label was proposed on the same terms and carries the same status, and its own
-report says to keep it out of a headline taxonomy until a second sweep
-reproduces it.
-
-\subsection{Mechanism grouping}
-
-% src: .claude/skills/analyze-sweep/SKILL.md:110-113; notes/Writing/Section Pointers.md:7
-Every sweep report answers one question, why agents cannot reproduce papers,
-and it answers it with a standing template of seven mechanisms, to which a
-report may add sweep-specific sections.
-Table~\ref{tab:mechanisms} maps each mechanism to the modes that feed it. A
-mechanism is a claim about why a run failed and a mode is a label on the run,
-so the mapping is many to many and one run can supply evidence to more than
-one mechanism. Report serialization is the one entry that no mode carries as
-a primary label, because it is a defect of the final report rather than of
-the reproduction attempt underneath it.
-
-% Row sources for Table~\ref{tab:mechanisms}:
-%   validation discipline   -> 2883229+2889575 report S1; 2896059 report S7; 2918306 report S1; 2936132 report S1
-%   shipped-code defects    -> 2883229+2889575 report S2; 2896059 report S2 (run list read against that report's per-run mode column)
-%   artifact provenance     -> 2883229+2889575 report S3 (names the artifact-provenance-mismatch rows and the shipped-number row together); 2859889 report, taxonomy notes
-%   protocol reconstruction -> 2883229+2889575 report S4; 2896059 report S3; 2918306 report S2
-%   compute non-bindingness -> 2883229+2889575 report S5; 2896059 report S5; 2918306 report S7; 2936132 report S4
-%   report serialization    -> 2883229+2889575 report S6; 2896059 report S6; 2918306 report S6; 2936132 report S2
-%   environment adaptation  -> 2883229+2889575 report S7; 2652648 report:145; 2859889 report:200-210
-\begingroup
-\footnotesize
-\begin{longtable}{@{}p{2.6cm}p{5.2cm}p{4.3cm}@{}}
-\caption{The seven standing mechanisms and the modes that feed each one.
-Mechanism headings are the template every sweep report writes to, and the
-mapping is many to many.}
-\label{tab:mechanisms}\\
-\toprule
-Mechanism & What it names & Modes that feed it \\
-\midrule
-\endfirsthead
-\caption[]{The seven standing mechanisms (continued).}\\
-\toprule
-Mechanism & What it names & Modes that feed it \\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-Validation discipline &
-The agent builds or replaces a component and never checks it against a
-reference it did not produce. &
-\texttt{reimplement-\allowbreak without-\allowbreak validating} \\
-\addlinespace
-Shipped-code defects &
-The released code does not execute as shipped or does not produce its own
-paper's number, and the repair work becomes the reproduction. &
-\texttt{near-\allowbreak miss-\allowbreak partial}, \texttt{reproduced-\allowbreak clean} \\
-\addlinespace
-Artifact provenance &
-A retrieved artifact or a shipped results file does not correspond to the
-paper's graded cell. &
-\texttt{artifact-\allowbreak provenance-\allowbreak mismatch}, \texttt{stale-\allowbreak artifact-\allowbreak reliance} \\
-\addlinespace
-Protocol reconstruction &
-The release under-specifies the evaluation protocol and the agent rebuilds
-it, anchored on the paper's own reproducible quantities. &
-\texttt{near-\allowbreak miss-\allowbreak partial}, \texttt{scope-\allowbreak substitution} \\
-\addlinespace
-Compute non-bindingness &
-The run ends with most of its allocation unspent. Rounds, wall clock, and the
-agent's own cost estimate bind first. &
-\texttt{procrastination/\allowbreak wall-\allowbreak kill}, \texttt{killed-\allowbreak before-\allowbreak the-\allowbreak number} \\
-\addlinespace
-Report serialization &
-The final report's outcome slot, numeric slots, or evidence paths are
-corrupted at the last turn. &
-None as a primary label. Recorded per run in the dissection record. \\
-\addlinespace
-Environment adaptation &
-The released stack does not build on the host and the agent adapts, either
-preserving the measured quantity or destroying it. &
-\texttt{environment-\allowbreak fights} \\
-\end{longtable}
-\endgroup
-
 \subsection{Transcript evidence}
 
 % src: notes/Analysis/2026-08-16 Hard Sweep 2936132 (MiniMax, pinned Sonnet).md:125-147; notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56); notes/Analysis/hard-sweep-2936132-minimax-runs.json (model, batch_id)
 The signature of \texttt{reimplement-without-validating} is an anchor the
-paper supplies and the agent declines to use. On arXiv paper 2510.08177 the
+paper supplies that the run never checks against. On arXiv paper 2510.08177 the
 agent wrote its own version of the paper's baseline and scored it well under
 the value the paper reports for that same baseline. It kept building on that
 base and recorded the disagreement in its own closing numbers without going
@@ -327,6 +143,7 @@ Our CE-only baseline: 54.21\%\\
 Gap vs target: -25.08\%
 \end{agentturn}
 
+% src: notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56)
 The third and fourth lines are the paper's own baseline and the agent's
 reimplementation of it, and the run carried that gap to the end.
 
@@ -341,8 +158,9 @@ number came from the arm the agent chose instead.
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
-Neither arm had released code, so both were equally a port, and the decision
-turned on effort rather than on which arm the claim named.
+% src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2505.10039-47d383, round 6)
+Neither arm had released code, so both were equally a port, and effort decided
+which one ran.
 
 % src: notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:313-321; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
 The signature of \texttt{environment-fights} is a version incompatibility in
@@ -355,5 +173,5 @@ corrupted output before the diagnostic landed.
 This is the smoking gun: **the saved abs dataset is broken** -- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 
-The defect sits in the released code on this host rather than in the agent's
-own work, and it is the reason this run is the one that exhausted its budget.
+% src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
+The defect sits in the released code on this host. It is why this run exhausted its budget.
