@@ -336,11 +336,13 @@ and compute estimate audited by hand.}
 
 \textbf{Stage I: Artifact-verified classification.} For each submission we
 retrieved the raw \LaTeX{} source together with any OpenReview supplementary
-material, since some authors ship code only in the supplement.
+material, since some authors ship code only in the supplement
+(Appendix~\ref{app:corpus}).
 A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
 extracted its central empirical claim, pinned its match target, and audited four
 artifact signals: released code, released datasets, released model weights, and
-whether the required datasets are standard public benchmarks. An artifact counts
+whether the required datasets are standard public benchmarks
+(Appendix~\ref{app:classifier}). An artifact counts
 as available only when a tool call is able to access it. An artifact the paper
 promises but never publishes counts as missing, as does one behind a paywall, a
 sign-up form, or a permission request. We ran the classifier on a 1,000-paper
@@ -361,8 +363,8 @@ Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
-pinned configuration otherwise. We cap the benchmark at 96 H100-hours and
-drop every paper estimated above it. We sampled a 200-paper audit pool
+pinned configuration otherwise (Appendix~\ref{app:selection}). We cap the
+benchmark at 96 H100-hours and drop every paper estimated above it. We sampled a 200-paper audit pool
 stratified by tier and compute band. We allocate the pool equally across
 tiers because tier is the variable under test, and equal cells measure each
 tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
@@ -371,8 +373,9 @@ any rate back to the venue level.
 
 \textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
 opening the evidence behind each availability call and re-deriving each compute
-estimate. Papers whose artifacts proved inaccessible or that depended on paid
-third-party APIs failed the audit and were replaced from the audited pool. We
+estimate (Appendices~\ref{app:human-audit} and~\ref{app:recompute}). Papers whose artifacts proved
+inaccessible or that depended on paid third-party APIs failed the audit and
+were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
 GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
@@ -436,7 +439,7 @@ budgeting and scheduling decisions that real reproduction work demands.
 Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
-prompts, tool schemas, and session mechanics.
+prompts, the toolset, and session mechanics.
 
 \paragraph{Models.} We evaluate three models under identical conditions:
 DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
@@ -479,12 +482,13 @@ cell names, runs an experiment other than the one the claim is about,
 reports a shipped constant in place of the number it measured, spends its
 rounds on reading and probing until the allocation is cut off largely
 unspent, or ends with no measurement of the pinned quantity at all.
-Appendix~\ref{app:taxonomy} gives each mode's evidence signature and the
-transcript excerpts that anchor it.
+Appendix~\ref{app:taxonomy} gives each mode's evidence signature, with
+transcript excerpts for three of them.
 
 \begin{table}[h]
 \caption{Primary failure mode by tier over the dissected runs, using the
-vocabulary of Appendix~\ref{app:taxonomy}.}
+vocabulary of Appendix~\ref{app:taxonomy}. Raw dissection labels are remapped
+onto the nine slugs.}
 \label{tab:failure-modes}
 \begin{center}
 \small

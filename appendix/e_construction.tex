@@ -2,257 +2,58 @@
 \label{app:construction}
 
 % src: iclr2027_conference.tex:319-396 (subsec:construction, fig:funnel); notes/DATASET.md:114-441
-This section records the construction protocol summarized in
-Section~\ref{subsec:construction} and Figure~\ref{fig:funnel}, component by
-component, from the source corpus to the frozen splits.
+Figure~\ref{fig:funnel} summarizes the funnel this appendix records, from
+1,000 classified papers through a 200-paper audit pool to the 100-paper
+evaluation split.
 
 \subsection{Source corpus}
 \label{app:corpus}
 
-% src: src/reprocli_data/pipeline/index.py:1-4,18-24,49-75; notes/DATASET.md:114-137
+% src: src/reprocli_data/pipeline/index.py:1-4,18-24,49-75; src/reprocli_data/pipeline/sources.py:32-60,115; src/reprocli_data/pipeline/supplements.py:1-5,85-175,184-233; src/reprocli_data/pipeline/bundle.py:30-56,150-210; src/reprocli_data/build_dataset.py:119-160; notes/DATASET.md:114-146
 The corpus starts from the NeurIPS 2025 index of the \emph{ai-conferences}
 collection~\citep{neurips2025corpus}, which carries a pre-matched arXiv
-identifier per submission. The index stage keeps a row only when its
-\texttt{arxiv\_id} field is present and matches the arXiv identifier grammar,
-drops duplicates after stripping the version suffix, and parses the OpenReview
-forum identifier out of the submission URL. No stage of the pipeline pairs a
-paper with an arXiv entry by title, so a wrong-title pairing cannot enter the
-corpus. The retained rows are snapshotted to a CSV index that every later stage
-reads.
-
-% src: src/reprocli_data/pipeline/sources.py:32-60,115; src/reprocli_data/pipeline/supplements.py:1-5,85-175,184-233; src/reprocli_data/build_dataset.py:119-160; notes/DATASET.md:118-127
-Two fetch stages retrieve the artifacts. The sources stage downloads each
-e-print package from arXiv with eight workers, a global throttle of 0.25\,s,
-three retries, and a 60\,s timeout, treats an HTML error page as a failure, and
-unpacks tar, gzip, or raw payloads into one directory per paper. The
-supplements stage fetches every venue note once from the OpenReview API,
-caches them, matches a paper to its note by forum identifier alone, and
-downloads the first attachment whose field name contains \texttt{supplement}
-under a 0.75\,s throttle. Both stages write a manifest, so a rerun resumes
-instead of refetching.
-
-% src: src/reprocli_data/pipeline/bundle.py:30-56,150-210; notes/DATASET.md:128-146
-The bundle stage assembles one row per paper and writes the rows as
-zstd-compressed Parquet in 512\,MB shards. Every \texttt{.tex} file in the
-e-print carries its relative path, size, SHA-256, and decoded text, and a
-joined field concatenates them with per-file headers. Every supplement file
-carries its path, extension, size, SHA-256, and raw bytes, with decoded text
-attached for an extension allowlist that covers markup, configuration, and
-documentation formats. The snapshot holds 3,414 bundled papers, of which 3,410
-carry at least one \texttt{.tex} file and 1,547 carry a supplement, and that
-LaTeX-backed set is the sampling frame for everything downstream.
-
-% src: notes/DATASET.md:116-121; src/reprocli_data/build_dataset.py:119-147
-Listing~\ref{lst:corpus-build} is the command that produces the bundle. The
-four stages run in order and each one resumes from its own manifest.
-
-\begin{codebox}[lst:corpus-build]{bash}{Source-corpus build, all four stages}
-PYTHONPATH=src python3 -m reprocli_data.build_dataset \
-  --stages index,sources,supplements,bundle --data-dir data --workers 8
-\end{codebox}
-
-% src: notes/DATASET.md:161-168; src/reprocli_vllm/papers/supplements.py:5-6,41-96 at commit 96d7f7f^
-The classifier reads one rendered document per paper. It opens with a header
-carrying the arXiv identifier, the title, and the source URL, continues with an
-\texttt{OPENREVIEW\_SUPPLEMENT} block, and ends with the full LaTeX source. The
-supplement block states the download status and source URL, lists the complete
-file manifest, and inlines excerpts of up to 12 text files at up to 12,000
-characters each, ordering code, configuration, and README files first. In the
-classification run 492 of the 1,000 rendered prompts carried a supplement
-manifest and 274 carried inline excerpts. The excerpt filter admits markup,
-configuration, and data extensions and never source files, so a supplement's
-code is visible to the classifier only through the manifest of file names,
-while its README, configuration, and result files are read in full without any
-external lookup.
+identifier. A row is kept only when that identifier is well formed, so no
+stage pairs a paper with an arXiv entry by title. Two fetch stages retrieve
+each arXiv e-print package and each OpenReview supplement, matched by forum
+identifier. The bundle stage writes one row per paper with the decoded
+\texttt{.tex} text and the supplement files. The snapshot holds 3,414 bundled
+papers, of which 3,410 carry at least one \texttt{.tex} file and 1,547 carry a
+supplement.
 
 \subsection{Stage I: artifact-verified classification}
 \label{app:classifier}
 
-% src: src/reprocli_vllm/config/config.py:7-13; src/reprocli_serve/profiles.py:65-74; notes/DATASET.md:156-175,218-226,643-649
-The classifier is MiniMax-M2.7~\citep{minimax2026m2}, served on vLLM with
-4-way tensor parallelism and the \texttt{minimax\_m2} tool-call and reasoning
-parsers, at a served context length of 196,608 tokens. Each request is capped
-at 128,000 input tokens and 8,192 output tokens. The run classified 1,000
-papers sampled uniformly at random from the LaTeX-backed corpus on 2026-06-11,
-and it wrote three files per completed paper: the raw response, the extracted
-row, and the full tool conversation. The trace file is what makes every
-availability call in the pool re-openable by a human auditor.
+% src: src/reprocli_vllm/config/config.py:7-13,16,28-32; src/reprocli_serve/profiles.py:65-74; src/reprocli_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reprocli_vllm/runtime/loop_guards.py:1-66; src/reprocli_vllm/runtime/tool_loop.py:126-129,184-215; src/reprocli_vllm/runtime/run_health.py:17-27,29-46,57-70; src/reprocli_vllm/schema/output.py:8-20,92-154; prompts/prompt.txt:33-63,324-333; notes/DATASET.md:156-261
+MiniMax-M2.7~\citep{minimax2026m2}, served on vLLM at a 196,608-token context
+with requests capped at 128,000 input tokens, classified 1,000 papers sampled
+uniformly at random from the LaTeX-backed corpus on 2026-06-11. Each paper
+drives an agentic loop over ten tools, five over GitHub, three over Hugging
+Face, a URL fetch, and a supplement reader, and every artifact signal records
+how a tool established it. Three guards bound the loop, a 10-round cap, a
+repeated-call cutoff, and a context budget, all surfaced in the verification
+status. Only rows whose applicable signals were tool-established and whose loop
+exited naturally enter the pool. A final tool-free turn returns a strict JSON
+record carrying no score or tier, and the saved tool conversation makes every
+call re-openable. Listing~\ref{lst:classifier-prompt} is that prompt in full.
 
-% src: src/reprocli_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reprocli_vllm/config/config.py:11-13; notes/DATASET.md:177-201
-Each paper runs an agentic loop over ten function tools: five GitHub tools for
-repository search, code search, repository metadata, file contents, and
-repository trees, three Hugging Face tools for search, repository metadata, and
-repository trees, a direct URL fetch, and a reader for the bundled supplement
-files. A tool call times out at 20\,s and is retried once when the failure
-looks transient. A fetched page is cut to 24,000 characters at the source, and
-every tool result is trimmed to 40,000 characters before it enters the
-conversation. The caps keep one large repository tree from consuming the
-context the rest of the checks need.
-
-% src: src/reprocli_vllm/runtime/loop_guards.py:1-66; src/reprocli_vllm/runtime/tool_loop.py:126-129,184-215; src/reprocli_vllm/config/config.py:16,28-32; src/reprocli_vllm/config/cli_args.py:86-88; notes/DATASET.md:186-200
-Three guards bound the loop. The tool phase ends after 10 rounds with exit
-reason \texttt{round\_limit}, after an identical tool-and-argument pair is
-issued a third time with exit reason \texttt{repeated\_call\_cutoff}, and when
-the conversation reaches a conservative context budget of three characters per
-token against the input cap with exit reason \texttt{context\_budget}. A failed
-call is not counted toward the repeat limit, so retrying an error is never
-penalized. A loop that stops calling tools on its own exits \texttt{natural}.
-The context guard fires before vLLM would silently truncate the front of the
-prompt, which is the failure the budget was added to prevent.
-
-% src: prompts/prompt.txt:33-63,324-333; src/reprocli_vllm/schema/output.py:8-20; notes/DATASET.md:186-190,202-217
-The prompt makes tool verification mandatory. An artifact may not be counted
-available because the paper announces it, and each of the four signals carries
-a \texttt{verification} field recording how its boolean was established. The
-field takes one of five values. \texttt{tool\_verified} means a tool result
-directly supports the value, \texttt{tool\_searched\_not\_found} means a search
-was run and returned nothing so the value is false,
-\texttt{tool\_failed} means the calls that category needed kept erroring,
-\texttt{paper\_text\_only} means only the paper was read, and
-\texttt{not\_applicable} means the category does not exist for this paper. The
-distinction between a completed search and a broken tool is what lets the
-extraction code separate a verified row from an unusable one without trusting
-the model's own summary of its run.
-
-% src: src/reprocli_vllm/config/config.py:18-27; src/reprocli_vllm/schema/output.py:92-154; paper_latex/tables/gen_classifier_schema.py; notes/DATASET.md:198-201
-After the tool phase the runner issues one final request with the tools removed
-and a fixed closing message, and constrains the response to the strict JSON
-schema of Listing~\ref{lst:classifier-schema}. The schema admits no additional
-properties at any level and pins the enumerations for the paper kind, the match
-bar, the five verification states, and the four compute-estimate bases. Two
-fields are absent by design. The schema has no place for a score or a tier,
-because the extraction code computes both from the signal booleans.
-
-% src: paper_latex/prompts/classifier_schema.json, generated by paper_latex/tables/gen_classifier_schema.py from src/reprocli_vllm/schema/output.py:92-154
-\codefile[lst:classifier-schema]{json}{Response format the classifier's final turn is constrained to, dumped from the served schema}{prompts/classifier_schema.json}
-
-% src: prompts/prompt.txt:1-558; paper_latex/prompts/prompt_classifier.txt
-Listing~\ref{lst:classifier-prompt} is the classifier prompt in full. The
-\texttt{\{PAPER\_TEXT\}} placeholder is where the rendered document of
-Appendix~\ref{app:corpus} is substituted. The prompt states the deterministic
-score formula and forbids the model from emitting the score, spells out a
-search playbook of query variants followed by direct README, tree, and file
-inspection, and scopes every artifact boolean to the minimal reproducible
-experiment. Its per-signal rules are the
-operational definition of what the released availability signals mean, so a
-reviewer who disagrees with a call can read the rule the call was made under.
-
-% src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt
-\promptfile[lst:classifier-prompt]{Stage-I classifier prompt, complete file}{prompts/prompt_classifier.txt}
+% src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
+\promptfile[lst:classifier-prompt]{Stage-I classifier prompt, complete file, with \texttt{\{PAPER\_TEXT\}} replaced by a rendered document carrying a header, the OpenReview supplement manifest with inlined text excerpts, and the full \LaTeX{} source.}{prompts/prompt_classifier.txt}
 
 \subsection{Deterministic extraction}
 \label{app:extraction}
 
-% src: src/reprocli_vllm/schema/output.py:157-225; prompts/prompt.txt:390-420; notes/DATASET.md:228-251
-The score and the tier are computed in code from the four signal booleans.
-Missing code adds 2, missing weights adds 1, and missing data adds 3 unless the
-required dataset is a standard public benchmark, which suppresses that term.
-Score 0 is \texttt{Easy}, score 1 is \texttt{Medium}, and score 2 is
-\texttt{Hard}, the lockfile names for the Run, Retrain, and Reimplement tiers.
-Score 3 stays \texttt{Hard} when the data are available or standard and becomes
-\texttt{Artifact-Blocked} otherwise, and any higher score is
-\texttt{Artifact-Blocked}. A non-empirical paper kind overrides the tier to
-\texttt{Out-of-Scope-Non-Empirical} and clears the score, and a legacy
-model-reported score or tier that disagrees is preserved under a
-\texttt{reported\_} prefix and overwritten.
-
-% src: src/reprocli_vllm/schema/output.py:157-225
-\begin{codebox}[lst:score-tier]{Python}{Score and tier assignment (excerpt, lines 171--178 and 212--225 of \texttt{schema/output.py})}
-    score = 0
-    if not code_available:
-        score += 2
-    if not dataset_is_standard and not dataset_available:
-        score += 3
-    if not weights_available:
-        score += 1
-    return score, tier_for_score(score, dataset_available, dataset_is_standard)
-
-
-def tier_for_score(
-    score: int,
-    dataset_available: bool,
-    dataset_is_standard: bool,
-) -> str:
-    if score == 0:
-        return "Easy"
-    if score == 1:
-        return "Medium"
-    if score == 2:
-        return "Hard"
-    if score == 3 and (dataset_available or dataset_is_standard):
-        return "Hard"
-    return "Artifact-Blocked"
-\end{codebox}
-
-% src: src/reprocli_vllm/runtime/run_health.py:17-27,29-46,57-70; notes/DATASET.md:252-261
-A second field records whether the classification run itself is usable, and it
-is computed from loop telemetry. The model never reports it. A row is
-\texttt{degraded} when the estimated input length would have front-truncated
-the prompt, when the final JSON does not parse, or when a signal is missing or
-invalid, and a degraded row is never scored and never selected. A row is
-\texttt{incomplete} when the loop exited on one of the three guards, when an
-applicable signal is \texttt{tool\_failed} or \texttt{paper\_text\_only}, or
-when applicable signals exist and the loop made no tool calls at all. A row is
-\texttt{verified} when every applicable signal is \texttt{tool\_verified} or
-\texttt{tool\_searched\_not\_found}, the loop exited naturally, and nothing was
-degraded. Only verified rows are eligible for the pool, so an unverified
-availability call cannot reach the benchmark.
-
-% src: src/reprocli_vllm/audit/h100.py:1-95; notes/DATASET.md:262-272
-The compute estimate is audited arithmetically for every row. The extraction
-code recomputes the product of GPU count, wall-clock hours, and the
-H100-equivalent multiplier, and flags a mismatch when the recomputed value
-differs from the stated hours by more than 20\% of the larger of the two. It
-assigns a compute band from the ladder 0--8, 8--32, 32--96, and above 96
-H100-hours with the interval test of Listing~\ref{lst:h100-bands}, where a
-value on a boundary lands in the lower band because the first matching
-interval wins. It sets a human-review flag when the basis is
-\texttt{compute\_unspecified}, when the arithmetic cannot be recomputed, or
-when the recompute disagrees. The dominant error the flag catches is a stated
-figure that describes the full-paper experiment while the structured fields
-describe the scaled-down minimal experiment.
-
-% src: src/reprocli_vllm/audit/h100.py:9,39-68
-\begin{codebox}[lst:h100-bands]{Python}{Compute-band assignment and the arithmetic check (excerpt, lines 9 and 39--68 of \texttt{audit/h100.py})}
-MISMATCH_TOLERANCE = 0.2
-
-def h100_band(hours: Any) -> str | None:
-    value = as_number(hours)
-    if value is None or value < 0:
-        return None
-    for low, high, label in H100_BANDS:
-        if low <= value <= high:
-            return label
-    return OVER_CAP_BAND
-
-
-def recomputed_hours(estimate: dict[str, Any]) -> float | None:
-    gpu_count = as_number(estimate.get("gpu_count"))
-    wallclock = as_number(estimate.get("wallclock_hours"))
-    multiplier = as_number(estimate.get("h100_equivalent_multiplier"))
-    if gpu_count is None or wallclock is None or multiplier is None:
-        return None
-    if gpu_count <= 0 or wallclock < 0 or multiplier <= 0:
-        return None
-    return gpu_count * wallclock * multiplier
-
-
-def arithmetic_mismatch(hours: Any, recomputed: float | None) -> bool | None:
-    reported = as_number(hours)
-    if reported is None or recomputed is None:
-        return None
-    largest = max(abs(reported), abs(recomputed))
-    if largest == 0:
-        return False
-    return abs(reported - recomputed) / largest > MISMATCH_TOLERANCE
-\end{codebox}
-
-% src: prompts/prompt.txt:456-483
-The multiplier that converts reported GPU-hours into H100-hours comes from the
-fixed table the prompt carries, reproduced in
-Table~\ref{tab:h100-multipliers}. H100 SXM is the unit. A reader who disagrees
-with one paper's compute band can therefore redo the conversion from the
-paper's own reported hardware.
+% src: src/reprocli_vllm/schema/output.py:157-225; src/reprocli_vllm/audit/h100.py:1-95; prompts/prompt.txt:390-420,456-483; notes/DATASET.md:228-272
+Score and tier are computed in code from the four signal booleans. Missing code
+adds 2, missing weights adds 1, and missing data adds 3 unless the dataset is a
+standard public benchmark. Score 0 is \texttt{Easy}, 1 is \texttt{Medium}, and 2
+is \texttt{Hard}, the lockfile names for Run, Retrain, and Reimplement. Score 3
+stays \texttt{Hard} when the data are available or standard and is otherwise
+\texttt{Artifact-Blocked}, as is any higher score. The code recomputes GPU count
+times wall-clock hours times the multiplier of
+Table~\ref{tab:h100-multipliers}, flags a mismatch above 20\% of the larger
+value, assigns a band from the ladder 0--8, 8--32, 32--96, and above 96
+H100-hours, and raises a human-review flag when the basis is unspecified or the
+recompute disagrees.
 
 \begin{table}[t]
 \caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
@@ -279,72 +80,28 @@ H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
 \subsection{Stage II: compute capping and stratified selection}
 \label{app:selection}
 
-% src: src/reprocli_vllm/audit/select_pool.py:39-81; notes/DATASET.md:289-304
-Selection reads the extracted rows and admits a row only when its verification
-status is \texttt{verified}, its tier is one of the three evaluation tiers, and
-its audited compute is known and at or under the cap. Audited compute
-adjudicates the arithmetic audit in code. When the recompute flagged a
-mismatch, the multiplier is at or below 1.1, and a recomputed value exists, the
-recomputed product replaces the stated hours, and one hand-checked paper is
-exempted from that rule. A multiplier above 1.1 means the structured fields are
-themselves unusable, so the stated hours are kept. The human audit of
-Appendix~\ref{app:human-audit} is scoped to the artifact signals and does not
-re-judge bands. The selected split's estimates were re-derived afterwards in a
-separate pass (Appendix~\ref{app:recompute}).
-
-% src: notes/DATASET.md:300-304,360-372; src/reprocli_vllm/audit/select_pool.py:40
-Of the 620 verified rows in the three evaluation tiers, 38 sat above the
-compute ceiling of the selection pass and were excluded, leaving 582 rows
-entering selection. That ceiling was higher than the benchmark's cap, so 17
-rows of the pool sit above 96 H100-hours. The cap was set to 96 on 2026-07-09,
-which replaced the three evaluation-split papers above it
-(Table~\ref{tab:swaps}), and 96 is the value the selection code carries.
-
-% src: src/reprocli_vllm/audit/select_pool.py:83-134; notes/DATASET.md:305-319
-The selection rule itself is deterministic. The pool target is split equally
-across the three tiers by largest remainder, the per-tier target is apportioned
-across the compute bands by fixed weights, and each band is filled cheapest
-first with the arXiv identifier breaking ties. Bands are processed from most
-expensive to cheapest so that a band that runs out of stock cascades its
-deficit into the next cheaper band of the same tier and never across tiers.
-The corpus is bottom-heavy, so a naive cheapest-first fill would collapse the
-compute axis and uniform band quotas would be unaffordable, and cheapest-first
-inside fixed quotas is the exact greedy solution to minimizing total
-H100-hours subject to those quotas and the cap.
-
-% src: src/reprocli_vllm/audit/select_pool.py:94-109
-\begin{codebox}[lst:select-tier]{Python}{Band fill inside one tier (excerpt, lines 94--109 of \texttt{audit/select\_pool.py})}
-def select_tier(rows: list[dict[str, Any]], target: int) -> list[dict[str, Any]]:
-    """Fill band quotas, refilling each deficit from the next cheapest band."""
-    by_band: dict[str, list[dict[str, Any]]] = {b: [] for b in BAND_ORDER}
-    for row in rows:
-        by_band[row["selection_band"]].append(row)
-    for bucket in by_band.values():
-        bucket.sort(key=lambda r: (r["audited_h100_hours"], r["custom_id"]))
-
-    quotas = largest_remainder(BAND_WEIGHTS, target)
-    selected: list[dict[str, Any]] = []
-    deficit = 0
-    for band in reversed(BAND_ORDER):  # most expensive first so refills cascade down
-        want = quotas[band] + deficit
-        take = by_band[band][:want]
-        selected.extend(take)
-        deficit = want - len(take)
-\end{codebox}
+% src: src/reprocli_vllm/audit/select_pool.py:39-134; notes/DATASET.md:289-336,360-372
+Selection admits a row only when its verification status is verified, its tier
+is an evaluation tier, and its audited compute is known and under the cap.
+Audited compute takes the recomputed product when the arithmetic audit flagged a
+mismatch and the multiplier is at or below 1.1, and the stated hours otherwise.
+Of the 620 verified rows in those tiers, 38 sat above the ceiling of the
+selection pass, leaving 582 entering selection. That ceiling exceeded the
+benchmark's cap, so 17 pool rows sit above 96 H100-hours. The cap was set to 96
+on 2026-07-09, replacing the three evaluation-split papers above it
+(Table~\ref{tab:swaps}). The pool target is split equally across tiers by
+largest remainder, apportioned across compute bands by fixed weights, and filled
+cheapest first with the arXiv identifier breaking ties, most expensive band
+first so a deficit cascades down inside the tier.
+Table~\ref{tab:audit-pool} is the pool the rule produced.
 
 % src: notes/DATASET.md:320-336
-Table~\ref{tab:audit-pool} is the pool the rule produced at a target of 200,
-selected with the command \texttt{python -m
-reprocli\_vllm.audit.select\_pool --total 200}. The expensive bands were taken
-whole, which is why their deficits cascaded downward and the two cheapest bands
-hold most of the pool. The pool is twice the size of the final benchmark, which
-absorbs the attrition of the human audit and leaves a replacement reserve in
-every tier.
-
 \begin{table}[t]
 \caption{The 200-paper audit pool by tier and compute band, with the count of
 rows carrying a compute-review flag, the count whose hours the recompute
-adjudicated, and the summed audited compute.}
+adjudicated, and the summed audited compute. The pool is twice the size of the
+final benchmark, which absorbs the attrition of the human audit and leaves a
+replacement reserve in every tier.}
 \label{tab:audit-pool}
 \begin{center}
 \small
@@ -365,139 +122,53 @@ Total & 200 & 50 & 97 & 36 & 17 & 50 & 13 & 5,905 \\
 \subsection{Stage III: human audit}
 \label{app:human-audit}
 
-% src: tools/verify_app/README.md:1-16,36-60; notes/DATASET.md:337-359
-The human audit runs in a static review app backed by a shared queue. A
-reviewer types a name, receives the next unlabelled paper, and works through
-four steps that unlock in order: released code, released data, released
-weights, and whether the required dataset is a standard public benchmark. Each
-step shows the model's verdict and its evidence, offers search shortcuts, and
-takes agree, disagree, or unsure together with an optional link and note. A
-completed paper leaves everyone's queue, so no paper is audited twice by
-accident and no reviewer self-selects. Titles, authors, years, and abstracts
-shown in the app are fetched from authoritative metadata keyed by arXiv
-identifier, so the header a reviewer reads never comes from a model
-conversation.
-
-% src: tools/verify_app/README.md:52-60,72-82; notes/DATASET.md:347-359
-The reviewer never types a score. The app recomputes the score from the
-reviewer's four verdicts with the extraction formula of
-Appendix~\ref{app:extraction} and displays it next to the model's score, and
-compute bands are not re-judged in the app. Every behavioural event is logged,
-including the verdict and how it was entered, which search shortcuts were
-clicked, whether the model's evidence was opened before answering, and an
-activity-aware stopwatch of seconds spent on the paper. Audit effort and
-model-reviewer agreement are therefore measurable quantities.
-
-% src: tools/rebuild_splits_from_app.py:1-22,110-165
-A reviewer verdict overrides the model's value one signal at a time. Agreement
-keeps the model's boolean, disagreement flips it, and an unsure or absent
-verdict keeps it, with a tie falling back to the model. Score and tier are then
-recomputed from the corrected booleans with the same deterministic scorer, so a
-single corrected signal can move a paper to another tier and therefore to
-another stratification cell. Overridden signals carry a marker in their
-evidence string recording the human correction.
-
-% src: src/reprocli_openai/recheck.py:1-12,30-45,89-95,118-125,247-266; prompts/prompt_openai_websearch.txt:29-60,239-330; diff against prompts/prompt.txt
-The pool rows most exposed to a false negative are the Reimplement-tier rows,
-whose tier rests on the finding that no code was located. Those rows were
-re-checked independently with a second model, GPT-5.5, run with web search
-enabled against the same strict output schema. Its score, tier, and compute
-sections are identical to Listing~\ref{lst:classifier-prompt}, and its artifact
-rules differ only where they name the search channel. The recheck recomputes the
-score and tier from the returned signals with the same deterministic scorer, so
-a paper whose code the recheck locates leaves the Reimplement tier before any
-human sees it. The reviewers saw the recheck-updated values in the app.
-
-% src: tools/rebuild_splits_from_app.py:68-93; iclr2027_conference.tex:387-390; notes/DATASET.md:363-366
-Papers whose minimal experiment calls a paid or closed model API are dropped
-from the pool before selection. The 15 papers in that list were adjudicated
-one by one from the full experiment recipe and the reproduction task, so a
-GitHub organization named after an API vendor or an open-weights model of the
-same family does not trigger the rule. The exclusion keeps the cost of a
-reproduction bounded and denominated in GPU-hours, and it removes a class of
-failure that would otherwise depend on a third party's billing.
+% src: tools/verify_app/README.md:1-16,36-82; tools/rebuild_splits_from_app.py:110-165; src/reprocli_openai/recheck.py:1-12,30-45,89-95,118-125,247-266; notes/DATASET.md:337-359
+A human opened the evidence behind every availability call in the pool,
+recording a verdict on each of the four signals. The
+reviewer never types a score. A review form recomputes the score from the
+verdicts with the formula of Appendix~\ref{app:extraction}, and the audit does
+not re-judge compute bands. A verdict overrides the model one signal at a time,
+disagreement flips the boolean and anything else keeps it, and the
+deterministic scorer then recomputes score and tier. Reimplement-tier rows,
+whose tier rests on no code being located, were re-checked with GPT-5.5 under
+web search, and on 2026-07-13
+each claimed wall in the tier was put to one adversarial prober and two
+independent refuters.
 
 \subsection{From the audited pool to the frozen splits}
 \label{app:splits}
 
-% src: tools/rebuild_splits_from_app.py:1-22,44-53,166-205; notes/DATASET.md:360-372
-The split builder rebuilds both splits from the audited values. It reads the
-model values the reviewers actually saw, applies the human verdicts, recomputes
-score and tier with the deterministic scorer, drops the paid-API papers, and
-then runs the same selection rule as Stage II over what remains. That carves
-the 100-paper evaluation split stratified 34/33/33 across the three tiers and
-band-stratified inside each tier. Everything else on a row is preserved from
-the audit pool verbatim, including the pinned match target, the verified links,
-and the compute fields.
-
-% src: tools/rebuild_splits_from_app.py:172-190; notes/DATASET.md:360-366; paper_latex/appendix/f_dataset.tex:1-12
-The development split is carved from what the evaluation split leaves behind.
-The builder takes the five cheapest eligible papers per tier that are not in
-the evaluation split, which makes the two splits disjoint by construction. One
-development row was dropped on 2026-06-26 over a reviewer disagreement about
-released code, leaving 14. There is no training split, and the released
-artifact publishes per-paper metadata and links rather than paper text, as
-Appendix~\ref{app:dataset-schema} describes.
+% src: tools/rebuild_splits_from_app.py:1-22,44-93,166-205; notes/DATASET.md:360-372
+The split builder applies the human verdicts to the model values the reviewers
+saw, recomputes score and tier, drops the papers whose minimal experiment calls
+a paid or closed model API, and runs the Stage II selection rule over what
+remains. The development split is then taken from the cheapest eligible papers
+each tier has left, so the two splits are disjoint by construction.
+Appendix~\ref{app:dataset-schema} gives the split sizes.
 
 \subsection{Compute re-estimation of the selected split}
 \label{app:recompute}
 
-% src: tasks/h100-recompute-eval100.md:1-12,25-45
-After the split shipped, the H100-hour figure of every evaluation row was
-re-derived in a second pass, completed on 2026-07-01. The pass fixes what the
-figure means. It is the compute of the minimal reproducible experiment, the
-cheapest run that establishes the central claim, which is evaluation-only when
-the paper's weights are released and the smallest training run that shows the
-effect otherwise, with no allowance for debugging or tuning time. Each row was
+% src: tasks/h100-recompute-eval100.md:1-12,25-60,199-236
+After the split shipped, every evaluation row's H100-hour figure was re-derived
+in a pass completed on 2026-07-01. The figure is the compute of the minimal
+reproducible experiment, evaluation-only when the weights are released and
+otherwise the smallest training run that shows the effect. Each row was
 recomputed as GPU count times wall-clock hours times the multiplier of
-Table~\ref{tab:h100-multipliers}, where wall-clock hours is the elapsed time
-and a source that reports total GPU-hours is divided by the GPU count first.
-
-% src: tasks/h100-recompute-eval100.md:47-60,199-236; iclr2027_conference.tex (AI use statement)
-Six error classes were checked on every row: a total GPU-hour figure
-multiplied by the GPU count a second time, a unit error, a multiplier that does
-not match the stated hardware, hours padded with non-compute work, a basis
-whose own numbers contradict its hours, and an estimate scoped to the whole
-paper instead of the minimal experiment. The pass ran as a model recompute
-stage followed by an adversarial verification stage and an adjudication stage
-for contested rows, each bound to a structured output schema, and the AI use
-statement records that every extracted field was reviewed by an author before
-the freeze. Only rows whose figure moved were rewritten, and on those rows the
-audited hours, the estimate and its basis, the recomputation fields, and the
-two band fields were replaced together while every other field was preserved.
-
-% src: tasks/h100-recompute-eval100.md:4-12
-Ninety of the 100 rows moved. The split's audited total fell from 4,426 to
-1,922 H100-hours and the median row from 35 to 2.5 hours, which is the state
-the cap change of 2026-07-09 and the later substitutions then acted on. Four
-rows whose released weights are only the base model were kept as small
-training runs, because the paper's contributed artifact was never released and
-an evaluation-only experiment cannot test the claim.
+Table~\ref{tab:h100-multipliers}, dividing a reported total GPU-hour figure by
+the GPU count first. Ninety of the 100 rows moved, the audited total fell from
+4,426 to 1,922 H100-hours, and the median row from 35 to 2.5 hours. Four rows
+whose released weights are only the base model were kept as small training
+runs.
 
 \subsection{Post-ship substitutions}
 \label{app:substitutions}
 
-% src: notes/Reports/reprobench_substitution_log.md:14-24; tasks/h100-recompute-eval100.md:117-136
+% src: notes/Reports/reprobench_substitution_log.md:14-24,140-160; tasks/h100-recompute-eval100.md:117-160
 A paper leaves the evaluation split only when its central claim is
-unreproducible in the sandbox by construction. The admitted reasons are an
-observed permission wall, an anchor artifact that was never released, a
-released artifact that contradicts the paper it came from, a paid or closed API
-inside the minimal experiment, and compute that provably exceeds the tier
-budget. A model failure is never grounds for a drop. Every drop is probed on
-the target host first, and the Reimplement tier was adjudicated prospectively on
-2026-07-13 with one adversarial prober and two independent refuters for each
-claimed wall. A wall that is specific to our harness, such as a dependency with
-no aarch64 build, is recorded with a return caveat so the paper comes back if
-the harness changes architecture.
-
-% src: notes/Reports/reprobench_substitution_log.md:20-24,140-160; tasks/h100-recompute-eval100.md:137-160
-A dropped row is replaced by the deterministic next-cheapest audited pool row
-of the same tier, cheapest first with the arXiv identifier breaking ties, so
-the split holds at 100 papers and at 34/33/33. Every candidate is host-probed
-before insertion, and four candidates were rejected at that step for a paid-API
-dependency the pool signals had not captured. A replacement enters carrying a
-provisional match target flagged for review. Table~\ref{tab:swaps} lists the
-membership changes by date and reason class.
+unreproducible in the sandbox by construction. A model failure never removes a
+paper. The replacement is drawn as the next-cheapest audited pool row of the
+same tier (Table~\ref{tab:swaps}).
 
 \begin{table}[t]
 \caption{Membership changes to the evaluation split since the initial ship on
@@ -524,10 +195,7 @@ Date & Tier & Out & In & Reason class \\
 
 % src: notes/DATASET.md:377-392; tasks/h100-recompute-eval100.md:163-198; notes/Reports/reprobench_substitution_log.md:130-160
 After the 2026-07-14 change the evaluation split holds 34 Run, 33 Retrain, and
-33 Reimplement papers, the Reimplement tier spreads 16/9/8 across the three
-compute bands, and the split sums to about 1,154 H100-hours. Because every
-removal was adjudicated against a host probe and every insertion was probed
-before it entered, an agent working on the frozen split meets artifacts the
-probe found reachable. A wall an agent reports during a run is therefore a
-claim the auditor checks against the evidence rather than a property of the
-dataset.
+33 Reimplement papers, the Reimplement tier spreads 16/9/8 across the compute
+bands, and sums to about 1,154 H100-hours. Every removal and insertion was
+host-probed, so an agent working on the frozen split meets artifacts the probe
+found reachable.
