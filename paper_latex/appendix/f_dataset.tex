@@ -12,8 +12,12 @@ papers at Run tier, 33 at Retrain, and 33 at Reimplement. The
 \texttt{validation} split holds the 14-paper development set and carries
 \texttt{split="dev"}, 5 at Run, 4 at Retrain, and 5 at Reimplement. No arXiv
 identifier appears in both splits. Each row is one paper with 25 top-level
-fields. Listing~\ref{lst:example-row} shows one row in full, and
-Listing~\ref{lst:load-dataset} loads both splits.
+fields. Listing~\ref{lst:example-row} shows the SharpZO row of
+Section~\ref{subsec:task} (score 0, Run tier, 0.07 H100-hours, band
+\texttt{0-8}) with its long text fields truncated and every other field
+verbatim. Listing~\ref{lst:load-dataset} loads both splits, which return
+metadata and links and no paper text, with the dataset identifier masked for
+review.
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 \begin{table}[t]
@@ -130,14 +134,7 @@ released checkpoint.
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl (row 2506.20990),
 %      paper_latex/tables/gen_example_row.py
-\codefile[lst:example-row]{json}{One evaluation row, arXiv 2506.20990, the
-SharpZO running example of Section~\ref{subsec:task}. The row scores 0, which
-places the paper at Run tier, and its audited estimate of 0.07
-H100-hours places it in the \texttt{0-8} band. The prose fields
-\texttt{central\_claim}, \texttt{claim\_evidence}, \texttt{mre\_config},
-\texttt{agent\_task}, the two basis strings, and the four signal evidence
-strings are truncated for length. Every other field is
-verbatim.}{prompts/example_row.json}
+\codefile[lst:example-row]{json}{One evaluation row (2506.20990)}{prompts/example_row.json}
 
 % src: rubric_audit.md:35-86 (criterion C1), outputs/v6/app_rebuild/eval_100.jsonl,
 %      outputs/v6/app_rebuild/splits_summary.json,
@@ -151,7 +148,7 @@ estimate matches within the authors' stated tolerance, or within 5\% relative
 when the paper states none (Listing~\ref{lst:rubric-text}).
 
 % src: notes/DATASET.md 8 (last paragraph), outputs/v6/app_rebuild/eval_100.jsonl
-\begin{codebox}[lst:load-dataset]{Python}{Loading the two splits and reading one pinned match target. The rows carry metadata and links, so a load returns the fields of Table~\ref{tab:schema-toplevel} and no paper text. A replicator fetches the paper and the artifacts from the URLs in \texttt{verified\_links}. The dataset identifier is masked for anonymous review.}
+\begin{codebox}[lst:load-dataset]{Python}{Loading the splits}
 from datasets import load_dataset
 
 eval100 = load_dataset("<anonymized>/reclaim", split="test")

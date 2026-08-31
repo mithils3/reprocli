@@ -5,24 +5,24 @@
 % src: src/reprocli_repro/transcript.py:22-26,88-96,105-107,128-155; src/reprocli_repro/compact.py:57-61,81-82,90-137;
 % src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
 % src: src/reprocli_repro/live_log.py:71-75; src/reprocli_vllm/vllm/io.py (initial_messages)
-The model reads two fixed strings, one rendered template, and a handful of
-short strings the harness inserts between turns. The system message of
-Listing~\ref{lst:system-message} opens the conversation at index 0, where
-compaction never reaches it, and the task prompt follows as the first user
-turn. The final-turn instruction of Listing~\ref{lst:final-message} is appended
-on the closing pass, after the tools are removed and the response is
-constrained to the report schema of Appendix~\ref{app:report-format}.
-Listings~\ref{lst:status-line} to~\ref{lst:tool-errors} give the strings the
-harness inserts during an episode.
+Listing~\ref{lst:harness-messages} gives every fixed string the model reads:
+the system message at index 0, where compaction never reaches it, the
+final-turn instruction appended after the tools are removed and the response
+is constrained to the report schema of Appendix~\ref{app:report-format}, and
+the five strings inserted during an episode (status line each round, budget
+note, length nudge after an output-cap hit, elision placeholder, tool-error
+fields). The task prompt follows the system message as the first user turn
+and is Listing~\ref{lst:task-prompt}.
 
-\begin{promptbox}[lst:system-message]{System message (\texttt{cli\_args.py}, \texttt{REPRO\_SYSTEM\_MESSAGE})}
+
+\begin{promptbox}[lst:harness-messages]{Harness messages}
+=== SYSTEM MESSAGE (index 0) ===
 You are a reproduction agent. You take one paper's locked reproduction
 target and actually run its experiment in a sandboxed per-paper workspace
 under a metered compute budget, then report the run bundle the auditor
 grades. Spend budget deliberately; write durable evidence as you go.
-\end{promptbox}
 
-\begin{promptbox}[lst:final-message]{Final-turn instruction, which enumerates the report fields, requires an evidence citation for every measurement, and tells the agent the auditor assigns the verdict (\texttt{cli\_args.py}, \texttt{REPRO\_FINAL\_NO\_TOOLS\_MESSAGE})}
+=== FINAL-TURN INSTRUCTION ===
 The tool phase is over. Return your final report now as a single JSON
 object: the claim you targeted, what you ran, the exact scoring command,
 your measurement(s) (metric, observed value, the paper's reference value,
@@ -30,37 +30,32 @@ scope) each citing the evidence file(s) the number came from, what you
 changed, any blockers, and your honest self-assessment. This is your
 account of the run, not the verdict -- the auditor grades it. Return only
 the JSON object.
-\end{promptbox}
 
-\begin{promptbox}[lst:status-line]{Per-round status line, appended to every tool-bearing request and discarded afterwards, shown as its source format string (\texttt{transcript.py}, \texttt{round\_status\_message}, \texttt{sweep\_wall\_note}). The wall countdown appears only when the sweep batch script exported an absolute deadline}
+=== STATUS LINE (appended each round) ===
 Tool round {used}/{max_rounds} · {left} left
 Tool round {used}/{max_rounds} · {left} left · sweep wall ~{h}h{m:02d}m left
 Tool round {used}/{max_rounds} · {left} left · sweep wall EXPIRED — the job hosting this run is being killed; finalize immediately
-\end{promptbox}
 
-\begin{promptbox}[lst:budget-note]{Note prepended to the final-turn instruction when an episode ends on an exhausted compute budget or a full context (\texttt{transcript.py}, \texttt{CONTEXT\_BUDGET\_NOTE})}
+=== BUDGET NOTE (prepended to the final turn after an exhausted budget or full context) ===
 The conversation hit its context budget, so the tool phase ended early.
 Finalize from the evidence already written to the run directory rather
 than re-running tools.
-\end{promptbox}
 
-\begin{promptbox}[lst:length-nudge]{Nudge sent after a turn that hit the output-token cap before emitting a tool call, at most twice per episode (\texttt{transcript.py}, \texttt{length\_nudge\_message})}
+=== LENGTH NUDGE (after a turn that hit the output cap, at most twice) ===
 Your previous turn hit the output-token limit before emitting any tool
 call, so it was cut off mid-stream and trimmed above. Do not re-plan from
 scratch. Take the next concrete action with a tool call now, and keep
 reasoning brief.
-\end{promptbox}
 
-\begin{promptbox}[lst:elided]{Placeholder left in an elided tool result, naming the untruncated transcript log written beside the evidence directory (\texttt{compact.py}, \texttt{\_placeholder}); the run-directory path is abbreviated}
+=== ELISION PLACEHOLDER (left in a compacted tool result) ===
 [elided {n_chars} chars — on disk at <run_dir>/agent.full.log]
-\end{promptbox}
 
-\begin{schemabox}[lst:tool-errors]{Tool error and truncation fields (\texttt{tools/\_\_init\_\_.py}, \texttt{\_run\_tool\_call}; \texttt{result\_limits.py}, \texttt{TRUNCATION\_NOTE}). An unknown tool name returns the advertised names, a handler exception returns its type and message, a retried call is marked, and a clamped result carries a truncation note}
+=== TOOL ERROR AND TRUNCATION FIELDS ===
 {"ok": false, "error": "Unknown tool: <name>. Available tools: <names>"}
 {"ok": false, "tool": "<name>", "error": "<ExceptionType>: <message>"}
 {"ok": false, "retried": true, ...}
 {..., "truncated": true, "truncation_note": "Result truncated to fit the tool budget; request a specific file path, path_filter, or smaller range for more."}
-\end{schemabox}
+\end{promptbox}
 
 % src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
 % src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165,299-312;
@@ -85,4 +80,4 @@ model's behaviour, a push toward more GPUs and a budget-fraction test for
 under-running. The template has not changed since 2026-07-11.
 Listing~\ref{lst:task-prompt} is the template in full.
 
-\promptfile[lst:task-prompt]{Task prompt template, rendered per paper by substituting the highlighted \texttt{\{PLACEHOLDER\}} fields from the paper's dataset row}{prompts/prompt_reproduce.txt}
+\promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}

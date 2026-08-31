@@ -126,7 +126,7 @@ and forces the final report pass. Step output streams write-through to a
 numbered log under \texttt{evidence/}, so a step killed at the wall leaves its
 output on disk. Listing~\ref{lst:slurm-lifecycle} is the allocation lifecycle.
 
-\begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle, sanitized (assembled by \texttt{slurm.py} \texttt{build\_acquire} / \texttt{build\_srun})}
+\begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle}
 # acquire once; returns the instant the allocation is granted, then stays up
 $ salloc --no-shell -A <account> -p <partition> --nodes=1 \
       --gpus=<k> --mem=<100*k>G --cpus-per-gpu=60 --time=<minutes>
