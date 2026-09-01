@@ -7,21 +7,24 @@
 We assign a run's primary failure mode in a transcript dissection that runs
 after the audit and separately from it. The dissection reads the run's ordered
 event transcript, the final report the agent emitted, and the audit verdict,
-rationale, and flags carried on the run row. It assigns one primary mode per
-run. The modes are not mutually exclusive as mechanisms. The label records the
-dominant one. A dissection never edits audit scores, verdicts, or flags. A mode label therefore never moves a grade. No dissection carries an
-availability-wall label. Every artifact in the frozen benchmark is retrievable
-by host probe. Where a report asserts otherwise, we relabel the run from its own evidence. We add a new mode to the taxonomy only on evidence from at least
-two runs.
+rationale, and flags recorded on the run row, and it assigns exactly one
+primary mode per run. The modes are not mutually exclusive as mechanisms, so
+the label records the dominant one. A dissection never edits audit scores,
+verdicts, or flags, and a mode label therefore never moves a grade. No
+dissection carries an availability-wall label. Every artifact in the frozen
+benchmark is retrievable by host probe, and where a report asserts otherwise
+we relabel the run from its own evidence. We add a new mode to the taxonomy
+only on evidence from at least two runs.
 
 \subsection{The failure modes}
 
 % src: .claude/skills/analyze-sweep/SKILL.md:74-79; notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:118; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:155-166,231-240
-The taxonomy has nine modes with fixed names. Before we count anything in a
-table that pools sweeps, we remap retired names, underscore spellings, and
-sweep-local labels onto the nine mode names. The caption of that table states
-that we did so. The band column reports a tendency of the rubric text. The auditor does not apply the band column as a rule. The auditor grades from the run's evidence
-and has no access to the mode label.
+The taxonomy has nine modes with fixed names (Table~\ref{tab:taxonomy}). Before
+we count anything in a table that pools sweeps, we remap retired names,
+underscore spellings, and sweep-local labels onto the nine mode names, and the
+caption of that table says so. The band column records where the rubric text
+says a mode tends to score. The auditor grades from the run's evidence, has no
+access to the mode label, and does not apply the band column as a rule.
 
 % Row sources for Table~\ref{tab:taxonomy}:
 %   reproduced-clean            -> SKILL.md:74; notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:380-383; rubric_audit.md:173-183,234
@@ -36,9 +39,9 @@ and has no access to the mode label.
 \begingroup
 \footnotesize
 \begin{longtable}{@{}p{2.9cm}p{3.85cm}p{4.15cm}p{1.1cm}@{}}
-\caption{The failure modes. We assign one primary mode per run. Band entries
-give the score of Appendix~\ref{app:rubric} that the mode tends to fall in
-where the frozen rubric text says so, and read -- where no source states
+\caption{The nine failure modes. We assign one primary mode per run. The band
+column gives the score of Appendix~\ref{app:rubric} the mode tends to fall in
+where the frozen rubric text says so, and reads -- where no source states
 one.}
 \label{tab:taxonomy}\\
 \toprule
@@ -125,11 +128,12 @@ value for the pinned metric anywhere in the run bundle. &
 \subsection{Failure taxonomy examples}
 
 % src: notes/Analysis/2026-08-16 Hard Sweep 2936132 (MiniMax, pinned Sonnet).md:125-147; notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56); notes/Analysis/hard-sweep-2936132-minimax-runs.json (model, batch_id)
-The signature of \texttt{reimplement-without-validating} is an anchor the
-paper supplies that the run never checks against. On arXiv paper 2510.08177 the
-agent wrote its own version of the paper's baseline and scored it below the
-value the paper reports for that same baseline. The agent continued to build on its own version. It recorded the disagreement in its own closing numbers and never
-returned to the comparison.
+The signature of \texttt{reimplement-without-validating} is a reference the
+paper supplies that the run never checks against. On arXiv paper 2510.08177
+the agent wrote its own version of the paper's baseline, scored it below the
+value the paper reports for that same baseline, and then kept building on its
+own version. The disagreement is visible in the
+agent's own closing numbers, and the run never returned to it.
 
 \begin{agentturn}{Round 56, agent. Paper 2510.08177, MiniMax-M2.7, sweep 2936132.}
 Best All: 40.82\% (ep 20)\\
@@ -141,33 +145,35 @@ Gap vs target: -25.08\%
 
 % src: notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56)
 The third and fourth lines are the paper's own baseline and the agent's
-reimplementation of it. The run kept that gap to the end.
+reimplementation of it. That gap persisted to the end of the run.
 
 % src: notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:176-181; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2505.10039-47d383, round 6); notes/Analysis/hard-sweep-2918306-dsv4-runs.json (model, batch_id)
-The signature of \texttt{scope-substitution} is a round where the agent names
-the pinned arm and chooses a different one. On arXiv paper 2505.10039 the
-agent made that choice at round 6, before it wrote any code, and gave
-implementation cost as the reason. The agent never measured the pinned arm.
-The graded number came from the arm the agent chose instead.
+The signature of \texttt{scope-substitution} is a round in which the agent
+names the pinned arm and then chooses a different one. On arXiv paper
+2505.10039 the agent made that choice at round 6, before writing any code,
+giving implementation cost as the reason. It never measured the pinned arm,
+and the graded number came from the arm it chose instead.
 
 \begin{agentturn}{Round 6, agent. Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
 % src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2505.10039-47d383, round 6)
-Neither arm had released code, so either arm required a port. The agent chose
-between them by implementation effort.
+Neither arm had released code, so either arm required a port, and the agent
+chose between them on implementation effort.
 
 % src: notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:313-321; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
 The signature of \texttt{environment-fights} is a version incompatibility in
-the released stack that persists until it corrupts the run's own data. On
-arXiv paper 2511.20906 a robosuite and mujoco version pair silently broke the
-released absolute-action dataset converter. The agent trained on the corrupted
-output before it discovered the break.
+the released stack that persists long enough to corrupt the run's own data. On
+arXiv paper 2511.20906 an incompatible pair of robosuite and mujoco versions
+silently broke the released absolute-action dataset converter, and the agent
+had already trained on the corrupted output by the time it discovered the
+break.
 
 \begin{agentturn}{Round 233, agent. Paper 2511.20906, DeepSeek-V4-Flash-0731, sweep 2918306.}
 This is the smoking gun: **the saved abs dataset is broken** -- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 
 % src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
-The defect lies in the released code on this host. The run exhausted its budget on that defect.
+The defect is in the released code as it runs on this host, and the run
+exhausted its budget on it.

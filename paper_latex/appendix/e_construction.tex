@@ -2,40 +2,44 @@
 \label{app:construction}
 
 % src: iclr2027_conference.tex:319-396 (subsec:construction, fig:funnel); notes/DATASET.md:114-441
-Figure~\ref{fig:funnel} summarizes the funnel this appendix records, from
-1,000 classified papers through a 200-paper audit pool to the 100-paper
-evaluation split.
+This appendix records the construction funnel summarized in
+Figure~\ref{fig:funnel}, from 1,000 classified papers through a 200-paper audit
+pool to the 100-paper evaluation split.
 
 \subsection{Source corpus}
 \label{app:corpus}
 
 % src: src/reprocli_data/pipeline/index.py:1-4,18-24,49-75; src/reprocli_data/pipeline/sources.py:32-60,115; src/reprocli_data/pipeline/supplements.py:1-5,85-175,184-233; src/reprocli_data/pipeline/bundle.py:30-56,150-210; src/reprocli_data/build_dataset.py:119-160; notes/DATASET.md:114-146
 The corpus starts from the NeurIPS 2025 index of the \emph{ai-conferences}
-collection~\citep{neurips2025corpus}, which carries a pre-matched arXiv ID. We
-keep a row only when that ID is well formed. No stage pairs a paper with an
-arXiv entry by title. Two fetch stages retrieve each arXiv source package and
-each OpenReview supplement, matched by forum identifier. The bundle stage
-writes one row per paper with the decoded \texttt{.tex} text and the
-supplement files. The snapshot holds 3,414 bundled papers, of which 3,410
-carry at least one \texttt{.tex} file and 1,547 carry a supplement.
+collection~\citep{neurips2025corpus}, in which each entry already carries a
+matched arXiv ID. We keep a row only when that ID is well formed, and at no
+stage do we pair a paper with an arXiv entry by title. Two fetch stages then
+retrieve each paper's arXiv source package and its OpenReview supplement, the
+latter matched by forum identifier, and the bundle stage writes one row per
+paper containing the decoded \texttt{.tex} text and the supplement files. The
+resulting snapshot holds 3,414 bundled papers, of which 3,410 have at least one
+\texttt{.tex} file and 1,547 have a supplement.
 
 \subsection{Stage I: artifact-verified classification}
 \label{app:classifier}
 
 % src: src/reprocli_vllm/config/config.py:7-13,16,28-32; src/reprocli_serve/profiles.py:65-74; src/reprocli_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reprocli_vllm/runtime/loop_guards.py:1-66; src/reprocli_vllm/runtime/tool_loop.py:126-129,184-215; src/reprocli_vllm/runtime/run_health.py:17-27,29-46,57-70; src/reprocli_vllm/schema/output.py:8-20,92-154; prompts/prompt.txt:33-63,324-333; notes/DATASET.md:156-261
-We sampled 1,000 papers uniformly at random from the corpus rows that carry
-\LaTeX{} source. MiniMax-M2.7~\citep{minimax2026m2} classified them on 2026-06-11. We served it
-on vLLM at a 196,608-token context with requests capped at 128,000 input
-tokens. Each paper drives an agent loop over ten tools, five
-over GitHub, three over Hugging Face, a URL fetch, and a supplement reader.
-Every artifact signal records how a tool established it. Three guards bound
-the loop, a 10-round cap, a repeated-call cutoff, and a context budget. The verification status records each one. Only rows whose applicable signals were
-tool-established and whose loop exited naturally enter the pool. A final
-tool-free turn returns a strict JSON record carrying no score or tier. The
-saved tool conversation lets us re-open every call.
-Figure~\ref{lst:classifier-prompt} is that prompt in full, with
-\texttt{\{PAPER\_TEXT\}} standing for the rendered paper, its supplement
-manifest with text excerpts, and its \LaTeX{} source.
+We sampled 1,000 papers uniformly at random from the corpus rows that have
+\LaTeX{} source. MiniMax-M2.7~\citep{minimax2026m2}, which we served on vLLM
+at a 196,608-token context with requests capped at 128,000 input tokens,
+classified them on 2026-06-11. For each paper the classifier runs an agent
+loop over ten tools: five over GitHub, three over Hugging Face, a URL fetch,
+and a supplement reader. Every artifact signal records how a tool established
+it. The loop is bounded by three guards, a 10-round cap, a repeated-call
+cutoff, and a context budget, and the verification status records each one. A
+row enters the pool only
+if all of its applicable signals were established by tool calls and the loop
+exited naturally. The final, tool-free turn returns a strict JSON record that
+contains neither a score nor a tier, and the saved tool conversation lets us
+re-open any individual call afterwards. Figure~\ref{lst:classifier-prompt}
+gives the classifier prompt in full, with \texttt{\{PAPER\_TEXT\}} standing for
+the rendered paper, its supplement manifest with text excerpts, and its
+\LaTeX{} source.
 
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
 \promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
@@ -44,16 +48,19 @@ manifest with text excerpts, and its \LaTeX{} source.
 \label{app:extraction}
 
 % src: src/reprocli_vllm/schema/output.py:157-225; src/reprocli_vllm/audit/h100.py:1-95; prompts/prompt.txt:390-420,456-483; notes/DATASET.md:228-272
-The code computes score and tier from the four signal booleans. Missing code
-adds 2, missing weights adds 1, and missing data adds 3 unless the dataset is
-a standard public benchmark. Score 0 is \texttt{Easy}, 1 is \texttt{Medium},
-and 2 is \texttt{Hard}, the released dataset's tier values for Run, Retrain,
-and Reimplement. Score 3 stays \texttt{Hard} when the data are available or
-standard, and is otherwise \texttt{Artifact-Blocked}. Any higher score is
-\texttt{Artifact-Blocked}. The code recomputes GPU count times wall-clock
-hours times the multiplier of Table~\ref{tab:h100-multipliers}. It flags a
-mismatch above 20\% of the larger value. It assigns a band from the ladder
-0--8, 8--32, 32--96, and above 96 H100-hours. It raises a human-review flag when the basis is unspecified or the recompute disagrees.
+Score and tier are computed in code from the four signal booleans. Missing
+code adds 2, missing weights adds 1, and missing data adds 3 unless the dataset
+is a standard public benchmark. A score of 0 maps to \texttt{Easy}, 1 to
+\texttt{Medium}, and 2 to \texttt{Hard}, which are the released dataset's tier
+values for Run, Retrain, and Reimplement. A score of 3 stays \texttt{Hard} when
+the data are available or standard and is otherwise \texttt{Artifact-Blocked},
+as is any higher score. The extraction code also re-derives the compute
+estimate as GPU count times wall-clock hours times the multiplier of
+Table~\ref{tab:h100-multipliers}, and flags a mismatch when the recomputed and
+stated figures differ by more than 20\% of the larger. It assigns a band from
+the ladder 0--8, 8--32, 32--96, and above 96 H100-hours, and raises a
+human-review flag whenever the basis is unspecified or the recompute
+disagrees.
 
 \begin{table}[t]
 \caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
@@ -81,27 +88,29 @@ H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
 \label{app:selection}
 
 % src: src/reprocli_vllm/audit/select_pool.py:39-134; notes/DATASET.md:289-336,360-372
-The selection pass admits a row only when its verification status is verified,
-its tier is an evaluation tier, and its audited compute is known and under the
-cap. Audited compute is the recomputed product when the arithmetic audit
-flagged a mismatch and the multiplier is at or below 1.1, and the stated hours
-otherwise. Of the 620 verified rows in those tiers, 38 were above the ceiling
-of the selection pass, leaving 582 entering selection. That ceiling exceeded
-the benchmark's cap, so 17 pool rows are above 96 H100-hours. We set the cap
-to 96 on 2026-07-09. That change replaced the three evaluation-split papers
-above it (Table~\ref{tab:swaps}). The selection rule splits the pool target
-equally across tiers by largest remainder. It apportions each tier's target
-across compute bands by fixed weights. It fills each band with the cheapest
-rows first, and the arXiv ID breaks ties. It takes the most expensive band
-first, so a deficit cascades down inside the tier. Table~\ref{tab:audit-pool}
-reports the pool the rule produced.
+The selection pass admits a row only if its verification status is verified,
+its tier is one of the three evaluation tiers, and its audited compute is
+known and under the cap. Audited compute is the recomputed product when the
+arithmetic audit flagged a mismatch and the multiplier is at or below 1.1, and
+the stated hours otherwise. Of the 620 verified rows in those tiers, 38 lay
+above the ceiling used by the selection pass, leaving 582 to enter selection.
+That ceiling was higher than the benchmark's eventual cap, which is why 17 pool
+rows lie above 96 H100-hours. We lowered the cap to 96 on 2026-07-09, and the
+three evaluation-split papers above it were replaced at that point
+(Table~\ref{tab:swaps}). The selection rule itself divides the pool target
+equally across tiers by largest remainder and apportions each tier's share
+across compute bands by fixed weights. Within a band it takes the cheapest rows
+first, breaking ties by arXiv ID, and it fills the most expensive band first so
+that any deficit cascades down into the cheaper bands of the same tier.
+Table~\ref{tab:audit-pool} reports the resulting pool.
 
 % src: notes/DATASET.md:320-336
 \begin{table}[t]
-\caption{The 200-paper audit pool by tier and compute band, with the count of
-rows carrying a compute-review flag, the count whose hours the recompute revised, and the summed audited compute.
-The pool is twice the size of the final benchmark. The margin absorbs the
-attrition of the human audit and leaves a replacement reserve in every tier.}
+\caption{The 200-paper audit pool by tier and compute band, with the number of
+rows flagged for compute review, the number whose hours the recompute revised,
+and the summed audited compute. The pool is twice the size of the final
+benchmark. The margin absorbs the attrition of the human audit and leaves a
+replacement reserve in every tier.}
 \label{tab:audit-pool}
 \begin{center}
 \small
@@ -124,50 +133,51 @@ Total & 200 & 50 & 97 & 36 & 17 & 50 & 13 & 5,905 \\
 \label{app:human-audit}
 
 % src: tools/verify_app/README.md:1-16,36-82; tools/rebuild_splits_from_app.py:110-165; src/reprocli_openai/recheck.py:1-12,30-45,89-95,118-125,247-266; notes/DATASET.md:337-359
-We opened the evidence behind every availability call in the pool and recorded
-a verdict on each of the four signals. The reviewer never types a score. A
-review form recomputes the score from the verdicts with the formula of
-Appendix~\ref{app:extraction}. The audit does not re-judge compute bands. A
-verdict overrides the model one signal at a time. Disagreement flips the
-boolean, and anything else keeps it. The deterministic scorer then recomputes
-score and tier. We re-checked Reimplement-tier rows, whose tier rests on no
-code being located, with GPT-5.5 under web search. On 2026-07-13 we put each
-claimed wall in the tier to one adversarial prober and two independent
-refuters.
+For every paper in the pool we opened the evidence behind each availability
+call and recorded a verdict on each of the four signals. The reviewer never
+types a score. Instead, a review form recomputes it from the verdicts using
+the formula of Appendix~\ref{app:extraction}, and compute bands are not
+re-judged at this stage. Verdicts override the model one signal at a time. A
+disagreement flips that signal's boolean and anything else leaves it as it
+was, after which the deterministic scorer recomputes score and tier. Because a
+Reimplement-tier assignment rests on no code having been located, we
+re-checked those rows with GPT-5.5 under web search, and on 2026-07-13 we
+submitted each claimed wall in that tier to one adversarial prober and two
+independent refuters.
 
 \subsection{The evaluation and development splits}
 \label{app:splits}
 
 % src: tools/rebuild_splits_from_app.py:1-22,44-93,166-205; notes/DATASET.md:360-372
 The split builder applies the human verdicts to the model values the reviewers
-saw. It recomputes score and tier, drops the papers whose minimal experiment
-calls a paid or closed model API, and runs the Stage II selection rule over
-what remains. The builder then takes the development split from the cheapest
-eligible papers each tier has left, so the two splits are disjoint by
-construction. Appendix~\ref{app:dataset-schema} gives the split sizes.
+saw, recomputes score and tier, drops any paper whose minimal experiment calls
+a paid or closed model API, and runs the Stage II selection rule over what
+remains. The development split is then drawn from the cheapest eligible papers
+left in each tier, so the two splits are disjoint by construction.
+Appendix~\ref{app:dataset-schema} gives the split sizes.
 
 \subsection{Compute re-estimation}
 \label{app:recompute}
 
 % src: tasks/h100-recompute-eval100.md:1-12,25-60,199-236
-After the initial release of the split, we re-derived every evaluation row's
-H100-hour figure in a pass completed on 2026-07-01. The figure is the compute
+After the split was first released we re-derived every evaluation row's
+H100-hour figure, in a pass completed on 2026-07-01. The figure is the compute
 of the minimal reproducible experiment, evaluation-only when the weights are
 released and otherwise the smallest training run that shows the effect. We
 recomputed each row as GPU count times wall-clock hours times the multiplier
-of Table~\ref{tab:h100-multipliers}, dividing a reported total GPU-hour figure
-by the GPU count first. Ninety of the 100 rows moved. The audited total fell
-from 4,426 to 1,922 H100-hours, and the median row from 35 to 2.5 hours. Four
-rows have released weights that are only the base model, and we kept them as
-small training runs.
+of Table~\ref{tab:h100-multipliers}, dividing any reported total GPU-hour
+figure by the GPU count first. Ninety of the 100 rows changed. The audited
+total fell from 4,426 to 1,922 H100-hours, and the median row from 35 to 2.5
+hours. Four rows have released weights that are only the base model, and we
+kept them as small training runs.
 
 \subsection{Changes to the evaluation split since release}
 \label{app:substitutions}
 
 % src: notes/Reports/reprobench_substitution_log.md:14-24,140-160; tasks/h100-recompute-eval100.md:117-160
-A paper leaves the evaluation split only when its central claim is
-unreproducible in the sandbox by construction. A model failure never removes a
-paper. We draw the replacement as the next-cheapest audited pool row of the
+A paper leaves the evaluation split only when its central claim turns out to
+be unreproducible in the sandbox by construction. A model failure never
+removes a paper. Each replacement is the next-cheapest audited pool row of the
 same tier (Table~\ref{tab:swaps}).
 
 \begin{table}[t]
@@ -193,8 +203,8 @@ Date & Tier & Out & In & Reason class \\
 \end{table}
 
 % src: notes/DATASET.md:377-392; tasks/h100-recompute-eval100.md:163-198; notes/Reports/reprobench_substitution_log.md:130-160
-After the 2026-07-14 change the evaluation split holds 34 Run, 33 Retrain, and
-33 Reimplement papers. The Reimplement tier spreads 16/9/8 across the compute
-bands. The split sums to about 1,154 H100-hours. We host-probed every removal
-and insertion, so an agent working on the frozen split meets artifacts the
-probe found reachable.
+After the 2026-07-14 change the evaluation split contains 34 Run, 33 Retrain,
+and 33 Reimplement papers, with the Reimplement tier spread 16/9/8 across the
+compute bands, and the split sums to about 1,154 H100-hours. We host-probed
+every removal and insertion, so an agent working on the frozen split meets
+artifacts the probe found reachable.

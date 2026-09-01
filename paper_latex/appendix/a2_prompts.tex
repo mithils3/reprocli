@@ -5,14 +5,16 @@
 % src: src/reprocli_repro/transcript.py:22-26,88-96,105-107,128-155; src/reprocli_repro/compact.py:57-61,81-82,90-137;
 % src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
 % src: src/reprocli_repro/live_log.py:71-75; src/reprocli_vllm/vllm/io.py (initial_messages)
-Figure~\ref{lst:harness-messages} shows every fixed string the model reads.
-The system message is at index 0, where compaction never reaches it. The
-harness appends the final-turn instruction after it removes the tools and
-constrains the response to the report schema of
+Figure~\ref{lst:harness-messages} collects every fixed string the model reads
+during an episode. The system message is stored at index 0, where compaction
+never reaches it. The final-turn instruction is appended after the harness
+removes the tools and constrains the response to the report schema of
 Appendix~\ref{app:report-format}. The harness inserts five further strings
-during an episode, the status line each round, the budget note, the length
-nudge after an output-cap hit, the elision placeholder, and the tool-error
-fields. The task prompt follows the system message as the first user turn and is Figure~\ref{lst:task-prompt}.
+during an episode, namely the status line appended each round, the budget
+note, the length nudge after a turn hits the output cap, the elision
+placeholder that compaction leaves behind, and the tool-error fields. The task prompt, which
+follows the system message as the first user turn, is shown in
+Figure~\ref{lst:task-prompt}.
 
 
 \begin{promptbox}[lst:harness-messages]{Harness messages}
@@ -60,23 +62,23 @@ reasoning brief.
 % src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
 % src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165,299-312;
 % src: src/reprocli_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
-The task prompt is one template of 290 lines with fourteen placeholder
-fields under nine headings. The renderer fills each field from the paper's
-dataset row (Appendix~\ref{app:dataset-schema}), from the episode's compute
-ceiling, or from the fixed container paths of Appendix~\ref{app:sandbox}. It
-raises an error when a field is left unfilled. Every field has a fallback
-string, so the renderer writes a stated absence where a row is missing a
-value. The renderer omits \texttt{match\_target.config}, the runnable
-configuration that produces the target value, so the agent must derive that
+The task prompt is a single 290-line template with fourteen placeholder fields
+under nine headings. Each field is filled from the paper's dataset row
+(Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or
+from the fixed container paths of Appendix~\ref{app:sandbox}. Rendering fails
+with an error if any field is left unfilled, and every field has a fallback
+string, so the renderer writes an explicit statement of absence where a row
+lacks a value. The renderer omits \texttt{match\_target.config}, the runnable
+configuration that produces the target value, so the agent has to derive that
 configuration from the paper.
 
 % src: git 05c58a6 (2026-06-28), 5514246 (2026-06-28), 0b26215 (2026-07-01), 3c6954b (2026-07-01),
 % src: f19e28f (2026-07-04), dfc02c0 (2026-07-09), 858e1eb (2026-07-09), 728c663 (2026-07-09), d25c8d4 (2026-07-11)
-We revised the template from transcript dissections of earlier agent runs, and
-checked each revision against other models' successful runs before adopting it.
-In a cross-model audit on 2026-06-28 we removed two rules specific to one
-model's behavior, a push toward more GPUs and a budget-fraction test for
-under-running. The template has not changed since 2026-07-11.
-Figure~\ref{lst:task-prompt} shows the template in full.
+We revised the template from transcript dissections of earlier agent runs,
+and checked each revision against other models' successful runs before
+adopting it. In a cross-model audit on 2026-06-28 we removed two rules that
+were specific to one model's behavior, a push toward requesting more GPUs and
+a budget-fraction test for under-running. The template has not changed since 2026-07-11, and
+Figure~\ref{lst:task-prompt} reproduces it in full.
 
 \promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}
