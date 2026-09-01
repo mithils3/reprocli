@@ -4,28 +4,28 @@
 % src: outputs/v6/app_rebuild/eval_100.jsonl, outputs/v6/app_rebuild/dev_split.jsonl,
 %      outputs/v6/app_rebuild/splits_summary.json, notes/DATASET.md 8,
 %      paper_latex/tables/gen_eval100.py (summary output)
-We submit the audited benchmark as anonymized supplementary material, packaged
-so that the \texttt{datasets} library loads it by name. The dataset contains
-two splits and no \texttt{train} split. The \texttt{test} split contains the
-100-paper frozen benchmark, 34 papers at Run tier, 33 at Retrain, and 33 at
-Reimplement. Every row in it has \texttt{split="eval"}. The
-\texttt{validation} split contains the 14-paper development set, 5 at Run, 4 at
-Retrain, and 5 at Reimplement. Every row in it has \texttt{split="dev"}. No
-arXiv ID appears in both splits. Each row is one paper with 25 top-level
-fields. Figure~\ref{lst:example-row} shows the SharpZO row of
-Section~\ref{subsec:task} (score 0, Run tier, 0.07 H100-hours, band
-\texttt{0-8}) with its long text fields truncated and every other field
-verbatim. Figure~\ref{lst:load-dataset} is the code that loads both splits,
-which return metadata and links with no paper text. We masked the dataset
+We submit the audited benchmark as anonymized supplementary material,
+packaged so that the \texttt{datasets} library loads it by name. It has two
+splits and no \texttt{train} split. The \texttt{test} split is the 100-paper
+frozen benchmark, with 34 papers at Run tier, 33 at Retrain, and 33 at
+Reimplement, and every row in it has \texttt{split="eval"}. The
+\texttt{validation} split is the 14-paper development set, with 5 at Run, 4 at
+Retrain, and 5 at Reimplement, and every row in it has \texttt{split="dev"}.
+No arXiv ID appears in both. Each row is one paper with 25 top-level fields.
+Figure~\ref{lst:example-row} shows the SharpZO row of Section~\ref{subsec:task}
+(score 0, Run tier, 0.07 H100-hours, band \texttt{0-8}), with its long text
+fields truncated and every other field verbatim, and
+Figure~\ref{lst:load-dataset} gives the code that loads both splits. The rows
+return metadata and links only, with no paper text. We masked the dataset
 identifier for review.
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 \begin{table}[t]
-\caption{Description of each top-level field of a dataset row. Four of the
-fields are nested objects, listed in Table~\ref{tab:schema-links}. Together
-the fields fix the claim, the artifact evidence, the match target, and the
-compute budget before any agent starts, so we measure a score from one agent
-against the same standard as a score from another.}
+\caption{The top-level fields of a dataset row. Four of them are nested
+objects, expanded in Table~\ref{tab:schema-links}. Together the fields fix the
+claim, the artifact evidence, the match target, and the compute budget before
+any agent starts, so we measure a score from one agent against the same
+standard as a score from another.}
 \label{tab:schema-toplevel}
 \begin{center}
 \footnotesize
@@ -113,21 +113,22 @@ Field & Description \\
 
 % src: notes/DATASET.md 5.1 (score -> tier), outputs/v6/app_rebuild/eval_100.jsonl,
 %      paper_latex/tables/gen_eval100.py (summary output)
-Four properties hold across the released rows, and a reader can check
-each from the file.
+Four properties hold across the released rows, and each can be checked
+directly from the file.
 \begin{itemize}\setlength{\itemsep}{0pt}
-\item The tier is a function of the score. Score 0 maps to Run, score 1 maps to
-Retrain, and scores 2 and 3 map to Reimplement.
+\item Tier is a function of score: score 0 maps to Run, score 1 to Retrain,
+and scores 2 and 3 to Reimplement.
 \item \texttt{selection\_band} and \texttt{h100\_band} agree on every row.
 \item \texttt{audited\_h100\_hours} differs from \texttt{h100\_estimate.hours}
-on exactly the 6 rows, 3 in each split, whose
+on exactly the 6 rows (3 in each split) whose
 \texttt{h100\_hours\_adjudicated} flag is set.
 \item Of the 400 signal entries in the evaluation split, 388 record a tool call
-and 12 are \texttt{not\_applicable}. Every signal set true is established by a
-successful tool call, with one exception. On 2503.02809 the pinned
-configuration runs on synthetic data, so \texttt{dataset\_available} is true and
-\texttt{not\_applicable} at once. Across both splits 13 signals are
-\texttt{not\_applicable}, 12 of them with a false value. Of those 12, 10 are \texttt{weights\_available} on papers whose pinned configuration needs no
+and 12 are \texttt{not\_applicable}. Every signal set to true was established
+by a successful tool call, with a single exception: on 2503.02809 the pinned
+configuration runs on synthetic data, so \texttt{dataset\_available} is both
+true and \texttt{not\_applicable}. Across both splits 13 signals are
+\texttt{not\_applicable}, 12 of them with a false value, and 10 of those 12 are
+\texttt{weights\_available} on papers whose pinned configuration needs no
 released checkpoint.
 \end{itemize}
 
@@ -141,10 +142,10 @@ released checkpoint.
 \paragraph{Match targets and tolerance.} For 62 of the 100 evaluation papers
 the match bar is a point estimate, for 21 a stated baseline the run must beat,
 for 14 a reported threshold it must clear, for 1 the size of a reported delta,
-and for 1 a reported range it must fall inside. One row, 2505.10475, entered as
-a late replacement and has no \texttt{match\_bar\_kind} field. A run matches a
-point estimate when its measured value lies within the authors' stated
-tolerance, or within 5\% relative when the paper states none
+and for 1 a reported range it must fall inside. One row, 2505.10475, entered
+as a late replacement and has no \texttt{match\_bar\_kind} field. A run
+matches a point estimate when its measured value lies within the authors'
+stated tolerance, or within 5\% relative when the paper states none
 (Figure~\ref{lst:rubric-text}).
 
 % src: notes/DATASET.md 8 (last paragraph), outputs/v6/app_rebuild/eval_100.jsonl
@@ -163,11 +164,11 @@ print(row["match_target"])
 %      outputs/v6/app_rebuild/splits_summary.json, notes/DATASET.md 8,
 %      paper_latex/tables/gen_eval100.py
 \paragraph{The evaluation and development papers.} Tables~\ref{tab:eval100}
-and~\ref{tab:dev14} list the 100 evaluation and 14 development papers with the
-match target each is graded against. The evaluation split totals 1{,}153.8
-audited H100-hours, 142.71 at Run, 380.91 at Retrain, and 630.18 at
-Reimplement. The band counts by tier are 27/7/0, 16/13/4, and 16/9/8 over
+and~\ref{tab:dev14} list the 100 evaluation and 14 development papers together
+with the match target each is graded against. The evaluation split totals
+1{,}153.8 audited H100-hours (142.71 at Run, 380.91 at Retrain, and 630.18 at
+Reimplement), and its band counts by tier are 27/7/0, 16/13/4, and 16/9/8 over
 \texttt{0-8}, \texttt{8-32}, and \texttt{32-96}. The development split totals
-26.89.
+26.89 H100-hours.
 
 \input{tables/eval100}
