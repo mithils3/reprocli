@@ -6,64 +6,68 @@
 % src: rubric_audit.md:17-31; prompts/prompt_audit.txt:1-9,5-9,54-58,138-139; src/reprocli_vllm/audit/inputs.py:1-9; src/reprocli_vllm/audit/audit.py:1-12
 One auditor grades one agent's attempt at one paper's central claim. It receives
 the claim with its pinned match target, a manifest of the agent's run bundle,
-and the frozen rubric text of Listing~\ref{lst:rubric-text}, then explores the
+and the frozen rubric text of Figure~\ref{lst:rubric-text}, then explores the
 bundle with the tools of Table~\ref{tab:audit-tools}, scoped to that one run
 directory. It assigns one integer from 0 to 10, first placing the run in the
 highest quality band whose conditions the cited evidence meets, then applying an
 integrity adjustment that can only lower the score. The rubric sets a low-score
-prior, so absence of evidence grades low and no number is trusted because the
-agent printed it. The agent's own report is a set of claims to verify against
-the files it cites. The auditor returns no verdict string, and the verdict is
-derived from its row by the code of Appendix~\ref{app:rubric-finalizer}.
+prior, so a run with no evidence receives a low score, and the auditor does not
+trust a number because the agent printed it. The auditor treats the agent's own
+report as a set of claims to verify against the files it cites. The auditor
+returns no verdict string, and the code of Appendix~\ref{app:rubric-finalizer}
+derives the verdict from its row.
 
 % src: rubric_audit.md:33-43,35-85,87-91,93-97,99-127,150-164
 The auditor works through six criteria and cites bundle evidence for each. C1
-fixes the target from the lockfile's pinned tuple, setting only the comparison
-operator and the tolerance to fit the pinned bar kind. C2 verifies that the
-agent ran code that computed the metric, and checks the executed dataset, split,
-checkpoint, and model size against the pinned scope. C3 locates the measured
-value and cites the file and line it came from. C4 attacks the number's
-provenance. C5 applies the C1 criterion to the measured and reference pair, and
-C6 checks that the run reproduced the experiment the claim rests on. Every check
-is applied to the baseline side of a relational claim with the same rigor. Two
-of the six can end the grade, since a claim with no checkable target and a
-number with no execution trace both score 0.
+fixes the target from the dataset row's pinned tuple, setting only the
+comparison operator and the tolerance to fit the pinned bar kind. C2 verifies
+that the agent ran code that computed the metric, and checks the executed
+dataset, split, checkpoint, and model size against the pinned scope. C3 locates
+the measured value and cites the file and line it came from. C4 tests the
+number's provenance. C5 applies the C1 criterion to the measured and reference
+pair, and C6 checks that the run reproduced the experiment the claim rests on.
+The auditor applies every check to the baseline side of a relational claim with
+the same rigor. Two of the six criteria can end the grade, since a claim with
+no checkable target and a number with no execution trace both score 0.
 
 % src: rubric_audit.md:99-148; prompts/prompt_audit.txt:86-105; src/reprocli_vllm/schema/audit.py:29-39
-Each break C4 finds is recorded as a typed flag carrying cited evidence and one
-of three severities, and a high-severity flag caps the score at 0. Released
-weights, datasets, splits, configs, and code are inputs the agent should
-consume, and the graded quantity is held to a stricter standard, since it must
-be computed in this run from model outputs this run produced. A disclosed value
-read from a shipped results file therefore caps the band at 4 and raises no
-flag, and the same value placed in the target slot as this run's own measurement
-is fabricated provenance.
+The auditor records each break C4 finds as a typed flag carrying cited
+evidence and one of three severities, and a high-severity flag caps the score
+at 0. Released weights, datasets, splits, configs, and code are
+inputs the agent should consume, and the graded quantity is held to a stricter
+standard, since it must be computed in this run from model outputs this run
+produced. A disclosed value read from a shipped results file therefore caps the
+band at 4 and raises no flag. The same value placed in the target slot as this
+run's own measurement is fabricated provenance.
 
 % src: src/reprocli_vllm/schema/audit.py:66-125,90-94; src/reprocli_claude/agent.py:155-178; rubric_audit.md:238-246; prompts/prompt_audit.txt:135-139
 Alongside the score the auditor returns a
 confidence and a one-paragraph rationale. When confidence falls below 0.6, or
-when a judgment call materially shaped the score, the rationale has to name what
-a human spot-check should examine and which file to open.
+when a judgment call shaped the score, the rationale must name what a human
+spot-check should examine and which file to open.
 
-\subsection{Score scale}
+\subsection{Score scale and verdicts}
 
 % src: rubric_audit.md:166-171,224-236; src/reprocli_vllm/audit/audit.py:74-90
-Table~\ref{tab:rubric} gives the quality bands with the verdict each score
-derives, from a rubric text frozen on 2026-07-16, three days after the dataset
-freeze, so every pinned-auditor grade reported in this paper postdates the
-freeze (Appendix~\ref{app:auditor-validation}).
+Table~\ref{tab:rubric} lists the quality bands with the verdict derived from
+each score. We froze the rubric text on 2026-07-16, three days after the
+dataset freeze, so every pinned-auditor grade reported in this paper postdates
+the freeze (Appendix~\ref{app:auditor-validation}).
 
 % src: rubric_audit.md:3-15,204-209,228-232
-No band credits a claimed artifact wall. Curation removed every paper with an
-observed hard wall and host-probed the rest (Appendix~\ref{app:construction}),
-so a claimed wall is graded by what the run achieved, and the auditor writes a
-curation escalation into \texttt{methodology\_notes} for human review.
+No band credits a claimed artifact wall, an agent's report that a required
+artifact could not be obtained. During curation we removed every paper with an
+observed hard wall and host-probed the rest, verifying each remaining artifact
+retrievable from the run host (Appendix~\ref{app:construction}). The auditor
+therefore grades a claimed wall by what the run achieved and writes a curation
+escalation into \texttt{methodology\_notes} for human review.
 
 % src: rubric_audit.md:166-236; src/reprocli_vllm/audit/audit.py:74-90
 \begin{table}[h]
-\caption{The frozen audit rubric. The auditor assigns the highest band whose
+\caption{The frozen audit rubric, with the conditions for each band and the
+verdict each score produces. The auditor assigns the highest band whose
 conditions the cited execution evidence meets. The verdict is derived from the
-score in code. A score of 1 derives \texttt{unverifiable} when the auditor also
+score in code. A score of 1 yields \texttt{unverifiable} when the auditor also
 reports that execution was not verified.}
 \label{tab:rubric}
 \begin{center}
@@ -113,33 +117,35 @@ retrieved benchmark answer the graded value runs through. &
 \end{center}
 \end{table}
 
-\subsection{Deterministic finalizer}
+\subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
 
 % src: src/reprocli_vllm/audit/audit.py:1-12,25-63,74-116
-Listing~\ref{lst:audit-finalizer} is the code that runs after the model returns,
-verbatim except for one section sign written out as a word.
-Every verdict string this paper reports comes from it, and the
+Figure~\ref{lst:audit-finalizer} is the code that runs after the model returns,
+reproduced verbatim except for one section sign written out as a word.
+Every verdict string this paper reports comes from that code, and the
 \texttt{reproduced} boolean behind the headline rate uses its threshold of 8.
 
 % src: src/reprocli_vllm/audit/audit.py:35-63,74-90 via paper_latex/tables/gen_audit_finalizer.py
-\codefile[lst:audit-finalizer]{Python}{Deterministic finalizer}{prompts/audit_finalizer.py}
+\codefile[lst:audit-finalizer]{Python}{Verdict derivation code}{prompts/audit_finalizer.py}
 
-\subsection{Auditor prompt and run-directory tools}
+\subsection{Auditor prompt and tools}
 
 % src: prompts/prompt_audit.txt:35-58,79-84; src/reprocli_vllm/tools/run_dir_tools.py:1-19,274-288; src/reprocli_vllm/config/config.py:50-54
-The auditor recomputes from stored predictions and outputs where that is cheap,
-and the 60\,s shell timeout keeps it from re-running training or evaluation.
-Listing~\ref{lst:audit-prompt} is the template, rendered per graded run from
-the pinned claim, the run-directory manifest, and the rubric text, with the
-benchmark's working name replaced by RECLAIM in one line.
+The auditor recomputes from stored predictions and outputs where recomputation
+is inexpensive, and the 60\,s shell timeout prevents it from re-running
+training or evaluation. Figure~\ref{lst:audit-prompt} shows the template,
+rendered per graded run from the pinned claim, the run-directory manifest, and
+the rubric text. We replaced the benchmark's working name with RECLAIM in one
+line.
 
 % src: src/reprocli_vllm/tools/run_dir_tools.py:42-247,274-288; src/reprocli_vllm/config/config.py:50-54
 \begin{table}[h]
-\caption{The four run-directory tools advertised to the auditor. Both graders
-are offered the same four under the same limits. Every path argument is resolved
-against the run directory, and absolute paths, backslashes, and parent
-references are rejected, so a grade can only cite the bundle under audit.}
+\caption{The four run-directory tools available to the auditor, with the
+function and limits of each. Both graders are offered the same four under the
+same limits. Every path argument is resolved against the run directory, and the
+tools reject absolute paths, backslashes, and parent references, so a grade can
+only cite the bundle under audit.}
 \label{tab:audit-tools}
 \begin{center}
 \footnotesize
@@ -168,11 +174,11 @@ It refuses to overwrite an existing file, so agent artifacts stay intact. \\
 % src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reprocli_vllm/audit/inputs.py:30-101
 \promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
 
-\subsection{The frozen rubric}
+\subsection{The rubric text}
 
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reprocli_vllm/audit/inputs.py:96-101
-Listing~\ref{lst:rubric-text} is the rubric as frozen on 2026-07-16, given to
-the auditor in full, with the working name replaced by RECLAIM in its title and
-in one flag definition.
+Figure~\ref{lst:rubric-text} shows the rubric as frozen on 2026-07-16, which
+the auditor receives in full. We replaced the working name with RECLAIM in its
+title and in one flag definition.
 
 \promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}

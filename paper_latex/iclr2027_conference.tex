@@ -119,7 +119,7 @@ The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
 Run tier the authors released every artifact the claim requires and we verified
 each one retrievable by direct host probe, and many of those claims still do not
 come back. Three properties of that residual organize the rest of this paper.
-Stronger agents achieve partial reproduction far more often: on Retrain-tier
+Stronger agents achieve partial reproduction more often: on Retrain-tier
 papers the strongest agent reaches a verified partial result on 79\% of runs,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Full recovery of
@@ -212,7 +212,7 @@ wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}, and
 three of them bracket the design space. CORE-Bench asks agents to rerun the
 released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive}. PaperBench sits at the
+effectively saturated~\citep{favaro2026recursive}. PaperBench lies at the
 opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
 with the authors' code withheld, grading the attempt against hierarchical
 rubrics the original authors wrote~\citep{starace2025paperbench}.
@@ -320,7 +320,7 @@ zero when a number was echoed from the paper and never measured.
 \label{subsec:construction}
 
 We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that carry an
-arXiv identifier, collected in the \emph{ai-conferences}
+arXiv ID, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
 
@@ -411,7 +411,7 @@ forces the score to zero, and a claimed artifact wall earns no credit band.
 Grading by evidence also preserves the agent's creativity, since any
 faithful route to the pinned number earns full credit, including
 strategies the authors never used. An
-LLM auditor reads far more material per run than a human grader can,
+LLM auditor reads more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
 On a held-out set of runs, the auditor's verdicts agree with expert human
@@ -425,8 +425,8 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
-\paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
-loop~\citep{yao2023react}. The toolset is
+\paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
+loop~\citep{yao2023react}. The tools are
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
@@ -439,7 +439,7 @@ budgeting and scheduling decisions that real reproduction work demands.
 Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
-prompts, the toolset, and session mechanics.
+prompts, the tools, and session mechanics.
 
 \paragraph{Models.} We evaluate three models under identical conditions:
 DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
@@ -477,8 +477,8 @@ artifact, and a near-miss partial runs a faithful pipeline and lands short
 of the bar. The other seven are process failures. The agent reimplements
 the method and validates no stage of its version against a reference it
 did not produce, loses the decisive rounds to build and dependency failures
-in the released stack, measures an artifact other than the one the pinned
-cell names, runs an experiment other than the one the claim is about,
+in the released stack, measures an artifact other than the one the
+dataset row names, runs an experiment other than the one the claim is about,
 reports a shipped constant in place of the number it measured, spends its
 rounds on reading and probing until the allocation is cut off largely
 unspent, or ends with no measurement of the pinned quantity at all.
@@ -488,7 +488,7 @@ transcript excerpts for three of them.
 \begin{table}[h]
 \caption{Primary failure mode by tier over the dissected runs, using the
 vocabulary of Appendix~\ref{app:taxonomy}. Raw dissection labels are remapped
-onto the nine slugs.}
+onto the nine mode names.}
 \label{tab:failure-modes}
 \begin{center}
 \small
@@ -560,8 +560,8 @@ Summarize the paper and its implications.
 \subsection*{Reproducibility statement}
 
 \begin{itemize}
-\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the tool loop,
-budget enforcement, the sandbox, and the prompts as verbatim listings.
+\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
+budget enforcement, the sandbox, and the prompts in full.
 \item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
 served revision and states the serving configuration it ran under.
 \item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
@@ -570,7 +570,7 @@ Appendix~\ref{app:auditor-validation} bounds how much of a reported score is
 grader noise.
 \item \textbf{Dataset.} Appendix~\ref{app:dataset-schema} documents every field
 and both splits.
-\item \textbf{Artifacts.} Code, batch scripts, and the per-run evidence bundles
+\item \textbf{Artifacts.} Code, batch scripts, and the run bundles
 are submitted as anonymized supplementary material, and
 Appendix~\ref{app:running} gives the commands that serve a model, run a
 paper, and grade a run. The repository and dataset
@@ -579,7 +579,7 @@ version.
 \end{itemize}
 
 An agent rollout is sampled and interacts with a live machine, so a rerun does
-not recover our transcripts turn for turn. The evidence bundles make the
+not recover our transcripts turn for turn. The run bundles make the
 grading stage reproducible from our artifacts where the rollout stage is not.
 
 \subsection*{AI use statement}

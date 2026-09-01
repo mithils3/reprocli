@@ -1,15 +1,16 @@
-\section{Running RECLAIM}
+\section{Setup Details}
 \label{app:running}
 
 % src: README.md:38-56; prompts/prompt_reproduce.txt, prompts/prompt_audit.txt, rubric_audit.md; paper_latex/prompts/; src/reprocli_repro/inputs.py:42-49
-The supplementary material is one repository holding the dataset pipeline, the reproduction agent of
-Appendix~\ref{app:harness}, the auditor of Appendix~\ref{app:rubric}, the
-serving layer both attach to, the batch scripts that produced every sweep, and
-the per-run evidence bundles the grades were computed on. The prompt templates
-and rubric rendered in Appendices~\ref{app:prompts}, \ref{app:rubric}, and
-\ref{app:construction} are the files it ships, up to the disclosed
-substitution of the benchmark's name. Listing~\ref{lst:running-commands}
-gives the three commands that serve a model, run one paper, and grade one run.
+The supplementary material is one repository holding the dataset pipeline,
+the reproduction agent of Appendix~\ref{app:harness}, the auditor of
+Appendix~\ref{app:rubric}, the serving layer they both use, the batch scripts
+that produced every sweep, and the run bundles the grades were computed on.
+The prompt templates and rubric rendered in Appendices~\ref{app:prompts},
+\ref{app:rubric}, and \ref{app:construction} are the files in that repository,
+apart from the disclosed substitution of the benchmark's name.
+Figure~\ref{lst:running-commands} shows the three commands that serve a model,
+run one paper, and grade one run.
 
 % src: scripts/serve/serve_gh200.sbatch:78-86, src/reprocli_serve/args.py:20-60,
 % src: src/reprocli_repro/cli_args.py:88-127, README.md:88-100,
@@ -45,21 +46,22 @@ $ PYTHONPATH=src python3 -m reprocli_claude \
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:58-120,280-300,357-360,424-525,
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:119,430-434,482-500,
 % src: src/run_arxiv_prompt_vllm.py:1-60
-A tier job dispatches papers sorted by compute ceiling ascending, so cheap
-papers land results early. The job also grades inline while the sweep is still
-running, over a vLLM endpoint with a cap of 40 tool rounds. A killed job
-resumes with \texttt{RESUME=1}, which skips papers whose verdict is on disk,
-regrades nothing, and retries a paper that died without a verdict. A paper
-that produced no bundle is recorded as a harness casualty and is not counted
-as a model failure.
+A tier job runs the papers of its tier in ascending order of compute ceiling,
+so the cheapest papers produce results early. The job also grades each run
+while the sweep is still running, over a vLLM endpoint with a cap of 40 tool
+rounds. We resume a killed job with \texttt{RESUME=1}, which skips papers
+whose verdict is on disk, regrades nothing, and retries a paper whose run
+ended without a verdict. We record a paper that produced no bundle as a
+harness failure. We do not count it as a model failure.
 
 % src: src/reprocli_repro/batch_runs.py:1-20, src/reprocli_claude/__main__.py:106-140,186-196,
 % src: src/reprocli_repro/inputs.py:42-49, .claude/skills/analyze-sweep/SKILL.md:52-60,
 % src: paper_latex/tables/gen_eval100.py:1-18
-Grading a batch takes each paper's newest attempt and drops runs still in
-progress unless \texttt{--include-running} is passed, because a half-written
-bundle grades the harness. A verdict is rechecked from the run bundle of
-Appendix~\ref{app:report-format} and the verdict row, which carries the score, the rationale, and
-any cheat flags. Every table in this paper regenerates from the frozen split
-files and those run records, so a reader can check a verdict against the run
-it graded without rerunning anything.
+We grade a batch by taking each paper's newest attempt. We drop runs that are
+still in progress unless we pass \texttt{--include-running}, because a
+half-written bundle measures the harness. A reader can recheck a verdict from the run bundle of
+Appendix~\ref{app:report-format} and from the verdict row, which carries the
+score, the rationale, and any anti-cheat flags. We regenerate
+every table in this paper from the frozen split files and those run records,
+so a reader can check a verdict against the run it graded without rerunning
+anything.

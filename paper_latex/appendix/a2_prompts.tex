@@ -1,18 +1,18 @@
-\subsection{Prompts}
+\subsection{Prompt templates}
 \label{app:prompts}
 
 % src: src/reprocli_repro/cli_args.py:26-42,238-240; src/reprocli_repro/loop.py:66-70,376-380;
 % src: src/reprocli_repro/transcript.py:22-26,88-96,105-107,128-155; src/reprocli_repro/compact.py:57-61,81-82,90-137;
 % src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
 % src: src/reprocli_repro/live_log.py:71-75; src/reprocli_vllm/vllm/io.py (initial_messages)
-Listing~\ref{lst:harness-messages} gives every fixed string the model reads:
-the system message at index 0, where compaction never reaches it, the
-final-turn instruction appended after the tools are removed and the response
-is constrained to the report schema of Appendix~\ref{app:report-format}, and
-the five strings inserted during an episode (status line each round, budget
-note, length nudge after an output-cap hit, elision placeholder, tool-error
-fields). The task prompt follows the system message as the first user turn
-and is Listing~\ref{lst:task-prompt}.
+Figure~\ref{lst:harness-messages} shows every fixed string the model reads.
+The system message is at index 0, where compaction never reaches it. The
+harness appends the final-turn instruction after it removes the tools and
+constrains the response to the report schema of
+Appendix~\ref{app:report-format}. The harness inserts five further strings
+during an episode, the status line each round, the budget note, the length
+nudge after an output-cap hit, the elision placeholder, and the tool-error
+fields. The task prompt follows the system message as the first user turn and is Figure~\ref{lst:task-prompt}.
 
 
 \begin{promptbox}[lst:harness-messages]{Harness messages}
@@ -60,24 +60,23 @@ reasoning brief.
 % src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
 % src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165,299-312;
 % src: src/reprocli_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
-The task prompt is one template of 290 lines carrying fourteen placeholder
-fields under nine headings. The renderer
-fills each field from the paper's dataset row
-(Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or
-from the fixed container paths of Appendix~\ref{app:sandbox}, and raises when a
-field is left unfilled. Every field carries a
-fallback string, so a row missing a value produces a stated absence in place of
-an empty slot. The renderer omits \texttt{match\_target.config}, the runnable
-configuration that produces the target value, so the agent derives that
+The task prompt is one template of 290 lines with fourteen placeholder
+fields under nine headings. The renderer fills each field from the paper's
+dataset row (Appendix~\ref{app:dataset-schema}), from the episode's compute
+ceiling, or from the fixed container paths of Appendix~\ref{app:sandbox}. It
+raises an error when a field is left unfilled. Every field has a fallback
+string, so the renderer writes a stated absence where a row is missing a
+value. The renderer omits \texttt{match\_target.config}, the runnable
+configuration that produces the target value, so the agent must derive that
 configuration from the paper.
 
 % src: git 05c58a6 (2026-06-28), 5514246 (2026-06-28), 0b26215 (2026-07-01), 3c6954b (2026-07-01),
 % src: f19e28f (2026-07-04), dfc02c0 (2026-07-09), 858e1eb (2026-07-09), 728c663 (2026-07-09), d25c8d4 (2026-07-11)
 We revised the template from transcript dissections of earlier agent runs, and
 checked each revision against other models' successful runs before adopting it.
-A cross-model audit on 2026-06-28 removed two rules it found specific to one
-model's behaviour, a push toward more GPUs and a budget-fraction test for
+In a cross-model audit on 2026-06-28 we removed two rules specific to one
+model's behavior, a push toward more GPUs and a budget-fraction test for
 under-running. The template has not changed since 2026-07-11.
-Listing~\ref{lst:task-prompt} is the template in full.
+Figure~\ref{lst:task-prompt} shows the template in full.
 
 \promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}

@@ -112,12 +112,12 @@ HEAD = "arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\\\"
 
 EVAL_CAPTION = (
     "The 100 evaluation papers, one row each, sorted by tier, then compute band, "
-    "then arXiv identifier. Tier is the lockfile's artifact tier under the "
+    "then arXiv ID. Tier is the dataset's artifact tier under the "
     "Run/Retrain/Reimplement names. Band is the compute band in H100-hours and "
     "H100-h is the audited estimate for that paper's match target. Metric, Bar, "
     "and Target value are the pinned match target. Metric names and target "
     f"values longer than {METRIC_CHARS} characters are cut and closed with an "
-    "ellipsis. One row carries no bar kind and is written unset."
+    "ellipsis. One row has no bar kind and is written unset."
 )
 DEV_CAPTION = (
     "The 14 development papers, in the same columns and the same sort order. "
