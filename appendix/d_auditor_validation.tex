@@ -2,33 +2,34 @@
 \label{app:auditor-validation}
 
 % src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md
-This appendix records what is known about grader noise in the audit scores of
+This appendix reports what we know about grader noise in the audit scores of
 Section~\ref{sec:auditing}, measured by re-grading sweeps that had already
-been graded once.
+been graded once. We write grader for any model that scored a run and auditor
+for the pinned grader whose scores the paper reports.
 
-\subsection{What pinning the auditor fixes}
+\subsection{Why the auditor is pinned}
 
 % src: src/reprocli_claude/__main__.py:1-19,74-81,265-276, src/reprocli_vllm/config/config.py:42-43, rubric_audit.md:1-15, src/reprocli_vllm/audit/audit.py:35-63
-Four inputs are held constant across every grade of record, the grader model
-id written onto every verdict row, the rubric file with its freeze date of 16
-July 2026, the audit prompt rendered per run from that rubric text and the
-pinned claim, and the shared finalizer that applies the integrity adjustment
-of Appendix~\ref{app:rubric}, with the grading client and its decoding
-settings given in Appendix~\ref{app:models}.
+We hold four inputs constant across every grade of record. They are the grader
+model ID written onto every verdict row, the rubric file with its freeze date
+of 2026-07-16, the audit prompt rendered per run from that rubric text and the
+pinned claim, and the shared verdict code that applies the integrity
+adjustment of Appendix~\ref{app:rubric}. The grading client and its decoding
+settings are given in Appendix~\ref{app:models}.
 
 % src: src/reprocli_claude/__main__.py:193-201,282-295, src/reprocli_vllm/runtime/audit_sink.py:85-104,124-129, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:18-28
-A grading pass also carries an identity of its own, the grader model name
-joined to a UTC timestamp, and every row and transcript event the pass writes
-is keyed by it. That tag makes a second pass observable. Without it a re-grade
-resolves to the first pass's row and inherits the older verdict.
+Each grading pass also carries an identity of its own, the grader model name
+joined to a UTC timestamp. Every row and transcript event the pass writes is
+keyed by that identity. The identity makes a second pass observable. Without
+it a re-grade resolves to the first pass's row and inherits the older verdict.
 
-\subsection{Protocols}
+\subsection{Validation protocol}
 
 % src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:9-11, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:9-10,18-27, notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:18-20, notes/Analysis/easy-sweep-2687371-qwen3-runs.json, notes/Analysis/medium-sweep-2690187-minimax-runs.json, rubric_audit.md:1-5
-Two validations re-grade runs without re-executing them, so the evidence
+In both validations we re-grade runs without re-executing them, so the run
 bundles, the pinned claims, the frozen rubric text, and the score scale are
 identical in both arms and only the grader changes. Both sweeps ran after the
-13 July 2026 dataset freeze, and the pinned arm of each is graded by Claude
+2026-07-13 dataset freeze, and the pinned arm of each is graded by Claude
 Sonnet 5.
 
 % src: iclr2027_conference.tex:385-390, notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:12-16,25-27
@@ -36,15 +37,14 @@ The other arm of each comparison is a grade the agent model produced over its
 own family's runs. Those grades are not results of this paper. Every score
 reported in Section~\ref{subsec:results} is a pinned-auditor grade, and no
 agent grades its own family (Section~\ref{sec:auditing}). Those earlier grades
-are the only
-second reading of the same transcripts on record, which is what makes them
-usable as a measurement of grader spread. Table~\ref{tab:auditor-validation}
+are the only second reading of the same transcripts on record, so we use them
+to measure how much two graders disagree. Table~\ref{tab:auditor-validation}
 summarizes the two comparisons.
 
 \begin{table}[h]
-\caption{The two auditor validations. Arm A is the sweep's original grader and
-arm B is the pinned auditor. Reproduced and disqualified are counts of runs over
-the paired set of size $n$.}
+\caption{The two auditor validations, with reproduced and disqualified counted
+over the paired set of size $n$. Arm A is the sweep's original grader and arm B
+is the pinned auditor.}
 \label{tab:auditor-validation}
 \begin{center}
 \footnotesize
@@ -55,84 +55,85 @@ the paired set of size $n$.}
 \cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
 Validation & $n$ & Graders & A & B & A & B & A & B \\
 \midrule
-Replay, easy sweep & 32 & A self-graded by Qwen3.6-27B, B pinned & 5 & 5 & 2 & 6
+Easy sweep & 32 & A self-graded by Qwen3.6-27B, B pinned & 5 & 5 & 2 & 6
 & 4.66 & 3.97 \\
 \addlinespace
-Re-audit, medium sweep & 32 & A self-graded by MiniMax-M2.7, B pinned & 6 & 5 &
+Medium sweep & 32 & A self-graded by MiniMax-M2.7, B pinned & 6 & 5 &
 10 & 10 & 3.91 & 3.41 \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-\subsection{Changing the grader on an easy-tier sweep}
+\subsection{Re-grading an easy-tier sweep}
 
 % src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:9-11,107-118
 An easy-tier sweep of Qwen3.6-27B was graded by that model during the sweep
-and re-graded by the pinned auditor on 23 July 2026, 34 runs of 34. Both
+and re-graded by the pinned auditor on 2026-07-23, 34 runs of 34. Both
 graders scored 32 of those runs. The mean score is 4.66 under the sweep's own
 grader and 3.97 under the pinned auditor. The sweep's grader scored higher on
-10 runs, equal on 20, and lower on 2, and the mean difference of 0.69 carries
-a Wilcoxon $p = 0.0108$. Across all 34 pinned audits the mean is 3.91.
+10 runs, equal on 20, and lower on 2, with a mean difference of 0.69 at a Wilcoxon $p = 0.0108$. Across all 34 pinned audits the mean is
+3.91.
 
 % src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:109-114,132-142,147-158
 The reproduced set holds its size, and its membership moves by two, with one
-run losing the verdict and one gaining it. The count of runs carrying a
-high-severity flag moves with the disqualified count, from 2 to 6. All four
+run losing the verdict and one gaining it. The count of runs carrying a high-severity flag moves with the disqualified
+count, from 2 to 6. All four
 added disqualifications are flagged \texttt{other\_provenance\_break} or
 \texttt{wrong\_split\_scale\_dataset}, and each cites a specific break, such as
-a report claiming a 2{,}427-sample evaluation whose only backed value comes
-from a 5-sample probe.
+a report claiming a 2{,}427-sample evaluation whose only value established by
+execution evidence comes from a 5-sample probe.
 
 % src: notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:120-131, prompts/prompt_audit.txt:88-101
-Grader identity is not the only difference between the arms. The audit
-prompt's severity rules were amended on 22 July 2026, so that a released
-results file which the agent consumes and discloses caps the score band
-without raising a flag. 32 of the 33 grades in the first arm predate that
-amendment and all 34 pinned audits postdate it, so grader identity and prompt
-version moved together. The amended rule fired on exactly one run of 34, at
-low severity, which does not reach the score-0 cap, so the rest of the
-difference is attributable to the grader.
+Grader identity is not the only difference between the arms. We amended the
+audit prompt's severity rules on 2026-07-22, so that a released results file
+which the agent consumes and discloses caps the score band without raising a
+flag. In the first arm, 32 of the 33 grades predate that amendment and all 34
+pinned audits postdate it, so grader identity and prompt version moved together. The amended rule matched on exactly one run of 34, at low severity,
+which does not reach the score-0 cap, so the rest of the difference is
+attributable to the grader.
 
-\subsection{Changing the grader on a medium-tier sweep}
+\subsection{Re-grading a medium-tier sweep}
 
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:9-10,25-27,266-277, notes/Analysis/medium-sweep-2690187-minimax-runs.json
 A medium-tier sweep of MiniMax-M2.7 was graded the same way and re-graded by
-the pinned auditor on 3 August 2026, 32 runs of 32. The pinned auditor's
-reproduced set is a subset of the sweep grader's, with no run promoted into it. Both graders
-disqualify exactly 10 runs and they agree on 4 of those. Six papers are
-disqualified only by the sweep's grader and six only by the pinned auditor.
+the pinned auditor on 2026-08-03, 32 runs of 32. The pinned auditor's
+reproduced set is a subset of the sweep grader's, with no run promoted into
+it. Both graders disqualify exactly 10 runs and they agree on 4 of those. Six
+runs are disqualified only by the sweep's grader and six only by the pinned
+auditor.
 
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:277-284
 The verdict changes on 16 of the 32 runs and the score changes on 20. Score
 correlation across all 32 is $r = 0.657$. Across the 16 runs where neither
-grader applied the score-0 cap it is $r = 0.863$, with subset means of 6.12
-and 5.69.
+grader applied the score-0 cap the correlation is $r = 0.863$, with subset
+means of 6.12 and 5.69.
 
-\subsection{Where the disagreement sits}
+\subsection{Where the graders disagree}
 
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:286-291, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:147-158, notes/Analysis/2026-08-13 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:456
-The two measurements put the disagreement in one place. The continuous score
-is reliable where the cap does not fire, at $r = 0.863$, and the top of the
-scale is stable, with the earlier reproductions surviving the swap as a strict
-subset. The score-0 cap is the unstable part. No second pass of the pinned
-auditor over one sweep is on record, so the within-grader stability of the cap
-is unmeasured.
+The two measurements locate the disagreement in the same part of the scale.
+The continuous score is reliable where the cap is not applied, at
+$r = 0.863$, and the top of the scale is stable, with the earlier
+reproductions surviving the swap as a strict subset. The score-0 cap is the
+unstable part. No second pass of the pinned auditor over one sweep is on record, so the
+within-grader stability of the cap is unmeasured.
 
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:293-300,332-335
 Two reporting rules follow, and we apply both. We report a disqualification
-count as a rubric behaviour with this instability attached, since 4 of 10
-disqualifications are shared between the two graders of the medium-tier sweep.
-We compare a mean audit score only within one grader, since the grader swap
-alone moves this sweep's mean by 0.5 points over identical transcripts.
+count as a rubric behavior and report this instability with it, since 4 of 10
+disqualifications are shared between the two graders of the medium-tier
+sweep. We compare a mean audit score only within one grader, since the grader
+swap alone moves this sweep's mean by 0.5 points over identical transcripts.
 
-\subsection{Human validation}
+\subsection{Human evaluation}
 
 % src: iclr2027_conference.tex:413-415, notes/Writing/Section Pointers.md:20, notes/TODO List.md:86-87
 The expert-grader study is pending and its result is the agreement figure
-quoted in Section~\ref{sec:auditing}. The design on file has expert graders
-score a held-out sample of runs alongside cases carrying injected provenance
-breaks, and reports agreement as a kappa and an F1 against the human labels,
-with recall on the injected cases. Until that study runs, the code-enforced
-cap is evidence that a flagged run cannot pass and is no evidence about a flag
-the auditor missed or a score it set too harshly.
+quoted in Section~\ref{sec:auditing}. In the planned design, expert graders
+score a held-out sample of runs alongside cases with injected provenance
+breaks, and we report agreement as a kappa and an F1 against the human
+labels, with recall on the injected cases. Until that study runs, the
+code-enforced cap is evidence that a flagged run cannot pass. It is no
+evidence about a flag the auditor missed or a score the auditor set too
+harshly.
