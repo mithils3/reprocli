@@ -30,7 +30,6 @@ from reprocli_vllm.runtime.trace_io import trace_output_path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-prompts", type=int)
     parser.add_argument(
         "--mode",
         choices=("audit",),
@@ -97,8 +96,6 @@ def parse_args() -> argparse.Namespace:
     resolve_mode_settings(args)
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
     if args.max_input_tokens < 1:

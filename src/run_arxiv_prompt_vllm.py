@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import random
 import sys
 
 from reprocli_vllm.config.config import CLAIM_PLACEHOLDER
@@ -33,7 +32,6 @@ def main() -> int:
     ]
     if args.paper_ids_file:
         papers = filter_papers_by_ids(papers, args.paper_ids_file)
-    papers_to_run = select_papers(papers, args.num_prompts)
     prompts = [
         build_audit_prompt(
             prompt_template,
@@ -42,14 +40,10 @@ def main() -> int:
             paper.arxiv_id,
             args.runs_dir,
         )
-        for paper in papers_to_run
+        for paper in papers
     ]
 
-    print(
-        f"Running {len(prompts)} prompts "
-        f"({'full dataset' if args.num_prompts is None else f'random {args.num_prompts}'})",
-        file=sys.stderr,
-    )
+    print(f"Running {len(prompts)} prompts", file=sys.stderr)
     server_url = resolve_server_url(args.vllm_server_url)
     if not server_url:
         raise SystemExit(
@@ -68,7 +62,7 @@ def main() -> int:
     audit_sink = None
     try:
         audit_sink = install_audit_sink(AuditSinkConfig.from_env(model_id))
-        run_tool_loop(args, papers_to_run, prompts, server_url, model_id=model_id)
+        run_tool_loop(args, papers, prompts, server_url, model_id=model_id)
     finally:
         if audit_sink:
             audit_sink.close()
@@ -80,12 +74,6 @@ def main() -> int:
 
 def run_dir_for(runs_dir, arxiv_id: str) -> str:
     return str(runs_dir / arxiv_id) if runs_dir else ""
-
-
-def select_papers(papers: list, num_prompts: int | None) -> list:
-    if num_prompts is None:
-        return papers
-    return random.sample(papers, min(num_prompts, len(papers)))
 
 
 def filter_papers_by_ids(papers: list, ids_file) -> list:
