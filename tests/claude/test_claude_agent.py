@@ -247,7 +247,7 @@ class PricingTests(unittest.TestCase):
         for usage in (opus, sonnet):
             usage.add(_usage(input_tokens=1_000_000, output_tokens=0))
         self.assertAlmostEqual(opus.cost, 5.0, places=6)
-        self.assertAlmostEqual(sonnet.cost, 2.0, places=6)  # introductory rate
+        self.assertAlmostEqual(sonnet.cost, 3.0, places=6)  # post-2026-08-31 rate
 
     def test_sonnet_5_intro_pricing_expires(self) -> None:
         before = agent.prices_for("claude-sonnet-5", today="2026-08-31")
