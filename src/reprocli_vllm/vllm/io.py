@@ -40,8 +40,6 @@ def build_chat_completion_request(
         body["top_p"] = args.top_p
     if args.top_k is not None:
         body["top_k"] = args.top_k
-    if getattr(args, "min_p", None) is not None:
-        body["min_p"] = args.min_p
     if include_tools:
         body["tools"] = args.tools
         body["tool_choice"] = tool_choice

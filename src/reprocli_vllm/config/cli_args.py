@@ -126,7 +126,6 @@ def apply_model_defaults(args: argparse.Namespace) -> None:
     generation_config defaults apply (vLLM recipe style).
     """
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.min_p = getattr(args, "min_p", None)
 
 
 def resolve_mode_settings(args: argparse.Namespace) -> None:

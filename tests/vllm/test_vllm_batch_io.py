@@ -67,18 +67,6 @@ class VllmBatchRequestTests(unittest.TestCase):
         self.assertNotIn("top_p", body)
         self.assertNotIn("top_k", body)
 
-    def test_min_p_included_only_when_set(self) -> None:
-        # No min_p attribute on the namespace -> omitted (getattr default None).
-        body = build_chat_completion_request(
-            "model", "2501.00001", [], args(), include_tools=True
-        )["body"]
-        self.assertNotIn("min_p", body)
-        # Explicit min_p -> forwarded.
-        body = build_chat_completion_request(
-            "model", "2501.00001", [], args(min_p=0.0), include_tools=True
-        )["body"]
-        self.assertEqual(body["min_p"], 0.0)
-
 
 class ResponseFinishReasonTests(unittest.TestCase):
     def test_normal_row(self) -> None:
