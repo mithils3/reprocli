@@ -6,7 +6,7 @@ on whatever the cluster has (GH200/H200/...), so the meter converts a step's
 ``HW_MULTIPLIER[hw]`` and charges it against the per-episode ``Budget``
 (``context.Budget``). Everything here is pure: ``slurm.py`` runs the step and
 times it, ``tools/run_gpu.py`` (Phase 4) calls ``affordable`` before launch and
-``charge`` after.
+``gpu_session`` bills the finished step with ``step_cost_hours`` + ``Budget.consume``.
 
 Cost model: ``gpus x elapsed_hours x HW_MULTIPLIER[hw]``. SLURM only bills the
 run, not the queue wait, so the meter is fed elapsed *run* time, never queue time.
@@ -63,7 +63,3 @@ def affordable(budget: Budget, gpus: int, minutes: float, hw: str) -> tuple[bool
         )
     return True, ""
 
-
-def charge(budget: Budget, gpus: int, elapsed_seconds: float, hw: str) -> float:
-    """Charge a finished step's actual cost against ``budget``; return remaining."""
-    return budget.consume(step_cost_hours(gpus, elapsed_seconds, hw))
