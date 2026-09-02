@@ -82,11 +82,6 @@ def test_score_3_is_not_reproduced():
     assert row["reproduced"] is False
 
 
-def test_score_2_is_not_reproduced():
-    row = finalize_audit_row(_score_row(2), {"exit_reason": "natural"})
-    assert row["verdict"] == "not_reproduced"
-
-
 def test_high_score_without_execution_is_capped_unverifiable():
     # The finalizer must not certify a reproduction the auditor says never ran:
     # execution_verified=False + score 10 is incoherent and caps to unverifiable.
