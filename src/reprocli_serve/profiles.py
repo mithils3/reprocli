@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from reprocli_serve.config import DEFAULT_GPU_MEMORY_UTILIZATION, MAX_MODEL_LEN
@@ -59,7 +59,6 @@ class Profile:
     kv_cache_dtype: str | None = None
     max_num_seqs: int | None = None
     swap_space_gb: float | None = None
-    extra: dict = field(default_factory=dict)
 
 
 def minimax_profile() -> Profile:
