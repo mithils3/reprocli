@@ -87,11 +87,6 @@ _PROFILES: dict[str, Cluster] = {
 }
 
 
-def cluster_names() -> tuple[str, ...]:
-    """Names of the built-in profiles (just ``deltaai``)."""
-    return tuple(_PROFILES)
-
-
 def cluster_defaults() -> dict[str, dict[str, Any]]:
     """The built-in default substrate per known cluster (source for ``list_partitions``).
 

@@ -11,7 +11,6 @@ from reprocli_repro.cluster import (
     DEFAULT_APPTAINER_SIF,
     DEFAULT_CLUSTER,
     cluster_defaults,
-    cluster_names,
     from_args,
     resolve_cluster,
 )
@@ -30,8 +29,6 @@ class ResolveClusterTests(unittest.TestCase):
         # Each agent's CPU shell steps are capped so six can share the brain node.
         self.assertEqual(c.sandbox_cpus, 12)
         self.assertEqual(c.sandbox_mem_gb, 16)
-        # deltaai is the sole known name.
-        self.assertEqual(cluster_names(), ("deltaai",))
 
     def test_partition_and_image_overrides_win(self):
         c = resolve_cluster("deltaai", partition="ghx4-interactive", apptainer_image="/my/image.sif")
@@ -48,9 +45,6 @@ class ResolveClusterTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             resolve_cluster("nope")
 
-    def test_default_is_a_known_name(self):
-        self.assertIn(DEFAULT_CLUSTER, cluster_names())
-
 
 class ClusterDefaultsTests(unittest.TestCase):
     def test_exposes_default_partition_per_known_cluster(self):
@@ -58,7 +52,7 @@ class ClusterDefaultsTests(unittest.TestCase):
         self.assertEqual(defaults["deltaai"]["default_partition"], "ghx4")
         self.assertEqual(defaults["deltaai"]["account"], "bfvr-dtai-gh")
         # Every known cluster is represented, with the fields list_partitions surfaces.
-        self.assertEqual(set(defaults), set(cluster_names()))
+        self.assertEqual(set(defaults), {"deltaai"})
         for entry in defaults.values():
             self.assertEqual(
                 set(entry), {"account", "default_partition", "gpus_per_node", "hw"}
