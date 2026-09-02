@@ -177,7 +177,6 @@ class RunAuditTests(unittest.TestCase):
             "2505.1",
             {"response": {"body": {"choices": [{"message": {"content": result.text}}]}},
              "tool_loop": result.tool_loop},
-            "audit",
         )
         self.assertEqual(row["verdict"], "reproduced")
         self.assertTrue(row["reproduced"])

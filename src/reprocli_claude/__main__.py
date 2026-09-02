@@ -174,7 +174,7 @@ def audit_run(
         )
         raw.update(tool_loop=result.tool_loop, model=args.model, run_id=run.run_id,
                    bundle=str(run.bundle), usage=result.usage.as_dict())
-        verdict = extracted_response(run.arxiv_id, raw, "audit")
+        verdict = extracted_response(run.arxiv_id, raw)
         with WRITE_LOCK:
             append_jsonl_row(args.output, raw, truncate=False)
             append_jsonl_row(args.extracted_output, verdict, truncate=False)

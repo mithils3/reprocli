@@ -66,9 +66,7 @@ def truncate_output_file(path: Path) -> None:
     path.write_text("", encoding="utf-8")
 
 
-def extracted_response(
-    custom_id: str, row: dict[str, Any], mode: str = "classification"
-) -> dict[str, Any]:
+def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
     message = response_message(row)
     content = message.get("content") or ""
     tool_loop = row.get("tool_loop") or {}

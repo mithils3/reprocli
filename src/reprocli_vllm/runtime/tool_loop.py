@@ -223,7 +223,7 @@ def handle_request_done(
     final_rows[custom_id] = row
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
     live_events.final(custom_id, round_index, message, exit_reason,
-                      extracted_response(custom_id, row, args.mode))
+                      extracted_response(custom_id, row))
 
 
 def finalize_failed_request(
@@ -265,7 +265,7 @@ def finalize_failed_request(
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
     live_events.final(
         custom_id, round_index, {}, "error",
-        extracted_response(custom_id, row, args.mode),
+        extracted_response(custom_id, row),
     )
 
 
@@ -286,7 +286,7 @@ def append_completed_outputs(
         append_jsonl_row(args.output, row, truncate=False)
         append_jsonl_row(
             args.extracted_output,
-            extracted_response(custom_id, row, args.mode),
+            extracted_response(custom_id, row),
             truncate=False,
         )
         if args.save_round_jsonl:
