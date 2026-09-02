@@ -85,7 +85,7 @@ main.view { flex: 1; min-height: 0; display: flex; }
 
 /* ---- card anatomy --------------------------------------------------------- */
 /* one surface, one border, one radius, one padding; the kicker heads it */
-.panel-card, .chart-card, .thesis-card, .ov-tile, .about-card {
+.panel-card, .chart-card, .about-card {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg);
   box-shadow: var(--shadow); padding: var(--card-pad); }
 .pc-head, .chart-h { display: flex; align-items: baseline; gap: var(--s3); margin-bottom: var(--s3); }

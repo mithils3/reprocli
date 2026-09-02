@@ -48,7 +48,6 @@
 /* a raised card on true black needs a lit top edge, not a drop shadow, to read
    as raised at all */
 :root[data-theme="dark"] .panel-card,
-:root[data-theme="dark"] .chart-card,
-:root[data-theme="dark"] .stat-card { background-image: linear-gradient(var(--panel2) 0 1px, transparent 1px); }
+:root[data-theme="dark"] .chart-card { background-image: linear-gradient(var(--panel2) 0 1px, transparent 1px); }
 
 :root[data-theme="dark"] .topbar { background: color-mix(in srgb, var(--bg) 82%, transparent); }
