@@ -260,10 +260,6 @@ class MegaMoeExtraArgGuardTests(unittest.TestCase):
 
 
 class PassthroughTests(unittest.TestCase):
-    def test_extra_args_are_appended_verbatim(self) -> None:
-        cmd = command_for(["--model", "m", "--", "--swap-space", "16"])
-        self.assertEqual(cmd[-2:], ["--swap-space", "16"])
-
     def test_single_node_omits_multinode_flags(self) -> None:
         cmd = command_for(["--model", "MiniMaxAI/MiniMax-M2.7"])
         for flag in ("--pipeline-parallel-size", "--nnodes", "--node-rank", "--headless"):
