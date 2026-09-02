@@ -53,8 +53,6 @@ def _tier(base_in: float, base_out: float) -> tuple[float, float, float, float]:
 
 PRICES = {
     "claude-opus-4-8": _tier(5e-6, 25e-6),
-    "claude-opus-4-7": _tier(5e-6, 25e-6),
-    "claude-opus-4-6": _tier(5e-6, 25e-6),
     "claude-fable-5": _tier(10e-6, 50e-6),
     "claude-haiku-4-5": _tier(1e-6, 5e-6),
 }
@@ -125,7 +123,6 @@ class AuditResult:
     place.
     """
 
-    paper_id: str
     text: str
     tool_loop: dict[str, Any]
     usage: Usage = field(default_factory=Usage)
@@ -248,7 +245,7 @@ def run_audit(
         "telemetry": {"tool_calls": tool_calls, "tool_errors": tool_errors},
     }
     if exit_reason == "refusal":
-        return AuditResult(paper_id, "", tool_loop, usage)
+        return AuditResult("", tool_loop, usage)
 
     # Tools off, schema on: the verdict is graded from the evidence just gathered.
     # Announced first because this turn is silent -- it makes no tool calls, so
@@ -267,7 +264,7 @@ def run_audit(
     usage.add(final.usage)
     # The caller emits the "final" event: only it holds the finalized verdict row
     # (score/verdict/flags) that belongs on that event alongside the submission.
-    return AuditResult(paper_id, _text_of(final), tool_loop, usage)
+    return AuditResult(_text_of(final), tool_loop, usage)
 
 
 def _send(
