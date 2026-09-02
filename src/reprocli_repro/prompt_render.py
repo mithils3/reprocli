@@ -2,32 +2,26 @@
 
 ``render_reproduce_prompt`` fills every ``{PLACEHOLDER}`` in
 ``prompts/prompt_reproduce.txt`` and refuses to return a prompt with any
-placeholder left unfilled. Pure: a row (+ budget + run paths) in, a string out —
-the row accessors live in ``dataset`` and the in-container path constants in
+placeholder left unfilled. Pure: a row (+ budget) in, a string out — the row
+accessors live in ``dataset`` and the in-container path constants in
 ``sandbox``.
 """
 
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
 
 from reprocli_repro import sandbox
 from reprocli_repro.dataset import arxiv_id_of, band_of, format_hours
-
-if TYPE_CHECKING:
-    from reprocli_repro.inputs import RunPaths
 
 # Every uppercase {TOKEN} the template carries. Literal JSON shown to the agent is
 # lowercase on purpose, so this regex only ever matches a real placeholder.
 _PLACEHOLDER_RE = re.compile(r"\{[A-Z][A-Z0-9_]*\}")
 
 
-def render_reproduce_prompt(
-    template: str, row: dict, *, budget: float, run_paths: "RunPaths"
-) -> str:
+def render_reproduce_prompt(template: str, row: dict, *, budget: float) -> str:
     rendered = template
-    for token, value in _replacements(row, budget, run_paths).items():
+    for token, value in _replacements(row, budget).items():
         rendered = rendered.replace(token, value)
     leftover = sorted(set(_PLACEHOLDER_RE.findall(rendered)))
     if leftover:
@@ -35,7 +29,7 @@ def render_reproduce_prompt(
     return rendered
 
 
-def _replacements(row: dict, budget: float, run_paths: "RunPaths") -> dict[str, str]:
+def _replacements(row: dict, budget: float) -> dict[str, str]:
     return {
         "{ARXIV_ID}": arxiv_id_of(row) or "(unknown)",
         "{PAPER_KIND}": _text_or(row.get("paper_kind"), "empirical"),
