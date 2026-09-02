@@ -61,7 +61,9 @@ def ensure_session(
         # failure surfaced to the model, not a library-level process crash.
         return None, str(exc)
     if not handle.ok or not handle.jobid:
-        return None, _acquire_error(handle)
+        # One-line reason the acquire failed, from salloc's stderr.
+        tail = (handle.stderr or "").strip().splitlines()
+        return None, (tail[-1] if tail else "salloc did not report a job allocation")
     now = time.monotonic()
     session = GpuSession(
         jobid=handle.jobid,
@@ -141,10 +143,3 @@ def teardown_all(contexts: Iterable[ExecutionContext]) -> None:
             release(ctx, "teardown")
         except Exception:  # teardown must never mask the real run outcome
             continue
-
-
-def _acquire_error(handle: slurm.SessionHandle) -> str:
-    """One-line reason an acquire failed, from salloc's stderr."""
-    tail = (handle.stderr or "").strip().splitlines()
-    detail = tail[-1] if tail else "salloc did not report a job allocation"
-    return detail
