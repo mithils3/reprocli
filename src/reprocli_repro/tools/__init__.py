@@ -32,32 +32,39 @@ from __future__ import annotations
 
 from typing import Any
 
-from reprocli_vllm.config.config import TOOL_RESULT_MAX_CHARS
+from reprocli_vllm.config.config import TOOL_MAX_CHARS, TOOL_RESULT_MAX_CHARS, function_tool
 from reprocli_vllm.tools.result_limits import is_transient_error, truncate_tool_result
-from reprocli_vllm.tools.web_fetch import parse_tool_arguments
+from reprocli_vllm.tools.web_fetch import fetch_url_tool, parse_tool_arguments
 
-from reprocli_repro.cluster import DEFAULT_CLUSTER, resolve_cluster
 from reprocli_repro.context import ExecutionContext
-from reprocli_repro.tools.fetch import FETCH_TOOL_HANDLERS, FETCH_TOOLS
 from reprocli_repro.tools.files import FILE_TOOL_HANDLERS, FILE_TOOLS
 from reprocli_repro.tools.partitions import LIST_PARTITIONS_HANDLERS, LIST_PARTITIONS_TOOLS
 from reprocli_repro.tools.plan import UPDATE_PLAN_HANDLERS, UPDATE_PLAN_TOOLS
 from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
-# The per-node GPU cap baked into run_gpu's schema is cluster-specific; cli_args
-# rebuilds the toolset with the resolved cluster's gpus_per_node. This default
-# covers the common case (the default cluster profile).
-_DEFAULT_GPUS_PER_NODE = resolve_cluster(DEFAULT_CLUSTER).gpus_per_node
+_FETCH_TOOL = function_tool(
+    "fetch_url",
+    "Fetch a direct public http(s) URL and return its status, final URL, and "
+    "text (HTML is reduced to text). There is no general web-search tool — you "
+    "fetch URLs you already know or can construct (e.g. the PyTorch install page "
+    "or wheel index to find the right aarch64/CUDA torch build, a raw README or "
+    "requirements file, a docs/release page).",
+    {
+        "url": {"type": "string", "description": "HTTP or HTTPS URL."},
+        "max_chars": {"type": "integer", "default": TOOL_MAX_CHARS},
+    },
+    ["url"],
+)
 
 
-def build_repro_tools(gpus_per_node: int = _DEFAULT_GPUS_PER_NODE) -> list[dict]:
+def build_repro_tools(gpus_per_node: int) -> list[dict]:
     """The tool schemas advertised to the model, with run_gpu's GPU cap = node size."""
     return [
         WORKSPACE_BASH_TOOL,
         *FILE_TOOLS,
         *UPDATE_PLAN_TOOLS,
-        *FETCH_TOOLS,
+        _FETCH_TOOL,
         *LIST_PARTITIONS_TOOLS,
         run_gpu_tool(gpus_per_node),
     ]
@@ -67,7 +74,7 @@ REPRO_TOOL_HANDLERS: dict[str, Any] = {
     **WORKSPACE_BASH_HANDLERS,
     **FILE_TOOL_HANDLERS,
     **UPDATE_PLAN_HANDLERS,
-    **FETCH_TOOL_HANDLERS,
+    "fetch_url": lambda arguments, _ctx: fetch_url_tool(arguments),
     **LIST_PARTITIONS_HANDLERS,
     **RUN_GPU_HANDLERS,
 }
