@@ -194,7 +194,6 @@ class Beacon:
         self.key = key
         self.host = socket.gethostname().split(".")[0]
         self.batch_id = args.batch_id or os.environ.get("REPRO_BATCH_ID") or None
-        self.failed = 0            # counted silently; the beacon never complains
         self._last_prune = 0.0
 
     def cycle(self) -> None:
@@ -223,14 +222,11 @@ class Beacon:
 
     def _post(self, method: str, path: str, body: Any, *, prefer: str | None = None) -> None:
         try:
-            code, _ = postgrest.request(
+            postgrest.request(
                 self.url + path, service_key=self.key, method=method,
                 body=body, prefer=prefer, timeout=HTTP_TIMEOUT)
         except Exception:  # noqa: BLE001 — best-effort; never propagate
-            self.failed += 1
-            return
-        if not code or code >= 300:
-            self.failed += 1
+            pass
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -267,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             beacon.cycle()
         except Exception:  # noqa: BLE001 — telemetry may never raise out of its loop
-            beacon.failed += 1
+            pass
         if args.once:
             return 0
         time.sleep(max(1.0, args.interval))
