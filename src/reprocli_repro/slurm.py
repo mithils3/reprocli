@@ -108,7 +108,6 @@ class SessionHandle:
     ok: bool
     jobid: str | None
     stderr: str
-    command: list[str]
 
 
 def _require_target(cluster: Cluster, gpus: int, partition: str | None) -> None:
@@ -227,7 +226,6 @@ def acquire_session(
             ok=False,
             jobid=None,
             stderr=f"{printed}\n[salloc timed out{waited} waiting for the allocation]".lstrip("\n"),
-            command=argv,
         )
     found = _JOBID_RE.findall(decode(proc.stdout) + "\n" + decode(proc.stderr))
     jobid = found[-1] if found else None
@@ -235,7 +233,6 @@ def acquire_session(
         ok=jobid is not None and proc.returncode == 0,
         jobid=jobid,
         stderr=decode(proc.stderr),
-        command=argv,
     )
 
 

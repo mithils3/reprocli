@@ -66,7 +66,7 @@ class EnsureAndReleaseTests(unittest.TestCase):
     def test_ensure_acquires_sets_session_and_starts_the_clock(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            handle = SessionHandle(ok=True, jobid="77", stderr="", command=["salloc"])
+            handle = SessionHandle(ok=True, jobid="77", stderr="")
             with mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle):
                 session, err = gpu_session.ensure_session(ctx, gpus=2, minutes=30)
             self.assertIsNone(err)
@@ -86,7 +86,7 @@ class EnsureAndReleaseTests(unittest.TestCase):
     def test_ensure_reports_a_failed_acquire(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            handle = SessionHandle(ok=False, jobid=None, stderr="salloc: error: boom", command=["salloc"])
+            handle = SessionHandle(ok=False, jobid=None, stderr="salloc: error: boom")
             with mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle):
                 session, err = gpu_session.ensure_session(ctx, gpus=1, minutes=5)
             self.assertIsNone(session)

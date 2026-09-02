@@ -148,7 +148,7 @@ class RunBeaconHookTests(unittest.TestCase):
         run_beacon._BEACONS.clear()
 
     def _acquire(self, ctx: ExecutionContext, env: dict[str, str]) -> mock.Mock:
-        handle = SessionHandle(ok=True, jobid="777", stderr="", command=["salloc"])
+        handle = SessionHandle(ok=True, jobid="777", stderr="")
         popen = mock.patch("reprocli_repro.run_beacon.subprocess.Popen", return_value=mock.Mock())
         with mock.patch.dict("os.environ", env, clear=True), \
              mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle), \

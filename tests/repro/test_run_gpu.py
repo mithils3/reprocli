@@ -34,7 +34,7 @@ def _ctx(root: Path, *, budget_hours: float = 8.0) -> ExecutionContext:
 
 
 def _handle(jobid: str | None = "555", *, ok: bool = True, stderr: str = "") -> SessionHandle:
-    return SessionHandle(ok=ok, jobid=jobid, stderr=stderr, command=["salloc"])
+    return SessionHandle(ok=ok, jobid=jobid, stderr=stderr)
 
 
 def _step(stdout: str = "ok", stderr: str = "", *, rc: int = 0, elapsed: float = 1.0) -> StepResult:
