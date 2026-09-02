@@ -61,7 +61,9 @@ def ensure_session(
         # failure surfaced to the model, not a library-level process crash.
         return None, str(exc)
     if not handle.ok or not handle.jobid:
-        return None, _acquire_error(handle)
+        # One-line reason the acquire failed, from salloc's stderr.
+        tail = (handle.stderr or "").strip().splitlines()
+        return None, (tail[-1] if tail else "salloc did not report a job allocation")
     now = time.monotonic()
     session = GpuSession(
         jobid=handle.jobid,
@@ -73,7 +75,6 @@ def ensure_session(
         partition=partition or ctx.cluster.partition,
     )
     ctx.session = session
-    ctx.allocation = handle.jobid
     # Telemetry sidecar into the fresh allocation; no-op unless SUPABASE env is set.
     run_beacon.start(ctx, handle.jobid)
     return session, None
@@ -107,7 +108,6 @@ def drop_lost(ctx: ExecutionContext) -> None:
     if ctx.session is not None:
         run_beacon.stop(ctx.session.jobid)  # the step died with the allocation; drop the client
     ctx.session = None
-    ctx.allocation = None
 
 
 def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
@@ -128,7 +128,6 @@ def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
         "reason": reason,
     }
     ctx.session = None
-    ctx.allocation = None
     if ctx.evidence is not None:
         evidence_mod.append_trajectory(ctx.evidence, {"type": "gpu_release", **record})
     return record
@@ -141,10 +140,3 @@ def teardown_all(contexts: Iterable[ExecutionContext]) -> None:
             release(ctx, "teardown")
         except Exception:  # teardown must never mask the real run outcome
             continue
-
-
-def _acquire_error(handle: slurm.SessionHandle) -> str:
-    """One-line reason an acquire failed, from salloc's stderr."""
-    tail = (handle.stderr or "").strip().splitlines()
-    detail = tail[-1] if tail else "salloc did not report a job allocation"
-    return detail

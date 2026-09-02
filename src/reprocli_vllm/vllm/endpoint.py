@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -41,10 +42,13 @@ ENV_SERVED_MODEL = "REPROCLI_SERVED_MODEL"
 ENV_API_KEY = "REPROCLI_API_KEY"
 ENV_OPENROUTER_PROVIDER = "REPROCLI_OPENROUTER_PROVIDER"
 ENV_CHAT_TEMPLATE_KWARGS = "REPROCLI_CHAT_TEMPLATE_KWARGS"
+ENV_REASONING_EFFORT = "REPROCLI_REASONING_EFFORT"
+ENV_CONTEXT_LENGTH = "REPROCLI_CONTEXT_LENGTH"
+ENV_NO_TRUNCATE_PROMPT = "REPROCLI_NO_TRUNCATE_PROMPT"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
-def resolve_api_key(cli_value: str | None = None) -> str | None:
+def resolve_api_key() -> str | None:
     """Bearer token for an authenticated endpoint (e.g. OpenRouter), or None.
 
     A local self-served vLLM needs no key, so this is empty by default and the
@@ -53,13 +57,13 @@ def resolve_api_key(cli_value: str | None = None) -> str | None:
     different provider — so a stray provider key in the shell can't leak to a URL
     it wasn't issued for.
     """
-    value = cli_value or os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
+    value = os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
     return (value or "").strip() or None
 
 
-def auth_headers(cli_value: str | None = None) -> dict[str, str]:
+def auth_headers() -> dict[str, str]:
     """``Authorization: Bearer`` header when a key is configured, else ``{}``."""
-    key = resolve_api_key(cli_value)
+    key = resolve_api_key()
     return {"Authorization": f"Bearer {key}"} if key else {}
 
 
@@ -113,6 +117,65 @@ def chat_template_kwargs() -> dict[str, Any] | None:
     return parsed
 
 
+def reasoning_effort() -> str | None:
+    """Per-request ``reasoning_effort`` for every completion, or None.
+
+    The OpenAI-compatible spelling of the knob ``chat_template_kwargs`` covers for a
+    locally-served model: a hosted reasoning API takes the depth as a top-level body
+    field instead of a chat-template flag. Set ``REPROCLI_REASONING_EFFORT`` to the
+    value the provider documents (Muse Spark accepts ``xhigh`` for maximum depth;
+    OpenAI-style backends take low/medium/high) and it rides on every chat-completion
+    body.
+
+    Unset/empty -> ``None`` and no field is sent, so a local vLLM sweep and every
+    non-reasoning model are unaffected.
+    """
+    value = (os.environ.get(ENV_REASONING_EFFORT) or "").strip()
+    return value or None
+
+
+def truncate_prompt_disabled() -> bool:
+    """Whether to strip ``truncate_prompt_tokens`` from every chat-completion body.
+
+    ``truncate_prompt_tokens`` is a vLLM extension: the server clips an over-long
+    prompt to the input ceiling instead of erroring. A self-hosted vLLM owns the
+    field and OpenRouter tolerates it, so it has ridden on every body since the
+    harness was written. A strictly-validating hosted API rejects the unknown
+    parameter with a 400 on the first call of both loops (the Meta Model API answers
+    ``unknown parameter `truncate_prompt_tokens```), and the preflight never catches
+    it because that probe only does a GET on /v1/models.
+
+    Set ``REPROCLI_NO_TRUNCATE_PROMPT=1`` for such a backend. The prompt ceiling then
+    rests entirely on the harness's own compaction, so pair it with a context length
+    the provider actually documents.
+
+    Unset/empty/0/false/no -> ``False`` and the field is sent, so every vLLM and
+    OpenRouter sweep is unaffected.
+    """
+    value = (os.environ.get(ENV_NO_TRUNCATE_PROMPT) or "").strip().lower()
+    return value not in ("", "0", "false", "no")
+
+
+OPENROUTER_HOST = "openrouter.ai"
+
+
+def is_openrouter(base_url: str) -> bool:
+    """Whether ``base_url`` is OpenRouter, and so understands a ``provider`` block.
+
+    ``provider`` is OpenRouter's own body field for upstream routing. Every other
+    backend either ignores an unknown key (a self-hosted vLLM) or rejects the whole
+    request: the Meta Model API answers 400 ``unknown parameter `provider```, which
+    killed the tools-off final pass of both loops on 2026-08-13 while every tool
+    round before it succeeded.
+
+    Presence of an API key used to stand in for "this is OpenRouter". That proxy
+    holds only while OpenRouter is the sole keyed backend, and it silently stopped
+    being true the moment a second hosted API arrived. Ask the URL instead.
+    """
+    host = (urllib.parse.urlparse(base_url).hostname or "").lower()
+    return host == OPENROUTER_HOST or host.endswith(f".{OPENROUTER_HOST}")
+
+
 def normalize_server_url(value: str) -> str:
     """Strip a trailing slash and a trailing ``/v1`` so callers can append paths."""
     url = value.strip().rstrip("/")
@@ -136,13 +199,13 @@ def resolve_server_url(cli_value: str | None) -> str | None:
     return None
 
 
-def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[dict]:
+def fetch_model_cards(base_url: str) -> list[dict]:
     """Return the raw ``/v1/models`` entries the server advertises (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
 
     def _do() -> dict:
         request = urllib.request.Request(url, headers=auth_headers(), method="GET")
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=MODELS_FETCH_TIMEOUT) as response:
             return json.loads(response.read().decode("utf-8"))
 
     try:
@@ -153,28 +216,41 @@ def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> l
     return [entry for entry in entries or [] if isinstance(entry, dict)]
 
 
-def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
+def fetch_served_models(base_url: str) -> list[str]:
     """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     return [
         entry["id"]
-        for entry in fetch_model_cards(base_url, timeout)
+        for entry in fetch_model_cards(base_url)
         if isinstance(entry.get("id"), str) and entry["id"]
     ]
 
 
-def fetch_served_context_length(
-    base_url: str,
-    model_id: str | None = None,
-    timeout: float = MODELS_FETCH_TIMEOUT,
-) -> int:
+def fetch_served_context_length(base_url: str, model_id: str | None = None) -> int:
     """Context window the server advertises for ``model_id``.
 
     vLLM's model card carries ``max_model_len``; OpenAI-compatible proxies (OpenRouter)
     carry ``context_length``, so we read either. Raises rather than guessing a default:
     the served window is the harness's input ceiling, and inventing one is how a
     1M-context brain ends up capped at some number the server never agreed to.
+
+    ``REPROCLI_CONTEXT_LENGTH`` overrides the lookup for a server whose model cards
+    carry no window at all (the Meta Model API advertises only id/object/created/
+    owned_by, so Muse Spark cannot be resolved from its card). That is the operator
+    stating the ceiling, which is different from this function inventing one, so an
+    unset env var still raises rather than falling back to a number nobody chose.
     """
-    for entry in fetch_model_cards(base_url, timeout):
+    override = (os.environ.get(ENV_CONTEXT_LENGTH) or "").strip()
+    if override:
+        try:
+            value = int(override)
+        except ValueError:
+            raise RuntimeError(
+                f"{ENV_CONTEXT_LENGTH}={override!r} is not an integer."
+            ) from None
+        if value <= 0:
+            raise RuntimeError(f"{ENV_CONTEXT_LENGTH}={value} must be positive.")
+        return value
+    for entry in fetch_model_cards(base_url):
         if model_id and entry.get("id") != model_id:
             continue
         for field in ("max_model_len", "context_length"):
@@ -183,15 +259,12 @@ def fetch_served_context_length(
                 return value
     raise RuntimeError(
         f"{base_url}/v1/models advertised no context window for {model_id!r}; "
-        f"cannot resolve the input ceiling."
+        f"cannot resolve the input ceiling. Set {ENV_CONTEXT_LENGTH} to the window "
+        f"the provider documents if its model cards omit it."
     )
 
 
-def resolve_served_model(
-    base_url: str,
-    cli_value: str | None = None,
-    timeout: float = MODELS_FETCH_TIMEOUT,
-) -> str:
+def resolve_served_model(base_url: str, cli_value: str | None = None) -> str:
     """Pick the model id to send in requests against an attached server.
 
     Priority for the name: ``--served-model-name`` flag > ``REPROCLI_SERVED_MODEL``
@@ -201,7 +274,7 @@ def resolve_served_model(
     verbatim but checked against the advertised list so a typo fails loudly here
     rather than as a per-request 404.
     """
-    available = fetch_served_models(base_url, timeout)
+    available = fetch_served_models(base_url)
     override = (cli_value or os.environ.get(ENV_SERVED_MODEL) or "").strip()
     if override:
         if available and override not in available:

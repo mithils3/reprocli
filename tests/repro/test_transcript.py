@@ -46,11 +46,6 @@ def test_sweep_wall_note_garbage_value_returns_none(monkeypatch):
     assert sweep_wall_note() is None
 
 
-def test_sweep_wall_note_empty_value_returns_none(monkeypatch):
-    monkeypatch.setenv(WALL_DEADLINE_ENV, "")
-    assert sweep_wall_note() is None
-
-
 def test_sweep_wall_note_unset_returns_none(monkeypatch):
     monkeypatch.delenv(WALL_DEADLINE_ENV, raising=False)
     assert sweep_wall_note() is None

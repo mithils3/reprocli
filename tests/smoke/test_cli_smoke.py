@@ -52,7 +52,7 @@ class ReproCliSmokeTests(unittest.TestCase):
         self.assertEqual(args.paper_id, "2505.18513")
         self.assertEqual(args.split, "dev")
         self.assertEqual(args.cluster_profile.name, "deltaai")
-        self.assertTrue(args.tools)  # build_repro_tools() advertised toolset
+        self.assertTrue(args.tools)  # build_repro_tools advertised toolset
         self.assertIsNotNone(args.response_format)
 
     def test_easy_sweep_reproduce_stage_parses(self):

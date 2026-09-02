@@ -24,13 +24,20 @@ MULTI = ["--model", "m", "--nnodes", "2", "--node-rank", "1", "--master-addr", "
 
 
 class ServeEnvTests(unittest.TestCase):
-    def test_single_node_inherits_unchanged(self) -> None:
-        self.assertIsNone(env_for(SINGLE, {}, "172.28.80.80"))
+    def test_single_node_disables_flashinfer_sampler(self) -> None:
+        env = env_for(SINGLE, {}, "172.28.80.80")
+        self.assertEqual(env["VLLM_USE_FLASHINFER_SAMPLER"], "0")
+        self.assertNotIn("VLLM_HOST_IP", env)
+
+    def test_explicit_flashinfer_sampler_wins(self) -> None:
+        env = env_for(SINGLE, {"VLLM_USE_FLASHINFER_SAMPLER": "1"}, None)
+        self.assertEqual(env["VLLM_USE_FLASHINFER_SAMPLER"], "1")
 
     def test_multinode_pins_fabric_ip_and_async_handling(self) -> None:
         env = env_for(MULTI, {}, "172.28.80.80")
         self.assertEqual(env["VLLM_HOST_IP"], "172.28.80.80")
         self.assertEqual(env["TORCH_NCCL_ASYNC_ERROR_HANDLING"], "1")
+        self.assertEqual(env["VLLM_USE_FLASHINFER_SAMPLER"], "0")
 
     def test_explicit_host_ip_wins(self) -> None:
         env = env_for(MULTI, {"VLLM_HOST_IP": "10.0.0.9"}, "172.28.80.80")

@@ -36,6 +36,7 @@ from reprocli_repro.workspace import create_layout
 from reprocli_vllm.audit.audit import finalize_audit_row
 from reprocli_vllm.audit.inputs import build_audit_prompt
 from reprocli_vllm.tools.run_dir_tools import list_run_files, read_run_file, run_bash
+from run_arxiv_prompt_vllm import run_dir_for
 
 ARXIV = "2510.21323"
 BUDGET = 8.0
@@ -43,12 +44,6 @@ RUN_ID = "20260630T120000Z-m2gate"
 
 # The three placeholders the audit prompt template carries (config.config).
 AUDIT_TEMPLATE = "CLAIM:\n{CENTRAL_CLAIM}\n\nRUBRIC:\n{RUBRIC}\n\nBUNDLE:\n{RUN_BUNDLE}\n"
-
-
-def run_dir_for(runs_dir: Path, arxiv_id: str) -> str:
-    """Mirror ``run_arxiv_prompt_vllm.run_dir_for`` -- the audit-mode entry seam
-    that binds one paper to ``<runs-dir>/<arxiv_id>``."""
-    return str(Path(runs_dir) / arxiv_id) if runs_dir else ""
 
 
 def claim_record() -> dict:

@@ -104,8 +104,7 @@ class RunPathTests(unittest.TestCase):
 class RenderTests(unittest.TestCase):
     def test_no_unfilled_placeholders(self):
         template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
-        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0)
         self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
         self.assertIn("2505.11483", prompt)
         self.assertIn("8 H100-hours total", prompt)
@@ -116,8 +115,7 @@ class RenderTests(unittest.TestCase):
         # run CONFIG, the MRE recipe, and the step-by-step task stay OUT — the agent
         # derives those from the paper.
         template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
-        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0)
         # Target fields ARE now rendered.
         self.assertIn("Peak RAM usage", prompt)     # match_target['metric']
         self.assertIn("MBV2-w0.35 model", prompt)   # match_target['scope']
@@ -131,7 +129,6 @@ class RenderTests(unittest.TestCase):
 
     def test_signals_block_renders_when_present(self):
         template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
         row = dict(
             ROW,
             signals={
@@ -157,7 +154,7 @@ class RenderTests(unittest.TestCase):
                 },
             },
         )
-        prompt = render_reproduce_prompt(template, row, budget=8.0, run_paths=paths)
+        prompt = render_reproduce_prompt(template, row, budget=8.0)
         self.assertIn("Code: no (classifier verification: tool_verified)", prompt)
         self.assertIn("Repo is a release-pending TODO stub.", prompt)
         self.assertIn("Dataset: yes", prompt)
@@ -165,20 +162,14 @@ class RenderTests(unittest.TestCase):
 
     def test_signals_block_falls_back_when_absent(self):
         template = PROMPT_FILE.read_text(encoding="utf-8")
-        paths = resolve_run_paths(Path("/runs"), "2505.11483", 8.0, run_id="RID")
         # ROW carries no `signals` (a pre-signals lockfile row); the block must still fill.
-        prompt = render_reproduce_prompt(template, ROW, budget=8.0, run_paths=paths)
+        prompt = render_reproduce_prompt(template, ROW, budget=8.0)
         self.assertIn("No pre-assessed availability recorded", prompt)
         self.assertNotRegex(prompt, r"\{[A-Z][A-Z0-9_]*\}")
 
     def test_unfilled_placeholder_is_rejected(self):
         with self.assertRaises(ValueError):
-            render_reproduce_prompt(
-                "before {AGENT_TASK} {NOT_A_FIELD} after",
-                ROW,
-                budget=8.0,
-                run_paths=resolve_run_paths(Path("/runs"), "x", 8.0, run_id="RID"),
-            )
+            render_reproduce_prompt("before {AGENT_TASK} {NOT_A_FIELD} after", ROW, budget=8.0)
 
 
 class PrepareEpisodesTests(unittest.TestCase):

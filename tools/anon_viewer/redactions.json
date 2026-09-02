@@ -1,0 +1,35 @@
+{
+  "hide_runs": [],
+  "hide_fields": {
+    "minimax-run-2505.18809": ["analysis.failure_mode_detail", "analysis.agent_trajectory_summary", "analysis.evidence_quotes"],
+    "dsv4-retrain-2504.12463": ["analysis.evidence_quotes"],
+    "qwen3-run-2503.18430": ["analysis.failure_mode_detail"],
+    "qwen3-reimplement-2506.00070": ["analysis.evidence_quotes", "analysis.agent_trajectory_summary"],
+    "minimax-retrain-2506.13717": ["analysis.agent_trajectory_summary"],
+    "qwen3-run-2504.12397": ["analysis.failure_mode_detail"],
+    "qwen3-reimplement-2503.02809": ["analysis.agent_trajectory_summary"],
+    "qwen3-retrain-2509.16391": ["analysis.agent_trajectory_summary"],
+    "qwen3-reimplement-2502.08924": ["analysis.agent_trajectory_summary"],
+    "qwen3-reimplement-2511.20906": ["analysis.agent_trajectory_summary"],
+    "minimax-run-2503.18430": ["analysis.evidence_quotes"],
+    "minimax-retrain-2506.20233": ["analysis.evidence_quotes"],
+    "qwen3-run-2505.10475": ["analysis.failure_mode_detail", "analysis.evidence_quotes"],
+    "qwen3-run-2506.01511": ["analysis.failure_mode_detail"]
+  },
+  "hide_sentences": {
+    "qwen3-reimplement-2510.25146": ["should have been excluded"],
+    "qwen3-reimplement-2510.04136": ["needs correction", "stale audit_result", "fabricated"],
+    "dsv4-reimplement-2510.04136": ["corresponds to no table"],
+    "qwen3-retrain-2502.01203": ["mis-specification"],
+    "qwen3-run-2506.02392": ["should have been pinned"],
+    "minimax-retrain-2510.09485": ["garbled"],
+    "qwen3-retrain-2510.09485": ["garbled", "flagged for human review"],
+    "qwen3-run-2505.11483": ["mis-specified"],
+    "minimax-retrain-2510.22123": ["I diverge"],
+    "minimax-run-2505.14827": ["diverges from a prior"],
+    "qwen3-run-2410.18164": ["audit_result.json"],
+    "qwen3-reimplement-2505.24452": ["curation-level"],
+    "qwen3-retrain-2505.17836": ["read off a log-log figure"],
+    "qwen3-run-2506.12025": ["worth flagging"]
+  }
+}

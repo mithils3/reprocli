@@ -52,9 +52,7 @@ def remove_endpoint(path: Path) -> None:
     """Remove a published endpoint file if present (best effort, on shutdown)."""
     try:
         path.unlink()
-    except FileNotFoundError:
-        pass
-    except OSError:
+    except OSError:  # includes FileNotFoundError
         pass
 
 

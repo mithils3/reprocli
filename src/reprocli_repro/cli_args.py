@@ -22,7 +22,7 @@ from reprocli_vllm.config.config import DEFAULT_MODEL
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
-from reprocli_repro.cluster import from_args as resolve_cluster
+from reprocli_repro.cluster import resolve_cluster
 from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 from reprocli_repro.inputs import DEFAULT_UNBANDED_BUDGET_H100_HOURS
 from reprocli_repro.report import REPORT_RESPONSE_FORMAT
@@ -258,7 +258,6 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.temperature = None
     args.top_p = _env_float("REPROCLI_TOP_P")
     args.top_k = _env_int("REPROCLI_TOP_K")
-    args.min_p = None
     args.max_tokens = MAX_TOKENS
     # Set from the attached brain's advertised window in __main__; a dry run attaches to
     # no server and issues no requests, so it stays None there.
@@ -273,7 +272,10 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.response_format = REPORT_RESPONSE_FORMAT
     # Resolve the JIT-allocation substrate once: the named profile merged with any
     # per-field overrides. slurm.py / the Phase-4 run_gpu tool read this.
-    args.cluster_profile = resolve_cluster(args)
+    args.cluster_profile = resolve_cluster(
+        partition=getattr(args, "partition", None),
+        apptainer_image=getattr(args, "apptainer_image", None),
+    )
     # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
     # per-node size, so the model picks a valid GPU count for this substrate.

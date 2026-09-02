@@ -15,16 +15,6 @@ TOOL_RESULT_MAX_CHARS = 40_000
 # (read off the args namespace by runtime/tool_loop.py).
 MAX_REPEATED_TOOL_CALLS = 2
 REQUEST_TIMEOUT = 1800.0
-FINAL_NO_TOOLS_MESSAGE = (
-    "The tool phase is finished. Write the final JSON now from the paper text "
-    "and the tool results above. Fill each signal's verification field with "
-    "what actually happened during the tool phase; this message is not a tool "
-    "failure. Checklist: clean URLs only in verified_links; search summaries go "
-    "in evidence strings, not URL arrays; signals are scoped to the MRE; "
-    "h100_estimate.hours matches its arithmetic fields; no score or tier. "
-    "Return only the JSON object: the first output character must be { and the "
-    "last must be }. No prose, no markdown fences, no tool calls."
-)
 CONTEXT_BUDGET_NOTE = (
     "The conversation hit its context budget, so the tool phase ended early. "
     "Mark any category you could not finish checking as tool_failed or "

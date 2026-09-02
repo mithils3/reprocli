@@ -9,6 +9,7 @@ cross-argument validation enforced.
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from reprocli_vllm.config.config import (
     AUDIT_CLAIMS_DEFAULT,
@@ -30,7 +31,6 @@ from reprocli_vllm.runtime.trace_io import trace_output_path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-prompts", type=int)
     parser.add_argument(
         "--mode",
         choices=("audit",),
@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--claims",
-        type=argparse_path,
+        type=Path,
         help=(
             "Audit-pool rows (classifier extracted output) carrying the "
             "central_claim per paper, injected into the audit prompt. A local "
@@ -49,17 +49,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--runs-dir",
-        type=argparse_path,
+        type=Path,
         help=(
             "Root directory of agent reproduction runs; the auditor reads one "
             "run dir per paper at <runs-dir>/<arxiv_id> via the path-confined "
             f"run-dir tools (default: {AUDIT_RUNS_DIR_DEFAULT})."
         ),
     )
-    parser.add_argument("--prompt-file", type=argparse_path)
-    parser.add_argument("--output", type=argparse_path)
-    parser.add_argument("--extracted-output", type=argparse_path)
-    parser.add_argument("--trace-output", type=argparse_path)
+    parser.add_argument("--prompt-file", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--extracted-output", type=Path)
+    parser.add_argument("--trace-output", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument(
         "--vllm-server-url",
@@ -80,7 +80,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--paper-ids-file",
-        type=argparse_path,
+        type=Path,
         help="Run only the arXiv ids listed in this file (one per line).",
     )
     parser.add_argument("--max-tokens", type=int, default=32768)
@@ -91,15 +91,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
     parser.add_argument("--top-k", type=int)
-    parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
     args = parser.parse_args()
     apply_model_defaults(args)
     resolve_mode_settings(args)
     if args.tool_rounds < 1:
         parser.error("--tool-rounds must be >= 1")
-    if args.num_prompts is not None and args.num_prompts < 1:
-        parser.error("--num-prompts must be >= 1")
     if args.request_workers < 1:
         parser.error("--request-workers must be >= 1")
     if args.max_input_tokens < 1:
@@ -127,7 +124,6 @@ def apply_model_defaults(args: argparse.Namespace) -> None:
     generation_config defaults apply (vLLM recipe style).
     """
     args.max_model_len = args.max_model_len or MAX_MODEL_LEN
-    args.min_p = getattr(args, "min_p", None)
 
 
 def resolve_mode_settings(args: argparse.Namespace) -> None:
@@ -148,8 +144,3 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     # Fixed loop guard (was --max-repeated-tool-calls, never varied).
     args.max_repeated_tool_calls = MAX_REPEATED_TOOL_CALLS
 
-
-def argparse_path(value: str):
-    from pathlib import Path
-
-    return Path(value)

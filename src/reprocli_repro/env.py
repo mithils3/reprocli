@@ -27,19 +27,6 @@ if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
 
 
-def env_inner(workdir, command: str) -> str:
-    """The ``bash -lc`` body for one step: ``cd <workdir> && <cmd>``.
-
-    The container (``sandbox.py``) supplies the toolchain, so the body carries no
-    ``module load`` — loading host modules would either be a no-op or, inside the
-    ``--cleanenv`` container where ``module`` does not exist, fail and short-circuit the
-    real command. ``workdir`` is the short container workspace path (``/repro/workspace``)
-    under the sandbox, or the host workspace when running bare (tests/builders); the
-    ``cd`` is belt-and-suspenders alongside the sandbox's ``--pwd``.
-    """
-    return f"cd {shlex.quote(str(workdir))} && {command}"
-
-
 def exec_argv(
     workspace,
     command: str,
@@ -56,8 +43,12 @@ def exec_argv(
     read-only image and can only *write* the episode's own dirs. ``on_gpu`` adds ``--nv``
     for GPU steps. With no sandbox the body ``cd``s to the given host ``workspace``.
     """
+    # The body carries no ``module load``: the container supplies the toolchain, and
+    # inside the ``--cleanenv`` container ``module`` does not exist, so loading would
+    # fail and short-circuit the real command. The ``cd`` is belt-and-suspenders
+    # alongside the sandbox's ``--pwd``.
     workdir = sandbox.workdir if sandbox is not None else workspace
-    body = env_inner(workdir, command)
+    body = f"cd {shlex.quote(str(workdir))} && {command}"
     if sandbox is not None:
         return sandbox.wrap_argv(body, nv=on_gpu)
     return ["bash", "-lc", body]

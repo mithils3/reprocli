@@ -17,7 +17,7 @@ from reprocli_vllm.vllm.io import (
     truncate_output_file,
     tool_result_message,
 )
-from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, REQUEST_TIMEOUT
 from reprocli_vllm.runtime.loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
 from reprocli_vllm.runtime import live_events
 from reprocli_vllm.papers.papers import Paper
@@ -35,11 +35,10 @@ def run_tool_loop(
     papers: list[Paper],
     prompts: list[str],
     server_url: str,
-    model_id: str | None = None,
+    model_id: str,
 ) -> None:
-    # The attached server is addressed by the id it advertises (resolved by the
-    # caller); fall back to --model when the caller didn't resolve one.
-    request_model = model_id or args.model
+    # The attached server is addressed by the id it advertises, resolved by the
+    # caller (resolve_served_model returns a non-empty id or raises).
     conversations = {
         paper.arxiv_id: initial_messages(prompt, args.system_message)
         for paper, prompt in zip(papers, prompts, strict=True)
@@ -73,20 +72,18 @@ def run_tool_loop(
                 final_message=args.final_no_tools_message,
             )
             request = build_chat_completion_request(
-                request_model,
+                model_id,
                 custom_id,
                 messages,
                 args,
                 include_tools=include_tools,
                 tool_choice="auto",
             )
-            stream = args.stream_first_response and round_index == 0 and custom_id == original_ids[0]
             future = requests.submit(
                 post_chat_completion_row,
                 base_url,
                 request,
                 REQUEST_TIMEOUT,
-                stream=stream,
             )
             request_futures[future] = {
                 "custom_id": custom_id,
@@ -151,7 +148,21 @@ def handle_request_done(
     state = request_futures.pop(future)
     custom_id = str(state["custom_id"])
     round_index = int(state["round_index"])
-    row = response_row(custom_id, future.result())
+    try:
+        completion = future.result()
+    except Exception as exc:  # noqa: BLE001 — a failed model call must not strand the run
+        # The round's model call failed after the retry budget (a non-retryable 4xx, or
+        # a hang that exhausted timeout+retries). Letting it propagate unwinds the whole
+        # loop: the paper never reaches final_rows, the run exits non-zero with no
+        # verdict written, and its Supabase row is left at status="running" forever.
+        # Mirror reprocli_repro.loop and finalize just this paper as an error terminal,
+        # so it still gets a (degraded) verdict row and its siblings keep running.
+        finalize_failed_request(
+            custom_id, round_index, exc, conversations, final_rows,
+            tool_rounds_used, exit_reasons, args,
+        )
+        return
+    row = response_row(custom_id, completion)
     message = response_message(row)
     tool_calls = normalize_tool_calls(message.get("tool_calls") or [])
     if state["include_tools"] and tool_calls:
@@ -212,7 +223,50 @@ def handle_request_done(
     final_rows[custom_id] = row
     append_completed_outputs(custom_id, row, conversations[custom_id], args)
     live_events.final(custom_id, round_index, message, exit_reason,
-                      extracted_response(custom_id, row, args.mode))
+                      extracted_response(custom_id, row))
+
+
+def finalize_failed_request(
+    custom_id: str,
+    round_index: int,
+    exc: BaseException,
+    conversations: dict[str, list[dict]],
+    final_rows: dict[str, dict],
+    tool_rounds_used: dict[str, int],
+    exit_reasons: dict[str, str],
+    args: argparse.Namespace,
+) -> None:
+    """Terminate one paper on a dead model call, degraded but accounted for.
+
+    Writes the same row shape reprocli_repro.loop uses for its error terminal
+    (``status_code`` 0, no body, the error string), which ``extracted_response``
+    already funnels to ``degraded_row``. Landing in ``final_rows`` is what keeps the
+    end-of-loop ``missing`` check from turning one paper's failure into a SystemExit
+    for the whole batch.
+    """
+    print(
+        f"request {custom_id}: model call failed at round {round_index}: {exc}",
+        file=sys.stderr,
+        flush=True,
+    )
+    exit_reasons[custom_id] = "error"
+    row: dict[str, Any] = {
+        "custom_id": custom_id,
+        "response": {"status_code": 0, "body": None, "error": str(exc)},
+        "tool_loop": {
+            "tool_rounds_used": tool_rounds_used[custom_id],
+            "max_tool_rounds": args.tool_rounds,
+            "hit_tool_round_limit": False,
+            "exit_reason": "error",
+            "telemetry": loop_telemetry(conversations[custom_id], args.max_input_tokens),
+        },
+    }
+    final_rows[custom_id] = row
+    append_completed_outputs(custom_id, row, conversations[custom_id], args)
+    live_events.final(
+        custom_id, round_index, {}, "error",
+        extracted_response(custom_id, row),
+    )
 
 
 def prepare_incremental_outputs(args: argparse.Namespace) -> None:
@@ -232,7 +286,7 @@ def append_completed_outputs(
         append_jsonl_row(args.output, row, truncate=False)
         append_jsonl_row(
             args.extracted_output,
-            extracted_response(custom_id, row, args.mode),
+            extracted_response(custom_id, row),
             truncate=False,
         )
         if args.save_round_jsonl:
@@ -243,7 +297,7 @@ def noop() -> None:
     return None
 
 
-def final_user_message(budget_note: bool, final_message: str = FINAL_NO_TOOLS_MESSAGE) -> dict[str, Any]:
+def final_user_message(budget_note: bool, final_message: str) -> dict[str, Any]:
     content = final_message
     if budget_note:
         content = CONTEXT_BUDGET_NOTE + content
@@ -255,7 +309,7 @@ def conversation_for_round(
     include_tools: bool,
     *,
     budget_note: bool = False,
-    final_message: str = FINAL_NO_TOOLS_MESSAGE,
+    final_message: str,
 ) -> list[dict]:
     if include_tools:
         return messages
@@ -287,7 +341,7 @@ def append_final_message(
     include_tools: bool,
     *,
     budget_note: bool = False,
-    final_message: str = FINAL_NO_TOOLS_MESSAGE,
+    final_message: str,
 ) -> None:
     if not include_tools:
         messages.append(final_user_message(budget_note, final_message))

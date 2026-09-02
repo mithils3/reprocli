@@ -19,10 +19,10 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from reprocli_repro import evidence, gpu_session, metrics_beacon, run_beacon
-from reprocli_repro.cluster import resolve_cluster
-from reprocli_repro.context import Budget, ExecutionContext
+from reprocli_repro import gpu_session, metrics_beacon, run_beacon
+from reprocli_repro.context import ExecutionContext
 from reprocli_repro.slurm import SessionHandle
+from tests.repro.test_gpu_session import _ctx
 
 _MIN_ENV = {"SUPABASE_URL": "https://x.supabase.co", "SUPABASE_SERVICE_KEY": "k"}
 
@@ -141,20 +141,6 @@ class DryRunTests(unittest.TestCase):
         self.assertIn("telemetry off", buf.getvalue())
 
 
-def _ctx(root: Path) -> ExecutionContext:
-    """A minimal episode whose run_id (evidence parent dir) is ``root.name``."""
-    ev = root / "evidence"
-    ev.mkdir(parents=True, exist_ok=True)
-    evidence.init_evidence(ev)
-    return ExecutionContext(
-        arxiv_id="x",
-        workspace=root,
-        evidence=ev,
-        budget=Budget(total_h100_hours=8.0),
-        cluster=resolve_cluster("deltaai"),
-    )
-
-
 class RunBeaconHookTests(unittest.TestCase):
     """ensure_session spawns the per-run beacon; release/drop_lost terminate it."""
 
@@ -162,7 +148,7 @@ class RunBeaconHookTests(unittest.TestCase):
         run_beacon._BEACONS.clear()
 
     def _acquire(self, ctx: ExecutionContext, env: dict[str, str]) -> mock.Mock:
-        handle = SessionHandle(ok=True, jobid="777", stderr="", command=["salloc"])
+        handle = SessionHandle(ok=True, jobid="777", stderr="")
         popen = mock.patch("reprocli_repro.run_beacon.subprocess.Popen", return_value=mock.Mock())
         with mock.patch.dict("os.environ", env, clear=True), \
              mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle), \

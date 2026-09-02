@@ -20,13 +20,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from .pipeline.supplements import DEFAULT_VENUE_ID, OPENREVIEW_API
 from .pipeline.bundle import stage_bundle
 from .pipeline.common import BUNDLE_DIRNAME, INDEX_FILENAME, NOTES_CACHE_FILENAME, STAGES
 from .pipeline.index import read_index_csv, stage_index
 from .pipeline.output import DEFAULT_REPO_ID, stage_upload
 from .pipeline.sources import stage_sources
-from .pipeline.supplements import stage_supplements
+from .pipeline.supplements import DEFAULT_VENUE_ID, OPENREVIEW_API, stage_supplements
 
 
 def main() -> int:

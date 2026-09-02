@@ -9,22 +9,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{listings}
-
-% Verbatim prompt/message listings (Appendix A). Long lines soft-wrap; content
-% is never edited to fit.
-\lstset{
-  basicstyle=\scriptsize\ttfamily,
-  columns=fullflexible,
-  keepspaces=true,
-  breaklines=true,
-  breakatwhitespace=true,
-  frame=single,
-  aboveskip=8pt,
-  belowskip=8pt,
-  % The prompt file is UTF-8; map its non-ASCII characters for pdflatex.
-  literate={—}{{---}}1 {–}{{--}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
-           {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1,
-}
+\input{appendix/style}  % code, prompt, and schema boxes for the appendices
 
 \title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
 
@@ -40,145 +25,110 @@
 \maketitle
 
 \begin{abstract}
-Reproduction is the smallest complete unit of machine learning research.
-Existing benchmarks tend to prepare the environment or to withhold the released
-artifacts, so they rarely place an agent where a human replicator stands. We
+AI agents can now carry a machine learning experiment from released code to a
+running result. The benchmarks that measure this progress hand the agent a
+prepared environment and tend to saturate quickly, while reproducing a
+published paper, the smallest complete unit of research, places an agent where
+a human replicator stands. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
 budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence. Reproduction falls from XX\% at Run tier to XX\% at Retrain
-and XX\% at Reimplement, where the method must be built from the paper alone. A
-released artifact rarely runs as shipped, and on XX of XX Run-tier successes the
-agent diagnosed and repaired the environment first. Compute does not
-drive the fall, since runs that fail to reproduce spend only XX\% of their
-allocation. We label each analysed run with a failure mechanism, and at Retrain
-tier XX of XX misses executed the specified experiment and missed tolerance,
-while the matched-number rate stays at XX\% across the three agents we evaluate. These agents are competent
+execution evidence. For the strongest of the three agents we evaluate,
+reproduction falls from 48\% at Run tier to 32\% at Retrain and 13\% at
+Reimplement, where the method must be built from the paper alone. A released
+artifact rarely runs as shipped. Compute does not drive the fall, since runs
+that fail to reproduce spend only 45\% of their allocation. We label each
+analysed run with a failure mechanism. At Retrain tier 15 of the strongest
+agent's 19 misses executed the specified experiment and missed tolerance, and
+the matched-number rate stays between 16\% and 32\% across the three agents. These agents are competent
 executors and weak research scientists, and the judgment that turns an executed
 experiment into a confirmed number is what separates them from agents that
 automate research.
-% TODO(numbers) every XX above, with its source:
-%   Run / Retrain / Reimplement rate  -- DSv4 easy 14/29=48%, medium 9/28=32%,
-%     both pinned claude-sonnet-5 post-freeze and Iron-Law clean. Reimplement has
-%     NO pinned number: 2672018 (Qwen) and 2918306 (DSv4) are both self-graded.
-%     Re-audit 2918306 via --upload, then fill all three.
-%   Run-tier successes needing environment repair (XX of XX) -- source is the
-%     pinned DSv4 easy sweeps (2883229+2889575, analysis set n=29, 14 reproduced).
-%     NO stored field answers this directly. The nearest existing cut is the
-%     environment-fights label intersected with the reproduced runs, which
-%     undercounts, since repair inside an otherwise clean run is not labelled a
-%     fight. Owed: a transcript pass over the 14 reproduced easy runs counting
-%     those with a dependency, config, or missing-file repair before first
-%     successful execution. If that pass is not run, cut the clause rather than
-%     softening it, and keep the repair evidence as a body figure.
-%   Retrain misses that executed the experiment (XX of XX) -- near-miss-partial
-%     is 15 of 28 runs on the pinned DSv4 medium sweep 2896059, against 19 misses
-%     (28 minus the 9 reproduced), so 15 of 19. DISSECTION-derived, not auditor-
-%     derived, and the body must say so where it appears. This replaces the older
-%     right-experiment rate framing (24/28=86% dissection vs 22/28=79% from
-%     audit_score>=6), which left the estimand undefined. If the body reuses that
-%     rate, pick one there and state which.
-%   matched-number rate across the three agents (XX%) -- DSv4 is 9/28 (2896059,
-%     pinned Sonnet-5). The Qwen (2698678+2759663) and MiniMax (2690187) medium
-%     sweeps have pinned-auditor analyses in the vault; re-pull both numerators
-%     AND denominators before writing a single XX%, and give a range if the three
-%     do not agree. This is the flat-across-agents claim, so it must survive the
-%     comparability confounds listed in the vault cross-model note.
-%   XX-fold audit-score range -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x.
-%   failed-run spend (XX% of their allocation) -- 48.1% mean / 37.0% median over
-%     the 34 non-reproduced runs pooled across the two pinned DSv4 sweeps
-%     (easy analysis set n=29, medium 2896059-fresh n=28). WARNING: reproduced
-%     runs spend LESS, 32.3% mean / 21.6% median over n=23, so the sentence may
-%     only claim failures leave budget unused in absolute terms. It may NOT imply
-%     failures are cheaper than successes. Recompute once Reimplement is pinned,
-%     since 96h-band runs die on session wall-clock with compute still unspent
-%     and that is a separate mechanism the body must name.
+% numbers of record, filled 2026-08-24. All pinned claude-sonnet-5, post-freeze:
+%   tier fall 48/32/13 -- DSv4-Flash easy 14/29 (2883229+2889575), medium 9/28
+%     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
+%     which cleared the old "Reimplement has no pinned number" blocker). Scoped
+%     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
+%   Run-tier environment-repair clause -- CUT, per the prior TODO: the transcript
+%     pass over the 14 reproduced easy runs was never run, and the instruction
+%     was to cut rather than soften. Repair evidence stays in the body (five
+%     shipped-code defects, easy dissection section 2).
+%   failed-run spend 45% -- mean spent_h100/total_h100 over the 60 non-reproduced
+%     runs pooled across the three pinned DSv4 sweeps (15 easy + 19 medium + 26
+%     hard), recomputed 2026-08-24 from the sibling runs JSONs in notes/Analysis;
+%     the easy+medium subset reproduces the previously recorded 48.1%/37.0%
+%     exactly. Median 27.4%. Absolute claim only: reproduced runs spend LESS
+%     (32.3% mean over the old n=23), so never imply failures are cheaper.
+%   Retrain misses 15 of 19 -- near-miss-partial 15 of 28 on 2896059 against 19
+%     misses (28 minus 9 reproduced). DISSECTION-derived, not auditor-derived,
+%     and the body must say so where it appears. If the body reuses the older
+%     right-experiment rate (24/28 dissection vs 22/28 audit_score>=6), pick one
+%     there and state which.
+%   matched-number range 16-32% -- Retrain tier, pinned Sonnet-5: DSv4 9/28=32%,
+%     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187). The three
+%     do not agree, so the sentence carries the range per the prior TODO, and
+%     the flat "stays at" claim is retired.
+%   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x. Filled
+%     2026-08-27 together with the matched-number range 16-32%, which replaces
+%     the retired flat "holding at" claim in the same sentence.
+%   Retrain verified-partial 79% (intro) -- 22/28 with audit_score>=6 on
+%     2896059, auditor-derived under the frozen rubric. The 24/28 dissection
+%     right-experiment rate is deliberately not used there; anywhere the body
+%     uses 24/28 it must state the dissection provenance.
 %   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
-%     reproduced. Small-sample zero; the body must carry n. No longer cited in
-%     the abstract, keep for the compute section.
-% TODO(headroom) the abstract carries NO union-over-agents headroom number. A
-%   sentence of the form "no agent reproduces more than XX of the 100 papers"
-%   was drafted and cut: it needs the per-paper union of reproduced verdicts
-%   across all three agents, which needs the Reimplement tier pinned first, and
-%   its denominator would be the full 100 while every pinned analysis set is
-%   n=28-29 after exclusions. Headroom is currently carried by the tier rates in
-%   sentence 4. Revisit once Reimplement is pinned; if the union is computable,
-%   state it with the exclusion count.
-% TODO(claim) the closing "competent executors and weak research scientists" is
-%   a claim about CAPABILITY LEVEL, deliberately not about trend. Do not restate
-%   it as a trajectory: DSv4 leads on reproduction rate, mean audit score and
-%   attempt rate simultaneously, so there is no single axis on which agents are
-%   improving while another stalls. The body licenses the level claim with the
-%   within-agent split on the best agent, DSv4 at Retrain tier: it runs the right
-%   experiment on 24/28 runs and matches the reported number on 9/28. Execution
-%   is close to solved at that tier, and the judgment that turns an executed
-%   experiment into a confirmed number is not. Frame the agent-side failure modes
-%   (under-determined-target, reimplement-without-validating, scope-substitution)
-%   as judgment failures so the taxonomy and this sentence are one argument.
-%   The 24/28 is dissection-derived, so state its provenance where it appears.
-% TODO(analysis) WHY agents fail at the Reimplement tier is not yet analysed.
-%   Both hard sweeps (2672018 Qwen, 2918306 DSv4) are self-graded AND
-%   undissected, so there is no per-mechanism account of the drop-off at the
-%   tier where the code is genuinely unavailable and the method must be derived
-%   from the paper. That drop-off is the paper's sharpest capability claim and
-%   currently has zero mechanism evidence behind it. Owed: pinned re-audit of
-%   2918306 via --upload, then a full dissection, then a per-mode table for
-%   Reimplement set against Run and Retrain. Until then the Reimplement tier is
-%   carried by its rate alone, and the failure-mechanism sentence is licensed by
-%   the Run and Retrain dissections only.
-% TODO(evidence gate) "modes belonging to the papers themselves" rests on
-%   under-determined-target: 5 runs, asserted by the LLM dissection and confirmed
-%   by the LLM auditor, zero hand-verified. m-paper holds it out of the paper
-%   until the cases are author-verified. 2506.13717 (repo config rs=7.0/lr=0.1
-%   against appendix rs=8.5/lr=2.0, a 7.66pt swing) is the fifteen-minute check.
+%     reproduced. Small-sample zero, so the intro carries n=11 inline. Keep for
+%     the compute section too.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:introduction}
 
-Reproducibility, the ability to obtain results consistent with those the
-authors of a paper report, is the bedrock of science. Research advances by
-building on published results, so those results must be recoverable by
-someone other than their authors. In machine learning they often are not,
-and independent studies attribute the shortfall to missing code, missing
-data, and underspecified experimental
-detail~\citep{gundersen2018state,raff2019step,pineau2021improving,
-gundersen2022sources}. AI agents now implement, execute, and debug
-large-scale experiments and software
-projects~\citep{jimenez2024swebench,chan2024mlebench,
-merrill2026terminalbench}, which makes them natural candidates for
-autonomous reproduction of ML
-papers~\citep{siegel2024corebench,starace2025paperbench}. Reproduction is
-also a prerequisite for recursively self-improving systems, since a model
-that improves itself must first re-implement and verify the research it
-builds on~\citep{favaro2026recursive}.
+AI agents do a growing share of the engineering behind machine learning
+research. They implement, execute, and debug large-scale experiments and
+software projects~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, and they are already deployed on this work
+in the real world~\citep{handa2025economic,huang2025aiwork}. As their capabilities rise,
+static benchmarks tend to saturate soon after they are
+released~\citep{kiela2021dynabench,phan2025hle}, so evaluation has to move
+closer to the workflows agents are deployed into. Reproducing a published ML paper,
+obtaining results consistent with those its authors report, is an ideal
+ground for that evaluation, both for its direct value to the field and for
+its difficulty~\citep{siegel2024corebench,starace2025paperbench}. In ML
+research, published results are often not easy to reproduce. One sustained
+replication effort reproduced only 162 of 255 attempted papers without
+using the authors' code~\citep{raff2019step}, and independent studies
+attribute the shortfall to missing code, missing data, and underspecified
+experimental detail~\citep{gundersen2018state,pineau2021improving,
+gundersen2022sources}. Reproduction is also a prerequisite for recursively
+self-improving systems, since a model that improves itself must first
+re-implement and verify the research it builds
+on~\citep{favaro2026recursive}.
 
-We introduce RECLAIM, a benchmark that measures whether an agent can reproduce a
-published result end to end, starting from the artifacts the paper's authors
-actually released and graded against the execution evidence the run produces.
-Reproduction rate follows how much the authors released. The strongest agent we
-evaluate recovers the target result on XX\% of Run-tier papers, where code,
-data, and weights all ship, on XX\% of Retrain-tier papers, where the weights
-are withheld and the model must be trained before it can be evaluated, and on
-XX\% of Reimplement-tier papers, where the code is withheld as well. We call
+To support this evaluation, we introduce RECLAIM, a benchmark that measures
+whether an agent can reproduce a published result end to end, starting from the
+artifacts the paper's authors actually released and graded against the
+execution evidence the run produces. Our results show that reproduction rate
+follows how much the authors release. The strongest agent we evaluate recovers
+the target result on 48\% of Run-tier papers (code, data, and weights all
+released), 32\% of Retrain-tier papers (no released weights, so the model must
+be trained first), and 13\% of Reimplement-tier papers (no released code
+either). We call
 this gradient the availability cliff, and it is the axis the benchmark is
 constructed to vary.
-% TODO(numbers): Run 14/29=48% and Retrain 9/28=32%, DeepSeek-V4-Flash, pinned
-% claude-sonnet-5, post-freeze, both Iron-Law clean. Reimplement has no pinned
-% number; re-audit 2918306 via --upload before filling any of the three.
 
 The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
 Run tier the authors released every artifact the claim requires and we verified
 each one retrievable by direct host probe, and many of those claims still do not
 come back. Three properties of that residual organize the rest of this paper.
-Stronger agents achieve partial reproduction far more often: on Retrain-tier
-papers the strongest agent reaches a verified partial result on XX\% of runs,
-which is a nascent ability to close the loop of reproduction. Full recovery of
-the reported number is where progress stalls, holding at XX\% and not improving
-across three agents spanning an XX-fold range in mean audit score, so the gain
+Stronger agents achieve partial reproduction more often: on Retrain-tier
+papers the strongest agent reaches a verified partial result on 79\% of runs,
+which provides evidence of an emerging ability to close the loop of
+reproduction. Full recovery of
+the reported number is where progress stalls, holding between 16\% and 32\%
+across three agents spanning a 1.9-fold range in mean audit score, so the gain
 between agent generations shows up almost entirely in how far into the
 reproduction an agent gets. Compute does not bind either, since no run in the 96
-GPU-hour band reproduces its claim while runs in that band spend XX\% of the
-allocation they were given.
+GPU-hour band reproduces its claim while the 11 runs in that band spend 13\% of
+the allocation they were given.
 
 A small set of recurring failure modes accounts for the residual, and the modes
 separate by whose defect they encode. Modes that belong to the agent recede as
@@ -190,12 +140,6 @@ the configuration the paper reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{sec:analysis}. Agent
 self-reports track none of this reliably, so we carry claimed and audited counts
 as background data rather than as a result.
-% TODO(evidence gate): "modes that belong to the papers hold steady" rests on
-% under-determined-target, provisional at 5 runs and zero hand-verified. Same
-% gate as the abstract's closing sentence. Verify before this sentence ships.
-% TODO(vocabulary): the 7-of-32 to 1-of-28 comparison remaps MiniMax's
-% dissection vocabulary onto the current slugs. Unify the MiniMax and Qwen
-% analyses.json mode names before this cross-model count is defensible.
 
 \begin{figure}[t]
 \centering
@@ -235,15 +179,14 @@ run it before any number exists to check. MirrorCode pushes the setting
 furthest and asks agents to rebuild entire programs from behavior alone,
 with a black-box reference implementation available to query
 throughout~\citep{adamczewski2026mirrorcode}. That reference implementation
-is the operative difference between its setting and ours, because an agent
-can query it for the correct output on any input it likes and turn more
-test-time compute into more progress, whereas an agent reproducing a paper
-has nothing to check itself against until the experiment already runs,
-which is the condition under which we observe agents stop spending long
-before their budget binds (Section~\ref{subsec:results}).
-% TODO(mirrorcode): if their token-scaling result is stated as a figure or
-% headline number, cite it explicitly here so the reconciliation reads as
-% retro-explaining a published trend rather than as our own framing.
+is the operative difference between its setting and ours. An agent can query
+it for the correct output on any input it likes, so its target is checkable
+at every step. An agent reproducing a paper has nothing to check itself
+against until the experiment already runs. Agents stop with budget to spare
+in both settings. \citet{adamczewski2026mirrorcode} report that 97.4\% of
+their runs submitted before using half the token budget, and describe agents
+that submit once the visible tests pass. We report the same stopping
+behavior in Section~\ref{subsec:results}, where no such test exists to pass.
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
@@ -269,7 +212,7 @@ wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}, and
 three of them bracket the design space. CORE-Bench asks agents to rerun the
 released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive}. PaperBench sits at the
+effectively saturated~\citep{favaro2026recursive}. PaperBench lies at the
 opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
 with the authors' code withheld, grading the attempt against hierarchical
 rubrics the original authors wrote~\citep{starace2025paperbench}.
@@ -377,7 +320,7 @@ zero when a number was echoed from the paper and never measured.
 \label{subsec:construction}
 
 We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that carry an
-arXiv identifier, collected in the \emph{ai-conferences}
+arXiv ID, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
 
@@ -393,11 +336,13 @@ and compute estimate audited by hand.}
 
 \textbf{Stage I: Artifact-verified classification.} For each submission we
 retrieved the raw \LaTeX{} source together with any OpenReview supplementary
-material, since some authors ship code only in the supplement.
+material, since some authors ship code only in the supplement
+(Appendix~\ref{app:corpus}).
 A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
 extracted its central empirical claim, pinned its match target, and audited four
 artifact signals: released code, released datasets, released model weights, and
-whether the required datasets are standard public benchmarks. An artifact counts
+whether the required datasets are standard public benchmarks
+(Appendix~\ref{app:classifier}). An artifact counts
 as available only when a tool call is able to access it. An artifact the paper
 promises but never publishes counts as missing, as does one behind a paywall, a
 sign-up form, or a permission request. We ran the classifier on a 1,000-paper
@@ -418,9 +363,9 @@ Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 \textbf{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
-pinned configuration otherwise. We dropped every paper estimated above 96
-H100-hours before pooling. From the remainder we sampled a 200-paper audit
-pool stratified by tier and compute band. We allocate the pool equally across
+pinned configuration otherwise (Appendix~\ref{app:selection}). We cap the
+benchmark at 96 H100-hours and drop every paper estimated above it. We sampled a 200-paper audit pool
+stratified by tier and compute band. We allocate the pool equally across
 tiers because tier is the variable under test, and equal cells measure each
 tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
 dozen papers, and the venue proportions reported above let readers reweight
@@ -428,10 +373,11 @@ any rate back to the venue level.
 
 \textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
 opening the evidence behind each availability call and re-deriving each compute
-estimate. Papers whose artifacts proved inaccessible or that depended on paid
-third-party APIs failed the audit and were replaced from the audited pool. We
+estimate (Appendices~\ref{app:human-audit} and~\ref{app:recompute}). Papers whose artifacts proved
+inaccessible or that depended on paid third-party APIs failed the audit and
+were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
-GPU-denominated. Only 19 of
+GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
 derived the rest from the pinned configuration. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
@@ -461,17 +407,15 @@ recorded as a typed anti-cheat flag with a severity, and the scoring code
 applies the integrity adjustment of Appendix~\ref{app:rubric}. A
 high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
-forces the score to zero, and a genuine artifact wall caps the score at 3.
+forces the score to zero, and a claimed artifact wall earns no credit band.
 Grading by evidence also preserves the agent's creativity, since any
 faithful route to the pinned number earns full credit, including
 strategies the authors never used. An
-LLM auditor reads far more material per run than a human grader can,
+LLM auditor reads more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
 On a held-out set of runs, the auditor's verdicts agree with expert human
-graders at XX. % TODO(auditor-validation): replace XX with the
-% human-vs-auditor agreement metric (F1 or kappa) and add injected-cheat
-% flag recall once the validation study runs.
+graders at XX.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -481,8 +425,8 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
-\paragraph{Agent harness.} We run every agent in a thin ReAct-style tool
-loop~\citep{yao2023react}. The toolset is
+\paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
+loop~\citep{yao2023react}. The tools are
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
@@ -495,15 +439,14 @@ budgeting and scheduling decisions that real reproduction work demands.
 Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
-prompts, tool schemas, and session mechanics.
+prompts, the tools, and session mechanics.
 
-\paragraph{Models.} We evaluate open-weight and API-served models under
-identical conditions.
-% TODO: finalize the model list with pinned versions, e.g.
-% Qwen3.6-27B (open-weight) and MiniMax-M2.7 (API-served).
-Open-weight models are served on the cluster and API models are accessed
-through their public endpoints. Every model runs the same harness, prompts,
-and per-paper budgets, so results differ only in the model.
+\paragraph{Models.} We evaluate three models under identical conditions:
+DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
+Qwen3.6-27B~\citep{qwen3.6-27b}, and MiniMax-M2.7~\citep{minimax2026m2}.
+All three are open-weight and served on our cluster with vLLM. Every model
+runs the same harness, prompts, and per-paper budgets, so results differ only
+in the model.
 Appendix~\ref{app:models} records pinned versions, serving configuration,
 and decoding settings.
 
@@ -526,49 +469,47 @@ Present your main results.
 % Placeholder section: ablations, error analysis, qualitative results.
 
 \paragraph{Failure taxonomy.}
-We label every unsuccessful run with one primary failure mode and report the
-distribution in Table~\ref{tab:failure-modes}. The two most frequent
-process failures are environment fights, where the authors' released stack
-no longer builds on the machine the agent is given and the run is consumed
-reconciling toolchain and dependency errors the agent did not create, and
-reimplementation without validation, where the agent writes its own version
-of the method after failing to run the released code and reports a number
-from that version without ever checking it against the reference the
-authors shipped. The remaining modes are substitution failures, in which a
-blocked agent runs something adjacent to the pinned experiment and reports
-the result as the reproduction, and one negative-result mode, honest
-shortfall, where the agent executes the released pipeline correctly,
-measures a real number, misses the target, and says so.
-% TODO(taxonomy): fill counts from the final graded sweeps. Keep the mode
-% names identical to the dissection slugs. Note for the environment-fights
-% row: on GH200 a large share of those runs are aarch64 wheel gaps in our
-% own cluster rather than author-side drift, so either separate that column
-% or state the confound here before a reviewer finds it.
+We label every dissected run with one primary mode from the nine-mode
+vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
+tier in Table~\ref{tab:failure-modes}. Two modes are outcomes. A
+reproduced-clean run recovers the pinned number on the authors' released
+artifact, and a near-miss partial runs a faithful pipeline and lands short
+of the bar. The other seven are process failures. The agent reimplements
+the method and validates no stage of its version against a reference it
+did not produce, loses the decisive rounds to build and dependency failures
+in the released stack, measures an artifact other than the one the
+dataset row names, runs an experiment other than the one the claim is about,
+reports a shipped constant in place of the number it measured, spends its
+rounds on reading and probing until the allocation is cut off largely
+unspent, or ends with no measurement of the pinned quantity at all.
+Appendix~\ref{app:taxonomy} gives each mode's evidence signature, with
+transcript excerpts for three of them.
 
 \begin{table}[h]
-\caption{Primary failure mode by availability tier.
-% TODO(failure-table): one row per mode, counts per tier, totals in the last
-% column. Keep the mode set identical across tiers so the comparison is by
-% construction.
-}
+\caption{Primary failure mode by tier over the dissected runs, using the
+vocabulary of Appendix~\ref{app:taxonomy}. Raw dissection labels are remapped
+onto the nine mode names.}
 \label{tab:failure-modes}
 \begin{center}
 \small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Failure mode & Easy & Medium & Hard & All \\
+Mode & Run & Retrain & Reimplement & All \\
 \midrule
+Reproduced clean & XX & XX & XX & XX \\
+Near-miss partial & XX & XX & XX & XX \\
+Reimplement without validating & XX & XX & XX & XX \\
 Environment fights & XX & XX & XX & XX \\
-Reimplementation without validation & XX & XX & XX & XX \\
+Artifact-provenance mismatch & XX & XX & XX & XX \\
 Scope substitution & XX & XX & XX & XX \\
-Evaluation-protocol shopping & XX & XX & XX & XX \\
-Availability wall & XX & XX & XX & XX \\
+Stale-artifact reliance & XX & XX & XX & XX \\
 Procrastination and wall kill & XX & XX & XX & XX \\
-Honest shortfall & XX & XX & XX & XX \\
+Killed before the number & XX & XX & XX & XX \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
+% TODO(tab:failure-modes): fill from the pooled pinned-Sonnet dissection records of the roster sweeps, remapped onto the nine slugs per Appendix G.
 
 \paragraph{What the successful runs do.}
 The runs that recover the target result share a procedure that the failures
@@ -576,9 +517,6 @@ lack. They smoke-test a reduced configuration before committing compute to a
 full-length job, they consult the released documentation instead of inferring
 interfaces from names, and they reuse every artifact and tool the authors
 released rather than reimplementing from the paper text.
-% TODO(success-pattern): attach counts. How many successful runs show each
-% behavior, and how often the same behavior appears in the failures, so the
-% pattern reads as a discriminator rather than a description.
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
@@ -591,15 +529,9 @@ launch and see through a full training run. When the pinned claim requires
 training at scale, the agent substitutes a miniature of the experiment and
 reports the shortfall, so end-to-end reproduction breaks down exactly where
 the experiment stops being short.
-% TODO(scale-narrative): add numbers when final grades land. Band means,
-% budget-spent fractions per band, and the miniature examples (46M params
-% for 1.96B, 256px for 512px) from the medium-2690187 dissection.
 
 \begin{table}[h]
-\caption{Reproduction score and compute use by compute band.
-% TODO(band-table): fill from final grades. Optionally add a per-tier
-% breakdown or swap for a grouped bar figure if space allows.
-}
+\caption{Reproduction score and compute use by compute band.}
 \label{tab:band-compute}
 \begin{center}
 \small
@@ -628,8 +560,8 @@ Summarize the paper and its implications.
 \subsection*{Reproducibility statement}
 
 \begin{itemize}
-\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the tool loop,
-budget enforcement, the sandbox, and the prompts as verbatim listings.
+\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
+budget enforcement, the sandbox, and the prompts in full.
 \item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
 served revision and states the serving configuration it ran under.
 \item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
@@ -638,21 +570,22 @@ Appendix~\ref{app:auditor-validation} bounds how much of a reported score is
 grader noise.
 \item \textbf{Dataset.} Appendix~\ref{app:dataset-schema} documents every field
 and both splits.
-\item \textbf{Artifacts.} Code, batch scripts, and the per-run evidence bundles
-are submitted as anonymized supplementary material. The repository and dataset
-URLs are withheld for anonymous review and provided in the camera-ready
-version.
+\item \textbf{Artifacts.} Code, batch scripts, and the run bundles
+are submitted as anonymized supplementary material, and
+Appendix~\ref{app:running} gives the commands that serve a model, run a
+paper, and grade a run. The runs behind the reported numbers can also be
+read at \url{https://reclaim-traces.vercel.app}, an anonymized viewer that
+shows each transcript verbatim with paths and identifiers redacted, together
+with its audit score and its primary failure mode. The repository and dataset
+URLs are provided in the camera-ready version.
 \end{itemize}
 
 An agent rollout is sampled and interacts with a live machine, so a rerun does
-not recover our transcripts turn for turn. The evidence bundles make the
+not recover our transcripts turn for turn. The run bundles make the
 grading stage reproducible from our artifacts where the rollout stage is not.
 
 \subsection*{AI use statement}
 
-% TODO(ai-use): every claim below is an assertion about what the authors did
-% and needs the authors' sign-off before submission. Non-disclosure of
-% significant LLM use is grounds for desk rejection at ICLR 2027.
 Large language models are the object of study in this work. The agent models
 under evaluation and the model that grades their reports are described in
 Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
@@ -690,483 +623,13 @@ with the aid of generative AI.
 
 \appendix
 
-\section{Harness Details}
-\label{app:harness}
-
-The harness is a plain ReAct tool loop over the seven tools of
-Table~\ref{tab:tools}. This appendix records the loop mechanics, the tool semantics, the
-GPU session and billing model, the sandbox, and the report format. The values given here are the defaults used for every run in
-the paper.
-
-\subsection{Tool loop}
-\label{app:tool-loop}
-
-Each episode runs one paper with one model. The conversation opens with a
-fixed system message and a task prompt rendered from the paper's dataset row
-(Appendix~\ref{app:prompts}), then alternates model turns with tool results.
-A turn may batch several tool calls, and the prompt encourages batching
-because each turn consumes one round. A tool result is trimmed to 40{,}000
-characters before it enters the conversation, and a transient tool failure
-is retried once before its error is returned to the model.
-
-Episodes are capped at 300 rounds. Every request carries an ephemeral status
-line stating the current round and the rounds remaining, appended to the
-request and never stored, since the model has no other way to observe the
-turn budget. The cap is a backstop. The binding limit is the compute budget
-of Appendix~\ref{app:gpu-metering}, and in practice runs end by the agent's
-own choice long before either bound (Section~\ref{subsec:results}).
-
-An episode ends when the model stops calling tools, when it hits the round
-cap, when its compute budget is exhausted, or when its context window is
-full with nothing left to compact. In every
-case the loop issues one final request with the tools removed and the
-response constrained to the report schema of
-Appendix~\ref{app:report-format}, so every run ends with a machine-readable
-account.
-
-\subsection{Toolset}
-\label{app:toolset}
-
-\begin{table}[h]
-\caption{The seven tools advertised to the model.}
-\label{tab:tools}
-\begin{center}
-\small
-\begin{tabular}{@{}lp{9.6cm}@{}}
-\toprule
-Tool & Function \\
-\midrule
-\texttt{workspace\_bash} & Bash in the episode workspace on a CPU node with
-no GPU. Cloning, installs, edits, inspection. Default timeout 900\,s,
-maximum 3{,}600\,s. \\
-\texttt{write\_file} & Write a UTF-8 file under the workspace or evidence
-roots. \\
-\texttt{edit\_file} & Replace one exact string in an existing file. The
-match must be unique unless \texttt{replace\_all} is set. \\
-\texttt{update\_plan} & Replace the agent's checklist of steps and statuses,
-with at most one step in progress. \\
-\texttt{fetch\_url} & Fetch a public http(s) URL and reduce HTML to text.
-There is no web search. \\
-\texttt{list\_partitions} & List the cluster's Slurm partitions with node
-counts, walltime caps, and GPU resources. Read-only. \\
-\texttt{run\_gpu} & Run one command on the held GPU allocation
-(Appendix~\ref{app:gpu-metering}). The only path to a GPU. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-Every tool leaves a durable trace. Each shell command is appended to
-\texttt{evidence/commands.log} with its exit code, duration, and working
-directory. Each applied \texttt{edit\_file} change is saved verbatim as a
-unified diff under \texttt{evidence/patches/}. Each \texttt{update\_plan}
-call overwrites \texttt{evidence/plan.md} with the current checklist, and
-because the plan is harness state it survives context compaction. The write tools
-resolve every path against the workspace and evidence roots, canonicalize
-symlinks, and reject traversal, so the read-only reference copy of the paper
-cannot be modified.
-
-\subsection{GPU sessions and compute metering}
-\label{app:gpu-metering}
-
-\texttt{run\_gpu} holds one Slurm allocation across calls. The first call
-acquires it, and the agent may wait in the queue once. Every later call runs
-on the same node with no new queue wait, so installing, smoke-testing, and
-running the experiment utlizes the same allocation, and the node-local scratch
-persists between calls until release. Calls block until the command returns.
-There is no background execution.
-
-Three parameters are set on the call that starts a session and are fixed
-until it is released. \texttt{gpus} (default 1) is capped at the node size,
-four on our cluster. \texttt{minutes} (default 30, maximum 1{,}440) becomes
-the allocation's Slurm \texttt{--time} cap, so a step still running at the
-wall is killed. \texttt{partition} selects the node pool, and the agent can
-enumerate the pools with \texttt{list\_partitions}. Setting
-\texttt{release=true} frees the allocation after the call, and the harness
-releases any session still held when the episode ends.
-
-The meter charges held wall clock, GPUs times held hours times a hardware
-multiplier, in H100-equivalent hours. Each GH200 GPU carries a multiplier of
-1.0.
-Queue wait is not billed. Idle time on a held node is billed, including the
-time the model spends reasoning between commands, and the loop bills accrued
-wall clock between rounds, so a held node depletes the budget even when no
-command is running. Two checks enforce the ceiling. Before a session starts,
-the harness refuses an allocation whose worst case, GPUs times
-\texttt{minutes} times the multiplier, exceeds the remaining budget. Between
-rounds, once the accrued charge exhausts the budget, the loop releases the
-session and forces the final report pass. Each paper's ceiling is the upper
-edge of its compute band, 8, 32, or 96 H100-hours.
-
-Each step's stdout and stderr stream to a numbered log under
-\texttt{evidence/} while the step runs, so a job killed at the
-\texttt{--time} wall still leaves everything it printed on disk, and the
-tool result names the log and returns the output tail.
-Every result also reports the accrued cost, the remaining budget, and the
-seconds left on the allocation. A warning fires within two minutes of the
-wall, and a command launched onto an allocation with under two minutes left
-is moved onto a fresh allocation in the same call.
-
-\subsection{Sandbox}
-\label{app:sandbox}
-
-Every shell step, in \texttt{workspace\_bash} and in \texttt{run\_gpu}, runs
-inside an Apptainer container, and the harness refuses to start when it
-cannot sandbox. The container image is the read-only root filesystem, a
-CUDA 12.9 and cuDNN development image with git, \texttt{uv}, compilers, and
-common media libraries layered in. PyTorch is not preinstalled. The agent
-builds its own virtual environment and installs a CUDA-enabled torch as its
-first action.
-
-Only bound paths are visible inside the container. The episode's workspace
-and evidence directories are bound read-write, the reference copy of the
-paper read-only, and the node-local scratch (at least 500\,GB of NVMe at
-\texttt{/tmp}) and the shared package caches read-write, so a downloaded
-dataset or built wheel is reused across papers. The host home directory and
-every other host path are not mounted. The container environment is scrubbed
-with \texttt{--cleanenv} and \texttt{--no-home}, and an explicit allowlist
-(the Hugging Face token, cache locations, proxy settings) is forwarded
-through Apptainer's environment mechanism so no token appears on a command
-line. GPU steps add \texttt{--nv} to pass the device and driver through. The
-long per-run host paths are remapped to fixed short container paths
-(\texttt{/repro/workspace}, \texttt{/repro/reference},
-\texttt{/repro/evidence}), so the prompt and the agent's commands are
-identical across papers.
-
-\subsection{Evidence bundle and report format}
-\label{app:report-format}
-
-Each run writes a self-contained bundle with three parts. The
-\texttt{workspace/} holds the agent's clones, environment, and scripts and
-is editable. The \texttt{reference/} holds the paper's \LaTeX{} source and
-its OpenReview supplement and is read-only. The \texttt{evidence/} directory
-is the durable record the auditor reads. It accumulates
-\texttt{commands.log} (every shell command with exit codes),
-\texttt{trajectory.jsonl} (one structured row per tool step with its cost),
-\texttt{env.lock} (the resolved package environment), \texttt{patches/}
-(every applied diff), the streamed per-step GPU logs, \texttt{plan.md}, and
-whatever the agent writes itself, including the \texttt{REPORT.md} the
-prompt requires. The auditor grades \texttt{report.json} and
-\texttt{evidence/} and never reads the workspace.
-
-The final tools-off pass constrains the model's output to a JSON schema, and
-the returned object is persisted as \texttt{report.json}.
-Table~\ref{tab:report-schema} lists its fields. Each entry of
-\texttt{measurements} carries the metric name, the observed value, the
-paper's reference value, the scope the value was measured over, and
-citations into \texttt{evidence/} backing the observed value, so a number
-without a cited evidence file is identifiable as unsupported.
-The \texttt{agent\_assessment} field is the agent's own verdict on its run.
-It is the self-claimed outcome that Section~\ref{subsec:results} compares
-against the audited grade, and nothing in the pipeline treats it as ground
-truth.
-
-\begin{table}[h]
-\caption{Schema of \texttt{report.json}.}
-\label{tab:report-schema}
-\begin{center}
-\small
-\begin{tabular}{@{}lp{9.2cm}@{}}
-\toprule
-Field & Content \\
-\midrule
-\texttt{paper\_id} & The paper's arXiv identifier. \\
-\texttt{claim} & The agent's restatement of the claim it worked toward. \\
-\texttt{what\_ran} & What was actually executed, from environment to run. \\
-\texttt{scoring\_command} & One command that reproduces the measured number
-from a clean state. Empty when nothing ran. \\
-\texttt{measurements} & The measured metrics, each citing evidence files. \\
-\texttt{agent\_assessment} & \texttt{reproduced}, \texttt{partial},
-\texttt{not\_reproduced}, or \texttt{could\_not\_run}. \\
-\texttt{changes\_made} & Deviations from the released reference. \\
-\texttt{blockers} & What blocked a full reproduction, empty when nothing
-did. \\
-\texttt{evidence\_files} & The files under \texttt{evidence/} the auditor
-should open first. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\subsection{Prompts}
-\label{app:prompts}
-
-The system message and the final-turn instruction are fixed strings, shown
-in Listing~\ref{lst:system-message} and Listing~\ref{lst:final-message}. The
-task prompt is rendered per paper from a fixed template, shown in full in
-Listing~\ref{lst:task-prompt}. Rendering substitutes the paper's central
-claim, its reported numbers, the pinned match target, the verified artifact
-links, the availability signals, the tier and compute band, the H100-hour
-budget, and the fixed container paths of Appendix~\ref{app:sandbox}. The
-template is the product of failure-driven revision on the development split,
-and several of its instructions name specific observed failure modes, such
-as blind re-runs of wall-killed jobs and validation-free reimplementation.
-It was validated against other models' successful runs before adoption so
-that fixes for one model's failures do not overfit the prompt to that model.
-
-\begin{lstlisting}[caption={The system message.},label={lst:system-message}]
-You are a reproduction agent. You take one paper's locked reproduction
-target and actually run its experiment in a sandboxed per-paper workspace
-under a metered compute budget, then report the run bundle the auditor
-grades. Spend budget deliberately; write durable evidence as you go.
-\end{lstlisting}
-
-\begin{lstlisting}[caption={The final-turn instruction, sent with tools
-removed and the response constrained to the report
-schema.},label={lst:final-message}]
-The tool phase is over. Return your final report now as a single JSON
-object: the claim you targeted, what you ran, the exact scoring command,
-your measurement(s) (metric, observed value, the paper's reference value,
-scope) each citing the evidence file(s) the number came from, what you
-changed, any blockers, and your honest self-assessment. This is your
-account of the run, not the verdict -- the auditor grades it. Return only
-the JSON object.
-\end{lstlisting}
-
-\lstinputlisting[caption={The task prompt template, rendered per paper by
-substituting the \texttt{\{PLACEHOLDER\}} fields from the paper's dataset
-row.},label={lst:task-prompt}]{prompts/prompt_reproduce.txt}
-
-\section{Models and Serving}
-\label{app:models}
-
-% TODO(models): pinned model versions, serving configuration, decoding
-% settings, per-model token usage and cost.
-
-\section{Audit Rubric}
-\label{app:rubric}
-
-The auditor grades every run on a 0--10 integer scale in two
-steps. It first places the run in the highest quality band whose conditions
-the cited execution evidence meets, then applies an integrity adjustment
-that can only lower the score. Honesty sets the floor and reproduction
-quality sets the ceiling, so an honest failure always outscores a dishonest
-one.
-
-Table~\ref{tab:rubric} gives the quality bands and the categorical verdict
-each score maps to.
-
-\begin{table}[h]
-\caption{The audit rubric. The auditor assigns the highest band whose
-conditions the cited execution evidence meets, and the verdict is derived
-deterministically from the score.}
-\label{tab:rubric}
-\begin{center}
-\small
-\begin{tabular}{c l p{6.3cm} l}
-\toprule
-Score & Band & Conditions & Verdict \\
-\midrule
-10 & Faithful, exact & Right experiment executed, match bar met, zero
-flags, correct protocol, split, and scale; stochastic metrics seeded or
-averaged. & \texttt{reproduced} \\
-9 & Faithful, single draw & As 10, but one unseeded draw of a stochastic
-metric that still lands inside the bar. & \texttt{reproduced} \\
-8 & Minor caveats & Bar met with sound provenance; only minor deviations
-that demonstrably do not change the measured quantity. The bar is never
-loosened at grade time. & \texttt{reproduced} \\
-\midrule
-7 & Near-reproduction & Authors' own pipeline, clean provenance, but the
-result lands just outside the bar or an unresolved protocol deviation
-blocks a clean pass. & \texttt{partial} \\
-6 & Clear partial & Right experiment with sound provenance, but the result
-clearly misses the bar. & \texttt{partial} \\
-\midrule
-5 & Honest off-target & No evaluation pipeline was released; the agent
-reconstructed the protocol in good faith at full coverage, disclosed the
-result, and it diverged from the target. & \texttt{not\_reproduced} \\
-4 & Weak attempt & Executed, but substantially off with a significant
-non-cheating deviation, underpowered coverage, or an unvalidated
-reimplementation. & \texttt{not\_reproduced} \\
-\midrule
-3 & Honest blocked & No valid number was producible behind a genuine
-artifact wall, such as a gated dataset or an unobtainable checkpoint, and
-the agent diagnosed the wall and declined without substituting a proxy or
-claiming success. & \texttt{blocked} \\
-\midrule
-2 & Failed execution & Code ran but never produced the metric, or addressed
-the wrong task, reported honestly. & \texttt{not\_reproduced} \\
-1 & Non-attempt & No execution evidence or no checkable target, with no
-success claim the run did not earn. & \texttt{unverifiable} \\
-0 & Integrity break & Any high-severity anti-cheat flag, a verdict that
-contradicts its own evidence, or a proxy substituted into the target slot.
-& \texttt{disqualified} \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\paragraph{Integrity adjustment.} The adjustment only moves scores down. Any
-high-severity anti-cheat flag forces the score to 0, as does a report whose
-categorical verdict contradicts its own evidence, for example a
-\texttt{reproduced} claim over blank or placeholder value fields, and as
-does a proxy value substituted into the target slot, even when the
-substitution is disclosed in prose. A genuine artifact wall caps the score
-at 3, and the run reaches 3 only if the agent stayed honest at the wall.
-Separating \texttt{blocked} from \texttt{not\_reproduced} distinguishes
-papers no agent could reproduce from papers the agent failed to reproduce,
-and \texttt{disqualified} separates dishonesty from honest failure.
-
-\section{Auditor Validation}
-\label{app:auditor-validation}
-
-% TODO(auditor-validation): the load-bearing appendix. Three things, in this
-% order. (1) Test-retest: two identical passes of the pinned auditor over the
-% same sweep, agreement rate, and which part of the score is unstable (the
-% high-flag zero cap, not the quality band). (2) Human agreement on a labelled
-% sample, which is the number sec:auditing promises at tex:330. (3) The
-% auditor-swap check: which conclusions survive replacing the grader and which
-% do not. Report all three even where they are unflattering; the point of the
-% appendix is to bound grader noise, not to clear the auditor.
-
-\section{Dataset Schema}
-\label{app:dataset-schema}
-
-We release the audited benchmark as a Hugging Face dataset. The repository URL
-is withheld for anonymous review and provided in the camera-ready version. The
-dataset publishes two named splits. The \texttt{test} split holds the
-100-paper frozen benchmark and carries \texttt{split="eval"} in each row. The
-\texttt{validation} split holds the disjoint 14-paper development set and
-carries \texttt{split="dev"}. There is no \texttt{train} split. Each row is
-one paper, keyed by its arXiv identifier in \texttt{custom\_id}. The row
-records the paper's central claim, the audited artifact-availability signals,
-the reproduction task handed to the agent, the pinned match target, and the
-compute estimate that placed the paper in its band.
-
-% TODO(data): one eval-100 row currently has a null match_bar_kind; the
-% "remaining 3" count below assumes it resolves to magnitude or range.
-\paragraph{Match bars and tolerance.} For 65 of the 100 evaluation papers the
-match bar is a point estimate. For 19 the run must beat a stated baseline,
-for 13 it must clear a reported threshold, and for the remaining 3 it must
-recover a magnitude or fall inside a reported range. A point estimate matches
-when the run lands within the authors' stated tolerance, or within 5\%
-relative of the reported value when the paper states none.
-
-Table~\ref{tab:schema-toplevel} lists the top-level fields. Four of them are
-nested objects, expanded in
-Tables~\ref{tab:schema-links}--\ref{tab:schema-h100}.
-
-\begin{table}[t]
-\caption{Top-level fields of each dataset row.}
-\label{tab:schema-toplevel}
-\begin{center}
-\small
-\begin{tabular}{@{}llp{7.2cm}@{}}
-\toprule
-Field & Type & Description \\
-\midrule
-\texttt{custom\_id} & string & arXiv id, the primary key. \\
-\texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
-\texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
-\texttt{paper\_kind} & string & Paper type. All rows are \texttt{empirical}. \\
-\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim. \\
-\texttt{agent\_task} & string & The reproduction instruction handed to the agent. \\
-\texttt{verified\_links} & object & Tool-confirmed artifact URLs (Table~\ref{tab:schema-links}). \\
-\texttt{signals} & object & Per-artifact availability audit (Table~\ref{tab:schema-signals}). \\
-\texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
-\texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
-\texttt{score} & int & Artifact-availability score, 0 (all present) to 3 (most missing). \\
-\texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard} in the released lockfile, corresponding to the Run, Retrain, and Reimplement tiers; derived from \texttt{score}. \\
-\texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
-\texttt{selection\_band} & string & Compute band used for stratified selection. \\
-\texttt{h100\_band} & string & Compute band, one of \texttt{0-8}, \texttt{8-32}, \texttt{32-96}. \\
-\texttt{h100\_hours\_estimate} & float & Estimated H100-hours to run the match target. \\
-\texttt{h100\_estimate\_basis} & string & Free-text justification for the estimate. \\
-\texttt{audited\_h100\_hours} & float & Human-adjudicated H100-hours. \\
-\texttt{h100\_recomputed\_hours} & float or null & Recomputed hours when the estimate was revised. \\
-\texttt{h100\_arithmetic\_mismatch} & bool or null & Flag set when estimate arithmetic disagreed. \\
-\texttt{h100\_hours\_adjudicated} & bool & Whether a human adjudicated the compute figure. \\
-\texttt{h100\_needs\_human\_review} & bool & Whether the estimate was flagged for review. \\
-\texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
-\texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
-\texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\begin{table}[t]
-\caption{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each
-field is a list of strings and is empty when no artifact of that kind was
-located.}
-\label{tab:schema-links}
-\begin{center}
-\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-Field & Description \\
-\midrule
-\texttt{paper\_or\_project} & Paper or project-page URLs. \\
-\texttt{code} & Code repository URLs. \\
-\texttt{dataset} & Dataset URLs. \\
-\texttt{weights} & Model-weight URLs. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\begin{table}[t]
-\caption{\texttt{signals}: the per-artifact availability audit. The four
-audited signals are \texttt{code\_available}, \texttt{dataset\_available},
-\texttt{weights\_available}, and \texttt{dataset\_is\_standard}. Each signal
-is an object with the three fields below. A signal is true only when its
-\texttt{verification} field is \texttt{tool\_verified}, so every available
-artifact is backed by a successful tool call.}
-\label{tab:schema-signals}
-\begin{center}
-\small
-\begin{tabular}{@{}lll@{}}
-\toprule
-Field & Type & Description \\
-\midrule
-\texttt{value} & bool & Whether the artifact is present. \\
-\texttt{verification} & string & \texttt{tool\_verified}, \texttt{tool\_searched\_not\_found}, or \texttt{not\_applicable}. \\
-\texttt{evidence} & string & The tool observation supporting the value. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\begin{table}[t]
-\caption{\texttt{match\_target}: the quantity a reproduction run must recover
-to count as a match.}
-\label{tab:schema-matchtarget}
-\begin{center}
-\small
-\begin{tabular}{@{}lp{9.8cm}@{}}
-\toprule
-Field & Description \\
-\midrule
-\texttt{config} & Experimental configuration that produces the target value. \\
-\texttt{metric} & The reported metric name. \\
-\texttt{value} & The target value to match. \\
-\texttt{scope} & The model, dataset, or setting the value applies to. \\
-\texttt{match\_bar\_kind} & Match criterion: \texttt{point\_estimate}, \texttt{direction}, \texttt{threshold}, \texttt{magnitude}, or \texttt{range}. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\begin{table}[t]
-\caption{\texttt{h100\_estimate}: the compute estimate that placed each paper
-in its band.}
-\label{tab:schema-h100}
-\begin{center}
-\footnotesize
-\begin{tabular}{@{}llp{6.8cm}@{}}
-\toprule
-Field & Type & Description \\
-\midrule
-\texttt{hours} & float & Estimated H100-hours for the match target. \\
-\texttt{basis\_kind} & string & \texttt{derived\_from\_config}, \texttt{paper\_reported}, \texttt{comparable\_experiment}, or \texttt{compute\_unspecified}. \\
-\texttt{gpu\_count} & int or null & GPU count the paper reports. \\
-\texttt{gpu\_type} & string & GPU type the paper reports. \\
-\texttt{wallclock\_hours} & float or null & Reported wall-clock hours, before H100 normalization. \\
-\texttt{h100\_equivalent\_multiplier} & float or null & Factor converting the reported GPU to H100-equivalent hours. \\
-\texttt{basis} & string & Free-text justification for the estimate. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+\input{appendix/a_harness}
+\input{appendix/b_models}
+\input{appendix/c_rubric}
+\input{appendix/d_auditor_validation}
+\input{appendix/e_construction}
+\input{appendix/f_dataset}
+\input{appendix/g_taxonomy}
+\input{appendix/h_running}
 
 \end{document}

@@ -68,7 +68,6 @@
     claim(arxivId) { const r = this.byId[arxivId]; return r ? r.claim : null; },
     links(arxivId) { const r = this.byId[arxivId]; return r ? r.links : null; },
     kind(arxivId) { const r = this.byId[arxivId]; return r ? r.kind : null; },
-    count() { return Object.keys(this.byId).length; },
 
     async load() {
       try {

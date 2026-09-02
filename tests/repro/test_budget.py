@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_repro.budget import (
     affordable,
-    charge,
     h100_equiv_hours,
     hw_multiplier,
     pre_authorized_cost,
@@ -55,12 +54,6 @@ class GuardrailTests(unittest.TestCase):
         ok, reason = affordable(b, gpus=1, minutes=1, hw="h100")
         self.assertFalse(ok)
         self.assertIn("exhausted", reason)
-
-    def test_charge_consumes_actual_elapsed(self):
-        b = Budget(total_h100_hours=8.0)
-        remaining = charge(b, gpus=2, elapsed_seconds=1800, hw="h100")  # 2 gpu x 0.5h = 1.0
-        self.assertAlmostEqual(b.spent_h100_hours, 1.0)
-        self.assertAlmostEqual(remaining, 7.0)
 
 
 if __name__ == "__main__":

@@ -34,7 +34,6 @@ def _held(ctx: ExecutionContext, *, gpus: int, seconds_ago: float) -> GpuSession
         jobid="555", gpus=gpus, minutes=60, hw="gh200",
         started=now - seconds_ago, last_charged=now - seconds_ago,
     )
-    ctx.allocation = "555"
     return ctx.session
 
 
@@ -67,12 +66,11 @@ class EnsureAndReleaseTests(unittest.TestCase):
     def test_ensure_acquires_sets_session_and_starts_the_clock(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            handle = SessionHandle(ok=True, jobid="77", stderr="", command=["salloc"])
+            handle = SessionHandle(ok=True, jobid="77", stderr="")
             with mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle):
                 session, err = gpu_session.ensure_session(ctx, gpus=2, minutes=30)
             self.assertIsNone(err)
             self.assertEqual(session.jobid, "77")
-            self.assertEqual(ctx.allocation, "77")
             self.assertAlmostEqual(session.started, session.last_charged, delta=1e-3)
 
     def test_ensure_reuses_an_existing_session(self):
@@ -88,7 +86,7 @@ class EnsureAndReleaseTests(unittest.TestCase):
     def test_ensure_reports_a_failed_acquire(self):
         with tempfile.TemporaryDirectory() as d:
             ctx = _ctx(Path(d))
-            handle = SessionHandle(ok=False, jobid=None, stderr="salloc: error: boom", command=["salloc"])
+            handle = SessionHandle(ok=False, jobid=None, stderr="salloc: error: boom")
             with mock.patch("reprocli_repro.slurm.acquire_session", return_value=handle):
                 session, err = gpu_session.ensure_session(ctx, gpus=1, minutes=5)
             self.assertIsNone(session)
@@ -115,7 +113,6 @@ class EnsureAndReleaseTests(unittest.TestCase):
                 record = gpu_session.release(ctx, "agent")
             scancel.assert_called_once_with("555")
             self.assertIsNone(ctx.session)
-            self.assertIsNone(ctx.allocation)
             self.assertAlmostEqual(ctx.budget.spent_h100_hours, 20 / 3600, delta=1e-3)
             self.assertEqual(record["reason"], "agent")
             self.assertIn('"type": "gpu_release"', (ctx.evidence / "trajectory.jsonl").read_text())

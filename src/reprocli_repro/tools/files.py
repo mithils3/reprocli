@@ -152,7 +152,10 @@ def edit_file(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any
     except OSError as exc:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
-    rel_display = _display_path(ctx, target)
+    try:  # diff header only, so it never needs to be exact
+        rel_display = str(target.relative_to(Path(ctx.workspace)))
+    except (ValueError, TypeError):
+        rel_display = target.name
     diff_text = "".join(difflib.unified_diff(
         before.splitlines(keepends=True), after.splitlines(keepends=True),
         fromfile=rel_display, tofile=rel_display,
@@ -195,15 +198,6 @@ def _first_str(arguments: dict[str, Any], *keys: str) -> str | None:
     return None
 
 
-def _display_path(ctx: ExecutionContext, target: Path) -> str:
-    """``target`` relative to the workspace when possible, else just its name --
-    used only as the diff header, so it never needs to be exact."""
-    try:
-        return str(target.relative_to(Path(ctx.workspace)))
-    except (ValueError, TypeError):
-        return target.name
-
-
 def _to_host(ctx: ExecutionContext, text: str) -> str:
     """Map an in-container ``/repro/...`` path back to the host run dir for host-side I/O.
 
@@ -230,7 +224,10 @@ def _resolve(ctx: ExecutionContext, raw: Any) -> dict[str, Any]:
     text = _to_host(ctx, text)
     if ".." in Path(text).parts:
         return {"ok": False, "error": f"Path contains a '..' segment: {text}"}
-    roots = _roots(ctx)
+    # ``write_file``/``edit_file`` only ever write durable source/evidence, so they
+    # stay tight to workspace + evidence (a subset of the sandbox's rw binds; bulk
+    # /tmp scratch is shell-driven, not a file-tool path).
+    roots = [Path(root) for root in (ctx.workspace, ctx.evidence) if root is not None]
     if not roots:
         return {"ok": False, "error": "Episode has no workspace directory set."}
     base = Path(text) if text.startswith("/") else Path(ctx.workspace or roots[0]) / text
@@ -243,37 +240,6 @@ def _resolve(ctx: ExecutionContext, raw: Any) -> dict[str, Any]:
         if resolved == rootr or rootr in resolved.parents:
             return {"ok": True, "path": resolved, "root": str(rootr)}
     return {"ok": False, "error": f"Path escapes the episode's writable roots: {text}"}
-
-
-def _roots(ctx: ExecutionContext) -> list[Path]:
-    # ``write_file``/``edit_file`` only ever write durable source/evidence, so they
-    # stay tight to workspace + evidence (a subset of the sandbox's rw binds; bulk
-    # /tmp scratch is shell-driven, not a file-tool path).
-    candidates = [ctx.workspace, ctx.evidence]
-    return [Path(p) for p in candidates if p is not None]
-
-
-def locate_by_suffix(workspace: Path, rel: Path) -> list[Path]:
-    """Files under ``workspace`` whose trailing path components equal ``rel``'s.
-
-    Skips ``.git``, any other dot-directory, and common dependency dirs so a
-    vendored copy or a venv's site-packages never shadows the real source file.
-    Capped at ``_MAX_SUFFIX_MATCHES`` hits -- this only runs on the failure path
-    of a direct resolve, but a runaway workspace tree should still bound the cost.
-    """
-    parts = rel.parts
-    hits: list[Path] = []
-    for hit in workspace.rglob(rel.name):
-        if not hit.is_file():
-            continue
-        ancestors = hit.relative_to(workspace).parts[:-1]
-        if any(part == ".git" or part.startswith(".") or part in _SKIP_DIRS for part in ancestors):
-            continue
-        if hit.parts[-len(parts):] == parts:
-            hits.append(hit)
-            if len(hits) >= _MAX_SUFFIX_MATCHES:
-                break
-    return hits
 
 
 def mismatch_hint(content: str, old_string: str) -> str:
@@ -331,7 +297,22 @@ def resolve_by_suffix(ctx: ExecutionContext, raw_path: Any) -> dict[str, Any] | 
                 break
         else:
             return None
-    hits = locate_by_suffix(Path(ctx.workspace), Path(text))
+    # Skip ``.git``, any other dot-directory, and common dependency dirs so a
+    # vendored copy or a venv's site-packages never shadows the real source file.
+    # Capped at ``_MAX_SUFFIX_MATCHES`` hits -- this only runs on the failure path
+    # of a direct resolve, but a runaway workspace tree should still bound the cost.
+    workspace, rel = Path(ctx.workspace), Path(text)
+    hits: list[Path] = []
+    for hit in workspace.rglob(rel.name):
+        if not hit.is_file():
+            continue
+        ancestors = hit.relative_to(workspace).parts[:-1]
+        if any(part == ".git" or part.startswith(".") or part in _SKIP_DIRS for part in ancestors):
+            continue
+        if hit.parts[-len(rel.parts):] == rel.parts:
+            hits.append(hit)
+            if len(hits) >= _MAX_SUFFIX_MATCHES:
+                break
     if len(hits) == 1:
         return {"ok": True, "path": hits[0]}
     if len(hits) > 1:

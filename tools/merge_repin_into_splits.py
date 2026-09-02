@@ -72,7 +72,7 @@ def _check_match_target(rid: str, target: object) -> list[str]:
     return warns
 
 
-def _download_base(repo: str, out_dir: Path) -> tuple[Path, Path]:
+def _download_base(repo: str) -> tuple[Path, Path]:
     from huggingface_hub import hf_hub_download
 
     paths = []
@@ -118,7 +118,7 @@ def main() -> int:
     print(f"Loaded {len(repin)} re-pinned rows from {args.repin}")
 
     if args.splits_repo:
-        base_eval, base_dev = _download_base(args.splits_repo, args.out_eval.parent)
+        base_eval, base_dev = _download_base(args.splits_repo)
     else:
         base_eval, base_dev = args.base_eval, args.base_dev
     if not (base_eval and base_dev):

@@ -67,7 +67,7 @@
 
 @inproceedings{chan2024mlebench,
   title     = {{MLE-bench}: Evaluating Machine Learning Agents on Machine Learning Engineering},
-  author    = {Chan, Jun Shern and Chowdhury, Neil and Jaffe, Oliver and Aung, James and Sherburn, Dane and Mays, Evan and Starace, Giulio and Liu, Kevin and Maksin, Leon and Patwardhan, Tejal and Madry, Aleksander and Weng, Lilian},
+  author    = {Chan, Jun Shern and Chowdhury, Neil and Jaffe, Oliver and Aung, James and Sherburn, Dane and Mays, Evan and Starace, Giulio and Liu, Kevin and Maksin, Leon and Patwardhan, Tejal and Weng, Lilian and Madry, Aleksander},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2025},
   note      = {arXiv:2410.07095}
@@ -93,14 +93,15 @@
   title   = {{ML-Bench}: Evaluating Large Language Models and Agents for Machine Learning Tasks on Repository-Level Code},
   author  = {Tang, Xiangru and Liu, Yuliang and Cai, Zefan and Shao, Yanjun and Lu, Junjie and Zhang, Yichi and Deng, Zexuan and Hu, Helan and An, Kaikai and Huang, Ruijun and Si, Shuzheng and Chen, Sheng and Zhao, Haozhe and Chen, Liang and Wang, Yan and Liu, Tianyu and Jiang, Zhiwei and Chang, Baobao and Fang, Yin and Qin, Yujia and Zhou, Wangchunshu and Zhao, Yilun and Cohan, Arman and Gerstein, Mark},
   journal = {arXiv preprint arXiv:2311.09835},
-  year    = {2024}
+  year    = {2023}
 }
 
 @inproceedings{jing2025dsbench,
   title     = {{DSBench}: How Far Are Data Science Agents from Becoming Data Science Experts?},
   author    = {Jing, Liqiang and Huang, Zhehui and Wang, Xiaoyang and Yao, Wenlin and Yu, Wenhao and Ma, Kaixin and Zhang, Hongming and Du, Xinya and Yu, Dong},
   booktitle = {International Conference on Learning Representations (ICLR)},
-  year      = {2025}
+  year      = {2025},
+  note      = {arXiv:2409.07703}
 }
 
 @article{zhang2025datascibench,
@@ -246,11 +247,36 @@
   year    = {2022}
 }
 
-@misc{mlrc,
-  title        = {{ML} Reproducibility Challenge},
-  author       = {{ReScience C}},
-  howpublished = {\url{https://reproml.org/}},
-  year         = {2023}
+% ---------- Deployment and benchmarking context ----------
+
+@article{handa2025economic,
+  title   = {Which Economic Tasks are Performed with {AI}? Evidence from Millions of {Claude} Conversations},
+  author  = {Handa, Kunal and Tamkin, Alex and McCain, Miles and Huang, Saffron and Durmus, Esin and Heck, Sarah and Mueller, Jared and Hong, Jerry and Ritchie, Stuart and Belonax, Tim and Troy, Kevin K. and Amodei, Dario and Kaplan, Jared and Clark, Jack and Ganguli, Deep},
+  journal = {arXiv preprint arXiv:2503.04761},
+  year    = {2025}
+}
+
+@online{huang2025aiwork,
+author = {Saffron Huang and Bryan Seethor and Esin Durmus and Kunal Handa and Miles McCain and Michael Stern and Deep Ganguli},
+title = {How {AI} Is Transforming Work at {Anthropic}},
+date = {2025-12-02},
+year = {2025},
+url = {https://anthropic.com/research/how-ai-is-transforming-work-at-anthropic/},
+}
+
+@inproceedings{kiela2021dynabench,
+  title     = {Dynabench: Rethinking Benchmarking in {NLP}},
+  author    = {Kiela, Douwe and Bartolo, Max and Nie, Yixin and Kaushik, Divyansh and Geiger, Atticus and Wu, Zhengxuan and Vidgen, Bertie and Prasad, Grusha and Singh, Amanpreet and Ringshia, Pratik and Ma, Zhiyi and Thrush, Tristan and Riedel, Sebastian and Waseem, Zeerak and Stenetorp, Pontus and Jia, Robin and Bansal, Mohit and Potts, Christopher and Williams, Adina},
+  booktitle = {Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  year      = {2021},
+  note      = {arXiv:2104.14337}
+}
+
+@article{phan2025hle,
+  title   = {Humanity's Last Exam},
+  author  = {Phan, Long and Gatti, Alice and Han, Ziwen and others},
+  journal = {arXiv preprint arXiv:2501.14249},
+  year    = {2025}
 }
 
 % ---------- Data and models ----------
@@ -272,10 +298,38 @@
   note    = {MiniMax-M2.7 model card: \url{https://huggingface.co/MiniMaxAI/MiniMax-M2.7}}
 }
 
+@misc{deepseekai2026deepseekv4highlyefficientmilliontoken,
+      title={{DeepSeek-V4}: Towards Highly Efficient Million-Token Context Intelligence},
+      author={DeepSeek-AI and Anyi Xu and Bangcai Lin and Bing Xue and Bingxuan Wang and Bingzheng Xu and Bochao Wu and Bowei Zhang and Chaofan Lin and Chen Dong and Chenchen Ling and Chengda Lu and Chenggang Zhao and Chengqi Deng and Chengyu Hou and Chenhao Xu and Chenze Shao and Chong Ruan and Conner Sun and Damai Dai and Daya Guo and Dejian Yang and Deli Chen and Donghao Li and Dongjie Ji and Erhang Li and Fang Wei and Fangyun Lin and Fangzhou Yuan and Feiyu Xia and Fucong Dai and Guangbo Hao and Guanting Chen and Guoai Cao and Guolai Meng and Guowei Li and Han Yu and Han Zhang and Hanwei Xu and Hao Li and Haofen Liang and Haoling Zhang and Haoming Luo and Haoran Wei and Haotian Yuan and Haowei Zhang and Haowen Luo and Haoyu Chen and Haozhe Ji and Hengqing Zhang and Honghui Ding and Hongxuan Tang and Huanqi Cao and Huazuo Gao and Hui Qu and Hui Zeng and J Yang and JQ Zhu and Jia Luo and Jia Song and Jia Yu and Jialiang Huang and Jialu Cai and Jian Liang and Jiangting Zhou and Jiasheng Ye and Jiashi Li and Jiaxin Xu and Jiewen Hu and Jieyu Yang and Jin Chen and Jin Yan and Jingchang Chen and Jingli Zhou and Jingting Xiang and Jingyang Yuan and Jingyuan Cheng and Jingzi Zhou and Jinhua Zhu and Jiping Yu and Joseph Sun and Jun Ran and Junguang Jiang and Junjie Qiu and Junlong Li and Junmin Zheng and Junxiao Song and Kai Dong and Kaige Gao and Kang Guan and Kexing Zhou and Kezhao Huang and Kuai Yu and Lean Wang and Lecong Zhang and Lei Wang and Leyi Xia and Li Zhang and Liang Zhao and Lihua Guo and Lingxiao Luo and Linwang Ma and Linyan Zhu and Litong Wang and Liyu Cai and Liyue Zhang and Longhao Chen and MS Di and MY Xu and Max Mei and Miaojun Wang and Mingchuan Zhang and Minghua Zhang and Minghui Tang and Mingming Li and Mingxu Zhou and Minmin Han and Ning Wang and Panpan Huang and Panpan Wang and Peixin Cong and Peiyi Wang and Peng Zhang and Qiancheng Wang and Qihao Zhu and Qingyang Li and Qinyu Chen and Qiushi Du and Qiwei Jiang and Rui Tian and Ruifan Xu and Ruijie Lu and Ruiling Xu and Ruiqi Ge and Ruisong Zhang and Ruizhe Pan and Runji Wang and Runqian Chen and Runqiu Yin and Runxin Xu and Ruomeng Shen and Ruoyu Zhang and Ruyi Chen and SH Liu and Shanghao Lu and Shangmian Sun and Shangyan Zhou and Shanhuang Chen and Shaofei Cai and Shaoheng Nie and Shaoqing Wu and Shaoyuan Chen and Shengding Hu and Shengyu Liu and Shiqiang Hu and Shirong Ma and Shiyu Wang and Shuiping Yu and Shunfeng Zhou and Shuting Pan and Shuying Yu and Songyang Zhou and Tao Ni and Tao Yun and Tian Jin and Tian Pei and Tian Ye and Tianle Lin and Tianran Ji and Tianyi Cui and Tianyuan Yue and Tingting Yu and Tun Wang and W Zhang and WL Xiao and Wangding Zeng and Wei An and Weilin Zhao and Wen Liu and Wenfeng Liang and Wenjie Pang and Wenjing Luo and Wenjing Yao and Wenjun Gao and Wenkai Yang and Wenlve Huang and Wenqing Hou and Wentao Zhang and Wenting Ma and Xi Gao and Xiang He and Xiangwen Wang and Xianzu Wang and Xiao Bi and Xiaodong Liu and Xiaohan Wang and Xiaokang Chen and Xiaokang Zhang and Xiaotao Nie and Xiaowen Sun and Xiaoxiang Wang and Xin Cheng and Xin Liu and Xin Xie and Xingchao Liu and Xingchen Liu and Xingkai Yu and Xingyou Li and Xinyu Yang and Xinyu Zhang and Xu Chen and Xuanyu Wang and Xuecheng Su and Xueyin Chen and Xuheng Lin and Xuwei Fu and YC Yan and YQ Wang and YW Ma and Yanfeng Luo and Yang Zhang and Yanhong Xu and Yanru Ma and Yanwen Huang and Yao Li and Yao Li and Yao Xu and Yao Zhao and Yaofeng Sun and Yaohui Wang and Yi Qian and Yi Shao and Yi Yu and Yichao Zhang and Yifan Ding and Yifan Shi and Yijia Wu and Yiliang Xiong and Yiling Ma and Ying He and Ying Tang and Ying Zhou and Yingjia Luo and Yinmin Zhong and Yishi Piao and Yisong Wang and Yixiang Zhang and Yixiao Chen and Yixuan Tan and Yixuan Wei and Yiyang Ma and Yiyuan Liu and Yonglun Yang and Yongqiang Guo and Yongtong Wu and Yu Wu and YuKun Li and Yuan Cheng and Yuan Ou and Yuanfan Xu and Yuanhao Li and Yuduan Wang and Yuehan Yang and Yuer Xu and Yuhan Wu and Yuhao Meng and Yuheng Zou and Yukun Zha and Yunfan Xiong and Yupeng Chen and Yuping Lin and Yuqian Cao and Yuqian Wang and Yushun Zhang and Yuting Yan and Yutong Lin and Yuxian Gu and Yuxiang Luo and Yuxiang You and Yuxuan Liu and Yuxuan Zhou and Yuyang Zhou and Yuzhen Huang and ZF Wu and Zehao Wang and Zehua Zhao and Zehui Ren and Zekai Zhang and Zhangli Sha and Zhe Fu and Zhe Ju and Zhean Xu and Zhenda Xie and Zhengyan Zhang and Zheren Gao and Zhewen Hao and Zhibin Gou and Zhicheng Ma and Zhigang Yan and Zhihong Shao and Zhixian Huang and Zhixuan Chen and Zhiyu Wu and Zhizhou Ren and Zhongyu Wu and Zhuoshu Li and Zhuping Zhang and Zian Xu and Zihao Wang and Zihua Qu and Zihui Gu and Zijia Zhu and Zilin Li and Zipeng Zhang and Ziwei Xie and Ziyi Gao and Ziyi Wan and Zizheng Pan and Zongqing Yao},
+      year={2026},
+      eprint={2606.19348},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2606.19348},
+}
+
+@misc{qwen3.6-27b,
+    title  = {{Qwen3.6-27B}: Flagship-Level Coding in a {27B} Dense Model},
+    author = {{Qwen Team}},
+    month  = {April},
+    year   = {2026},
+    url    = {https://qwen.ai/blog?id=qwen3.6-27b}
+}
+
 @inproceedings{yao2023react,
   title     = {{ReAct}: Synergizing Reasoning and Acting in Language Models},
   author    = {Yao, Shunyu and Zhao, Jeffrey and Yu, Dian and Du, Nan and Shafran, Izhak and Narasimhan, Karthik and Cao, Yuan},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2023},
   note      = {arXiv:2210.03629}
+}
+
+@inproceedings{bode2025deltaai,
+  title     = {{DeltaAI}: A National Resource for {AI}/{ML} Research},
+  author    = {Bode, Brett and Bauer, Gregory and Herriott, Laura and Kindratenko, Volodymyr and Gropp, William},
+  booktitle = {Practice and Experience in Advanced Research Computing (PEARC)},
+  pages     = {1--4},
+  year      = {2025},
+  publisher = {ACM},
+  doi       = {10.1145/3708035.3736062}
 }

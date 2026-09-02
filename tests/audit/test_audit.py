@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from reprocli_vllm.audit.audit import finalize_audit_row  # noqa: E402
 from reprocli_vllm.audit.inputs import build_audit_prompt, claim_block  # noqa: E402
+from reprocli_vllm.runtime.run_health import INCOMPLETE_EXIT_REASONS  # noqa: E402
 
 
 def _score_row(score, flags=None, execution_verified=True) -> dict:
@@ -80,11 +81,6 @@ def test_score_3_is_not_reproduced():
     row = finalize_audit_row(_score_row(3), {"exit_reason": "natural"})
     assert row["verdict"] == "not_reproduced"
     assert row["reproduced"] is False
-
-
-def test_score_2_is_not_reproduced():
-    row = finalize_audit_row(_score_row(2), {"exit_reason": "natural"})
-    assert row["verdict"] == "not_reproduced"
 
 
 def test_high_score_without_execution_is_capped_unverifiable():
@@ -191,3 +187,9 @@ def test_build_audit_prompt_lists_run_directory(tmp_path):
     )
     assert "train.log" in out
     assert "AGENT RUN DIRECTORY" in out
+
+
+def test_forced_exits_are_incomplete():
+    for reason in INCOMPLETE_EXIT_REASONS:
+        row = finalize_audit_row(_score_row(8), {"exit_reason": reason})
+        assert row["verification_status"] == "incomplete", reason

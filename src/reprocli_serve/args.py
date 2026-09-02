@@ -81,23 +81,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="GiB of pinned host RAM for preempted-KV offload (0 disables; "
         "unset falls back to the profile, then vLLM's default).",
     )
-    parser.add_argument("--tokenizer-mode")
-    parser.add_argument("--structured-outputs-backend")
     parser.add_argument("--trust-remote-code", action="store_true")
 
     # Multi-node rendezvous (one process per node; only rank 0 serves the API).
     parser.add_argument("--nnodes", type=int)
     parser.add_argument("--node-rank", type=int)
     parser.add_argument("--master-addr")
-
-    # Data-parallel rendezvous (wide-EP: TP stays intra-node, DP spans nodes, and
-    # --enable-expert-parallel shards the MoE across all DP*TP ranks). An
-    # alternative to pipeline parallel for spanning nodes without inter-node TP.
-    parser.add_argument("--data-parallel-size", type=int)
-    parser.add_argument("--data-parallel-size-local", type=int)
-    parser.add_argument("--data-parallel-start-rank", type=int)
-    parser.add_argument("--data-parallel-address")
-    parser.add_argument("--data-parallel-rpc-port", type=int)
     parser.add_argument(
         "--headless",
         action="store_true",

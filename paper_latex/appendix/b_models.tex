@@ -1,0 +1,94 @@
+\section{Model and Serving Details}
+\label{app:models}
+
+% src: README.md:44-56, src/reprocli_serve/profiles.py:1-9, src/reprocli_repro/cli_args.py:168-187, src/reprocli_repro/__main__.py:86-95, scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330, src/reprocli_serve/endpoint.py
+We serve all three agent models on our cluster with vLLM, each from a
+per-model profile that the launcher expands into a single \texttt{vllm serve}
+command. A sweep is one batch job per model per tier, which launches the
+server and then runs that tier's papers as processes on the same node. Each
+paper's \texttt{run\_gpu} call acquires its own Slurm allocation
+(Appendix~\ref{app:harness}), so the agent's compute is allocated and metered
+separately from the serving GPUs. The model ID the server advertised is
+recorded on the run row.
+Table~\ref{tab:models} lists the served configuration of each model.
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reprocli_serve/profiles.py:65-74,116-143,146-198; src/reprocli_serve/config.py:28; src/reprocli_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
+\begin{table}[h]
+\caption{Served configuration of the three agent models, taken from the tier
+launch scripts and the serve profiles (the launch script takes precedence
+where the two disagree). ``not set'' means the file leaves the field unset and
+the server or the checkpoint supplies it. The agent input ceiling is the served context window
+less the 32{,}768 tokens the harness reserves for the completion. The
+\texttt{top\_p} of $0.95$ follows the DeepSeek-V4-Flash model card's
+recommendation for agentic use. Concurrent papers is how many papers a job runs
+at once, listed for the Run, Retrain, and Reimplement tiers in that order. Each
+paper still receives its own GPU allocation and its own compute budget.}
+\label{tab:models}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}p{3.0cm}p{3.35cm}p{2.45cm}p{3.2cm}@{}}
+\toprule
+Setting & DeepSeek-V4 & Qwen3.6-27B & MiniMax-M2.7 \\
+\midrule
+Served checkpoint &
+\texttt{deepseek-ai/\allowbreak{}DeepSeek-\allowbreak{}V4-\allowbreak{}Flash-\allowbreak{}0731} &
+\texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
+\texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} \\
+Advertised name & same as checkpoint & same as checkpoint &
+\texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} \\
+Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) \\
+KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set \\
+GPUs per replica & 2 & 1 & 2 \\
+Tensor parallel & 2 & 1 & 2 \\
+Served context & 409{,}600 & 262{,}144 & 196{,}608 \\
+Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 \\
+Reasoning setting & \texttt{thinking} true,\newline
+\texttt{reasoning\_effort} \texttt{max} & checkpoint default &
+checkpoint default \\
+Temperature & not set & not set & not set \\
+\texttt{top\_p} & 0.95 & not set & not set \\
+Tool-call parser & \texttt{deepseek\_v4} & \texttt{qwen3\_coder} &
+\texttt{minimax\_m2} \\
+Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
+\texttt{minimax\_m2} \\
+\texttt{max\_num\_seqs} & not set & 32 & not set \\
+Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 \\
+Tool rounds & 300 & 300 & 300 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reprocli_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reprocli_serve/launch.py:44-47,124-178
+Several caveats apply when comparing across models. First, reasoning effort is
+held constant only within the three DeepSeek-V4-Flash sweeps. The Qwen3.6-27B
+and MiniMax-M2.7 launch scripts set no reasoning arguments, so effort is
+uncontrolled across models. Second, precision differs by model, and for
+MiniMax-M2.7 we serve a third-party requantization under the upstream model's
+name, so the name recorded with a run is the advertised one while the weights
+behind it are the requantized ones. W4A16 quantization is lossy by
+construction, and the harness makes no correction for it. Third, the served
+context window differs by model, so the agent input ceiling the harness
+derives from it differs by the same amount, which means a run that exhausts
+its context on one model would have had more room on another. Separately, we
+disable two compilation fusions for DeepSeek-V4-Flash because we observed them
+garbling this checkpoint's decoding on this hardware.
+
+% src: src/reprocli_claude/__main__.py:1-19,74-81,282-295, src/reprocli_claude/agent.py:38-41,134-152,192-308, README.md:34,50
+We produce the grades of record with a separate grading client on the
+Anthropic Messages API, and every sweep of record passes
+\texttt{claude-sonnet-5} to that client. A grading pass is one agent loop over
+one run bundle, capped at 25 rounds, using the frozen rubric and the four
+run-directory tools of Appendix~\ref{app:rubric} under the same limits as the
+served auditor. Appendix~\ref{app:auditor-validation} describes the identity
+of a grading pass. Re-grading a batch with this client overwrites the batch's
+existing audit, so a re-graded sweep has a single grader.
+
+% src: src/reprocli_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
+We price GPU time at the \$2 per H100-hour of
+Section~\ref{subsec:experimental-setup}, and grader tokens by request date, at
+\$2 and \$10 per million input and output tokens through 2026-08-31 and \$3
+and \$15 per million after that.
+
+% src: funding acknowledgement, kept verbatim by author directive 2026-08-30
+This research used the DeltaAI advanced computing and data resource, which is supported by the National Science Foundation (award OAC 2320345) and the State of Illinois. DeltaAI is a joint effort of the University of Illinois Urbana-Champaign and its National Center for Supercomputing Applications~\citep{bode2025deltaai}.

@@ -108,7 +108,6 @@ class SessionHandle:
     ok: bool
     jobid: str | None
     stderr: str
-    command: list[str]
 
 
 def _require_target(cluster: Cluster, gpus: int, partition: str | None) -> None:
@@ -158,7 +157,6 @@ def build_acquire(
 
 
 def build_srun(
-    cluster: Cluster,
     workspace: Path | str,
     cmd: str,
     *,
@@ -228,7 +226,6 @@ def acquire_session(
             ok=False,
             jobid=None,
             stderr=f"{printed}\n[salloc timed out{waited} waiting for the allocation]".lstrip("\n"),
-            command=argv,
         )
     found = _JOBID_RE.findall(decode(proc.stdout) + "\n" + decode(proc.stderr))
     jobid = found[-1] if found else None
@@ -236,12 +233,10 @@ def acquire_session(
         ok=jobid is not None and proc.returncode == 0,
         jobid=jobid,
         stderr=decode(proc.stderr),
-        command=argv,
     )
 
 
 def run_in_session(
-    cluster: Cluster,
     workspace: Path | str,
     cmd: str,
     *,
@@ -261,13 +256,14 @@ def run_in_session(
     Only the head and tail of each stream are kept in memory (``STREAM_KEEP_BYTES``
     each); the log file is the complete record.
     """
-    argv = build_srun(cluster, workspace, cmd, jobid=jobid, sandbox=sandbox)
+    argv = build_srun(workspace, cmd, jobid=jobid, sandbox=sandbox)
     start = time.monotonic()
     try:
         # Own process group: a timeout kill must take out srun's whole tree, or an
         # orphan keeps the pipes open and the pumps block long past the kill.
         proc = subprocess.Popen(
-            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True
+            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL, start_new_session=True,
         )
     except OSError as exc:
         return StepResult(

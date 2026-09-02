@@ -51,11 +51,6 @@ def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]
     command.extend(_coalesced_flags(args, profile))
     if args.enable_expert_parallel or profile.enable_expert_parallel:
         command.append("--enable-expert-parallel")
-    if args.tokenizer_mode:
-        command.extend(["--tokenizer-mode", args.tokenizer_mode])
-    if args.structured_outputs_backend:
-        command.extend(["--structured-outputs-config.backend", args.structured_outputs_backend])
-    command.extend(_dataparallel_flags(args))
     command.extend(_multinode_flags(args))
     command.extend(_supported_extra_args(args.extra_vllm_args))
     return command
@@ -254,23 +249,6 @@ def _coalesced_flags(args: argparse.Namespace, profile: Profile) -> list[str]:
         if present:
             tokens.extend([spec.flag, spec.render(value)])
     return tokens
-
-
-def _dataparallel_flags(args: argparse.Namespace) -> list[str]:
-    """Data-parallel rendezvous flags (wide-EP), set only for a multi-node DP serve."""
-    flags: list[str] = []
-    if not (args.data_parallel_size and args.data_parallel_size > 1):
-        return flags
-    flags.extend(["--data-parallel-size", str(args.data_parallel_size)])
-    if args.data_parallel_size_local is not None:
-        flags.extend(["--data-parallel-size-local", str(args.data_parallel_size_local)])
-    if args.data_parallel_start_rank is not None:
-        flags.extend(["--data-parallel-start-rank", str(args.data_parallel_start_rank)])
-    if args.data_parallel_address:
-        flags.extend(["--data-parallel-address", args.data_parallel_address])
-    if args.data_parallel_rpc_port:
-        flags.extend(["--data-parallel-rpc-port", str(args.data_parallel_rpc_port)])
-    return flags
 
 
 def _multinode_flags(args: argparse.Namespace) -> list[str]:

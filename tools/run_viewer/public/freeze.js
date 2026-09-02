@@ -80,6 +80,5 @@
     filter: (rows) => excluded ? (rows || []).filter((r) => !isNonFrozenRecord(r)) : (rows || []),
     setRuns, setExcluded, mount, setButtonVisible,
     onChange: (fn) => listeners.add(fn),
-    get excluded() { return excluded; },
   };
 })();

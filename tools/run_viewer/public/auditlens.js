@@ -113,7 +113,6 @@
   window.AuditLens = {
     isClaudeGrader, setAudits, upsertAudit, view, coverage, load,
     hasClaudeAudit: (runId) => claudeByRun.has(runId),
-    claudeAuditOf: (runId) => claudeByRun.get(runId) || null,
     mount, setButtonVisible, setActive,
     onChange: (fn) => listeners.add(fn),
     get active() { return active; },

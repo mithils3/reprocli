@@ -22,26 +22,6 @@ from pathlib import Path
 DEFAULT_DATASET = "Mithilss/neurips-2025-paper-bundles"
 
 
-def load_bundle(dataset: str):
-    """Load the paper-bundle fully (non-streaming): download + cache every shard once.
-
-    Unlike streaming, this shows HF download progress (no silent per-run scan) and,
-    once cached, lookups are local memory-mapped reads — so the second run is fast.
-    Point ``HF_HOME``/``HF_HUB_CACHE`` at the NVMe work filesystem, not ``$HOME``,
-    since the full bundle is large.
-    """
-    from datasets import load_dataset
-
-    return load_dataset(dataset, split="train")
-
-
-def arxiv_matches(row_id: str, wanted: str) -> bool:
-    """True if ``row_id`` is ``wanted``, ignoring any trailing version (``v2``)."""
-    row_id = str(row_id or "").strip()
-    wanted = str(wanted or "").strip()
-    return bool(row_id) and (row_id == wanted or row_id.split("v")[0] == wanted.split("v")[0])
-
-
 def write_paper(row: dict, paper_dir: Path) -> dict:
     """Materialize one bundle row into ``paper_dir`` and return its counts."""
     latex_dir = paper_dir / "latex"
@@ -156,11 +136,19 @@ def find_bundle_row(arxiv_id: str, *, dataset: str = DEFAULT_DATASET) -> dict | 
 
     Reads the lightweight ``arxiv_id`` column to locate the row, then materializes
     just that one row's heavy ``content`` bytes — so finding one paper never pulls
-    every row's payload into memory.
+    every row's payload into memory. The load is non-streaming: it downloads and
+    caches every shard once, shows HF download progress, and serves later runs from
+    local memory-mapped reads. Point ``HF_HOME``/``HF_HUB_CACHE`` at the NVMe work
+    filesystem, not ``$HOME`` — the full bundle is large.
     """
-    ds = load_bundle(dataset)
+    from datasets import load_dataset
+
+    ds = load_dataset(dataset, split="train")
+    # Match ignoring any trailing version suffix (``2505.11483v2`` is ``2505.11483``).
+    wanted = str(arxiv_id or "").strip().split("v")[0]
     for index, row_id in enumerate(ds["arxiv_id"]):
-        if arxiv_matches(row_id, arxiv_id):
+        text = str(row_id or "").strip()
+        if text and text.split("v")[0] == wanted:
             return dict(ds[index])
     return None
 

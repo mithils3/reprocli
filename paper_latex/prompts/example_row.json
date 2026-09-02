@@ -1,0 +1,67 @@
+{
+  "custom_id": "2506.20990",
+  "central_claim": "SharpZO achieves up to 7% average gain over state-of-the-art forward-only methods for VLM prompt tuning using only forward passes (no ...",
+  "claim_evidence": "Abstract: 'SharpZO significantly improves accuracy and convergence speed, achieving up to 7% average gain over state-of-the-art forward-only ...",
+  "paper_kind": "empirical",
+  "mre_config": "Fine-tune CLIP-ViT-B/16 with SharpZO on EuroSAT dataset using 16-shot few-shot learning for 20K total steps (Stage 1: sharpness-aware CMA-ES for 500 ...",
+  "verified_links": {
+    "paper_or_project": ["https://yifan-yang.net/sharpzo.github.io/"],
+    "code": ["https://github.com/yifanycc/sharpzo"],
+    "dataset": ["https://huggingface.co/datasets/sensor-jet/EuroSAT"],
+    "weights": ["https://huggingface.co/openai/clip-vit-base-patch16"]
+  },
+  "signals": {
+    "code_available": {
+      "value": true,
+      "verification": "tool_verified",
+      "evidence": "GitHub repo yifanycc/sharpzo verified: contains main_sharpzo.py (ZOTrainer class with CMA-ES Stage 1 and ZO-SGD Stage 2, Z-pruning implementation) ..."
+    },
+    "dataset_available": {
+      "value": true,
+      "verification": "tool_verified",
+      "evidence": "EuroSAT verified as publicly available: download link http://madm.dfki.de/files/sentinel/EuroSAT.zip and HuggingFace dataset. DATASET.md in repo ..."
+    },
+    "weights_available": {
+      "value": true,
+      "verification": "tool_verified",
+      "evidence": "CLIP ViT-B/16 verified on HuggingFace at openai/clip-vit-base-patch16 (1.16M downloads). Code uses clip.load() which automatically downloads ..."
+    },
+    "dataset_is_standard": {
+      "value": true,
+      "verification": "tool_verified",
+      "evidence": "EuroSAT is a widely recognized remote sensing classification benchmark (2700 satellite images, 10 classes) used in prior VLM fine-tuning works ..."
+    }
+  },
+  "agent_task": "Reproduce SharpZO on EuroSAT with CLIP ViT-B/16: (1) Download EuroSAT dataset from http://madm.dfki.de/files/sentinel/EuroSAT.zip, extract to ...",
+  "h100_estimate": {
+    "hours": 0.07,
+    "basis_kind": "paper_reported",
+    "gpu_count": 1,
+    "gpu_type": "A100 80GB",
+    "wallclock_hours": 0.2117,
+    "h100_equivalent_multiplier": 0.32,
+    "basis": "Paper Table 4 reports SharpZO converges to test accuracy in 12.7 min on EuroSAT (1 GPU, A100 80GB per repo). weights_available=true is the frozen ..."
+  },
+  "verification_status": "verified",
+  "web_verification": "available",
+  "exit_reason": "natural",
+  "h100_hours_estimate": 0.07,
+  "h100_estimate_basis": "paper_reported: Paper Table 4 reports SharpZO converges to test accuracy in 12.7 min on EuroSAT (1 GPU, A100 80GB per repo). weights_available=true ...",
+  "h100_band": "0-8",
+  "h100_recomputed_hours": 0.067744,
+  "h100_arithmetic_mismatch": false,
+  "h100_needs_human_review": false,
+  "score": 0,
+  "tier": "Easy",
+  "audited_h100_hours": 0.07,
+  "h100_hours_adjudicated": false,
+  "selection_band": "0-8",
+  "split": "eval",
+  "match_target": {
+    "config": "CLIP ViT-B/16 backbone, EuroSAT dataset, 16-shot, SharpZO method with --sigma 0.4 --zo_lr 1e-3 --rho 0.1 --change_point 500 --total_steps 20000 --prompt_trainer zo --smoothness_estimator zo",
+    "metric": "test accuracy (%)",
+    "value": "79.42%",
+    "scope": "EuroSAT test set",
+    "match_bar_kind": "point_estimate"
+  }
+}

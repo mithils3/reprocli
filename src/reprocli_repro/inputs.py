@@ -121,7 +121,7 @@ def prepare_episodes(args: argparse.Namespace) -> list[EpisodeInput]:
             band_budget = band_max_hours(row)
             budget = band_budget if band_budget is not None else DEFAULT_UNBANDED_BUDGET_H100_HOURS
         run_paths = resolve_run_paths(args.runs_dir, arxiv_id, budget, pinned_run_id)
-        prompt = render_reproduce_prompt(template, row, budget=budget, run_paths=run_paths)
+        prompt = render_reproduce_prompt(template, row, budget=budget)
         episodes.append(
             EpisodeInput(arxiv_id=arxiv_id, row=row, prompt=prompt, run_paths=run_paths, budget=budget)
         )

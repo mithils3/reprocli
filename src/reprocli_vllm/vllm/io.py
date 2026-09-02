@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from reprocli_vllm.audit.audit import finalize_audit_row
-from reprocli_vllm.runtime.run_health import degraded_row, finalize_extracted_row
+from reprocli_vllm.runtime.run_health import degraded_row
 
 
 def initial_messages(prompt: str, system_message: str) -> list[dict[str, Any]]:
@@ -40,8 +40,6 @@ def build_chat_completion_request(
         body["top_p"] = args.top_p
     if args.top_k is not None:
         body["top_k"] = args.top_k
-    if getattr(args, "min_p", None) is not None:
-        body["min_p"] = args.min_p
     if include_tools:
         body["tools"] = args.tools
         body["tool_choice"] = tool_choice
@@ -68,9 +66,7 @@ def truncate_output_file(path: Path) -> None:
     path.write_text("", encoding="utf-8")
 
 
-def extracted_response(
-    custom_id: str, row: dict[str, Any], mode: str = "classification"
-) -> dict[str, Any]:
+def extracted_response(custom_id: str, row: dict[str, Any]) -> dict[str, Any]:
     message = response_message(row)
     content = message.get("content") or ""
     tool_loop = row.get("tool_loop") or {}
@@ -78,10 +74,7 @@ def extracted_response(
     if not isinstance(parsed, dict):
         return degraded_row(custom_id, content, parsed, tool_loop)
     result: dict[str, Any] = {"custom_id": custom_id}
-    if mode == "audit":
-        result.update(finalize_audit_row(parsed, tool_loop))
-    else:
-        result.update(finalize_extracted_row(parsed, tool_loop))
+    result.update(finalize_audit_row(parsed, tool_loop))
     return result
 
 
@@ -107,7 +100,10 @@ def parse_json_content(content: str) -> Any | None:
 
 
 def response_message(row: dict[str, Any]) -> dict[str, Any]:
-    choices = row.get("response", {}).get("body", {}).get("choices") or []
+    # ``body`` is explicitly None on a failed-model-call row, so default-to-{} is not
+    # enough: .get("body", {}) returns the None that is actually there.
+    body = (row.get("response") or {}).get("body") or {}
+    choices = body.get("choices") or []
     if not choices:
         return {}
     return choices[0].get("message") or {}

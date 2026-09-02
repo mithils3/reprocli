@@ -66,12 +66,6 @@ class BundleResolutionTests(unittest.TestCase):
         self.assertIsNone(batch_runs.bundle_for(self.runs_dir, "2505.1", "run-gone"))
         self.assertIsNone(batch_runs.bundle_for(self.runs_dir, "9999.9", "run-new"))
 
-    def test_resolve_splits_present_from_missing(self) -> None:
-        runs = batch_runs.select_runs([_row("2505.1", "run-new"), _row("2505.2", "run-x")])
-        resolved, missing = batch_runs.resolve_bundles(runs, self.runs_dir)
-        self.assertEqual([r.arxiv_id for r in resolved], ["2505.1"])
-        self.assertEqual([r.arxiv_id for r in missing], ["2505.2"])
-
     def test_newest_bundle_picks_the_latest_run_record(self) -> None:
         # No run_id to match (grading by paper id), so recency decides.
         old = self.runs_dir / "2505.1" / "8h" / "run-old" / "report.json"

@@ -62,13 +62,14 @@ _PROFILES: dict[str, Cluster] = {
         name="deltaai",
         hw="gh200",
         gpus_per_node=4,
-        # The agent's JIT GPU steps charge bfvr, not the betw account the sbatch
-        # jobs carry: the two are billed separately, so a sweep's brain/orchestrator
-        # node comes out of betw while every run_gpu hold comes out of bfvr. NOTE the
-        # two names — the PROJECT is bfvr, the SLURM ACCOUNT string is bfvr-dtai-gh
-        # (the bare project code is rejected at submit with "Invalid account or
-        # account/partition combination specified"). Confirmed 2026-08-06 against
-        # `accounts` and a successful submit (job 2889476).
+        # The agent's JIT GPU steps charge bfvr, not the betw account the sbatch jobs
+        # carry: the two are billed separately, so a sweep's brain/orchestrator node
+        # comes out of betw while every run_gpu hold comes out of bfvr. NOTE the two
+        # names — the PROJECT is bfvr, the SLURM ACCOUNT string is bfvr-dtai-gh (the
+        # bare project code is rejected at submit with "Invalid account or
+        # account/partition combination specified"). The QOS string tracks the account
+        # string on DeltaAI and the two settle one update apart, so a queued job issued
+        # under the old account parks in InvalidQOS until it is resubmitted.
         account="bfvr-dtai-gh",
         # ``ghx4`` (the 48 h batch pool) is the default; the faster-queueing
         # ``ghx4-interactive`` (≤4 nodes, 2 h) is one of the partitions the agent can
@@ -84,11 +85,6 @@ _PROFILES: dict[str, Cluster] = {
         sandbox_mem_gb=16,
     ),
 }
-
-
-def cluster_names() -> tuple[str, ...]:
-    """Names of the built-in profiles (just ``deltaai``)."""
-    return tuple(_PROFILES)
 
 
 def cluster_defaults() -> dict[str, dict[str, Any]]:
@@ -124,12 +120,4 @@ def resolve_cluster(
         base,
         partition=partition if partition is not None else base.partition,
         apptainer_image=apptainer_image if apptainer_image is not None else base.apptainer_image,
-    )
-
-
-def from_args(args: Any) -> Cluster:
-    """Resolve the deltaai profile from a parsed CLI namespace (--partition / --apptainer-image)."""
-    return resolve_cluster(
-        partition=getattr(args, "partition", None),
-        apptainer_image=getattr(args, "apptainer_image", None),
     )

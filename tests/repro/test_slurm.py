@@ -71,7 +71,7 @@ class BuildAcquireTests(unittest.TestCase):
 
 class BuildSrunTests(unittest.TestCase):
     def test_runs_into_held_jobid_bare_without_sandbox(self):
-        argv = build_srun(resolve_cluster("deltaai"), "/ws", "python train.py", jobid="2542640")
+        argv = build_srun("/ws", "python train.py", jobid="2542640")
         self.assertEqual(argv[0], "srun")
         self.assertIn("--jobid=2542640", argv)
         self.assertIn("--ntasks=1", argv)
@@ -86,7 +86,7 @@ class BuildSrunTests(unittest.TestCase):
         from reprocli_repro.sandbox import CONTAINER_WORKSPACE, Bind, Sandbox
 
         sb = Sandbox(image="/img.sif", binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
-        argv = build_srun(resolve_cluster("deltaai"), "/host/ws", "python train.py", jobid="42", sandbox=sb)
+        argv = build_srun("/host/ws", "python train.py", jobid="42", sandbox=sb)
         # srun (the trusted launcher) stays outside; the apptainer wrap is spliced after,
         # and the payload cd's to the short container workdir.
         self.assertEqual(argv[0], "srun")
@@ -172,7 +172,7 @@ class RunInSessionTests(unittest.TestCase):
         with mock.patch(
             "reprocli_repro.slurm.build_srun", return_value=["bash", "-c", script]
         ) as build:
-            result = run_in_session(resolve_cluster("deltaai"), "/ws", script, jobid="9", **kwargs)
+            result = run_in_session("/ws", script, jobid="9", **kwargs)
         self.assertEqual(build.call_args.kwargs["jobid"], "9")
         return result
 
@@ -255,7 +255,7 @@ class RunInSessionTests(unittest.TestCase):
             self.assertIn("TAIL-MARK", output.tail(result.stdout, 4_000))
 
     def test_srun_argv_is_unbuffered(self):
-        argv = build_srun(resolve_cluster("deltaai"), "/ws", "python t.py", jobid="9")
+        argv = build_srun("/ws", "python t.py", jobid="9")
         self.assertIn("--unbuffered", argv)
 
 

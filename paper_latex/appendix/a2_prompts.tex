@@ -1,0 +1,84 @@
+\subsection{Prompt templates}
+\label{app:prompts}
+
+% src: src/reprocli_repro/cli_args.py:26-42,238-240; src/reprocli_repro/loop.py:66-70,376-380;
+% src: src/reprocli_repro/transcript.py:22-26,88-96,105-107,128-155; src/reprocli_repro/compact.py:57-61,81-82,90-137;
+% src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
+% src: src/reprocli_repro/live_log.py:71-75; src/reprocli_vllm/vllm/io.py (initial_messages)
+Figure~\ref{lst:harness-messages} collects every fixed string the model reads
+during an episode. The system message is stored at index 0, where compaction
+never reaches it. The final-turn instruction is appended after the harness
+removes the tools and constrains the response to the report schema of
+Appendix~\ref{app:report-format}. The harness inserts five further strings
+during an episode, namely the status line appended each round, the budget
+note, the length nudge after a turn hits the output cap, the elision
+placeholder that compaction leaves behind, and the tool-error fields. The task prompt, which
+follows the system message as the first user turn, is shown in
+Figure~\ref{lst:task-prompt}.
+
+
+\begin{promptbox}[lst:harness-messages]{Harness messages}
+=== SYSTEM MESSAGE (index 0) ===
+You are a reproduction agent. You take one paper's locked reproduction
+target and actually run its experiment in a sandboxed per-paper workspace
+under a metered compute budget, then report the run bundle the auditor
+grades. Spend budget deliberately; write durable evidence as you go.
+
+=== FINAL-TURN INSTRUCTION ===
+The tool phase is over. Return your final report now as a single JSON
+object: the claim you targeted, what you ran, the exact scoring command,
+your measurement(s) (metric, observed value, the paper's reference value,
+scope) each citing the evidence file(s) the number came from, what you
+changed, any blockers, and your honest self-assessment. This is your
+account of the run, not the verdict -- the auditor grades it. Return only
+the JSON object.
+
+=== STATUS LINE (appended each round) ===
+Tool round {used}/{max_rounds} · {left} left
+Tool round {used}/{max_rounds} · {left} left · sweep wall ~{h}h{m:02d}m left
+Tool round {used}/{max_rounds} · {left} left · sweep wall EXPIRED — the job hosting this run is being killed; finalize immediately
+
+=== BUDGET NOTE (prepended to the final turn after an exhausted budget or full context) ===
+The conversation hit its context budget, so the tool phase ended early.
+Finalize from the evidence already written to the run directory rather
+than re-running tools.
+
+=== LENGTH NUDGE (after a turn that hit the output cap, at most twice) ===
+Your previous turn hit the output-token limit before emitting any tool
+call, so it was cut off mid-stream and trimmed above. Do not re-plan from
+scratch. Take the next concrete action with a tool call now, and keep
+reasoning brief.
+
+=== ELISION PLACEHOLDER (left in a compacted tool result) ===
+[elided {n_chars} chars — on disk at <run_dir>/agent.full.log]
+
+=== TOOL ERROR AND TRUNCATION FIELDS ===
+{"ok": false, "error": "Unknown tool: <name>. Available tools: <names>"}
+{"ok": false, "tool": "<name>", "error": "<ExceptionType>: <message>"}
+{"ok": false, "retried": true, ...}
+{..., "truncated": true, "truncation_note": "Result truncated to fit the tool budget; request a specific file path, path_filter, or smaller range for more."}
+\end{promptbox}
+
+% src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
+% src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165,299-312;
+% src: src/reprocli_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
+The task prompt is a single 290-line template with fourteen placeholder fields
+under nine headings. Each field is filled from the paper's dataset row
+(Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or
+from the fixed container paths of Appendix~\ref{app:sandbox}. Rendering fails
+with an error if any field is left unfilled, and every field has a fallback
+string, so the renderer writes an explicit statement of absence where a row
+lacks a value. The renderer omits \texttt{match\_target.config}, the runnable
+configuration that produces the target value, so the agent has to derive that
+configuration from the paper.
+
+% src: git 05c58a6 (2026-06-28), 5514246 (2026-06-28), 0b26215 (2026-07-01), 3c6954b (2026-07-01),
+% src: f19e28f (2026-07-04), dfc02c0 (2026-07-09), 858e1eb (2026-07-09), 728c663 (2026-07-09), d25c8d4 (2026-07-11)
+We revised the template from transcript dissections of earlier agent runs,
+and checked each revision against other models' successful runs before
+adopting it. In a cross-model audit on 2026-06-28 we removed two rules that
+were specific to one model's behavior, a push toward requesting more GPUs and
+a budget-fraction test for under-running. The template has not changed since 2026-07-11, and
+Figure~\ref{lst:task-prompt} reproduces it in full.
+
+\promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}
