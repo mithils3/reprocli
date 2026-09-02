@@ -96,7 +96,7 @@ class RunAuditTests(unittest.TestCase):
             _text(json.dumps(VERDICT)),
         ])
         result = agent.run_audit(
-            client, paper_id="2505.1", prompt="grade this", run_dir=self.run_dir, tool_rounds=5
+            client, prompt="grade this", run_dir=self.run_dir, tool_rounds=5
         )
         self.assertEqual(json.loads(result.text)["score"], 9)
         self.assertEqual(result.tool_loop["exit_reason"], "natural")
@@ -109,7 +109,7 @@ class RunAuditTests(unittest.TestCase):
 
     def test_every_request_asks_for_caching_and_thinking(self) -> None:
         client = StubClient([_text(json.dumps(VERDICT)), _text(json.dumps(VERDICT))])
-        agent.run_audit(client, paper_id="2505.1", prompt="p", run_dir=self.run_dir, effort="high")
+        agent.run_audit(client, prompt="p", run_dir=self.run_dir, effort="high")
         for request in client.requests:
             self.assertEqual(request["cache_control"], {"type": "ephemeral"})
             self.assertEqual(request["thinking"], {"type": "adaptive"})
@@ -117,7 +117,7 @@ class RunAuditTests(unittest.TestCase):
 
     def test_final_turn_is_schema_bound_with_tools_off(self) -> None:
         client = StubClient([_text("thinking out loud"), _text(json.dumps(VERDICT))])
-        agent.run_audit(client, paper_id="2505.1", prompt="p", run_dir=self.run_dir)
+        agent.run_audit(client, prompt="p", run_dir=self.run_dir)
         final = client.requests[-1]
         self.assertEqual(final["tool_choice"], {"type": "none"})
         self.assertEqual(final["output_config"]["format"]["type"], "json_schema")
@@ -130,7 +130,7 @@ class RunAuditTests(unittest.TestCase):
             _text(json.dumps(VERDICT)),
         ])
         result = agent.run_audit(
-            client, paper_id="2505.1", prompt="p", run_dir=self.run_dir, tool_rounds=2
+            client, prompt="p", run_dir=self.run_dir, tool_rounds=2
         )
         self.assertTrue(result.tool_loop["hit_tool_round_limit"])
         self.assertEqual(result.tool_loop["exit_reason"], "round_limit")
@@ -141,7 +141,7 @@ class RunAuditTests(unittest.TestCase):
             _text("blocked"),
             _text(json.dumps(VERDICT)),
         ])
-        result = agent.run_audit(client, paper_id="2505.1", prompt="p", run_dir=self.run_dir)
+        result = agent.run_audit(client, prompt="p", run_dir=self.run_dir)
         self.assertEqual(result.tool_loop["telemetry"]["tool_errors"], 1)
         self.assertTrue(client.requests[-1]["messages"][2]["content"][0]["is_error"])
 
@@ -149,7 +149,7 @@ class RunAuditTests(unittest.TestCase):
         refusal = _text("")
         refusal.stop_reason = "refusal"
         client = StubClient([refusal])
-        result = agent.run_audit(client, paper_id="2505.1", prompt="p", run_dir=self.run_dir)
+        result = agent.run_audit(client, prompt="p", run_dir=self.run_dir)
         self.assertEqual(result.tool_loop["exit_reason"], "refusal")
         self.assertEqual(result.text, "")
         self.assertEqual(len(client.requests), 1)
@@ -162,7 +162,7 @@ class RunAuditTests(unittest.TestCase):
         ])
         seen: list[str] = []
         agent.run_audit(
-            client, paper_id="2505.1", prompt="p", run_dir=self.run_dir,
+            client, prompt="p", run_dir=self.run_dir,
             on_event=lambda kind, idx, payload: seen.append(kind),
         )
         self.assertEqual(
@@ -172,7 +172,7 @@ class RunAuditTests(unittest.TestCase):
 
     def test_verdict_row_matches_the_vllm_auditor_finalizer(self) -> None:
         client = StubClient([_text(json.dumps({**VERDICT, "score": 10}))] * 2)
-        result = agent.run_audit(client, paper_id="2505.1", prompt="p", run_dir=self.run_dir)
+        result = agent.run_audit(client, prompt="p", run_dir=self.run_dir)
         row = extracted_response(
             "2505.1",
             {"response": {"body": {"choices": [{"message": {"content": result.text}}]}},

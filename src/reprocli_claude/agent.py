@@ -189,7 +189,6 @@ def execute_tool(name: str, arguments: Any, run_dir: Path) -> dict[str, Any]:
 def run_audit(
     client: Any,
     *,
-    paper_id: str,
     prompt: str,
     run_dir: Path,
     model: str = MODEL,

@@ -157,7 +157,6 @@ def audit_run(
     try:
         result = agent.run_audit(
             client,
-            paper_id=run.arxiv_id,
             prompt=prompt,
             run_dir=run.bundle,
             model=args.model,
