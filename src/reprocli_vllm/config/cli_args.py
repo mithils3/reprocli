@@ -9,6 +9,7 @@ cross-argument validation enforced.
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from reprocli_vllm.config.config import (
     AUDIT_CLAIMS_DEFAULT,
@@ -38,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--claims",
-        type=argparse_path,
+        type=Path,
         help=(
             "Audit-pool rows (classifier extracted output) carrying the "
             "central_claim per paper, injected into the audit prompt. A local "
@@ -48,17 +49,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--runs-dir",
-        type=argparse_path,
+        type=Path,
         help=(
             "Root directory of agent reproduction runs; the auditor reads one "
             "run dir per paper at <runs-dir>/<arxiv_id> via the path-confined "
             f"run-dir tools (default: {AUDIT_RUNS_DIR_DEFAULT})."
         ),
     )
-    parser.add_argument("--prompt-file", type=argparse_path)
-    parser.add_argument("--output", type=argparse_path)
-    parser.add_argument("--extracted-output", type=argparse_path)
-    parser.add_argument("--trace-output", type=argparse_path)
+    parser.add_argument("--prompt-file", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--extracted-output", type=Path)
+    parser.add_argument("--trace-output", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument(
         "--vllm-server-url",
@@ -79,7 +80,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--paper-ids-file",
-        type=argparse_path,
+        type=Path,
         help="Run only the arXiv ids listed in this file (one per line).",
     )
     parser.add_argument("--max-tokens", type=int, default=32768)
@@ -143,8 +144,3 @@ def resolve_mode_settings(args: argparse.Namespace) -> None:
     # Fixed loop guard (was --max-repeated-tool-calls, never varied).
     args.max_repeated_tool_calls = MAX_REPEATED_TOOL_CALLS
 
-
-def argparse_path(value: str):
-    from pathlib import Path
-
-    return Path(value)
