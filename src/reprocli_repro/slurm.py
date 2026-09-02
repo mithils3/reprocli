@@ -158,7 +158,6 @@ def build_acquire(
 
 
 def build_srun(
-    cluster: Cluster,
     workspace: Path | str,
     cmd: str,
     *,
@@ -241,7 +240,6 @@ def acquire_session(
 
 
 def run_in_session(
-    cluster: Cluster,
     workspace: Path | str,
     cmd: str,
     *,
@@ -261,7 +259,7 @@ def run_in_session(
     Only the head and tail of each stream are kept in memory (``STREAM_KEEP_BYTES``
     each); the log file is the complete record.
     """
-    argv = build_srun(cluster, workspace, cmd, jobid=jobid, sandbox=sandbox)
+    argv = build_srun(workspace, cmd, jobid=jobid, sandbox=sandbox)
     start = time.monotonic()
     try:
         # Own process group: a timeout kill must take out srun's whole tree, or an

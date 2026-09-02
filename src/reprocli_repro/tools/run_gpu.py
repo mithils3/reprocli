@@ -150,7 +150,7 @@ def run_gpu(arguments: dict[str, Any], ctx: ExecutionContext) -> dict[str, Any]:
 
     log_path = evidence_mod.next_gpu_log(ctx.evidence) if ctx.evidence is not None else None
     step = slurm.run_in_session(
-        ctx.cluster, ctx.workspace, command, jobid=session.jobid,
+        ctx.workspace, command, jobid=session.jobid,
         timeout=session.minutes * 60 + 600, sandbox=ctx.sandbox, log_path=log_path,
     )
     log_ref = _log_ref(ctx, log_path)
