@@ -1,7 +1,7 @@
 """Direct URL fetch + tool-argument parsing shared across agent toolsets.
 
 ``fetch_url_tool`` is the urllib + HTML->text fetch used by the reproduction
-agent (``reprocli_repro.tools.fetch``); ``parse_tool_arguments`` normalizes the
+agent (``reprocli_repro.tools``); ``parse_tool_arguments`` normalizes the
 JSON ``arguments`` payload of a model tool call for every dispatcher.
 """
 
