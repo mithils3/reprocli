@@ -105,22 +105,6 @@ class DropTruncatePromptTokensTests(unittest.TestCase):
                 client.post_chat_completion_row("http://h:8000", row, 30.0)
         self.assertNotIn("truncate_prompt_tokens", seen["body"])
 
-    def test_streamed_body_is_stripped_too(self) -> None:
-        row = {
-            "custom_id": "c1",
-            "body": {"model": "m", "messages": [], "truncate_prompt_tokens": 967232},
-        }
-        seen: dict = {}
-
-        def _fake_stream(base_url, body, timeout):
-            seen["body"] = body
-            return {"choices": []}
-
-        with patch.dict("os.environ", {ENV_NO_TRUNCATE_PROMPT: "1"}, clear=True):
-            with patch.object(client, "post_streaming_chat_completion", _fake_stream):
-                client.post_chat_completion_row("http://h:8000", row, 30.0, stream=True)
-        self.assertNotIn("truncate_prompt_tokens", seen["body"])
-
 
 class ApplyProviderRoutingTests(unittest.TestCase):
     def test_noop_when_unset(self) -> None:

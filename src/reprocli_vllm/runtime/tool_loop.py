@@ -80,13 +80,11 @@ def run_tool_loop(
                 include_tools=include_tools,
                 tool_choice="auto",
             )
-            stream = args.stream_first_response and round_index == 0 and custom_id == original_ids[0]
             future = requests.submit(
                 post_chat_completion_row,
                 base_url,
                 request,
                 REQUEST_TIMEOUT,
-                stream=stream,
             )
             request_futures[future] = {
                 "custom_id": custom_id,

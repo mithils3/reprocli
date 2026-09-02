@@ -91,7 +91,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
     parser.add_argument("--top-k", type=int)
-    parser.add_argument("--stream-first-response", action="store_true")
     parser.add_argument("--save-round-jsonl", action="store_true")
     args = parser.parse_args()
     apply_model_defaults(args)
