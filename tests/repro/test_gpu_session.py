@@ -34,7 +34,6 @@ def _held(ctx: ExecutionContext, *, gpus: int, seconds_ago: float) -> GpuSession
         jobid="555", gpus=gpus, minutes=60, hw="gh200",
         started=now - seconds_ago, last_charged=now - seconds_ago,
     )
-    ctx.allocation = "555"
     return ctx.session
 
 
@@ -72,7 +71,6 @@ class EnsureAndReleaseTests(unittest.TestCase):
                 session, err = gpu_session.ensure_session(ctx, gpus=2, minutes=30)
             self.assertIsNone(err)
             self.assertEqual(session.jobid, "77")
-            self.assertEqual(ctx.allocation, "77")
             self.assertAlmostEqual(session.started, session.last_charged, delta=1e-3)
 
     def test_ensure_reuses_an_existing_session(self):
@@ -115,7 +113,6 @@ class EnsureAndReleaseTests(unittest.TestCase):
                 record = gpu_session.release(ctx, "agent")
             scancel.assert_called_once_with("555")
             self.assertIsNone(ctx.session)
-            self.assertIsNone(ctx.allocation)
             self.assertAlmostEqual(ctx.budget.spent_h100_hours, 20 / 3600, delta=1e-3)
             self.assertEqual(record["reason"], "agent")
             self.assertIn('"type": "gpu_release"', (ctx.evidence / "trajectory.jsonl").read_text())

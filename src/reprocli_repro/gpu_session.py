@@ -75,7 +75,6 @@ def ensure_session(
         partition=partition or ctx.cluster.partition,
     )
     ctx.session = session
-    ctx.allocation = handle.jobid
     # Telemetry sidecar into the fresh allocation; no-op unless SUPABASE env is set.
     run_beacon.start(ctx, handle.jobid)
     return session, None
@@ -109,7 +108,6 @@ def drop_lost(ctx: ExecutionContext) -> None:
     if ctx.session is not None:
         run_beacon.stop(ctx.session.jobid)  # the step died with the allocation; drop the client
     ctx.session = None
-    ctx.allocation = None
 
 
 def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
@@ -130,7 +128,6 @@ def release(ctx: ExecutionContext, reason: str = "done") -> dict | None:
         "reason": reason,
     }
     ctx.session = None
-    ctx.allocation = None
     if ctx.evidence is not None:
         evidence_mod.append_trajectory(ctx.evidence, {"type": "gpu_release", **record})
     return record

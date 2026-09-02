@@ -61,7 +61,6 @@ class SessionLifecycleTests(unittest.TestCase):
             self.assertEqual(res["session_jobid"], "555")
             self.assertFalse(res["session_released"])
             self.assertEqual(ctx.session.jobid, "555")
-            self.assertEqual(ctx.allocation, "555")
             a.assert_called_once()
             r.assert_called_once()
             self.assertIn("torch 2.11", res["stdout"])
@@ -109,7 +108,6 @@ class SessionLifecycleTests(unittest.TestCase):
                 res = run_gpu({"command": "python score.py", "release": True}, ctx)
             self.assertTrue(res["session_released"])
             self.assertIsNone(ctx.session)
-            self.assertIsNone(ctx.allocation)
             scancel.assert_called_once_with("555")
 
     def test_release_only_with_no_command_frees_session(self):
@@ -144,7 +142,6 @@ class StalenessGuardTests(unittest.TestCase):
             jobid="555", gpus=1, minutes=minutes, hw="h100",
             started=now - held_seconds, last_charged=now, partition="ghx4",
         )
-        ctx.allocation = "555"
         return ctx
 
     def test_rotates_out_a_nearly_expired_session(self):

@@ -30,7 +30,6 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(ctx.lockfile_row, {})
         self.assertIsNone(ctx.budget)
         self.assertIsNone(ctx.workspace)
-        self.assertIsNone(ctx.allocation)
         self.assertIsNone(ctx.evidence)
 
 

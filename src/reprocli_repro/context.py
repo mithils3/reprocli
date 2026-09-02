@@ -82,7 +82,6 @@ class ExecutionContext:
     workspace: Path | None = None        # editable code clone + venv (rw)
     reference: Path | None = None        # read-only paper LaTeX + supplement (ro)
     budget: Budget | None = None         # metered compute budget
-    allocation: str | None = None        # jobid of the held GPU allocation (mirrors session.jobid)
     session: "GpuSession | None" = None  # the live held run_gpu allocation, if any
     evidence: Path | None = None         # commands.log / trajectory.jsonl / ...
     run_dir: Path | None = None          # bundle root where report.json is written for the auditor
