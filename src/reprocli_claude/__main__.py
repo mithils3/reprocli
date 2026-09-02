@@ -149,7 +149,10 @@ def audit_run(
     sink_config: SinkConfig | None,
 ) -> dict[str, Any]:
     """Grade one run: audit, finalize, persist, stream. Returns the verdict row."""
-    sink = _open_sink(sink_config, run)
+    # One sink per run so each audit links to the run it graded, not to $env.
+    sink = None if sink_config is None else AuditSink(
+        dataclasses.replace(sink_config, graded_run_id=run.run_id or None)
+    )
     on_event = _sink_bridge(sink, run.arxiv_id)
     try:
         result = agent.run_audit(
@@ -175,10 +178,9 @@ def audit_run(
         with WRITE_LOCK:
             append_jsonl_row(args.output, raw, truncate=False)
             append_jsonl_row(args.extracted_output, verdict, truncate=False)
-        if on_event:
-            on_event("final", result.tool_loop["tool_rounds_used"],
-                     {"message": {"content": result.text}, "verdict": verdict,
-                      "exit_reason": result.tool_loop["exit_reason"]})
+        on_event("final", result.tool_loop["tool_rounds_used"],
+                 {"message": {"content": result.text}, "verdict": verdict,
+                  "exit_reason": result.tool_loop["exit_reason"]})
         if args.upload and run.run_id:
             _upload(run.run_id, verdict, args.model)
         print(f"  {run.arxiv_id}: score={verdict.get('score')} verdict={verdict.get('verdict')} "
@@ -199,13 +201,6 @@ def attempt_tag(model: str, stamp: str) -> str:
     keeps re-grades by the SAME model distinct too.
     """
     return f"{model.rsplit('/', 1)[-1]}-{stamp}"
-
-
-def _open_sink(sink_config: SinkConfig | None, run: batch_runs.Run) -> AuditSink | None:
-    """One sink per run so each audit links to the run it graded, not to $env."""
-    if sink_config is None:
-        return None
-    return AuditSink(dataclasses.replace(sink_config, graded_run_id=run.run_id or None))
 
 
 def _sink_bridge(sink: AuditSink | None, paper_id: str):
