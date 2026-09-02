@@ -10,24 +10,17 @@ This module reads the sweep's rows from the run-viewer Supabase and resolves eac
 ``run_id`` to the bundle it actually wrote, so a grader points at one attempt and
 its verdict patches the matching ``repro_runs`` row. Read-only; needs
 ``SUPABASE_URL`` + ``SUPABASE_SERVICE_KEY``.
-
-    PYTHONPATH=src python -m reprocli_repro.batch_runs \
-      --batch slurm-2687371 --runs-dir /work/nvme/bfvr/msalunkhe/reprocli/agent_runs
 """
 
 from __future__ import annotations
 
-import argparse
 import json
-import os
-import sys
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from reprocli_repro import postgrest
-from reprocli_repro.event_sink import service_key_from_env
 
 HTTP_TIMEOUT = 20.0
 SELECT = (
@@ -147,64 +140,3 @@ def newest_bundle(runs_dir: Path, arxiv_id: str) -> Path | None:
     if not marked:
         return None
     return max(marked, key=lambda path: path.stat().st_mtime)
-
-
-def resolve_bundles(runs: list[Run], runs_dir: Path) -> tuple[list[Run], list[Run]]:
-    """Split ``runs`` into (resolved, missing) by whether their bundle is on disk."""
-    resolved, missing = [], []
-    for run in runs:
-        run.bundle = bundle_for(runs_dir, run.arxiv_id, run.run_id)
-        (resolved if run.bundle else missing).append(run)
-    return resolved, missing
-
-
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="reprocli_repro.batch_runs", description=__doc__)
-    parser.add_argument("--batch", required=True, help="batch_id to resolve, e.g. slurm-2687371.")
-    parser.add_argument("--runs-dir", type=Path, required=True,
-                        help="Root of the agent run bundles (<runs-dir>/<arxiv_id>/<budget>h/<run_id>).")
-    parser.add_argument("--supabase-url", default=os.environ.get("SUPABASE_URL"),
-                        help="Supabase project URL (default: $SUPABASE_URL).")
-    parser.add_argument("--include-running", action="store_true",
-                        help="Also grade runs still in progress (their bundles are incomplete).")
-    parser.add_argument("--skip-audited", action="store_true",
-                        help="Skip papers whose repro_runs row already has an audit_score.")
-    parser.add_argument("--limit", type=int, help="Grade at most this many papers (smoke tests).")
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    base, key = (args.supabase_url or "").rstrip("/"), service_key_from_env()
-    if not base or not key:
-        print("batch_runs: set SUPABASE_URL (or --supabase-url) and SUPABASE_SERVICE_KEY",
-              file=sys.stderr)
-        return 2
-
-    runs = select_runs(
-        fetch_runs(base, key, args.batch),
-        include_running=args.include_running,
-        skip_audited=args.skip_audited,
-    )
-    if args.limit is not None:
-        runs = runs[: max(0, args.limit)]
-    resolved, missing = resolve_bundles(runs, args.runs_dir)
-    for run in missing:
-        print(f"  {run.arxiv_id}: no bundle for run {run.run_id} under {args.runs_dir} -- skipped",
-              file=sys.stderr)
-    if not resolved:
-        print(f"batch_runs: no gradeable bundles for {args.batch}", file=sys.stderr)
-        return 1
-
-    for run in resolved:
-        print(f"{run.arxiv_id}\t{run.run_id}\t{run.bundle}")
-    print(
-        f"batch_runs: {len(resolved)} bundle(s) bound for {args.batch}"
-        + (f", {len(missing)} missing" if missing else ""),
-        file=sys.stderr,
-    )
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
