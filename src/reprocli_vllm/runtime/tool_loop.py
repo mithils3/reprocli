@@ -17,7 +17,7 @@ from reprocli_vllm.vllm.io import (
     truncate_output_file,
     tool_result_message,
 )
-from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, FINAL_NO_TOOLS_MESSAGE, REQUEST_TIMEOUT
+from reprocli_vllm.config.config import CONTEXT_BUDGET_NOTE, REQUEST_TIMEOUT
 from reprocli_vllm.runtime.loop_guards import context_budget_exceeded, record_tool_call, repeated_tool_call
 from reprocli_vllm.runtime import live_events
 from reprocli_vllm.papers.papers import Paper
@@ -298,7 +298,7 @@ def noop() -> None:
     return None
 
 
-def final_user_message(budget_note: bool, final_message: str = FINAL_NO_TOOLS_MESSAGE) -> dict[str, Any]:
+def final_user_message(budget_note: bool, final_message: str) -> dict[str, Any]:
     content = final_message
     if budget_note:
         content = CONTEXT_BUDGET_NOTE + content
@@ -310,7 +310,7 @@ def conversation_for_round(
     include_tools: bool,
     *,
     budget_note: bool = False,
-    final_message: str = FINAL_NO_TOOLS_MESSAGE,
+    final_message: str,
 ) -> list[dict]:
     if include_tools:
         return messages
@@ -342,7 +342,7 @@ def append_final_message(
     include_tools: bool,
     *,
     budget_note: bool = False,
-    final_message: str = FINAL_NO_TOOLS_MESSAGE,
+    final_message: str,
 ) -> None:
     if not include_tools:
         messages.append(final_user_message(budget_note, final_message))
