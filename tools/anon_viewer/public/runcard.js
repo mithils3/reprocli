@@ -26,9 +26,6 @@
   // spend against predicted still reads off one scale. Numbers stay literal.
   const scale = (v) => Math.sqrt(clamp(v) / 100) * 100;
 
-  // agent short name: strip everything through the last "/"
-  function shortModel(m) { if (!m) return ""; const i = String(m).lastIndexOf("/"); return i >= 0 ? String(m).slice(i + 1) : String(m); }
-
   // micro fuel bar = spent/budget + indigo predicted tick; omitted with no budget data
   function microFuelHtml(run) {
     const { total, spent } = R.fuelNums(run);
@@ -48,5 +45,5 @@
       `<i>/</i><span class="mfuel-b">${R.fmtHM(total)}</span></span></span>`;
   }
 
-  Object.assign(window.RENDER, { microFuelHtml, shortModel });
+  Object.assign(window.RENDER, { microFuelHtml });
 })();

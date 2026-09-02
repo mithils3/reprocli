@@ -68,7 +68,6 @@
       if (v && familyFromAudit(run) === fam) return String(v).replace(/_/g, " ");
       return this.meta(fam).word;
     },
-    runInline(run) { return this.inline(this.ofRun(run), this.word(run)); },
 
     // rotated double-entry stamp
     stamp(fam, labelOverride) {

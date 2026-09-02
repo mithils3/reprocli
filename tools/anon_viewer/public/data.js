@@ -81,7 +81,6 @@
         colour: "--slate", definition: "", rank: 99 };
     },
     name(key) { return this.get(key).name; },
-    colour(key) { return this.get(key).colour; },
     definition(key) { return this.get(key).definition; },
     rank(key) { return this.get(key).rank; },
     // the mode pill: a fixed colour dot plus the display name, same everywhere
@@ -161,7 +160,6 @@
       });
     },
 
-    sweep(model, tier) { return this.sweeps.find((s) => s.model === model && s.tier === tier) || null; },
     runsForPaper(arx) { return this.runs.filter((r) => r.arxiv_id === arx); },
 
     // ---- one run bundle: runs/<id>.json.gz ----------------------------------
@@ -189,9 +187,6 @@
       promise.catch(() => this._runCache.delete(id));
       return promise;
     },
-
-    // event key -> which Round a row belongs to (mirrors render.js's data-key)
-    roundKey(e) { return (e.kind === "final" ? "final:" : "round:") + e.round_index; },
 
     rowsToRounds(rows) {
       const byKey = new Map(), order = [];

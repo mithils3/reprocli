@@ -7,8 +7,6 @@
 
 (function () {
   const esc = window.RENDER.esc;
-  const fmtK = (n) => n == null ? "·" : n < 1000 ? String(Math.round(n)) : n < 1e6 ? (n / 1e3).toFixed(n < 1e4 ? 1 : 0) + "k" : (n / 1e6).toFixed(2) + "M";
-  const fmtH = (n) => n == null ? "·" : (Math.round(n * 10) / 10).toLocaleString();
 
   // ---- ArcGauge: 270° gauge, progress over a track, numerals centered --------
   // The box is cropped to the arc it draws, so the ring uses the whole width it
@@ -92,5 +90,5 @@
       (opts.axis ? `<div class="hg-axis">${esc(opts.axis)}</div>` : "");
   }
 
-  window.Charts = { arcGauge, card, empty, barRow, legend, histogram, fmtK, fmtH };
+  window.Charts = { arcGauge, card, empty, barRow, legend, histogram };
 })();

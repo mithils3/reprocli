@@ -24,11 +24,6 @@
       window.addEventListener("resize", this._resize);
       this.draw(); this.observe();
     },
-    redraw(rootEl, run, rounds) {
-      this.rootEl = rootEl; this.run = run; this.rounds = rounds || [];
-      this.rail = rootEl.querySelector(".strip-rail");
-      if (this.rail && this.rounds.length) { this.draw(); this.observe(); }
-    },
 
     draw() {
       const rail = this.rail; if (!rail || !window.Trace) return;

@@ -23,7 +23,6 @@ function uni(s) {
   });
 }
 const uesc = (s) => esc(uni(s));
-function el(html) { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
 const num = (v) => (v == null ? null : (Math.round(v * 10000) / 10000));
 
 // H100·h as a readable Hh MMm / MMm SSs / SSs (compute, so "minutes" = H100·minutes)
@@ -402,5 +401,5 @@ function renderRun(rootEl, run, rounds, opts) {
   if (window.Strip) window.Strip.mount(rootEl, run, rounds);
 }
 
-window.RENDER = { esc, uni, uesc, el, num, fmtHM, fmtDur, fmtTok, fmtTime, claimOf, predictedOf,
+window.RENDER = { esc, uni, uesc, num, fmtHM, fmtDur, fmtTok, fmtTime, claimOf, predictedOf,
   GOOD_EXIT, exitLabel, fuelNums, renderRun, topHtml, runTilesHtml, revealRound };
