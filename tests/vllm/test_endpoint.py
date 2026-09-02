@@ -111,10 +111,6 @@ class AuthHeaderTests(unittest.TestCase):
             self.assertIsNone(resolve_api_key())
             self.assertEqual(auth_headers(), {})
 
-    def test_cli_value_wins(self) -> None:
-        with patch.dict("os.environ", {ENV_API_KEY: "env"}, clear=True):
-            self.assertEqual(auth_headers("sk-or-cli"), {"Authorization": "Bearer sk-or-cli"})
-
     def test_reprocli_env_key(self) -> None:
         with patch.dict("os.environ", {ENV_API_KEY: "sk-or-env"}, clear=True):
             self.assertEqual(auth_headers(), {"Authorization": "Bearer sk-or-env"})

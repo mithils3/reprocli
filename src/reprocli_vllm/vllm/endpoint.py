@@ -48,7 +48,7 @@ ENV_NO_TRUNCATE_PROMPT = "REPROCLI_NO_TRUNCATE_PROMPT"
 MODELS_FETCH_TIMEOUT = 30.0
 
 
-def resolve_api_key(cli_value: str | None = None) -> str | None:
+def resolve_api_key() -> str | None:
     """Bearer token for an authenticated endpoint (e.g. OpenRouter), or None.
 
     A local self-served vLLM needs no key, so this is empty by default and the
@@ -57,13 +57,13 @@ def resolve_api_key(cli_value: str | None = None) -> str | None:
     different provider — so a stray provider key in the shell can't leak to a URL
     it wasn't issued for.
     """
-    value = cli_value or os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
+    value = os.environ.get(ENV_API_KEY) or os.environ.get("OPENROUTER_API_KEY")
     return (value or "").strip() or None
 
 
-def auth_headers(cli_value: str | None = None) -> dict[str, str]:
+def auth_headers() -> dict[str, str]:
     """``Authorization: Bearer`` header when a key is configured, else ``{}``."""
-    key = resolve_api_key(cli_value)
+    key = resolve_api_key()
     return {"Authorization": f"Bearer {key}"} if key else {}
 
 
@@ -199,13 +199,13 @@ def resolve_server_url(cli_value: str | None) -> str | None:
     return None
 
 
-def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[dict]:
+def fetch_model_cards(base_url: str) -> list[dict]:
     """Return the raw ``/v1/models`` entries the server advertises (may be empty)."""
     url = f"{base_url.rstrip('/')}/v1/models"
 
     def _do() -> dict:
         request = urllib.request.Request(url, headers=auth_headers(), method="GET")
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=MODELS_FETCH_TIMEOUT) as response:
             return json.loads(response.read().decode("utf-8"))
 
     try:
@@ -216,20 +216,16 @@ def fetch_model_cards(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> l
     return [entry for entry in entries or [] if isinstance(entry, dict)]
 
 
-def fetch_served_models(base_url: str, timeout: float = MODELS_FETCH_TIMEOUT) -> list[str]:
+def fetch_served_models(base_url: str) -> list[str]:
     """Return the model ids the server advertises at ``/v1/models`` (may be empty)."""
     return [
         entry["id"]
-        for entry in fetch_model_cards(base_url, timeout)
+        for entry in fetch_model_cards(base_url)
         if isinstance(entry.get("id"), str) and entry["id"]
     ]
 
 
-def fetch_served_context_length(
-    base_url: str,
-    model_id: str | None = None,
-    timeout: float = MODELS_FETCH_TIMEOUT,
-) -> int:
+def fetch_served_context_length(base_url: str, model_id: str | None = None) -> int:
     """Context window the server advertises for ``model_id``.
 
     vLLM's model card carries ``max_model_len``; OpenAI-compatible proxies (OpenRouter)
@@ -254,7 +250,7 @@ def fetch_served_context_length(
         if value <= 0:
             raise RuntimeError(f"{ENV_CONTEXT_LENGTH}={value} must be positive.")
         return value
-    for entry in fetch_model_cards(base_url, timeout):
+    for entry in fetch_model_cards(base_url):
         if model_id and entry.get("id") != model_id:
             continue
         for field in ("max_model_len", "context_length"):
@@ -268,11 +264,7 @@ def fetch_served_context_length(
     )
 
 
-def resolve_served_model(
-    base_url: str,
-    cli_value: str | None = None,
-    timeout: float = MODELS_FETCH_TIMEOUT,
-) -> str:
+def resolve_served_model(base_url: str, cli_value: str | None = None) -> str:
     """Pick the model id to send in requests against an attached server.
 
     Priority for the name: ``--served-model-name`` flag > ``REPROCLI_SERVED_MODEL``
@@ -282,7 +274,7 @@ def resolve_served_model(
     verbatim but checked against the advertised list so a typo fails loudly here
     rather than as a per-request 404.
     """
-    available = fetch_served_models(base_url, timeout)
+    available = fetch_served_models(base_url)
     override = (cli_value or os.environ.get(ENV_SERVED_MODEL) or "").strip()
     if override:
         if available and override not in available:
