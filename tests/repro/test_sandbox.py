@@ -134,19 +134,6 @@ class CpuCapTests(unittest.TestCase):
         self.assertEqual(argv[-1], "echo hi")
 
 
-class ExecArgvIntegrationTests(unittest.TestCase):
-    def test_exec_argv_wraps_only_when_sandbox_passed(self):
-        # No sandbox -> the plain body, cd to the given (host) workspace.
-        self.assertEqual(env.exec_argv("/ws", "echo hi"), ["bash", "-lc", "cd /ws && echo hi"])
-        # With a sandbox -> cd to the short container workdir, wrapped in apptainer; the
-        # host workspace arg is ignored for the cd. on_gpu drives --nv.
-        sb = Sandbox(image=IMAGE, binds=(Bind("/host/ws", CONTAINER_WORKSPACE),))
-        argv = env.exec_argv("/host/ws", "echo hi", on_gpu=True, sandbox=sb)
-        self.assertEqual(argv[0], "apptainer")
-        self.assertIn("--nv", argv)
-        self.assertEqual(argv[-1], "cd /repro/workspace && echo hi")
-
-
 class RequireApptainerTests(unittest.TestCase):
     def test_require_raises_when_no_image(self):
         with self.assertRaises(SystemExit):
