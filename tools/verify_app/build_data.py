@@ -209,7 +209,7 @@ def build(base: Path, out_dir: Path, traces_dir: Path) -> dict[str, dict[str, An
 def upload_traces(traces_dir: Path) -> None:
     """Optional: push split traces to a public Supabase Storage bucket named 'traces'."""
     try:
-        import requests  # noqa
+        import requests
     except ImportError:
         sys.exit("`pip install requests` to use --upload")
     url = os.environ.get("SUPABASE_URL")
@@ -217,8 +217,6 @@ def upload_traces(traces_dir: Path) -> None:
     bucket = os.environ.get("SUPABASE_TRACE_BUCKET", "traces")
     if not url or not key:
         sys.exit("Set SUPABASE_URL and SUPABASE_SERVICE_KEY env vars to upload.")
-    import requests
-
     files = sorted(traces_dir.glob("*.json"))
     print(f"Uploading {len(files)} traces to bucket '{bucket}' ...")
     for i, f in enumerate(files, 1):

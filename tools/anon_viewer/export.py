@@ -126,10 +126,6 @@ REDACTABLE = {"audit.rationale", "audit.flags", "analysis.failure_mode_detail",
               "analysis.agent_trajectory_summary", "analysis.evidence_quotes",
               "analysis.paper_gist", "self_report"}
 BLANK = {"audit.flags": [], "analysis.evidence_quotes": []}
-# SPEC 8.2: the displayed narrative fields the facing pass rewrites.
-NARRATIVE = ["audit.rationale", "audit.flags[].evidence",
-             "analysis.failure_mode_detail", "analysis.agent_trajectory_summary",
-             "analysis.evidence_quotes[].quote", "analysis.paper_gist"]
 
 
 # --------------------------------------------------------------------------
