@@ -16,23 +16,15 @@ def append_trace_row(
     final_row: dict[str, Any],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    row = trace_row(custom_id, messages, final_row)
-    with path.open("a", encoding="utf-8") as handle:
-        json.dump(row, handle, ensure_ascii=False)
-        handle.write("\n")
-
-
-def trace_row(
-    custom_id: str,
-    messages: list[dict[str, Any]],
-    final_row: dict[str, Any],
-) -> dict[str, Any]:
-    return {
+    row = {
         "custom_id": custom_id,
         "messages": messages,
         "final_response": final_row,
         "tool_loop": final_row.get("tool_loop", {}),
     }
+    with path.open("a", encoding="utf-8") as handle:
+        json.dump(row, handle, ensure_ascii=False)
+        handle.write("\n")
 
 
 def assistant_message(message: dict[str, Any], tool_calls: list[dict[str, Any]]) -> dict[str, Any]:
