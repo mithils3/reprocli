@@ -41,31 +41,6 @@ AGENT_ASSESSMENTS = ("reproduced", "partial", "not_reproduced", "could_not_run")
 
 REPORT_SCHEMA_NAME = "reproduction_report"
 
-
-def measurement_schema() -> dict:
-    """One metric the agent measured from its OWN run, with evidence citations."""
-    return {
-        "type": "object",
-        "additionalProperties": False,
-        "required": ["metric", "observed_value", "reference_value", "scope", "evidence"],
-        "properties": {
-            # Metric name with units explicit (e.g. "top-1 accuracy (%)").
-            "metric": {"type": "string"},
-            # What the agent's run produced -- a string so it tolerates "76.5%",
-            # "2.37x", "8.56 kB", or a range / "mean+-std".
-            "observed_value": {"type": "string"},
-            # The paper's target value the agent compared against (the lockfile bar),
-            # echoed for context -- null when the measurement is off-anchor.
-            "reference_value": {"type": ["string", "null"]},
-            # Dataset / split / benchmark-set the value was measured over.
-            "scope": {"type": "string"},
-            # Citations BACKING observed_value: evidence-relative paths, a
-            # ``file:line`` into commands.log, or an output artifact under evidence/.
-            "evidence": {"type": "array", "items": {"type": "string"}},
-        },
-    }
-
-
 REPORT_JSON_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -89,7 +64,30 @@ REPORT_JSON_SCHEMA = {
         # A single command that reproduces the measured number from a clean state,
         # so the auditor can re-run it if it chooses. Empty when nothing ran.
         "scoring_command": {"type": "string"},
-        "measurements": {"type": "array", "items": measurement_schema()},
+        # Each metric the agent measured from its OWN run, with evidence citations.
+        "measurements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["metric", "observed_value", "reference_value", "scope", "evidence"],
+                "properties": {
+                    # Metric name with units explicit (e.g. "top-1 accuracy (%)").
+                    "metric": {"type": "string"},
+                    # What the agent's run produced -- a string so it tolerates "76.5%",
+                    # "2.37x", "8.56 kB", or a range / "mean+-std".
+                    "observed_value": {"type": "string"},
+                    # The paper's target value the agent compared against (the lockfile bar),
+                    # echoed for context -- null when the measurement is off-anchor.
+                    "reference_value": {"type": ["string", "null"]},
+                    # Dataset / split / benchmark-set the value was measured over.
+                    "scope": {"type": "string"},
+                    # Citations BACKING observed_value: evidence-relative paths, a
+                    # ``file:line`` into commands.log, or an output artifact under evidence/.
+                    "evidence": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
         "agent_assessment": {"type": "string", "enum": list(AGENT_ASSESSMENTS)},
         # What the agent changed vs the reference (deviations, re-implementation).
         "changes_made": {"type": "string"},
@@ -212,17 +210,3 @@ def write_episode_report(ctx: "ExecutionContext", content: str, exit_reason: str
             },
         )
     return path
-
-
-__all__ = [
-    "AGENT_ASSESSMENTS",
-    "REPORT_SCHEMA_NAME",
-    "REPORT_JSON_SCHEMA",
-    "REPORT_RESPONSE_FORMAT",
-    "measurement_schema",
-    "REPORT_FILENAME",
-    "validate_report",
-    "coerce_report",
-    "write_report",
-    "write_episode_report",
-]
