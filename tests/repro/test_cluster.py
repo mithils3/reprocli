@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import sys
 import unittest
 from pathlib import Path
@@ -11,7 +10,6 @@ from reprocli_repro.cluster import (
     DEFAULT_APPTAINER_SIF,
     DEFAULT_CLUSTER,
     cluster_defaults,
-    from_args,
     resolve_cluster,
 )
 
@@ -57,23 +55,6 @@ class ClusterDefaultsTests(unittest.TestCase):
             self.assertEqual(
                 set(entry), {"account", "default_partition", "gpus_per_node", "hw"}
             )
-
-
-class FromArgsTests(unittest.TestCase):
-    def _args(self, **kw):
-        base = dict(partition=None, apptainer_image=None)
-        base.update(kw)
-        return argparse.Namespace(**base)
-
-    def test_from_args_uses_profile_when_unset(self):
-        c = from_args(self._args())
-        self.assertEqual(c.account, "bfvr-dtai-gh")
-        self.assertEqual(c.partition, "ghx4")
-
-    def test_from_args_applies_partition_and_image(self):
-        c = from_args(self._args(partition="ghx4-interactive", apptainer_image="/x.sif"))
-        self.assertEqual(c.partition, "ghx4-interactive")
-        self.assertEqual(c.apptainer_image, "/x.sif")
 
 
 if __name__ == "__main__":

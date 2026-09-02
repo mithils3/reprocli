@@ -121,11 +121,3 @@ def resolve_cluster(
         partition=partition if partition is not None else base.partition,
         apptainer_image=apptainer_image if apptainer_image is not None else base.apptainer_image,
     )
-
-
-def from_args(args: Any) -> Cluster:
-    """Resolve the deltaai profile from a parsed CLI namespace (--partition / --apptainer-image)."""
-    return resolve_cluster(
-        partition=getattr(args, "partition", None),
-        apptainer_image=getattr(args, "apptainer_image", None),
-    )
