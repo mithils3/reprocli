@@ -8,7 +8,6 @@
 (function () {
   const R = window.RENDER, esc = R.esc, V = () => window.Verdict, C = () => window.Charts, Tr = () => window.Trace;
   const fmtH = (n) => n == null ? "—" : (Math.round(n * 1000) / 1000).toLocaleString();
-  const TIERS = ["Easy", "Medium", "Hard"];
   const TIER_CLS = { Easy: "yes", Medium: "over", Hard: "no" };
 
   const Overview = {
