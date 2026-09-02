@@ -12,16 +12,6 @@
 .rt-meta { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
 .rt-meta .s-rid { font-size: 11px; }
 
-/* fuel gauge (burn-down) */
-.fuel { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
-.fuel-l { text-transform: uppercase; letter-spacing: .06em; font-size: 10.5px; }
-.fuel-bar { position: relative; flex: 1; max-width: 460px; height: 8px; border-radius: 4px; background: var(--panel2); overflow: hidden; border: 1px solid var(--line); }
-.fuel-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px 0 0 4px; transition: width .3s; }
-.fuel-fill.done { background: var(--yes); }
-.fuel-fill.over { background: var(--over); }
-.fuel-pred { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1.5px dashed var(--predicted); }
-.fuel-v b { color: var(--txt); }
-
 /* ---- horizontal burn-trace panel (annotated, sibling of .run-top) ---------
    The curve alone reads flat whenever a run finishes well under the paper's
    estimate, which is the common case, so the panel carries the units, a key,
@@ -35,7 +25,6 @@
 .tr-head .tr-key { margin: 0; font-family: var(--mono); font-size: var(--fs-micro); color: var(--muted); gap: var(--s3); }
 .tr-sw { width: 15px; height: 0; flex: none; display: inline-block; }
 .tr-sw-line { border-top: 2px solid var(--accent); }
-.tr-sw-dash { border-top: 1.5px dashed var(--predicted); }
 .tr-sw-band { width: 15px; height: 9px; border: 0; border-top: 1.5px dashed var(--predicted);
   background: var(--predicted-tint); align-self: center; }
 .tr-sw-over { border-top: 2px solid var(--over); }
@@ -226,37 +215,6 @@ pre.rcode { margin: 0; padding: 10px 12px; font-family: var(--mono); font-size: 
 .verdict-cap.miss { background: var(--over-tint); border-color: var(--over); }
 .vc-bal { color: var(--muted); } .vc-bal b { color: var(--txt); }
 
-/* ---- run tags ----------------------------------------------- */
-.tag-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; vertical-align: middle; }
-.tag-chip { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10px; font-weight: 500;
-  color: var(--muted); background: var(--panel2); border: 1px solid var(--line-strong); border-radius: 5px; padding: 1px 7px; white-space: nowrap; }
-.tag-chip.fam-reproduced { color: var(--yes-deep); background: var(--yes-tint); border-color: var(--yes); }
-.tag-chip.fam-miss { color: var(--over-deep); background: var(--over-tint); border-color: var(--over); }
-.tag-chip.fam-fault { color: var(--no-deep); background: var(--no-tint); border-color: var(--no); }
-.tag-chip.fam-idle { color: var(--muted); background: var(--slate-tint); border-color: var(--slate); }
-.tagbar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.tagbar .tag-lead { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
-.tagbar .tag-chip.edit { font-size: 11px; padding: 2px 4px 2px 8px; }
-.tag-x { background: none; border: 0; color: inherit; font-size: 13px; line-height: 1; padding: 0 2px; border-radius: 50%; opacity: .55; }
-.tag-x:hover { opacity: 1; color: var(--no-deep); }
-.tag-input { font: inherit; font-family: var(--mono); font-size: 11px; padding: 2px 9px; border: 1px dashed var(--line-strong); border-radius: 6px; background: var(--panel); color: var(--txt); width: 92px; }
-.tag-input:focus { outline: none; border-color: var(--accent); border-style: solid; box-shadow: 0 0 0 3px var(--accent-tint); }
-.tag-off { font-size: 10px; color: var(--muted); font-style: italic; }
-
-/* tag filter chips */
-.tag-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 0 12px 10px; }
-.tag-filters:empty { display: none; }
-.tag-flt { background: var(--panel2); border: 1px solid var(--line-strong); color: var(--muted); padding: 2px 9px; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 500; transition: all .12s; }
-.tag-flt:hover { filter: brightness(.97); border-color: var(--muted); }
-.tag-flt.fam-reproduced { color: var(--yes-deep); border-color: var(--yes); }
-.tag-flt.fam-miss { color: var(--over-deep); border-color: var(--over); }
-.tag-flt.fam-fault { color: var(--no-deep); border-color: var(--no); }
-.tag-flt.fam-idle { color: var(--muted); border-color: var(--slate); }
-.tag-flt.inc { background: var(--yes); border-color: var(--yes); color: #fff; }
-.tag-flt.exc { background: var(--no); border-color: var(--no); color: #fff; text-decoration: line-through; }
-.tag-flt-clear { background: transparent; border-style: dashed; }
-.tag-flt-clear:hover { color: var(--accent-strong); border-color: var(--accent); }
-
 /* json tree (tool-call args) */
 .jraw { font-family: var(--mono); font-size: 11.5px; line-height: 1.7; padding: 2px; overflow-x: auto; }
 .jchildren { padding-left: 1.25em; border-left: 1px solid var(--line); margin-left: .4em; }
@@ -283,13 +241,6 @@ a.jlink:hover { text-decoration-style: solid; background: var(--accent-tint); bo
 
 /* ---- round-list controls -------------------------------------------------- */
 .rounds-ctl .rc-note { margin-right: auto; font-family: var(--mono); font-size: var(--fs-micro); color: var(--faint); }
-
-/* ---- drop zone ------------------------------------------------------------ */
-.drop { margin: 40px auto; max-width: 560px; border: 2px dashed var(--line-strong); border-radius: 16px; padding: 48px 32px; text-align: center; color: var(--muted); background: var(--panel); transition: border-color .15s, background .15s; cursor: pointer; }
-.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-tint); color: var(--accent-strong); }
-.drop h2 { margin: 0 0 8px; font-size: 19px; color: var(--txt); }
-.drop .hint { font-size: 13px; }
-.drop .hint code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; font-family: var(--mono); font-size: 12px; }
 
 @media (max-width: 1000px) {
   .run-body { grid-template-columns: 1fr; gap: var(--s3); }
