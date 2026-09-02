@@ -20,7 +20,7 @@ from reprocli_serve.profiles import Profile
 def build_serve_command(args: argparse.Namespace, profile: Profile) -> list[str]:
     tp = args.tensor_parallel_size or profile.tensor_parallel_size
     command = [
-        "vllm",
+        args.vllm_bin,
         "serve",
         args.model,
         "--host",

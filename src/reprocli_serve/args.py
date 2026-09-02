@@ -93,6 +93,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Run a non-head rank: no API, no health wait, no endpoint publish.",
     )
 
+    parser.add_argument("--vllm-bin", default="vllm", help="vLLM CLI binary (default: vllm).")
     parser.add_argument(
         "extra_vllm_args",
         nargs="*",
