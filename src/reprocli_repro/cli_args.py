@@ -258,7 +258,6 @@ def apply_defaults(args: argparse.Namespace) -> None:
     args.temperature = None
     args.top_p = _env_float("REPROCLI_TOP_P")
     args.top_k = _env_int("REPROCLI_TOP_K")
-    args.min_p = None
     args.max_tokens = MAX_TOKENS
     # Set from the attached brain's advertised window in __main__; a dry run attaches to
     # no server and issues no requests, so it stays None there.
