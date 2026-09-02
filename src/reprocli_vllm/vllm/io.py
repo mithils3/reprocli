@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from reprocli_vllm.audit.audit import finalize_audit_row
-from reprocli_vllm.runtime.run_health import degraded_row, finalize_extracted_row
+from reprocli_vllm.runtime.run_health import degraded_row
 
 
 def initial_messages(prompt: str, system_message: str) -> list[dict[str, Any]]:
@@ -78,10 +78,7 @@ def extracted_response(
     if not isinstance(parsed, dict):
         return degraded_row(custom_id, content, parsed, tool_loop)
     result: dict[str, Any] = {"custom_id": custom_id}
-    if mode == "audit":
-        result.update(finalize_audit_row(parsed, tool_loop))
-    else:
-        result.update(finalize_extracted_row(parsed, tool_loop))
+    result.update(finalize_audit_row(parsed, tool_loop))
     return result
 
 

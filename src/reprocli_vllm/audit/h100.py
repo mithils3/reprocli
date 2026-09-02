@@ -67,43 +67,6 @@ def arithmetic_mismatch(hours: Any, recomputed: float | None) -> bool | None:
     return abs(reported - recomputed) / largest > MISMATCH_TOLERANCE
 
 
-def audit_h100_fields(row: dict[str, Any]) -> dict[str, Any]:
-    estimate = row.get("h100_estimate")
-    if not isinstance(estimate, dict):
-        return legacy_audit_fields(row)
-    hours = as_number(estimate.get("hours"))
-    basis_kind = str(estimate.get("basis_kind") or "")
-    recomputed = recomputed_hours(estimate)
-    mismatch = arithmetic_mismatch(hours, recomputed)
-    return {
-        "h100_hours_estimate": hours,
-        "h100_estimate_basis": basis_text(estimate, basis_kind),
-        "h100_band": h100_band(hours),
-        "h100_recomputed_hours": recomputed,
-        "h100_arithmetic_mismatch": mismatch,
-        "h100_needs_human_review": (
-            basis_kind == "compute_unspecified" or recomputed is None or bool(mismatch)
-        ),
-    }
-
-
-def legacy_audit_fields(row: dict[str, Any]) -> dict[str, Any]:
-    hours = as_number(row.get("h100_hours_estimate"))
-    return {
-        "h100_band": h100_band(hours),
-        "h100_recomputed_hours": None,
-        "h100_arithmetic_mismatch": None,
-        "h100_needs_human_review": True,
-    }
-
-
-def basis_text(estimate: dict[str, Any], basis_kind: str) -> str:
-    basis = str(estimate.get("basis") or "")
-    if basis_kind and basis_kind not in basis:
-        return f"{basis_kind}: {basis}" if basis else basis_kind
-    return basis
-
-
 def as_number(value: Any) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None

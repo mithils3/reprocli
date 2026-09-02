@@ -21,19 +21,15 @@ class ToolLoopOutputTests(unittest.TestCase):
                 extracted_output=root / "extracted.jsonl",
                 save_round_jsonl=True,
                 trace_output=root / "trace.jsonl",
-                mode="classification",
+                mode="audit",
             )
             prepare_incremental_outputs(args)
             row = final_row(
                 json.dumps(
                     {
-                        "paper_kind": "empirical",
-                        "signals": {
-                            "code_available": signal(True, "repo"),
-                            "dataset_available": signal(True, "data"),
-                            "weights_available": signal(False, "none"),
-                            "dataset_is_standard": signal(True, "bench"),
-                        },
+                        "paper_id": "2501.00001",
+                        "execution_verified": True,
+                        "score": 9,
                     }
                 )
             )
@@ -42,17 +38,12 @@ class ToolLoopOutputTests(unittest.TestCase):
 
             self.assertEqual(len(read_jsonl(args.output)), 1)
             extracted = read_jsonl(args.extracted_output)
-            self.assertEqual(extracted[0]["score"], 1)
-            self.assertEqual(extracted[0]["tier"], "Medium")
+            self.assertEqual(extracted[0]["score"], 9)
+            self.assertEqual(extracted[0]["verdict"], "reproduced")
+            self.assertTrue(extracted[0]["reproduced"])
             self.assertEqual(extracted[0]["verification_status"], "verified")
-            self.assertEqual(extracted[0]["web_verification"], "available")
             trace = read_jsonl(args.trace_output)
             self.assertEqual(trace[0]["custom_id"], "2501.00001")
-
-
-def signal(value: bool, evidence: str) -> dict:
-    state = "tool_verified" if value else "tool_searched_not_found"
-    return {"value": value, "verification": state, "evidence": evidence}
 
 
 def final_row(content: str) -> dict:
