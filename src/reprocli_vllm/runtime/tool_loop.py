@@ -35,11 +35,10 @@ def run_tool_loop(
     papers: list[Paper],
     prompts: list[str],
     server_url: str,
-    model_id: str | None = None,
+    model_id: str,
 ) -> None:
-    # The attached server is addressed by the id it advertises (resolved by the
-    # caller); fall back to --model when the caller didn't resolve one.
-    request_model = model_id or args.model
+    # The attached server is addressed by the id it advertises, resolved by the
+    # caller (resolve_served_model returns a non-empty id or raises).
     conversations = {
         paper.arxiv_id: initial_messages(prompt, args.system_message)
         for paper, prompt in zip(papers, prompts, strict=True)
@@ -73,7 +72,7 @@ def run_tool_loop(
                 final_message=args.final_no_tools_message,
             )
             request = build_chat_completion_request(
-                request_model,
+                model_id,
                 custom_id,
                 messages,
                 args,
