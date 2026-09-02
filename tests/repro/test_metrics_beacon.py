@@ -19,10 +19,10 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from reprocli_repro import evidence, gpu_session, metrics_beacon, run_beacon
-from reprocli_repro.cluster import resolve_cluster
-from reprocli_repro.context import Budget, ExecutionContext
+from reprocli_repro import gpu_session, metrics_beacon, run_beacon
+from reprocli_repro.context import ExecutionContext
 from reprocli_repro.slurm import SessionHandle
+from tests.repro.test_gpu_session import _ctx
 
 _MIN_ENV = {"SUPABASE_URL": "https://x.supabase.co", "SUPABASE_SERVICE_KEY": "k"}
 
@@ -139,20 +139,6 @@ class DryRunTests(unittest.TestCase):
             rc = metrics_beacon.main(["--role", "master", "--once"])
         self.assertEqual(rc, 0)  # opt-in telemetry: unset env is never an error
         self.assertIn("telemetry off", buf.getvalue())
-
-
-def _ctx(root: Path) -> ExecutionContext:
-    """A minimal episode whose run_id (evidence parent dir) is ``root.name``."""
-    ev = root / "evidence"
-    ev.mkdir(parents=True, exist_ok=True)
-    evidence.init_evidence(ev)
-    return ExecutionContext(
-        arxiv_id="x",
-        workspace=root,
-        evidence=ev,
-        budget=Budget(total_h100_hours=8.0),
-        cluster=resolve_cluster("deltaai"),
-    )
 
 
 class RunBeaconHookTests(unittest.TestCase):
