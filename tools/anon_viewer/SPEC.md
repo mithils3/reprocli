@@ -323,7 +323,7 @@ intro and the `% numbers of record` comment block, 2026-08-24/27):
 | DeepSeek-V4 reproduced by tier | 14/29 run, 9/28 retrain, 4/30 reimplement (48% / 32% / 13%) | sweeps dsv4-* n_reproduced / n |
 | Retrain matched-number range | MiniMax 5/32 = 16%, Qwen3.6 6/26 = 23%, Muse Spark 9/32 = 28%, DeepSeek 9/28 = 32% | sweeps *-retrain |
 | Retrain mean audit score range | 3.41 (MiniMax) to 6.43 (DeepSeek) | sweeps *-retrain mean_score |
-| Failed-run spend | mean spent/budget = 45% (median 27.4%) over the 60 non-reproduced DeepSeek-V4 runs (15 + 19 + 26) | runs model=dsv4, audit.reproduced=false |
+| Failed-run spend | mean spent/budget = 30% (median 15.7%) over the 299 non-reproduced runs of all four agents (98 + 89 + 112 by tier) | runs audit.reproduced=false |
 | 96 H100-hour band | mean spend 6.5%, 1 of 42 reproduced, pooled over the twelve sweeps | runs budget_h100 = 96 |
 | Retrain near-miss | 15 of 28 DeepSeek retrain runs are near-miss-partial, 15 of its 19 misses | runs dsv4-retrain mode |
 | Retrain verified partial | 22 of 28 DeepSeek retrain runs score >= 6 | runs dsv4-retrain audit.score |
