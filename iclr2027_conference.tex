@@ -13,8 +13,6 @@
 
 \title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
 
-% ICLR submissions must be anonymous. Do not include author names,
-% affiliations, acknowledgments, or identifying links in the submission version.
 \author{Anonymous Authors}
 
 % Uncomment only for the camera-ready version after acceptance.
@@ -526,7 +524,8 @@ Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
 (Table~\ref{tab:band-compute}). Mean score falls with band for each of the
 four agents, and the 42 runs in the 96 H100-hour band spend 6.5\% of the
-compute granted to them. The gradient tracks the scale of the experiment the paper
+compute granted to them. The bands hold 59, 29, and 12 papers, so the 96-hour
+cells rest on 9 to 12 runs per agent. The gradient tracks the scale of the experiment the paper
 demands.
 Agents handle short evaluation-style experiments well. They load a released
 checkpoint, run an inference pass, and recompute a metric. They do not
@@ -537,13 +536,8 @@ the experiment stops being short.
 
 \begin{table}[h]
 \caption{Mean reproduction score and share of the granted GPU-hours spent, by
-compute band and agent, over the pinned grades of all twelve sweeps, one per
-agent per tier. Bands are named by their ceiling on the 0--8, 8--32, and
-32--96 H100-hour ladder of Appendix~\ref{app:construction}; they hold 59, 29,
-and 12 frozen papers and 228, 102, and 42 pooled runs. Each agent ran 56 to 58
-runs in the 8 H100-hour band, 21 to 29 in the 32 H100-hour band, and 9 to 12
-in the 96 H100-hour band, fewer than one per paper where a sweep left a paper
-without a graded run.}
+compute band (H100-hours) and agent, over the pinned grades of all twelve
+sweeps.}
 \label{tab:band-compute}
 \begin{center}
 \small
@@ -569,8 +563,10 @@ All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & 6.5 \\
 % run's budget (agrees with eval_100 h100_band on every run); spent = sum of
 % spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
 % counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
-% Muse Spark 56/29/12. One 96-band run reproduces (Muse Spark, Retrain,
-% 2508.21046). Recompute: tools/anon_viewer/concordance.py band rows.
+% Muse Spark 56/29/12; 8-band 228 runs, 32-band 102, 96-band 42. Bands are
+% named by their ceiling on the 0-8 / 8-32 / 32-96 ladder of Appendix E. One
+% 96-band run reproduces (Muse Spark, Retrain, 2508.21046). Recompute:
+% tools/anon_viewer/concordance.py band rows.
 
 \section{Limitations}
 \label{sec:limitations}
