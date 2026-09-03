@@ -6,22 +6,22 @@ for the ICLR 2027 double-blind submission. Executes decision
 agent-logs.vercel.app is untouched.
 
 v2 supersedes v1 in four ways: the site uses the paper's vocabulary (RECLAIM,
-tiers Run / Retrain / Reimplement, three agents, the nine-slug taxonomy of
+tiers Run / Retrain / Reimplement, four agents, the nine-slug taxonomy of
 appendix G), the grade of record is the pinned Claude Sonnet 5 grade only,
 the dissection records come from `notes/Analysis/*-analyses.json`, and every
 development-era detail is removed from what a reviewer can see or download.
 
 ```
 GOAL            Static site under tools/anon_viewer/public/ showing the paper's
-                run set (3 agents x 3 tiers = 9 sweeps, 275 runs, Claude Sonnet 5
+                run set (4 agents x 3 tiers = 12 sweeps, 372 runs, Claude Sonnet 5
                 grades) in the paper's own vocabulary, with no identifying,
                 infrastructure or development detail anywhere in source or data.
-DONE-WHEN       (1) python3 tools/anon_viewer/export.py exits 0, prints 275 runs /
-                9 sweeps / 3 agents, leak gate 0 hits;
+DONE-WHEN       (1) python3 tools/anon_viewer/export.py exits 0, prints 372 runs /
+                12 sweeps / 4 agents, leak gate 0 hits;
                 (2) an independent grep of public/ (data included) for the gate
                 list returns nothing;
-                (3) Playwright smoke: overview matrix has 9 cells whose n sum to
-                275, a run page renders its transcript, no console errors;
+                (3) Playwright smoke: overview matrix has 12 cells whose n sum to
+                372, a run page renders its transcript, no console errors;
                 (4) deployed on Vercel project reclaim-traces, URL returned.
 MUST-NOT-CHANGE tools/run_viewer/** (live viewer), the Supabase DB (read only),
                 notes/** (read only), audit scores/verdicts/flags (displayed as
@@ -40,8 +40,8 @@ Sources (service key `SUPABASE_SERVICE_KEY` in env, URL
 `host_*`, `repro_tags`, `repro_sweeps.aggregates`. Dissection records of record
 are the local files below (read only).
 
-Roster: three agents, three tiers, nine sweeps. Muse Spark, Laguna and GLM are
-not in the paper and never appear.
+Roster: four agents, three tiers, twelve sweeps. Muse Spark 1.2 joined the
+roster on 2026-09-03. Laguna and GLM are not in the paper and never appear.
 
 | model key | `repro_runs.model` | display name | tier key | sweep slug (DB) | dissection record (notes/Analysis/) |
 |---|---|---|---|---|---|
@@ -54,6 +54,9 @@ not in the paper and never appear.
 | `minimax` | `MiniMaxAI/MiniMax-M2.7` | MiniMax-M2.7 | run | easy-2652648-minimax | easy-sweep-2652648-minimax-analyses.json |
 | `minimax` | | | retrain | medium-2690187 | medium-sweep-2690187-minimax-analyses.json |
 | `minimax` | | | reimplement | hard-2936132-minimax | hard-sweep-2936132-minimax-analyses.json |
+| `muse` | `muse-spark-1.2-contributor` | Muse Spark 1.2 | run | easy-musespark-20260814 | easy-sweep-20260814T135227Z-muse-analyses.json |
+| `muse` | | | retrain | medium-muse-spark-20260816 | medium-sweep-20260816T133804Z-muse-analyses.json |
+| `muse` | | | reimplement | hard-muse-spark-20260820 | hard-sweep-20260820T205201Z-muse-analyses.json |
 
 Tier names: the DB says Easy / Medium / Hard; the site says Run / Retrain /
 Reimplement (keys `run`, `retrain`, `reimplement`). The old words never appear.
@@ -185,7 +188,7 @@ unit, `aarch64`.
 Case-insensitive grep over every file under `public/` (data gunzipped) for:
 `ncsa`, `illinois`, `uiuc`, `urbana`, `deltaai`, `delta.internal`, `gh-login`,
 `msalunkhe`, `mithil`, `salunkhe`, `bfvr`, `betw-dtai`, `/u/`, `rjnkpoxwdslkgxjliakq`,
-`slurm-2`, `ghx4`, `gh200`, `reprocli`, `agent-logs`, `reprobench`, `muse`,
+`slurm-2`, `ghx4`, `gh200`, `reprocli`, `agent-logs`, `reprobench`,
 `laguna`, `hf_[A-Za-z0-9]{20}`, `eyJhbGci`, `@illinois`, every known 7-digit
 job id, every raw run id. Zero hits. Source-only list: `supabase`,
 `huggingface`, `Mithilss`, `freeze`, `frozen`, `self-grade`, `sbatch`, `slurm`,
@@ -262,9 +265,9 @@ Google Fonts. `<meta name="robots" content="noindex,nofollow">`. Brand
 "RECLAIM", sub-line "reproduction run traces", `<title>RECLAIM run traces</title>`.
 Hash routing: `#/overview` (default), `#/runs?model=&tier=&verdict=&mode=&q=`,
 `#/run/<id>`, `#/papers`, `#/paper/<arxiv_id>`, `#/about`. Global filter bar
-(Agent: all + 3; Tier: all + 3) persists across Overview, Runs and Papers.
+(Agent: all + 4; Tier: all + 3) persists across Overview, Runs and Papers.
 
-- Overview: tiles (papers 100, runs 275, agents 3, reproduced rate overall);
+- Overview: tiles (papers 100, runs 372, agents 4, reproduced rate overall);
   the agent x tier matrix (mean score to 2 decimals, reproduced %, n; click ->
   Runs filtered); failure-mode distribution as stacked bars per agent with the
   nine modes plus Other in a fixed order and colour; score histogram 0-10;
@@ -294,7 +297,7 @@ Hash routing: `#/overview` (default), `#/runs?model=&tier=&verdict=&mode=&q=`,
   Transcripts are shown verbatim; sandbox paths and identifiers are replaced
   by bracketed tokens.
 
-Copy rules: no em dashes; never "Easy/Medium/Hard", "ReproBench", "Muse",
+Copy rules: no em dashes; never "Easy/Medium/Hard", "ReproBench",
 "freeze", "self-grade", "re-audit", "test-retest", "sbatch", "slurm",
 "cluster", "GPU node", "specimen", "dev split", "harness fault", "pin defect",
 "corrupted", "unstable", or any date. Nothing on the site describes a
@@ -318,14 +321,14 @@ intro and the `% numbers of record` comment block, 2026-08-24/27):
 | check | paper says | computed from |
 |---|---|---|
 | DeepSeek-V4 reproduced by tier | 14/29 run, 9/28 retrain, 4/30 reimplement (48% / 32% / 13%) | sweeps dsv4-* n_reproduced / n |
-| Retrain matched-number range | MiniMax 5/32 = 16%, Qwen3.6 6/26 = 23%, DeepSeek 9/28 = 32% | sweeps *-retrain |
+| Retrain matched-number range | MiniMax 5/32 = 16%, Qwen3.6 6/26 = 23%, Muse Spark 9/32 = 28%, DeepSeek 9/28 = 32% | sweeps *-retrain |
 | Retrain mean audit score range | 3.41 (MiniMax) to 6.43 (DeepSeek) | sweeps *-retrain mean_score |
 | Failed-run spend | mean spent/budget = 45% (median 27.4%) over the 60 non-reproduced DeepSeek-V4 runs (15 + 19 + 26) | runs model=dsv4, audit.reproduced=false |
-| 96 H100-hour band | mean spend 13.1%, 0 of 11 reproduced, pooled over the pinned sweeps | runs budget_h100 = 96 |
+| 96 H100-hour band | mean spend 6.5%, 1 of 42 reproduced, pooled over the twelve sweeps | runs budget_h100 = 96 |
 | Retrain near-miss | 15 of 28 DeepSeek retrain runs are near-miss-partial, 15 of its 19 misses | runs dsv4-retrain mode |
 | Retrain verified partial | 22 of 28 DeepSeek retrain runs score >= 6 | runs dsv4-retrain audit.score |
 | Papers | 100, tiers 34 / 33 / 33 (lockfile) | papers |
-| Agents | 3 | models |
+| Agents | 4 | models |
 
 A FAIL is reported, never patched in the data: the exporter prints the FAIL
 and exits 0, and the report's Concordance section explains which definition
