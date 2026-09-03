@@ -11,7 +11,14 @@ frozen benchmark, with 34 papers at Run tier, 33 at Retrain, and 33 at
 Reimplement, and every row in it has \texttt{split="eval"}. The
 \texttt{validation} split is the 14-paper development set, with 5 at Run, 4 at
 Retrain, and 5 at Reimplement, and every row in it has \texttt{split="dev"}.
-No arXiv ID appears in both. Each row is one paper with 25 top-level fields.
+No arXiv ID appears in both. Each row is one paper with the 25 top-level
+fields of Table~\ref{tab:schema-toplevel}, which together fix the claim, the
+artifact evidence, the match target, and the compute budget before any agent
+starts, so we measure a score from one agent against the same standard as a
+score from another. Table~\ref{tab:schema-links} expands the four nested
+objects, where \texttt{signals} carries one object for each of the four
+audited signals \texttt{code\_available}, \texttt{dataset\_available},
+\texttt{weights\_available}, and \texttt{dataset\_is\_standard}.
 Figure~\ref{lst:example-row} shows the SharpZO row of Section~\ref{subsec:task}
 (score 0, Run tier, 0.07 H100-hours, band \texttt{0-8}), with its long text
 fields truncated and every other field verbatim, and
@@ -22,11 +29,7 @@ identifier for review.
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
 \begin{longtable}{@{}llp{7.1cm}@{}}
-\caption{The top-level fields of a dataset row. Four of them are nested
-objects, expanded in Table~\ref{tab:schema-links}. Together the fields fix the
-claim, the artifact evidence, the match target, and the compute budget before
-any agent starts, so we measure a score from one agent against the same
-standard as a score from another.}
+\caption{The top-level fields of a dataset row.}
 \label{tab:schema-toplevel} \\
 \toprule
 Field & Type & Description \\
@@ -73,10 +76,7 @@ Field & Type & Description \\
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
 \begin{longtable}{@{}lp{8.2cm}@{}}
-\caption{Description of the four nested objects and their fields.
-\texttt{signals} contains one such object for each of the four audited signals \texttt{code\_available},
-\texttt{dataset\_available}, \texttt{weights\_available}, and
-\texttt{dataset\_is\_standard}.}
+\caption{The four nested objects and their fields.}
 \label{tab:schema-links}
 \label{tab:schema-signals}
 \label{tab:schema-matchtarget}

@@ -325,9 +325,8 @@ corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
 
 \begin{figure}[t]
-\begin{center}
+\centering
 \includegraphics[width=\textwidth]{figures/construction_funnel}
-\end{center}
 \caption{The construction funnel. Three stages narrow 3,414 NeurIPS 2025
 submissions to the released 100-paper benchmark, with every availability call
 and compute estimate audited by hand.}
@@ -640,6 +639,9 @@ with the aid of generative AI.
 \bibliographystyle{iclr2027_conference}
 
 \appendix
+% The appendix pages carry breakable verbatim boxes that cannot always fill a
+% page, and flushbottom then stretches the heading skips around them.
+\raggedbottom
 
 \input{appendix/a_harness}
 \input{appendix/b_models}
