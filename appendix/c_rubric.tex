@@ -66,19 +66,28 @@ the run achieved, and the auditor writes a curation escalation into
 \texttt{methodology\_notes} for human review.
 
 % src: rubric_audit.md:166-236; src/reprocli_vllm/audit/audit.py:74-90
-\begin{table}[h]
+{\small
+\begin{longtable}{@{}c l p{5.8cm} l@{}}
 \caption{The frozen audit rubric, with the conditions for each band and the
 verdict derived from each score. The auditor assigns the highest band whose
 conditions the cited execution evidence meets, and the verdict is then derived
 from the score in code. A score of 1 yields \texttt{unverifiable} when the
 auditor also reports that execution was not verified.}
-\label{tab:rubric}
-\begin{center}
-\small
-\begin{tabular}{@{}c l p{5.8cm} l@{}}
+\label{tab:rubric} \\
 \toprule
 Score & Band & Conditions & Verdict \\
 \midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:rubric}, continued.} \\
+\toprule
+Score & Band & Conditions & Verdict \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{@{}r}{\footnotesize\itshape continued on the next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
 10 & Faithful, exact & Right experiment executed, C1 criterion met, no flags,
 correct protocol, split, and scale; a stochastic metric seed-fixed or averaged.
 & \texttt{reproduced} \\
@@ -115,10 +124,8 @@ checkable target, and the run does not misrepresent itself. &
 contradicts its own evidence, a proxy substituted into the target slot, or a
 retrieved benchmark answer the graded value runs through. &
 \texttt{disqualified} \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+\end{longtable}
+}
 
 \subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
