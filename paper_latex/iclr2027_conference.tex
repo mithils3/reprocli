@@ -32,14 +32,14 @@ published paper, the smallest complete unit of research, places an agent where
 a human replicator stands. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
 budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
-execution evidence. For the strongest of the three agents we evaluate,
+execution evidence. For the strongest of the four agents we evaluate,
 reproduction falls from 48\% at Run tier to 32\% at Retrain and 13\% at
 Reimplement, where the method must be built from the paper alone. A released
 artifact rarely runs as shipped. Compute does not drive the fall, since runs
 that fail to reproduce spend only 45\% of their allocation. We label each
 analysed run with a failure mechanism. At Retrain tier 15 of the strongest
 agent's 19 misses executed the specified experiment and missed tolerance, and
-the matched-number rate stays between 16\% and 32\% across the three agents. These agents are competent
+the matched-number rate stays between 16\% and 32\% across the four agents. These agents are competent
 executors and weak research scientists, and the judgment that turns an executed
 experiment into a confirmed number is what separates them from agents that
 automate research.
@@ -64,19 +64,22 @@ automate research.
 %     right-experiment rate (24/28 dissection vs 22/28 audit_score>=6), pick one
 %     there and state which.
 %   matched-number range 16-32% -- Retrain tier, pinned Sonnet-5: DSv4 9/28=32%,
-%     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187). The three
+%     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187), Muse Spark
+%     9/32=28% (muse_spark 20260816T133804Z, added 2026-09-03). The four
 %     do not agree, so the sentence carries the range per the prior TODO, and
 %     the flat "stays at" claim is retired.
-%   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x. Filled
+%   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x; Muse Spark
+%     6.03 sits inside the range (2026-09-03), so the 1.9x stands. Filled
 %     2026-08-27 together with the matched-number range 16-32%, which replaces
 %     the retired flat "holding at" claim in the same sentence.
 %   Retrain verified-partial 79% (intro) -- 22/28 with audit_score>=6 on
 %     2896059, auditor-derived under the frozen rubric. The 24/28 dissection
 %     right-experiment rate is deliberately not used there; anywhere the body
 %     uses 24/28 it must state the dissection provenance.
-%   96 GPU-hour band spend -- 13.1%, pooled over the pinned sweeps, 0 of 11 runs
-%     reproduced. Small-sample zero, so the intro carries n=11 inline. Keep for
-%     the compute section too.
+%   96 GPU-hour band spend -- 6.5% (sum spent / sum budget; the mean of per-run
+%     fractions is also 6.5%), pooled over the 12 sweeps of record incl. Muse
+%     Spark, 1 of 42 runs reproduced (Muse Spark, Retrain, 2508.21046, score 9,
+%     1.9 of 96 H100-h). Refilled 2026-09-03; matches tab:band-compute.
 \end{abstract}
 
 \section{Introduction}
@@ -124,11 +127,10 @@ papers the strongest agent reaches a verified partial result on 79\% of runs,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Full recovery of
 the reported number is where progress stalls, holding between 16\% and 32\%
-across three agents spanning a 1.9-fold range in mean audit score, so the gain
+across four agents spanning a 1.9-fold range in mean audit score, so the gain
 between agent generations shows up almost entirely in how far into the
-reproduction an agent gets. Compute does not bind either, since no run in the 96
-GPU-hour band reproduces its claim while the 11 runs in that band spend 13\% of
-the allocation they were given.
+reproduction an agent gets. Compute does not bind either: the 42 runs in the 96 GPU-hour band spend 6.5\%
+of the allocation they were given, and 1 of the 42 reproduces its claim.
 
 A small set of recurring failure modes accounts for the residual, and the modes
 separate by whose defect they encode. Modes that belong to the agent recede as
@@ -441,14 +443,15 @@ ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, the tools, and session mechanics.
 
-\paragraph{Models.} We evaluate three models under identical conditions:
+\paragraph{Models.} We evaluate four models under a common harness:
 DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
-Qwen3.6-27B~\citep{qwen3.6-27b}, and MiniMax-M2.7~\citep{minimax2026m2}.
-All three are open-weight and served on our cluster with vLLM. Every model
-runs the same harness, prompts, and per-paper budgets, so results differ only
-in the model.
-Appendix~\ref{app:models} records pinned versions, serving configuration,
-and decoding settings.
+Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
+Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
+served on our cluster with vLLM, and we reach Muse Spark 1.2 through the Meta
+Model API. Every model runs the same harness, prompts, and per-paper budgets.
+Serving differs by model, and Appendix~\ref{app:models} records pinned
+versions, serving configuration, and decoding settings where we control them,
+together with what the hosted model leaves unrecorded.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
 integer grade from 0 to 10 that the auditor assigns each run
@@ -521,8 +524,10 @@ released rather than reimplementing from the paper text.
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
-(Table~\ref{tab:band-compute}). The gradient tracks the scale of the
-experiment the paper demands.
+(Table~\ref{tab:band-compute}). Mean score falls with band for each of the
+four agents, and the 42 runs in the 96 H100-hour band spend 6.5\% of the
+compute granted to them. The gradient tracks the scale of the experiment the paper
+demands.
 Agents handle short evaluation-style experiments well. They load a released
 checkpoint, run an inference pass, and recompute a metric. They do not
 launch and see through a full training run. When the pinned claim requires
@@ -531,21 +536,41 @@ reports the shortfall, so end-to-end reproduction breaks down exactly where
 the experiment stops being short.
 
 \begin{table}[h]
-\caption{Reproduction score and compute use by compute band.}
+\caption{Mean reproduction score and share of the granted GPU-hours spent, by
+compute band and agent, over the pinned grades of all twelve sweeps, one per
+agent per tier. Bands are named by their ceiling on the 0--8, 8--32, and
+32--96 H100-hour ladder of Appendix~\ref{app:construction}; they hold 59, 29,
+and 12 frozen papers and 228, 102, and 42 pooled runs. Each agent ran 56 to 58
+runs in the 8 H100-hour band, 21 to 29 in the 32 H100-hour band, and 9 to 12
+in the 96 H100-hour band, fewer than one per paper where a sweep left a paper
+without a graded run.}
 \label{tab:band-compute}
 \begin{center}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lccc@{\hspace{2.5em}}ccc@{}}
 \toprule
-Band (H100-h) & Papers & Mean score & Grant spent (\%) \\
+& \multicolumn{3}{c}{Mean score} & \multicolumn{3}{c}{Grant spent (\%)} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Agent & 8 & 32 & 96 & 8 & 32 & 96 \\
 \midrule
-8 & XX & XX & XX \\
-32 & XX & XX & XX \\
-96 & XX & XX & XX \\
+DeepSeek-V4 & 6.21 & 5.67 & 4.44 & 43.3 & 43.9 & 16.7 \\
+Qwen3.6-27B & 4.18 & 3.79 & 2.22 & 31.8 & 20.5 & 2.6 \\
+MiniMax-M2.7 & 3.62 & 2.50 & 1.92 & 27.3 & 11.9 & 2.3 \\
+Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & 6.1 \\
+\midrule
+All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & 6.5 \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
+% numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
+% sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
+% 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
+% run's budget (agrees with eval_100 h100_band on every run); spent = sum of
+% spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
+% counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
+% Muse Spark 56/29/12. One 96-band run reproduces (Muse Spark, Retrain,
+% 2508.21046). Recompute: tools/anon_viewer/concordance.py band rows.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -563,7 +588,8 @@ Summarize the paper and its implications.
 \item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
 budget enforcement, the sandbox, and the prompts in full.
 \item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
-served revision and states the serving configuration it ran under.
+served revision, or for the hosted model to an API identifier and an access
+window, and states the serving configuration it ran under.
 \item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
 frozen before any reported sweep was graded, and
 Appendix~\ref{app:auditor-validation} bounds how much of a reported score is

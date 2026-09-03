@@ -34,7 +34,14 @@ $ PYTHONPATH=src python3 -m reprocli_repro \
     --vllm-server-url <endpoint-url> \
     --served-model-name <model-id>
 
-# Grade the resulting bundle with the pinned grader.
+# A hosted model takes the same run command with its API as the server URL,
+# the key and context window exported, and a timestamped batch id.
+$ export REPROCLI_API_KEY=<api-key> REPROCLI_CONTEXT_LENGTH=<window>
+$ REPRO_BATCH_ID=<model>-<sweep-timestamp> PYTHONPATH=src python3 -m reprocli_repro \
+    ... --vllm-server-url https://api.meta.ai/v1 --served-model-name <model-id>
+
+# Grade the resulting bundle with the pinned grader. A hosted sweep is graded
+# by its timestamped batch id in place of slurm-<jobid>.
 $ PYTHONPATH=src python3 -m reprocli_claude \
     --batch slurm-<jobid> \
     --runs-dir <runs-dir> \
