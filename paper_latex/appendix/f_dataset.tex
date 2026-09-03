@@ -20,19 +20,28 @@ return metadata and links only, with no paper text. We masked the dataset
 identifier for review.
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
-\begin{table}[t]
+{\footnotesize
+\begin{longtable}{@{}llp{7.1cm}@{}}
 \caption{The top-level fields of a dataset row. Four of them are nested
 objects, expanded in Table~\ref{tab:schema-links}. Together the fields fix the
 claim, the artifact evidence, the match target, and the compute budget before
 any agent starts, so we measure a score from one agent against the same
 standard as a score from another.}
-\label{tab:schema-toplevel}
-\begin{center}
-\footnotesize
-\begin{tabular}{@{}llp{7.1cm}@{}}
+\label{tab:schema-toplevel} \\
 \toprule
 Field & Type & Description \\
 \midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-toplevel}, continued.} \\
+\toprule
+Field & Type & Description \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{@{}r}{\footnotesize\itshape continued on the next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
 \texttt{custom\_id} & string & arXiv ID, the primary key. \\
 \texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
 \texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
@@ -58,13 +67,12 @@ Field & Type & Description \\
 \texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
 \texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
 \texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+\end{longtable}
+}
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
-\begin{table}[t]
+{\footnotesize
+\begin{longtable}{@{}lp{8.2cm}@{}}
 \caption{Description of the four nested objects and their fields.
 \texttt{signals} contains one such object for each of the four audited signals \texttt{code\_available},
 \texttt{dataset\_available}, \texttt{weights\_available}, and
@@ -72,13 +80,21 @@ Field & Type & Description \\
 \label{tab:schema-links}
 \label{tab:schema-signals}
 \label{tab:schema-matchtarget}
-\label{tab:schema-h100}
-\begin{center}
-\footnotesize
-\begin{tabular}{@{}lp{8.2cm}@{}}
+\label{tab:schema-h100} \\
 \toprule
 Field & Description \\
 \midrule
+\endfirsthead
+\multicolumn{2}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-links}, continued.} \\
+\toprule
+Field & Description \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{@{}r}{\footnotesize\itshape continued on the next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
 \multicolumn{2}{@{}l}{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each field is a list of} \\
 \multicolumn{2}{@{}l}{strings and is empty when no artifact of that kind was located.} \\
 \texttt{paper\_or\_project} & Paper or project-page URLs. \\
@@ -106,10 +122,8 @@ Field & Description \\
 \texttt{wallclock\_hours} & float or null. Reported wall-clock hours, before H100 normalization. \\
 \texttt{h100\_equivalent\_multiplier} & float or null. Factor converting the reported GPU to H100-equivalent hours. \\
 \texttt{basis} & string. Free-text justification for the estimate. \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
+\end{longtable}
+}
 
 % src: notes/DATASET.md 5.1 (score -> tier), outputs/v6/app_rebuild/eval_100.jsonl,
 %      paper_latex/tables/gen_eval100.py (summary output)
