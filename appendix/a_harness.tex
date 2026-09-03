@@ -30,7 +30,7 @@ defaults.
 enforces each. The launch scripts of Appendix~\ref{app:models} record the
 value a sweep set where one was set.}
 \label{tab:knobs}
-\begin{center}
+\centering
 \footnotesize
 \begin{tabular}{@{}p{4.1cm}p{5.6cm}p{2.7cm}@{}}
 \toprule
@@ -69,7 +69,6 @@ Address space of a CPU step & 16\,GiB & sandbox \\
 Excerpt kept in a malformed report & 4{,}000 characters & report writer \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 \subsection{Tools}
@@ -85,7 +84,7 @@ which means the agent can only fetch URLs it already knows or can construct.
 \caption{The seven tools available to the model, with the code defaults and
 caps each enforces.}
 \label{tab:tools}
-\begin{center}
+\centering
 \small
 % src: src/reprocli_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
 \begin{tabular}{@{}lp{9.4cm}@{}}
@@ -113,7 +112,6 @@ default. Read-only. \\
 (Appendix~\ref{app:gpu-metering}). The only path to a GPU. \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 \subsection{Hardware setup and compute accounting}
@@ -193,7 +191,7 @@ which includes the validation errors and an excerpt of the raw output.
 \caption{The fields of \texttt{report.json}. All nine are required by the
 schema.}
 \label{tab:report-schema}
-\begin{center}
+\centering
 \small
 % src: src/reprocli_repro/report/report.py:40-102
 \begin{tabular}{@{}lp{9.2cm}@{}}
@@ -218,7 +216,6 @@ into \texttt{evidence/} supporting the observed value. \\
 open first. \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 % src: src/reprocli_repro/report/report.py:11-14,37-40, src/reprocli_repro/cleanup.py:1-40, prompts/prompt_reproduce.txt:277-290
