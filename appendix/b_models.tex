@@ -2,7 +2,7 @@
 \label{app:models}
 
 % src: README.md:44-56, src/reprocli_serve/profiles.py:1-9, src/reprocli_repro/cli_args.py:168-187, src/reprocli_repro/__main__.py:86-95, scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330, src/reprocli_serve/endpoint.py
-We serve all three agent models on our cluster with vLLM, each from a
+We serve the three open-weight agent models on our cluster with vLLM, each from a
 per-model profile that the launcher expands into a single \texttt{vllm serve}
 command. A sweep is one batch job per model per tier, which launches the
 server and then runs that tier's papers as processes on the same node. Each
@@ -10,11 +10,21 @@ paper's \texttt{run\_gpu} call acquires its own Slurm allocation
 (Appendix~\ref{app:harness}), so the agent's compute is allocated and metered
 separately from the serving GPUs. The model ID the server advertised is
 recorded on the run row.
-Table~\ref{tab:models} lists the served configuration of each model.
+Table~\ref{tab:models} lists the served configuration of each of the three.
+Muse Spark 1.2 is hosted by Meta, and the harness reached it through the Meta
+Model API as \texttt{muse-spark-1.2-contributor} between 2026-08-14 and
+2026-08-23, with \texttt{reasoning\_effort} set to \texttt{xhigh} and the
+same 300 tool rounds. Its sweeps run the same per-tier loop as a process on a
+login node rather than inside a batch job, so they carry no job wall clock,
+while each paper's \texttt{run\_gpu} call still acquires its own allocation.
+The API advertises no context length, so we declare a window of
+1{,}000{,}000 tokens to the harness, which sets the agent input ceiling at
+967{,}232 tokens.
+% src: scripts/reproduce/muse_spark/muse_spark_sweep.sh:14,26-36,67-74,113-114,133-135; repro_runs started_at/finished_at of the three muse_spark batches
 
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reprocli_serve/profiles.py:65-74,116-143,146-198; src/reprocli_serve/config.py:28; src/reprocli_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
 \begin{table}[h]
-\caption{Served configuration of the three agent models, taken from the tier
+\caption{Served configuration of the three cluster-served agent models, taken from the tier
 launch scripts and the serve profiles (the launch script takes precedence
 where the two disagree). ``not set'' means the file leaves the field unset and
 the server or the checkpoint supplies it. The agent input ceiling is the served context window
@@ -61,7 +71,8 @@ Tool rounds & 300 & 300 & 300 \\
 
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reprocli_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reprocli_serve/launch.py:44-47,124-178
 Several caveats apply when comparing across models. First, reasoning effort is
-held constant only within the three DeepSeek-V4-Flash sweeps. The Qwen3.6-27B
+held constant within the three DeepSeek-V4-Flash sweeps and within the three
+Muse Spark 1.2 sweeps, at different settings. The Qwen3.6-27B
 and MiniMax-M2.7 launch scripts set no reasoning arguments, so effort is
 uncontrolled across models. Second, precision differs by model, and for
 MiniMax-M2.7 we serve a third-party requantization under the upstream model's
@@ -69,8 +80,13 @@ name, so the name recorded with a run is the advertised one while the weights
 behind it are the requantized ones. W4A16 quantization is lossy by
 construction, and the harness makes no correction for it. Third, the served
 context window differs by model, so the agent input ceiling the harness
-derives from it differs by the same amount, which means a run that exhausts
-its context on one model would have had more room on another. Separately, we
+derives from it differs by the same amount, from 163{,}840 tokens for
+MiniMax-M2.7 to the 967{,}232 declared for Muse Spark 1.2, which means a run
+that exhausts its context on one model would have had more room on another.
+Fourth, Muse Spark 1.2 runs on its vendor's servers, so its precision,
+batching, and decoding defaults are outside our control and unrecorded, and
+the request-level reasoning effort and the round budget are the settings we
+fix. Separately, we
 disable two compilation fusions for DeepSeek-V4-Flash because we observed them
 garbling this checkpoint's decoding on this hardware.
 
@@ -85,6 +101,8 @@ of a grading pass. Re-grading a batch with this client overwrites the batch's
 existing audit, so a re-graded sweep has a single grader.
 
 % src: src/reprocli_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
+% TODO(source): the Muse Spark 1.2 agent tokens need an API rate here before any
+% cost row is filled; the contributor-tier rate is unverified, so no number yet.
 We price GPU time at the \$2 per H100-hour of
 Section~\ref{subsec:experimental-setup}, and grader tokens by request date, at
 \$2 and \$10 per million input and output tokens through 2026-08-31 and \$3
