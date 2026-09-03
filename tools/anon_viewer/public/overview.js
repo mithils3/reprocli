@@ -3,7 +3,7 @@
    matrix (mean audit score, reproduced share, n) whose cells route into the
    filtered runs table, a failure-mode stack per agent in the fixed vocabulary
    order, the 0 to 10 score histogram and the budget row that puts reproduced
-   runs next to the rest, tier by tier. The matrix always shows the full three by
+   runs next to the rest, tier by tier. The matrix always shows the full four by
    three plus an all-agents footer; everything else is recomputed from the run
    rows under the global Agent and Tier filter. Markup only: every class it
    writes is defined in styles.css, anon.css or overview.css. */
@@ -85,7 +85,7 @@
     },
 
     /* the matrix is the collection, not the selection: the filter dims the cells
-       it excludes instead of removing them, so the three by three always reads.
+       it excludes instead of removing them, so the four by three always reads.
        The last column and the last row are the margins, in the demoted grey, and
        every cell including a margin opens the runs behind it. */
     matrixHtml() {

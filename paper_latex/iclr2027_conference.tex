@@ -325,9 +325,8 @@ corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
 
 \begin{figure}[t]
-\begin{center}
+\centering
 \includegraphics[width=\textwidth]{figures/construction_funnel}
-\end{center}
 \caption{The construction funnel. Three stages narrow 3,414 NeurIPS 2025
 submissions to the released 100-paper benchmark, with every availability call
 and compute estimate audited by hand.}
@@ -491,7 +490,7 @@ transcript excerpts for three of them.
 vocabulary of Appendix~\ref{app:taxonomy}. Raw dissection labels are remapped
 onto the nine mode names.}
 \label{tab:failure-modes}
-\begin{center}
+\centering
 \small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -508,7 +507,6 @@ Procrastination and wall kill & XX & XX & XX & XX \\
 Killed before the number & XX & XX & XX & XX \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 % TODO(tab:failure-modes): fill from the pooled pinned-Sonnet dissection records of the roster sweeps, remapped onto the nine slugs per Appendix G.
 
@@ -537,7 +535,7 @@ the experiment stops being short.
 \begin{table}[h]
 \caption{Mean reproduction score and share of the granted GPU-hours spent.}
 \label{tab:band-compute}
-\begin{center}
+\centering
 \small
 \begin{tabular}{@{}lccc@{\hspace{2.5em}}ccc@{}}
 \toprule
@@ -553,7 +551,6 @@ Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & 6.1 \\
 All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & 6.5 \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 % numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
 % sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
@@ -642,6 +639,9 @@ with the aid of generative AI.
 \bibliographystyle{iclr2027_conference}
 
 \appendix
+% The appendix pages carry breakable verbatim boxes that cannot always fill a
+% page, and flushbottom then stretches the heading skips around them.
+\raggedbottom
 
 \input{appendix/a_harness}
 \input{appendix/b_models}

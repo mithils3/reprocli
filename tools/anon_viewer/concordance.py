@@ -21,18 +21,19 @@ DEFAULT_INDEX = os.path.join(HERE, "public", "data", "index.json")
 
 # The paper's numbers of record: abstract, introduction and the
 # `% numbers of record` block of paper_latex/iclr2027_conference.tex,
-# filled 2026-08-24 and 2026-08-27.
+# filled 2026-08-24 and 2026-08-27, band and roster rows refilled 2026-09-03
+# when Muse Spark 1.2 joined the roster.
 PAPER = {
     "dsv4_by_tier": "14/29 (48%), 9/28 (32%), 4/30 (13%)",
     "retrain_matched": "MiniMax-M2.7 5/32 (16%), Qwen3.6-27B 6/26 (23%), "
-                       "DeepSeek-V4 9/28 (32%)",
+                       "Muse Spark 1.2 9/32 (28%), DeepSeek-V4 9/28 (32%)",
     "retrain_means": "3.41 (MiniMax-M2.7) to 6.43 (DeepSeek-V4)",
     "failed_spend": "mean 45%, median 27.4%, n=60 (15+19+26)",
-    "band_96": "mean spend 13.1%, 0 of 11 reproduced",
+    "band_96": "mean spend 6.5%, 1 of 42 reproduced",
     "retrain_near_miss": "15 of 28 near-miss-partial, 15 of 19 misses",
     "retrain_partial": "22 of 28 score 6 or better",
     "papers": "100 papers, 34 run / 33 retrain / 33 reimplement",
-    "agents": "3",
+    "agents": "4",
 }
 TIERS = ["run", "retrain", "reimplement"]
 
@@ -81,7 +82,7 @@ def checks(index):
                  "paper": PAPER["dsv4_by_tier"], "computed": ", ".join(parts)})
 
     parts = []
-    for model in ("minimax", "qwen3", "dsv4"):
+    for model in ("minimax", "qwen3", "muse", "dsv4"):
         sweep = _sweep(index, model + "-retrain")
         parts.append("%s %d/%d (%s)" % (_name(index, model), sweep["n_reproduced"],
                                         sweep["n"],
@@ -90,7 +91,7 @@ def checks(index):
                  "paper": PAPER["retrain_matched"], "computed": ", ".join(parts)})
 
     means = [(s["mean_score"], s["model"]) for s in (_sweep(index, m + "-retrain")
-             for m in ("minimax", "qwen3", "dsv4")) if s.get("mean_score") is not None]
+             for m in ("minimax", "qwen3", "muse", "dsv4")) if s.get("mean_score") is not None]
     if means:
         low, high = min(means), max(means)
         computed = "%.2f (%s) to %.2f (%s)" % (low[0], _name(index, low[1]),
@@ -121,9 +122,8 @@ def checks(index):
         reproduced, len(band))
     rows.append({"name": "96 H100-hour band", "paper": PAPER["band_96"],
                  "computed": computed,
-                 "note": "the paper pools 11 runs at this band and the export "
-                         "pools every run of the nine sweeps whose budget is 96, "
-                         "so the denominators differ; both find no reproduction"})
+                 "note": "the paper and the export both pool every run of the "
+                         "twelve sweeps whose budget is 96"})
 
     retrain = [r for r in runs if r["sweep"] == "dsv4-retrain"]
     misses = [r for r in retrain if not r["audit"]["reproduced"]]

@@ -66,7 +66,7 @@ disagrees.
 \caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
 the classifier prompt. H100 SXM is 1.00 by definition.}
 \label{tab:h100-multipliers}
-\begin{center}
+\centering
 \small
 \begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
 \toprule
@@ -81,7 +81,6 @@ H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
           &      &            &      & A16 board & 0.07 \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 \subsection{Stage II: compute capping and stratified selection}
@@ -112,7 +111,7 @@ and the summed audited compute. The pool is twice the size of the final
 benchmark. The margin absorbs the attrition of the human audit and leaves a
 replacement reserve in every tier.}
 \label{tab:audit-pool}
-\begin{center}
+\centering
 \small
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
@@ -126,7 +125,6 @@ Reimplement (\texttt{Hard})  & 66 & 24 & 23 & 11 & 8 & 14 & 4 & 2,190 \\
 Total & 200 & 50 & 97 & 36 & 17 & 50 & 13 & 5,905 \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 \subsection{Stage III: human audit}
@@ -183,7 +181,7 @@ same tier (Table~\ref{tab:swaps}).
 \begin{table}[t]
 \caption{Membership changes to the evaluation split since the initial release on 2026-06-19. Tier composition held at 34/33/33 after every change.}
 \label{tab:swaps}
-\begin{center}
+\centering
 \small
 \begin{tabular}{@{}llrrp{6.4cm}@{}}
 \toprule
@@ -199,7 +197,6 @@ Date & Tier & Out & In & Reason class \\
 2026-07-14 & Reimplement & 2 & 2 & No artifact anywhere, and compute that cannot be bounded inside the tier budget \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 % src: notes/DATASET.md:377-392; tasks/h100-recompute-eval100.md:163-198; notes/Reports/reprobench_substitution_log.md:130-160

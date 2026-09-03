@@ -315,7 +315,7 @@ def _rule_sources():
         (r"msalunkhe|msalunke|mithils3|mithilss|salunkhe|salunke|mithil",
          "[user]", re.I),
         # the spellings a ps or ls listing leaves: msalunk, msalunk+, msalunkiwl
-        (r"\bm?salunk[\w+.-]*", "[user]", re.I),
+        (r"m?salunk[\w+.-]*", "[user]", re.I),
         (r"/u/\[user\]", "/home/[user]", re.I),
         # anything still sitting on /u/ is either another home directory or a
         # third-party url path; the gate forbids the prefix either way.
@@ -325,6 +325,8 @@ def _rule_sources():
         # the same prefix used as a hostname: dtai-prov02, dtai-sched
         (r"(?:root@)?\bdtai[\w.-]*", "[host]", re.I),
         (r"/work/nvme/bfvr", "/work", re.I),
+        # the same project root as the mount table prints it, without /work
+        (r"/nvme/(?:bfvr|betw)(?![\w-])", "/work", re.I),
         (r"/work/hdd/bfvr", "/work-hdd", re.I),
         # the roots on their own, for the paths where the agent elided the
         # project segment as "..."
@@ -404,7 +406,6 @@ def _rule_sources():
         (r"(?:models--)?poolside(?:--|/)Laguna[\w.-]*", "[model]", re.I),
         (r"\bLaguna-S[\w.-]*", "[model]", re.I),
         (r"\bpoolside\b", "[vendor]", re.I),
-        (r"(?:models--)?muse[-_]spark[\w.-]*|\bMuse Spark\b", "[model]", re.I),
         (r"(?:zai-org(?:--|/))?\bGLM-5(?:\.\d+)?\b", "[model]", re.I),
         # 12. private / campus IPs
         (r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}"
@@ -545,6 +546,7 @@ def _rule_sources():
         # 36. the retired difficulty vocabulary in the plural, which rule 14
         # cannot see because its noun ends that pattern on a word boundary
         (r"\b(?:easy|medium|hard)_sweeps?\b", "sweeps", re.I),
+        (r"\bmuse_spark_sweeps\b", "sweeps", re.I),
         # 37. the home root on its own, where no account name follows it. The
         # lookbehind excludes an angle bracket, because `</u>` closes an
         # underline in the HTML results tables the agent pastes from a paper,
@@ -573,6 +575,9 @@ def _rule_sources():
         # 42. the retired difficulty vocabulary joined to the word it labels by
         # a hyphen or an underscore, which rule 23 reads as two separate words
         (r"\b(?:easy|medium|hard)[-_](?=difficulty)", "", re.I),
+        # 43. the job window once more, after every other rule has run, so a
+        # [job] an earlier rule wrote is the job word for the ids beside it.
+        (_JOBNUM, _job_repl, 0),
     ]
 
 
@@ -721,15 +726,14 @@ GATE_SHAPES.append(
     ("job-number-in-context",
      r"\b(?:" + _JOBWORD + r")\b[^\"]{0,120}" + _GATE_JOBNUM
      + r"|" + _GATE_JOBNUM + r"[^\"]{0,120}\b(?:" + _JOBWORD + r")\b"))
-# The two retired agent brands are four and six letters long, short enough that
-# a substring match lands inside ordinary words a transcript is entitled to
-# carry: Museum is a Tanks-and-Temples scene, Lagunas is the surname of an
-# author of one of the benchmark papers, muse_glimmer is a model architecture,
-# and an ANSI colour code abutting the word user spells 1muser. Matching them as
-# whole tokens keeps every real spelling (Muse Spark, muse-spark-1.2,
-# poolside--Laguna-S-2.1) and drops every one of those. report_benign() accounts
-# for what a plain substring grep would still surface.
-WORD_LITERALS = ["muse", "laguna"]
+# The retired Laguna brand is six letters long, short enough that a substring
+# match lands inside ordinary words a transcript is entitled to carry: Lagunas
+# is the surname of an author of one of the benchmark papers and LagunaConfig
+# is a model-config class. Matching it as a whole token keeps every real
+# spelling (poolside--Laguna-S-2.1) and drops those. report_benign() accounts
+# for what a plain substring grep would still surface. Muse Spark 1.2 joined
+# the roster on 2026-09-03, so its name is no longer gated.
+WORD_LITERALS = ["laguna"]
 # Checked in the site's own source only. The data may legitimately carry some of
 # these: SPEC 3.2 leaves srun/slurm standing inside tool output, and an agent
 # quoting a paper may write "hard". The site's copy may not.
@@ -954,8 +958,16 @@ CASES = [
     ("/work/[user]/.cache/hub/models--poolside--Laguna-S-2.1-INT4",
      "/work/[user]/.cache/hub/[model]"),
     ("served poolside/Laguna-S-2.1-INT4 on vllm", "served [model] on vllm"),
-    ("the muse-spark-1.2-contributor endpoint", "the [model] endpoint"),
+    ("the muse-spark-1.2-contributor endpoint", "the muse-spark-1.2-contributor endpoint"),
     ("graded by zai-org/GLM-5.2 earlier", "graded by [model] earlier"),
+    # shapes the Muse Spark sweeps added on 2026-09-03
+    ("--output /work/nvme/bfvr/msalunkhe/harness/muse_spark_sweeps/medium/20260816T133804Z/reproduce_2506.08898.jsonl",
+     "--output /work/[user]/harness/sweeps/medium/20260816T133804Z/reproduce_2506.08898.jsonl"),
+    ("3190:803230 /nvme/bfvr/msalunkhe/harness/agent_runs/2505.14827/8h/muse-run-2505.14827/workspace",
+     "3190:803230 /work/[user]/harness/agent_runs/2505.14827/8h/muse-run-2505.14827/workspace"),
+    ("0:00:30  114Mmsalunk+ 2775316  0.0", "0:00:30  114M[user] 2775316  0.0"),
+    ("outage (attempted `2958455`, `2958456`, `[job]` etc.)",
+     "outage (attempted `[job]`, `[job]`, `[job]` etc.)"),
     # 12 IPs
     ("bind 10.0.1.23 and 192.168.1.1 and 141.142.145.1",
      "bind [ip] and [ip] and [ip]"),
@@ -1277,8 +1289,9 @@ GATE_CASES = [
     ("the RECLAIM lockfile pins the claim", []),
     ("the ReproBench lockfile pins the claim", ["reprobench"]),
     ("hf download Mithilss/reprobench-splits", ["mithil", "reprobench"]),
-    ("served Muse Spark on eight nodes", ["muse"]),
-    ("served muse-spark-1.2 on eight nodes", ["muse"]),
+    # Muse Spark 1.2 is on the roster since 2026-09-03, so its name passes
+    ("served Muse Spark on eight nodes", []),
+    ("served muse-spark-1.2 on eight nodes", []),
     ("scenes: Ballroom, Church, Museum, Panther", []),
     ("authors Michael Niemeyer and Manuel Lagunas", []),
     ("checkpoint Laguna-S-2.1 loaded", ["laguna"]),

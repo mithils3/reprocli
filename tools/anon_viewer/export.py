@@ -54,6 +54,7 @@ MODELS = [
     {"key": "dsv4", "name": "DeepSeek-V4", "id": "deepseek-ai/DeepSeek-V4-Flash-0731"},
     {"key": "qwen3", "name": "Qwen3.6-27B", "id": "Qwen/Qwen3.6-27B-FP8"},
     {"key": "minimax", "name": "MiniMax-M2.7", "id": "MiniMaxAI/MiniMax-M2.7"},
+    {"key": "muse", "name": "Muse Spark 1.2", "id": "muse-spark-1.2-contributor"},
 ]
 TIERS = [
     {"key": "run", "name": "Run",
@@ -77,6 +78,9 @@ SWEEPS = [
     ("minimax", "run", "easy-2652648-minimax", "easy-sweep-2652648-minimax-analyses.json"),
     ("minimax", "retrain", "medium-2690187", "medium-sweep-2690187-minimax-analyses.json"),
     ("minimax", "reimplement", "hard-2936132-minimax", "hard-sweep-2936132-minimax-analyses.json"),
+    ("muse", "run", "easy-musespark-20260814", "easy-sweep-20260814T135227Z-muse-analyses.json"),
+    ("muse", "retrain", "medium-muse-spark-20260816", "medium-sweep-20260816T133804Z-muse-analyses.json"),
+    ("muse", "reimplement", "hard-muse-spark-20260820", "hard-sweep-20260820T205201Z-muse-analyses.json"),
 ]
 # SPEC 2 step 3: the two sweeps whose dissection was graded by the agent's own
 # family before the pinned re-audit, so a mode may contradict the pinned verdict.
@@ -451,6 +455,11 @@ def parse_args(argv):
     parser.add_argument("--cache", action="store_true",
                         help="reuse transcript rows fetched by an earlier --cache "
                              "run from .scratch/cache/ (selection stays live)")
+    parser.add_argument("--reuse", default="",
+                        help="directory of already exported <anon-id>.json.gz bundles; "
+                             "a selected run found there is copied as is, with its "
+                             "index entry read back from the bundle, instead of being "
+                             "fetched and scrubbed again")
     return parser.parse_args(argv[1:])
 
 
@@ -481,6 +490,8 @@ def main(argv):
         os.makedirs(CACHE_DIR, exist_ok=True)
     key = _key()
     started = time.time()
+    reuse_dir = os.path.abspath(args.reuse) if args.reuse else None
+    reused = 0
 
     # ---- 1. the dissection records of record ------------------------------
     print("reading the dissection records")
@@ -644,6 +655,29 @@ def main(argv):
     rationale_fallbacks, tails_trimmed, facing_chars, gist_of = [], 0, 0, {}
     for i, entry in enumerate(selected, 1):
         run, record, grade = entry["run"], entry["record"], entry["grade"]
+        reuse_path = (os.path.join(reuse_dir, entry["anon_id"] + ".json.gz")
+                      if reuse_dir else None)
+        if reuse_path and os.path.isfile(reuse_path):
+            with gzip.open(reuse_path, "rt", encoding="utf-8") as fh:
+                bundle = json.load(fh)
+            index_entry = bundle["run"]
+            gist = (bundle.get("analysis") or {}).get("paper_gist")
+            if gist and entry["arxiv_id"] not in gist_of:
+                gist_of[entry["arxiv_id"]] = gist
+            raw_exit = run.get("exit_reason")
+            exit_raw[str(raw_exit)] = exit_raw.get(str(raw_exit), 0) + 1
+            word = index_entry.get("self_report")
+            self_reports[str(word)] = self_reports.get(str(word), 0) + 1
+            target = os.path.join(RUNS_DIR, entry["anon_id"] + ".json.gz")
+            os.makedirs(RUNS_DIR, exist_ok=True)
+            with open(reuse_path, "rb") as src, open(target, "wb") as dst:
+                dst.write(src.read())
+            index_runs.append(index_entry)
+            reused += 1
+            if i % 25 == 0 or i == len(selected):
+                print("  %3d/%d runs, %d reused (%.0fs)"
+                      % (i, len(selected), reused, time.time() - started))
+            continue
         start = ts(run.get("started_at"))
         events = select("repro_events",
                         {"select": "*", "run_id": "eq." + entry["raw_id"],
@@ -1048,20 +1082,16 @@ def write_report(out_sweeps, dropped, disagreements, orphan_arxiv, no_runs,
     if not total:
         lines.append("Clean.")
     lines += ["", "### Longer words containing a brand name", "",
-              "Muse and Laguna are short enough to sit inside ordinary words, so "
-              "the gate matches them as whole tokens. Every longer word a plain "
-              "substring `grep -i muse` or `grep -i laguna` over public/ would "
-              "additionally return is listed here, and there are no others.", ""]
+              "Laguna is short enough to sit inside ordinary words, so the gate "
+              "matches it as a whole token. Every longer word a plain substring "
+              "`grep -i laguna` over public/ would additionally return is listed "
+              "here, and there are no others.", ""]
     if allowed:
         lines.append("| word | occurrences | what it is |")
         lines.append("|---|---|---|")
         what = {
-            "museum": "a Tanks-and-Temples scene named in a benchmark paper",
-            "nmuseum": "the same scene name, after an escaped newline in the JSON",
-            "muse_glimmer": "a model architecture in a library listing",
             "lagunas": "the surname of an author of a benchmark paper",
             "lagunaconfig": "a model-config class in a library listing",
-            "1muser": "an ANSI colour code abutting the word user",
         }
         for word in sorted(allowed, key=lambda w: (-allowed[w]["n"], w.lower())):
             lines.append("| %s | %d | %s |"

@@ -157,7 +157,7 @@ the same limits. Every path argument is resolved against the run directory, and
 the tools reject absolute paths, backslashes, and parent references, so a grade
 can only cite the bundle under audit.}
 \label{tab:audit-tools}
-\begin{center}
+\centering
 \footnotesize
 \begin{tabular}{@{}lp{8.4cm}@{}}
 \toprule
@@ -178,7 +178,6 @@ into the bundle, such as a re-scoring script to run with \texttt{bash} and cite.
 It refuses to overwrite an existing file, so agent artifacts stay intact. \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 % src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reprocli_vllm/audit/inputs.py:30-101
