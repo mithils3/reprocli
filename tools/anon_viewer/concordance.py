@@ -28,7 +28,7 @@ PAPER = {
     "retrain_matched": "MiniMax-M2.7 5/32 (16%), Qwen3.6-27B 6/26 (23%), "
                        "Muse Spark 1.2 9/32 (28%), DeepSeek-V4 9/28 (32%)",
     "retrain_means": "3.41 (MiniMax-M2.7) to 6.43 (DeepSeek-V4)",
-    "failed_spend": "mean 45%, median 27.4%, n=60 (15+19+26)",
+    "failed_spend": "mean 30%, median 15.7%, n=299 (98+89+112)",
     "band_96": "mean spend 6.5%, 1 of 42 reproduced",
     "retrain_near_miss": "15 of 28 near-miss-partial, 15 of 19 misses",
     "retrain_partial": "22 of 28 score 6 or better",
@@ -101,7 +101,7 @@ def checks(index):
     rows.append({"name": "Retrain mean audit score range",
                  "paper": PAPER["retrain_means"], "computed": computed})
 
-    failed = [r for r in runs if r["model"] == "dsv4" and not r["audit"]["reproduced"]]
+    failed = [r for r in runs if not r["audit"]["reproduced"]]
     fractions = [f for f in (_fraction(r) for r in failed) if f is not None]
     per_tier = [sum(1 for r in failed if r["tier"] == tier) for tier in TIERS]
     if fractions:
