@@ -43,7 +43,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 
 /* grid */
 .grid { display: grid; grid-template-columns: 486px 1fr; column-gap: 50px; align-items: start; }
-.right-stack { display: grid; grid-template-columns: 656px 1fr; column-gap: 38px; row-gap: 20px; }
+.right-stack { display: grid; grid-template-columns: 656px 1fr; column-gap: 38px; row-gap: 42px; }
 .span2 { grid-column: 1 / span 2; }
 
 /* task group */
@@ -80,8 +80,8 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .step img { width: 22px; height: 22px; }
 .step.on { background: var(--greenbg); border-color: var(--green); color: #2A6B40; }
 .step.on .tn { font-weight: 700; }
-.step.s2 { margin: 6px 0 0 26px; }
-.step.s3 { margin: 6px 0 0 52px; }
+.step.s2 { margin: 6px 0 0 14px; }
+.step.s3 { margin: 6px 0 0 28px; }
 .cliff-note { margin-top: 10px; font-size: 19px; color: var(--red); line-height: 1.35; }
 .cliff-note b { font-weight: 700; }
 .avail { font-family: 'JBMono', monospace; font-size: 20px; font-weight: 500; color: #2A6B40;
@@ -342,23 +342,25 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     const audit = box(q('.audit-card'));
     const result = box(q('.term-wrap .result'));
     // task -> agent bar (from group's top right to bar's left, at bar height)
-    line(task.r + 6, agent.cy, agent.l - 8, agent.cy);
+    line(task.r + 4, agent.cy, agent.l - 3, agent.cy);
     // agent bar -> terminal (vertical, at terminal center x)
-    line(term.cx, agent.b + 2, term.cx, term.t - 6);
+    line(term.cx, agent.b + 3, term.cx, term.t - 3);
     // terminal -> report (horizontal at report card height)
-    line(term.r + 4, out.cy, out.l - 8, out.cy);
+    line(term.r + 3, out.cy, out.l - 3, out.cy);
     // output -> audit (vertical = handoff to auditor)
-    line(out.cx, out.b + 2, out.cx, audit.t - 28);
+    line(out.cx, out.b + 3, out.cx, audit.t - 3);
     // the availability cliff: falling arrow beside the tier steps
     const s1 = box(q('.step.s1')), s3 = box(q('.step.s3'));
-    line(s3.r + 16, s1.t + 6, s3.r + 16, s3.b - 2, false, true);
+    const rel = box(q('.cliff').closest('.card'));
+    const cx = rel.r - 13;
+    line(cx, s1.t + 4, cx, s3.b - 2, false, true);
     // label
     const lbl = document.createElement('div');
     lbl.className = 'arrow-label';
     lbl.textContent = 'report + evidence';
     document.querySelector('.wrap').appendChild(lbl);
-    lbl.style.left = (out.cx + 14) + 'px';
-    lbl.style.top = (out.b + 12) + 'px';
+    lbl.style.left = (out.cx + 12) + 'px';
+    lbl.style.top = ((out.b + audit.t) / 2 - 11) + 'px';
   </script>
 </div>
 </body>
