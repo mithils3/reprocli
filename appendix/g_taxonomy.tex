@@ -39,16 +39,11 @@ access to the mode label, and does not apply the band column as a rule.
 \begingroup
 \footnotesize
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{4.15cm}p{1.1cm}@{}}
-\caption{The nine failure modes. We assign one primary mode per run. The band
-column gives the score of Appendix~\ref{app:rubric} the mode tends to fall in
-where the frozen rubric text says so, and reads -- where no source states
-one.}
-\label{tab:taxonomy}\\
 \toprule
 Mode & Definition & Evidence signature & Band \\
 \midrule
 \endfirsthead
-\caption[]{The nine failure modes (continued).}\\
+\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:taxonomy}, continued.} \\[3pt]
 \toprule
 Mode & Definition & Evidence signature & Band \\
 \midrule
@@ -56,6 +51,11 @@ Mode & Definition & Evidence signature & Band \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The nine failure modes, with one primary mode assigned per run. The
+band column gives the rubric score of Appendix~\ref{app:rubric} where the
+frozen rubric text states one and reads -- otherwise.}
+\label{tab:taxonomy}\\
 \endlastfoot
 \texttt{reproduced-\allowbreak clean} &
 The agent runs the authors' released artifact on the authors' data and the
