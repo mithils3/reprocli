@@ -4,11 +4,14 @@
 % Common packages. These do not change the ICLR style parameters.
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
-% URLs break only after / - ? = & _, never inside a word or at a dot. The colon keeps its
+% URLs break only after / ? = & _, never inside a word, at a hyphen or at a dot. The colon keeps its
 % relation class (so // stays together) but its break penalty is raised to infinity.
-\def\UrlBreaks{\do\/\do\-\do\?\do\=\do\&\do\_}
+\def\UrlBreaks{\do\/\do\?\do\=\do\&\do\_}
 \def\UrlBigBreaks{}
+% Punctuation left out of every url list falls back to the math fonts, so list it as ordinary.
+\def\UrlOrds{\do\*\do\-\do\~\do\'\do\"\do\.\do\@\do\\\do\!\do\|\do\;\do\>\do\]\do\)\do\,\do\+\do\#\do\<\do\[\do\(}
 \mathchardef\UrlBigBreakPenalty=10000
+\renewcommand{\UrlFont}{\small\ttfamily}  % 9pt Courier sits level with 10pt Times and lets long URLs fit a line
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -351,7 +354,7 @@ and compute estimate audited by hand.}
 \end{figure}
 
 \textbf{Stage I: Artifact-verified classification.} For each submission we
-retrieved the raw \LaTeX{} source together with any OpenReview supplementary
+retrieved the raw LaTeX source together with any OpenReview supplementary
 material, since some authors ship code only in the supplement
 (Appendix~\ref{app:corpus}).
 A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
@@ -445,7 +448,7 @@ Describe your experimental setup, baselines, metrics, and implementation details
 loop~\citep{yao2023react}. The tools are
 minimal but general. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
-guidance beyond them, so outcomes measure the model. The agent receives the paper's \LaTeX{} source, its OpenReview
+guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
 target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
 GPU, holding a Slurm allocation whose wall clock is metered against the
