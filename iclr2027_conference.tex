@@ -27,17 +27,17 @@ AI agents can now carry a machine learning experiment from released code to a
 running result. The benchmarks that measure this progress give the agent a
 prepared environment, and they saturate quickly. Reproducing a published
 paper, the smallest complete unit of research, starts the agent from the paper
-and whatever code its authors released, as a human replicator does. We
+and whatever artifacts its authors released, as a human replicator does. We
 introduce RECLAIM, 100 NeurIPS 2025 papers that give an agent a metered GPU-hour
 budget, a frozen target claim, a numeric tolerance, and a pinned auditor over its
 execution evidence. For the strongest of the four agents we evaluate,
 reproduction falls from 48\% at Run tier to 32\% at Retrain and 13\% at
 Reimplement, where the method must be built from the paper alone. A released
-artifact rarely runs as shipped. Compute is not responsible for this decline,
-since runs that fail to reproduce use only 30\% of their allocation. We label
-each analysed run with a failure mechanism, and for the strongest agent at
-Retrain tier most misses ran the specified experiment and returned a number
-outside tolerance. These agents are competent
+artifact rarely runs as shipped. Compute is not responsible for the decline
+across tiers, since runs that fail to reproduce use only 30\% of their
+allocation. We label each analysed run with a failure mechanism, and for the
+strongest agent at Retrain tier most misses ran the experiment the paper
+describes and returned a number outside tolerance. These agents are competent
 executors and weak research scientists, and the judgment that turns an executed
 experiment into a confirmed number is what separates them from agents that
 automate research.
@@ -68,8 +68,9 @@ automate research.
 %   matched-number range 16-32% -- Retrain tier, pinned Sonnet-5: DSv4 9/28=32%,
 %     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187), Muse Spark
 %     9/32=28% (muse_spark 20260816T133804Z, added 2026-09-03). The four
-%     do not agree, so the sentence carries the range per the prior TODO, and
-%     the flat "stays at" claim is retired.
+%     do not agree, so the sentence carried the range per the prior TODO, and
+%     the flat "stays at" claim is retired. 2026-09-04: the range left the
+%     abstract (user: unclear); it now appears in the body only.
 %   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x; Muse Spark
 %     6.03 sits inside the range (2026-09-03), so the 1.9x stands. Filled
 %     2026-08-27 together with the matched-number range 16-32%, which replaces
