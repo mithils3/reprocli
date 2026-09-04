@@ -10,7 +10,17 @@ paper's \texttt{run\_gpu} call acquires its own Slurm allocation
 (Appendix~\ref{app:harness}), so the agent's compute is allocated and metered
 separately from the serving GPUs. The model ID the server advertised is
 recorded on the run row.
-Table~\ref{tab:models} lists the served configuration of each of the three.
+Table~\ref{tab:models} lists the served configuration of each of the three,
+taken from the tier launch scripts and the serve profiles, with the launch
+script taking precedence where the two disagree. A field marked ``not set'' is
+one the files leave unset, so the server or the checkpoint supplies it. The
+agent input ceiling is the served context window less the 32{,}768 tokens the
+harness reserves for the completion, and the \texttt{top\_p} of $0.95$ follows
+the DeepSeek-V4-Flash model card's recommendation for agentic use. Concurrent
+papers is how many papers a job runs at once, listed for the Run, Retrain, and
+Reimplement tiers in that order, and each paper still receives its own GPU
+allocation and its own compute budget.
+
 Muse Spark 1.2 is hosted by Meta, and the harness reached it through the Meta
 Model API as \texttt{muse-spark-1.2-contributor} between 2026-08-14 and
 2026-08-23, with \texttt{reasoning\_effort} set to \texttt{xhigh} and the
@@ -24,16 +34,6 @@ The API advertises no context length, so we declare a window of
 
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reprocli_serve/profiles.py:65-74,116-143,146-198; src/reprocli_serve/config.py:28; src/reprocli_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
 \begin{table}[h]
-\caption{Served configuration of the three cluster-served agent models, taken from the tier
-launch scripts and the serve profiles (the launch script takes precedence
-where the two disagree). ``not set'' means the file leaves the field unset and
-the server or the checkpoint supplies it. The agent input ceiling is the served context window
-less the 32{,}768 tokens the harness reserves for the completion. The
-\texttt{top\_p} of $0.95$ follows the DeepSeek-V4-Flash model card's
-recommendation for agentic use. Concurrent papers is how many papers a job runs
-at once, listed for the Run, Retrain, and Reimplement tiers in that order. Each
-paper still receives its own GPU allocation and its own compute budget.}
-\label{tab:models}
 \centering
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.2cm}@{}}
@@ -68,6 +68,9 @@ Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 \\
 Tool rounds & 300 & 300 & 300 \\
 \bottomrule
 \end{tabular}
+\caption{Served configuration of the three cluster-served agent models, from
+the tier launch scripts and the serve profiles.}
+\label{tab:models}
 \end{table}
 
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reprocli_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reprocli_serve/launch.py:44-47,124-178

@@ -63,9 +63,6 @@ human-review flag whenever the basis is unspecified or the recompute
 disagrees.
 
 \begin{table}[t]
-\caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
-the classifier prompt. H100 SXM is 1.00 by definition.}
-\label{tab:h100-multipliers}
 \centering
 \small
 \begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
@@ -81,6 +78,9 @@ H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
           &      &            &      & A16 board & 0.07 \\
 \bottomrule
 \end{tabular}
+\caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
+the classifier prompt. H100 SXM is 1.00 by definition.}
+\label{tab:h100-multipliers}
 \end{table}
 
 \subsection{Stage II: compute capping and stratified selection}
@@ -101,16 +101,12 @@ equally across tiers by largest remainder and apportions each tier's share
 across compute bands by fixed weights. Within a band it takes the cheapest rows
 first, breaking ties by arXiv ID, and it fills the most expensive band first so
 that any deficit cascades down into the cheaper bands of the same tier.
-Table~\ref{tab:audit-pool} reports the resulting pool.
+Table~\ref{tab:audit-pool} reports the resulting pool, which is twice the
+size of the final benchmark, a margin that absorbs the attrition of the human
+audit and leaves a replacement reserve in every tier.
 
 % src: notes/DATASET.md:320-336
 \begin{table}[t]
-\caption{The 200-paper audit pool by tier and compute band, with the number of
-rows flagged for compute review, the number whose hours the recompute revised,
-and the summed audited compute. The pool is twice the size of the final
-benchmark. The margin absorbs the attrition of the human audit and leaves a
-replacement reserve in every tier.}
-\label{tab:audit-pool}
 \centering
 \small
 \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -125,6 +121,10 @@ Reimplement (\texttt{Hard})  & 66 & 24 & 23 & 11 & 8 & 14 & 4 & 2,190 \\
 Total & 200 & 50 & 97 & 36 & 17 & 50 & 13 & 5,905 \\
 \bottomrule
 \end{tabular}
+\caption{The 200-paper audit pool by tier and compute band, with the rows
+flagged for compute review, the rows whose hours the recompute revised, and the
+summed audited compute.}
+\label{tab:audit-pool}
 \end{table}
 
 \subsection{Stage III: human audit}
@@ -179,8 +179,6 @@ removes a paper. Each replacement is the next-cheapest audited pool row of the
 same tier (Table~\ref{tab:swaps}).
 
 \begin{table}[t]
-\caption{Membership changes to the evaluation split since the initial release on 2026-06-19. Tier composition held at 34/33/33 after every change.}
-\label{tab:swaps}
 \centering
 \small
 \begin{tabular}{@{}llrr>{\raggedright\arraybackslash}p{6.4cm}@{}}
@@ -197,6 +195,9 @@ Date & Tier & Out & In & Reason class \\
 2026-07-14 & Reimplement & 2 & 2 & No artifact anywhere, and compute that cannot be bounded inside the tier budget \\
 \bottomrule
 \end{tabular}
+\caption{Membership changes to the evaluation split since the initial release
+on 2026-06-19. Tier composition held at 34/33/33 after every change.}
+\label{tab:swaps}
 \end{table}
 
 % src: notes/DATASET.md:377-392; tasks/h100-recompute-eval100.md:163-198; notes/Reports/reprobench_substitution_log.md:130-160

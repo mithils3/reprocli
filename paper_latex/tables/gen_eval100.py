@@ -114,18 +114,13 @@ HEAD = "arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\\\"
 
 EVAL_CAPTION = (
     "The 100 evaluation papers, one row each, sorted by tier, then compute band, "
-    "then arXiv ID. Tier is the dataset's artifact tier under the "
-    "Run/Retrain/Reimplement names. Band is the compute band in H100-hours and "
-    "H100-h is the audited estimate for that paper's match target. Metric, Bar, "
-    "and Target value are the pinned match target. Metric names and target "
-    f"values longer than {METRIC_CHARS} characters are cut and closed with an "
-    "ellipsis. One row has no bar kind and is written unset."
+    "then arXiv ID. Metric names and target values longer than "
+    f"{METRIC_CHARS} characters are cut and closed with an ellipsis."
 )
 DEV_CAPTION = (
-    "The 14 development papers, in the same columns and the same sort order. "
-    "This split is disjoint from the evaluation set and is used for harness "
-    f"development only. Metric names and target values longer than {METRIC_CHARS} "
-    "characters are cut and closed with an ellipsis."
+    "The 14 development papers, in the same columns, sort order, and truncation "
+    "as Table~\\ref{tab:eval100}. This split is disjoint from the evaluation set "
+    "and is used for harness development only."
 )
 
 
@@ -135,8 +130,6 @@ def longtable(rows: list[dict]) -> str:
         "% src: outputs/v6/app_rebuild/eval_100.jsonl",
         "{\\footnotesize",
         f"\\begin{{longtable}}{{{COLSPEC}}}",
-        f"\\caption{{{EVAL_CAPTION}}}",
-        "\\label{tab:eval100} \\\\",
         "\\toprule",
         HEAD,
         "\\midrule",
@@ -149,6 +142,9 @@ def longtable(rows: list[dict]) -> str:
         "\\midrule",
         "\\endfoot",
         "\\bottomrule",
+        "\\noalign{\\vskip 6pt}",
+        f"\\caption{{{EVAL_CAPTION}}}",
+        "\\label{tab:eval100} \\\\",
         "\\endlastfoot",
     ]
     for row in sorted(rows, key=sort_key):
@@ -162,8 +158,6 @@ def devtable(rows: list[dict]) -> str:
         "% src: outputs/v6/app_rebuild/dev_split.jsonl",
         "{\\footnotesize",
         f"\\begin{{longtable}}{{{COLSPEC}}}",
-        f"\\caption{{{DEV_CAPTION}}}",
-        "\\label{tab:dev14} \\\\",
         "\\toprule",
         HEAD,
         "\\midrule",
@@ -176,6 +170,9 @@ def devtable(rows: list[dict]) -> str:
         "\\midrule",
         "\\endfoot",
         "\\bottomrule",
+        "\\noalign{\\vskip 6pt}",
+        f"\\caption{{{DEV_CAPTION}}}",
+        "\\label{tab:dev14} \\\\",
         "\\endlastfoot",
     ]
     for row in sorted(rows, key=sort_key):

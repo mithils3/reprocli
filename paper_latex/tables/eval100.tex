@@ -2,8 +2,6 @@
 % src: outputs/v6/app_rebuild/eval_100.jsonl
 {\footnotesize
 \begin{longtable}{@{}l@{\hspace{5pt}}l@{\hspace{5pt}}>{\centering\arraybackslash}p{0.95cm}@{\hspace{5pt}}>{\raggedleft\arraybackslash}p{1.1cm}@{\hspace{7pt}}p{2.5cm}@{\hspace{7pt}}p{1.85cm}@{\hspace{7pt}}p{2.75cm}@{}}
-\caption{The 100 evaluation papers, one row each, sorted by tier, then compute band, then arXiv ID. Tier is the dataset's artifact tier under the Run/Retrain/Reimplement names. Band is the compute band in H100-hours and H100-h is the audited estimate for that paper's match target. Metric, Bar, and Target value are the pinned match target. Metric names and target values longer than 28 characters are cut and closed with an ellipsis. One row has no bar kind and is written unset.}
-\label{tab:eval100} \\
 \toprule
 arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\
 \midrule
@@ -16,6 +14,9 @@ arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The 100 evaluation papers, one row each, sorted by tier, then compute band, then arXiv ID. Metric names and target values longer than 28 characters are cut and closed with an ellipsis.}
+\label{tab:eval100} \\
 \endlastfoot
 2502.05795 & Run & 0--8 & 1.00 & \raggedright Validation perplexity... & \raggedright point estimate & \raggedright 25.76 \tabularnewline
 2502.06684 & Run & 0--8 & $<$0.01 & \raggedright Mean accuracy (\%) on 10... & \raggedright point estimate & \raggedright 77.0 +/- 1.8\% \tabularnewline
@@ -123,8 +124,6 @@ arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\
 % src: outputs/v6/app_rebuild/dev_split.jsonl
 {\footnotesize
 \begin{longtable}{@{}l@{\hspace{5pt}}l@{\hspace{5pt}}>{\centering\arraybackslash}p{0.95cm}@{\hspace{5pt}}>{\raggedleft\arraybackslash}p{1.1cm}@{\hspace{7pt}}p{2.5cm}@{\hspace{7pt}}p{1.85cm}@{\hspace{7pt}}p{2.75cm}@{}}
-\caption{The 14 development papers, in the same columns and the same sort order. This split is disjoint from the evaluation set and is used for harness development only. Metric names and target values longer than 28 characters are cut and closed with an ellipsis.}
-\label{tab:dev14} \\
 \toprule
 arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\
 \midrule
@@ -137,6 +136,9 @@ arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The 14 development papers, in the same columns, sort order, and truncation as Table~\ref{tab:eval100}. This split is disjoint from the evaluation set and is used for harness development only.}
+\label{tab:dev14} \\
 \endlastfoot
 2505.18513 & Run & 0--8 & 0.01 & \raggedright LDS (Linear Datamodeling... & \raggedright point estimate & \raggedright 21.11 \tabularnewline
 2506.09045 & Run & 0--8 & $<$0.01 & \raggedright end-to-end latency speedup & \raggedright point estimate & \raggedright 2.68x \tabularnewline

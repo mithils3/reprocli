@@ -8,7 +8,9 @@ Each audit grades a single agent's attempt at a single paper's central claim.
 The auditor receives the claim with its pinned match target, a manifest of the
 agent's run bundle, and the frozen rubric text of Figure~\ref{lst:rubric-text},
 and it explores the bundle with the tools of Table~\ref{tab:audit-tools}, which
-are scoped to that one run directory. It assigns one integer from 0 to 10,
+both graders receive under the same limits. Every path argument is resolved
+against the run directory, and the tools reject absolute paths, backslashes,
+and parent references, so a grade can only cite the bundle under audit. It assigns one integer from 0 to 10,
 first placing the run in the highest quality band whose conditions the cited
 evidence meets, then applying an integrity adjustment that can only lower the
 score. The rubric sets a low-score prior, so a run with no evidence scores
@@ -52,7 +54,8 @@ file to open.
 
 % src: rubric_audit.md:166-171,224-236; src/reprocli_vllm/audit/audit.py:74-90
 Table~\ref{tab:rubric} lists the quality bands and the verdict derived from
-each score. We froze the rubric text on 2026-07-16, three days after the
+each score, where a score of 1 yields \texttt{unverifiable} when the auditor
+also reports that execution was not verified. We froze the rubric text on 2026-07-16, three days after the
 dataset freeze, and every pinned-auditor grade reported in this paper
 postdates that freeze (Appendix~\ref{app:auditor-validation}).
 
@@ -68,12 +71,6 @@ the run achieved, and the auditor writes a curation escalation into
 % src: rubric_audit.md:166-236; src/reprocli_vllm/audit/audit.py:74-90
 {\small
 \begin{longtable}{@{}c l >{\raggedright\arraybackslash}p{6.14cm} l@{}}
-\caption{The frozen audit rubric, with the conditions for each band and the
-verdict derived from each score. The auditor assigns the highest band whose
-conditions the cited execution evidence meets, and the verdict is then derived
-from the score in code. A score of 1 yields \texttt{unverifiable} when the
-auditor also reports that execution was not verified.}
-\label{tab:rubric} \\
 \toprule
 Score & Band & Conditions & Verdict \\
 \midrule
@@ -86,6 +83,10 @@ Score & Band & Conditions & Verdict \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The frozen audit rubric, with the conditions for each band and the
+verdict derived from each score.}
+\label{tab:rubric} \\
 \endlastfoot
 10 & Faithful, exact & Right experiment executed, C1 criterion met, no flags,
 correct protocol, split, and scale; a stochastic metric seed-fixed or averaged.
@@ -150,12 +151,6 @@ working name with RECLAIM in one line.
 
 % src: src/reprocli_vllm/tools/run_dir_tools.py:42-247,274-288; src/reprocli_vllm/config/config.py:50-54
 \begin{table}[h]
-\caption{The four run-directory tools available to the auditor, with the
-function and limits of each. Both graders are offered the same four tools under
-the same limits. Every path argument is resolved against the run directory, and
-the tools reject absolute paths, backslashes, and parent references, so a grade
-can only cite the bundle under audit.}
-\label{tab:audit-tools}
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -178,6 +173,9 @@ into the bundle, such as a re-scoring script to run with \texttt{bash} and cite.
 It refuses to overwrite an existing file, so agent artifacts stay intact. \\
 \bottomrule
 \end{tabular}
+\caption{The four run-directory tools available to the auditor, with the
+function and limits of each.}
+\label{tab:audit-tools}
 \end{table}
 
 % src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reprocli_vllm/audit/inputs.py:30-101

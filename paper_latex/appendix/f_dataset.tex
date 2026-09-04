@@ -29,8 +29,6 @@ identifier for review.
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
 \begin{longtable}{@{}ll>{\raggedright\arraybackslash}p{7.1cm}@{}}
-\caption{The top-level fields of a dataset row.}
-\label{tab:schema-toplevel} \\
 \toprule
 Field & Type & Description \\
 \midrule
@@ -43,6 +41,9 @@ Field & Type & Description \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The top-level fields of a dataset row.}
+\label{tab:schema-toplevel} \\
 \endlastfoot
 \texttt{custom\_id} & string & arXiv ID, the primary key. \\
 \texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
@@ -75,11 +76,6 @@ Field & Type & Description \\
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
 \begin{longtable}{@{}l>{\raggedright\arraybackslash}p{8.62cm}@{}}
-\caption{The four nested objects and their fields.}
-\label{tab:schema-links}
-\label{tab:schema-signals}
-\label{tab:schema-matchtarget}
-\label{tab:schema-h100} \\
 \toprule
 Field & Description \\
 \midrule
@@ -92,6 +88,12 @@ Field & Description \\
 \midrule
 \endfoot
 \bottomrule
+\noalign{\vskip 6pt}
+\caption{The four nested objects and their fields.}
+\label{tab:schema-links}
+\label{tab:schema-signals}
+\label{tab:schema-matchtarget}
+\label{tab:schema-h100} \\
 \endlastfoot
 \multicolumn{2}{@{}l}{\texttt{verified\_links}: artifact URLs confirmed by a tool call. Each field is a list of} \\
 \multicolumn{2}{@{}l}{strings and is empty when no artifact of that kind was located.} \\
@@ -178,7 +180,11 @@ print(row["match_target"])
 %      paper_latex/tables/gen_eval100.py
 \paragraph{The evaluation and development papers.} Tables~\ref{tab:eval100}
 and~\ref{tab:dev14} list the 100 evaluation and 14 development papers together
-with the match target each is graded against. The evaluation split totals
+with the match target each is graded against. In both, Tier is the dataset's
+artifact tier under the Run, Retrain, and Reimplement names, Band is the
+compute band in H100-hours, H100-h is the audited estimate for that paper's
+match target, and Metric, Bar, and Target value are the pinned match target.
+One evaluation row has no bar kind and is written unset. The evaluation split totals
 1{,}153.8 audited H100-hours (142.71 at Run, 380.91 at Retrain, and 630.18 at
 Reimplement), and its band counts by tier are 27/7/0, 16/13/4, and 16/9/8 over
 \texttt{0-8}, \texttt{8-32}, and \texttt{32-96}. The development split totals
