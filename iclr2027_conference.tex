@@ -2,14 +2,27 @@
 \usepackage{iclr2027_conference,times}
 
 % Common packages. These do not change the ICLR style parameters.
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{url}
+% URLs break only after / - ? = & _, never inside a word or at a dot. The colon keeps its
+% relation class (so // stays together) but its break penalty is raised to infinity.
+\def\UrlBreaks{\do\/\do\-\do\?\do\=\do\&\do\_}
+\def\UrlBigBreaks{}
+\mathchardef\UrlBigBreakPenalty=10000
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{listings}
 \input{appendix/style}  % code, prompt, and schema boxes for the appendices
+\usepackage{etoolbox}
+\usepackage{needspace}
+% Table captions sit above the tabular: give them clearance from the top rule.
+\AtBeginEnvironment{table}{\setlength{\abovecaptionskip}{4pt}\setlength{\belowcaptionskip}{6pt}}
+\setlength{\LTcapwidth}{\dimexpr\textwidth-2.3pt\relax}  % longtable captions span the text block (longtable centres them 1.1pt left)
+\makeatletter
+\patchcmd{\LT@makecaption}{\reset@font}{\reset@font\normalsize}{}{}  % caption stays 10pt inside \small tables
+\makeatother
 
 \title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
 
@@ -543,16 +556,16 @@ the experiment stops being short.
 \small
 \begin{tabular}{@{}lccc@{\hspace{2.5em}}ccc@{}}
 \toprule
-& \multicolumn{3}{c}{Mean score} & \multicolumn{3}{c}{Grant spent (\%)} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+& \multicolumn{3}{c@{\hspace{2.5em}}}{Mean score} & \multicolumn{3}{c}{Grant spent (\%)} \\
+\cmidrule(l{1.2em}r{3em}){2-4} \cmidrule(lr){5-7}
 Agent & 8 & 32 & 96 & 8 & 32 & 96 \\
 \midrule
 DeepSeek-V4 & 6.21 & 5.67 & 4.44 & 43.3 & 43.9 & 16.7 \\
-Qwen3.6-27B & 4.18 & 3.79 & 2.22 & 31.8 & 20.5 & 2.6 \\
-MiniMax-M2.7 & 3.62 & 2.50 & 1.92 & 27.3 & 11.9 & 2.3 \\
-Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & 6.1 \\
+Qwen3.6-27B & 4.18 & 3.79 & 2.22 & 31.8 & 20.5 & \phantom{0}2.6 \\
+MiniMax-M2.7 & 3.62 & 2.50 & 1.92 & 27.3 & 11.9 & \phantom{0}2.3 \\
+Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & \phantom{0}6.1 \\
 \midrule
-All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & 6.5 \\
+All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & \phantom{0}6.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -639,13 +652,14 @@ We have reviewed all AI-assisted work, and we take responsibility for the
 final content of this paper, including text, claims, and artifacts produced
 with the aid of generative AI.
 
+\raggedbottom
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
+\clearpage  % appendices start on a fresh page
 \appendix
 % The appendix pages carry breakable verbatim boxes that cannot always fill a
 % page, and flushbottom then stretches the heading skips around them.
-\raggedbottom
 
 \input{appendix/a_harness}
 \input{appendix/b_models}

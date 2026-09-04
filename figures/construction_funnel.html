@@ -6,10 +6,10 @@
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.otf'); font-weight: 400; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.otf'); font-weight: 500; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.otf'); font-weight: 600; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.otf'); font-weight: 800; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.ttf'); font-weight: 800; }
 
 :root {
   --navy: #1F3A5F;
@@ -60,7 +60,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 
 /* ---- corpus zone ---- */
 .z-corpus { width: 296px; flex: none; }
-.deck { position: relative; flex: 1; display: flex; }
+.deck { position: relative; flex: 1; min-width: 0; display: flex; }
 .deck .stack1, .deck .stack2 { position: absolute; border-radius: 14px; background: #fff; border: 2px solid rgba(31,58,95,.5); }
 .deck .stack1 { left: 10px; right: 10px; top: 14px; bottom: -7px; z-index: -1; }
 .deck .stack2 { left: 20px; right: 20px; top: 28px; bottom: -14px; border-color: rgba(31,58,95,.28); z-index: -2; }
@@ -113,7 +113,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 /* ---- audit zone ---- */
 .z-audit { width: 300px; flex: none; }
 .z-audit .card { background: #FBF8F1; }
-.stamp-img { position: absolute; right: -10px; top: -14px; width: 46px; height: 46px; transform: rotate(-12deg); z-index: 4; }
+.stamp-img { position: absolute; right: -18px; top: -18px; width: 46px; height: 46px; transform: rotate(-12deg); z-index: 4; }
 .check { display: flex; gap: 9px; font-size: 17.5px; color: var(--ink); line-height: 1.3; margin-top: 11px; }
 .check .g { font-weight: 700; flex: none; width: 16px; }
 .g.ok { color: var(--green); }
@@ -235,7 +235,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
       </div>
       <div class="filetree">
         <span class="f">test/</span>&nbsp;&nbsp;100 papers
-        <div class="sub">34 Run &middot; 33 Retrain<br>33 Reimplement</div>
+        <div class="sub">34 Run &middot; 33 Retrain &middot;<br>33 Reimplement</div>
         <span class="f">dev/</span>&nbsp;&nbsp;&nbsp;14 papers
         <div class="sub">held-out dev split</div>
         <span class="f">bands</span>&nbsp;&nbsp;57 &middot; 29 &middot; 14

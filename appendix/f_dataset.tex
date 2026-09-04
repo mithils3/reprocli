@@ -28,14 +28,14 @@ identifier for review.
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
-\begin{longtable}{@{}llp{7.1cm}@{}}
+\begin{longtable}{@{}ll>{\raggedright\arraybackslash}p{7.1cm}@{}}
 \caption{The top-level fields of a dataset row.}
 \label{tab:schema-toplevel} \\
 \toprule
 Field & Type & Description \\
 \midrule
 \endfirsthead
-\multicolumn{3}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-toplevel}, continued.} \\
+\multicolumn{3}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-toplevel}, continued.} \\[3pt]
 \toprule
 Field & Type & Description \\
 \midrule
@@ -74,7 +74,7 @@ Field & Type & Description \\
 
 % src: outputs/v6/app_rebuild/eval_100.jsonl, notes/DATASET.md 8
 {\footnotesize
-\begin{longtable}{@{}lp{8.2cm}@{}}
+\begin{longtable}{@{}l>{\raggedright\arraybackslash}p{8.62cm}@{}}
 \caption{The four nested objects and their fields.}
 \label{tab:schema-links}
 \label{tab:schema-signals}
@@ -84,7 +84,7 @@ Field & Type & Description \\
 Field & Description \\
 \midrule
 \endfirsthead
-\multicolumn{2}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-links}, continued.} \\
+\multicolumn{2}{@{}l}{\footnotesize\itshape Table~\ref{tab:schema-links}, continued.} \\[3pt]
 \toprule
 Field & Description \\
 \midrule
@@ -125,6 +125,7 @@ Field & Description \\
 
 % src: notes/DATASET.md 5.1 (score -> tier), outputs/v6/app_rebuild/eval_100.jsonl,
 %      paper_latex/tables/gen_eval100.py (summary output)
+\needspace{4\baselineskip}
 Four properties hold across the released rows, and each can be checked
 directly from the file.
 \begin{itemize}\setlength{\itemsep}{0pt}

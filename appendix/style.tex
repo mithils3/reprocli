@@ -35,7 +35,7 @@
 }
 
 \lstdefinestyle{rbBase}{
-  basicstyle=\scriptsize\ttfamily,
+  basicstyle=\fontsize{6.5}{7.6}\selectfont\ttfamily,
   columns=fullflexible,
   keepspaces=true,
   breaklines=true,
@@ -46,17 +46,21 @@
   postbreak=\mbox{\textcolor{rbComment}{$\hookrightarrow$}\space},
   numbers=none,
   % The prompt files are UTF-8; map non-ASCII characters for pdflatex.
-  literate={—}{{---}}1 {–}{{--}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
+  literate={—}{{\textemdash}}1 {–}{{\textendash}}1 {→}{{$\rightarrow$}}1 {±}{{$\pm$}}1
            {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1
            {≤}{{$\leq$}}1 {≈}{{$\approx$}}1 {…}{{\ldots}}1 {’}{{'}}1
            {“}{{``}}1 {”}{{''}}1 {✓}{{$\checkmark$}}1 {✗}{{$\times$}}1
-           {•}{{$\bullet$}}1 {←}{{$\leftarrow$}}1 {↔}{{$\leftrightarrow$}}1
+           {•}{{$\bullet$}}1 {←}{{$\leftarrow$}}1 {↔}{{<->}}3
            {≡}{{$\equiv$}}1 {⁻}{{$^-$}}1 {²}{{$^2$}}1 {°}{{$^\circ$}}1
            {∞}{{$\infty$}}1 {≫}{{$\gg$}}1 {≪}{{$\ll$}}1 {μ}{{$\mu$}}1
            {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {σ}{{$\sigma$}}1 {Δ}{{$\Delta$}}1
            {δ}{{$\delta$}}1 {λ}{{$\lambda$}}1 {τ}{{$\tau$}}1 {ε}{{$\epsilon$}}1
            {ρ}{{$\rho$}}1 {π}{{$\pi$}}1 {γ}{{$\gamma$}}1 {θ}{{$\theta$}}1,
 }
+% Courier has no TS1 grave, so upquote's \textasciigrave would fall back to cmtt; take the
+% glyph from Courier's OT1 table. Done here rather than in literate so `token` never
+% breaks after the opening tick.
+\AtBeginDocument{\renewcommand{\textasciigrave}{{\fontencoding{OT1}\ttfamily\selectfont\char18}}}
 % Prompt text: verbatim, with the template's {PLACEHOLDER} fields set off in
 % colour. Only the fields the renderers substitute are listed
 % (src/reprocli_repro/prompt_render.py, src/reprocli_vllm/audit/inputs.py).
@@ -78,6 +82,7 @@
   moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUN_DIR}{\}},
   moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUN_BUNDLE}{\}},
   moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{RUBRIC}{\}},
+  moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{PAPER_TEXT}{\}},
 }
 \lstdefinestyle{rbCode}{
   style=rbBase,
@@ -98,7 +103,7 @@
 \tcbset{
   rbFrame/.style={
     halign title=left,
-    enhanced, breakable,
+    breakable,
     boxrule=0.5pt, arc=1.5pt,
     left=5pt, right=5pt, top=4pt, bottom=4pt,
     toptitle=2.5pt, bottomtitle=2.5pt,
@@ -113,48 +118,48 @@
 \newtcblisting[use counter=figure]{promptbox}[2][]{
   rbFrame, listing only, listing options={style=rbPrompt},
   colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame!10!white, coltitle=rbPromptFrame!85!black,
-  title={Figure~\thetcbcounter: #2}, label={#1},
+  title={Figure~\thetcbcounter:\ #2}, title after break={Figure~\thetcbcounter\ (continued):\ #2}, label={#1},
 }
 % \promptfile[label]{Title}{path}
 \newtcbinputlisting[use counter from=promptbox]{\promptfile}[3][]{
   rbFrame, listing only, listing options={style=rbPrompt}, listing file={#3},
   colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame!10!white, coltitle=rbPromptFrame!85!black,
-  title={Figure~\thetcbcounter: #2}, label={#1},
+  title={Figure~\thetcbcounter:\ #2}, title after break={Figure~\thetcbcounter\ (continued):\ #2}, label={#1},
 }
 % \promptexcerpt[label]{Title}{path}{linerange}   e.g. {12-48,90-97}
 \newtcbinputlisting[use counter from=promptbox]{\promptexcerpt}[4][]{
   rbFrame, listing only, listing options={style=rbPrompt, linerange={#4}}, listing file={#3},
   colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame!10!white, coltitle=rbPromptFrame!85!black,
-  title={Figure~\thetcbcounter: #2}, label={#1},
+  title={Figure~\thetcbcounter:\ #2}, title after break={Figure~\thetcbcounter\ (continued):\ #2}, label={#1},
 }
 % \begin{codebox}[label]{language}{Title} ... \end{codebox}   language in {bash,Python,json}
 \newtcblisting[use counter from=promptbox]{codebox}[3][]{
-  rbFrame, listing only, listing options={style=rbCode, language=#2},
+  rbFrame, listing only, listing options={style=rbCode, language=#2, deletekeywords={eval}},
   colback=rbCodeBack, colframe=rbCodeFrame, colbacktitle=rbCodeFrame!8!white, coltitle=rbCodeFrame,
-  title={Figure~\thetcbcounter: #3}, label={#1},
+  title={Figure~\thetcbcounter:\ #3}, title after break={Figure~\thetcbcounter\ (continued):\ #3}, label={#1},
 }
 % \begin{schemabox}[label]{Title} ... \end{schemabox}   JSON, plum frame
 \newtcblisting[use counter from=promptbox]{schemabox}[2][]{
   rbFrame, listing only, listing options={style=rbCode, language=json},
   colback=rbSchemaBack, colframe=rbSchemaFrame, colbacktitle=rbSchemaFrame!10!white, coltitle=rbSchemaFrame!85!black,
-  title={Figure~\thetcbcounter: #2}, label={#1},
+  title={Figure~\thetcbcounter:\ #2}, title after break={Figure~\thetcbcounter\ (continued):\ #2}, label={#1},
 }
 % \codefile[label]{language}{Title}{path}
 \newtcbinputlisting[use counter from=promptbox]{\codefile}[4][]{
-  rbFrame, listing only, listing options={style=rbCode, language=#2}, listing file={#4},
+  rbFrame, listing only, listing options={style=rbCode, language=#2, deletekeywords={eval}}, listing file={#4},
   colback=rbCodeBack, colframe=rbCodeFrame, colbacktitle=rbCodeFrame!8!white, coltitle=rbCodeFrame,
-  title={Figure~\thetcbcounter: #3}, label={#1},
+  title={Figure~\thetcbcounter:\ #3}, title after break={Figure~\thetcbcounter\ (continued):\ #3}, label={#1},
 }
 
 % Transcript excerpts: an agent turn and a tool result, unnumbered, prose-set.
 % \begin{agentturn}{Round 12, agent} ... \end{agentturn}
 \newtcolorbox{agentturn}[1]{
   rbFrame, colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame!10!white, coltitle=rbPromptFrame!85!black,
-  title={#1}, fontupper=\scriptsize\ttfamily,
+  title={#1}, fontupper=\scriptsize\ttfamily\raggedright,
 }
 \newtcolorbox{toolresult}[1]{
   rbFrame, colback=rbToolBack, colframe=rbToolFrame, colbacktitle=rbToolFrame!10!white, coltitle=rbToolFrame!85!black,
-  title={#1}, fontupper=\scriptsize\ttfamily,
+  title={#1}, fontupper=\scriptsize\ttfamily\raggedright,
 }
 
 % Inline code in prose.

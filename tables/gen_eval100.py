@@ -19,6 +19,7 @@ Override the lockfile location with RECLAIM_LOCKFILE_DIR.
 from __future__ import annotations
 
 import json
+import re
 import os
 from collections import Counter
 from pathlib import Path
@@ -59,7 +60,7 @@ def tex(text: str) -> str:
             out.append("?")
         else:
             out.append(ch)
-    return "".join(out)
+    return re.sub(r"\\textasciicircum\{\}(-?\d+)", r"$^{\1}$", "".join(out))
 
 
 def clip(text: str, limit: int) -> str:
@@ -103,10 +104,11 @@ def cells(row: dict) -> list[str]:
     ]
 
 
-# The preamble loads longtable but not array, so no >{...} column modifiers.
+# Band and H100-h get fixed widths so the eval and dev tables share one geometry.
 COLSPEC = (
-    "@{}l@{\\hspace{5pt}}l@{\\hspace{5pt}}c@{\\hspace{5pt}}r@{\\hspace{5pt}}"
-    "p{2.35cm}@{\\hspace{5pt}}p{1.4cm}@{\\hspace{5pt}}p{2.75cm}@{}"
+    "@{}l@{\\hspace{5pt}}l@{\\hspace{5pt}}>{\\centering\\arraybackslash}p{0.95cm}@{\\hspace{5pt}}"
+    ">{\\raggedleft\\arraybackslash}p{1.1cm}@{\\hspace{7pt}}"
+    "p{2.5cm}@{\\hspace{7pt}}p{1.85cm}@{\\hspace{7pt}}p{2.75cm}@{}"
 )
 HEAD = "arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\\\"
 
@@ -139,13 +141,12 @@ def longtable(rows: list[dict]) -> str:
         HEAD,
         "\\midrule",
         "\\endfirsthead",
-        "\\multicolumn{7}{@{}l}{\\footnotesize\\itshape Table~\\ref{tab:eval100}, continued.} \\\\",
+        "\\multicolumn{7}{@{}l}{\\footnotesize\\itshape Table~\\ref{tab:eval100}, continued.} \\\\[3pt]",
         "\\toprule",
         HEAD,
         "\\midrule",
         "\\endhead",
         "\\midrule",
-        "\\multicolumn{7}{@{}r}{\\footnotesize\\itshape continued on the next page} \\\\",
         "\\endfoot",
         "\\bottomrule",
         "\\endlastfoot",
@@ -167,11 +168,13 @@ def devtable(rows: list[dict]) -> str:
         HEAD,
         "\\midrule",
         "\\endfirsthead",
-        "\\multicolumn{7}{@{}l}{\\footnotesize\\itshape Table~\\ref{tab:dev14}, continued.} \\\\",
+        "\\multicolumn{7}{@{}l}{\\footnotesize\\itshape Table~\\ref{tab:dev14}, continued.} \\\\[3pt]",
         "\\toprule",
         HEAD,
         "\\midrule",
         "\\endhead",
+        "\\midrule",
+        "\\endfoot",
         "\\bottomrule",
         "\\endlastfoot",
     ]
