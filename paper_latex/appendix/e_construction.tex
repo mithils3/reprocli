@@ -25,7 +25,7 @@ resulting snapshot holds 3,414 bundled papers, of which 3,410 have at least one
 
 % src: src/reprocli_vllm/config/config.py:7-13,16,28-32; src/reprocli_serve/profiles.py:65-74; src/reprocli_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reprocli_vllm/runtime/loop_guards.py:1-66; src/reprocli_vllm/runtime/tool_loop.py:126-129,184-215; src/reprocli_vllm/runtime/run_health.py:17-27,29-46,57-70; src/reprocli_vllm/schema/output.py:8-20,92-154; prompts/prompt.txt:33-63,324-333; notes/DATASET.md:156-261
 We sampled 1,000 papers uniformly at random from the corpus rows that have
-\LaTeX{} source. MiniMax-M2.7~\citep{minimax2026m2}, which we served on vLLM
+LaTeX source. MiniMax-M2.7~\citep{minimax2026m2}, which we served on vLLM
 at a 196,608-token context with requests capped at 128,000 input tokens,
 classified them on 2026-06-11. For each paper the classifier runs an agent
 loop over ten tools: five over GitHub, three over Hugging Face, a URL fetch,
@@ -39,7 +39,7 @@ contains neither a score nor a tier, and the saved tool conversation lets us
 re-open any individual call afterwards. Figure~\ref{lst:classifier-prompt}
 gives the classifier prompt in full, with \texttt{\{PAPER\_TEXT\}} standing for
 the rendered paper, its supplement manifest with text excerpts, and its
-\LaTeX{} source.
+LaTeX source.
 
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
 \promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
