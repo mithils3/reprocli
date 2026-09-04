@@ -6,10 +6,10 @@
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
 @font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.otf'); font-weight: 400; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.otf'); font-weight: 500; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.otf'); font-weight: 600; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.otf'); font-weight: 800; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.ttf'); font-weight: 800; }
 
 :root {
   --navy: #1F3A5F;
@@ -26,7 +26,7 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
-.wrap { position: relative; width: 1720px; padding: 10px 16px 14px 20px; }
+.wrap { position: relative; width: 1720px; padding: 10px 10px 14px 20px; }
 
 /* header */
 .header { display: flex; align-items: baseline; gap: 18px; margin: 0 0 36px 4px; }
@@ -43,7 +43,7 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 
 /* grid */
 .grid { display: grid; grid-template-columns: 486px 1fr; column-gap: 50px; align-items: start; }
-.right-stack { display: grid; grid-template-columns: 656px 1fr; column-gap: 38px; row-gap: 42px; }
+.right-stack { display: grid; grid-template-columns: 640px 1fr; column-gap: 26px; row-gap: 42px; }
 .span2 { grid-column: 1 / span 2; }
 
 /* task group */
@@ -152,11 +152,13 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .audit-hdr { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
 .audit-hdr img { width: 52px; height: 52px; }
 .audit-hdr .t { font-weight: 600; font-size: 25px; color: var(--navy); }
-.audit-sub { font-size: 19px; color: var(--gray); margin-top: 1px; }
-.check { display: flex; gap: 11px; font-size: 20px; color: var(--ink); line-height: 1.35; margin-top: 9px; }
+.audit-sub { font-size: 19px; color: var(--gray); margin-top: 1px; text-wrap: balance; }
+.check { display: flex; align-items: flex-start; gap: 11px; font-size: 20px; color: var(--ink); line-height: 1.35; margin-top: 9px; }
+.check span:last-child { text-wrap: balance; }
 .check .g { font-weight: 600; flex: none; }
 .g.ok { color: var(--green); }
-.g.fl { color: #C9A02E; }
+.g.fl { color: #C9A02E; display: inline-flex; align-items: center; height: 27px; }
+.g.fl .flag { display: block; }
 .verdicts { display: flex; align-items: center; gap: 10px; margin-top: 15px; position: relative; }
 .verdict { border-radius: 10px; padding: 8px 14px 10px 14px; text-align: center; }
 .verdict .lab { font-size: 17px; font-weight: 600; color: var(--gray); letter-spacing: .6px; white-space: nowrap; }
@@ -302,7 +304,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="check"><span class="g ok">&#10003;</span><span>metric recomputed from raw predictions</span></div>
             <div class="check"><span class="g ok">&#10003;</span><span>exact checkpoint, sibling rows ruled out</span></div>
             <div class="check"><span class="g ok">&#10003;</span><span>AP<sub>S/M/L</sub> values not in the paper: no echo</span></div>
-            <div class="check"><span class="g fl">&#9873;</span><span>training arm untested (released ckpt only)</span></div>
+            <div class="check"><span class="g fl"><svg class="flag" width="18" height="18" viewBox="0 0 24 24" aria-label="flag"><path d="M5 2.5h2.4V22H5z" fill="#C9A02E"/><path d="M7.4 3.5h11.6l-3.2 4.6 3.2 4.6H7.4z" fill="#C9A02E"/></svg></span><span>training arm untested (released ckpt only)</span></div>
             <div class="verdicts">
               <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">AP 46.3 &#10003;</div></div>
               <span class="vs">vs</span>
@@ -352,7 +354,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     // the availability cliff: falling arrow beside the tier steps
     const s1 = box(q('.step.s1')), s3 = box(q('.step.s3'));
     const rel = box(q('.cliff').closest('.card'));
-    const cx = rel.r - 13;
+    const cx = rel.r - 21;
     line(cx, s1.t + 4, cx, s3.b - 2, false, true);
     // label
     const lbl = document.createElement('div');

@@ -67,7 +67,7 @@ the run achieved, and the auditor writes a curation escalation into
 
 % src: rubric_audit.md:166-236; src/reprocli_vllm/audit/audit.py:74-90
 {\small
-\begin{longtable}{@{}c l p{5.8cm} l@{}}
+\begin{longtable}{@{}c l >{\raggedright\arraybackslash}p{5.8cm} l@{}}
 \caption{The frozen audit rubric, with the conditions for each band and the
 verdict derived from each score. The auditor assigns the highest band whose
 conditions the cited execution evidence meets, and the verdict is then derived
@@ -78,7 +78,7 @@ auditor also reports that execution was not verified.}
 Score & Band & Conditions & Verdict \\
 \midrule
 \endfirsthead
-\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:rubric}, continued.} \\
+\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:rubric}, continued.} \\[3pt]
 \toprule
 Score & Band & Conditions & Verdict \\
 \midrule
@@ -158,7 +158,8 @@ can only cite the bundle under audit.}
 \label{tab:audit-tools}
 \centering
 \footnotesize
-\begin{tabular}{@{}lp{8.4cm}@{}}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{10.6cm}@{}}
 \toprule
 Tool & Function and limits \\
 \midrule

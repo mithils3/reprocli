@@ -32,7 +32,8 @@ value a sweep set where one was set.}
 \label{tab:knobs}
 \centering
 \footnotesize
-\begin{tabular}{@{}p{4.1cm}p{5.6cm}p{2.7cm}@{}}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{6.2cm}l@{}}
 \toprule
 Parameter & Value & Where enforced \\
 \midrule
@@ -87,7 +88,8 @@ caps each enforces.}
 \centering
 \small
 % src: src/reprocli_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
-\begin{tabular}{@{}lp{9.4cm}@{}}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.4cm}@{}}
 \toprule
 Tool & Function \\
 \midrule
@@ -155,8 +157,8 @@ are visible inside the container. The workspace and evidence directories are
 mounted read-write at \texttt{/repro/workspace} and \texttt{/repro/evidence},
 the paper's reference copy read-only at \texttt{/repro/reference}, and
 node-local \texttt{/tmp} and the shared package caches read-write. The host
-home directory is not mounted, and Apptainer runs with \texttt{--cleanenv}
-and \texttt{--no-home}. The harness forwards the Hugging Face token, the cache
+home directory is not mounted, and Apptainer runs with \texttt{-{}-cleanenv}
+and \texttt{-{}-no-home}. The harness forwards the Hugging Face token, the cache
 locations, and the proxy settings through an environment allowlist, so no
 secret appears on a command line.
 
@@ -194,7 +196,8 @@ schema.}
 \centering
 \small
 % src: src/reprocli_repro/report/report.py:40-102
-\begin{tabular}{@{}lp{9.2cm}@{}}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.2cm}@{}}
 \toprule
 Field & Content \\
 \midrule

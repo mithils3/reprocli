@@ -36,7 +36,7 @@ paper still receives its own GPU allocation and its own compute budget.}
 \label{tab:models}
 \centering
 \footnotesize
-\begin{tabular}{@{}p{3.0cm}p{3.35cm}p{2.45cm}p{3.2cm}@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.2cm}@{}}
 \toprule
 Setting & DeepSeek-V4 & Qwen3.6-27B & MiniMax-M2.7 \\
 \midrule
@@ -44,15 +44,17 @@ Served checkpoint &
 \texttt{deepseek-ai/\allowbreak{}DeepSeek-\allowbreak{}V4-\allowbreak{}Flash-\allowbreak{}0731} &
 \texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
 \texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} \\
+\addlinespace
 Advertised name & same as checkpoint & same as checkpoint &
 \texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} \\
+\addlinespace
 Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) \\
 KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set \\
 GPUs per replica & 2 & 1 & 2 \\
 Tensor parallel & 2 & 1 & 2 \\
 Served context & 409{,}600 & 262{,}144 & 196{,}608 \\
 Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 \\
-Reasoning setting & \texttt{thinking} true,\newline
+Reasoning setting & \texttt{thinking} true,
 \texttt{reasoning\_effort} \texttt{max} & checkpoint default &
 checkpoint default \\
 Temperature & not set & not set & not set \\

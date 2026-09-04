@@ -38,7 +38,7 @@ access to the mode label, and does not apply the band column as a rule.
 %   killed-before-the-number    -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:121; notes/Analysis/easy-sweep-2652648-minimax-analyses.json (2510.21311); rubric_audit.md:197-209
 \begingroup
 \footnotesize
-\begin{longtable}{@{}p{2.9cm}p{3.85cm}p{4.15cm}p{1.1cm}@{}}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{4.15cm}p{1.1cm}@{}}
 \caption{The nine failure modes. We assign one primary mode per run. The band
 column gives the score of Appendix~\ref{app:rubric} the mode tends to fall in
 where the frozen rubric text says so, and reads -- where no source states
@@ -48,13 +48,15 @@ one.}
 Mode & Definition & Evidence signature & Band \\
 \midrule
 \endfirsthead
-\caption[]{The failure modes (continued).}\\
+\caption[]{The nine failure modes (continued).}\\
 \toprule
 Mode & Definition & Evidence signature & Band \\
 \midrule
 \endhead
-\bottomrule
+\midrule
 \endfoot
+\bottomrule
+\endlastfoot
 \texttt{reproduced-\allowbreak clean} &
 The agent runs the authors' released artifact on the authors' data and the
 graded quantity falls inside the pinned bar. &
@@ -135,7 +137,7 @@ value the paper reports for that same baseline, and then kept building on its
 own version. The disagreement is visible in the
 agent's own closing numbers, and the run never returned to it.
 
-\begin{agentturn}{Round 56, agent. Paper 2510.08177, MiniMax-M2.7, sweep 2936132.}
+\begin{agentturn}{Round 56, agent.\ Paper 2510.08177, MiniMax-M2.7, sweep 2936132.}
 Best All: 40.82\% (ep 20)\\
 Target (paper ProCo+MORE): 65.9\%\\
 Paper CE baseline: 61.4\%\\
@@ -154,7 +156,7 @@ names the pinned arm and then chooses a different one. On arXiv paper
 giving implementation cost as the reason. It never measured the pinned arm,
 and the graded number came from the arm it chose instead.
 
-\begin{agentturn}{Round 6, agent. Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
+\begin{agentturn}{Round 6, agent.\ Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
@@ -170,8 +172,8 @@ silently broke the released absolute-action dataset converter, and the agent
 had already trained on the corrupted output by the time it discovered the
 break.
 
-\begin{agentturn}{Round 233, agent. Paper 2511.20906, DeepSeek-V4-Flash-0731, sweep 2918306.}
-This is the smoking gun: **the saved abs dataset is broken** -- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
+\begin{agentturn}{Round 233, agent.\ Paper 2511.20906, DeepSeek-V4-Flash-0731, sweep 2918306.}
+This is the smoking gun: **the saved abs dataset is broken** -{}- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 
 % src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
