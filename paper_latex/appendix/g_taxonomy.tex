@@ -20,12 +20,15 @@ runs whose dissection carried a label outside the vocabulary, or a label that
 disagreed with the pinned verdict, were re-read against the definitions below
 and assigned by the agent's recorded behavior. The labels folded this way are
 under-determined-target, scope-collapse, unavailability-concluded-from-prose,
-context-or-round-exhaustion, fabrication-or-provenance-break,
-report-serialization-fault, tool-call-format-collapse,
-protocol-drift-direction-flip, eval-protocol-shopping, and
-verified-non-attempt. Table~\ref{tab:failure-modes} and
-Table~\ref{tab:failure-modes-by-agent} print each mode under a plain-language
-name in the order of Table~\ref{tab:taxonomy}.
+context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
+report-serialization-fault and report-serialization-collapse,
+tool-call-format-collapse, protocol-drift-direction-flip,
+eval-protocol-shopping, verified-non-attempt, and success. Four of the
+twenty-nine carried an in-vocabulary label that disagreed with the pinned
+verdict, and one kept its label after re-reading.
+Table~\ref{tab:failure-modes} and Table~\ref{tab:failure-modes-by-agent}
+print each mode under the plain-language name given beneath its slug in
+Table~\ref{tab:taxonomy}, in the same order.
 % relabel pass 2026-09-05: ~/sweeps/paper-table-2026-09-05/result.json
 % (per-run evidence) and resolved_modes.json (final per-run labels).
 
@@ -70,21 +73,21 @@ band column gives the rubric score of Appendix~\ref{app:rubric} where the
 frozen rubric text states one and reads -- otherwise.}
 \label{tab:taxonomy}\\
 \endlastfoot
-\texttt{reproduced-\allowbreak clean} &
+\texttt{reproduced-\allowbreak clean}\newline \emph{Reproduced} &
 The agent runs the authors' released artifact on the authors' data and the
 graded quantity falls inside the pinned bar. &
 A value computed in the run and traced to a command the transcript contains,
 with the released code, checkpoint, and data as inputs. &
 8--10 \\
 \addlinespace
-\texttt{near-\allowbreak miss-\allowbreak partial} &
+\texttt{near-\allowbreak miss-\allowbreak partial}\newline \emph{Ran, outside tolerance} &
 The agent executes a faithful pipeline and produces a measured number short of
 the bar. &
 A completed execution of the pinned quantity with sound provenance, and a
 measured value on the wrong side of the bar. &
 6--7 \\
 \addlinespace
-\texttt{reimplement-\allowbreak without-\allowbreak validating} &
+\texttt{reimplement-\allowbreak without-\allowbreak validating}\newline \emph{Reimplemented but did not check the result} &
 The agent writes its own version of the method or a component of it and
 anchors no stage of it to a reference it did not produce itself. &
 A from-scratch component in the run's own code, alongside a reference row the
@@ -92,14 +95,14 @@ paper supplies, most often its own baseline in the table that carries the
 target, that the transcript never checks against. &
 4 \\
 \addlinespace
-\texttt{environment-\allowbreak fights} &
+\texttt{environment-\allowbreak fights}\newline \emph{Build and dependency failures} &
 The decisive rounds go to build and dependency failures in the released stack
 on the host machine, and the claim's experiment never reaches a valid number. &
 Repeated install, compile, and ABI failures against the authors' pins, with
 the same package families recurring across runs on the same host. &
 -- \\
 \addlinespace
-\texttt{artifact-\allowbreak provenance-\allowbreak mismatch} &
+\texttt{artifact-\allowbreak provenance-\allowbreak mismatch}\newline \emph{Wrong artifact measured} &
 The agent measures a checkpoint, dataset, split, or scale other than the one
 the dataset row names. &
 A retrieved artifact whose own model card, README, or shipped example
@@ -107,14 +110,14 @@ disagrees with the dataset row, carrying a measurement taken on it. The
 \texttt{wrong\_\allowbreak split\_\allowbreak scale\_\allowbreak dataset} flag names the same break. &
 -- \\
 \addlinespace
-\texttt{scope-\allowbreak substitution} &
+\texttt{scope-\allowbreak substitution}\newline \emph{Wrong experiment} &
 The experiment that ran differs from the experiment the pinned claim is
 about. &
 A round where the agent names the pinned arm and chooses a different one, and
 a graded number produced from the substitute. &
 0 or 2 \\
 \addlinespace
-\texttt{stale-\allowbreak artifact-\allowbreak reliance} &
+\texttt{stale-\allowbreak artifact-\allowbreak reliance}\newline \emph{Echoed a shipped number} &
 The agent runs the right thing, gets a number that misses, finds a shipped
 constant in the repository that passes, and reports the constant. &
 The run's own executed value and the reported value differ, and the reported
@@ -122,7 +125,7 @@ value traces to a file the repository shipped. The \texttt{stale\_artifact}
 flag names the same break. &
 4 or 0 \\
 \addlinespace
-\texttt{procrastination/\allowbreak wall-\allowbreak kill} &
+\texttt{procrastination/\allowbreak wall-\allowbreak kill}\newline \emph{Never launched an experiment} &
 The agent spends its rounds on reading, retrieval, and probing, the pinned
 pipeline never runs, and the run stops or is cut off with most of the band
 unspent. &
@@ -130,7 +133,7 @@ Rounds dominated by search and setup, an own estimate that the pinned run
 fits the band, and an exit with the allocation largely unspent. &
 -- \\
 \addlinespace
-\texttt{killed-\allowbreak before-\allowbreak the-\allowbreak number} &
+\texttt{killed-\allowbreak before-\allowbreak the-\allowbreak number}\newline \emph{Failed before any number was produced} &
 The run produces no measurement of the pinned quantity. The environment and
 the artifacts work, and the run ends before the graded command yields a
 value. &
