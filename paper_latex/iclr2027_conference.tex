@@ -444,8 +444,8 @@ Describe your experimental setup, baselines, metrics, and implementation details
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
-loop~\citep{yao2023react}. The tools are
-minimal but general. A workspace shell and a metered GPU session express the
+loop~\citep{yao2023react}. The tools we provide leave the agent free to
+design its own experiment. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
@@ -459,7 +459,7 @@ ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
 prompts, the tools, and session mechanics.
 
-\paragraph{Models.} We evaluate four models under a common harness:
+\paragraph{Models.} We evaluate four models:
 DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
