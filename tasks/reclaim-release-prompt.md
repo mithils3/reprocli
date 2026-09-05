@@ -78,3 +78,14 @@ Phase 3, one fixer (agent 11) applies every refuter finding, reruns the DONE-WHE
 ## Report
 
 Lead with the DONE-WHEN results verbatim. Then: what was dropped and why, the two license choices, whether the viewer shipped, and any refuter finding you could not fix. Finish with the three manual steps left for him: push `../reclaim/` to a new GitHub repository, mint the link at https://anonymous.4open.science (add the terms from the leak-gate regex, set the expiration after the ICLR 2027 notification date), and paste the minted URL back so the placeholder `RECLAIM-XXXX` in footnote 1 and the README link get filled.
+
+## Outcome (2026-09-05)
+
+Built at `../reclaim`, one commit by `RECLAIM Authors <reclaim@anonymous.invalid>` on `main`, 586 files, DONE-WHEN block green. Paper side landed as ba9e8f3 on repro-next and was subtree-pushed to the paper remote.
+
+Facts the prompt did not know:
+- `tools/anon_viewer/scrub.py` misses `ps aux` output that lists co-tenant project dirs. Four bundles (`muse-retrain-2410.19933`, `muse-retrain-2504.12463`, `muse-retrain-2511.00119`, `muse-run-2505.18456`) carried `/projects/<acct>/<netid>` for two other users. The release copies replace them with `/projects/[proj]/[user]`; the hosted viewer still has them. Add a rule for `/projects/[a-z]{4}/[a-z0-9]+` plus the bare netids, re-export, redeploy.
+- Indirect identifiers the regex missed and the release rewrote: `hsn0..3` fabric names, the site's public `/16` in test fixtures, `ghNNN` node names, `/sw/user/NGC_containers`, SU accounting vocabulary in `slurm.py`, Laguna and Kimi serve profiles, `verify_app`, `dev15`, Stage-7/S6/S7/Phase-N markers, "brain".
+- `prompts/analyze.txt` is a personal analysis prompt with the database ref; it stays out of any release.
+- `runs/index.json` carries a tenth mode `other` on 25 runs; the paper says nine. Bare "DeepSeek-V4" remains in four paper spots. Both need the author.
+- Records are `.json.gz`; the viewer decompresses client-side, so `python3 -m http.server` from the repo root serves it with no headers.
