@@ -124,7 +124,11 @@ self-improving systems, since a model that improves itself must first
 re-implement and verify the research it builds
 on~\citep{favaro2026recursive}.
 
-To support this evaluation, we introduce RECLAIM, a benchmark that measures
+To support this evaluation, we introduce RECLAIM,\footnote{Code:
+% TODO(source): mint the anonymous.4open.science link for the reprocli repo before submission; RECLAIM-XXXX is a placeholder.
+\url{https://anonymous.4open.science/r/RECLAIM-XXXX}. Runs, with each transcript,
+audit score, and failure mechanism: \url{https://reclaim-traces.vercel.app}.\label{fn:artifacts}}
+a benchmark that measures
 whether an agent can reproduce a published result end to end, starting from the
 artifacts the paper's authors actually released and graded against the
 execution evidence the run produces. Our results show that reproduction rate
@@ -613,8 +617,8 @@ Appendix~\ref{app:running} gives the commands that serve a model, run a
 paper, and grade a run. The runs behind the reported numbers can also be
 read at \url{https://reclaim-traces.vercel.app}, an anonymized viewer that
 shows each transcript verbatim with paths and identifiers redacted, together
-with its audit score and its primary failure mode. The repository and dataset
-URLs are provided in the camera-ready version.
+with its audit score and its primary failure mode. The anonymized code
+repository is linked from footnote~\ref{fn:artifacts} on the first page.
 \end{itemize}
 
 An agent rollout is sampled and interacts with a live machine, so a rerun does
