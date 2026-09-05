@@ -1,10 +1,10 @@
 \subsection{Prompt templates}
 \label{app:prompts}
 
-% src: src/reprocli_repro/cli_args.py:26-42,238-240; src/reprocli_repro/loop.py:66-70,376-380;
-% src: src/reprocli_repro/transcript.py:22-26,88-96,105-107,128-155; src/reprocli_repro/compact.py:57-61,81-82,90-137;
-% src: src/reprocli_repro/tools/__init__.py:78-99; src/reprocli_vllm/tools/result_limits.py:8-11,24-38,60-62;
-% src: src/reprocli_repro/live_log.py:71-75; src/reprocli_vllm/vllm/io.py (initial_messages)
+% src: src/reclaim_repro/cli_args.py:26-42,238-240; src/reclaim_repro/loop.py:66-70,376-380;
+% src: src/reclaim_repro/transcript.py:22-26,88-96,105-107,128-155; src/reclaim_repro/compact.py:57-61,81-82,90-137;
+% src: src/reclaim_repro/tools/__init__.py:78-99; src/reclaim_vllm/tools/result_limits.py:8-11,24-38,60-62;
+% src: src/reclaim_repro/live_log.py:71-75; src/reclaim_vllm/vllm/io.py (initial_messages)
 Figure~\ref{lst:harness-messages} collects every fixed string the model reads
 during an episode. The system message is stored at index 0, where compaction
 never reaches it. The final-turn instruction is appended after the harness
@@ -59,9 +59,9 @@ reasoning brief.
 {..., "truncated": true, "truncation_note": "Result truncated to fit the tool budget; request a specific file path, path_filter, or smaller range for more."}
 \end{promptbox}
 
-% src: src/reprocli_repro/prompt_render.py:22-147; src/reprocli_repro/inputs.py:37-45,110-135;
-% src: src/reprocli_repro/dataset.py:82-118; src/reprocli_repro/sandbox.py:162-165,299-312;
-% src: src/reprocli_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
+% src: src/reclaim_repro/prompt_render.py:22-147; src/reclaim_repro/inputs.py:37-45,110-135;
+% src: src/reclaim_repro/dataset.py:82-118; src/reclaim_repro/sandbox.py:162-165,299-312;
+% src: src/reclaim_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
 The task prompt is a single 290-line template with fourteen placeholder fields
 under nine headings. Each field is filled from the paper's dataset row
 (Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or

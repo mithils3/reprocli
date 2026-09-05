@@ -63,7 +63,7 @@
 \AtBeginDocument{\renewcommand{\textasciigrave}{{\fontencoding{OT1}\ttfamily\selectfont\char18}}}
 % Prompt text: verbatim, with the template's {PLACEHOLDER} fields set off in
 % colour. Only the fields the renderers substitute are listed
-% (src/reprocli_repro/prompt_render.py, src/reprocli_vllm/audit/inputs.py).
+% (src/reclaim_repro/prompt_render.py, src/reclaim_vllm/audit/inputs.py).
 \lstdefinestyle{rbPrompt}{
   style=rbBase,
   moredelim=**[s][\bfseries\color{rbPlaceholder}]{\{ARXIV_ID}{\}},
