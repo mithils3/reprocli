@@ -154,15 +154,28 @@ reproduction an agent gets. Compute does not bind either: the 42 runs in the 96 
 of the allocation they were given, and 1 of the 42 reproduces its claim.
 
 A small set of recurring failure modes accounts for the residual, and the modes
-separate by whose defect they encode. Modes that belong to the agent recede as
-capability rises: reimplementation without validation falls from XX of XX runs
-to XX of XX across the agents we evaluate, and environment fights disappear as a
-primary cause while remaining a large tax on rounds. Modes that belong to the
-papers hold steady, led by releases whose own configuration files disagree with
-the configuration the paper reports. We define the taxonomy, report the per-mode
+divide by whether they follow agent capability. Reimplementing the method
+without checking the result against anything the authors released accounts for
+43 of the 188 runs of the two weakest agents and 20 of the 184 runs of the two
+strongest, and build and dependency failures fall from 19 of those runs to 5.
+Measuring the wrong artifact does not follow capability. It ranges from 3 of 90
+runs to 15 of 97 across the four agents, and in 10 of its 37 cases the released
+model card or configuration file states a setting that differs from the one the
+paper reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{sec:analysis}. Agent
 self-reports track none of this reliably, so we carry claimed and audited counts
 as background data rather than as a result.
+% numbers of record (2026-09-05): resolved per-run primary modes in
+% ~/sweeps/paper-table-2026-09-05/resolved_modes.json (index.json of 2026-09-03
+% plus the 29-run relabel pass in result.json). Agents ordered by mean audit
+% score: DSv4 5.90, Muse 5.15, Qwen3 3.88, MiniMax 3.09. reimplement-without-
+% validating: Qwen3 16/90 + MiniMax 27/98 = 43/188; DSv4 13/87 + Muse 7/97 =
+% 20/184. environment-fights: 8+11 = 19 vs 1+4 = 5. artifact-provenance-
+% mismatch per agent 6/87, 3/90, 13/98, 15/97 = 37; release-disagrees-with-paper
+% signature in 10 (dsv4-retrain-2506.19839, dsv4-run-2505.23305,
+% dsv4-run-2510.21311, dsv4-run-2505.24873, muse-run-2505.23305,
+% muse-run-2511.16666, muse-run-2505.18456, minimax-run-2511.16666,
+% minimax-run-2505.18456, minimax-run-2505.10475), read from failure_mode_detail.
 
 \begin{figure}[t]
 \centering
@@ -432,8 +445,6 @@ graders at XX.
 \section{Experiments}
 \label{sec:experiments}
 
-Describe your experimental setup, baselines, metrics, and implementation details.
-
 \subsection{Experimental Setup}
 \label{subsec:experimental-setup}
 
@@ -474,61 +485,175 @@ at \$2 per H100-hour.
 \subsection{Results}
 \label{subsec:results}
 
-Present your main results.
+Table~\ref{tab:main-results} reports every graded run. Each agent has between 87
+and 98 graded runs over the 100 papers; the remaining cells have no graded run,
+and every rate below uses the graded runs as its denominator. The auditor
+confirms reproduction on 73 of the 372 runs. DeepSeek-V4 is the strongest of
+the four agents. It recovers the pinned number on 14 of 29 Run-tier papers, 9
+of 28 at Retrain, and 4 of 30 at Reimplement, and the four agents span a factor
+of 1.9 in mean audit score, from 5.90 for DeepSeek-V4 to 3.09 for MiniMax-M2.7.
+% TODO(source): state why 28 cells have no graded run (2 dropped for lacking a
+% pinned grade per tools/anon_viewer/export_report.md; the rest never produced a
+% run row).
 
-\section{Analysis}
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccc@{\hspace{1.2em}}ccc@{\hspace{1.2em}}c@{}}
+\toprule
+& \multicolumn{3}{c@{\hspace{1.2em}}}{Reproduced} & \multicolumn{3}{c@{\hspace{1.2em}}}{Mean score} & Grant \\
+\cmidrule(lr{1.2em}){2-4} \cmidrule(lr{1.2em}){5-7}
+Agent & Run & Retrain & Reimplement & Run & Retrain & Reimplement & spent (\%) \\
+\midrule
+DeepSeek-V4 & 14/29 (48\%) & 9/28 (32\%) & 4/30 (13\%) & 6.21 & 6.43 & 5.10 & 32.0 \\
+Qwen3.6-27B & 5/34 (15\%) & 6/26 (23\%) & 2/30 (7\%) & 3.91 & 4.54 & 3.27 & 15.5 \\
+MiniMax-M2.7 & 3/33 (9\%) & 5/32 (16\%) & 2/33 (6\%) & 3.18 & 3.41 & 2.70 & 10.3 \\
+Muse Spark 1.2 & 9/33 (27\%) & 9/32 (28\%) & 5/32 (16\%) & 5.64 & 6.03 & 3.78 & 21.7 \\
+\midrule
+All agents & 31/129 (24\%) & 29/118 (25\%) & 13/125 (10\%) & 4.68 & 5.08 & 3.69 & 19.4 \\
+\bottomrule
+\end{tabular}
+\caption{Reproduced runs, mean audit score, and share of the granted H100-hours
+spent, by agent and tier.}
+\label{tab:main-results}
+\end{table}
+% numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
+% sweeps[] (n, n_reproduced, mean_score); reproduced = audit score >= 8 =
+% verdict reproduced on all 372 runs. Grant spent = 100 * sum(spent_h100) /
+% sum(budget_h100) over the agent's runs: 636.7/1992.0, 324.6/2088.0,
+% 259.6/2512.0, 549.4/2528.0, all 1770.2/9120.0. All-agents means are over all
+% runs in the tier (4.68/5.08/3.69), not means of the four rows.
+
+The agents differ more in how far they get than in how often they finish. At
+Retrain, DeepSeek-V4 reaches a verified partial result or better on 22 of 28
+runs and Muse Spark 1.2 on 23 of 32, while MiniMax-M2.7 reaches one on 9 of
+32. Confirmed reproduction at the same tier stays between 5 of 32 and 9 of 28
+for all four. Only DeepSeek-V4 falls monotonically across the tiers. For the
+other three agents the Run and Retrain rates sit within nine points of each
+other, and mean score rises from Run to Retrain for all four agents before
+falling at Reimplement. Table~\ref{tab:failure-modes} shows where the
+difference sits: Retrain draws more runs that execute a faithful pipeline and
+land outside tolerance, 39 of 118 against 26 of 129 at Run, and Run draws more
+measurements on the wrong released artifact, 17 of 129 against 9 of 118. Every
+agent posts its lowest reproduction rate and lowest mean score at Reimplement,
+where no code is released, and 13 of 125 runs reproduce there.
+% partial-or-better = audit score >= 6 (index.json): DSv4 retrain 22/28, Muse
+% retrain 23/32, MiniMax retrain 9/32.
+
+Spending stays far below the grant in every row of the table. Pooled over all
+372 runs, the agents spend 1{,}770 of the 9{,}120 H100-hours we granted, and
+the per-agent share runs from 32.0\% for DeepSeek-V4 to 10.3\% for
+MiniMax-M2.7. We carry the agents' own verdicts as background data. Of the 359
+runs that return a parsable self-assessment, 128 claim reproduction, against 73
+audited reproductions over all 372 runs, and the disagreement runs in both
+directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
+of its runs, and DeepSeek-V4 claims 19 and the auditor confirms 27.
+% self_report field of index.json: reproduced 128, not_reproduced 208, partial
+% 23, none 13 (12 of them Qwen3.6-27B). The abstract's 30% is the mean per-run
+% spent/budget over the 299 non-reproduced runs; the pooled figure here is
+% hours over hours (19.4% all runs, 18.6% non-reproduced).
+
+\subsection{Failure mechanisms}
 \label{sec:analysis}
 
-% Placeholder section: ablations, error analysis, qualitative results.
-
 \paragraph{Failure taxonomy.}
-We label every dissected run with one primary mode from the nine-mode
+We label every graded run with one primary mode from the nine-mode
 vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
 tier in Table~\ref{tab:failure-modes}. Two modes are outcomes. A
-reproduced-clean run recovers the pinned number on the authors' released
-artifact, and a near-miss partial runs a faithful pipeline and lands short
-of the bar. The other seven are process failures. The agent reimplements
-the method and validates no stage of its version against a reference it
-did not produce, loses the decisive rounds to build and dependency failures
-in the released stack, measures an artifact other than the one the
-dataset row names, runs an experiment other than the one the claim is about,
-reports a shipped constant in place of the number it measured, spends its
-rounds on reading and probing until the allocation is cut off largely
-unspent, or ends with no measurement of the pinned quantity at all.
-Appendix~\ref{app:taxonomy} gives each mode's evidence signature, with
-transcript excerpts for three of them.
+reproduced run recovers the pinned number on the authors' released
+artifact and data, and a run outside tolerance executes a faithful pipeline
+and lands short of the bar. The other seven are process failures. The agent
+reimplements the method or a component of it and checks no stage of its
+version against a reference it did not produce, loses the decisive rounds to
+build and dependency failures in the released stack, measures an artifact
+other than the one the dataset row names, runs an experiment other than the
+one the claim is about, echoes a shipped constant in place of the number it
+measured, spends its rounds on reading and probing and never launches the
+experiment, or runs a working pipeline on working artifacts that ends before
+the graded command yields a value. Appendix~\ref{app:taxonomy} gives each
+mode's evidence signature, with transcript excerpts for three of them. One run
+the auditor graded reproduced carries the wrong-artifact label, because the
+dissection found its passing number was measured on a released checkpoint
+other than the one the row pins, so the Reproduced row holds 72 runs against
+73 audited reproductions.
+% the one run: muse-run-2505.18456 (audit 8; adlm-medium/large 262B/524B
+% checkpoints against a pinned 110B row).
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 Mode & Run & Retrain & Reimplement & All \\
 \midrule
-Reproduced clean & XX & XX & XX & XX \\
-Near-miss partial & XX & XX & XX & XX \\
-Reimplement without validating & XX & XX & XX & XX \\
-Environment fights & XX & XX & XX & XX \\
-Artifact-provenance mismatch & XX & XX & XX & XX \\
-Scope substitution & XX & XX & XX & XX \\
-Stale-artifact reliance & XX & XX & XX & XX \\
-Procrastination and wall kill & XX & XX & XX & XX \\
-Killed before the number & XX & XX & XX & XX \\
+Reproduced & 30 & 29 & 13 & 72 \\
+Ran, outside tolerance & 26 & 39 & 15 & 80 \\
+Reimplemented but did not check the result & 14 & 11 & 38 & 63 \\
+Build and dependency failures & 13 & 6 & 5 & 24 \\
+Wrong artifact measured & 17 & 9 & 11 & 37 \\
+Wrong experiment & 7 & 12 & 24 & 43 \\
+Echoed a shipped number & 7 & 2 & 0 & 9 \\
+Never launched an experiment & 1 & 2 & 10 & 13 \\
+Failed before any number was produced & 14 & 8 & 9 & 31 \\
+\midrule
+Graded runs & 129 & 118 & 125 & 372 \\
 \bottomrule
 \end{tabular}
-\caption{Primary failure mode by tier over the dissected runs, using the
-vocabulary of Appendix~\ref{app:taxonomy}. Raw dissection labels are remapped
-onto the nine mode names.}
+\caption{Primary failure mode by tier over the 372 graded runs, in the order of
+Appendix~\ref{app:taxonomy}. Sweep-local dissection labels are remapped onto
+the nine modes as described there.}
 \label{tab:failure-modes}
 \end{table}
-% TODO(tab:failure-modes): fill from the pooled pinned-Sonnet dissection records of the roster sweeps, remapped onto the nine slugs per Appendix G.
+% numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
+% resolved_modes.json = index.json field "mode" with the 29 relabels of
+% result.json applied (25 "other" runs plus 4 label/verdict conflicts); every
+% relabel carries its evidence there. Rows are the slugs reproduced-clean,
+% near-miss-partial, reimplement-without-validating, environment-fights,
+% artifact-provenance-mismatch, scope-substitution, stale-artifact-reliance,
+% procrastination/wall-kill, killed-before-the-number.
+
+\paragraph{Where the failures sit.}
+Reimplementing without checking the result is the most common process
+failure, at 63 of 372 runs, and 38 of those fall at Reimplement. Together with
+running the wrong experiment it accounts for 62 of the 125 Reimplement-tier
+runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
+18 of 33 for MiniMax-M2.7. Two modes are confined to one end of the tier
+ladder. Echoing a shipped number needs released code to ship it and never
+occurs at Reimplement, and never launching an experiment occurs once at Run
+and ten times at Reimplement. Three modes concentrate in one agent each
+(Table~\ref{tab:failure-modes-by-agent}). MiniMax-M2.7 holds 11 of the 24
+build and dependency failures, Qwen3.6-27B holds 19 of the 31 runs that failed
+before producing a number, and Muse Spark 1.2 holds 15 of the 37 wrong-artifact
+measurements. The build failures depend on the host as much as on the agent.
+All eight of MiniMax-M2.7's Run-tier cases trace to packages without aarch64
+wheels on our GH200 nodes, and DeepSeek-V4 met the same gaps on the same
+papers and checked its substitutions against the released code before using
+them.
+% sources: resolved_modes.json for every count; aarch64 attribution from
+% notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:95-103,145
+% and notes/Analysis/2026-08-11 Easy Sweep 2883229+2889575 (DSv4, pinned
+% Sonnet).md:52.
 
 \paragraph{What the successful runs do.}
-The runs that recover the target result share a procedure that the failures
-lack. They smoke-test a reduced configuration before committing compute to a
-full-length job, they consult the released documentation instead of inferring
-interfaces from names, and they reuse every artifact and tool the authors
-released rather than reimplementing from the paper text.
+The runs that recover the target result reuse what the authors released.
+Where code, checkpoints, and data exist, they run the authors' own entrypoint
+and change nothing that touches the graded computation, and where the method
+has to be rebuilt they check the rebuilt component against a quantity the
+paper reports before spending compute on it. Reimplementing without that check
+never succeeded: none of the 63 runs in that row passed the audit, and none of
+the 43 that ran the wrong experiment did either. Reduced-scale smoke tests do
+not separate the two groups, since the dissections record them in about half
+of the failed runs as well as in most of the successful ones.
+% sources: resolved_modes.json (0 of 63 and 0 of 43 with verdict reproduced);
+% dissection records read 2026-09-05: smoke test mentioned in 45/73 audited-
+% reproduced and 148/299 failed records; reuse of released entrypoint in 58/73
+% vs 160/299. Report lines: notes/Analysis/2026-08-03 Medium Sweep 2690187
+% (MiniMax, pinned Sonnet).md:255-266; 2026-08-24 Hard Sweep muse_spark-
+% 20260820T205201Z (Muse Spark 1.2, pinned Sonnet).md:198-209.
+
+\subsection{Compute does not bind reproduction}
+\label{subsec:compute}
 
 \paragraph{Failure rises with the scale of the required experiment.}
 Reproduction scores fall as the paper's compute band grows, even though no
@@ -539,11 +664,19 @@ compute granted to them. The bands hold 59, 29, and 12 papers, so the 96-hour
 cells rest on 9 to 12 runs per agent. The gradient tracks the scale of the experiment the paper
 demands.
 Agents handle short evaluation-style experiments well. They load a released
-checkpoint, run an inference pass, and recompute a metric. They do not
-launch and see through a full training run. When the pinned claim requires
-training at scale, the agent substitutes a miniature of the experiment and
-reports the shortfall, so end-to-end reproduction breaks down exactly where
-the experiment stops being short.
+checkpoint, run an inference pass, and recompute a metric. They rarely carry
+a full training run through to the end. When the pinned claim requires
+training at scale, the most common response is to stop before launching it:
+29 of the 42 runs in the 96 H100-hour band spent under 5\% of their grant, and
+11 spent under 1\%. Seven of the 42 ran a shrunken version of the paper's
+training and reported a number from it, and six of the seven stated the
+shortfall.
+% 96-band spend from index.json (spent_h100/budget_h100 < 0.05: 29/42; < 0.01:
+% 11/42). Shrunken-training runs, read from the dissection records 2026-09-05:
+% dsv4-retrain-2504.12463, dsv4-retrain-2505.02391, dsv4-retrain-2506.19839,
+% qwen3-retrain-2504.12463, muse-retrain-2506.19839, muse-reimplement-
+% 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
+% shortfall).
 
 \begin{table}[h]
 \centering

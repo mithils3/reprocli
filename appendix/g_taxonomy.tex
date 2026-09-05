@@ -15,6 +15,19 @@ dissection carries an availability-wall label. Every artifact in the frozen
 benchmark is retrievable by host probe, and where a report asserts otherwise
 we relabel the run from its own evidence. We add a new mode to the taxonomy
 only on evidence from at least two runs.
+Before pooling, we remap sweep-local labels onto the nine modes. Twenty-nine
+runs whose dissection carried a label outside the vocabulary, or a label that
+disagreed with the pinned verdict, were re-read against the definitions below
+and assigned by the agent's recorded behavior. The labels folded this way are
+under-determined-target, scope-collapse, unavailability-concluded-from-prose,
+context-or-round-exhaustion, fabrication-or-provenance-break,
+report-serialization-fault, tool-call-format-collapse,
+protocol-drift-direction-flip, eval-protocol-shopping, and
+verified-non-attempt. Table~\ref{tab:failure-modes} and
+Table~\ref{tab:failure-modes-by-agent} print each mode under a plain-language
+name in the order of Table~\ref{tab:taxonomy}.
+% relabel pass 2026-09-05: ~/sweeps/paper-table-2026-09-05/result.json
+% (per-run evidence) and resolved_modes.json (final per-run labels).
 
 \subsection{The failure modes}
 
@@ -126,6 +139,32 @@ value for the pinned metric anywhere in the run bundle. &
 3 \\
 \end{longtable}
 \endgroup
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.6cm}ccccc@{}}
+\toprule
+Mode & DeepSeek-V4 & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 & All \\
+\midrule
+Reproduced & 27 & 13 & 10 & 22 & 72 \\
+Ran, outside tolerance & 26 & 18 & 9 & 27 & 80 \\
+Reimplemented but did not check the result & 13 & 16 & 27 & 7 & 63 \\
+Build and dependency failures & 1 & 8 & 11 & 4 & 24 \\
+Wrong artifact measured & 6 & 3 & 13 & 15 & 37 \\
+Wrong experiment & 9 & 10 & 14 & 10 & 43 \\
+Echoed a shipped number & 1 & 1 & 4 & 3 & 9 \\
+Never launched an experiment & 2 & 2 & 4 & 5 & 13 \\
+Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
+\midrule
+Graded runs & 87 & 90 & 98 & 97 & 372 \\
+\bottomrule
+\end{tabular}
+\caption{Primary failure mode by agent over the 372 graded runs.}
+\label{tab:failure-modes-by-agent}
+\end{table}
+% numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/resolved_modes.json.
 
 \subsection{Failure taxonomy examples}
 
