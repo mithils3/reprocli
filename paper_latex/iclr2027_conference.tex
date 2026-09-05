@@ -154,10 +154,11 @@ reproduction an agent gets. Compute does not bind either: the 42 runs in the 96 
 of the allocation they were given, and 1 of the 42 reproduces its claim.
 
 A small set of recurring failure modes accounts for the residual, and the modes
-divide by whether they follow agent capability. Reimplementing the method
-without checking the result against anything the authors released accounts for
-43 of the 188 runs of the two weakest agents and 20 of the 184 runs of the two
-strongest, and build and dependency failures fall from 19 of those runs to 5.
+divide by whether they follow agent capability. Runs that reimplemented the
+method but did not check the result against anything the authors released
+account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
+of the two strongest, and build and dependency failures fall from 19 of those
+runs to 5.
 Measuring the wrong artifact does not follow capability. It ranges from 3 of 90
 runs to 15 of 97 across the four agents, and in 10 of its 37 cases the released
 model card or configuration file states a setting that differs from the one the
@@ -614,9 +615,9 @@ the nine modes as described there.}
 % procrastination/wall-kill, killed-before-the-number.
 
 \paragraph{Where the failures sit.}
-Reimplementing without checking the result is the most common process
+Reimplemented but did not check the result is the most common process
 failure, at 63 of 372 runs, and 38 of those fall at Reimplement. Together with
-running the wrong experiment it accounts for 62 of the 125 Reimplement-tier
+wrong experiment it accounts for 62 of the 125 Reimplement-tier
 runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
 18 of 33 for MiniMax-M2.7. Two modes are confined to one end of the tier
 ladder. Echoing a shipped number needs released code to ship it and never
@@ -640,9 +641,9 @@ The runs that recover the target result reuse what the authors released.
 Where code, checkpoints, and data exist, they run the authors' own entrypoint
 and change nothing that touches the graded computation, and where the method
 has to be rebuilt they check the rebuilt component against a quantity the
-paper reports before spending compute on it. Reimplementing without that check
-never succeeded: none of the 63 runs in that row passed the audit, and none of
-the 43 that ran the wrong experiment did either. Reduced-scale smoke tests do
+paper reports before spending compute on it. Runs that reimplemented but did
+not check the result never succeeded: none of the 63 runs in that row passed
+the audit, and none of the 43 that ran the wrong experiment did either. Reduced-scale smoke tests do
 not separate the two groups, since the dissections record them in about half
 of the failed runs as well as in most of the successful ones.
 % sources: resolved_modes.json (0 of 63 and 0 of 43 with verdict reproduced);
