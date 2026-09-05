@@ -160,7 +160,7 @@ account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
 of the two strongest, and build and dependency failures fall from 19 of those
 runs to 5.
 Measuring the wrong artifact does not follow capability: the two strongest
-agents account for 21 of its 37 cases, and on 7 papers the released model card
+agents account for 21 of its 38 cases, and on 7 papers the released model card
 or configuration file states a setting that differs from the one the paper
 reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{subsec:mechanisms}. Agent
@@ -539,8 +539,8 @@ every tier. For the other three agents the Run and Retrain rates sit within
 nine points of each other, and mean score rises from Run to Retrain for all
 four agents before falling at Reimplement. Table~\ref{tab:failure-modes}
 locates the difference: Retrain has more runs that execute a faithful pipeline
-and land outside tolerance, 39 of 118 against 26 of 129 at Run, and Run has
-more measurements on the wrong released artifact, 17 of 129 against 9 of 118.
+and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
+more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
 Every agent's lowest reproduction rate and lowest mean score are at
 Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 % partial-or-better = audit score >= 6 (index.json): DSv4 retrain 22/28, Muse
@@ -593,11 +593,11 @@ other than the one the row pins, so the Reproduced row holds 72 runs against
 Mode & Run & Retrain & Reimplement & All \\
 \midrule
 Reproduced & 30 & 29 & 13 & 72 \\
-Ran, outside tolerance & 26 & 39 & 15 & 80 \\
+Ran, outside tolerance & 24 & 37 & 15 & 76 \\
 Reimplemented but did not check the result & 14 & 11 & 38 & 63 \\
 Build and dependency failures & 13 & 6 & 5 & 24 \\
-Wrong artifact measured & 17 & 9 & 11 & 37 \\
-Wrong experiment & 7 & 12 & 24 & 43 \\
+Wrong artifact measured & 18 & 9 & 11 & 38 \\
+Wrong experiment & 8 & 14 & 24 & 46 \\
 Echoed a shipped number & 7 & 2 & 0 & 9 \\
 Never launched an experiment & 1 & 2 & 10 & 13 \\
 Failed before any number was produced & 14 & 8 & 9 & 31 \\
@@ -610,9 +610,10 @@ Appendix~\ref{app:taxonomy}.}
 \label{tab:failure-modes}
 \end{table}
 % numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
-% resolved_modes.json = index.json field "mode" with the 29 relabels of
-% result.json applied (25 "other" runs plus 4 label/verdict conflicts); every
-% relabel carries its evidence there. Rows are the slugs reproduced-clean,
+% resolved_modes.json = index.json field "mode" with two relabel passes
+% applied: 29 runs (25 "other" plus 4 label/verdict conflicts; evidence in
+% result.json) and the 7 outside-tolerance runs with a disqualified verdict
+% (4 moved; evidence in relabel_pass2.txt). Rows are the slugs reproduced-clean,
 % near-miss-partial, reimplement-without-validating, environment-fights,
 % artifact-provenance-mismatch, scope-substitution, stale-artifact-reliance,
 % procrastination/wall-kill, killed-before-the-number.
@@ -629,7 +630,7 @@ Run. Two modes concentrate in one agent each
 (Table~\ref{tab:failure-modes-by-agent}): MiniMax-M2.7 holds 11 of the 24
 build and dependency failures and Qwen3.6-27B holds 19 of the 31 runs that
 failed before producing a number, while wrong-artifact measurements split
-between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 37. The build failures
+between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
 DeepSeek-V4 met the same packaging gaps and split on how it adapted, with a

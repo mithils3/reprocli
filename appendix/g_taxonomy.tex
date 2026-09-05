@@ -15,7 +15,7 @@ dissection carries an availability-wall label. Every artifact in the frozen
 benchmark is retrievable by host probe, and where a report asserts otherwise
 we relabel the run from its own evidence. We add a new mode to the taxonomy
 only on evidence from at least two runs.
-Before pooling, we remap sweep-local labels onto the nine modes. Twenty-nine
+Before pooling, we remap sweep-local labels onto the nine modes. Thirty-six
 runs whose dissection carried a label outside the vocabulary, or a label that
 disagreed with the pinned verdict, were re-read against the definitions below
 and assigned by the agent's recorded behavior. The labels folded this way are
@@ -23,14 +23,17 @@ under-determined-target, scope-collapse, unavailability-concluded-from-prose,
 context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
 report-serialization-fault and report-serialization-collapse,
 tool-call-format-collapse, protocol-drift-direction-flip,
-eval-protocol-shopping, verified-non-attempt, and success. Four of the
-twenty-nine carried an in-vocabulary label that disagreed with the pinned
-verdict, and one kept its label after re-reading.
+eval-protocol-shopping, verified-non-attempt, and success. Eleven of the
+thirty-six carried an in-vocabulary label that disagreed with the pinned
+verdict, seven of them the outside-tolerance label on a disqualified run, and
+four kept their label after re-reading because the disqualifying flag concerned
+only the run's self-report.
 Table~\ref{tab:failure-modes} and Table~\ref{tab:failure-modes-by-agent}
 print each mode under the plain-language name given beneath its slug in
 Table~\ref{tab:taxonomy}, in the same order.
-% relabel pass 2026-09-05: ~/sweeps/paper-table-2026-09-05/result.json
-% (per-run evidence) and resolved_modes.json (final per-run labels).
+% relabel passes 2026-09-05: ~/sweeps/paper-table-2026-09-05/result.json (pass
+% 1, 29 runs) and relabel_pass2.txt (pass 2, 7 runs); resolved_modes.json holds
+% the final per-run labels.
 
 \subsection{The failure modes}
 
@@ -152,11 +155,11 @@ value for the pinned metric anywhere in the run bundle. &
 Mode & DeepSeek-V4 & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 & All \\
 \midrule
 Reproduced & 27 & 13 & 10 & 22 & 72 \\
-Ran, outside tolerance & 26 & 18 & 9 & 27 & 80 \\
+Ran, outside tolerance & 26 & 16 & 7 & 27 & 76 \\
 Reimplemented but did not check the result & 13 & 16 & 27 & 7 & 63 \\
 Build and dependency failures & 1 & 8 & 11 & 4 & 24 \\
-Wrong artifact measured & 6 & 3 & 13 & 15 & 37 \\
-Wrong experiment & 9 & 10 & 14 & 10 & 43 \\
+Wrong artifact measured & 6 & 4 & 13 & 15 & 38 \\
+Wrong experiment & 9 & 11 & 16 & 10 & 46 \\
 Echoed a shipped number & 1 & 1 & 4 & 3 & 9 \\
 Never launched an experiment & 2 & 2 & 4 & 5 & 13 \\
 Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
