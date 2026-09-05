@@ -1,7 +1,7 @@
 \section{Model and Serving Details}
 \label{app:models}
 
-% src: README.md:44-56, src/reprocli_serve/profiles.py:1-9, src/reprocli_repro/cli_args.py:168-187, src/reprocli_repro/__main__.py:86-95, scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330, src/reprocli_serve/endpoint.py
+% src: README.md:44-56, src/reclaim_serve/profiles.py:1-9, src/reclaim_repro/cli_args.py:168-187, src/reclaim_repro/__main__.py:86-95, scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330, src/reclaim_serve/endpoint.py
 We serve the three open-weight agent models on our cluster with vLLM, each from a
 per-model profile that the launcher expands into a single \texttt{vllm serve}
 command. A sweep is one batch job per model per tier, which launches the
@@ -32,7 +32,7 @@ The API advertises no context length, so we declare a window of
 967{,}232 tokens.
 % src: scripts/reproduce/muse_spark/muse_spark_sweep.sh:14,26-36,67-74,113-114,133-135; repro_runs started_at/finished_at of the three muse_spark batches
 
-% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reprocli_serve/profiles.py:65-74,116-143,146-198; src/reprocli_serve/config.py:28; src/reprocli_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reclaim_serve/profiles.py:65-74,116-143,146-198; src/reclaim_serve/config.py:28; src/reclaim_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
 \begin{table}[h]
 \centering
 \footnotesize
@@ -73,7 +73,7 @@ the tier launch scripts and the serve profiles.}
 \label{tab:models}
 \end{table}
 
-% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reprocli_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reprocli_serve/launch.py:44-47,124-178
+% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reclaim_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reclaim_serve/launch.py:44-47,124-178
 Several caveats apply when comparing across models. First, reasoning effort is
 held constant within the three DeepSeek-V4-Flash sweeps and within the three
 Muse Spark 1.2 sweeps, at different settings. The Qwen3.6-27B
@@ -94,7 +94,7 @@ fix. Separately, we
 disable two compilation fusions for DeepSeek-V4-Flash because we observed them
 garbling this checkpoint's decoding on this hardware.
 
-% src: src/reprocli_claude/__main__.py:1-19,74-81,282-295, src/reprocli_claude/agent.py:38-41,134-152,192-308, README.md:34,50
+% src: src/reclaim_claude/__main__.py:1-19,74-81,282-295, src/reclaim_claude/agent.py:38-41,134-152,192-308, README.md:34,50
 We produce the grades of record with a separate grading client on the
 Anthropic Messages API, and every sweep of record passes
 \texttt{claude-sonnet-5} to that client. A grading pass is one agent loop over
@@ -104,7 +104,7 @@ served auditor. Appendix~\ref{app:auditor-validation} describes the identity
 of a grading pass. Re-grading a batch with this client overwrites the batch's
 existing audit, so a re-graded sweep has a single grader.
 
-% src: src/reprocli_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
+% src: src/reclaim_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
 % TODO(source): the Muse Spark 1.2 agent tokens need an API rate here before any
 % cost row is filled; the contributor-tier rate is unverified, so no number yet.
 We price GPU time at the \$2 per H100-hour of

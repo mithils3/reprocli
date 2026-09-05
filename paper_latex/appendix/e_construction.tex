@@ -9,7 +9,7 @@ pool to the 100-paper evaluation split.
 \subsection{Source corpus}
 \label{app:corpus}
 
-% src: src/reprocli_data/pipeline/index.py:1-4,18-24,49-75; src/reprocli_data/pipeline/sources.py:32-60,115; src/reprocli_data/pipeline/supplements.py:1-5,85-175,184-233; src/reprocli_data/pipeline/bundle.py:30-56,150-210; src/reprocli_data/build_dataset.py:119-160; notes/DATASET.md:114-146
+% src: src/reclaim_data/pipeline/index.py:1-4,18-24,49-75; src/reclaim_data/pipeline/sources.py:32-60,115; src/reclaim_data/pipeline/supplements.py:1-5,85-175,184-233; src/reclaim_data/pipeline/bundle.py:30-56,150-210; src/reclaim_data/build_dataset.py:119-160; notes/DATASET.md:114-146
 The corpus starts from the NeurIPS 2025 index of the \emph{ai-conferences}
 collection~\citep{neurips2025corpus}, in which each entry already carries a
 matched arXiv ID. We keep a row only when that ID is well formed, and at no
@@ -23,7 +23,7 @@ resulting snapshot holds 3,414 bundled papers, of which 3,410 have at least one
 \subsection{Stage I: artifact-verified classification}
 \label{app:classifier}
 
-% src: src/reprocli_vllm/config/config.py:7-13,16,28-32; src/reprocli_serve/profiles.py:65-74; src/reprocli_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reprocli_vllm/runtime/loop_guards.py:1-66; src/reprocli_vllm/runtime/tool_loop.py:126-129,184-215; src/reprocli_vllm/runtime/run_health.py:17-27,29-46,57-70; src/reprocli_vllm/schema/output.py:8-20,92-154; prompts/prompt.txt:33-63,324-333; notes/DATASET.md:156-261
+% src: src/reclaim_vllm/config/config.py:7-13,16,28-32; src/reclaim_serve/profiles.py:65-74; src/reclaim_vllm/tools/web_tools.py:22-32 at commit 96d7f7f^; src/reclaim_vllm/runtime/loop_guards.py:1-66; src/reclaim_vllm/runtime/tool_loop.py:126-129,184-215; src/reclaim_vllm/runtime/run_health.py:17-27,29-46,57-70; src/reclaim_vllm/schema/output.py:8-20,92-154; prompts/prompt.txt:33-63,324-333; notes/DATASET.md:156-261
 We sampled 1,000 papers uniformly at random from the corpus rows that have
 LaTeX source. MiniMax-M2.7~\citep{minimax2026m2}, which we served on vLLM
 at a 196,608-token context with requests capped at 128,000 input tokens,
@@ -47,7 +47,7 @@ LaTeX source.
 \subsection{Deterministic extraction}
 \label{app:extraction}
 
-% src: src/reprocli_vllm/schema/output.py:157-225; src/reprocli_vllm/audit/h100.py:1-95; prompts/prompt.txt:390-420,456-483; notes/DATASET.md:228-272
+% src: src/reclaim_vllm/schema/output.py:157-225; src/reclaim_vllm/audit/h100.py:1-95; prompts/prompt.txt:390-420,456-483; notes/DATASET.md:228-272
 Score and tier are computed in code from the four signal booleans. Missing
 code adds 2, missing weights adds 1, and missing data adds 3 unless the dataset
 is a standard public benchmark. A score of 0 maps to \texttt{Easy}, 1 to
@@ -86,7 +86,7 @@ the classifier prompt. H100 SXM is 1.00 by definition.}
 \subsection{Stage II: compute capping and stratified selection}
 \label{app:selection}
 
-% src: src/reprocli_vllm/audit/select_pool.py:39-134; notes/DATASET.md:289-336,360-372
+% src: src/reclaim_vllm/audit/select_pool.py:39-134; notes/DATASET.md:289-336,360-372
 The selection pass admits a row only if its verification status is verified,
 its tier is one of the three evaluation tiers, and its audited compute is
 known and under the cap. Audited compute is the recomputed product when the
@@ -130,7 +130,7 @@ summed audited compute.}
 \subsection{Stage III: human audit}
 \label{app:human-audit}
 
-% src: tools/verify_app/README.md:1-16,36-82; tools/rebuild_splits_from_app.py:110-165; src/reprocli_openai/recheck.py:1-12,30-45,89-95,118-125,247-266; notes/DATASET.md:337-359
+% src: tools/verify_app/README.md:1-16,36-82; tools/rebuild_splits_from_app.py:110-165; src/reclaim_openai/recheck.py:1-12,30-45,89-95,118-125,247-266; notes/DATASET.md:337-359
 For every paper in the pool we opened the evidence behind each availability
 call and recorded a verdict on each of the four signals. The reviewer never
 types a score. Instead, a review form recomputes it from the verdicts using

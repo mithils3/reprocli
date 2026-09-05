@@ -9,7 +9,7 @@ the \emph{auditor} is the pinned grader whose scores the paper reports.
 
 \subsection{Why the auditor is pinned}
 
-% src: src/reprocli_claude/__main__.py:1-19,74-81,265-276, src/reprocli_vllm/config/config.py:42-43, rubric_audit.md:1-15, src/reprocli_vllm/audit/audit.py:35-63
+% src: src/reclaim_claude/__main__.py:1-19,74-81,265-276, src/reclaim_vllm/config/config.py:42-43, rubric_audit.md:1-15, src/reclaim_vllm/audit/audit.py:35-63
 We hold four inputs constant across every grade of record. They are the grader
 model ID, which is written onto every verdict row, the rubric file with its
 2026-07-16 freeze date, the audit prompt rendered per run from that rubric
@@ -17,7 +17,7 @@ text and the pinned claim, and the shared verdict code that applies the
 integrity adjustment of Appendix~\ref{app:rubric}. The grading client and its
 decoding settings are given in Appendix~\ref{app:models}.
 
-% src: src/reprocli_claude/__main__.py:193-201,282-295, src/reprocli_vllm/runtime/audit_sink.py:85-104,124-129, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:18-28
+% src: src/reclaim_claude/__main__.py:193-201,282-295, src/reclaim_vllm/runtime/audit_sink.py:85-104,124-129, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:18-28
 Each grading pass is also given an identity of its own, formed from the grader
 model name and a UTC timestamp, and every row and transcript event the pass
 writes is keyed by it. The identity is what makes a second pass observable.

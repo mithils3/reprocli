@@ -4,7 +4,7 @@
 \subsection{Agent loop}
 \label{app:tool-loop}
 
-% src: src/reprocli_repro/loop.py:62-160,236-264,291-306,328-424,441-501, src/reprocli_repro/cli_args.py:31-44,189-206,243-281, src/reprocli_repro/inputs.py:104-141, src/reprocli_repro/transcript.py:22-32,38-99,102-104,107-157, src/reprocli_repro/compact.py, src/reprocli_repro/tools/__init__.py:76-99, prompts/prompt_reproduce.txt:141
+% src: src/reclaim_repro/loop.py:62-160,236-264,291-306,328-424,441-501, src/reclaim_repro/cli_args.py:31-44,189-206,243-281, src/reclaim_repro/inputs.py:104-141, src/reclaim_repro/transcript.py:22-32,38-99,102-104,107-157, src/reclaim_repro/compact.py, src/reclaim_repro/tools/__init__.py:76-99, prompts/prompt_reproduce.txt:141
 Each episode runs a single paper with a single model. The conversation opens
 with a fixed system message followed by a task prompt rendered from the paper's
 dataset row (Appendix~\ref{app:prompts}), after which model turns alternate
@@ -25,7 +25,7 @@ Appendix~\ref{app:report-format}. Table~\ref{tab:knobs} lists the loop's code
 defaults, and the launch scripts of Appendix~\ref{app:models} record the value
 a sweep set where one was set.
 
-% src: src/reprocli_repro/cli_args.py:48,55-62,189-206, src/reprocli_repro/loop.py:95-119,236-264,328-424, src/reprocli_repro/tools/__init__.py:76-99, src/reprocli_vllm/tools/result_limits.py:8-38,69-73, src/reprocli_vllm/config/config.py:12-17, src/reprocli_repro/compact.py, src/reprocli_repro/budget.py:1-69, src/reprocli_repro/tools/run_gpu.py:55-92,131-150,302-356, src/reprocli_repro/cluster.py:60-87, src/reprocli_repro/gpu_session.py:36-101, src/reprocli_repro/sandbox.py:154-166,216-258,325-409, src/reprocli_repro/env.py, src/reprocli_repro/report/report.py:190-214, src/reprocli_repro/live_log.py:14-25,191-266, src/reprocli_repro/supabase_sink.py:29-135
+% src: src/reclaim_repro/cli_args.py:48,55-62,189-206, src/reclaim_repro/loop.py:95-119,236-264,328-424, src/reclaim_repro/tools/__init__.py:76-99, src/reclaim_vllm/tools/result_limits.py:8-38,69-73, src/reclaim_vllm/config/config.py:12-17, src/reclaim_repro/compact.py, src/reclaim_repro/budget.py:1-69, src/reclaim_repro/tools/run_gpu.py:55-92,131-150,302-356, src/reclaim_repro/cluster.py:60-87, src/reclaim_repro/gpu_session.py:36-101, src/reclaim_repro/sandbox.py:154-166,216-258,325-409, src/reclaim_repro/env.py, src/reclaim_repro/report.py:190-214, src/reclaim_repro/live_log.py:14-25,191-266, src/reclaim_repro/telemetry_sink.py:29-135
 \begin{table}[h]
 \centering
 \footnotesize
@@ -75,7 +75,7 @@ enforces each.}
 \subsection{Tools}
 \label{app:toolset}
 
-% src: src/reprocli_repro/tools/__init__.py:1-63
+% src: src/reclaim_repro/tools/__init__.py:1-63
 The model acts through the seven tools listed in Table~\ref{tab:tools}. There
 is no file-reading tool, so the agent reads files through the shell with
 \texttt{grep}, \texttt{sed}, and \texttt{cat}. There is also no web search,
@@ -84,7 +84,7 @@ which means the agent can only fetch URLs it already knows or can construct.
 \begin{table}[h]
 \centering
 \small
-% src: src/reprocli_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
+% src: src/reclaim_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.4cm}@{}}
 \toprule
@@ -119,7 +119,7 @@ caps each enforces.}
 \subsection{Hardware setup and compute accounting}
 \label{app:gpu-metering}
 
-% src: src/reprocli_repro/gpu_session.py:1-101, src/reprocli_repro/slurm.py:1-30,144-183, src/reprocli_repro/tools/run_gpu.py:1-37,55-71,82-92,95-208,302-356, src/reprocli_repro/budget.py:1-69, src/reprocli_repro/context.py:26-47, src/reprocli_repro/cluster.py:60-87, src/reprocli_repro/loop.py:345-355, src/reprocli_repro/evidence.py:116-131, src/reprocli_repro/sandbox.py:239-245
+% src: src/reclaim_repro/gpu_session.py:1-101, src/reclaim_repro/slurm.py:1-30,144-183, src/reclaim_repro/tools/run_gpu.py:1-37,55-71,82-92,95-208,302-356, src/reclaim_repro/budget.py:1-69, src/reclaim_repro/context.py:26-47, src/reclaim_repro/cluster.py:60-87, src/reclaim_repro/loop.py:345-355, src/reclaim_repro/evidence.py:116-131, src/reclaim_repro/sandbox.py:239-245
 \texttt{run\_gpu} holds a single Slurm allocation across calls. The first call
 acquires it with a fixed GPU count and wall cap, and later calls reuse it with
 no further queue wait. As the allocation nears its wall cap the harness
@@ -149,7 +149,7 @@ $ scancel <jobid>
 \subsection{Environment details}
 \label{app:sandbox}
 
-% src: src/reprocli_repro/sandbox.py:1-35,51-59,92-166,216-258,280-409, src/reprocli_repro/__main__.py:38-46, src/reprocli_repro/cluster.py:25-36,80-86, src/reprocli_repro/env.py, scripts/cluster/build_cuda_sandbox.sh:1-80
+% src: src/reclaim_repro/sandbox.py:1-35,51-59,92-166,216-258,280-409, src/reclaim_repro/__main__.py:38-46, src/reclaim_repro/cluster.py:25-36,80-86, src/reclaim_repro/env.py, scripts/cluster/build_cuda_sandbox.sh:1-80
 Every shell step runs inside an Apptainer container whose image is a read-only
 CUDA 12.9 and cuDNN development root with git, a C and C++ build chain,
 \texttt{uv}, and Python 3.12. PyTorch is not preinstalled. Only bound paths
@@ -165,7 +165,7 @@ secret appears on a command line.
 \subsection{Run bundle and report format}
 \label{app:report-format}
 
-% src: src/reprocli_repro/inputs.py:41-49,84-98, src/reprocli_repro/workspace.py:1-66, src/reprocli_repro/reference.py:1-17,110-127, src/reprocli_repro/cleanup.py, src/reprocli_repro/evidence.py:1-19,45-56,110-141, src/reprocli_repro/tools/run_gpu.py:248-287, src/reprocli_repro/loop.py:388-401, src/reprocli_repro/live_log.py:1-25,191-266, src/reprocli_repro/supabase_sink.py:29-135, src/reprocli_repro/gpu_usage.py
+% src: src/reclaim_repro/inputs.py:41-49,84-98, src/reclaim_repro/workspace.py:1-66, src/reclaim_repro/reference.py:1-17,110-127, src/reclaim_repro/cleanup.py, src/reclaim_repro/evidence.py:1-19,45-56,110-141, src/reclaim_repro/tools/run_gpu.py:248-287, src/reclaim_repro/loop.py:388-401, src/reclaim_repro/live_log.py:1-25,191-266, src/reclaim_repro/telemetry_sink.py:29-135, src/reclaim_repro/gpu_usage.py
 Each run writes a self-contained directory, the run bundle, at
 \texttt{<runs-dir>/\allowbreak<arxiv\_id>/\allowbreak<budget>h/\allowbreak<run\_id>/}, which is the object the
 auditor reads. The writable \texttt{workspace/} contains the agent's clones and
@@ -178,7 +178,7 @@ of IDs. The \texttt{evidence/} directory has four fixed entries
 GPU-utilization samples are recorded alongside the bundle. The harness never
 re-executes the agent's scoring command.
 
-% src: src/reprocli_repro/report/report.py:1-24,104-214, src/reprocli_repro/cli_args.py:37-44,270-273, src/reprocli_repro/loop.py:504-515
+% src: src/reclaim_repro/report.py:1-24,104-214, src/reclaim_repro/cli_args.py:37-44,270-273, src/reclaim_repro/loop.py:504-515
 On the final, tool-free turn the model's output is constrained to a JSON
 schema, and the returned object is saved as \texttt{report.json} beside
 \texttt{evidence/}. Table~\ref{tab:report-schema} lists its fields. The harness
@@ -192,7 +192,7 @@ which includes the validation errors and an excerpt of the raw output.
 \begin{table}[h]
 \centering
 \small
-% src: src/reprocli_repro/report/report.py:40-102
+% src: src/reclaim_repro/report.py:40-102
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.2cm}@{}}
 \toprule
@@ -220,7 +220,7 @@ open first. \\
 \label{tab:report-schema}
 \end{table}
 
-% src: src/reprocli_repro/report/report.py:11-14,37-40, src/reprocli_repro/cleanup.py:1-40, prompts/prompt_reproduce.txt:277-290
+% src: src/reclaim_repro/report.py:11-14,37-40, src/reclaim_repro/cleanup.py:1-40, prompts/prompt_reproduce.txt:277-290
 Because every measurement includes its own citation array, a number with no
 cited evidence file can be identified as unsupported without reading the
 transcript. The \texttt{agent\_assessment} field is the agent's own verdict on

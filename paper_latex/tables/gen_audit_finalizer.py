@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Slice the deterministic audit finalizer for Appendix C (app:rubric).
 
-Source data: src/reprocli_vllm/audit/audit.py (finalize_audit_row, _verdict).
+Source data: src/reclaim_vllm/audit/audit.py (finalize_audit_row, _verdict).
 Output:      paper_latex/prompts/audit_finalizer.py
 Run:         python3 paper_latex/tables/gen_audit_finalizer.py
 

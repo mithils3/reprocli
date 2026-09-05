@@ -1,32 +1,34 @@
 \section{Setup Details}
 \label{app:running}
 
-% src: README.md:38-56; prompts/prompt_reproduce.txt, prompts/prompt_audit.txt, rubric_audit.md; paper_latex/prompts/; src/reprocli_repro/inputs.py:42-49
+% src: README.md:38-56; prompts/prompt_reproduce.txt, prompts/prompt_audit.txt, rubric_audit.md; paper_latex/prompts/; src/reclaim_repro/inputs.py:42-49
 The supplementary material is a single repository containing the dataset
 pipeline, the reproduction agent of Appendix~\ref{app:harness}, the auditor of
 Appendix~\ref{app:rubric}, the serving layer they share, the batch scripts that
 produced every sweep, and the run bundles the grades were computed on. The
 prompt templates and rubric reproduced in Appendices~\ref{app:prompts},
 \ref{app:rubric}, and \ref{app:construction} are the files from that
-repository, apart from the disclosed substitution of the benchmark's name.
+repository. We ran the sweeps under a development name, the released files
+carry the public name RECLAIM in its place, and the printed listings are
+otherwise verbatim.
 Figure~\ref{lst:running-commands} shows the three commands that serve a
 model, run one paper, and grade one run.
 
-% src: scripts/serve/serve_gh200.sbatch:78-86, src/reprocli_serve/args.py:20-60,
-% src: src/reprocli_repro/cli_args.py:88-127, README.md:88-100,
-% src: src/reprocli_claude/__main__.py:57-104, scripts/reproduce/repro_audit_one.sh:83-100
+% src: scripts/serve/serve_gh200.sbatch:78-86, src/reclaim_serve/args.py:20-60,
+% src: src/reclaim_repro/cli_args.py:88-127, README.md:88-100,
+% src: src/reclaim_claude/__main__.py:57-104, scripts/reproduce/repro_audit_one.sh:83-100
 \begin{codebox}[lst:running-commands]{bash}{Serving, running, and grading}
 # Serve the agent model and publish the address other nodes reach it at.
-$ PYTHONPATH=src python3 -m reprocli_serve \
+$ PYTHONPATH=src python3 -m reclaim_serve \
     --model <hf-id-or-path> \
     --served-model-name <model-id> \
     --port 8000 \
     --tensor-parallel-size <tp> \
     --endpoint-file <endpoint-file>
-$ export REPROCLI_ENDPOINT_FILE=<endpoint-file>
+$ export RECLAIM_ENDPOINT_FILE=<endpoint-file>
 
 # Run one paper of the frozen benchmark against it.
-$ PYTHONPATH=src python3 -m reprocli_repro \
+$ PYTHONPATH=src python3 -m reclaim_repro \
     --paper-id <arxiv-id> \
     --split eval \
     --run-id <run-id> \
@@ -35,12 +37,12 @@ $ PYTHONPATH=src python3 -m reprocli_repro \
     --served-model-name <model-id>
 
 # Hosted model: same run command, its API as the server URL, key and window exported.
-$ export REPROCLI_API_KEY=<api-key> REPROCLI_CONTEXT_LENGTH=<window>
-$ PYTHONPATH=src python3 -m reprocli_repro ... \
+$ export RECLAIM_API_KEY=<api-key> RECLAIM_CONTEXT_LENGTH=<window>
+$ PYTHONPATH=src python3 -m reclaim_repro ... \
     --vllm-server-url https://api.meta.ai/v1 --served-model-name <model-id>
 
 # Grade the bundle with the pinned grader (hosted sweeps: --batch <model>-<timestamp>).
-$ PYTHONPATH=src python3 -m reprocli_claude \
+$ PYTHONPATH=src python3 -m reclaim_claude \
     --batch slurm-<jobid> \
     --runs-dir <runs-dir> \
     --split eval \
@@ -59,8 +61,8 @@ verdict is already on disk, regrades nothing, and retries any paper whose run
 ended without a verdict. We record a paper that produced no bundle as a
 harness failure, and we do not count it as a model failure.
 
-% src: src/reprocli_repro/batch_runs.py:1-20, src/reprocli_claude/__main__.py:106-140,186-196,
-% src: src/reprocli_repro/inputs.py:42-49, .claude/skills/analyze-sweep/SKILL.md:52-60,
+% src: src/reclaim_repro/batch_runs.py:1-20, src/reclaim_claude/__main__.py:106-140,186-196,
+% src: src/reclaim_repro/inputs.py:42-49, .claude/skills/analyze-sweep/SKILL.md:52-60,
 % src: paper_latex/tables/gen_eval100.py:1-18
 When grading a batch we take each paper's newest attempt and drop runs still in
 progress unless \texttt{-{}-include-running} is passed, since a half-written

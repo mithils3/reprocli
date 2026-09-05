@@ -3,7 +3,7 @@
 
 \subsection{Grading procedure}
 
-% src: rubric_audit.md:17-31; prompts/prompt_audit.txt:1-9,5-9,54-58,138-139; src/reprocli_vllm/audit/inputs.py:1-9; src/reprocli_vllm/audit/audit.py:1-12
+% src: rubric_audit.md:17-31; prompts/prompt_audit.txt:1-9,5-9,54-58,138-139; src/reclaim_vllm/audit/inputs.py:1-9; src/reclaim_vllm/audit/audit.py:1-12
 Each audit grades a single agent's attempt at a single paper's central claim.
 The auditor receives the claim with its pinned match target, a manifest of the
 agent's run bundle, and the frozen rubric text of Figure~\ref{lst:rubric-text},
@@ -33,7 +33,7 @@ to the baseline side with the same rigor. Two of the six criteria can end the
 grade, since a claim with no checkable target and a number with no execution
 trace both score 0.
 
-% src: rubric_audit.md:99-148; prompts/prompt_audit.txt:86-105; src/reprocli_vllm/schema/audit.py:29-39
+% src: rubric_audit.md:99-148; prompts/prompt_audit.txt:86-105; src/reclaim_vllm/schema/audit.py:29-39
 Each provenance break that C4 finds is recorded as a typed flag with cited
 evidence and one of three severities, and any high-severity flag caps the
 score at 0. The rubric holds the graded quantity to a stricter standard than
@@ -44,7 +44,7 @@ shipped results file and discloses as such therefore caps the band at 4
 without raising a flag. The same value placed in the target slot as this run's
 own measurement is fabricated provenance.
 
-% src: src/reprocli_vllm/schema/audit.py:66-125,90-94; src/reprocli_claude/agent.py:155-178; rubric_audit.md:238-246; prompts/prompt_audit.txt:135-139
+% src: src/reclaim_vllm/schema/audit.py:66-125,90-94; src/reclaim_claude/agent.py:155-178; rubric_audit.md:238-246; prompts/prompt_audit.txt:135-139
 Alongside the score, the auditor returns a confidence and a one-paragraph
 rationale. Whenever confidence falls below 0.6, or a judgment call shaped the
 score, the rationale must say what a human spot-check should examine and which
@@ -52,7 +52,7 @@ file to open.
 
 \subsection{Score scale and verdicts}
 
-% src: rubric_audit.md:166-171,224-236; src/reprocli_vllm/audit/audit.py:74-90
+% src: rubric_audit.md:166-171,224-236; src/reclaim_vllm/audit/audit.py:74-90
 Table~\ref{tab:rubric} lists the quality bands and the verdict derived from
 each score, where a score of 1 yields \texttt{unverifiable} when the auditor
 also reports that execution was not verified. We froze the rubric text on 2026-07-16, three days after the
@@ -68,7 +68,7 @@ remaining artifact was verified retrievable from the run host
 the run achieved, and the auditor writes a curation escalation into
 \texttt{methodology\_notes} for human review.
 
-% src: rubric_audit.md:166-236; src/reprocli_vllm/audit/audit.py:74-90
+% src: rubric_audit.md:166-236; src/reclaim_vllm/audit/audit.py:74-90
 {\small
 \begin{longtable}{@{}c l >{\raggedright\arraybackslash}p{6.14cm} l@{}}
 \toprule
@@ -130,26 +130,27 @@ retrieved benchmark answer the graded value runs through. &
 \subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
 
-% src: src/reprocli_vllm/audit/audit.py:1-12,25-63,74-116
+% src: src/reclaim_vllm/audit/audit.py:1-12,25-63,74-116
 Figure~\ref{lst:audit-finalizer} reproduces the code that runs after the model
 returns, verbatim except for one section sign written out as a word. Every
 verdict string reported in this paper comes from that code, and the
 \texttt{reproduced} boolean behind the headline rate uses its threshold of 8.
 
-% src: src/reprocli_vllm/audit/audit.py:35-63,74-90 via paper_latex/tables/gen_audit_finalizer.py
+% src: src/reclaim_vllm/audit/audit.py:35-63,74-90 via paper_latex/tables/gen_audit_finalizer.py
 \codefile[lst:audit-finalizer]{Python}{Verdict derivation code}{prompts/audit_finalizer.py}
 
 \subsection{Auditor prompt and tools}
 
-% src: prompts/prompt_audit.txt:35-58,79-84; src/reprocli_vllm/tools/run_dir_tools.py:1-19,274-288; src/reprocli_vllm/config/config.py:50-54
+% src: prompts/prompt_audit.txt:35-58,79-84; src/reclaim_vllm/tools/run_dir_tools.py:1-19,274-288; src/reclaim_vllm/config/config.py:50-54
 Where recomputation is inexpensive, the auditor recomputes metrics from the
 stored predictions and outputs, and the 60\,s shell timeout rules out
 re-running training or evaluation. Figure~\ref{lst:audit-prompt} shows the
 prompt template, which is rendered for each graded run from the pinned claim,
-the run-directory manifest, and the rubric text. We replaced the benchmark's
-working name with RECLAIM in one line.
+the run-directory manifest, and the rubric text. We ran the sweeps under a
+development name, and the released file carries the public name RECLAIM in
+that one line.
 
-% src: src/reprocli_vllm/tools/run_dir_tools.py:42-247,274-288; src/reprocli_vllm/config/config.py:50-54
+% src: src/reclaim_vllm/tools/run_dir_tools.py:42-247,274-288; src/reclaim_vllm/config/config.py:50-54
 \begin{table}[h]
 \centering
 \footnotesize
@@ -178,14 +179,15 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-% src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reprocli_vllm/audit/inputs.py:30-101
+% src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reclaim_vllm/audit/inputs.py:30-101
 \promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
 
 \subsection{The rubric text}
 
-% src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reprocli_vllm/audit/inputs.py:96-101
+% src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
 Figure~\ref{lst:rubric-text} shows the rubric as frozen on 2026-07-16, which
-the auditor receives in full, except that we replaced the working name with
-RECLAIM in its title and in one flag definition.
+the auditor receives in full. We ran the sweeps under a development name, and
+the released rubric carries the public name RECLAIM in its title and in one
+flag definition.
 
 \promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}
