@@ -133,29 +133,29 @@ gundersen2022sources}. Reproduction is also a prerequisite for recursively
 self-improving systems, since a model that improves itself must first
 re-implement and verify the research it builds
 on~\citep{favaro2026recursive}. Both Anthropic and OpenAI report that their
-researchers delegate the running of experiments to agents and retain the
-judgment of which results to
+researchers increasingly delegate the running of experiments to agents and
+retain the judgment of which results to
 trust~\citep{favaro2026recursive,openai2026acceleration}.
 
 To support this evaluation, we introduce RECLAIM,\footnote{\renewcommand{\UrlFont}{\fontsize{8}{9}\selectfont\ttfamily}Code:
 \textcolor{blue}{\href{https://anonymous.4open.science/r/reclaim-5733}{\nolinkurl{anonymous.4open.science/r/reclaim-5733}}}.
 Run logs: \textcolor{blue}{\href{https://reclaim-traces.vercel.app}{\nolinkurl{reclaim-traces.vercel.app}}}.\label{fn:artifacts}}
-a benchmark that measures
-whether an agent can reproduce a published result end to end, starting from the
-artifacts the paper's authors actually released and graded against the
-execution evidence the run produces. Our results show that reproduction rate
-follows how much the authors release. The strongest agent we evaluate, DeepSeek-V4, recovers
+a benchmark in which we
+provide the agent with the paper and the artifacts its authors released, then
+evaluate the agent on the execution evidence it produced and on how its result
+compares with the authors' claim. Our results show that reproduction rate
+follows how much the authors release. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
 the target result on 48\% of Run-tier papers (code, data, and weights all
 released), 32\% of Retrain-tier papers (no released weights, so the model must
 be trained first), and 13\% of Reimplement-tier papers (no released code
-either). We call
-this gradient the availability cliff, and it is the axis the benchmark is
-constructed to vary.
+either). The tiers are defined by what the authors released, so this decline
+measures how much reproduction depends on released artifacts.
 
-The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
-Run tier the authors released every artifact the claim requires and we verified
-each one retrievable by direct host probe, and many of those claims still do not
-come back. Three properties of that residual organize the rest of this paper.
+What the authors released explains the difference between tiers. It does not
+explain the failures within a tier. At the Run tier the authors released every
+artifact the claim requires, and during construction we verified that all of
+them were retrievable, yet many of those runs still fail. Three properties of
+those failures organize the rest of this paper.
 Stronger agents achieve partial reproduction more often. On Retrain-tier
 papers the strongest agent reaches a verified partial result or better on 79\% of runs,
 which provides evidence of an emerging ability to close the loop of
@@ -166,13 +166,13 @@ between agent generations shows up almost entirely in how far into the
 reproduction an agent gets. Compute does not bind either, since the 42 runs in the 96 GPU-hour band spend 6.5\%
 of the allocation they were given and 1 of the 42 reproduces its claim.
 
-A small set of recurring failure modes accounts for the residual, and the modes
-divide by whether they follow agent capability. Runs that reimplemented the
-method but did not check the result against anything the authors released
+A small set of recurring failure modes accounts for those failures. Some modes
+become rarer as agents get stronger and some do not. Runs that reimplemented the
+method but did not check their result against the numbers the paper reports
 account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
 of the two strongest, and build and dependency failures fall from 19 of those
 runs to 5.
-Measuring the wrong artifact does not follow capability. The two strongest
+Measuring the wrong artifact does not become rarer, since the two strongest
 agents account for 21 of its 38 cases, and on 7 papers the released model card
 or configuration file states a setting that differs from the one the paper
 reports. We define the taxonomy, report the per-mode
@@ -195,7 +195,7 @@ as background data rather than as a result.
 \centering
 \includegraphics[width=\textwidth]{figures/reclaim_overview}
 \caption{Overview of RECLAIM and its evaluation pipeline. The figure shows an
-example run with DeepSeek-V4 on the CQ-DINO paper.}
+example run with DeepSeek-V4-Flash on the CQ-DINO paper.}
 \label{fig:overview}
 \end{figure}
 
@@ -493,7 +493,7 @@ self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} 
 prompts, the tools, and session mechanics.
 
 \paragraph{Models.} We evaluate four models:
-DeepSeek-V4~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
+DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 served on our cluster with vLLM, and we reach Muse Spark 1.2 through the Meta
@@ -515,14 +515,14 @@ at \$2 per H100-hour.
 
 Table~\ref{tab:main-results} reports every graded run. Each agent has between 87
 and 98 graded runs over the 100 papers; the remaining cells have no graded run,
-and every rate below uses the graded runs as its denominator. DeepSeek-V4 is
+and every rate below uses the graded runs as its denominator. DeepSeek-V4-Flash is
 missing 13 of its 100 cells and MiniMax-M2.7 two; counting every missing
-DeepSeek-V4 cell as a non-reproduction gives 41\%, 27\%, and 12\%, so the
+DeepSeek-V4-Flash cell as a non-reproduction gives 41\%, 27\%, and 12\%, so the
 gradient survives the worst case. The auditor
-confirms reproduction on 73 of the 372 runs. DeepSeek-V4 is the strongest of
+confirms reproduction on 73 of the 372 runs. DeepSeek-V4-Flash is the strongest of
 the four agents. It recovers the pinned number on 14 of 29 Run-tier papers, 9
 of 28 at Retrain, and 4 of 30 at Reimplement, and the four agents span a factor
-of 1.9 in mean audit score, from 5.90 for DeepSeek-V4 to 3.09 for MiniMax-M2.7.
+of 1.9 in mean audit score, from 5.90 for DeepSeek-V4-Flash to 3.09 for MiniMax-M2.7.
 % TODO(source): state why 28 cells have no graded run (2 dropped for lacking a
 % pinned grade per tools/anon_viewer/export_report.md; the rest never produced a
 % run row). Missing per agent x tier vs 34/33/33 papers: DSv4 5/5/3 (2510.20725
@@ -531,14 +531,14 @@ of 1.9 in mean audit score, from 5.90 for DeepSeek-V4 to 3.09 for MiniMax-M2.7.
 \begin{table}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lccc@{\hspace{1.2em}}ccc@{\hspace{1.2em}}c@{}}
 \toprule
 & \multicolumn{3}{c@{\hspace{1.2em}}}{Reproduced} & \multicolumn{3}{c@{\hspace{1.2em}}}{Mean score} & Grant \\
 \cmidrule(lr{1.2em}){2-4} \cmidrule(lr{1.2em}){5-7}
 Agent & Run & Retrain & Reimplement & Run & Retrain & Reimplement & spent (\%) \\
 \midrule
-DeepSeek-V4 & 14/29 (48\%) & 9/28 (32\%) & 4/30 (13\%) & 6.21 & 6.43 & 5.10 & 32.0 \\
+DeepSeek-V4-Flash & 14/29 (48\%) & 9/28 (32\%) & 4/30 (13\%) & 6.21 & 6.43 & 5.10 & 32.0 \\
 Qwen3.6-27B & 5/34 (15\%) & 6/26 (23\%) & 2/30 (7\%) & 3.91 & 4.54 & 3.27 & 15.5 \\
 MiniMax-M2.7 & 3/33 (9\%) & 5/32 (16\%) & 2/33 (6\%) & 3.18 & 3.41 & 2.70 & 10.3 \\
 Muse Spark 1.2 & 9/33 (27\%) & 9/32 (28\%) & 5/32 (16\%) & 5.64 & 6.03 & 3.78 & 21.7 \\
@@ -559,9 +559,9 @@ spent, by agent and tier.}
 
 The agents differ more in how far they get than in how often they finish. We
 call an audit score of 6 or more a partial result or better. At Retrain,
-DeepSeek-V4 reaches one on 22 of 28 runs and Muse Spark 1.2 on 23 of 32, while
+DeepSeek-V4-Flash reaches one on 22 of 28 runs and Muse Spark 1.2 on 23 of 32, while
 MiniMax-M2.7 reaches one on 9 of 32, and confirmed reproduction at the same
-tier runs from 16\% to 32\%. Only DeepSeek-V4's reproduction rate falls at
+tier runs from 16\% to 32\%. Only DeepSeek-V4-Flash's reproduction rate falls at
 every tier. For the other three agents the Run and Retrain rates sit within
 nine points of each other, and mean score rises from Run to Retrain for all
 four agents before falling at Reimplement. Table~\ref{tab:failure-modes}
@@ -576,11 +576,11 @@ Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 Spending stays far below the grant in every row of the table. The mean
 non-reproduced run uses 30\% of its allocation, and pooled over all 372 runs
 the agents spend 1{,}770 of the 9{,}120 H100-hours we granted, from 32.0\% of
-the grant for DeepSeek-V4 to 10.3\% for MiniMax-M2.7. We carry the agents' own verdicts as background data. Of the 359
+the grant for DeepSeek-V4-Flash to 10.3\% for MiniMax-M2.7. We carry the agents' own verdicts as background data. Of the 359
 runs that return a parsable self-assessment, 128 claim reproduction, against 73
 audited reproductions over all 372 runs, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
-of its runs, and DeepSeek-V4 claims 19 and the auditor confirms 27.
+of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 % self_report field of index.json: reproduced 128, not_reproduced 208, partial
 % 23, none 13 (12 of them Qwen3.6-27B). The abstract's 30% is the mean per-run
 % spent/budget over the 299 non-reproduced runs; the pooled figure here is
@@ -660,7 +660,7 @@ failed before producing a number, while wrong-artifact measurements split
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
-DeepSeek-V4 met the same packaging gaps and split on how it adapted: on one
+DeepSeek-V4-Flash met the same packaging gaps and split on how it adapted: on one
 paper it rebuilt the package from source after the PyPI wheel failed at import
 against the installed torch and, when the authors' scorer exceeded the
 node's memory limit, rewrote it and checked the
@@ -733,7 +733,7 @@ number from it, and six of the seven stated the shortfall.
 \cmidrule(l{1.2em}r{3em}){2-4} \cmidrule(lr){5-7}
 Agent & 8 & 32 & 96 & 8 & 32 & 96 \\
 \midrule
-DeepSeek-V4 & 6.21 & 5.67 & 4.44 & 43.3 & 43.9 & 16.7 \\
+DeepSeek-V4-Flash & 6.21 & 5.67 & 4.44 & 43.3 & 43.9 & 16.7 \\
 Qwen3.6-27B & 4.18 & 3.79 & 2.22 & 31.8 & 20.5 & \phantom{0}2.6 \\
 MiniMax-M2.7 & 3.62 & 2.50 & 1.92 & 27.3 & 11.9 & \phantom{0}2.3 \\
 Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & \phantom{0}6.1 \\
