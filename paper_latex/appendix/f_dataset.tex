@@ -16,7 +16,7 @@ fields of Table~\ref{tab:schema-toplevel}, which together fix the claim, the
 artifact evidence, the match target, and the compute budget before any agent
 starts, so we measure a score from one agent against the same standard as a
 score from another. Table~\ref{tab:schema-links} expands the four nested
-objects, where \texttt{signals} carries one object for each of the four
+objects, where \texttt{signals} holds one object for each of the four
 audited signals \texttt{code\_available}, \texttt{dataset\_available},
 \texttt{weights\_available}, and \texttt{dataset\_is\_standard}.
 Figure~\ref{lst:example-row} shows the SharpZO row of Section~\ref{subsec:task}
@@ -55,7 +55,7 @@ Field & Type & Description \\
 \texttt{signals} & object & Per-artifact availability audit (Table~\ref{tab:schema-signals}). \\
 \texttt{match\_target} & object & The quantity a run must match (Table~\ref{tab:schema-matchtarget}). \\
 \texttt{h100\_estimate} & object & Compute estimate and its basis (Table~\ref{tab:schema-h100}). \\
-\texttt{score} & int & Artifact-availability score derived from the four signals. Shipped rows carry 0 to 3. \\
+\texttt{score} & int & Artifact-availability score derived from the four signals. Shipped rows take values 0 to 3. \\
 \texttt{tier} & string & \texttt{Easy}, \texttt{Medium}, or \texttt{Hard} in the released dataset, corresponding to the Run, Retrain, and Reimplement tiers; derived from \texttt{score}. \\
 \texttt{split} & string & \texttt{eval} (test split) or \texttt{dev} (validation split). \\
 \texttt{selection\_band} & string & Compute band used for stratified selection. \\

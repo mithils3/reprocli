@@ -177,8 +177,8 @@ agents account for 21 of its 38 cases, and on 7 papers the released model card
 or configuration file states a setting that differs from the one the paper
 reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{subsec:mechanisms}. Agent
-self-reports track none of this reliably, so we carry claimed and audited counts
-as background data rather than as a result.
+self-reports track none of this reliably, so we report claimed and audited counts
+as background data.
 % numbers of record (2026-09-05): resolved per-run primary modes in
 % ~/sweeps/paper-table-2026-09-05/resolved_modes.json (index.json of 2026-09-03
 % plus the 29-run relabel pass in result.json). Agents ordered by mean audit
@@ -235,8 +235,8 @@ against the historical leaderboard for that
 competition~\citep{chan2024mlebench}. Because the method is the agent's to
 choose and success is a leaderboard position rather than a specific
 published quantity, these benchmarks reward any solution that scores well
-and leave open whether an agent can carry a prescribed method and
-configuration into an environment its authors never used and land on the
+and leave open whether an agent can run a prescribed method and
+configuration in an environment its authors never used and reach the
 number they reported.
 
 \paragraph{Scientific reproduction.}
@@ -295,8 +295,8 @@ exists for a model to absorb during training, and across all tiers our
 cluster seldom matches the authors' hardware and software stack exactly, so
 replaying memorized artifacts is rarely enough.
 
-\paragraph{Sufficient compute.} Each paper carries a GPU grant estimated from
-its minimal reproducible experiment, with additional capacity for iteration. As
+\paragraph{Sufficient compute.} Each paper has a GPU grant. We estimate
+it from the paper's minimal reproducible experiment and add hours for iteration. As
 reported in Section~\ref{subsec:results}, most agent runs do not exhaust their
 assigned compute. Although this does not establish sufficiency for every task,
 it indicates that the compute cap is not the binding constraint for most runs.
@@ -321,13 +321,13 @@ and resists saturation as agents improve.
 \subsection{Task definition}
 \label{subsec:task}
 
-Each paper carries one reproduction target, which we call the \emph{match
+Each paper has one reproduction target, which we call the \emph{match
 target} and fix before any agent runs. The match target is the cheapest
 configuration the authors report that still establishes the paper's central
 empirical claim, together with the value that configuration produces. Papers
 usually headline their largest model or their full benchmark suite, but the
-same claim typically rests on a smaller supporting experiment, and we pin that
-one. Pinning the smallest supporting configuration bounds the compute a task
+same claim typically also follows from a smaller supporting experiment, and we
+pin that one. Pinning the smallest supporting configuration bounds the compute a task
 can demand while still exercising the paper's method end to end.
 
 A match target records the configuration that produces the value, the metric,
@@ -355,7 +355,7 @@ zero when a number was echoed from the paper and never measured.
 \subsection{Benchmark construction}
 \label{subsec:construction}
 
-We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that carry an
+We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that have an
 arXiv ID, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
 (Figure~\ref{fig:funnel}).
@@ -572,7 +572,7 @@ Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 Spending stays far below the grant in every row of the table. The mean
 non-reproduced run uses 30\% of its allocation, and pooled over all 372 runs
 the agents spend 1{,}770 of the 9{,}120 H100-hours we granted, from 32.0\% of
-the grant for DeepSeek-V4-Flash to 10.3\% for MiniMax-M2.7. We carry the agents' own verdicts as background data. Of the 359
+the grant for DeepSeek-V4-Flash to 10.3\% for MiniMax-M2.7. We report the agents' own verdicts as background data. Of the 359
 runs that return a parsable self-assessment, 128 claim reproduction, against 73
 audited reproductions over all 372 runs, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
@@ -601,7 +601,7 @@ measured, spends its rounds on reading and probing and never launches the
 experiment, or runs a working pipeline on working artifacts that ends before
 the graded command yields a value. Appendix~\ref{app:taxonomy} gives each
 mode's evidence signature, with transcript excerpts for three of them. One run
-the auditor graded reproduced carries the wrong-artifact label, because the
+the auditor graded reproduced has the wrong-artifact label, because the
 dissection found its passing number was measured on a released checkpoint
 other than the one the row pins, so the Reproduced row holds 72 runs against
 73 audited reproductions, with the difference in the Run column.
@@ -706,7 +706,7 @@ compute granted to them. The bands hold 59, 29, and 12 papers, and 99 of the
 agent. The gradient tracks the scale of the experiment the paper demands.
 Agents handle short evaluation-style experiments well, loading a released
 checkpoint, running an inference pass, and recomputing a metric, but they rarely
-carry a full training run through to the end. At Retrain, where the training
+complete a full training run. At Retrain, where the training
 itself is the missing step, 7 of the 15 runs in the 96 H100-hour band spent
 under 5\% of their grant, and 14 of the 15 did not reproduce. Seven of the 42
 runs in the band ran a shrunken version of the paper's training and reported a
