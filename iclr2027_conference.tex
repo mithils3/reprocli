@@ -446,8 +446,22 @@ strategies the authors never used. An
 LLM auditor reads more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
-On a held-out set of runs, the auditor's verdicts agree with expert human
-graders at XX.
+We have not validated the auditor against human graders.
+Appendix~\ref{app:auditor-validation} instead measures agreement between
+graders by re-grading two 32-run sweeps with the pinned auditor after the
+agent model had graded its own runs. The reproduced set survives the grader
+swap on both sweeps, with one run exchanged on the first and one removed on
+the second, and the continuous score correlates at $r = 0.86$ away from the
+score-0 cap. Only 4 of the 10 disqualifications on the second sweep are
+shared by both graders, so the cap is where the graders disagree, and we
+report disqualification counts as a rubric behavior.
+% numbers of record: appendix/d_auditor_validation.tex, tab:auditor-validation.
+% Easy sweep 2687371 (Qwen3.6 self-graded vs pinned Sonnet-5, n=32): reproduced
+% 5 vs 5 with one run lost and one gained. Medium sweep 2690187 (MiniMax
+% self-graded vs pinned, n=32): reproduced 6 vs 5, pinned set a strict subset;
+% DQ 10 vs 10 sharing 4; r=0.657 over all 32, r=0.863 over the 16 runs where
+% neither grader applied the score-0 cap. Human-grader study: none on record
+% (2026-09-06, the labeled repo was deleted), so the sentence says so.
 
 \section{Experiments}
 \label{sec:experiments}

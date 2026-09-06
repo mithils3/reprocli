@@ -131,13 +131,8 @@ the medium-tier sweep are shared by both graders. Second, we compare mean
 audit scores only within a single grader, since the grader swap alone shifts
 this sweep's mean by 0.5 points on identical transcripts.
 
-\subsection{Human evaluation}
-
-% src: iclr2027_conference.tex:413-415, notes/Writing/Section Pointers.md:20, notes/TODO List.md:86-87
-The expert-grader study is still pending, and its result is the agreement
-figure quoted in Section~\ref{sec:auditing}. In the planned design, expert
-graders score a held-out sample of runs together with cases that contain
-injected provenance breaks, and we report agreement with the human labels as
-a kappa and an F1, plus recall on the injected cases. Until that study runs,
-the code-enforced cap is evidence only that a flagged run cannot pass. It says
-nothing about flags the auditor missed or scores it set too harshly.
+% src: former Human evaluation subsection, kept as the bound on what the validation shows (2026-09-06: no human-grader study on record; the labeled repo was deleted)
+Both validations compare graders with each other and none compares a grader
+with a human, so the code-enforced cap is evidence only that a flagged run
+cannot pass. It says nothing about flags the auditor missed or scores it set
+too harshly.
