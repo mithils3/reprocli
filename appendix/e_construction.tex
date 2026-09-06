@@ -37,12 +37,9 @@ if all of its applicable signals were established by tool calls and the loop
 exited naturally. The final, tool-free turn returns a strict JSON record that
 contains neither a score nor a tier, and the saved tool conversation lets us
 re-open any individual call afterwards. Figure~\ref{lst:classifier-prompt}
-gives the classifier prompt in full, with \texttt{\{PAPER\_TEXT\}} standing for
+in Appendix~\ref{app:prompt-listings} gives the classifier prompt in full, with \texttt{\{PAPER\_TEXT\}} standing for
 the rendered paper, its supplement manifest with text excerpts, and its
 LaTeX source.
-
-% src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
-\promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
 
 \subsection{Deterministic extraction}
 \label{app:extraction}

@@ -144,8 +144,8 @@ verdict string reported in this paper comes from that code, and the
 % src: prompts/prompt_audit.txt:35-58,79-84; src/reclaim_vllm/tools/run_dir_tools.py:1-19,274-288; src/reclaim_vllm/config/config.py:50-54
 Where recomputation is inexpensive, the auditor recomputes metrics from the
 stored predictions and outputs, and the 60\,s shell timeout rules out
-re-running training or evaluation. Figure~\ref{lst:audit-prompt} shows the
-prompt template, which is rendered for each graded run from the pinned claim,
+re-running training or evaluation. Figure~\ref{lst:audit-prompt} in
+Appendix~\ref{app:prompt-listings} shows the prompt template, which is rendered for each graded run from the pinned claim,
 the run-directory manifest, and the rubric text. We ran the sweeps under a
 development name, and the released file carries the public name RECLAIM in
 that one line.
@@ -179,15 +179,10 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-% src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reclaim_vllm/audit/inputs.py:30-101
-\promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
-
 \subsection{The rubric text}
 
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
-Figure~\ref{lst:rubric-text} shows the rubric as frozen on 2026-07-16, which
-the auditor receives in full. We ran the sweeps under a development name, and
+Figure~\ref{lst:rubric-text} in Appendix~\ref{app:prompt-listings} shows the
+rubric as frozen on 2026-07-16, which the auditor receives in full. We ran the sweeps under a development name, and
 the released rubric carries the public name RECLAIM in its title and in one
 flag definition.
-
-\promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}

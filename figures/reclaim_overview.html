@@ -259,8 +259,8 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="ln"><span class="p">$</span><span class="cmd">gdown &hellip;swinb1k_v3det.pth</span><span class="cm"># 1.89 GB</span></div>
             <div class="phase"><span class="pt">BUILD &middot; r9&ndash;61</span><span class="pr"></span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">pip install mmcv==2.2.0</span></div>
-            <div class="ln e"><span class="err">  ERROR: no aarch64 wheel</span></div>
-            <div class="ln th"><span class="think">AH! no aarch64 wheel. build it from source</span></div>
+            <div class="ln e"><span class="err">  mmcv/_ext&hellip;so: undefined symbol</span></div>
+            <div class="ln th"><span class="think">wheel built for an older torch. build it</span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 pip install -e mmcv/</span></div>
             <div class="phase"><span class="pt">RUN &middot; r62&ndash;64</span><span class="pr"></span></div>
             <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu tools/test.py</span><span class="cm"># 29,821 imgs</span><span class="gpu">GPU</span></div>
@@ -269,7 +269,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="ln th"><span class="think">OOM again, but the preds survived in /tmp</span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/results.bbox.json evidence/</span></div>
             <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu chunked_eval.py</span><span class="cm"># score them</span><span class="gpu">GPU</span></div>
-            <div class="phase"><span class="pt">VERIFY &amp; REPORT &middot; r93&ndash;107</span><span class="pr"></span></div>
+            <div class="phase"><span class="pt">VERIFY &amp; REPORT &middot; r93&ndash;106</span><span class="pr"></span></div>
             <div class="ln th"><span class="think">my scorer agrees with COCOeval, twice</span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">write_file report.json</span></div>
           </div>

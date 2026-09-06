@@ -1,0 +1,94 @@
+\section{Prompts}
+\label{app:prompt-listings}
+
+% Moved here 2026-09-06 from Appendices A, C, and E at the user's request: every
+% prompt in one place, each with a description of at most three lines. The
+% per-listing % src comments travel with the listings.
+This appendix reproduces every prompt the pipeline sends to a model, in
+pipeline order: the agent's harness messages and task prompt, the auditor's
+prompt and rubric, and the dataset classifier's prompt. Placeholder fields
+are set in color, and each listing is the file from the released repository.
+
+\subsection{Harness messages}
+% src: src/reclaim_repro/cli_args.py:26-42,238-240; src/reclaim_repro/loop.py:66-70,376-380;
+% src: src/reclaim_repro/transcript.py:22-26,88-96,105-107,128-155; src/reclaim_repro/compact.py:57-61,81-82,90-137;
+% src: src/reclaim_repro/tools/__init__.py:78-99; src/reclaim_vllm/tools/result_limits.py:8-11,24-38,60-62;
+% src: src/reclaim_repro/live_log.py:71-75; src/reclaim_vllm/vllm/io.py (initial_messages)
+The fixed strings of the agent loop (Appendix~\ref{app:tool-loop}): the
+system message at index 0, the final-turn instruction, and the five strings
+the harness inserts during an episode.
+
+\begin{promptbox}[lst:harness-messages]{Harness messages}
+=== SYSTEM MESSAGE (index 0) ===
+You are a reproduction agent. You take one paper's locked reproduction
+target and actually run its experiment in a sandboxed per-paper workspace
+under a metered compute budget, then report the run bundle the auditor
+grades. Spend budget deliberately; write durable evidence as you go.
+
+=== FINAL-TURN INSTRUCTION ===
+The tool phase is over. Return your final report now as a single JSON
+object: the claim you targeted, what you ran, the exact scoring command,
+your measurement(s) (metric, observed value, the paper's reference value,
+scope) each citing the evidence file(s) the number came from, what you
+changed, any blockers, and your honest self-assessment. This is your
+account of the run, not the verdict -- the auditor grades it. Return only
+the JSON object.
+
+=== STATUS LINE (appended each round) ===
+Tool round {used}/{max_rounds} · {left} left
+Tool round {used}/{max_rounds} · {left} left · sweep wall ~{h}h{m:02d}m left
+Tool round {used}/{max_rounds} · {left} left · sweep wall EXPIRED — the job hosting this run is being killed; finalize immediately
+
+=== BUDGET NOTE (prepended to the final turn after an exhausted budget or full context) ===
+The conversation hit its context budget, so the tool phase ended early.
+Finalize from the evidence already written to the run directory rather
+than re-running tools.
+
+=== LENGTH NUDGE (after a turn that hit the output cap, at most twice) ===
+Your previous turn hit the output-token limit before emitting any tool
+call, so it was cut off mid-stream and trimmed above. Do not re-plan from
+scratch. Take the next concrete action with a tool call now, and keep
+reasoning brief.
+
+=== ELISION PLACEHOLDER (left in a compacted tool result) ===
+[elided {n_chars} chars — on disk at <run_dir>/agent.full.log]
+
+=== TOOL ERROR AND TRUNCATION FIELDS ===
+{"ok": false, "error": "Unknown tool: <name>. Available tools: <names>"}
+{"ok": false, "tool": "<name>", "error": "<ExceptionType>: <message>"}
+{"ok": false, "retried": true, ...}
+{..., "truncated": true, "truncation_note": "Result truncated to fit the tool budget; request a specific file path, path_filter, or smaller range for more."}
+\end{promptbox}
+
+\subsection{Task prompt}
+% src: src/reclaim_repro/prompt_render.py:22-147; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
+The first user turn, a 290-line template with fourteen placeholder fields
+filled from the dataset row, the compute ceiling, and the container paths
+(Appendix~\ref{app:prompts}). The template has not changed since 2026-07-11.
+
+\promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}
+
+\subsection{Auditor prompt}
+% src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reclaim_vllm/audit/inputs.py:30-101
+Rendered for each graded run from the pinned claim, the run-directory
+manifest, and the rubric text (Appendix~\ref{app:rubric}). We ran the sweeps
+under a development name, and the released file carries the public name
+RECLAIM in that one line.
+
+\promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
+
+\subsection{Audit rubric}
+% src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
+The rubric as frozen on 2026-07-16, which the auditor receives in full. The
+released copy carries the public name RECLAIM in its title and in one flag
+definition.
+
+\promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}
+
+\subsection{Classifier prompt}
+% src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
+The Stage-I classifier prompt of Appendix~\ref{app:classifier}, with
+\texttt{\{PAPER\_TEXT\}} standing for the rendered paper, its supplement
+manifest with text excerpts, and its LaTeX source.
+
+\promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
