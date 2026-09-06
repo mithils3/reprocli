@@ -211,11 +211,10 @@ lu2026frontiercode}. SWE-bench grades patches for real GitHub issues using
 the tests the repository already ships~\citep{jimenez2024swebench}, and
 Terminal-Bench 2.0 poses command-line tasks inside prepared containers with
 executable checks written in advance~\citep{merrill2026terminalbench}. Both
-designs scale precisely because the objective, the environment, and the
-verifier are all fixed before the agent starts, but that same property
-removes the first half of a reproduction, where an agent has to decide
-which experiment establishes the claim and build an environment that can
-run it before any number exists to check. MirrorCode pushes the setting
+fix the objective, the environment, and the verifier before the agent
+starts. A reproduction begins earlier, with the agent choosing the
+experiment that establishes the claim and building an environment that can
+run it. MirrorCode pushes the setting
 furthest and asks agents to rebuild entire programs from behavior alone,
 with a black-box reference implementation available to query
 throughout~\citep{adamczewski2026mirrorcode}. That reference implementation
