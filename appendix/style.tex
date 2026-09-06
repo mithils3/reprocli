@@ -157,6 +157,17 @@
   rbFrame, colback=rbPromptBack, colframe=rbPromptFrame, colbacktitle=rbPromptFrame!10!white, coltitle=rbPromptFrame!85!black,
   title={#1}, fontupper=\scriptsize\ttfamily\raggedright,
 }
+% The decisive round of an annotated run (Appendix H): gold frame, heavier
+% left rule, and \keyline for the sentence the reader should see.
+\definecolor{rbDecisiveFrame}{HTML}{8C6B1F}
+\definecolor{rbDecisiveBack}{HTML}{FCF3D9}
+\newtcolorbox{decisiveturn}[1]{
+  rbFrame, colback=rbDecisiveBack, colframe=rbDecisiveFrame, colbacktitle=rbDecisiveFrame!12!white, coltitle=rbDecisiveFrame!85!black,
+  leftrule=3pt, title={#1}, fontupper=\scriptsize\ttfamily\raggedright,
+}
+\usepackage{soul}  % \hl breaks across lines where \colorbox cannot
+\colorlet{rbDecisiveHl}{rbDecisiveFrame!32!white}
+\newcommand{\keyline}[1]{{\sethlcolor{rbDecisiveHl}\hl{#1}}}
 \newtcolorbox{toolresult}[1]{
   rbFrame, colback=rbToolBack, colframe=rbToolFrame, colbacktitle=rbToolFrame!10!white, coltitle=rbToolFrame!85!black,
   title={#1}, fontupper=\scriptsize\ttfamily\raggedright,
