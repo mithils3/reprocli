@@ -48,10 +48,10 @@ environment and saturate quickly, whereas reproducing a published paper
 involves no such preparation. We introduce RECLAIM, 100 NeurIPS 2025 papers
 with a metered GPU-hour budget, a frozen target claim, a numeric tolerance,
 and a pinned auditor of execution evidence. The agent gets the paper and
-whatever the authors released and supplies the rest. For the strongest of
-four agents, reproduction rates fall from 48\% at Run tier, where code, data, and
-weights are released, to 32\% at Retrain and 13\% at Reimplement, where the
-method is built from the paper alone. Compute does not explain the decline,
+whatever the authors released and supplies the rest. Across four agents,
+the best reproduction rate per tier falls from 48\% at Run tier, where code,
+data, and weights are released, to 32\% at Retrain and 16\% at Reimplement,
+where the method is built from the paper alone. Compute does not explain the decline,
 since non-reproduced runs use 30\% of their allocation. Under a nine-mode
 labeling of every graded run, most Retrain-tier misses by the strongest agent
 ran the paper's experiment but produced a number outside tolerance. The
@@ -64,6 +64,10 @@ step, with headroom at every tier.
 %     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
 %     which cleared the old "Reimplement has no pinned number" blocker). Scoped
 %     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
+%     2026-09-06 (user: "make it 16% then"): the abstract now reports the best
+%     agent per tier, 48/32/16. Reimplement 16 = Muse Spark 5/32 (sweep
+%     20260820, pinned, tab:main-results); Run and Retrain stay DSv4's. The
+%     intro sentence keeps DSv4's own 48/32/13, scoped by name.
 %   "rarely runs as shipped" -- CUT 2026-09-06: unsourced frequency claim, and
 %     the body attributes Run-tier misses to the agent. Run tier is now defined
 %     inside the tier sentence instead.
