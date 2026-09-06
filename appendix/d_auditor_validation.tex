@@ -115,10 +115,7 @@ means of 6.12 and 5.69.
 \subsection{Where the graders disagree}
 
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:286-291, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:147-158, notes/Analysis/2026-08-13 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:456
-Both measurements locate the disagreement in the same part of the scale. Away
-from the cap the continuous score is reliable ($r = 0.863$), and the top of
-the scale is stable, since the earlier reproductions survive the grader swap
-as a strict subset. The unstable part is the score-0 cap. No second pass of
+The unstable part is the score-0 cap. No second pass of
 the pinned auditor over a single sweep is on record, so the within-grader
 stability of the cap remains unmeasured.
 % TODO(app:auditor-validation): the record may contradict this sentence. A second pinned Sonnet-5 pass over sweep 2652648 exists (see memory auditor-test-retest-instability: 23/32 exact agreement, high-flag zeros 15 vs 10). If it stands, replace this sentence with that within-grader measurement from the analysis of record.
@@ -126,8 +123,7 @@ stability of the cap remains unmeasured.
 % src: notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:293-300,332-335
 Two reporting rules follow, and we apply both. First, whenever we report a
 disqualification count we report it as a rubric behavior and note this
-instability alongside it, given that only 4 of the 10 disqualifications in
-the medium-tier sweep are shared by both graders. Second, we compare mean
+instability alongside it. Second, we compare mean
 audit scores only within a single grader, since the grader swap alone shifts
 this sweep's mean by 0.5 points on identical transcripts.
 

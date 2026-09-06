@@ -148,8 +148,7 @@ follows how much the authors release. The strongest agent we evaluate, DeepSeek-
 the target result on 48\% of Run-tier papers (code, data, and weights all
 released), 32\% of Retrain-tier papers (no released weights, so the model must
 be trained first), and 13\% of Reimplement-tier papers (no released code
-either). The tiers are defined by what the authors released, so this decline
-measures how much reproduction depends on released artifacts.
+either).
 
 What the authors released explains the difference between tiers. It does not
 explain the failures within a tier. At the Run tier the authors released every
@@ -161,10 +160,9 @@ papers the strongest agent reaches a verified partial result or better on 79\% o
 which provides evidence of an emerging ability to close the loop of
 reproduction. Full recovery of
 the reported number is where progress stalls, holding between 16\% and 32\%
-across four agents spanning a 1.9-fold range in mean audit score, so the gain
-between agent generations shows up almost entirely in how far into the
-reproduction an agent gets. Compute does not bind either, since the 42 runs in the 96 GPU-hour band spend 6.5\%
-of the allocation they were given and 1 of the 42 reproduces its claim.
+across four agents spanning a 1.9-fold range in mean audit score. Compute does
+not bind either, since 1 of the 42 runs in the 96 H100-hour band reproduces its
+claim (Section~\ref{subsec:compute}).
 
 A small set of recurring failure modes accounts for those failures. Some modes
 become rarer as agents get stronger and some do not. Runs that reimplemented the
@@ -296,10 +294,9 @@ cluster seldom matches the authors' hardware and software stack exactly, so
 replaying memorized artifacts is rarely enough.
 
 \paragraph{Sufficient compute.} Each paper has a GPU grant. We estimate
-it from the paper's minimal reproducible experiment and add hours for iteration. As
-reported in Section~\ref{subsec:results}, most agent runs do not exhaust their
-assigned compute. Although this does not establish sufficiency for every task,
-it indicates that the compute cap is not the binding constraint for most runs.
+it from the paper's minimal reproducible experiment and add hours for
+iteration. Section~\ref{subsec:results} reports how much of the grant runs
+actually spend.
 
 \paragraph{Provenance-audited grading.} The benchmark records what the
 agent claims and grades what the evidence shows. Every reported number is
@@ -307,9 +304,7 @@ traced to execution evidence, and deterministic checks zero out any number
 that was echoed from the paper and never measured. Because the audit checks how
 the number was produced, the
 agent is free to reach the result by any faithful route, and a novel
-reproduction strategy scores as well as the authors' own. Recording the
-claim and the audited outcome side by side is what lets us measure how far
-agent self-reports diverge from verified reproductions.
+reproduction strategy scores as well as the authors' own.
 
 \paragraph{Refresh at low human cost.} An agent classifier reads and
 verifies the candidate papers, and humans audit only the selected pool
@@ -347,10 +342,7 @@ The agent receives the paper, the metric, the target value, the scope, and
 the bar shape. It does not receive the configuration. The agent must
 therefore design the experiment itself, deciding from the paper and the
 released artifacts what to run, retrain, or reimplement. Because the agent
-knows the number it must hit, a bare value match proves nothing. An LLM
-auditor therefore traces every claimed result to execution
-evidence in the run directory, and deterministic checks force the score to
-zero when a number was echoed from the paper and never measured.
+knows the number it must hit, a bare value match proves nothing.
 
 \subsection{Benchmark construction}
 \label{subsec:construction}
@@ -442,10 +434,7 @@ recorded as a typed anti-cheat flag with a severity, and the scoring code
 applies the integrity adjustment of Appendix~\ref{app:rubric}. A
 high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
-forces the score to zero, and a claimed artifact wall earns no credit band.
-Grading by evidence also preserves the agent's creativity, since any
-faithful route to the pinned number earns full credit, including
-strategies the authors never used. An
+forces the score to zero, and a claimed artifact wall earns no credit band. An
 LLM auditor reads more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
@@ -571,8 +560,8 @@ Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 
 Spending stays far below the grant in every row of the table. The mean
 non-reproduced run uses 30\% of its allocation, and pooled over all 372 runs
-the agents spend 1{,}770 of the 9{,}120 H100-hours we granted, from 32.0\% of
-the grant for DeepSeek-V4-Flash to 10.3\% for MiniMax-M2.7. We report the agents' own verdicts as background data. Of the 359
+the agents spend 1{,}770 of the 9{,}120 H100-hours we granted. We report the
+agents' own verdicts as background data. Of the 359
 runs that return a parsable self-assessment, 128 claim reproduction, against 73
 audited reproductions over all 372 runs, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
@@ -591,15 +580,8 @@ vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
 tier in Table~\ref{tab:failure-modes}. Two modes are outcomes. A
 reproduced run recovers the pinned number on the authors' released
 artifact and data, and a run outside tolerance executes a faithful pipeline
-and lands short of the bar. The other seven are process failures. The agent
-reimplements the method or a component of it and checks no stage of its
-version against a reference it did not produce, loses the decisive rounds to
-build and dependency failures in the released stack, measures an artifact
-other than the one the dataset row names, runs an experiment other than the
-one the claim is about, echoes a shipped constant in place of the number it
-measured, spends its rounds on reading and probing and never launches the
-experiment, or runs a working pipeline on working artifacts that ends before
-the graded command yields a value. Appendix~\ref{app:taxonomy} gives each
+and lands short of the bar. The other seven are process failures.
+Appendix~\ref{app:taxonomy} gives each
 mode's evidence signature, with transcript excerpts for three of them. One run
 the auditor graded reproduced has the wrong-artifact label, because the
 dissection found its passing number was measured on a released checkpoint
@@ -682,10 +664,7 @@ rebuilt they check the rebuilt component against a quantity the paper reports
 before spending compute on it. Reduced-scale smoke tests separate the two
 groups only weakly, since the records mention them in 45 of the 73 successful runs
 and 148 of the 299 failed ones. Appendix~\ref{app:annotated-runs} shows these
-behaviors at the round level in ten annotated runs: three repair a defect in
-the released code before the graded command runs, three check a host
-substitution against the authors' own path, one reports a shortfall as
-measured, and three put a different method or arm in the graded slot.
+behaviors at the round level in ten annotated runs.
 % sources: dissection records (analysis.* fields of the run records) read
 % 2026-09-05: smoke test mentioned in 45/73 audited-
 % reproduced and 148/299 failed records; reuse of released entrypoint in 58/73
