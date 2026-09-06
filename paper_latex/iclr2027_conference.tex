@@ -214,18 +214,15 @@ executable checks written in advance~\citep{merrill2026terminalbench}. Both
 fix the objective, the environment, and the verifier before the agent
 starts. A reproduction begins earlier, with the agent choosing the
 experiment that establishes the claim and building an environment that can
-run it. MirrorCode pushes the setting
-furthest and asks agents to rebuild entire programs from behavior alone,
-with a black-box reference implementation available to query
-throughout~\citep{adamczewski2026mirrorcode}. That reference implementation
-is the operative difference between its setting and ours. An agent can query
-it for the correct output on any input it likes, so its target is checkable
-at every step. An agent reproducing a paper has nothing to check itself
-against until the experiment already runs. Agents stop with budget to spare
-in both settings. \citet{adamczewski2026mirrorcode} report that 97.4\% of
-their runs submitted before using half the token budget, and describe agents
-that submit once the visible tests pass. We report the same stopping
-behavior in Section~\ref{subsec:results}, where no such test exists to pass.
+run it. MirrorCode asks agents to rebuild entire programs from behavior
+alone, with a black-box reference implementation the agent can query
+throughout~\citep{adamczewski2026mirrorcode}. The reference makes the target
+checkable at every step. A paper provides no such reference, and the number
+to check exists only once the experiment runs. Agents stop early in both
+settings. \citet{adamczewski2026mirrorcode} report that 97.4\% of their runs
+submitted before using half the token budget and that agents submit once the
+visible tests pass. We report the same early stopping in
+Section~\ref{subsec:results}, with no test to pass.
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
