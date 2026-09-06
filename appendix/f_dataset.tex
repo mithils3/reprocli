@@ -131,7 +131,7 @@ Field & Description \\
 Four properties hold across the released rows, and each can be checked
 directly from the file.
 \begin{itemize}\setlength{\itemsep}{0pt}
-\item Tier is a function of score: score 0 maps to Run, score 1 to Retrain,
+\item Tier is a function of score, with score 0 mapping to Run, score 1 to Retrain,
 and scores 2 and 3 to Reimplement.
 \item \texttt{selection\_band} and \texttt{h100\_band} agree on every row.
 \item \texttt{audited\_h100\_hours} differs from \texttt{h100\_estimate.hours}
@@ -139,7 +139,7 @@ on exactly the 6 rows (3 in each split) whose
 \texttt{h100\_hours\_adjudicated} flag is set.
 \item Of the 400 signal entries in the evaluation split, 388 record a tool call
 and 12 are \texttt{not\_applicable}. Every signal set to true was established
-by a successful tool call, with a single exception: on 2503.02809 the pinned
+by a successful tool call, with a single exception. On 2503.02809 the pinned
 configuration runs on synthetic data, so \texttt{dataset\_available} is both
 true and \texttt{not\_applicable}. Across both splits 13 signals are
 \texttt{not\_applicable}, 12 of them with a false value, and 10 of those 12 are

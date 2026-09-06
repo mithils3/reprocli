@@ -149,15 +149,15 @@ The cliff sets a ceiling and leaves the shortfall beneath it unexplained. At the
 Run tier the authors released every artifact the claim requires and we verified
 each one retrievable by direct host probe, and many of those claims still do not
 come back. Three properties of that residual organize the rest of this paper.
-Stronger agents achieve partial reproduction more often: on Retrain-tier
+Stronger agents achieve partial reproduction more often. On Retrain-tier
 papers the strongest agent reaches a verified partial result or better on 79\% of runs,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Full recovery of
 the reported number is where progress stalls, holding between 16\% and 32\%
 across four agents spanning a 1.9-fold range in mean audit score, so the gain
 between agent generations shows up almost entirely in how far into the
-reproduction an agent gets. Compute does not bind either: the 42 runs in the 96 GPU-hour band spend 6.5\%
-of the allocation they were given, and 1 of the 42 reproduces its claim.
+reproduction an agent gets. Compute does not bind either, since the 42 runs in the 96 GPU-hour band spend 6.5\%
+of the allocation they were given and 1 of the 42 reproduces its claim.
 
 A small set of recurring failure modes accounts for the residual, and the modes
 divide by whether they follow agent capability. Runs that reimplemented the
@@ -165,7 +165,7 @@ method but did not check the result against anything the authors released
 account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
 of the two strongest, and build and dependency failures fall from 19 of those
 runs to 5.
-Measuring the wrong artifact does not follow capability: the two strongest
+Measuring the wrong artifact does not follow capability. The two strongest
 agents account for 21 of its 38 cases, and on 7 papers the released model card
 or configuration file states a setting that differs from the one the paper
 reports. We define the taxonomy, report the per-mode
@@ -544,7 +544,7 @@ tier runs from 16\% to 32\%. Only DeepSeek-V4's reproduction rate falls at
 every tier. For the other three agents the Run and Retrain rates sit within
 nine points of each other, and mean score rises from Run to Retrain for all
 four agents before falling at Reimplement. Table~\ref{tab:failure-modes}
-locates the difference: Retrain has more runs that execute a faithful pipeline
+shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
 and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
 more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
 Every agent's lowest reproduction rate and lowest mean score are at
@@ -633,7 +633,7 @@ runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
 a shipped number needs released code and does not occur at Reimplement, and
 never launching an experiment occurs ten times at Reimplement against once at
 Run. Two modes concentrate in one agent each
-(Table~\ref{tab:failure-modes-by-agent}): MiniMax-M2.7 holds 11 of the 24
+(Table~\ref{tab:failure-modes-by-agent}). MiniMax-M2.7 holds 11 of the 24
 build and dependency failures and Qwen3.6-27B holds 19 of the 31 runs that
 failed before producing a number, while wrong-artifact measurements split
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
@@ -653,13 +653,13 @@ disqualified on another.
 % 2505.14827 unvalidated port, disqualified).
 
 \paragraph{What the successful runs do.}
-Most runs that recover the target result run the authors' own entrypoint: the
+Most runs that recover the target result run the authors' own entrypoint. The
 dissection records describe it for 58 of the 73, against 160 of the 299 runs
 that fail. Where they patch released code they disclose the patch and show
 that the graded computation is unchanged, and where the method has to be
 rebuilt they check the rebuilt component against a quantity the paper reports
 before spending compute on it. Reduced-scale smoke tests separate the two
-groups only weakly: the records mention them in 45 of the 73 successful runs
+groups only weakly, since the records mention them in 45 of the 73 successful runs
 and 148 of the 299 failed ones.
 % sources: dissection records (analysis.* fields of the run records) read
 % 2026-09-05: smoke test mentioned in 45/73 audited-
@@ -679,8 +679,8 @@ four agents, and the 42 runs in the 96 H100-hour band spend 6.5\% of the
 compute granted to them. The bands hold 59, 29, and 12 papers, and 99 of the
 100 produced at least one run, so the 96-hour cells rest on 9 to 12 runs per
 agent. The gradient tracks the scale of the experiment the paper demands.
-Agents handle short evaluation-style experiments well: they load a released
-checkpoint, run an inference pass, and recompute a metric, and they rarely
+Agents handle short evaluation-style experiments well, loading a released
+checkpoint, running an inference pass, and recomputing a metric, but they rarely
 carry a full training run through to the end. At Retrain, where the training
 itself is the missing step, 7 of the 15 runs in the 96 H100-hour band spent
 under 5\% of their grant, and 14 of the 15 did not reproduce. Seven of the 42
