@@ -110,8 +110,8 @@ merrill2026terminalbench}, and they are already deployed on this work
 in the real world~\citep{handa2025economic,huang2025aiwork}. As their capabilities rise,
 static benchmarks tend to saturate soon after they are
 released~\citep{kiela2021dynabench,phan2025hle}, so evaluation has to move
-closer to the workflows agents are deployed into. Reproducing a published ML paper,
-obtaining results consistent with those its authors report, is an ideal
+closer to the workflows agents are deployed into. Reproducing a published ML paper by
+obtaining results consistent with those its authors report is an ideal
 ground for that evaluation, both for its direct value to the field and for
 its difficulty~\citep{siegel2024corebench,starace2025paperbench}. In ML
 research, published results are often not easy to reproduce. One sustained
@@ -122,7 +122,10 @@ experimental detail~\citep{gundersen2018state,pineau2021improving,
 gundersen2022sources}. Reproduction is also a prerequisite for recursively
 self-improving systems, since a model that improves itself must first
 re-implement and verify the research it builds
-on~\citep{favaro2026recursive}.
+on~\citep{favaro2026recursive}. Anthropic and OpenAI both report that their
+researchers now delegate the running of experiments to agents and retain the
+judgment of which results to
+trust~\citep{favaro2026recursive,openai2026acceleration}.
 
 To support this evaluation, we introduce RECLAIM,\footnote{\renewcommand{\UrlFont}{\fontsize{8}{9}\selectfont\ttfamily}Code:
 \textcolor{blue}{\href{https://anonymous.4open.science/r/reclaim-5733}{\nolinkurl{anonymous.4open.science/r/reclaim-5733}}}.
@@ -131,7 +134,7 @@ a benchmark that measures
 whether an agent can reproduce a published result end to end, starting from the
 artifacts the paper's authors actually released and graded against the
 execution evidence the run produces. Our results show that reproduction rate
-follows how much the authors release. The strongest agent we evaluate recovers
+follows how much the authors release. The strongest agent we evaluate, DeepSeek-V4, recovers
 the target result on 48\% of Run-tier papers (code, data, and weights all
 released), 32\% of Retrain-tier papers (no released weights, so the model must
 be trained first), and 13\% of Reimplement-tier papers (no released code
