@@ -26,7 +26,7 @@ defaults, and the launch scripts of Appendix~\ref{app:models} record the value
 a sweep set where one was set.
 
 % src: src/reclaim_repro/cli_args.py:48,55-62,189-206, src/reclaim_repro/loop.py:95-119,236-264,328-424, src/reclaim_repro/tools/__init__.py:76-99, src/reclaim_vllm/tools/result_limits.py:8-38,69-73, src/reclaim_vllm/config/config.py:12-17, src/reclaim_repro/compact.py, src/reclaim_repro/budget.py:1-69, src/reclaim_repro/tools/run_gpu.py:55-92,131-150,302-356, src/reclaim_repro/cluster.py:60-87, src/reclaim_repro/gpu_session.py:36-101, src/reclaim_repro/sandbox.py:154-166,216-258,325-409, src/reclaim_repro/env.py, src/reclaim_repro/report.py:190-214, src/reclaim_repro/live_log.py:14-25,191-266, src/reclaim_repro/telemetry_sink.py:29-135
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -81,7 +81,7 @@ is no file-reading tool, so the agent reads files through the shell with
 \texttt{grep}, \texttt{sed}, and \texttt{cat}. There is also no web search,
 which means the agent can only fetch URLs it already knows or can construct.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \small
 % src: src/reclaim_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
@@ -189,7 +189,7 @@ that fails to parse, or that fails the structural check, is still written, as
 a malformed report whose \texttt{report\_status} is \texttt{degraded} and
 which includes the validation errors and an excerpt of the raw output.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \small
 % src: src/reclaim_repro/report.py:40-102

@@ -1,3 +1,4 @@
+\RequirePackage{fix-cm}  % CM math fonts at the 6.5pt listing size
 \documentclass{article} % For LaTeX2e
 \usepackage{iclr2027_conference,times}
 
@@ -18,6 +19,7 @@
 \usepackage{amssymb}
 \usepackage{listings}
 \input{appendix/style}  % code, prompt, and schema boxes for the appendices
+\usepackage{microtype}
 \usepackage{etoolbox}
 \usepackage{needspace}
 % Table captions sit below the tabular: give them clearance from the bottom rule.
@@ -716,7 +718,7 @@ number from it, and six of the seven stated the shortfall.
 % 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
 % shortfall).
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \small
 \begin{tabular}{@{}lccc@{\hspace{2.5em}}ccc@{}}
