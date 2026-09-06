@@ -22,6 +22,7 @@
 \usepackage{microtype}
 \usepackage{etoolbox}
 \usepackage{needspace}
+\usepackage{placeins}  % \FloatBarrier keeps each run card inside its vignette
 % Table captions sit below the tabular: give them clearance from the bottom rule.
 \AtBeginEnvironment{table}{\setlength{\abovecaptionskip}{6pt}\setlength{\belowcaptionskip}{0pt}}
 \setlength{\LTcapwidth}{\dimexpr\textwidth-2.3pt\relax}  % longtable captions span the text block (longtable centres them 1.1pt left)
@@ -656,8 +657,9 @@ between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
 DeepSeek-V4 met the same packaging gaps and split on how it adapted: on one
-paper it built the package with no aarch64 wheel from source and, when the
-authors' scorer exceeded the node's memory limit, rewrote it and checked the
+paper it rebuilt the package from source after the PyPI wheel failed at import
+against the installed torch and, when the authors' scorer exceeded the
+node's memory limit, rewrote it and checked the
 rewrite against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and
 on another it replaced the package by an unvalidated port that the auditor
 disqualified.
@@ -848,5 +850,6 @@ Applications~\citep{bode2025deltaai}.
 \input{appendix/g_taxonomy}
 \input{appendix/h_runs}
 \input{appendix/i_running}
+\input{appendix/j_prompts}
 
 \end{document}

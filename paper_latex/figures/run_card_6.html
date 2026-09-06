@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
+:root { --navy:#1F3A5F; --teal:#3E8E8C; --gold:#E3B341; --red:#C2483B; --green:#3C8252; --greenbg:#E6F3EA; --ink:#2E3440; --gray:#6B7280; --cgray:#8C939E; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { width:1280px; font-family:'InterF',sans-serif; background:#fff; }
+.wrap { width:1280px; padding:4px; }
+.term { background:#F7F6F3; border:2px solid var(--navy); border-radius:14px; overflow:hidden; }
+.term-bar { display:flex; align-items:center; gap:9px; background:#E6E9ED; padding:9px 16px; }
+.dot { width:15px; height:15px; border-radius:50%; }
+.term-bar .title { font-family:'JBMono',monospace; font-size:18px; color:var(--gray); margin-left:8px; }
+.term-body { position:relative; padding:12px 16px 16px 50px; font-family:'JBMono',monospace; font-size:20px; line-height:1.5; font-feature-settings:'liga' 0,'calt' 0; }
+.term-body::before { content:''; position:absolute; left:27px; top:16px; bottom:16px; width:2.5px; background:#D8DCE1; }
+.phase { display:flex; align-items:center; gap:10px; margin:5px 0 1px -32px; }
+.phase .pt { font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; background:#F7F6F3; position:relative; z-index:1; padding:0 6px 0 4px; }
+.phase .pr { flex:1; height:1.5px; background:#E4E7EB; }
+.phase:first-child { margin-top:0; }
+.ln { position:relative; display:flex; align-items:center; gap:11px; white-space:pre; border-radius:6px; }
+.ln::before { content:''; position:absolute; left:-25px; top:50%; transform:translate(-50%,-50%); width:11px; height:11px; border-radius:50%; background:#fff; border:2.5px solid var(--teal); z-index:1; }
+.ln.pl::before { background:var(--navy); border-color:var(--navy); }
+.ln.e::before { background:var(--red); border-color:var(--red); }
+.ln.g::before { background:var(--teal); border-color:var(--teal); width:13px; height:13px; }
+.ln.th::before { background:#fff; border-color:var(--navy); }
+.ln.key { background:rgba(227,179,65,.22); box-shadow:0 0 0 1.5px rgba(140,107,31,.55); margin:2px 0 2px -6px; padding:0 8px 0 6px; }
+.ln.key::before { left:-19px; }
+.p { color:var(--teal); font-weight:500; }
+.cmd { color:var(--ink); }
+.cm { color:var(--cgray); }
+.err { color:var(--red); font-weight:500; }
+.out { color:#4A5568; }
+.ln.o::before { background:#fff; border-color:#9AA3AE; }
+.plan { color:var(--navy); font-weight:500; }
+.think { color:var(--navy); font-style:italic; }
+.right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.rn { font-size:15px; color:var(--cgray); }
+.gpu { font-size:15px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:2px 9px; }
+.tag { font-size:15px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:2px 9px; }
+.result { display:flex; align-items:center; gap:14px; border:1.5px solid; border-radius:9px; padding:7px 13px; margin-top:12px; font-size:18px; font-family:'JBMono',monospace; white-space:nowrap; }
+.result .num { color:var(--navy); font-weight:700; }
+.result .match { font-weight:700; margin-left:auto; }
+.result.good { background:var(--greenbg); border-color:var(--green); } .result.good .match { color:#2A6B40; }
+.result.warn { background:#FCF3D9; border-color:var(--gold); } .result.warn .match { color:#8C6B1F; }
+.result.bad { background:#F9E8E6; border-color:var(--red); } .result.bad .match { color:#8F3229; }
+.legend { display:flex; gap:15px; font-family:'JBMono',monospace; font-size:16px; color:var(--cgray); margin-top:6px; padding-left:4px; }
+.legend span { white-space:nowrap; }
+.legend .sw { display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }
+</style></head><body><div class="wrap">
+<div class="term"><div class="term-bar"><span class="dot" style="background:#DF7065;"></span><span class="dot" style="background:#EEC252;"></span><span class="dot" style="background:#6BB770;"></span><span class="title">dsv4-run-2503.18430 &middot; 107 rounds &middot; 6.0 of 8 H100-h</span></div>
+<div class="term-body"><div class="phase"><span class="pt">PLAN &amp; FETCH &middot; r0&ndash;11</span><span class="pr"></span></div><div class="ln pl"><span class="plan">[plan]</span><span class="cmd">46.3% AP on V3Det validation set…surpassing DINO's 42.0% AP by 2.1%</span><span class="right"><span class="rn">r0</span></span></div><div class="ln"><span class="p">$</span><span class="cmd">gdown --folder …/drive/folders/1QzKk6k7qDEGHWT3uoHkv4geZ7nmOfP5o</span><span class="cm"># 1.89G checkpoint</span><span class="right"><span class="rn">r8</span></span></div><div class="phase"><span class="pt">BUILD &middot; r12&ndash;47</span><span class="pr"></span></div><div class="ln e"><span class="err">  mmcv/_ext.cpython-312-aarch64-linux-gnu.so: undefined symbol: …</span><span class="right"><span class="rn">r12</span></span></div><div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 …pip install /tmp/mmcv_src/mmcv-2.2.0 --no-build-isolation</span><span class="right"><span class="rn">r25</span></span></div><div class="phase"><span class="pt">PATCH &amp; EVAL &middot; r48&ndash;64</span><span class="pr"></span></div><div class="ln g"><span class="p">$</span><span class="cmd">python repo/tools/test.py …swinb1k_v3det_eval.py checkpoint/…v3det.pth</span><span class="right"><span class="gpu">GPU</span><span class="rn">r48</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">python repo/tools/test.py …--work-dir /repro/evidence/full_eval_work</span><span class="cm"># 29,821 images</span><span class="right"><span class="gpu">GPU</span><span class="rn">r64</span></span></div><div class="ln e"><span class="err">  Detected 10 oom_kill events in StepId=[job]…task 0: Out Of Memory</span><span class="right"><span class="rn">r64</span></span></div><div class="phase"><span class="pt">DEBUG &amp; RESCUE &middot; r65&ndash;90</span><span class="pr"></span></div><div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/tmpw0nwnjud/results.bbox.json …/predictions_v3det_val.json</span><span class="cm"># 8,946,300 dets</span><span class="right"><span class="rn">r66</span></span></div><div class="ln th"><span class="think">The job cgroup memory limit is 107374182400 bytes = 100 GB…oom_kill 11</span><span class="right"><span class="rn">r73</span></span></div><div class="ln th"><span class="think">this is a DICT COMPREHENSION over all (img, cat) pairs = 396M…→ OOM</span><span class="right"><span class="rn">r87</span></span></div><div class="phase"><span class="pt">SCORE &amp; VERIFY &middot; r91&ndash;99</span><span class="pr"></span></div><div class="ln o key"><span class="out">  precision allclose: True | max abs diff: 0.0</span><span class="right"><span class="tag">decisive</span><span class="rn">r91</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">python tools/chunked_coco_eval.py --full …tee …full_chunked_eval.log</span><span class="right"><span class="gpu">GPU</span><span class="rn">r92</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">tools/test.py …_eval_rr.py …chunked_coco_eval.py --gt …smoke_128.json</span><span class="right"><span class="gpu">GPU</span><span class="rn">r98</span></span></div><div class="phase"><span class="pt">REPORT &middot; r100&ndash;106</span><span class="pr"></span></div><div class="ln"><span class="p">$</span><span class="cmd">write_file …/repro/evidence/REPORT.md</span><span class="right"><span class="rn">r102</span></span></div></div></div>
+<div class="result bad"><span class="num">bbox_mAP 0.463 0.515 0.484 = paper's 46.3 / 51.5 / 48.4</span><span class="match">audit 4, not reproduced</span></div>
+<div class="legend"><span><span style="color:#1F3A5F;">&#9679;</span> plan</span><span><span style="color:#1F3A5F;">&#9675;</span> <i>agent</i></span><span><span style="color:#3E8E8C;">&#9675;</span> command</span><span><span style="color:#3E8E8C;">&#9679;</span> GPU run</span><span><span style="color:#C2483B;">&#9679;</span> error</span><span><span style="color:#9AA3AE;">&#9675;</span> output</span><span><span class="sw"></span> decisive round</span><span>rN = round</span></div>
+</div></body></html>
