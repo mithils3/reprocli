@@ -1,12 +1,13 @@
-% RECLAIM bibliography. Entries verified against the arXiv API on 2026-07-09.
+% RECLAIM bibliography. Entries verified against the arXiv API on 2026-07-09 and against each work's preferred citation (README or project-page citation block, venue record, or DOI) on 2026-09-06.
 
 % ---------- Flagship reproduction benchmarks ----------
 
 @article{siegel2024corebench,
   title   = {{CORE-Bench}: Fostering the Credibility of Published Research Through a Computational Reproducibility Agent Benchmark},
   author  = {Siegel, Zachary S. and Kapoor, Sayash and Nadgir, Nitya and Stroebl, Benedikt and Narayanan, Arvind},
-  journal = {Transactions on Machine Learning Research},
-  year    = {2025},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2024},
+  url     = {https://openreview.net/forum?id=BsMMc4MEGS},
   note    = {arXiv:2409.11363}
 }
 
@@ -22,7 +23,12 @@
   title     = {{PaperBench}: Evaluating {AI}'s Ability to Replicate {AI} Research},
   author    = {Starace, Giulio and Jaffe, Oliver and Sherburn, Dane and Aung, James and Chan, Jun Shern and Maksin, Leon and Dias, Rachel and Mays, Evan and Kinsella, Benjamin and Thompson, Wyatt and Heidecke, Johannes and Glaese, Amelia and Patwardhan, Tejal},
   booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+  volume    = {267},
+  series    = {Proceedings of Machine Learning Research},
+  pages     = {56843--56873},
+  publisher = {PMLR},
   year      = {2025},
+  url       = {https://proceedings.mlr.press/v267/starace25a.html},
   note      = {arXiv:2504.01848}
 }
 
@@ -33,43 +39,53 @@
   author    = {Jimenez, Carlos E. and Yang, John and Wettig, Alexander and Yao, Shunyu and Pei, Kexin and Press, Ofir and Narasimhan, Karthik},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2024},
-  note      = {arXiv:2310.06770}
+  note      = {arXiv:2310.06770},
+  url       = {https://openreview.net/forum?id=VTF8yNQM66}
 }
 
-@article{merrill2026terminalbench,
-  title   = {{Terminal-Bench}: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces},
-  author  = {Merrill, Mike A. and Shaw, Alexander G. and Carlini, Nicholas and others},
-  journal = {arXiv preprint arXiv:2601.11868},
-  year    = {2026}
+@inproceedings{merrill2026terminalbench,
+  title     = {{Terminal-Bench}: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces},
+  author    = {Merrill, Mike A. and Shaw, Alexander Glenn and Carlini, Nicholas and Li, Boxuan and Raj, Harsh and Bercovich, Ivan and Shi, Lin and Shin, Jeong Yeon and Walshe, Thomas and Buchanan, E. Kelly and Shen, Junhong and Ye, Guanghao and Lin, Haowei and Poulos, Jason and Wang, Maoyu and Jitsev, Jenia and Nezhurina, Marianna and Lu, Di and Menis Mastromichalakis, Orfeas and Xu, Zhiwei and Chen, Zizhao and Liu, Yue and Zhang, Robert and Chen, Leon Liangyu and Kashyap, Anurag and Uslu, Jan-Lucas and Li, Jeffrey and Wu, Jianbo and Yan, Minghao and Bian, Song and Sharma, Vedang and Sun, Ke and Dillmann, Steven and Anand, Akshay and Lanpouthakoun, Andrew and Koopah, Bardia and Hu, Changran and Guha, Etash and Dreiman, Gabriel H. S. and Zhu, Jiacheng and Krauth, Karl and Zhong, Li and Muennighoff, Niklas and Amanfu, Robert and Tan, Shangyin and Pimpalgaonkar, Shreyas and Aggarwal, Tushar and Lin, Xiangning and Lan, Xin and Zhao, Xuandong and Liang, Yiqing and Wang, Yuanli and Wang, Zilong and Zhou, Changzhi and Heineman, David and Liu, Hange and Trivedi, Harsh and Yang, John and Lin, Junhong and Shetty, Manish and Yang, Michael and Omi, Nabil and Raoof, Negin and Li, Shanda and Zhuo, Terry Yue and Lin, Wuwei and Dai, Yiwei and Wang, Yuxin and Chai, Wenhao and Zhou, Shang and Wahdany, Dariush and She, Ziyu and Hu, Jiaming and Dong, Zhikang and Zhu, Yuxuan and Cui, Sasha and Saiyed, Ahson and Kolbeinsson, Arinbj{\"o}rn and Rytting, Christopher Michael and Marten, Ryan and Wang, Yixin and Dimakis, Alex and Konwinski, Andy and Schmidt, Ludwig},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2026},
+  note      = {arXiv:2601.11868},
+  url       = {https://openreview.net/forum?id=a7Qa4CcHak}
 }
 
-@article{miserendino2025swelancer,
-  title   = {{SWE-Lancer}: Can Frontier {LLMs} Earn \$1 Million from Real-World Freelance Software Engineering?},
-  author  = {Miserendino, Samuel and Wang, Michele and Patwardhan, Tejal and Heidecke, Johannes},
-  journal = {arXiv preprint arXiv:2502.12115},
-  year    = {2025}
+@inproceedings{miserendino2025swelancer,
+  title     = {{SWE-Lancer}: Can Frontier {LLMs} Earn \$1 Million from Real-World Freelance Software Engineering?},
+  author    = {Miserendino, Samuel and Wang, Michele and Patwardhan, Tejal and Heidecke, Johannes},
+  booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+  pages     = {44412--44450},
+  year      = {2025},
+  note      = {PMLR 267; arXiv:2502.12115},
+  url       = {https://proceedings.mlr.press/v267/miserendino25a.html}
 }
 
-@article{deng2025swebenchpro,
-  title   = {{SWE-Bench Pro}: Can {AI} Agents Solve Long-Horizon Software Engineering Tasks?},
-  author  = {Deng, Xiang and Da, Jeff and Pan, Edwin and He, Yannis Yiming and Ide, Charles and Garg, Kanak and Lauffer, Niklas and Park, Andrew and Pasari, Nitin and Rane, Chetan and Sampath, Karmini and Krishnan, Maya and Kundurthy, Srivatsa and Hendryx, Sean and Wang, Zifan and Bharadwaj, Vijay and Holm, Jeff and Aluri, Raja and Zhang, Chen Bo Calvin and Jacobson, Noah and Liu, Bing and Kenstler, Brad},
-  journal = {arXiv preprint arXiv:2509.16941},
-  year    = {2025}
+@inproceedings{deng2025swebenchpro,
+  title     = {{SWE-Bench Pro}: Can {AI} Agents Solve Long-Horizon Software Engineering Tasks?},
+  author    = {Deng, Xiang and Da, Jeff and Pan, Edwin and He, Yannis Yiming and Ide, Charles and Garg, Kanak and Lauffer, Niklas and Park, Andrew and Pasari, Nitin and Rane, Chetan and Sampath, Karmini and Krishnan, Maya and Kundurthy, Srivatsa and Hendryx, Sean and Wang, Zifan and Bharadwaj, Vijay and Holm, Jeff and Aluri, Raja and Zhang, Chen Bo Calvin and Jacobson, Noah and Liu, Bing and Kenstler, Brad},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
+  year      = {2026},
+  note      = {arXiv:2509.16941},
+  url       = {https://icml.cc/virtual/2026/poster/61047}
 }
 
 @misc{lu2026frontiercode,
   title        = {Introducing {FrontierCode}},
   author       = {Lu, Eric and Pan, Ben and Birlikci, Deniz and Lee, Sam and Wang, Ray and Choudhury, Rohan and Ma, Fermi and Qin, TC and Baronio, Carlo and Alberti, Silas},
-  howpublished = {Cognition blog, June 8},
+  howpublished = {Cognition blog},
+  month        = {June},
   year         = {2026},
   url          = {https://cognition.com/blog/frontier-code}
 }
 
 @inproceedings{chan2024mlebench,
   title     = {{MLE-bench}: Evaluating Machine Learning Agents on Machine Learning Engineering},
-  author    = {Chan, Jun Shern and Chowdhury, Neil and Jaffe, Oliver and Aung, James and Sherburn, Dane and Mays, Evan and Starace, Giulio and Liu, Kevin and Maksin, Leon and Patwardhan, Tejal and Weng, Lilian and Madry, Aleksander},
+  author    = {Chan, Jun Shern and Chowdhury, Neil and Jaffe, Oliver and Aung, James and Sherburn, Dane and Mays, Evan and Starace, Giulio and Liu, Kevin and Maksin, Leon and Patwardhan, Tejal and Weng, Lilian and M{\k{a}}dry, Aleksander},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2025},
+  url       = {https://openreview.net/forum?id=6s5uXNWGIh},
   note      = {arXiv:2410.07095}
 }
 
@@ -79,14 +95,17 @@
   booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
   pages     = {20271--20309},
   year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/huang24y.html},
   note      = {PMLR 235; arXiv:2310.03302}
 }
 
-@article{nathani2025mlgym,
-  title   = {{MLGym}: A New Framework and Benchmark for Advancing {AI} Research Agents},
-  author  = {Nathani, Deepak and Madaan, Lovish and Roberts, Nicholas and Bashlykov, Nikolay and Menon, Ajay and Moens, Vincent and Budhiraja, Amar and Magka, Despoina and Vorotilov, Vladislav and Chaurasia, Gaurav and Hupkes, Dieuwke and Cabral, Ricardo Silveira and Shavrina, Tatiana and Foerster, Jakob and Bachrach, Yoram and Wang, William Yang and Raileanu, Roberta},
-  journal = {arXiv preprint arXiv:2502.14499},
-  year    = {2025}
+@inproceedings{nathani2025mlgym,
+  title     = {{MLGym}: A New Framework and Benchmark for Advancing {AI} Research Agents},
+  author    = {Nathani, Deepak and Madaan, Lovish and Roberts, Nicholas and Bashlykov, Nikolay and Menon, Ajay and Moens, Vincent and Plekhanov, Mikhail and Budhiraja, Amar and Magka, Despoina and Vorotilov, Vladislav and Chaurasia, Gaurav and Hupkes, Dieuwke and Cabral, Ricardo Silveira and Shavrina, Tatiana and Foerster, Jakob and Bachrach, Yoram and Wang, William Yang and Raileanu, Roberta},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year      = {2025},
+  url       = {https://openreview.net/forum?id=ryTr83DxRq},
+  note      = {arXiv:2502.14499}
 }
 
 @article{tang2024mlbench,
@@ -101,14 +120,18 @@
   author    = {Jing, Liqiang and Huang, Zhehui and Wang, Xiaoyang and Yao, Wenlin and Yu, Wenhao and Ma, Kaixin and Zhang, Hongming and Du, Xinya and Yu, Dong},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2025},
+  url       = {https://openreview.net/forum?id=DSsSPr0RZJ},
   note      = {arXiv:2409.07703}
 }
 
-@article{zhang2025datascibench,
-  title   = {{DataSciBench}: An {LLM} Agent Benchmark for Data Science},
-  author  = {Zhang, Dan and Zhoubian, Sining and Cai, Min and Li, Fengzu and Yang, Lekang and Wang, Wei and Dong, Tianjiao and Hu, Ziniu and Tang, Jie and Yue, Yisong},
-  journal = {arXiv preprint arXiv:2502.13897},
-  year    = {2025}
+@inproceedings{zhang2025datascibench,
+  title     = {{DataSciBench}: An {LLM} Agent Benchmark for Data Science},
+  author    = {Zhang, Dan and Zhoubian, Sining and Cai, Min and Li, Fengzu and Yang, Lekang and Wang, Wei and Dong, Tianjiao and Hu, Ziniu and Tang, Jie and Yue, Yisong},
+  booktitle = {Findings of the Association for Computational Linguistics (ACL Findings)},
+  pages     = {3685--3728},
+  year      = {2026},
+  doi       = {10.18653/v1/2026.findings-acl.181},
+  note      = {arXiv:2502.13897}
 }
 
 @article{lupidi2026airsbench,
@@ -122,7 +145,9 @@
   title     = {{SUPER}: Evaluating Agents on Setting Up and Executing Tasks from Research Repositories},
   author    = {Bogin, Ben and Yang, Kejuan and Gupta, Shashank and Richardson, Kyle and Bransom, Erin and Clark, Peter and Sabharwal, Ashish and Khot, Tushar},
   booktitle = {Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  pages     = {12622--12645},
   year      = {2024},
+  doi       = {10.18653/v1/2024.emnlp-main.702},
   note      = {arXiv:2409.07440}
 }
 
@@ -135,11 +160,12 @@
   note      = {PMLR 267; arXiv:2411.15114}
 }
 
-@article{xiang2025scireplicate,
-  title   = {{SciReplicate-Bench}: Benchmarking {LLMs} in Agent-driven Algorithmic Reproduction from Research Papers},
-  author  = {Xiang, Yanzheng and Yan, Hanqi and Ouyang, Shuyin and Gui, Lin and He, Yulan},
-  journal = {arXiv preprint arXiv:2504.00255},
-  year    = {2025}
+@inproceedings{xiang2025scireplicate,
+  title     = {{SciReplicate-Bench}: Benchmarking {LLMs} in Agent-driven Algorithmic Reproduction from Research Papers},
+  author    = {Xiang, Yanzheng and Yan, Hanqi and Ouyang, Shuyin and Gui, Lin and He, Yulan},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year      = {2025},
+  note      = {arXiv:2504.00255}
 }
 
 @inproceedings{zhang2025mlrcbench,
@@ -147,47 +173,60 @@
   author    = {Zhang, Yunxiang and Khalifa, Muhammad and Bhushan, Shitanshu and Murphy, Grant D. and Logeswaran, Lajanugen and Kim, Jaekyeom and Lee, Moontae and Lee, Honglak and Wang, Lu},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
   year      = {2025},
+  url       = {https://openreview.net/forum?id=t8Okk2PRWU},
   note      = {arXiv:2504.09702}
 }
 
-@article{kon2025expbench,
-  title   = {{EXP-Bench}: Can {AI} Conduct {AI} Research Experiments?},
-  author  = {Kon, Patrick Tser Jern and Liu, Jiachen and Zhu, Xinyi and Ding, Qiuyi and Peng, Jingjia and Xing, Jiarong and Huang, Yibo and Qiu, Yiming and Srinivasa, Jayanth and Lee, Myungjin and Chowdhury, Mosharaf and Zaharia, Matei and Chen, Ang},
-  journal = {arXiv preprint arXiv:2505.24785},
-  year    = {2025}
+@inproceedings{kon2025expbench,
+  title     = {{EXP-Bench}: Can {AI} Conduct {AI} Research Experiments?},
+  author    = {Kon, Patrick Tser Jern and Ding, Qiuyi and Liu, Jiachen and Zhu, Xinyi and Peng, Jingjia and Xing, Jiarong and Huang, Yibo and Qiu, Yiming and Srinivasa, Jayanth and Lee, Myungjin and Chowdhury, Mosharaf and Zaharia, Matei and Chen, Ang},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=KjgyAm383Z},
+  note      = {arXiv:2505.24785}
 }
 
-@article{hua2025researchcodebench,
-  title   = {{ResearchCodeBench}: Benchmarking {LLMs} on Implementing Novel Machine Learning Research Code},
-  author  = {Hua, Tianyu and Hua, Harper and Xiang, Violet and Klieger, Benjamin and Truong, Sang T. and Liang, Weixin and Sun, Fan-Yun and Haber, Nick},
-  journal = {arXiv preprint arXiv:2506.02314},
-  year    = {2025}
+@inproceedings{hua2025researchcodebench,
+  title     = {{ResearchCodeBench}: Benchmarking {LLMs} on Implementing Novel Machine Learning Research Code},
+  author    = {Hua, Tianyu and Hua, Harper and Xiang, Violet and Klieger, Benjamin and Truong, Sang T. and Liang, Weixin and Sun, Fan-Yun and Haber, Nick},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  year      = {2025},
+  doi       = {10.52202/085713-4687},
+  note      = {arXiv:2506.02314}
 }
 
-@article{edwards2025rexbench,
-  title   = {{RExBench}: Can Coding Agents Autonomously Implement {AI} Research Extensions?},
-  author  = {Edwards, Nicholas and Lee, Yukyung and Mao, Yujun Audrey and Qin, Yulu and Schuster, Sebastian and Kim, Najoung},
-  journal = {arXiv preprint arXiv:2506.22598},
-  year    = {2025}
+@inproceedings{edwards2025rexbench,
+  title     = {{RExBench}: Can Coding Agents Autonomously Implement {AI} Research Extensions?},
+  author    = {Edwards, Nicholas and Lee, Yukyung and Mao, Yujun Audrey and Qin, Yulu and Schuster, Sebastian and Kim, Najoung},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year      = {2026},
+  pages     = {16380--16417},
+  doi       = {10.18653/v1/2026.acl-long.745},
+  note      = {arXiv:2506.22598}
 }
 
-@article{zhao2025speedrunning,
-  title   = {The Automated {LLM} Speedrunning Benchmark: Reproducing {NanoGPT} Improvements},
-  author  = {Zhao, Bingchen and Magka, Despoina and Jiang, Minqi and Li, Xian and Raileanu, Roberta and Shavrina, Tatiana and Gagnon-Audet, Jean-Christophe and Niu, Kelvin and Sodhani, Shagun and Shvartsman, Michael and Lupu, Andrei and Lupidi, Alisia and Toledo, Edan and Hambardzumyan, Karen and Josifoski, Martin and Foster, Thomas and Cipolina-Kun, Lucia and Charnalia, Abhishek and Dunfield, Derek and Miller, Alexander H. and Mac Aodha, Oisin and Foerster, Jakob and Bachrach, Yoram},
-  journal = {arXiv preprint arXiv:2506.22419},
-  year    = {2025}
+@inproceedings{zhao2025speedrunning,
+  title     = {The Automated {LLM} Speedrunning Benchmark: Reproducing {NanoGPT} Improvements},
+  author    = {Zhao, Bingchen and Magka, Despoina and Jiang, Minqi and Li, Xian and Raileanu, Roberta and Shavrina, Tatiana and Gagnon-Audet, Jean-Christophe and Niu, Kelvin and Sodhani, Shagun and Shvartsman, Michael and Lupu, Andrei and Lupidi, Alisia and Toledo, Edan and Hambardzumyan, Karen and Josifoski, Martin and Foster, Thomas and Cipolina-Kun, Lucia and Charnalia, Abhishek and Dunfield, Derek and Miller, Alexander H. and Mac Aodha, Oisin and Foerster, Jakob and Bachrach, Yoram},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  year      = {2025},
+  doi       = {10.52202/085713-0928},
+  note      = {arXiv:2506.22419}
 }
 
-@article{nguyen2026replicatorbench,
-  title   = {{ReplicatorBench}: Benchmarking {LLM} Agents for Replicability in Social and Behavioral Sciences},
-  author  = {Nguyen, Bang and So{\'o}s, Dominik and Ma, Qian and Obadage, Rochana R. and Ranjan, Zack and Koneru, Sai and others},
-  journal = {arXiv preprint arXiv:2602.11354},
-  year    = {2026}
+@inproceedings{nguyen2026replicatorbench,
+  title     = {{ReplicatorBench}: Benchmarking {LLM} Agents for Replicability in Social and Behavioral Sciences},
+  author    = {Nguyen, Bang and So{\'o}s, Dominik and Ma, Qian and Obadage, Rochana R. and Ranjan, Zack and Koneru, Sai and Errington, Timothy M. and Nematova, Shakhlo and Rajtmajer, Sarah and Wu, Jian and Jiang, Meng},
+  booktitle = {Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2 (KDD)},
+  year      = {2026},
+  pages     = {11693--11704},
+  doi       = {10.1145/3770855.3819003},
+  note      = {arXiv:2602.11354}
 }
 
 @article{wang2026researchenvbench,
   title   = {{ResearchEnvBench}: Benchmarking Agents on Environment Synthesis for Research Code Execution},
-  author  = {Wang, Yubang and Zhang, Chenxi and Chen, Bowen and Huai, Zezheng and Dai, Zihao and Chen, Xinchi and others},
+  author  = {Wang, Yubang and Zhang, Chenxi and Chen, Bowen and Huai, Zezheng and Dai, Zihao and Chen, Xinchi and Wang, Yuxin and Zheng, Yining and Gong, Jingjing and Qiu, Xipeng},
   journal = {arXiv preprint arXiv:2603.06739},
   year    = {2026}
 }
@@ -199,18 +238,22 @@
   year    = {2026}
 }
 
-@article{seo2025paper2code,
-  title   = {{Paper2Code}: Automating Code Generation from Scientific Papers in Machine Learning},
-  author  = {Seo, Minju and Baek, Jinheon and Lee, Seongyun and Hwang, Sung Ju},
-  journal = {arXiv preprint arXiv:2504.17192},
-  year    = {2025}
+@inproceedings{seo2025paper2code,
+  title     = {{Paper2Code}: Automating Code Generation from Scientific Papers in Machine Learning},
+  author    = {Seo, Minju and Baek, Jinheon and Lee, Seongyun and Hwang, Sung Ju},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2026},
+  note      = {arXiv:2504.17192}
 }
 
-@article{zhao2025autoreproduce,
-  title   = {{AutoReproduce}: Automatic {AI} Experiment Reproduction with Paper Lineage},
-  author  = {Zhao, Xuanle and Sang, Zilin and Li, Yuxuan and Shi, Qi and Zhao, Weilun and Wang, Shuo and Zhang, Duzhen and Han, Xu and Liu, Zhiyuan and Sun, Maosong},
-  journal = {arXiv preprint arXiv:2505.20662},
-  year    = {2025}
+@inproceedings{zhao2025autoreproduce,
+  title     = {{AutoReproduce}: Automatic {AI} Experiment Reproduction with Paper Lineage},
+  author    = {Zhao, Xuanle and Sang, Zilin and Li, Yuxuan and Shi, Qi and Zhao, Weilun and Wang, Shuo and Zhang, Duzhen and Han, Xu and Liu, Zhiyuan and Sun, Maosong},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (ACL), Volume 1: Long Papers},
+  year      = {2026},
+  pages     = {21920--21942},
+  doi       = {10.18653/v1/2026.acl-long.1001},
+  note      = {arXiv:2505.20662}
 }
 
 % ---------- Reproducibility literature ----------
@@ -218,26 +261,32 @@
 @inproceedings{gundersen2018state,
   title     = {State of the Art: Reproducibility in Artificial Intelligence},
   author    = {Gundersen, Odd Erik and Kjensmo, Sigbj{\o}rn},
-  booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence},
-  year      = {2018}
+  booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI)},
+  pages     = {1644--1651},
+  year      = {2018},
+  doi       = {10.1609/aaai.v32i1.11503},
 }
 
 @inproceedings{raff2019step,
   title     = {A Step Toward Quantifying Independently Reproducible Machine Learning Research},
   author    = {Raff, Edward},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {32},
   year      = {2019},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2019/hash/c429429bf1f2af051f2021dc92a8ebea-Abstract.html},
   note      = {arXiv:1909.06674}
 }
 
 @article{pineau2021improving,
   title   = {Improving Reproducibility in Machine Learning Research (A Report from the {NeurIPS} 2019 Reproducibility Program)},
   author  = {Pineau, Joelle and Vincent-Lamarre, Philippe and Sinha, Koustuv and Larivi{\`e}re, Vincent and Beygelzimer, Alina and d'Alch{\'e}-Buc, Florence and Fox, Emily and Larochelle, Hugo},
-  journal = {Journal of Machine Learning Research},
+  journal = {Journal of Machine Learning Research (JMLR)},
   volume  = {22},
   number  = {164},
   pages   = {1--20},
-  year    = {2021}
+  year    = {2021},
+  url     = {https://jmlr.org/papers/v22/20-303.html},
+  note    = {arXiv:2003.12206}
 }
 
 @article{gundersen2022sources,
@@ -257,42 +306,51 @@
 }
 
 @misc{huang2025aiwork,
-author = {Saffron Huang and Bryan Seethor and Esin Durmus and Kunal Handa and Miles McCain and Michael Stern and Deep Ganguli},
-title = {How {AI} Is Transforming Work at {Anthropic}},
-date = {2025-12-02},
-year = {2025},
-url = {https://anthropic.com/research/how-ai-is-transforming-work-at-anthropic/},
+  title        = {How {AI} Is Transforming Work at {Anthropic}},
+  author       = {Huang, Saffron and Seethor, Bryan and Durmus, Esin and Handa, Kunal and McCain, Miles and Stern, Michael and Ganguli, Deep},
+  howpublished = {Anthropic Research blog},
+  month        = {December},
+  year         = {2025},
+  url          = {https://anthropic.com/research/how-ai-is-transforming-work-at-anthropic/}
 }
 
 @misc{openai2026acceleration,
-author = {{OpenAI}},
-title = {Research Acceleration: The View Inside {OpenAI}},
-date = {2026-09-06},
-year = {2026},
-url = {https://openai.com/index/research-acceleration-view-inside-openai/},
+  title        = {Research Acceleration: The View Inside {OpenAI}},
+  author       = {{OpenAI}},
+  howpublished = {OpenAI blog},
+  month        = {September},
+  year         = {2026},
+  url          = {https://openai.com/index/research-acceleration-view-inside-openai/}
 }
 
 @inproceedings{kiela2021dynabench,
   title     = {Dynabench: Rethinking Benchmarking in {NLP}},
   author    = {Kiela, Douwe and Bartolo, Max and Nie, Yixin and Kaushik, Divyansh and Geiger, Atticus and Wu, Zhengxuan and Vidgen, Bertie and Prasad, Grusha and Singh, Amanpreet and Ringshia, Pratik and Ma, Zhiyi and Thrush, Tristan and Riedel, Sebastian and Waseem, Zeerak and Stenetorp, Pontus and Jia, Robin and Bansal, Mohit and Potts, Christopher and Williams, Adina},
-  booktitle = {Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  booktitle = {Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL)},
+  pages     = {4110--4124},
   year      = {2021},
+  doi       = {10.18653/v1/2021.naacl-main.324},
   note      = {arXiv:2104.14337}
 }
 
 @article{phan2025hle,
-  title   = {Humanity's Last Exam},
-  author  = {Phan, Long and Gatti, Alice and Han, Ziwen and others},
-  journal = {arXiv preprint arXiv:2501.14249},
-  year    = {2025}
+  title   = {A Benchmark of Expert-Level Academic Questions to Assess {AI} Capabilities},
+  author  = {{Center for AI Safety} and {Scale AI} and {HLE Contributors Consortium}},
+  journal = {Nature},
+  volume  = {649},
+  pages   = {1139--1146},
+  year    = {2026},
+  doi     = {10.1038/s41586-025-09962-4},
+  note    = {Humanity's Last Exam; arXiv:2501.14249}
 }
 
 % ---------- Data and models ----------
 
 @misc{neurips2025corpus,
   author       = {{ai-conferences}},
-  title        = {{NeurIPS 2025 Submissions Dataset}},
+  title        = {{NeurIPS2025}},
   year         = {2026},
+  month        = {July},
   publisher    = {Hugging Face},
   howpublished = {Hugging Face dataset},
   url          = {https://huggingface.co/datasets/ai-conferences/NeurIPS2025},
@@ -301,20 +359,16 @@ url = {https://openai.com/index/research-acceleration-view-inside-openai/},
 
 @article{minimax2026m2,
   author  = {{MiniMax}},
-  title   = {{The MiniMax-M2 Series: Mini Activations Unleashing Max Real-World Intelligence}},
+  title   = {The {MiniMax-M2} Series: Mini Activations Unleashing Max Real-World Intelligence},
   journal = {arXiv preprint arXiv:2605.26494},
-  year    = {2026},
-  url     = {https://huggingface.co/MiniMaxAI/MiniMax-M2.7}
+  year    = {2026}
 }
 
-@misc{deepseekai2026deepseekv4highlyefficientmilliontoken,
-      title={{DeepSeek-V4}: Towards Highly Efficient Million-Token Context Intelligence},
-      author={DeepSeek-AI and others},
-      year={2026},
-      eprint={2606.19348},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2606.19348},
+@article{deepseekai2026deepseekv4highlyefficientmilliontoken,
+  author  = {{DeepSeek-AI}},
+  title   = {{DeepSeek-V4}: Towards Highly Efficient Million-Token Context Intelligence},
+  journal = {arXiv preprint arXiv:2606.19348},
+  year    = {2026}
 }
 
 @misc{qwen3.6-27b,
@@ -345,9 +399,243 @@ url = {https://openai.com/index/research-acceleration-view-inside-openai/},
 @inproceedings{bode2025deltaai,
   title     = {{DeltaAI}: A National Resource for {AI}/{ML} Research},
   author    = {Bode, Brett and Bauer, Gregory and Herriott, Laura and Kindratenko, Volodymyr and Gropp, William},
-  booktitle = {Practice and Experience in Advanced Research Computing (PEARC)},
+  booktitle = {Practice and Experience in Advanced Research Computing 2025: The Power of Collaboration (PEARC)},
   pages     = {1--4},
   year      = {2025},
   publisher = {ACM},
   doi       = {10.1145/3708035.3736062}
+}
+
+% ---------- Added 2026-09-06 (citation audit) ----------
+
+@inproceedings{kwon2023vllm,
+  title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
+  author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
+  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP)},
+  pages     = {611--626},
+  publisher = {ACM},
+  year      = {2023},
+  doi       = {10.1145/3600006.3613165},
+  note      = {arXiv:2309.06180}
+}
+
+@inproceedings{zheng2023judging,
+  title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
+  author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and Gonzalez, Joseph E. and Stoica, Ion},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  year      = {2023},
+  note      = {arXiv:2306.05685}
+}
+
+@misc{anthropic2026sonnet5,
+  author       = {{Anthropic}},
+  title        = {Introducing {Claude Sonnet 5}},
+  howpublished = {Anthropic news},
+  month        = {June},
+  year         = {2026},
+  url          = {https://www.anthropic.com/news/claude-sonnet-5}
+}
+
+@article{kurtzer2017singularity,
+  title     = {Singularity: Scientific Containers for Mobility of Compute},
+  author    = {Kurtzer, Gregory M. and Sochat, Vanessa and Bauer, Michael W.},
+  journal   = {PLOS ONE},
+  volume    = {12},
+  number    = {5},
+  pages     = {e0177459},
+  year      = {2017},
+  doi       = {10.1371/journal.pone.0177459}
+}
+
+@inproceedings{yoo2003slurm,
+  title     = {{SLURM}: Simple {Linux} Utility for Resource Management},
+  author    = {Yoo, Andy B. and Jette, Morris A. and Grondona, Mark},
+  booktitle = {Job Scheduling Strategies for Parallel Processing (JSSPP)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {2862},
+  pages     = {44--60},
+  publisher = {Springer},
+  year      = {2003},
+  doi       = {10.1007/10968987_3}
+}
+
+@article{kapoor2024agents,
+  title   = {{AI} Agents That Matter},
+  author  = {Kapoor, Sayash and Stroebl, Benedikt and Siegel, Zachary S. and Nadgir, Nitya and Narayanan, Arvind},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2025},
+  note    = {arXiv:2407.01502}
+}
+
+@inproceedings{lin2023awq,
+  title     = {{AWQ}: Activation-aware Weight Quantization for On-Device {LLM} Compression and Acceleration},
+  author    = {Lin, Ji and Tang, Jiaming and Tang, Haotian and Yang, Shang and Chen, Wei-Ming and Wang, Wei-Chen and Xiao, Guangxuan and Dang, Xingyu and Gan, Chuang and Han, Song},
+  booktitle = {Proceedings of Machine Learning and Systems (MLSys)},
+  year      = {2024},
+  note      = {arXiv:2306.00978}
+}
+
+@inproceedings{yang2025sharpzo,
+  title     = {{SharpZO}: Hybrid Sharpness-Aware Vision Language Model Prompt Tuning via Forward-Only Passes},
+  author    = {Yang, Yifan and Zhang, Zhen and Swaminathan, Rupak Vignesh and Liu, Jing and Susanj, Nathan and Zhang, Zheng},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  pages     = {159440--159466},
+  year      = {2025},
+  doi       = {10.52202/085713-4811},
+  note      = {arXiv:2506.20990}
+}
+
+@inproceedings{lhoest2021datasets,
+  title     = {Datasets: A Community Library for Natural Language Processing},
+  author    = {Lhoest, Quentin and Villanova del Moral, Albert and Jernite, Yacine and Thakur, Abhishek and von Platen, Patrick and Patil, Suraj and Chaumond, Julien and Drame, Mariama and Plu, Julien and Tunstall, Lewis and Davison, Joe and {\v{S}}a{\v{s}}ko, Mario and Chhablani, Gunjan and Malik, Bhavitvya and Brandeis, Simon and Le Scao, Teven and Sanh, Victor and Xu, Canwen and Patry, Nicolas and McMillan-Major, Angelina and Schmid, Philipp and Gugger, Sylvain and Delangue, Cl{\'e}ment and Matussi{\`e}re, Th{\'e}o and Debut, Lysandre and Bekman, Stas and Cistac, Pierric and Goehringer, Thibault and Mustar, Victor and Lagunas, Fran{\c{c}}ois and Rush, Alexander and Wolf, Thomas},
+  booktitle = {Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP), System Demonstrations},
+  pages     = {175--184},
+  publisher = {Association for Computational Linguistics},
+  year      = {2021},
+  doi       = {10.18653/v1/2021.emnlp-demo.21},
+  note      = {arXiv:2109.02846}
+}
+
+@inproceedings{kwa2025long,
+  title     = {Measuring {AI} Ability to Complete Long Software Tasks},
+  author    = {Kwa, Thomas and West, Ben and Becker, Joel and Deng, Amy and Garcia, Katharyn and Hasin, Max and Jawhar, Sami and Kinniment, Megan and Rush, Nate and Von Arx, Sydney and Bloom, Ryan and Broadley, Thomas and Du, Haoxing and Goodrich, Brian and Jurkovic, Nikola and Miles, Luke Harold and Nix, Seraphina and Lin, Tao and Painter, Chris and Parikh, Neev and Rein, David and Sato, Lucas Jun Koba and Wijk, Hjalmar and Ziegler, Daniel M. and Barnes, Elizabeth and Chan, Lawrence},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2025},
+  note      = {arXiv:2503.14499}
+}
+
+@article{ott2022mapping,
+  title   = {Mapping Global Dynamics of Benchmark Creation and Saturation in Artificial Intelligence},
+  author  = {Ott, Simon and Barbosa-Silva, Adriano and Blagec, Kathrin and Brauner, Jan and Samwald, Matthias},
+  journal = {Nature Communications},
+  volume  = {13},
+  number  = {1},
+  pages   = {6793},
+  year    = {2022},
+  doi     = {10.1038/s41467-022-34591-0},
+  note    = {arXiv:2203.04592}
+}
+
+@inproceedings{henderson2018deep,
+  title     = {Deep Reinforcement Learning That Matters},
+  author    = {Henderson, Peter and Islam, Riashat and Bachman, Philip and Pineau, Joelle and Precup, Doina and Meger, David},
+  booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI)},
+  pages     = {3207--3214},
+  year      = {2018},
+  doi       = {10.1609/aaai.v32i1.11694},
+  note      = {arXiv:1709.06560}
+}
+
+@article{murphyhill2026adoption,
+  title   = {Adoption and Impact of Command-Line {AI} Coding Agents: A Study of {Microsoft}'s Early 2026 Rollout of {Claude Code} and {GitHub Copilot CLI}},
+  author  = {Murphy-Hill, Emerson and Butler, Jenna and Savelieva, Alexandra},
+  journal = {arXiv preprint arXiv:2607.01418},
+  year    = {2026}
+}
+
+@misc{anthropic2026pricing,
+  author       = {{Anthropic}},
+  title        = {Pricing},
+  howpublished = {Claude Developer Platform documentation},
+  year         = {2026},
+  url          = {https://platform.claude.com/docs/en/about-claude/pricing},
+  note         = {Accessed 2026-09-06}
+}
+
+@inproceedings{sun2025cqdino,
+  title     = {{CQ-DINO}: Mitigating Gradient Dilution via Category Queries for Vast Vocabulary Object Detection},
+  author    = {Sun, Zhichao and Hu, Huazhang and Ma, Yidong and Liu, Gang and Chen, Yibo and Tang, Xu and Hu, Yao and Xu, Yongchao},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2025},
+  note      = {arXiv:2503.18430}
+}
+
+@inproceedings{panickssery2024evaluators,
+  title     = {{LLM} Evaluators Recognize and Favor Their Own Generations},
+  author    = {Panickssery, Arjun and Bowman, Samuel R. and Feng, Shi},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  pages     = {68772--68802},
+  year      = {2024},
+  note      = {arXiv:2404.13076}
+}
+
+@misc{deepseekai2026flashcard,
+  author       = {{DeepSeek-AI}},
+  title        = {{DeepSeek-V4-Flash-0731}},
+  publisher    = {Hugging Face},
+  howpublished = {Hugging Face model card},
+  month        = {July},
+  year         = {2026},
+  url          = {https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731},
+  note         = {Accessed \mbox{2026-09-06}, revision \texttt{7872f01b1d1f\allowbreak e23eabc4c98b\allowbreak 48bffcef5a386062}}
+}
+
+@misc{openai2026gpt55,
+  author       = {{OpenAI}},
+  title        = {{GPT-5.5}},
+  howpublished = {OpenAI API documentation},
+  year         = {2026},
+  url          = {https://developers.openai.com/api/docs/models/gpt-5.5},
+  note         = {Accessed 2026-09-06}
+}
+
+@misc{abid2026reproducing,
+  title        = {What We Learned by Reproducing 2,200 papers from {ICML}},
+  author       = {Abid, Abubakar},
+  howpublished = {Hugging Face blog},
+  month        = {August},
+  year         = {2026},
+  url          = {https://huggingface.co/blog/icml-2026-open-reproductions}
+}
+
+@article{nadgir2026saturation,
+  title   = {Life After Benchmark Saturation: A Case Study of {CORE-Bench}},
+  author  = {Nadgir, Nitya and Kapoor, Sayash and Liu, Kangheng and Kirgis, Peter and Orona, Matilda and Rabanser, Stephan and Bayer, Tilman and Shetty, Abhishek and Ling, Yue and Chan-Sew, Derrick and Nakagawa, Rumi and Utpala, Saiteja and Siegel, Zachary S. and Narayanan, Arvind},
+  journal = {arXiv preprint arXiv:2606.26158},
+  year    = {2026}
+}
+
+@article{ye2025replicationbench,
+  title   = {{ReplicationBench}: Can {AI} Agents Replicate Astrophysics Research Papers?},
+  author  = {Ye, Christine and Yuan, Sihan and Cooray, Suchetha and Dillmann, Steven and Roque, Ian L. V. and Baron, Dalya and Frank, Philipp and Martin-Alvarez, Sergio and Koblischke, Nolan and Qu, Frank J. and Yang, Diyi and Wechsler, Risa and Ciuca, Ioana},
+  journal = {arXiv preprint arXiv:2510.24591},
+  year    = {2025}
+}
+
+@article{alizadeh2026socsci,
+  title   = {{AI} Coding Agents Can Reproduce Social Science Findings},
+  author  = {Alizadeh, Meysam and Mosleh, Mohsen and Gilardi, Fabrizio and Kasirzadeh, Atoosa and Tucker, Joshua},
+  journal = {arXiv preprint arXiv:2606.11447},
+  year    = {2026}
+}
+
+@inproceedings{li2026reprorepo,
+  title     = {{ReproRepo}: Scaling Reproducibility Audits with {GitHub} Repository Issues},
+  author    = {Li, Shanda and Wei, Qiuhong Anna and Tang, Jingwu and Chen, Valerie and Shah, Nihar B. and Dettmers, Tim and Yang, Yiming and Talwalkar, Ameet},
+  booktitle = {Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year      = {2026},
+  note      = {arXiv:2606.18237}
+}
+
+@inproceedings{hu2026sabench,
+  title     = {{SA-Bench}: Evaluating Semantic Alignment in {LLM}-Based Paper Reproduction},
+  author    = {Hu, Xue and Pan, Zewei and Su, Zeli and Liu, Zhou and Zhang, Wentao},
+  booktitle = {Findings of the Association for Computational Linguistics: {EMNLP} 2026 (EMNLP Findings)},
+  year      = {2026},
+  note      = {arXiv:2608.24252}
+}
+
+@inproceedings{huang2026automat,
+  title     = {Can Coding Agents Reproduce Findings in Computational Materials Science?},
+  author    = {Huang, Ziyang and Cao, Yi and Shargh, Ali K. and Luo, Jing and Mei, Ruidong and Zaki, Mohd and Liu, Zhan and Bunstine, Wyatt and Jurayj, William and Goswami, Somdatta and McQueen, Tyrel and Shields, Michael and El-Awady, Jaafar and Clancy, Paulette and Van Durme, Benjamin and Andrews, Nicholas and Walden, William and Khashabi, Daniel},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year      = {2026},
+  note      = {arXiv:2605.00803}
+}
+
+@article{xu2026autolab,
+  title   = {{AutoLab}: Can Frontier Models Solve Long-Horizon Auto Research and Engineering Tasks?},
+  author  = {Xu, Zhangchen and Chen, Junda and Huang, Yue and Jiang, Dongfu and Chen, Jiefeng and Hua, Hang and Wu, Zijian and Liu, Zheyuan and He, Zexue and Li, Lichi and Diao, Shizhe and Pei, Jiaxin and Yoon, Jinsung and Zhang, Hao and Wang, Mengdi and Poovendran, Radha and Sra, Misha and Pentland, Alex and Chen, Zichen},
+  journal = {arXiv preprint arXiv:2606.05080},
+  year    = {2026}
 }

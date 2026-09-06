@@ -117,9 +117,9 @@ AI agents do a growing share of the engineering behind machine learning
 research. They implement, execute, and debug large-scale experiments and
 software projects~\citep{jimenez2024swebench,chan2024mlebench,
 merrill2026terminalbench}, and they are already deployed on this work
-in the real world~\citep{handa2025economic,huang2025aiwork}. As their capabilities rise,
+in the real world~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
 static benchmarks tend to saturate soon after they are
-released~\citep{kiela2021dynabench,phan2025hle}, so evaluation has to move
+released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping}, so evaluation has to move
 closer to the workflows agents are deployed into. Reproducing a published ML paper by
 obtaining results consistent with those its authors report is an ideal
 ground for that evaluation, both for its direct value to the field and for
@@ -128,8 +128,9 @@ research, published results are often not easy to reproduce. One sustained
 replication effort reproduced only 162 of 255 attempted papers without
 using the authors' code~\citep{raff2019step}, and independent studies
 attribute the shortfall to missing code, missing data, and underspecified
-experimental detail~\citep{gundersen2018state,pineau2021improving,
-gundersen2022sources}. Reproduction is also a prerequisite for recursively
+experimental detail~\citep{gundersen2018state,henderson2018deep,
+pineau2021improving,gundersen2022sources}. Reproduction is also a
+prerequisite for recursively
 self-improving systems, since a model that improves itself must first
 re-implement and verify the research it builds
 on~\citep{favaro2026recursive}. Both Anthropic and OpenAI report that their
@@ -193,7 +194,7 @@ as background data.
 \centering
 \includegraphics[width=\textwidth]{figures/reclaim_overview}
 \caption{Overview of RECLAIM and its evaluation pipeline. The figure shows an
-example run with DeepSeek-V4-Flash on the CQ-DINO paper.}
+example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
 \label{fig:overview}
 \end{figure}
 
@@ -205,8 +206,9 @@ example run with DeepSeek-V4-Flash on the CQ-DINO paper.}
 Agent evaluations have moved from isolated code generation to long-horizon
 work inside real repositories and terminals~\citep{jimenez2024swebench,
 merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
-lu2026frontiercode}. SWE-bench grades patches for real GitHub issues using
-the tests the repository already ships~\citep{jimenez2024swebench}, and
+lu2026frontiercode,tang2024mlbench,kwa2025long}. SWE-bench grades patches for
+real GitHub issues using
+the tests from the pull request that resolved the issue~\citep{jimenez2024swebench}, and
 Terminal-Bench 2.0 poses command-line tasks inside prepared containers with
 executable checks written in advance~\citep{merrill2026terminalbench}. Both
 fix the objective, the environment, and the verifier before the agent
@@ -225,41 +227,45 @@ Section~\ref{subsec:results}, with no test to pass.
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
 development through research engineering~\citep{huang2024mlagentbench,
-nathani2025mlgym,tang2024mlbench,jing2025dsbench,zhang2025datascibench,
-wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench}. MLE-bench is
+nathani2025mlgym,jing2025dsbench,zhang2025datascibench,
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench,xu2026autolab}. MLE-bench is
 representative, with agents building and refining pipelines for Kaggle
 competitions under a fixed compute budget and each submission scored
 against the historical leaderboard for that
 competition~\citep{chan2024mlebench}. Because the method is the agent's to
-choose and success is a leaderboard position rather than a specific
-published quantity, these benchmarks reward any solution that scores well
+choose and success is a score to maximize rather than a specific
+published quantity to recover, these benchmarks reward any solution that scores well
 and leave open whether an agent can run a prescribed method and
 configuration in an environment its authors never used and reach the
 number they reported.
 
 \paragraph{Scientific reproduction.}
-A growing line of benchmarks measures how well agents reproduce published
-research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
+A growing line of benchmarks measures how well agents reproduce, reimplement,
+extend, or audit published research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
 xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
 edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
-wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce}, and
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce,
+ye2025replicationbench,alizadeh2026socsci,li2026reprorepo,hu2026sabench,huang2026automat}, and
 three of them bracket the design space. CORE-Bench asks agents to rerun the
 released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive}. PaperBench lies at the
+effectively saturated~\citep{favaro2026recursive,nadgir2026saturation}. PaperBench lies at the
 opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
 with the authors' code withheld, grading the attempt against hierarchical
-rubrics the original authors wrote~\citep{starace2025paperbench}.
+rubrics co-developed with the original authors~\citep{starace2025paperbench}.
 EXP-Bench withholds the paper itself and hands the agent a research
-question and starter code to design and run the experiments
-from~\citep{kon2025expbench}. In all three the release state is settled
-before the run begins, usually by selection, since most keep only papers
-whose code is already public and already runs, and the stricter protocols
-exclude the rest on the stated reasoning that an irreproducible paper is
-not worth including. That builds a clean coding task, but it fixes the
+question, a high-level method description, and starter code to design and
+run the experiments from~\citep{kon2025expbench}. In all three the release state is settled
+before the run begins, by withholding the code or by selection. Most keep
+only papers whose code is already public and already runs, and the stricter
+protocols exclude the rest on the stated reasoning that there is no need to include
+an irreproducible paper. That builds a clean coding task, but it fixes the
 variable RECLAIM exists to measure, and a benchmark assembled only from
 papers that shipped working code cannot say what happens on the papers that
 did not.
+Outside benchmarks, the ICML 2026 Open Reproductions challenge instructed its
+LLM judge to treat each agent logbook's self-assessment as untrusted, and its
+organizers re-verified every claimed falsification~\citep{abid2026reproducing}.
 
 \section{RECLAIM}
 \label{sec:reclaim}
@@ -331,7 +337,7 @@ must clear, most often a point estimate within a stated or default tolerance.
 Appendix~\ref{app:dataset-schema} details the bar kinds and the tolerance
 rule.
 
-As a running example, SharpZO (arXiv 2506.20990) claims that a two-stage
+As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
 forward passes alone. Its match target pins a test accuracy of 79.42\% on the
 EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
@@ -412,12 +418,13 @@ reproduction in AI research~\citep{gundersen2018state}.
 \section{Auditing}
 \label{sec:auditing}
 
-Every finished run is graded by an LLM auditor that reads the
+Every finished run is graded by an LLM auditor~\citep{zheng2023judging} that reads the
 run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
-deterministically. We fix Claude Sonnet 5 as the auditor for every run of
+deterministically. We fix Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
+auditor for every run of
 every agent, and we froze the rubric before grading began, so scores are
-comparable across models and no agent grades its own family. The auditor is
+comparable across models and no agent grades its own family~\citep{panickssery2024evaluators}. The auditor is
 adversarial by instruction. It treats the agent's final report as a set of
 unverified claims and grades what the evidence shows. It traces every
 reported number to the execution that produced it, checks the executed
@@ -468,7 +475,7 @@ same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
 target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
-GPU, holding a Slurm allocation whose wall clock is metered against the
+GPU, holding a Slurm allocation~\citep{yoo2003slurm} whose wall clock is metered against the
 run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
 budgeting and scheduling decisions that real reproduction work demands.
@@ -481,7 +488,7 @@ prompts, the tools, and session mechanics.
 DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
-served on our cluster with vLLM, and we reach Muse Spark 1.2 through the Meta
+served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
 Model API. Every model runs the same harness, prompts, and per-paper budgets.
 Serving differs by model, and Appendix~\ref{app:models} records pinned
 versions, serving configuration, and decoding settings where we control them,
@@ -492,8 +499,8 @@ integer grade from 0 to 10 that the auditor assigns each run
 under the rubric of Appendix~\ref{app:rubric}. We also report the
 reproduction rate, the fraction of papers whose runs score 8 or higher and
 are therefore graded reproduced. Alongside both we report each model's token
-usage and total benchmark cost, the sum of its API pricing and its GPU time
-at \$2 per H100-hour.
+usage and total benchmark cost~\citep{kapoor2024agents}, the sum of its API
+pricing and its GPU time at \$2 per H100-hour.
 
 \subsection{Results}
 \label{subsec:results}

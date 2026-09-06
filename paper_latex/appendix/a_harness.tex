@@ -150,8 +150,8 @@ $ scancel <jobid>
 \label{app:sandbox}
 
 % src: src/reclaim_repro/sandbox.py:1-35,51-59,92-166,216-258,280-409, src/reclaim_repro/__main__.py:38-46, src/reclaim_repro/cluster.py:25-36,80-86, src/reclaim_repro/env.py, scripts/cluster/build_cuda_sandbox.sh:1-80
-Every shell step runs inside an Apptainer container whose image is a read-only
-CUDA 12.9 and cuDNN development root with git, a C and C++ build chain,
+Every shell step runs inside an Apptainer container~\citep{kurtzer2017singularity} whose image is a
+read-only CUDA 12.9 and cuDNN development root with git, a C and C++ build chain,
 \texttt{uv}, and Python 3.12. PyTorch is not preinstalled. Only bound paths
 are visible inside the container. The workspace and evidence directories are
 mounted read-write at \texttt{/repro/workspace} and \texttt{/repro/evidence},
