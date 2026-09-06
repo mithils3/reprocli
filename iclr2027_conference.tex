@@ -42,25 +42,29 @@
 AI agents can now take released code, set up its environment, run the
 experiments, and write up the results without a person in the loop. The benchmarks measuring this progress prepare the
 agent's environment and saturate quickly, whereas reproducing a published
-paper, the smallest complete unit of research, involves no such preparation.
+paper involves no such preparation.
 To mirror the conditions a human replicator faces, we give the agent the paper
 and whatever the authors released, and it supplies the rest. We introduce
 RECLAIM, a collection of 100 NeurIPS 2025 papers with a metered GPU-hour budget, a frozen target
 claim, a numeric tolerance, and a pinned auditor of execution evidence. For the strongest of
-four agents, reproduction falls from 48\% at Run tier to 32\% at Retrain and
-13\% at Reimplement, where the method is built from the paper alone. A
-released artifact rarely runs as shipped. Compute is not responsible for the
+four agents, reproduction falls from 48\% at Run tier, where code, data, and
+weights are all released, to 32\% at Retrain and 13\% at Reimplement, where
+the method is built from the paper alone. Compute is not responsible for the
 decline, since non-reproduced runs use only 30\% of their allocation. We label
-each analysed run's failure mechanism. For the strongest agent
-at Retrain tier, most failed reproductions ran the paper's experiment but did
-not match the result inside tolerance. These agents are competent executors and weak research
-scientists, separated from agents that automate research by the judgment
-that turns an executed experiment into a confirmed number.
+every graded run with one primary mode from a nine-mode failure taxonomy,
+which shows that for the strongest agent at Retrain tier most misses ran the
+paper's experiment and landed outside tolerance. We read these results as
+evidence that current agents are competent executors and weak research
+scientists. What separates them from agents that automate research is the
+judgment that turns an executed experiment into a confirmed number.
 % numbers of record, filled 2026-08-24. All pinned claude-sonnet-5, post-freeze:
 %   tier fall 48/32/13 -- DSv4-Flash easy 14/29 (2883229+2889575), medium 9/28
 %     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
 %     which cleared the old "Reimplement has no pinned number" blocker). Scoped
 %     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
+%   "rarely runs as shipped" -- CUT 2026-09-06: unsourced frequency claim, and
+%     the body attributes Run-tier misses to the agent. Run tier is now defined
+%     inside the tier sentence instead.
 %   Run-tier environment-repair clause -- CUT, per the prior TODO: the transcript
 %     pass over the 14 reproduced easy runs was never run, and the instruction
 %     was to cut rather than soften. Repair evidence stays in the body (five
