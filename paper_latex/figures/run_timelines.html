@@ -8,18 +8,18 @@
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
 :root { --navy:#1F3A5F; --teal:#3E8E8C; --gold:#E3B341; --red:#C2483B; --green:#3C8252; --greenbg:#E6F3EA; --ink:#2E3440; --gray:#6B7280; --cgray:#8C939E; }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { width:1720px; font-family:'InterF',sans-serif; background:#fff; }
-.wrap { width:1720px; padding:14px 18px 12px 18px; }
+body { width:1790px; font-family:'InterF',sans-serif; background:#fff; }
+.wrap { width:1790px; padding:14px 18px 12px 18px; }
 .hdr { display:flex; align-items:baseline; gap:26px; margin:0 0 10px 0; font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; }
-.hdr .c1 { width:500px; } .hdr .c2 { width:980px; } .hdr .c3 { width:210px; }
+.hdr .c1 { width:512px; } .hdr .c2 { width:980px; } .hdr .c3 { width:210px; }
 .lane { display:flex; align-items:center; gap:26px; height:52px; }
-.lab { width:500px; display:flex; align-items:center; gap:12px; white-space:nowrap; }
+.lab { width:512px; flex:none; display:flex; align-items:center; gap:12px; white-space:nowrap; }
 .num { width:34px; height:34px; border-radius:50%; background:var(--navy); color:#fff; font-weight:600; font-size:19px; display:flex; align-items:center; justify-content:center; flex:none; }
 .lab img { width:30px; height:30px; flex:none; }
 .who { font-size:20px; font-weight:600; color:var(--navy); }
 .sep { color:#B0B6BF; font-weight:400; padding:0 2px; }
 .paper { font-family:'JBMono',monospace; font-size:18px; color:var(--gray); margin-left:auto; padding-right:6px; }
-.track { position:relative; width:980px; height:52px; }
+.track { position:relative; flex:none; width:980px; height:52px; }
 .bg { position:absolute; top:15px; height:22px; left:0; border-radius:5px; background:#EEF0F3; }
 .cell { position:absolute; top:15px; height:22px; }
 .span { position:absolute; top:9px; height:34px; border-radius:6px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); z-index:1; }
@@ -28,12 +28,12 @@ body { width:1720px; font-family:'InterF',sans-serif; background:#fff; }
 .dia::after { content:''; position:absolute; left:4px; top:12px; width:2px; height:34px; background:var(--navy); transform:rotate(-45deg); transform-origin:top left; opacity:.0; }
 .dlab { position:absolute; top:-1px; font-family:'JBMono',monospace; font-size:15px; font-weight:500; color:var(--navy); z-index:3; }
 .tri { position:absolute; top:38px; width:0; height:0; margin-left:-7px; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:11px solid var(--red); z-index:2; }
-.audit { width:210px; font-family:'JBMono',monospace; font-size:16px; padding:5px 11px; border-radius:8px; border:1.5px solid; white-space:nowrap; }
+.audit { flex:none; width:210px; font-family:'JBMono',monospace; font-size:16px; padding:5px 11px; border-radius:8px; border:1.5px solid; white-space:nowrap; }
 .audit b { font-weight:700; font-size:19px; margin-right:6px; }
 .audit.good { color:#2A6B40; background:var(--greenbg); border-color:var(--green); }
 .audit.warn { color:#8C6B1F; background:#FCF3D9; border-color:var(--gold); }
 .audit.bad { color:#8F3229; background:#F9E8E6; border-color:var(--red); }
-.axis { position:relative; height:34px; margin:2px 0 0 526px; width:980px; border-top:1.5px solid #D8DCE1; }
+.axis { position:relative; height:34px; margin:2px 0 0 538px; width:980px; border-top:1.5px solid #D8DCE1; }
 .tick { position:absolute; top:6px; margin-left:-12px; width:24px; text-align:center; font-family:'JBMono',monospace; font-size:15px; color:var(--cgray); }
 .tick i { position:absolute; left:11px; top:-7px; width:1.5px; height:6px; background:#C9CED6; }
 .axis .name { position:absolute; right:0; top:8px; font-size:15px; font-weight:600; letter-spacing:1.4px; color:#8A919C; }
@@ -44,7 +44,7 @@ body { width:1720px; font-family:'InterF',sans-serif; background:#fff; }
 .legend .ld { width:11px; height:11px; margin:0 6px 0 3px; background:var(--navy); transform:rotate(45deg); border-radius:1px; }
 .legend .lt { width:0; height:0; margin:0 4px; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:10px solid var(--red); border-radius:0; }
 </style></head><body><div class="wrap">
-  <div class="hdr"><span class="c1">RUN</span><span class="c2">ROUNDS, COLOURED BY WHAT THE AGENT DID</span><span class="c3">AUDIT</span></div>
+  <div class="hdr"><span class="c1">RUN</span><span class="c2">ROUNDS, COLORED BY WHAT THE AGENT DID</span><span class="c3">AUDIT</span></div>
   
   <div class="lane">
     <div class="lab"><span class="num">1</span><img src="icons/wrench.png"><span class="who">DeepSeek-V4 <span class="sep">/</span> Run</span><span class="paper">2410.18164</span></div>

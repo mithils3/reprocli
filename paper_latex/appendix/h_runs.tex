@@ -16,8 +16,8 @@
 % conda, cmake, git clone, downloads = install; edit_file/write_file = write;
 % everything else = read and plan).
 
-\newcommand{\runfacts}[8]{\noindent{\footnotesize Run \texttt{#1} in the run
-logs. #2, #3 tier, arXiv~#4. Audit #5, #6; mode #7; #8.}\par\medskip}
+\newcommand{\runfacts}[8]{\noindent{\footnotesize #2, #3 tier, arXiv~#4. Run
+\texttt{#1} in the run logs. Audit #5, #6; mode #7; #8.}\par\medskip}
 
 The counts of Section~\ref{subsec:mechanisms} say how often each failure mode
 occurs and little about what the work of a reproduction looks like from inside
@@ -40,13 +40,13 @@ audit score and verdict, its primary mode, and one to three verbatim excerpts
 with their round numbers; the decisive round, the one in which the transcript
 shows the run being fixed or lost, is set in a gold box. Round numbers are the
 transcript's own, so a tool result is cited at the round in which it returned. Figure~\ref{fig:run-timelines} places the ten on a
-common round axis, coloured by the kind of tool call the agent made in each
+common round axis, colored by the kind of tool call the agent made in each
 round, with the annotated episode and its decisive round marked.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/run_timelines}
-\caption{Activity of the ten annotated runs by round, coloured by the kind
+\caption{Activity of the ten annotated runs by round, colored by the kind
 of tool call, with the annotated episode, its decisive round, and the first
 graded-pipeline launch marked.}
 \label{fig:run-timelines}

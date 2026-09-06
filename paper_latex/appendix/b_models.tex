@@ -23,8 +23,8 @@ allocation and its own compute budget.
 
 Muse Spark 1.2 is hosted by Meta, and the harness reached it through the Meta
 Model API as \texttt{muse-spark-1.2-contributor} between 2026-08-14 and
-2026-08-23, with \texttt{reasoning\_effort} set to \texttt{xhigh} and the
-same 300 tool rounds. Its sweeps run the same per-tier loop as a process on a
+2026-08-23, with the same 300 tool rounds and \texttt{reasoning\_effort}
+set to \texttt{xhigh}. Its sweeps run the same per-tier loop as a process on a
 login node rather than inside a batch job, so they carry no job wall clock,
 while each paper's \texttt{run\_gpu} call still acquires its own allocation.
 The API advertises no context length, so we declare a window of
@@ -33,7 +33,7 @@ The API advertises no context length, so we declare a window of
 % src: scripts/reproduce/muse_spark/muse_spark_sweep.sh:14,26-36,67-74,113-114,133-135; repro_runs started_at/finished_at of the three muse_spark batches
 
 % src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reclaim_serve/profiles.py:65-74,116-143,146-198; src/reclaim_serve/config.py:28; src/reclaim_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.2cm}@{}}
