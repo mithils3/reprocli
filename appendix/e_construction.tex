@@ -11,7 +11,7 @@ pool to the 100-paper evaluation split.
 
 % src: src/reclaim_data/pipeline/index.py:1-4,18-24,49-75; src/reclaim_data/pipeline/sources.py:32-60,115; src/reclaim_data/pipeline/supplements.py:1-5,85-175,184-233; src/reclaim_data/pipeline/bundle.py:30-56,150-210; src/reclaim_data/build_dataset.py:119-160; notes/DATASET.md:114-146
 The corpus starts from the NeurIPS 2025 index of the \emph{ai-conferences}
-collection~\citep{neurips2025corpus}, in which each entry already carries a
+collection~\citep{neurips2025corpus}, in which each entry already has a
 matched arXiv ID. We keep a row only when that ID is well formed, and at no
 stage do we pair a paper with an arXiv entry by title. Two fetch stages then
 retrieve each paper's arXiv source package and its OpenReview supplement, the

@@ -11,12 +11,12 @@ rationale, and flags recorded on the run row, and it assigns exactly one
 primary mode per run. The modes are not mutually exclusive as mechanisms, so
 the label records the dominant one. A dissection never edits audit scores,
 verdicts, or flags, and a mode label therefore never moves a grade. No
-dissection carries an availability-wall label. Every artifact in the frozen
+dissection uses an availability-wall label. Every artifact in the frozen
 benchmark is retrievable by host probe, and where a report asserts otherwise
 we relabel the run from its own evidence. We add a new mode to the taxonomy
 only on evidence from at least two runs.
 Before pooling, we remap sweep-local labels onto the nine modes. Thirty-six
-runs whose dissection carried a label outside the vocabulary, or a label that
+runs whose dissection gave a label outside the vocabulary, or one that
 disagreed with the pinned verdict, were re-read against the definitions below
 and assigned by the agent's recorded behavior. The labels folded this way are
 under-determined-target, scope-collapse, unavailability-concluded-from-prose,
@@ -24,7 +24,7 @@ context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
 report-serialization-fault and report-serialization-collapse,
 tool-call-format-collapse, protocol-drift-direction-flip,
 eval-protocol-shopping, verified-non-attempt, and success. Eleven of the
-thirty-six carried an in-vocabulary label that disagreed with the pinned
+thirty-six had an in-vocabulary label that disagreed with the pinned
 verdict, seven of them the outside-tolerance label on a disqualified run, and
 four kept their label after re-reading because the disqualifying flag concerned
 only the run's self-report.
@@ -94,7 +94,7 @@ measured value on the wrong side of the bar. &
 The agent writes its own version of the method or a component of it and
 anchors no stage of it to a reference it did not produce itself. &
 A from-scratch component in the run's own code, alongside a reference row the
-paper supplies, most often its own baseline in the table that carries the
+paper supplies, most often its own baseline in the same table as the
 target, that the transcript never checks against. &
 4 \\
 \addlinespace
@@ -109,7 +109,7 @@ the same package families recurring across runs on the same host. &
 The agent measures a checkpoint, dataset, split, or scale other than the one
 the dataset row names. &
 A retrieved artifact whose own model card, README, or shipped example
-disagrees with the dataset row, carrying a measurement taken on it. The
+disagrees with the dataset row, and a measurement taken on it. The
 \texttt{wrong\_\allowbreak split\_\allowbreak scale\_\allowbreak dataset} flag names the same break. &
 -- \\
 \addlinespace
