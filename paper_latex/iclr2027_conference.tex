@@ -42,11 +42,11 @@
 AI agents can now take released code, set up its environment, run the
 experiments, and write up the results. Existing benchmarks prepare the agent's
 environment and saturate quickly, whereas reproducing a published paper
-involves no such preparation. We give the agent the paper and whatever the
-authors released, and it supplies the rest. We introduce RECLAIM, 100 NeurIPS
-2025 papers with a metered GPU-hour budget, a frozen target claim, a numeric
-tolerance, and a pinned auditor of execution evidence. For the strongest of
-four agents, reproduction falls from 48\% at Run tier, where code, data, and
+involves no such preparation. We introduce RECLAIM, 100 NeurIPS 2025 papers
+with a metered GPU-hour budget, a frozen target claim, a numeric tolerance,
+and a pinned auditor of execution evidence. We give the agent the paper and
+whatever the authors released, and it supplies the rest. For the strongest of
+four agents, reproduction rates fall from 48\% at Run tier, where code, data, and
 weights are released, to 32\% at Retrain and 13\% at Reimplement, where the
 method is built from the paper alone. Compute does not explain the decline,
 since non-reproduced runs use only 30\% of their allocation. We label every
