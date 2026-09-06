@@ -32,7 +32,7 @@ lenses (defects in the release, host adaptation, provenance work,
 substitutions, and near misses), which nominated 37 runs; we verified 16 of the
 nominations against the event transcript at the cited rounds, one failed, and
 we kept ten of the fifteen for coverage of agents, tiers, and outcomes. Four
-of the ten are DeepSeek-V4 runs and five are at the Run tier, and we did not
+of the ten are DeepSeek-V4-Flash runs and five are at the Run tier, and we did not
 balance further, since the recoveries concentrate in the strongest agent and
 in the tier where released code exists to repair. Each vignette gives the
 run's identifier in the run logs of footnote~\ref{fn:artifacts}, the pinned
@@ -57,7 +57,7 @@ graded-pipeline launch marked.}
 \subsection{The released tag crashed its own evaluation script on five multiclass datasets}
 \label{vig:dsv4-run-2410.18164}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2410.18164; dissection: pool.json; verified.json quotes at rounds ['Round 47', 'Round 53', 'Round 86']
-\runfacts{dsv4-run-2410.18164}{DeepSeek-V4}{Run}{2410.18164}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{94 rounds, 4.0 of 32 H100-hours}
+\runfacts{dsv4-run-2410.18164}{DeepSeek-V4-Flash}{Run}{2410.18164}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{94 rounds, 4.0 of 32 H100-hours}
 The pinned target is Table~1 of TabDPT: an AUC of at least 0.92 over the 72
 CC18 classification datasets (the paper reports 0.933) and an $R^2$ of at
 least 0.70 over the 35 CTR23 regression datasets (0.742). The repository's
@@ -77,14 +77,14 @@ as a low-severity provenance note.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_1}
-\caption{Run card for DeepSeek-V4 on TabDPT (arXiv~2410.18164) at the Run tier, with the decisive round 53 in gold.}
+\caption{Run card for DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164) at the Run tier, with the decisive round 53 in gold.}
 \label{fig:card-dsv4-run-2410.18164}
 \end{figure}
 
 \subsection{A renamed branch made LayerNorm Scaling dead code in the released repository}
 \label{vig:dsv4-run-2502.05795}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2502.05795; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 22', 'Round 26']
-\runfacts{dsv4-run-2502.05795}{DeepSeek-V4}{Run}{2502.05795}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{52 rounds, 6.2 of 8 H100-hours}
+\runfacts{dsv4-run-2502.05795}{DeepSeek-V4-Flash}{Run}{2502.05795}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{52 rounds, 6.2 of 8 H100-hours}
 The pinned target is the LayerNorm Scaling (LNS) cell of Table~1: a validation
 perplexity of 25.76 for a 130M-parameter LLaMA pretrained for 20K steps on C4.
 A CPU forward pass with \code{NORM\_TYPE=LNS} crashed at round 19. At round
@@ -104,7 +104,7 @@ a disclosed single-seed deviation.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_2}
-\caption{Run card for DeepSeek-V4 on LayerNorm Scaling (LNS) (arXiv~2502.05795) at the Run tier, with the decisive round 22 in gold.}
+\caption{Run card for DeepSeek-V4-Flash on LayerNorm Scaling (LNS) (arXiv~2502.05795) at the Run tier, with the decisive round 22 in gold.}
 \label{fig:card-dsv4-run-2502.05795}
 \end{figure}
 
@@ -139,7 +139,7 @@ agent read and the report it wrote.
 \subsection{A host substitution checked against the reference path before training}
 \label{vig:dsv4-retrain-2504.12463}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-retrain-2504.12463; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 91', 'Round 94']
-\runfacts{dsv4-retrain-2504.12463}{DeepSeek-V4}{Retrain}{2504.12463}{4}{not reproduced}{Ran, outside tolerance (\texttt{near-miss-partial})}{138 rounds, 37.2 of 96 H100-hours}
+\runfacts{dsv4-retrain-2504.12463}{DeepSeek-V4-Flash}{Retrain}{2504.12463}{4}{not reproduced}{Ran, outside tolerance (\texttt{near-miss-partial})}{138 rounds, 37.2 of 96 H100-hours}
 The pinned target for Default MoE is a validation perplexity of 23.48 after
 10B tokens of training in the released GPT-NeoX stack, with no released
 weights. The stack pins megablocks 0.5.1 and grouped\_gemm 0.1.4, which ship
@@ -164,7 +164,7 @@ that the attention substitution had been verified loss-identical.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_4}
-\caption{Run card for DeepSeek-V4 on Default MoE (arXiv~2504.12463) at the Retrain tier, with the decisive round 91 in gold.}
+\caption{Run card for DeepSeek-V4-Flash on Default MoE (arXiv~2504.12463) at the Retrain tier, with the decisive round 91 in gold.}
 \label{fig:card-dsv4-retrain-2504.12463}
 \end{figure}
 
@@ -196,7 +196,7 @@ aggregation over the agent's raw predictions to the same value.
 \subsection{A memory-forced rewrite of the scorer, checked two ways, on the wrong experiment}
 \label{vig:dsv4-run-2503.18430}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2503.18430; dissection: pool.json; verified.json quotes at rounds ['Round 87', 'Round 91', 'Round 98']
-\runfacts{dsv4-run-2503.18430}{DeepSeek-V4}{Run}{2503.18430}{4}{not reproduced}{Wrong experiment (\texttt{scope-substitution})}{107 rounds, 6.0 of 8 H100-hours}
+\runfacts{dsv4-run-2503.18430}{DeepSeek-V4-Flash}{Run}{2503.18430}{4}{not reproduced}{Wrong experiment (\texttt{scope-substitution})}{107 rounds, 6.0 of 8 H100-hours}
 The pinned claim is 46.3 AP for CQ-DINO with a Swin-B backbone on the V3Det
 validation set of 29,821 images. The agent ran inference with the authors'
 released checkpoint through their test script, all 7,456 batches finished at
@@ -223,7 +223,7 @@ against one shipped example only; the auditor disqualified that run
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_6}
-\caption{Run card for DeepSeek-V4 on CQ-DINO (arXiv~2503.18430) at the Run tier, with the decisive round 91 in gold.}
+\caption{Run card for DeepSeek-V4-Flash on CQ-DINO (arXiv~2503.18430) at the Run tier, with the decisive round 91 in gold.}
 \label{fig:card-dsv4-run-2503.18430}
 \end{figure}
 
