@@ -16,7 +16,7 @@ script taking precedence where the two disagree. A field marked ``not set'' is
 one the files leave unset, so the server or the checkpoint supplies it. The
 agent input ceiling is the served context window less the 32{,}768 tokens the
 harness reserves for the completion, and the \texttt{top\_p} of $0.95$ follows
-the DeepSeek-V4-Flash model card's recommendation for agentic use. Concurrent
+the DeepSeek-V4-Flash model card's recommendation for agentic use~\citep{deepseekai2026flashcard}. Concurrent
 papers is how many papers a job runs at once, listed for the Run, Retrain, and
 Reimplement tiers in that order.
 
@@ -79,7 +79,7 @@ and MiniMax-M2.7 launch scripts set no reasoning arguments, so effort is
 uncontrolled across models. Second, precision differs by model, and for
 MiniMax-M2.7 we serve a third-party requantization under the upstream model's
 name, so the name recorded with a run is the advertised one while the weights
-behind it are the requantized ones. W4A16 quantization is lossy by
+behind it are the requantized ones. W4A16 quantization~\citep{lin2023awq} is lossy by
 construction, and the harness makes no correction for it. Third, the served
 context window differs by model, so the agent input ceiling the harness
 derives from it differs by the same amount, from 163{,}840 tokens for
@@ -104,6 +104,5 @@ grader.
 % TODO(source): the Muse Spark 1.2 agent tokens need an API rate here before any
 % cost row is filled; the contributor-tier rate is unverified, so no number yet.
 We price GPU time at the \$2 per H100-hour of
-Section~\ref{subsec:experimental-setup}, and grader tokens by request date, at
-\$2 and \$10 per million input and output tokens through 2026-08-31 and \$3
-and \$15 per million after that.
+Section~\ref{subsec:experimental-setup}, and grader tokens at \$2 and \$10 per
+million input and output tokens~\citep{anthropic2026pricing}.
