@@ -62,9 +62,7 @@ reasoning brief.
 
 \subsection{Task prompt}
 % src: src/reclaim_repro/prompt_render.py:22-147; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
-The first user turn, a 290-line template with fourteen placeholder fields
-filled from the dataset row, the compute ceiling, and the container paths
-(Appendix~\ref{app:prompts}). The template has not changed since 2026-07-11.
+The first user turn (Appendix~\ref{app:prompts}).
 
 \promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}
 
@@ -83,8 +81,6 @@ The rubric as frozen on 2026-07-16, which the auditor receives in full.
 
 \subsection{Classifier prompt}
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
-The Stage-I classifier prompt of Appendix~\ref{app:classifier}, with
-\texttt{\{PAPER\_TEXT\}} standing for the rendered paper, its supplement
-manifest with text excerpts, and its LaTeX source.
+The Stage-I classifier prompt of Appendix~\ref{app:classifier}.
 
 \promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}

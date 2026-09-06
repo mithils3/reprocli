@@ -18,8 +18,8 @@ leaving in their place a placeholder that records the character count and the
 on-disk file holding the full text. An episode ends when the model returns a
 turn with no tool call, when it reaches the round cap, when the episode's
 compute budget is exhausted, when the context overflows in a way elision cannot relieve, or on
-an unrecoverable error. Whichever way it ends, the harness releases any GPU
-allocation it still holds and then issues one final request with the tools
+an unrecoverable error. Whichever way it ends, the harness issues one final
+request with the tools
 removed and the response constrained to the report schema of
 Appendix~\ref{app:report-format}. Table~\ref{tab:knobs} lists the loop's code
 defaults, and the launch scripts of Appendix~\ref{app:models} record the value
@@ -224,7 +224,7 @@ open first. \\
 Because every measurement includes its own citation array, a number with no
 cited evidence file can be identified as unsupported without reading the
 transcript. The \texttt{agent\_assessment} field is the agent's own verdict on
-its run. We never treat it as ground truth, and Section~\ref{subsec:mechanisms}
+its run, and Section~\ref{subsec:mechanisms}
 compares this self-reported outcome with the audited grade. Since the auditor
 grades from \texttt{report.json} and \texttt{evidence/}
 (Section~\ref{sec:auditing}), the harness prunes the agent's virtual

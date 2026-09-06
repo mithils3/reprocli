@@ -18,15 +18,13 @@ agent input ceiling is the served context window less the 32{,}768 tokens the
 harness reserves for the completion, and the \texttt{top\_p} of $0.95$ follows
 the DeepSeek-V4-Flash model card's recommendation for agentic use. Concurrent
 papers is how many papers a job runs at once, listed for the Run, Retrain, and
-Reimplement tiers in that order, and each paper still receives its own GPU
-allocation and its own compute budget.
+Reimplement tiers in that order.
 
 Muse Spark 1.2 is hosted by Meta, and the harness reached it through the Meta
 Model API as \texttt{muse-spark-1.2-contributor} between 2026-08-14 and
 2026-08-23, with the same 300 tool rounds and \texttt{reasoning\_effort}
 set to \texttt{xhigh}. Its sweeps run the same per-tier loop as a process on a
-login node rather than inside a batch job, so they have no job wall clock,
-while each paper's \texttt{run\_gpu} call still acquires its own allocation.
+login node rather than inside a batch job, so they have no job wall clock.
 The API advertises no context length, so we declare a window of
 1{,}000{,}000 tokens to the harness, which sets the agent input ceiling at
 967{,}232 tokens.
@@ -98,11 +96,9 @@ garbling this checkpoint's decoding on this hardware.
 We produce the grades of record with a separate grading client on the
 Anthropic Messages API, and every sweep of record passes
 \texttt{claude-sonnet-5} to that client. A grading pass is one agent loop over
-one run bundle, capped at 25 rounds, using the frozen rubric and the four
-run-directory tools of Appendix~\ref{app:rubric} under the same limits as the
-served auditor. Appendix~\ref{app:auditor-validation} describes the identity
-of a grading pass. Re-grading a batch with this client overwrites the batch's
-existing audit, so a re-graded sweep has a single grader.
+one run bundle, capped at 25 rounds. Re-grading a batch with this client
+overwrites the batch's existing audit, so a re-graded sweep has a single
+grader.
 
 % src: src/reclaim_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
 % TODO(source): the Muse Spark 1.2 agent tokens need an API rate here before any

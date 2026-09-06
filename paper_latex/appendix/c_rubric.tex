@@ -10,13 +10,12 @@ agent's run bundle, and the frozen rubric text of Figure~\ref{lst:rubric-text},
 and it explores the bundle with the tools of Table~\ref{tab:audit-tools}, which
 both graders receive under the same limits. Every path argument is resolved
 against the run directory, and the tools reject absolute paths, backslashes,
-and parent references, so a grade can only cite the bundle under audit. It assigns one integer from 0 to 10,
-first placing the run in the highest quality band whose conditions the cited
-evidence meets, then applying an integrity adjustment that can only lower the
+and parent references, so a grade can only cite the bundle under audit. It
+first places the run in the highest quality band whose conditions the cited
+evidence meets, then applies an integrity adjustment that can only lower the
 score. The rubric sets a low-score prior, so a run with no evidence scores
-low, and the auditor does not treat a printed number as verified. It treats
-the agent's own report as a set of claims to be verified against the files it
-cites. The auditor returns no verdict string. The verdict is derived from its
+low, and the auditor does not treat a printed number as verified. The auditor
+returns no verdict string. The verdict is derived from its
 row in code (Appendix~\ref{app:rubric-finalizer}).
 
 % src: rubric_audit.md:33-43,35-85,87-91,93-97,99-127,150-164
@@ -61,10 +60,8 @@ postdates that freeze (Appendix~\ref{app:auditor-validation}).
 
 % src: rubric_audit.md:3-15,204-209,228-232
 No band gives credit for a claimed artifact wall, that is, an agent's report
-that a required artifact could not be obtained. During curation we removed
-every paper with an observed hard wall and host-probed the rest, so each
-remaining artifact was verified retrievable from the run host
-(Appendix~\ref{app:construction}). A claimed wall is therefore graded on what
+that a required artifact could not be obtained. Curation rules these walls out
+of the frozen split (Appendix~\ref{app:construction}). A claimed wall is therefore graded on what
 the run achieved, and the auditor writes a curation escalation into
 \texttt{methodology\_notes} for human review.
 
@@ -145,8 +142,7 @@ verdict string reported in this paper comes from that code, and the
 Where recomputation is inexpensive, the auditor recomputes metrics from the
 stored predictions and outputs, and the 60\,s shell timeout rules out
 re-running training or evaluation. Figure~\ref{lst:audit-prompt} in
-Appendix~\ref{app:prompt-listings} shows the prompt template, which is rendered for each graded run from the pinned claim,
-the run-directory manifest, and the rubric text.
+Appendix~\ref{app:prompt-listings} shows the prompt template.
 
 % src: src/reclaim_vllm/tools/run_dir_tools.py:42-247,274-288; src/reclaim_vllm/config/config.py:50-54
 \begin{table}[ht]
@@ -177,8 +173,4 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-\subsection{The rubric text}
-
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
-Figure~\ref{lst:rubric-text} in Appendix~\ref{app:prompt-listings} shows the
-rubric as frozen on 2026-07-16, which the auditor receives in full.
