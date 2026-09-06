@@ -653,9 +653,12 @@ failed before producing a number, while wrong-artifact measurements split
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
-DeepSeek-V4 met the same packaging gaps and split on how it adapted, with a
-bit-identical chunked scorer on one paper and an unvalidated port the auditor
-disqualified on another.
+DeepSeek-V4 met the same packaging gaps and split on how it adapted: on one
+paper it built the package with no aarch64 wheel from source and, when the
+authors' scorer exceeded the node's memory limit, rewrote it and checked the
+rewrite against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and
+on another it replaced the package by an unvalidated port that the auditor
+disqualified.
 % sources: resolved_modes.json for every count. aarch64 attribution: the five
 % are 2504.20571, 2506.20671, 2505.24873, 2505.10978, 2505.14827 per
 % notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:95-103,145
@@ -674,7 +677,11 @@ that the graded computation is unchanged, and where the method has to be
 rebuilt they check the rebuilt component against a quantity the paper reports
 before spending compute on it. Reduced-scale smoke tests separate the two
 groups only weakly, since the records mention them in 45 of the 73 successful runs
-and 148 of the 299 failed ones.
+and 148 of the 299 failed ones. Appendix~\ref{app:annotated-runs} shows these
+behaviors at the round level in ten annotated runs: three repair a defect in
+the released code before the graded command runs, three check a host
+substitution against the authors' own path, one reports a shortfall as
+measured, and three put a different method or arm in the graded slot.
 % sources: dissection records (analysis.* fields of the run records) read
 % 2026-09-05: smoke test mentioned in 45/73 audited-
 % reproduced and 148/299 failed records; reuse of released entrypoint in 58/73
@@ -837,6 +844,7 @@ Applications~\citep{bode2025deltaai}.
 \input{appendix/e_construction}
 \input{appendix/f_dataset}
 \input{appendix/g_taxonomy}
-\input{appendix/h_running}
+\input{appendix/h_runs}
+\input{appendix/i_running}
 
 \end{document}
