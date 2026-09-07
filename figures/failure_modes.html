@@ -3,154 +3,168 @@
 <head>
 <meta charset="utf-8">
 <style>
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.ttf'); font-weight: 500; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.ttf'); font-weight: 800; }
+@font-face { font-family: 'FrauncesF'; src: url('fonts/ttf/Fraunces-VF.ttf'); font-weight: 100 900; }
 * { margin: 0; padding: 0; }
-html { width: 900px; }
-body { width: 900px; background: #fff; }
+html { width: 680px; }
+body { width: 680px; background: #fff; }
 svg { display: block; }
+text { font-optical-sizing: auto; text-rendering: geometricPrecision; }
+text.n { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
-<svg width="900" height="349" viewBox="0 0 900 349">
-<rect x="8" y="8" width="884" height="333" rx="18" fill="#FFFFFF" stroke="#E4E4DF" stroke-width="1.3"/>
-<text x="30.0" y="42.0" font-family="InterF, sans-serif" font-size="22" font-weight="800" fill="#14141A" text-anchor="start">primary failure mode by tier</text>
-<text x="376.8" y="42.0" font-family="JBMono, monospace" font-size="14.5" font-weight="400" fill="#7C7C75" text-anchor="start">one mode per run, 372 graded runs</text>
-<text x="30.0" y="60.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#7C7C75" text-anchor="start" letter-spacing="1.1">OUTCOMES</text>
-<line x1="30.0" y1="65.0" x2="126.0" y2="65.0" stroke="#D8D8D2" stroke-width="4"/>
-<rect x="30.00" y="69.00" width="11.00" height="11.00" rx="3" fill="#1FAE6B"/>
-<text x="47.0" y="78.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Reproduced</text>
-<rect x="180.00" y="69.00" width="11.00" height="11.00" rx="3" fill="#E2A430"/>
-<text x="197.0" y="78.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Ran, outside tolerance</text>
-<text x="30.0" y="96.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#7C7C75" text-anchor="start" letter-spacing="1.1">PROCESS FAILURES</text>
-<line x1="30.0" y1="101.0" x2="202.0" y2="101.0" stroke="#D8D8D2" stroke-width="4"/>
-<rect x="30.00" y="105.00" width="11.00" height="11.00" rx="3" fill="#E8557C"/>
-<text x="47.0" y="114.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Reimplemented but did not check the result</text>
-<rect x="30.00" y="126.00" width="11.00" height="11.00" rx="3" fill="#17B4A6"/>
-<text x="47.0" y="135.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Build and dependency failures</text>
-<rect x="30.00" y="147.00" width="11.00" height="11.00" rx="3" fill="#8B5FE8"/>
-<text x="47.0" y="156.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Wrong artifact measured</text>
-<rect x="30.00" y="168.00" width="11.00" height="11.00" rx="3" fill="#EF7F3B"/>
-<text x="47.0" y="177.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Wrong experiment</text>
-<rect x="454.00" y="105.00" width="11.00" height="11.00" rx="3" fill="#3E7DFA"/>
-<text x="471.0" y="114.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Echoed a shipped number</text>
-<rect x="454.00" y="126.00" width="11.00" height="11.00" rx="3" fill="#DD4FC0"/>
-<text x="471.0" y="135.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Never launched an experiment</text>
-<rect x="454.00" y="147.00" width="11.00" height="11.00" rx="3" fill="#93A0B2"/>
-<text x="471.0" y="156.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#4B4B47" text-anchor="start">Failed before any number was produced</text>
-<text x="126.0" y="207.0" font-family="JBMono, monospace" font-size="14.5" font-weight="700" fill="#14141A" text-anchor="end">Run</text>
-<clipPath id="clip0"><rect x="138" y="191" width="610" height="22" rx="6"/></clipPath>
-<g clip-path="url(#clip0)">
-<rect x="138.00" y="191.00" width="610.00" height="22.00" rx="6" fill="#ECECEA"/>
-<rect x="138.00" y="191.00" width="141.86" height="22.00" rx="0" fill="#1FAE6B"/>
-<text x="208.9" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">30</text>
-<rect x="279.86" y="191.00" width="113.49" height="22.00" rx="0" fill="#E2A430"/>
-<text x="336.6" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">24</text>
-<rect x="393.35" y="191.00" width="66.20" height="22.00" rx="0" fill="#E8557C"/>
-<text x="426.4" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">14</text>
-<rect x="459.55" y="191.00" width="61.47" height="22.00" rx="0" fill="#17B4A6"/>
-<text x="490.3" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">13</text>
-<rect x="521.02" y="191.00" width="85.12" height="22.00" rx="0" fill="#8B5FE8"/>
-<text x="563.6" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">18</text>
-<rect x="606.14" y="191.00" width="37.83" height="22.00" rx="0" fill="#EF7F3B"/>
-<text x="625.1" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">8</text>
-<rect x="643.97" y="191.00" width="33.10" height="22.00" rx="0" fill="#3E7DFA"/>
-<text x="660.5" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
-<rect x="677.07" y="191.00" width="4.73" height="22.00" rx="0" fill="#DD4FC0"/>
-<rect x="681.80" y="191.00" width="66.20" height="22.00" rx="0" fill="#93A0B2"/>
-<text x="714.9" y="206.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">14</text>
+<svg width="680" height="280" viewBox="0 0 680 280">
+<rect x="6" y="6" width="668" height="268" rx="10" fill="#FFFFFF" stroke="#DAD5C6" stroke-width="1"/>
+<text x="22.0" y="31.0" font-family="FrauncesF, serif" font-size="15" font-weight="600" fill="#1A1915" text-anchor="start">primary failure mode by tier</text>
+<text x="658.0" y="31.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="400" fill="#6B665A" text-anchor="end">one primary mode per run; 372 graded runs</text>
+<rect x="22.00" y="50.00" width="9.00" height="9.00" rx="2" fill="#4F8A5B"/>
+<text x="37.0" y="58.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Reproduced</text>
+<text x="330.0" y="58.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">72</text>
+<rect x="22.00" y="67.00" width="9.00" height="9.00" rx="2" fill="#B8740C"/>
+<text x="37.0" y="75.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Ran, outside tolerance</text>
+<text x="330.0" y="75.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">76</text>
+<rect x="22.00" y="84.00" width="9.00" height="9.00" rx="2" fill="#C13B54"/>
+<text x="37.0" y="92.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Reimplemented but did not check the result</text>
+<text x="330.0" y="92.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">63</text>
+<rect x="22.00" y="101.00" width="9.00" height="9.00" rx="2" fill="#0F7D74"/>
+<text x="37.0" y="109.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Build and dependency failures</text>
+<text x="330.0" y="109.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">24</text>
+<rect x="22.00" y="118.00" width="9.00" height="9.00" rx="2" fill="#7548C4"/>
+<text x="37.0" y="126.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Wrong artifact measured</text>
+<text x="330.0" y="126.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">38</text>
+<rect x="352.00" y="50.00" width="9.00" height="9.00" rx="2" fill="#C15F3C"/>
+<text x="367.0" y="58.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Wrong experiment</text>
+<text x="658.0" y="58.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">46</text>
+<rect x="352.00" y="67.00" width="9.00" height="9.00" rx="2" fill="#2F6FC4"/>
+<text x="367.0" y="75.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Echoed a shipped number</text>
+<text x="658.0" y="75.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">9</text>
+<rect x="352.00" y="84.00" width="9.00" height="9.00" rx="2" fill="#B23E90"/>
+<text x="367.0" y="92.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Never launched an experiment</text>
+<text x="658.0" y="92.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">13</text>
+<rect x="352.00" y="101.00" width="9.00" height="9.00" rx="2" fill="#5F6B7A"/>
+<text x="367.0" y="109.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#3D3B34" text-anchor="start">Failed before any number was produced</text>
+<text x="658.0" y="109.0" font-family="InterF, sans-serif" font-size="12" font-weight="600" fill="#1A1915" text-anchor="end" class="n">31</text>
+<text x="118.0" y="166.0" font-family="InterF, sans-serif" font-size="12.5" font-weight="600" fill="#1A1915" text-anchor="end">Run</text>
+<clipPath id="clip0"><rect x="130" y="153" width="470" height="18" rx="4"/></clipPath><g clip-path="url(#clip0)">
+<rect x="130.00" y="153.00" width="470.00" height="18.00" rx="0" fill="#EAE6DA"/>
+<rect x="130.00" y="153.00" width="109.30" height="18.00" rx="0" fill="#4F8A5B"/>
+<text x="184.7" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">30</text>
+<rect x="239.30" y="153.00" width="87.44" height="18.00" rx="0" fill="#B8740C"/>
+<line x1="239.3" y1="153.0" x2="239.3" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="283.0" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">24</text>
+<rect x="326.74" y="153.00" width="51.01" height="18.00" rx="0" fill="#C13B54"/>
+<line x1="326.7" y1="153.0" x2="326.7" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="352.2" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
+<rect x="377.75" y="153.00" width="47.36" height="18.00" rx="0" fill="#0F7D74"/>
+<line x1="377.8" y1="153.0" x2="377.8" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="401.4" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<rect x="425.12" y="153.00" width="65.58" height="18.00" rx="0" fill="#7548C4"/>
+<line x1="425.1" y1="153.0" x2="425.1" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="457.9" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">18</text>
+<rect x="490.70" y="153.00" width="29.15" height="18.00" rx="0" fill="#C15F3C"/>
+<line x1="490.7" y1="153.0" x2="490.7" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="505.3" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">8</text>
+<rect x="519.84" y="153.00" width="25.50" height="18.00" rx="0" fill="#2F6FC4"/>
+<line x1="519.8" y1="153.0" x2="519.8" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="532.6" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">7</text>
+<rect x="545.35" y="153.00" width="3.64" height="18.00" rx="0" fill="#B23E90"/>
+<line x1="545.3" y1="153.0" x2="545.3" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="548.99" y="153.00" width="51.01" height="18.00" rx="0" fill="#5F6B7A"/>
+<line x1="549.0" y1="153.0" x2="549.0" y2="171.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="574.5" y="166.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
 </g>
-<line x1="679.4" y1="186.0" x2="679.4" y2="190.0" stroke="#DD4FC0" stroke-width="1.2"/>
-<circle cx="679.4" cy="191.0" r="1.8" fill="#DD4FC0"/>
-<text x="679.4" y="183.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#DD4FC0" text-anchor="middle">1</text>
-<text x="760.0" y="207.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#7C7C75" text-anchor="start">129 runs</text>
-<text x="126.0" y="247.0" font-family="JBMono, monospace" font-size="14.5" font-weight="700" fill="#14141A" text-anchor="end">Retrain</text>
-<clipPath id="clip1"><rect x="138" y="231" width="610" height="22" rx="6"/></clipPath>
-<g clip-path="url(#clip1)">
-<rect x="138.00" y="231.00" width="610.00" height="22.00" rx="6" fill="#ECECEA"/>
-<rect x="138.00" y="231.00" width="149.92" height="22.00" rx="0" fill="#1FAE6B"/>
-<text x="213.0" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">29</text>
-<rect x="287.92" y="231.00" width="191.27" height="22.00" rx="0" fill="#E2A430"/>
-<text x="383.6" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">37</text>
-<rect x="479.19" y="231.00" width="56.86" height="22.00" rx="0" fill="#E8557C"/>
-<text x="507.6" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
-<rect x="536.05" y="231.00" width="31.02" height="22.00" rx="0" fill="#17B4A6"/>
-<text x="551.6" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
-<rect x="567.07" y="231.00" width="46.53" height="22.00" rx="0" fill="#8B5FE8"/>
-<text x="590.3" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
-<rect x="613.59" y="231.00" width="72.37" height="22.00" rx="0" fill="#EF7F3B"/>
-<text x="649.8" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">14</text>
-<rect x="685.97" y="231.00" width="10.34" height="22.00" rx="0" fill="#3E7DFA"/>
-<rect x="696.31" y="231.00" width="10.34" height="22.00" rx="0" fill="#DD4FC0"/>
-<rect x="706.64" y="231.00" width="41.36" height="22.00" rx="0" fill="#93A0B2"/>
-<text x="727.3" y="246.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">8</text>
+<text x="610.0" y="166.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#6B665A" text-anchor="start">129 runs</text>
+<text x="118.0" y="193.0" font-family="InterF, sans-serif" font-size="12.5" font-weight="600" fill="#1A1915" text-anchor="end">Retrain</text>
+<clipPath id="clip1"><rect x="130" y="180" width="470" height="18" rx="4"/></clipPath><g clip-path="url(#clip1)">
+<rect x="130.00" y="180.00" width="470.00" height="18.00" rx="0" fill="#EAE6DA"/>
+<rect x="130.00" y="180.00" width="115.51" height="18.00" rx="0" fill="#4F8A5B"/>
+<text x="187.8" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">29</text>
+<rect x="245.51" y="180.00" width="147.37" height="18.00" rx="0" fill="#B8740C"/>
+<line x1="245.5" y1="180.0" x2="245.5" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="319.2" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">37</text>
+<rect x="392.88" y="180.00" width="43.81" height="18.00" rx="0" fill="#C13B54"/>
+<line x1="392.9" y1="180.0" x2="392.9" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="414.8" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">11</text>
+<rect x="436.69" y="180.00" width="23.90" height="18.00" rx="0" fill="#0F7D74"/>
+<line x1="436.7" y1="180.0" x2="436.7" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="448.6" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">6</text>
+<rect x="460.59" y="180.00" width="35.85" height="18.00" rx="0" fill="#7548C4"/>
+<line x1="460.6" y1="180.0" x2="460.6" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="478.5" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
+<rect x="496.44" y="180.00" width="55.76" height="18.00" rx="0" fill="#C15F3C"/>
+<line x1="496.4" y1="180.0" x2="496.4" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="524.3" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
+<rect x="552.20" y="180.00" width="7.97" height="18.00" rx="0" fill="#2F6FC4"/>
+<line x1="552.2" y1="180.0" x2="552.2" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="560.17" y="180.00" width="7.97" height="18.00" rx="0" fill="#B23E90"/>
+<line x1="560.2" y1="180.0" x2="560.2" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="568.14" y="180.00" width="31.86" height="18.00" rx="0" fill="#5F6B7A"/>
+<line x1="568.1" y1="180.0" x2="568.1" y2="198.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="584.1" y="193.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">8</text>
 </g>
-<line x1="687.8" y1="226.0" x2="691.1" y2="230.0" stroke="#3E7DFA" stroke-width="1.2"/>
-<circle cx="691.1" cy="231.0" r="1.8" fill="#3E7DFA"/>
-<text x="687.8" y="223.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#3E7DFA" text-anchor="middle">2</text>
-<line x1="704.8" y1="226.0" x2="701.5" y2="230.0" stroke="#DD4FC0" stroke-width="1.2"/>
-<circle cx="701.5" cy="231.0" r="1.8" fill="#DD4FC0"/>
-<text x="704.8" y="223.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#DD4FC0" text-anchor="middle">2</text>
-<text x="760.0" y="247.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#7C7C75" text-anchor="start">118 runs</text>
-<text x="126.0" y="287.0" font-family="JBMono, monospace" font-size="14.5" font-weight="700" fill="#14141A" text-anchor="end">Reimplement</text>
-<clipPath id="clip2"><rect x="138" y="271" width="610" height="22" rx="6"/></clipPath>
-<g clip-path="url(#clip2)">
-<rect x="138.00" y="271.00" width="610.00" height="22.00" rx="6" fill="#ECECEA"/>
-<rect x="138.00" y="271.00" width="63.44" height="22.00" rx="0" fill="#1FAE6B"/>
-<text x="169.7" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">13</text>
-<rect x="201.44" y="271.00" width="73.20" height="22.00" rx="0" fill="#E2A430"/>
-<text x="238.0" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">15</text>
-<rect x="274.64" y="271.00" width="185.44" height="22.00" rx="0" fill="#E8557C"/>
-<text x="367.4" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">38</text>
-<rect x="460.08" y="271.00" width="24.40" height="22.00" rx="0" fill="#17B4A6"/>
-<text x="472.3" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
-<rect x="484.48" y="271.00" width="53.68" height="22.00" rx="0" fill="#8B5FE8"/>
-<text x="511.3" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
-<rect x="538.16" y="271.00" width="117.12" height="22.00" rx="0" fill="#EF7F3B"/>
-<text x="596.7" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">24</text>
-<rect x="655.28" y="271.00" width="48.80" height="22.00" rx="0" fill="#DD4FC0"/>
-<text x="679.7" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">10</text>
-<rect x="704.08" y="271.00" width="43.92" height="22.00" rx="0" fill="#93A0B2"/>
-<text x="726.0" y="286.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">9</text>
+<text x="610.0" y="193.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#6B665A" text-anchor="start">118 runs</text>
+<text x="118.0" y="220.0" font-family="InterF, sans-serif" font-size="12.5" font-weight="600" fill="#1A1915" text-anchor="end">Reimplement</text>
+<clipPath id="clip2"><rect x="130" y="207" width="470" height="18" rx="4"/></clipPath><g clip-path="url(#clip2)">
+<rect x="130.00" y="207.00" width="470.00" height="18.00" rx="0" fill="#EAE6DA"/>
+<rect x="130.00" y="207.00" width="48.88" height="18.00" rx="0" fill="#4F8A5B"/>
+<text x="154.4" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<rect x="178.88" y="207.00" width="56.40" height="18.00" rx="0" fill="#B8740C"/>
+<line x1="178.9" y1="207.0" x2="178.9" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="207.1" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">15</text>
+<rect x="235.28" y="207.00" width="142.88" height="18.00" rx="0" fill="#C13B54"/>
+<line x1="235.3" y1="207.0" x2="235.3" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="306.7" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">38</text>
+<rect x="378.16" y="207.00" width="18.80" height="18.00" rx="0" fill="#0F7D74"/>
+<line x1="378.2" y1="207.0" x2="378.2" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="387.6" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">5</text>
+<rect x="396.96" y="207.00" width="41.36" height="18.00" rx="0" fill="#7548C4"/>
+<line x1="397.0" y1="207.0" x2="397.0" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="417.6" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">11</text>
+<rect x="438.32" y="207.00" width="90.24" height="18.00" rx="0" fill="#C15F3C"/>
+<line x1="438.3" y1="207.0" x2="438.3" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="483.4" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">24</text>
+<rect x="528.56" y="207.00" width="37.60" height="18.00" rx="0" fill="#B23E90"/>
+<line x1="528.6" y1="207.0" x2="528.6" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="547.4" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">10</text>
+<rect x="566.16" y="207.00" width="33.84" height="18.00" rx="0" fill="#5F6B7A"/>
+<line x1="566.2" y1="207.0" x2="566.2" y2="225.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="583.1" y="220.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
 </g>
-<line x1="655.3" y1="266.0" x2="655.3" y2="270.0" stroke="#3E7DFA" stroke-width="1.2"/>
-<circle cx="655.3" cy="271.0" r="1.8" fill="#3E7DFA"/>
-<text x="655.3" y="263.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#3E7DFA" text-anchor="middle">0</text>
-<text x="760.0" y="287.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#7C7C75" text-anchor="start">125 runs</text>
-<line x1="30.0" y1="299.0" x2="870.0" y2="299.0" stroke="#E4E4DF" stroke-width="1"/>
-<text x="126.0" y="327.0" font-family="JBMono, monospace" font-size="14.5" font-weight="700" fill="#14141A" text-anchor="end">All agents</text>
-<clipPath id="clip3"><rect x="138" y="311" width="610" height="22" rx="6"/></clipPath>
-<g clip-path="url(#clip3)">
-<rect x="138.00" y="311.00" width="610.00" height="22.00" rx="6" fill="#ECECEA"/>
-<rect x="138.00" y="311.00" width="118.06" height="22.00" rx="0" fill="#1FAE6B"/>
-<text x="197.0" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">72</text>
-<rect x="256.06" y="311.00" width="124.62" height="22.00" rx="0" fill="#E2A430"/>
-<text x="318.4" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">76</text>
-<rect x="380.69" y="311.00" width="103.31" height="22.00" rx="0" fill="#E8557C"/>
-<text x="432.3" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">63</text>
-<rect x="483.99" y="311.00" width="39.35" height="22.00" rx="0" fill="#17B4A6"/>
-<text x="503.7" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">24</text>
-<rect x="523.35" y="311.00" width="62.31" height="22.00" rx="0" fill="#8B5FE8"/>
-<text x="554.5" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">38</text>
-<rect x="585.66" y="311.00" width="75.43" height="22.00" rx="0" fill="#EF7F3B"/>
-<text x="623.4" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">46</text>
-<rect x="661.09" y="311.00" width="14.76" height="22.00" rx="0" fill="#3E7DFA"/>
-<rect x="675.85" y="311.00" width="21.32" height="22.00" rx="0" fill="#DD4FC0"/>
-<rect x="697.17" y="311.00" width="50.83" height="22.00" rx="0" fill="#93A0B2"/>
-<text x="722.6" y="326.0" font-family="JBMono, monospace" font-size="13.5" font-weight="700" fill="#14141A" text-anchor="middle">31</text>
+<text x="610.0" y="220.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#6B665A" text-anchor="start">125 runs</text>
+<line x1="22.0" y1="236.0" x2="658.0" y2="236.0" stroke="#C7C0AD" stroke-width="1"/>
+<text x="118.0" y="255.0" font-family="InterF, sans-serif" font-size="12.5" font-weight="600" fill="#6B665A" text-anchor="end">All agents</text>
+<clipPath id="clip3"><rect x="130" y="242" width="470" height="18" rx="4"/></clipPath><g clip-path="url(#clip3)">
+<rect x="130.00" y="242.00" width="470.00" height="18.00" rx="0" fill="#EAE6DA"/>
+<rect x="130.00" y="242.00" width="90.97" height="18.00" rx="0" fill="#4F8A5B"/>
+<text x="175.5" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">72</text>
+<rect x="220.97" y="242.00" width="96.02" height="18.00" rx="0" fill="#B8740C"/>
+<line x1="221.0" y1="242.0" x2="221.0" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="269.0" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">76</text>
+<rect x="316.99" y="242.00" width="79.60" height="18.00" rx="0" fill="#C13B54"/>
+<line x1="317.0" y1="242.0" x2="317.0" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="356.8" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">63</text>
+<rect x="396.59" y="242.00" width="30.32" height="18.00" rx="0" fill="#0F7D74"/>
+<line x1="396.6" y1="242.0" x2="396.6" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="411.7" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">24</text>
+<rect x="426.91" y="242.00" width="48.01" height="18.00" rx="0" fill="#7548C4"/>
+<line x1="426.9" y1="242.0" x2="426.9" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="450.9" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">38</text>
+<rect x="474.92" y="242.00" width="58.12" height="18.00" rx="0" fill="#C15F3C"/>
+<line x1="474.9" y1="242.0" x2="474.9" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="504.0" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">46</text>
+<rect x="533.04" y="242.00" width="11.37" height="18.00" rx="0" fill="#2F6FC4"/>
+<line x1="533.0" y1="242.0" x2="533.0" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="538.7" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
+<rect x="544.41" y="242.00" width="16.42" height="18.00" rx="0" fill="#B23E90"/>
+<line x1="544.4" y1="242.0" x2="544.4" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="560.83" y="242.00" width="39.17" height="18.00" rx="0" fill="#5F6B7A"/>
+<line x1="560.8" y1="242.0" x2="560.8" y2="260.0" stroke="#FFFFFF" stroke-width="1"/>
+<text x="580.4" y="255.0" font-family="InterF, sans-serif" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">31</text>
 </g>
-<line x1="668.5" y1="306.0" x2="668.5" y2="310.0" stroke="#3E7DFA" stroke-width="1.2"/>
-<circle cx="668.5" cy="311.0" r="1.8" fill="#3E7DFA"/>
-<text x="668.5" y="303.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#3E7DFA" text-anchor="middle">9</text>
-<line x1="686.5" y1="306.0" x2="686.5" y2="310.0" stroke="#DD4FC0" stroke-width="1.2"/>
-<circle cx="686.5" cy="311.0" r="1.8" fill="#DD4FC0"/>
-<text x="686.5" y="303.0" font-family="JBMono, monospace" font-size="12" font-weight="700" fill="#DD4FC0" text-anchor="middle">13</text>
-<text x="760.0" y="327.0" font-family="JBMono, monospace" font-size="13" font-weight="400" fill="#7C7C75" text-anchor="start">372 runs</text>
+<text x="610.0" y="255.0" font-family="InterF, sans-serif" font-size="12" font-weight="400" fill="#6B665A" text-anchor="start">372 runs</text>
 </svg>
 </body>
 </html>
