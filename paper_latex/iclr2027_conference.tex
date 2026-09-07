@@ -54,11 +54,11 @@ data, and weights are released, to 32\% at Retrain and 16\% at Reimplement,
 where the method is built from the paper alone. Compute does not explain the decline,
 since non-reproduced runs use 30\% of their allocation. Under a nine-mode
 labeling of every graded run, most Retrain-tier misses by the strongest agent
-ran the paper's experiment but produced a number outside tolerance. Our
-interpretation of these findings is that the strongest agent can execute a
-published experiment, and what separates it from automating research is
-judging whether a run's output matches the paper and what to change otherwise.
-RECLAIM measures that step, with headroom at every tier.
+ran the paper's experiment but produced a number outside tolerance. We
+interpret these findings to mean the strongest agent can run an experiment
+with released code but struggles to design one from the paper alone. RECLAIM
+has headroom at every tier. The next step toward automated research, writing
+code for an unpublished idea, remains open.
 % numbers of record, filled 2026-08-24. All pinned claude-sonnet-5, post-freeze:
 %   tier fall 48/32/13 -- DSv4-Flash easy 14/29 (2883229+2889575), medium 9/28
 %     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
