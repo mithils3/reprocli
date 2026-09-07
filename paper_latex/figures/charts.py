@@ -1,111 +1,102 @@
 #!/usr/bin/env python3
 """The data charts of Section 5 and Appendix C, as standalone HTML+SVG.
 
-One chart language for the paper, shared with the reviewer viewer: a rounded
-white card, a bold lowercase Inter title with a gray JetBrains Mono subtitle
-beside it, one saturated categorical palette in which green always means
-reproduced, a light track behind every bar, and counts set in bold mono inside
-each segment where they fit. Every chart uses the same 900px canvas so label
-sizes match across figures. Regenerate with build.py after running this.
+One chart language, shared with the reviewer viewer: a white card with a
+hairline edge, a Fraunces title with a muted Inter subtitle at the right,
+Inter with tabular numerals for every label, and the viewer's light palette
+in which sage green always means reproduced. The canvas is 680px wide and is
+printed at the 5.5in text width, so one px is 0.58pt and the smallest label
+(11.5px) prints at 6.7pt. Regenerate with build.py, then check with audit.py.
 Usage: charts.py [name ...]"""
 import pathlib
 import sys
 
 OUT = pathlib.Path(__file__).parent
-W = 900
+W = 680
+X0, X1 = 22, W - 22          # inner left and right edges
 
 # --------------------------------------------------------------- palette
-GREEN = "#1FAE6B"   # reproduced
-AMBER = "#E2A430"   # near-miss / partial
-PINK = "#E8557C"    # reimplemented without checking
-TEAL = "#17B4A6"    # build / dependency failures
-PURPLE = "#8B5FE8"  # wrong artifact measured
-ORANGE = "#EF7F3B"  # wrong experiment
-BLUE = "#3E7DFA"    # echoed a shipped number
-MAGENTA = "#DD4FC0" # never launched
-SLATE = "#93A0B2"   # failed before any number
+GREEN = "#4F8A5B"    # reproduced
+AMBER = "#B8740C"    # ran, outside tolerance
+ROSE = "#C13B54"     # reimplemented without checking
+TEAL = "#0F7D74"     # build and dependency failures
+VIOLET = "#7548C4"   # wrong artifact measured
+CLAY = "#C15F3C"     # wrong experiment
+BLUE = "#2F6FC4"     # echoed a shipped number
+MAGENTA = "#B23E90"  # never launched
+SLATE = "#5F6B7A"    # failed before any number
 
-MODE_COLOR = [GREEN, AMBER, PINK, TEAL, PURPLE, ORANGE, BLUE, MAGENTA, SLATE]
+MODE_COLOR = [GREEN, AMBER, ROSE, TEAL, VIOLET, CLAY, BLUE, MAGENTA, SLATE]
 
 AGENT_COLOR = {
     "DeepSeek-V4-Flash": BLUE,
-    "Qwen3.6-27B": PURPLE,
-    "MiniMax-M2.7": ORANGE,
+    "Qwen3.6-27B": VIOLET,
+    "MiniMax-M2.7": CLAY,
     "Muse Spark 1.2": TEAL,
-    "All agents": "#4B5665",
+    "All agents": SLATE,
 }
 
-INK = "#14141A"
-MID = "#4B4B47"
-MUTE = "#7C7C75"
-TRACK = "#ECECEA"
-EDGE = "#E4E4DF"
+INK = "#1A1915"
+MID = "#3D3B34"
+MUTED = "#6B665A"
+FAINT = "#938D7E"
+LINE = "#DAD5C6"
+LINE_STRONG = "#C7C0AD"
+TRACK = "#EAE6DA"
 CARD = "#FFFFFF"
-ON_DARK = "#FFFFFF"
-ON_LIGHT = "#14141A"
-MONO = "JBMono, monospace"
 SANS = "InterF, sans-serif"
-
-
-def w_mono(s, size):
-    return len(s) * size * 0.6
+SERIF = "FrauncesF, serif"
 
 
 def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def on(fill):
-    r, g, b = (int(fill[i:i + 2], 16) for i in (1, 3, 5))
-    return ON_LIGHT if 0.299 * r + 0.587 * g + 0.114 * b > 150 else ON_DARK
-
-
-def text(x, y, s, size=15, fill=None, family=MONO, weight=400, anchor="start", ls=0,
-         halo=False):
-    sp = f' letter-spacing="{ls}"' if ls else ""
-    if halo:
-        sp += ' stroke="#FFFFFF" stroke-width="3.8" paint-order="stroke"'
+def text(x, y, s, size=12, fill=INK, family=SANS, weight=400, anchor="start",
+         halo=False, tnum=False):
+    """Tabular numerals are opt-in, for right-aligned count columns only:
+    Inter's tnum feature also widens the hyphen and opens pairs like 47."""
+    h = ' stroke="#FFFFFF" stroke-width="3.5" paint-order="stroke"' if halo else ""
+    cls = ' class="n"' if tnum else ""
     return (
         f'<text x="{x:.1f}" y="{y:.1f}" font-family="{family}" font-size="{size}" '
-        f'font-weight="{weight}" fill="{fill or INK}" text-anchor="{anchor}"'
-        f'{sp}>{esc(s)}</text>'
+        f'font-weight="{weight}" fill="{fill}" text-anchor="{anchor}"{h}{cls}>{esc(s)}</text>'
     )
 
 
-def rect(x, y, w, h, fill, r=3):
+def rect(x, y, w, h, fill, r=2):
     return (
         f'<rect x="{x:.2f}" y="{y:.2f}" width="{max(w, 0):.2f}" height="{h:.2f}" '
         f'rx="{r}" fill="{fill}"/>'
     )
 
 
-def line(x1, y1, x2, y2, color=None, wdt=1, dash=None):
+def line(x1, y1, x2, y2, color=LINE, wdt=1, dash=None):
     d = f' stroke-dasharray="{dash}"' if dash else ""
     return (
         f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
-        f'stroke="{color or EDGE}" stroke-width="{wdt}"{d}/>'
+        f'stroke="{color}" stroke-width="{wdt}"{d}/>'
     )
 
 
-def dot(x, y, color, r=3.4):
+def dot(x, y, color, r=3):
     return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{color}"/>'
 
 
-def card(x, y, w, h):
+def card(h):
     return (
-        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="{CARD}" '
-        f'stroke="{EDGE}" stroke-width="1.3"/>'
+        f'<rect x="6" y="6" width="{W - 12}" height="{h - 12}" rx="10" fill="{CARD}" '
+        f'stroke="{LINE}" stroke-width="1"/>'
     )
 
 
-def head(x, y, title, sub):
-    out = [text(x, y, title, 22, INK, SANS, 800)]
-    out.append(text(x + len(title) * 11.6 + 22, y, sub, 14.5, MUTE, MONO, 400))
-    return out
+def head(title, sub):
+    return [text(X0, 31, title, 15, INK, SERIF, 600),
+            text(X1, 31, sub, 11.5, MUTED, SANS, 400, "end")]
 
 
-def swatch(x, y, color, size=11, r=3):
-    return rect(x, y, size, size, color, r)
+def swatch(x, y, color):
+    return rect(x, y, 9, 9, color, 2)
 
 
 def declutter(rows, gap):
@@ -131,30 +122,32 @@ def declutter(rows, gap):
 
 def page(name, body, height):
     css = """
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Medium.ttf'); font-weight: 500; }
-@font-face { font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Bold.ttf'); font-weight: 700; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.ttf'); font-weight: 500; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
-@font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-ExtraBold.ttf'); font-weight: 800; }
+@font-face { font-family: 'FrauncesF'; src: url('fonts/ttf/Fraunces-VF.ttf'); font-weight: 100 900; }
 * { margin: 0; padding: 0; }
 html { width: %dpx; }
 body { width: %dpx; background: #fff; }
 svg { display: block; }
+text { font-optical-sizing: auto; text-rendering: geometricPrecision; }
+text.n { font-variant-numeric: tabular-nums; }
 """ % (W, W)
     html = (
         '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<style>'
         f"{css}</style>\n</head>\n<body>\n"
         f'<svg width="{W}" height="{height}" viewBox="0 0 {W} {height}">\n'
-        + "\n".join(body)
+        + card(height) + "\n" + "\n".join(body)
         + "\n</svg>\n</body>\n</html>\n"
     )
     (OUT / f"{name}.html").write_text(html)
     print(f"wrote {name}.html  {W}x{height}")
 
 
-# ======================================================== fig1: results by tier
+# ============================================ fig: results by agent and tier
+# numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
+# sweeps[] (n, n_reproduced, mean_score); grant spent = 100 * sum(spent_h100) /
+# sum(budget_h100) over the agent's runs.
 RESULTS = [
     ("DeepSeek-V4-Flash", [(14, 29), (9, 28), (4, 30)], [6.21, 6.43, 5.10], 32.0),
     ("Qwen3.6-27B", [(5, 34), (6, 26), (2, 30)], [3.91, 4.54, 3.27], 15.5),
@@ -165,71 +158,48 @@ RESULTS = [
 TIERS = ["Run", "Retrain", "Reimplement"]
 
 
-def band_color(score):
-    return GREEN if score >= 8 else AMBER if score >= 6 else SLATE
-
-
 def fig_results():
-    b = [card(8, 8, W - 16, 0)]
-    x0 = 30
-    b += head(x0, 42, "reproduction and audit score", "372 graded runs, by agent and tier")
+    """A matrix: one row per agent, one column per tier, each cell the mean
+    audit score over the fraction and bar of runs reproduced, and a last
+    column for the share of the granted GPU-hours the agent spent."""
+    b = head("results by agent and tier",
+             "372 graded runs; grant spent is the share of granted H100-hours")
+    tx = [156, 286, 416]      # tier column lefts, 130px each
+    gx = 560                  # grant column left, 98px
+    barw = 90                 # one track width for every bar
+    hy = 60
+    for x, tier in zip(tx, TIERS):
+        b.append(text(x, hy, tier, 12, INK, SANS, 600))
+    b.append(text(gx, hy, "grant spent", 12, INK, SANS, 600))
+    b.append(line(X0, hy + 7, X1, hy + 7, LINE_STRONG))
 
-    # threshold key, one line
-    ky = 64
-    b.append(text(x0, ky, "score", 12, MUTE, MONO, 500, ls=0.4))
-    kx = x0 + 46
-    for c, lab in ((GREEN, "8+ reproduced"), (AMBER, "6+ partial or better"), (SLATE, "below 6")):
-        b.append(dot(kx, ky - 4, c, 3.6))
-        b.append(text(kx + 9, ky, lab, 12, MID, MONO, 400))
-        kx += 9 + w_mono(lab, 12) + 20
-
-    lab_x = x0 + 166          # agent name, right-aligned
-    tier_x = lab_x + 16 + 86  # tier name, right-aligned
-    p1x, p1w = tier_x + 14, 128
-    p2x, p2w = p1x + p1w + 10 + 84 + 24, 96
-    p3x, p3w = p2x + p2w + 10 + 32 + 26, 96
-    top, bh, gap, ggap = 96, 11, 4, 6
-    gh = 3 * bh + 2 * gap
-    pitch = gh + ggap
-
-    b.append(text(p1x, top - 14, "reproduced", 12.5, MUTE, MONO, 500, ls=0.5))
-    b.append(text(p2x, top - 14, "mean score (0–10)", 12.5, MUTE, MONO, 500, ls=0.4))
-    b.append(text(p3x, top - 14, "grant spent (0–100%)", 12.5, MUTE, MONO, 500, ls=0.4))
-
+    top, pitch = 72, 49
     for gi, (agent, repro, score, spent) in enumerate(RESULTS):
-        gy = top + gi * pitch
-        if agent == "All agents":
-            b.append(line(x0, gy - 8, W - 30, gy - 8))
-        acol = AGENT_COLOR[agent]
-        b.append(dot(lab_x - w_mono(agent, 14) - 12, gy + gh / 2 + 1, acol, 3.6))
-        b.append(text(lab_x, gy + gh / 2 + 5, agent, 14, INK, MONO, 700, "end"))
-        for ti, tier in enumerate(TIERS):
-            y = gy + ti * (bh + gap)
-            n, d = repro[ti]
-            pct = round(100 * n / d)
-            b.append(text(tier_x, y + bh - 2, tier, 12.5, MUTE, MONO, 400, "end"))
-            b.append(rect(p1x, y, p1w, bh, TRACK, bh / 2))
-            b.append(rect(p1x, y, max(p1w * n / d, 3), bh, GREEN, bh / 2))
-            b.append(text(p1x + p1w + 10, y + bh - 2, f"{n}/{d}", 13, MUTE))
-            b.append(text(p1x + p1w + 10 + w_mono(f"{n}/{d} ", 13), y + bh - 2,
-                          f"{pct}%", 13, INK, MONO, 700))
-            b.append(rect(p2x, y, p2w, bh, TRACK, bh / 2))
-            b.append(rect(p2x, y, max(p2w * score[ti] / 10.0, 3), bh, band_color(score[ti]), bh / 2))
-            for tick_v in (6, 8):
-                tx = p2x + p2w * tick_v / 10.0
-                b.append(line(tx, y - 1.5, tx, y + bh + 1.5, "#FFFFFF", 1.4))
-            b.append(text(p2x + p2w + 10, y + bh - 2, f"{score[ti]:.2f}", 13, INK, MONO, 700))
-        sy = gy + gh / 2 - bh / 2
-        b.append(rect(p3x, sy, p3w, bh, TRACK, bh / 2))
-        b.append(rect(p3x, sy, max(p3w * spent / 100.0, 3), bh, acol, bh / 2))
-        b.append(text(p3x + p3w + 10, sy + bh - 2, f"{spent:.1f}%", 13, INK, MONO, 700))
+        y = top + gi * pitch
+        total = agent == "All agents"
+        ink = MUTED if total else INK
+        if total:
+            b.append(line(X0, y - 4, X1, y - 4, LINE_STRONG))
+        elif gi:
+            b.append(line(X0, y - 4, X1, y - 4, LINE))
+        b.append(text(X0, y + 21, agent, 12, ink, SANS, 600))
+        for x, (n, d), s in zip(tx, repro, score):
+            b.append(text(x, y + 16, f"{s:.2f}", 19, ink, SERIF, 600))
+            b.append(text(x, y + 31, f"{n}/{d} reproduced", 11, MUTED))
+            b.append(rect(x, y + 37, barw, 4, TRACK, 2))
+            b.append(rect(x, y + 37, barw * n / d, 4, GREEN, 2))
+            b.append(text(x + barw + 8, y + 42.5, f"{round(100 * n / d)}%", 11, ink,
+                          SANS, 600))
+        b.append(text(gx, y + 16, f"{spent:.1f}%", 19, ink, SERIF, 600))
+        b.append(rect(gx, y + 37, barw, 4, TRACK, 2))
+        b.append(rect(gx, y + 37, barw * spent / 100, 4, SLATE, 2))
 
-    h = top + 4 * pitch + gh + 22
-    b[0] = card(8, 8, W - 16, h - 16)
-    page("results_by_tier", b, h)
+    page("results_by_tier", b, top + 5 * pitch + 12)
 
 
-# ========================================================= fig2: failure modes
+# ============================================== fig: failure modes by tier
+# numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
+# resolved_modes.json; rows in the order of Appendix G.
 MODES = [
     ("Reproduced", 30, 29, 13, 72),
     ("Ran, outside tolerance", 24, 37, 15, 76),
@@ -243,90 +213,54 @@ MODES = [
 ]
 STACKS = [("Run", 1, 129), ("Retrain", 2, 118), ("Reimplement", 3, 125),
           ("All agents", 4, 372)]
-SMALL = 24  # px: below this, label moves off-segment
 
 
 def fig_modes():
-    b = [card(8, 8, W - 16, 0)]
-    x0 = 30
-    b += head(x0, 42, "primary failure mode by tier", "one mode per run, 372 graded runs")
+    """A legend that doubles as the all-tier count table, then one stacked
+    bar per tier with the count printed inside every segment wide enough to
+    hold it, and an all-agents bar ruled off below."""
+    b = head("primary failure mode by tier", "one primary mode per run; 372 graded runs")
+    cols = [(X0, 330), (352, X1)]
+    ly, lp = 58, 17
+    for i, mode in enumerate(MODES):
+        cx, cend = cols[0] if i < 5 else cols[1]
+        y = ly + (i if i < 5 else i - 5) * lp
+        b.append(swatch(cx, y - 8, MODE_COLOR[i]))
+        b.append(text(cx + 15, y, mode[0], 12, MID))
+        b.append(text(cend, y, str(mode[4]), 12, INK, SANS, 600, "end", tnum=True))
 
-    # legend: an OUTCOMES kicker over the 2 outcome modes (inline, since both
-    # names are short), then a PROCESS FAILURES kicker over the remaining 7,
-    # laid out in two columns. The kickers bound exactly the rows they name.
-    lcol = 424
-    k1_y = 60
-    b.append(text(x0, k1_y, "OUTCOMES", 12, MUTE, MONO, 700, ls=1.1))
-    b.append(line(x0, k1_y + 5, x0 + 96, k1_y + 5, "#D8D8D2", 4))
-    row_out_y = k1_y + 18
-    b.append(swatch(x0, row_out_y - 9, MODE_COLOR[0]))
-    b.append(text(x0 + 17, row_out_y, MODES[0][0], 13, MID))
-    out2_x = x0 + 150
-    b.append(swatch(out2_x, row_out_y - 9, MODE_COLOR[1]))
-    b.append(text(out2_x + 17, row_out_y, MODES[1][0], 13, MID))
-
-    k2_y = row_out_y + 18
-    b.append(text(x0, k2_y, "PROCESS FAILURES", 12, MUTE, MONO, 700, ls=1.1))
-    b.append(line(x0, k2_y + 5, x0 + 172, k2_y + 5, "#D8D8D2", 4))
-    lrow = 21
-    proc_y = k2_y + 18
-    proc_idx = list(range(2, 9))  # modes 3..9, split 4 left / 3 right
-    for j, i in enumerate(proc_idx):
-        col, row = (0, j) if j < 4 else (1, j - 4)
-        cx = x0 + col * lcol
-        y = proc_y + row * lrow
-        b.append(swatch(cx, y - 9, MODE_COLOR[i]))
-        b.append(text(cx + 17, y, MODES[i][0], 13, MID))
-
-    top = proc_y + 3 * lrow + 14
-    bar_x, bar_w, bh, pitch = x0 + 108, 610, 22, 40
+    top, bx, bw, bh, pitch = ly + 5 * lp + 10, 130, 470, 18, 27
     for si, (label, idx, total) in enumerate(STACKS):
         y = top + si * pitch
         if label == "All agents":
-            b.append(line(x0, y - 12, W - 30, y - 12))
-        b.append(text(bar_x - 12, y + bh - 6, label, 14.5, INK, MONO, 700, "end"))
-
-        # geometry per segment
-        segs = []
-        cx = bar_x
+            y += 8
+            b.append(line(X0, y - 6, X1, y - 6, LINE_STRONG))
+        b.append(text(bx - 12, y + 13, label, 12.5, MUTED if idx == 4 else INK,
+                      SANS, 600, "end"))
+        b.append(f'<clipPath id="clip{si}"><rect x="{bx}" y="{y}" width="{bw}" '
+                 f'height="{bh}" rx="4"/></clipPath><g clip-path="url(#clip{si})">')
+        b.append(rect(bx, y, bw, bh, TRACK, 0))
+        cx = bx
         for mi, mode in enumerate(MODES):
-            w = bar_w * mode[idx] / total
-            segs.append((cx, w, mode[idx], mi))
+            w = bw * mode[idx] / total
+            if w > 0:
+                b.append(rect(cx, y, w, bh, MODE_COLOR[mi], 0))
+                if cx > bx:
+                    b.append(line(cx, y, cx, y + bh, "#FFFFFF", 1))
+                s = str(mode[idx])
+                if w >= 6.4 * len(s) + 4:
+                    b.append(text(cx + w / 2, y + 13, s, 11.5, "#FFFFFF", SANS, 600,
+                                  "middle"))
             cx += w
-
-        b.append(f'<clipPath id="clip{si}"><rect x="{bar_x}" y="{y}" '
-                 f'width="{bar_w}" height="{bh}" rx="6"/></clipPath>')
-        b.append(f'<g clip-path="url(#clip{si})">')
-        b.append(rect(bar_x, y, bar_w, bh, TRACK, 6))
-        for scx, w, n, mi in segs:
-            if w > 0.3:
-                b.append(rect(scx, y, w, bh, MODE_COLOR[mi], 0))
-            if w >= SMALL:
-                b.append(text(scx + w / 2, y + bh - 7, str(n), 13.5,
-                              on(MODE_COLOR[mi]), MONO, 700, "middle"))
         b.append("</g>")
+        b.append(text(bx + bw + 10, y + 13, f"{total} runs", 12, MUTED))
 
-        # small/zero segments: labelled off-bar with a leader, x-declutter
-        smalls = [(scx + w / 2, n, mi) for scx, w, n, mi in segs if w < SMALL]
-        if smalls:
-            placed = declutter([(c, (n, mi)) for c, n, mi in smalls], 17)
-            for slot_x, (n, mi) in placed:
-                col = MODE_COLOR[mi]
-                ly2 = y - 8
-                # true center for the leader (match by mi within this row)
-                true_c = next(scx + w / 2 for scx, w, nn, mmi in segs if mmi == mi)
-                b.append(line(slot_x, ly2 + 3, true_c, y - 1, col, 1.2))
-                b.append(dot(true_c, y, col, 1.8))
-                b.append(text(slot_x, ly2, str(n), 12, col, MONO, 700, "middle"))
-
-        b.append(text(bar_x + bar_w + 12, y + bh - 6, f"{total} runs", 13, MUTE))
-
-    h = top + 3 * pitch + bh + 16
-    b[0] = card(8, 8, W - 16, h - 16)
-    page("failure_modes", b, h)
+    page("failure_modes", b, top + 3 * pitch + 8 + bh + 20)
 
 
-# ========================================================= fig3: compute bands
+# ============================================ fig: score and spending by cap
+# numbers of record (2026-09-03): pinned grades over the 12 sweeps of record;
+# band = the run's budget; spent = sum(spent_h100) / sum(budget_h100) per cell.
 BANDS, BANDRUNS = [8, 32, 96], [228, 102, 42]
 COMPUTE = [
     ("DeepSeek-V4-Flash", [6.21, 5.67, 4.44], [43.3, 43.9, 16.7]),
@@ -337,100 +271,73 @@ COMPUTE = [
 ]
 
 
-def slope_panel(b, px, pw, top, ph, label, ymax, series, fmt):
-    xs = [px + i * (pw / 2) for i in range(3)]
-
-    def Y(v):
-        return top + ph - ph * v / ymax
-
-    b.append(text(px - 30, top - 13, label, 12.5, MUTE, MONO, 500, ls=0.5))
-    for frac in (0, 0.25, 0.5, 0.75, 1.0):
-        gy = top + ph - ph * frac
-        b.append(line(px - 30, gy, px + pw + 6, gy, EDGE if frac == 0 else TRACK))
-    for name, vals in series:
-        c = AGENT_COLOR[name]
-        dash = ' stroke-dasharray="5 4"' if name == "All agents" else ""
-        wdt = 3.0 if name == "All agents" else 2.3
-        pts = " ".join(f"{x:.1f},{Y(v):.1f}" for x, v in zip(xs, vals))
-        b.append(f'<polyline points="{pts}" fill="none" stroke="{c}" '
-                 f'stroke-width="{wdt}" stroke-linejoin="round"{dash}/>')
-        for x, v in zip(xs, vals):
-            b.append(f'<circle cx="{x:.1f}" cy="{Y(v):.1f}" r="3.4" fill="{c}"/>')
-    for ly_, (name, val) in declutter([(Y(v[1]) - 13, (n, v[1])) for n, v in series], 16.5):
-        b.append(text(xs[1], ly_, fmt(val), 12, AGENT_COLOR[name], MONO, 700, "middle",
-                      halo=True))
-    for ly_, (name, val) in declutter([(Y(v[0]), (n, v[0])) for n, v in series], 16.5):
-        c, y0 = AGENT_COLOR[name], Y(dict((n_, v_[0]) for n_, v_ in series)[name])
-        if abs(ly_ - y0) > 4:
-            b.append(line(xs[0] - 8, ly_, xs[0] - 3, y0, c, 0.9))
-        b.append(text(xs[0] - 12, ly_ + 4, fmt(val), 12, c, MONO, 700, "end"))
-    for ly_, (name, val) in declutter([(Y(v[2]), (n, v[2])) for n, v in series], 16.5):
-        c, y0 = AGENT_COLOR[name], Y(dict((n_, v_[2]) for n_, v_ in series)[name])
-        if abs(ly_ - y0) > 4:
-            b.append(line(xs[2] + 8, ly_, xs[2] + 3, y0, c, 0.9))
-        b.append(text(xs[2] + 12, ly_ + 4, fmt(val), 12, c, MONO, 700))
-        b.append(text(xs[2] + 12 + w_mono(fmt(val) + " ", 12), ly_ + 4, name, 12, c,
-                      MONO, 500))
-    for x, band, n in zip(xs, BANDS, BANDRUNS):
-        b.append(text(x, top + ph + 28, str(band), 14.5, INK, MONO, 700, "middle"))
-        b.append(text(x, top + ph + 43, f"{n} runs", 11.5, MUTE, MONO, 400, "middle"))
-
-
 def fig_compute():
-    b = [card(8, 8, W - 16, 0)]
-    x0 = 30
-    b += head(x0, 42, "score and spending by compute cap", "per-paper cap, H100-hours")
-    top, ph = 88, 152
-    slope_panel(b, x0 + 58, 190, top, ph, "mean audit score", 8.0,
-                [(n, s) for n, s, _ in COMPUTE], lambda v: f"{v:.2f}")
-    slope_panel(b, x0 + 487, 186, top, ph, "grant spent (%)", 50.0,
-                [(n, g) for n, _, g in COMPUTE], lambda v: f"{v:.1f}")
-    b.append(line(x0 + 440, 60, x0 + 440, top + ph + 38, TRACK))
-    h = top + ph + 62
-    b[0] = card(8, 8, W - 16, h - 16)
-    page("compute_bands", b, h)
+    """The same matrix as the results figure: one row per agent, three cap
+    columns for mean audit score and three for the share of the granted hours
+    spent, each cell a number over a bar on a 0 to 10 or 0 to 100 track."""
+    b = head("score and spending by compute band",
+             "bands named by their H100-hour ceiling; 228, 102, and 42 runs")
+    cx = [166, 248, 330, 426, 508, 590]   # cell lefts, 82px each, 14px between groups
+    barw = 66
+    for x, label in ((cx[0], "mean audit score, 0 to 10"), (cx[3], "grant spent, %")):
+        b.append(text(x, 54, label, 12, INK, SANS, 600))
+    for i, x in enumerate(cx):
+        b.append(text(x, 69, f"{BANDS[i % 3]} H100-h", 11.5, MUTED, SANS, 500))
+    b.append(line(cx[0], 75, cx[2] + barw, 75, LINE_STRONG))
+    b.append(line(cx[3], 75, cx[5] + barw, 75, LINE_STRONG))
+
+    top, pitch = 84, 40
+    for gi, (agent, score, spent) in enumerate(COMPUTE):
+        y = top + gi * pitch
+        total = agent == "All agents"
+        ink = MUTED if total else INK
+        if total:
+            b.append(line(X0, y - 4, X1, y - 4, LINE_STRONG))
+        elif gi:
+            b.append(line(X0, y - 4, X1, y - 4, LINE))
+        b.append(text(X0, y + 19, agent, 12, ink, SANS, 600))
+        cells = [(v, v / 10, f"{v:.2f}") for v in score] + \
+                [(v, v / 100, f"{v:.1f}") for v in spent]
+        for x, (v, frac, s) in zip(cx, cells):
+            b.append(text(x, y + 19, s, 19, ink, SERIF, 600))
+            b.append(rect(x, y + 27, barw, 4, TRACK, 2))
+            b.append(rect(x, y + 27, barw * frac, 4, SLATE, 1))
+
+    page("compute_bands", b, top + 5 * pitch + 10)
 
 
-# =================================================== score distribution
+# ================================================== fig: score distribution
 # numbers of record: audit.score over the 372 runs of
 # tools/anon_viewer/public/data/index.json, read 2026-09-07.
 HIST = [53, 10, 47, 17, 72, 14, 60, 26, 52, 16, 5]
-HIST_KEY = [("disqualified (0)", PINK), ("not reproduced (1 to 5)", SLATE),
+HIST_KEY = [("disqualified (0)", ROSE), ("not reproduced (1 to 5)", SLATE),
             ("partial (6 to 7)", AMBER), ("reproduced (8 to 10)", GREEN)]
 
 
 def score_color(s):
-    return PINK if s == 0 else SLATE if s <= 5 else AMBER if s <= 7 else GREEN
+    return ROSE if s == 0 else SLATE if s <= 5 else AMBER if s <= 7 else GREEN
 
 
 def fig_scores():
-    b = [card(8, 8, W - 16, 0)]
-    x0 = 30
-    b += head(x0, 42, "score distribution", "372 graded runs")
-    kx = x0
-    for name, color in HIST_KEY:
-        b.append(swatch(kx, 58, color))
-        b.append(text(kx + 17, 67, name, 13, MID))
-        kx += 17 + w_mono(name, 13) + 24
-
-    top, ph = 96, 132
-    colw, gapw = 58, 17
-    hx = x0 + 14
+    b = head("score distribution", "372 graded runs")
+    for i, (name, color) in enumerate(HIST_KEY):
+        kx = X0 + i * (X1 - X0) / 4
+        b.append(swatch(kx, 48, color))
+        b.append(text(kx + 15, 56, name, 12, MID))
+    top, ph, colw, gapw = 84, 110, 44, 12
+    hx = X0 + ((X1 - X0) - (11 * colw + 10 * gapw)) / 2
     ymax = max(HIST)
     for s, n in enumerate(HIST):
         x = hx + s * (colw + gapw)
         hgt = ph * n / ymax
-        b.append(rect(x, top + ph - hgt, colw, hgt, score_color(s), 5))
-        b.append(text(x + colw / 2, top + ph - hgt - 8, str(n), 13.5, INK, MONO, 700,
+        b.append(rect(x, top + ph - hgt, colw, hgt, score_color(s), 0))
+        b.append(text(x + colw / 2, top + ph - hgt - 6, str(n), 11.5, INK, SANS, 600,
                       "middle"))
-        b.append(text(x + colw / 2, top + ph + 21, str(s), 14.5, MID, MONO, 700,
-                      "middle"))
-    b.append(line(x0, top + ph + 1, W - 30, top + ph + 1, EDGE))
-    b.append(text(x0 + 14 + (11 * colw + 10 * gapw) / 2, top + ph + 40,
-                  "audit score, 0 to 10", 12.5, MUTE, MONO, 400, "middle"))
-    h = top + ph + 56
-    b[0] = card(8, 8, W - 16, h - 16)
-    page("score_distribution", b, h)
+        b.append(text(x + colw / 2, top + ph + 16, str(s), 12, INK, SANS, 600, "middle"))
+    b.append(line(X0, top + ph + 0.5, X1, top + ph + 0.5, LINE))
+    b.append(text((X0 + X1) / 2, top + ph + 31, "audit score, 0 to 10", 11.5, MUTED,
+                  SANS, 400, "middle"))
+    page("score_distribution", b, top + ph + 52)
 
 
 CHARTS = {

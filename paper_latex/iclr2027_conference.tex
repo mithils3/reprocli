@@ -655,6 +655,24 @@ behaviors at the round level in ten annotated runs.
 \subsection{Compute does not bind reproduction}
 \label{subsec:compute}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/compute_bands}
+\caption{Mean audit score and share of the granted GPU-hours spent, by the
+compute band of the paper.}
+\label{fig:band-compute}
+\end{figure}
+% numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
+% sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
+% 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
+% run's budget (agrees with eval_100 h100_band on every run); spent = sum of
+% spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
+% counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
+% Muse Spark 56/29/12; 8-band 228 runs, 32-band 102, 96-band 42. Bands are
+% named by their ceiling on the 0-8 / 8-32 / 32-96 ladder of Appendix E. One
+% 96-band run reproduces (Muse Spark, Retrain, 2508.21046). Recompute:
+% tools/anon_viewer/concordance.py band rows.
+
 \paragraph{Score falls with the paper's compute band.}
 Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
@@ -678,24 +696,6 @@ number from it, and six of the seven stated the shortfall.
 % qwen3-retrain-2504.12463, muse-retrain-2506.19839, muse-reimplement-
 % 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
 % shortfall).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/compute_bands}
-\caption{Mean reproduction score and share of the granted GPU-hours spent, by
-the compute band of the paper.}
-\label{fig:band-compute}
-\end{figure}
-% numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
-% sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
-% 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
-% run's budget (agrees with eval_100 h100_band on every run); spent = sum of
-% spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
-% counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
-% Muse Spark 56/29/12; 8-band 228 runs, 32-band 102, 96-band 42. Bands are
-% named by their ceiling on the 0-8 / 8-32 / 32-96 ladder of Appendix E. One
-% 96-band run reproduces (Muse Spark, Retrain, 2508.21046). Recompute:
-% tools/anon_viewer/concordance.py band rows.
 
 \section{Limitations}
 \label{sec:limitations}
