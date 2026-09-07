@@ -124,6 +124,19 @@ retrieved benchmark answer the graded value runs through. &
 \end{longtable}
 }
 
+Figure~\ref{fig:score-dist} shows how the 372 graded runs fall across the scale.
+The distribution has a mode at 4, where a run executes something the auditor can
+grade and lands well short of the bar, and a second at 0, where an integrity
+flag zeroes the score.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/score_distribution}
+\caption{Audit scores over the 372 graded runs, colored by the verdict bands of
+Table~\ref{tab:rubric}.}
+\label{fig:score-dist}
+\end{figure}
+
 \subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
 

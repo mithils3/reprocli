@@ -66,7 +66,7 @@ remains open.
 %     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
 %     2026-09-06 (user: "make it 16% then"): the abstract now reports the best
 %     agent per tier, 48/32/16. Reimplement 16 = Muse Spark 5/32 (sweep
-%     20260820, pinned, tab:main-results); Run and Retrain stay DSv4's. The
+%     20260820, pinned, fig:main-results); Run and Retrain stay DSv4's. The
 %     intro sentence keeps DSv4's own 48/32/13, scoped by name.
 %   "rarely runs as shipped" -- CUT 2026-09-06: unsourced frequency claim, and
 %     the body attributes Run-tier misses to the agent. Run tier is now defined
@@ -107,7 +107,7 @@ remains open.
 %   96 GPU-hour band spend -- 6.5% (sum spent / sum budget; the mean of per-run
 %     fractions is also 6.5%), pooled over the 12 sweeps of record incl. Muse
 %     Spark, 1 of 42 runs reproduced (Muse Spark, Retrain, 2508.21046, score 9,
-%     1.9 of 96 H100-h). Refilled 2026-09-03; matches tab:band-compute.
+%     1.9 of 96 H100-h). Refilled 2026-09-03; matches fig:band-compute.
 \end{abstract}
 
 \section{Introduction}
@@ -504,7 +504,7 @@ H100-hour. Appendix~\ref{app:models} gives the rates and the per-agent totals.
 \subsection{Results}
 \label{subsec:results}
 
-Table~\ref{tab:main-results} reports every graded run. Each agent has between 87
+Figure~\ref{fig:main-results} reports every graded run. Each agent has between 87
 and 98 graded runs over the 100 papers; the remaining cells have no graded run,
 and every rate below uses the graded runs as its denominator. DeepSeek-V4-Flash is
 missing 13 of its 100 cells and MiniMax-M2.7 two; counting every missing
@@ -519,28 +519,13 @@ of 1.9 in mean audit score, from 5.90 for DeepSeek-V4-Flash to 3.09 for MiniMax-
 % run row). Missing per agent x tier vs 34/33/33 papers: DSv4 5/5/3 (2510.20725
 % has no run for any agent), Qwen3 0/7/3, MiniMax 1/1/0, Muse 1/1/1.
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\small
-\setlength{\tabcolsep}{2.8pt}
-\begin{tabular}{@{}lccc@{\hspace{1.2em}}ccc@{\hspace{1.2em}}c@{}}
-\toprule
-& \multicolumn{3}{c@{\hspace{1.2em}}}{Reproduced} & \multicolumn{3}{c@{\hspace{1.2em}}}{Mean score} & Grant \\
-\cmidrule(lr{1.2em}){2-4} \cmidrule(lr{1.2em}){5-7}
-Agent & Run & Retrain & Reimplement & Run & Retrain & Reimplement & spent (\%) \\
-\midrule
-DeepSeek-V4-Flash & 14/29 (48\%) & 9/28 (32\%) & 4/30 (13\%) & 6.21 & 6.43 & 5.10 & 32.0 \\
-Qwen3.6-27B & 5/34 (15\%) & 6/26 (23\%) & 2/30 (7\%) & 3.91 & 4.54 & 3.27 & 15.5 \\
-MiniMax-M2.7 & 3/33 (9\%) & 5/32 (16\%) & 2/33 (6\%) & 3.18 & 3.41 & 2.70 & 10.3 \\
-Muse Spark 1.2 & 9/33 (27\%) & 9/32 (28\%) & 5/32 (16\%) & 5.64 & 6.03 & 3.78 & 21.7 \\
-\midrule
-All agents & 31/129 (24\%) & 29/118 (25\%) & 13/125 (10\%) & 4.68 & 5.08 & 3.69 & 19.4 \\
-\bottomrule
-\end{tabular}
-\caption{Reproduced runs, mean audit score, and share of the granted H100-hours
-spent, by agent and tier.}
-\label{tab:main-results}
-\end{table}
+\includegraphics[width=\textwidth]{figures/results_by_tier}
+\caption{Confirmed reproductions, mean audit score, and share of the granted
+H100-hours spent, by agent and tier.}
+\label{fig:main-results}
+\end{figure}
 % numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
 % sweeps[] (n, n_reproduced, mean_score); reproduced = audit score >= 8 =
 % verdict reproduced on all 372 runs. Grant spent = 100 * sum(spent_h100) /
@@ -555,7 +540,7 @@ MiniMax-M2.7 reaches one on 9 of 32, and confirmed reproduction at the same
 tier runs from 16\% to 32\%. Only DeepSeek-V4-Flash's reproduction rate falls at
 every tier. For the other three agents the Run and Retrain rates sit within
 nine points of each other, and mean score rises from Run to Retrain for all
-four agents before falling at Reimplement. Table~\ref{tab:failure-modes}
+four agents before falling at Reimplement. Figure~\ref{fig:failure-modes}
 shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
 and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
 more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
@@ -564,7 +549,7 @@ Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 % partial-or-better = audit score >= 6 (index.json): DSv4 retrain 22/28, Muse
 % retrain 23/32, MiniMax retrain 9/32.
 
-Spending stays far below the grant in every row of the table. The mean
+Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced run uses 30\% of its allocation, and pooled over all 372 runs
 the agents spend 1{,}770 of the 9{,}120 H100-hours we granted. Priced at the
 rates of Appendix~\ref{app:models}, the 372 runs cost \$4{,}567, which is
@@ -589,7 +574,7 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 \paragraph{Failure taxonomy.}
 We label every graded run with one primary mode from the nine-mode
 vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
-tier in Table~\ref{tab:failure-modes}. Two modes are outcomes. A
+tier in Figure~\ref{fig:failure-modes}. Two modes are outcomes. A
 reproduced run recovers the pinned number on the authors' released
 artifact and data, and a run outside tolerance executes a faithful pipeline
 and lands short of the bar. The other seven are process failures.
@@ -602,30 +587,13 @@ other than the one the row pins, so the Reproduced row holds 72 runs against
 % the one run: muse-run-2505.18456 (audit 8; adlm-medium/large 262B/524B
 % checkpoints against a pinned 110B row).
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Mode & Run & Retrain & Reimplement & All \\
-\midrule
-Reproduced & 30 & 29 & 13 & 72 \\
-Ran, outside tolerance & 24 & 37 & 15 & 76 \\
-Reimplemented but did not check the result & 14 & 11 & 38 & 63 \\
-Build and dependency failures & 13 & 6 & 5 & 24 \\
-Wrong artifact measured & 18 & 9 & 11 & 38 \\
-Wrong experiment & 8 & 14 & 24 & 46 \\
-Echoed a shipped number & 7 & 2 & 0 & 9 \\
-Never launched an experiment & 1 & 2 & 10 & 13 \\
-Failed before any number was produced & 14 & 8 & 9 & 31 \\
-\midrule
-Graded runs & 129 & 118 & 125 & 372 \\
-\bottomrule
-\end{tabular}
+\includegraphics[width=\textwidth]{figures/failure_modes}
 \caption{Primary failure mode by tier over the 372 graded runs, in the order of
 Appendix~\ref{app:taxonomy}.}
-\label{tab:failure-modes}
-\end{table}
+\label{fig:failure-modes}
+\end{figure}
 % numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
 % resolved_modes.json = index.json field "mode" with two relabel passes
 % applied: 29 runs (25 "other" plus 4 label/verdict conflicts; evidence in
@@ -690,7 +658,7 @@ behaviors at the round level in ten annotated runs.
 \paragraph{Score falls with the paper's compute band.}
 Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
-(Table~\ref{tab:band-compute}). Mean score falls with band for each of the
+(Figure~\ref{fig:band-compute}). Mean score falls with band for each of the
 four agents, and the 42 runs in the 96 H100-hour band spend 6.5\% of the
 compute granted to them. The bands hold 59, 29, and 12 papers, and 99 of the
 100 produced at least one run, so the 96-hour cells rest on 9 to 12 runs per
@@ -711,26 +679,13 @@ number from it, and six of the seven stated the shortfall.
 % 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
 % shortfall).
 
-\begin{table}[ht]
+\begin{figure}[t]
 \centering
-\small
-\begin{tabular}{@{}lccc@{\hspace{2.5em}}ccc@{}}
-\toprule
-& \multicolumn{3}{c@{\hspace{2.5em}}}{Mean score} & \multicolumn{3}{c}{Grant spent (\%)} \\
-\cmidrule(l{1.2em}r{3em}){2-4} \cmidrule(lr){5-7}
-Agent & 8 & 32 & 96 & 8 & 32 & 96 \\
-\midrule
-DeepSeek-V4-Flash & 6.21 & 5.67 & 4.44 & 43.3 & 43.9 & 16.7 \\
-Qwen3.6-27B & 4.18 & 3.79 & 2.22 & 31.8 & 20.5 & \phantom{0}2.6 \\
-MiniMax-M2.7 & 3.62 & 2.50 & 1.92 & 27.3 & 11.9 & \phantom{0}2.3 \\
-Muse Spark 1.2 & 5.91 & 4.55 & 3.08 & 39.5 & 32.6 & \phantom{0}6.1 \\
-\midrule
-All agents & 4.97 & 4.04 & 2.86 & 35.4 & 26.4 & \phantom{0}6.5 \\
-\bottomrule
-\end{tabular}
-\caption{Mean reproduction score and share of the granted GPU-hours spent.}
-\label{tab:band-compute}
-\end{table}
+\includegraphics[width=\textwidth]{figures/compute_bands}
+\caption{Mean reproduction score and share of the granted GPU-hours spent, by
+the compute band of the paper.}
+\label{fig:band-compute}
+\end{figure}
 % numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
 % sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
 % 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
