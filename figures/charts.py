@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """The data charts of Section 5 and Appendix C, as standalone HTML+SVG.
 
-One chart language, shared with the reviewer viewer: a white card with a
-hairline edge, a Fraunces title with a muted Inter subtitle at the right,
+One chart language, shared with the reviewer viewer: no frame, a Fraunces title with a muted Inter subtitle at the right,
 Inter with tabular numerals for every label, and the viewer's light palette
 in which sage green always means reproduced. The canvas is 680px wide and is
 printed at the 5.5in text width, so one px is 0.58pt and the smallest label
@@ -43,7 +42,6 @@ FAINT = "#938D7E"
 LINE = "#DAD5C6"
 LINE_STRONG = "#C7C0AD"
 TRACK = "#EAE6DA"
-CARD = "#FFFFFF"
 SANS = "InterF, sans-serif"
 SERIF = "FrauncesF, serif"
 
@@ -83,16 +81,11 @@ def dot(x, y, color, r=3):
     return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{color}"/>'
 
 
-def card(h):
-    return (
-        f'<rect x="6" y="6" width="{W - 12}" height="{h - 12}" rx="10" fill="{CARD}" '
-        f'stroke="{LINE}" stroke-width="1"/>'
-    )
-
-
-def head(title, sub):
-    return [text(X0, 31, title, 15, INK, SERIF, 600),
-            text(X1, 31, sub, 11.5, MUTED, SANS, 400, "end")]
+def head(title, sub=""):
+    out = [text(X0, 31, title, 15, INK, SERIF, 600)]
+    if sub:
+        out.append(text(X1, 31, sub, 11.5, MUTED, SANS, 400, "end"))
+    return out
 
 
 def swatch(x, y, color):
@@ -120,7 +113,11 @@ def declutter(rows, gap):
     return out
 
 
+CROP, TOP_CROP, BOT_CROP = 14, 12, 6   # trim the margin the card used to fill
+
+
 def page(name, body, height):
+    vw, vh = W - 2 * CROP, height - TOP_CROP - BOT_CROP
     css = """
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-Medium.ttf'); font-weight: 500; }
@@ -132,16 +129,16 @@ body { width: %dpx; background: #fff; }
 svg { display: block; }
 text { font-optical-sizing: auto; text-rendering: geometricPrecision; }
 text.n { font-variant-numeric: tabular-nums; }
-""" % (W, W)
+""" % (vw, vw)
     html = (
         '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<style>'
         f"{css}</style>\n</head>\n<body>\n"
-        f'<svg width="{W}" height="{height}" viewBox="0 0 {W} {height}">\n'
-        + card(height) + "\n" + "\n".join(body)
+        f'<svg width="{vw}" height="{vh}" viewBox="{CROP} {TOP_CROP} {vw} {vh}">\n'
+        + "\n".join(body)
         + "\n</svg>\n</body>\n</html>\n"
     )
     (OUT / f"{name}.html").write_text(html)
-    print(f"wrote {name}.html  {W}x{height}")
+    print(f"wrote {name}.html  {vw}x{vh}")
 
 
 # ============================================ fig: results by agent and tier
@@ -162,11 +159,11 @@ TIER_COLOR = ["#A9B2BE", SLATE, INK]   # Run, Retrain, Reimplement: a ramp
 
 
 def tier_dot(x, y, color):
-    return (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.4" fill="{color}" '
-            f'stroke="#FFFFFF" stroke-width="1.8"/>')
+    return (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.2" fill="{color}" '
+            f'stroke="#FFFFFF" stroke-width="1.6"/>')
 
 
-def spread(xs, gap=9.5, step=3.4):
+def spread(xs, gap=14, step=6.0):
     """Vertical offsets for dots whose x positions collide, so every tier
     stays visible while x keeps its true value."""
     order = sorted(range(len(xs)), key=lambda i: xs[i])
@@ -197,9 +194,13 @@ def dot_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
     for y, vals in rows:
         cy = y + pitch / 2 - 3
         xs = [X(v) for v in vals]
-        if max(xs) - min(xs) >= 12:
-            b.append(line(min(xs), cy, max(xs), cy, LINE_STRONG, 1.5))
-        for x, dy, c in zip(xs, spread(xs), TIER_COLOR):
+        dys = spread(xs)
+        pts = sorted(zip(xs, dys))
+        if pts[-1][0] - pts[0][0] >= 12:
+            path = " ".join(f"{x:.1f},{cy + dy:.1f}" for x, dy in pts)
+            b.append(f'<polyline points="{path}" fill="none" stroke="{LINE_STRONG}" '
+                     f'stroke-width="1.5" stroke-linejoin="round"/>')
+        for x, dy, c in zip(xs, dys, TIER_COLOR):
             b.append(tier_dot(x, cy + dy, c))
 
 
@@ -213,7 +214,7 @@ def fig_results():
         b.append(tier_dot(x + 4, ky - 4, c))
         b.append(text(x + 14, ky, tier, 12, MID))
     p1, p2, pw = 160, 384, 176
-    gx = 578
+    gx = 574
     hy = 78
     b.append(text(p1, hy, "reproduced, % of graded runs", 12, INK, SANS, 600))
     b.append(text(p2, hy, "mean audit score", 12, INK, SANS, 600))
@@ -231,9 +232,9 @@ def fig_results():
         if total:
             b.append(line(X0, y - 6, X1, y - 6, LINE_STRONG))
         b.append(text(X0, cy + 4.5, agent, 12, ink, SANS, 600))
-        b.append(rect(gx, cy - 2, 44, 4, TRACK, 2))
-        b.append(rect(gx, cy - 2, 44 * spent / 100, 4, SLATE, 1))
-        b.append(text(X1, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600, "end"))
+        b.append(rect(gx, cy - 2, 40, 4, TRACK, 2))
+        b.append(rect(gx, cy - 2, 40 * spent / 100, 4, SLATE, 1))
+        b.append(text(gx + 50, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600))
     dot_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
               50, [0, 10, 20, 30, 40, 50], top, pitch, "%")
     dot_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
@@ -278,7 +279,7 @@ def fig_modes():
         y = top + si * pitch
         if label == "All agents":
             y += 8
-            b.append(line(X0, y - 6, X1, y - 6, LINE_STRONG))
+            b.append(line(X0, y - 8.5, X1, y - 8.5, LINE_STRONG))
         b.append(text(bx - 12, y + 13, label, 12.5, MUTED if idx == 4 else INK,
                       SANS, 600, "end"))
         b.append(f'<clipPath id="clip{si}"><rect x="{bx}" y="{y}" width="{bw}" '
@@ -289,15 +290,15 @@ def fig_modes():
             w = bw * mode[idx] / total
             if w > 0:
                 b.append(rect(cx, y, w, bh, MODE_COLOR[mi], 0))
-                if cx > bx:
+                if cx > bx and w >= 4:
                     b.append(line(cx, y, cx, y + bh, "#FFFFFF", 1))
                 s = str(mode[idx])
-                if w >= 6.4 * len(s) + 4:
+                if w >= 6.4 * len(s) + 8:
                     b.append(text(cx + w / 2, y + 13, s, 11.5, "#FFFFFF", SANS, 600,
                                   "middle"))
             cx += w
         b.append("</g>")
-        b.append(text(bx + bw + 10, y + 13, f"{total} runs", 12, MUTED))
+        b.append(text(bx + bw + 8, y + 13, f"{total} runs", 12, MUTED))
 
     page("failure_modes", b, top + 3 * pitch + 8 + bh + 20)
 
@@ -331,22 +332,27 @@ def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
         c = AGENT_COLOR[name]
         total = name == "All agents"
         pts = " ".join(f"{x:.1f},{Y(v):.1f}" for x, v in zip(xs, vals))
-        dash = ' stroke-dasharray="5 4"' if total else ""
+        dash = ' stroke-dasharray="6 4" stroke-dashoffset="2"' if total else ""
         b.append(f'<polyline points="{pts}" fill="none" stroke="{c}" '
                  f'stroke-width="{2.4 if total else 2.1}" stroke-linejoin="round"{dash}/>')
+    # white discs under every point first, then the colored dots, so no
+    # ring erases a neighbouring series' marker
     for name, vals in series:
         for x, v in zip(xs, vals):
-            b.append(f'<circle cx="{x:.1f}" cy="{Y(v):.1f}" r="3" fill="{AGENT_COLOR[name]}" '
-                     f'stroke="#FFFFFF" stroke-width="1.2"/>')
+            b.append(dot(x, Y(v), "#FFFFFF", 4.2))
+    for name, vals in series:
+        for x, v in zip(xs, vals):
+            b.append(dot(x, Y(v), AGENT_COLOR[name], 3))
     for col, anchor, sg in ((0, "end", -1), (2, "start", 1)):
         placed = declutter([(Y(v[col]), (n, v[col])) for n, v in series], 13.5)
         shift = max(0, max(ly for ly, _ in placed) - (top + ph - 6))
+        shift -= max(0, (top + 6) - (min(ly for ly, _ in placed) - shift))
         for ly, (name, val) in placed:
             ly -= shift
             c, y0 = AGENT_COLOR[name], Y(dict(series)[name][col])
             if abs(ly - y0) > 3:
-                b.append(line(xs[col] + sg * 4.5, y0, xs[col] + sg * 12, ly, c, 0.9))
-            b.append(text(xs[col] + sg * 15, ly + 4, fmt(val), 11.5, c, SANS, 600, anchor,
+                b.append(line(xs[col] + sg * 6, y0, xs[col] + sg * 20, ly, c, 0.9))
+            b.append(text(xs[col] + sg * 23, ly + 4, fmt(val), 11.5, c, SANS, 600, anchor,
                           halo=True))
     for x, band, n in zip(xs, BANDS, BANDRUNS):
         b.append(text(x, top + ph + 18, str(band), 12, INK, SANS, 600, "middle"))
@@ -356,17 +362,16 @@ def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
 def fig_compute():
     """Two slope panels over the three compute bands, one line per agent:
     mean audit score on the left, share of the granted hours on the right."""
-    b = head("score and spending by compute band",
-             "bands named by their H100-hour ceiling; 228, 102, and 42 runs")
+    b = head("score and spending by compute band")
     ky = 56
     for kx, (name, c) in zip((X0, 170, 284, 406, 534), AGENT_COLOR.items()):
         total = name == "All agents"
         b.append(line(kx, ky - 4, kx + 16, ky - 4, c, 2.4, "4 3" if total else None))
         b.append(text(kx + 21, ky, name, 12, MID))
     top, ph = 88, 112
-    slope_panel(b, 44, [96, 186, 276], top, ph, "mean audit score", 8, [0, 2, 4, 6, 8],
+    slope_panel(b, 44, [102, 184, 266], top, ph, "mean audit score", 8, [0, 2, 4, 6, 8],
                 [(n, sc) for n, sc, _ in COMPUTE], lambda v: f"{v:.2f}")
-    slope_panel(b, 372, [442, 532, 622], top, ph, "grant spent, %", 50,
+    slope_panel(b, 372, [440, 522, 604], top, ph, "grant spent, %", 50,
                 [0, 10, 20, 30, 40, 50], [(n, g) for n, _, g in COMPUTE],
                 lambda v: f"{v:.1f}")
     page("compute_bands", b, top + ph + 46)
