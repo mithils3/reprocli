@@ -158,43 +158,87 @@ RESULTS = [
 TIERS = ["Run", "Retrain", "Reimplement"]
 
 
-def fig_results():
-    """A matrix: one row per agent, one column per tier, each cell the mean
-    audit score over the fraction and bar of runs reproduced, and a last
-    column for the share of the granted GPU-hours the agent spent."""
-    b = head("results by agent and tier",
-             "372 graded runs; grant spent is the share of granted H100-hours")
-    tx = [156, 286, 416]      # tier column lefts, 130px each
-    gx = 560                  # grant column left, 98px
-    barw = 90                 # one track width for every bar
-    hy = 60
-    for x, tier in zip(tx, TIERS):
-        b.append(text(x, hy, tier, 12, INK, SANS, 600))
-    b.append(text(gx, hy, "grant spent", 12, INK, SANS, 600))
-    b.append(line(X0, hy + 7, X1, hy + 7, LINE_STRONG))
+TIER_COLOR = ["#A9B2BE", SLATE, INK]   # Run, Retrain, Reimplement: a ramp
 
-    top, pitch = 72, 49
+
+def tier_dot(x, y, color):
+    return (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.4" fill="{color}" '
+            f'stroke="#FFFFFF" stroke-width="1.8"/>')
+
+
+def spread(xs, gap=9.5, step=3.4):
+    """Vertical offsets for dots whose x positions collide, so every tier
+    stays visible while x keeps its true value."""
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    groups, cur = [], [order[0]]
+    for i in order[1:]:
+        if xs[i] - xs[cur[-1]] < gap:
+            cur.append(i)
+        else:
+            groups.append(cur)
+            cur = [i]
+    groups.append(cur)
+    dy = [0.0] * len(xs)
+    for g in groups:
+        for k, i in enumerate(g):
+            dy[i] = (k - (len(g) - 1) / 2) * 2 * step
+    return dy
+
+
+def dot_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
+    """One dot-plot panel: a row per agent, one dot per tier on a shared axis,
+    the three dots joined by a hairline so the spread reads at a glance."""
+    def X(v):
+        return px + pw * v / vmax
+    bottom = rows[-1][0] + pitch - 6
+    for t in ticks:
+        b.append(line(X(t), top - 4, X(t), bottom, TRACK))
+        b.append(text(X(t), bottom + 14, f"{t}{unit}", 11, FAINT, SANS, 400, "middle"))
+    for y, vals in rows:
+        cy = y + pitch / 2 - 3
+        xs = [X(v) for v in vals]
+        if max(xs) - min(xs) >= 12:
+            b.append(line(min(xs), cy, max(xs), cy, LINE_STRONG, 1.5))
+        for x, dy, c in zip(xs, spread(xs), TIER_COLOR):
+            b.append(tier_dot(x, cy + dy, c))
+
+
+def fig_results():
+    """Two dot-plot panels, reproduction rate and mean audit score, one row per
+    agent and one dot per tier, plus a strip for the share of the grant spent.
+    The exact values are in the appendix results table."""
+    b = head("reproduction rate and audit score by agent and tier", "372 graded runs")
+    ky = 56
+    for x, tier, c in zip((X0, X0 + 60, X0 + 140), TIERS, TIER_COLOR):
+        b.append(tier_dot(x + 4, ky - 4, c))
+        b.append(text(x + 14, ky, tier, 12, MID))
+    p1, p2, pw = 160, 384, 176
+    gx = 578
+    hy = 78
+    b.append(text(p1, hy, "reproduced, % of graded runs", 12, INK, SANS, 600))
+    b.append(text(p2, hy, "mean audit score", 12, INK, SANS, 600))
+    b.append(text(gx, hy, "grant spent", 12, INK, SANS, 600))
+
+    top, pitch = 88, 26
+    rows = []
     for gi, (agent, repro, score, spent) in enumerate(RESULTS):
-        y = top + gi * pitch
+        y = top + gi * pitch + (8 if agent == "All agents" else 0)
+        rows.append((y, agent, repro, score, spent))
+    for y, agent, repro, score, spent in rows:
         total = agent == "All agents"
         ink = MUTED if total else INK
+        cy = y + pitch / 2 - 3
         if total:
-            b.append(line(X0, y - 4, X1, y - 4, LINE_STRONG))
-        elif gi:
-            b.append(line(X0, y - 4, X1, y - 4, LINE))
-        b.append(text(X0, y + 21, agent, 12, ink, SANS, 600))
-        for x, (n, d), s in zip(tx, repro, score):
-            b.append(text(x, y + 16, f"{s:.2f}", 19, ink, SERIF, 600))
-            b.append(text(x, y + 31, f"{n}/{d} reproduced", 11, MUTED))
-            b.append(rect(x, y + 37, barw, 4, TRACK, 2))
-            b.append(rect(x, y + 37, barw * n / d, 4, GREEN, 2))
-            b.append(text(x + barw + 8, y + 42.5, f"{round(100 * n / d)}%", 11, ink,
-                          SANS, 600))
-        b.append(text(gx, y + 16, f"{spent:.1f}%", 19, ink, SERIF, 600))
-        b.append(rect(gx, y + 37, barw, 4, TRACK, 2))
-        b.append(rect(gx, y + 37, barw * spent / 100, 4, SLATE, 2))
-
-    page("results_by_tier", b, top + 5 * pitch + 12)
+            b.append(line(X0, y - 6, X1, y - 6, LINE_STRONG))
+        b.append(text(X0, cy + 4.5, agent, 12, ink, SANS, 600))
+        b.append(rect(gx, cy - 2, 44, 4, TRACK, 2))
+        b.append(rect(gx, cy - 2, 44 * spent / 100, 4, SLATE, 1))
+        b.append(text(X1, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600, "end"))
+    dot_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
+              50, [0, 10, 20, 30, 40, 50], top, pitch, "%")
+    dot_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
+              8, [0, 2, 4, 6, 8], top, pitch, "")
+    page("results_by_tier", b, rows[-1][0] + pitch + 22)
 
 
 # ============================================== fig: failure modes by tier
@@ -271,39 +315,61 @@ COMPUTE = [
 ]
 
 
+def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
+    """One slope panel: gridlines with axis numerals at ax, three points per
+    agent at xs, value labels at both ends with a leader where a label had to
+    move off its point."""
+    px, pw = xs[0] - 40, xs[2] - xs[0] + 48
+
+    def Y(v):
+        return top + ph - ph * v / ymax
+    b.append(text(px, top - 12, label, 12, INK, SANS, 600))
+    for t in ticks:
+        b.append(line(px, Y(t), px + pw, Y(t), LINE if t == 0 else TRACK))
+        b.append(text(ax, Y(t) + 4, str(t), 11, FAINT, SANS, 400, "end"))
+    for name, vals in series:
+        c = AGENT_COLOR[name]
+        total = name == "All agents"
+        pts = " ".join(f"{x:.1f},{Y(v):.1f}" for x, v in zip(xs, vals))
+        dash = ' stroke-dasharray="5 4"' if total else ""
+        b.append(f'<polyline points="{pts}" fill="none" stroke="{c}" '
+                 f'stroke-width="{2.4 if total else 2.1}" stroke-linejoin="round"{dash}/>')
+    for name, vals in series:
+        for x, v in zip(xs, vals):
+            b.append(f'<circle cx="{x:.1f}" cy="{Y(v):.1f}" r="3" fill="{AGENT_COLOR[name]}" '
+                     f'stroke="#FFFFFF" stroke-width="1.2"/>')
+    for col, anchor, sg in ((0, "end", -1), (2, "start", 1)):
+        placed = declutter([(Y(v[col]), (n, v[col])) for n, v in series], 13.5)
+        shift = max(0, max(ly for ly, _ in placed) - (top + ph - 6))
+        for ly, (name, val) in placed:
+            ly -= shift
+            c, y0 = AGENT_COLOR[name], Y(dict(series)[name][col])
+            if abs(ly - y0) > 3:
+                b.append(line(xs[col] + sg * 4.5, y0, xs[col] + sg * 12, ly, c, 0.9))
+            b.append(text(xs[col] + sg * 15, ly + 4, fmt(val), 11.5, c, SANS, 600, anchor,
+                          halo=True))
+    for x, band, n in zip(xs, BANDS, BANDRUNS):
+        b.append(text(x, top + ph + 18, str(band), 12, INK, SANS, 600, "middle"))
+        b.append(text(x, top + ph + 31, f"{n} runs", 11, FAINT, SANS, 400, "middle"))
+
+
 def fig_compute():
-    """The same matrix as the results figure: one row per agent, three cap
-    columns for mean audit score and three for the share of the granted hours
-    spent, each cell a number over a bar on a 0 to 10 or 0 to 100 track."""
+    """Two slope panels over the three compute bands, one line per agent:
+    mean audit score on the left, share of the granted hours on the right."""
     b = head("score and spending by compute band",
              "bands named by their H100-hour ceiling; 228, 102, and 42 runs")
-    cx = [166, 248, 330, 426, 508, 590]   # cell lefts, 82px each, 14px between groups
-    barw = 66
-    for x, label in ((cx[0], "mean audit score, 0 to 10"), (cx[3], "grant spent, %")):
-        b.append(text(x, 54, label, 12, INK, SANS, 600))
-    for i, x in enumerate(cx):
-        b.append(text(x, 69, f"{BANDS[i % 3]} H100-h", 11.5, MUTED, SANS, 500))
-    b.append(line(cx[0], 75, cx[2] + barw, 75, LINE_STRONG))
-    b.append(line(cx[3], 75, cx[5] + barw, 75, LINE_STRONG))
-
-    top, pitch = 84, 40
-    for gi, (agent, score, spent) in enumerate(COMPUTE):
-        y = top + gi * pitch
-        total = agent == "All agents"
-        ink = MUTED if total else INK
-        if total:
-            b.append(line(X0, y - 4, X1, y - 4, LINE_STRONG))
-        elif gi:
-            b.append(line(X0, y - 4, X1, y - 4, LINE))
-        b.append(text(X0, y + 19, agent, 12, ink, SANS, 600))
-        cells = [(v, v / 10, f"{v:.2f}") for v in score] + \
-                [(v, v / 100, f"{v:.1f}") for v in spent]
-        for x, (v, frac, s) in zip(cx, cells):
-            b.append(text(x, y + 19, s, 19, ink, SERIF, 600))
-            b.append(rect(x, y + 27, barw, 4, TRACK, 2))
-            b.append(rect(x, y + 27, barw * frac, 4, SLATE, 1))
-
-    page("compute_bands", b, top + 5 * pitch + 10)
+    ky = 56
+    for kx, (name, c) in zip((X0, 170, 284, 406, 534), AGENT_COLOR.items()):
+        total = name == "All agents"
+        b.append(line(kx, ky - 4, kx + 16, ky - 4, c, 2.4, "4 3" if total else None))
+        b.append(text(kx + 21, ky, name, 12, MID))
+    top, ph = 88, 112
+    slope_panel(b, 44, [96, 186, 276], top, ph, "mean audit score", 8, [0, 2, 4, 6, 8],
+                [(n, sc) for n, sc, _ in COMPUTE], lambda v: f"{v:.2f}")
+    slope_panel(b, 372, [442, 532, 622], top, ph, "grant spent, %", 50,
+                [0, 10, 20, 30, 40, 50], [(n, g) for n, _, g in COMPUTE],
+                lambda v: f"{v:.1f}")
+    page("compute_bands", b, top + ph + 46)
 
 
 # ================================================== fig: score distribution

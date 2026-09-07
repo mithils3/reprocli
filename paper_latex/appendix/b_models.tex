@@ -148,3 +148,59 @@ All agents & 3{,}462.8 & 55.20 & 1{,}026.41 & 3{,}540.42 & 4{,}566.84 & 12.28 \\
 appendix and \$2 per H100-hour.}
 \label{tab:cost}
 \end{table}
+
+\subsection{Results by agent, tier, and compute band}
+\label{app:results-table}
+
+Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
+and~\ref{fig:band-compute}. Reproduced counts a run whose audit score is 8 or
+higher, grant spent is the agent's H100-hours used over the hours granted to
+its runs, and the compute band is the run's cap in H100-hours.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-7}
+Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
+\midrule
+DeepSeek-V4-Flash & Run & 14/29 (48\%) & 6.21 & & & \\
+& Retrain & 9/28 (32\%) & 6.43 & & & \\
+& Reimplement & 4/30 (13\%) & 5.10 & & & \\
+& Mean score & & & 6.21 & 5.67 & 4.44 \\
+& Grant spent (\%) & \multicolumn{2}{r}{32.0 overall} & 43.3 & 43.9 & 16.7 \\
+\midrule
+Qwen3.6-27B & Run & 5/34 (15\%) & 3.91 & & & \\
+& Retrain & 6/26 (23\%) & 4.54 & & & \\
+& Reimplement & 2/30 (7\%) & 3.27 & & & \\
+& Mean score & & & 4.18 & 3.79 & 2.22 \\
+& Grant spent (\%) & \multicolumn{2}{r}{15.5 overall} & 31.8 & 20.5 & 2.6 \\
+\midrule
+MiniMax-M2.7 & Run & 3/33 (9\%) & 3.18 & & & \\
+& Retrain & 5/32 (16\%) & 3.41 & & & \\
+& Reimplement & 2/33 (6\%) & 2.70 & & & \\
+& Mean score & & & 3.62 & 2.50 & 1.92 \\
+& Grant spent (\%) & \multicolumn{2}{r}{10.3 overall} & 27.3 & 11.9 & 2.3 \\
+\midrule
+Muse Spark 1.2 & Run & 9/33 (27\%) & 5.64 & & & \\
+& Retrain & 9/32 (28\%) & 6.03 & & & \\
+& Reimplement & 5/32 (16\%) & 3.78 & & & \\
+& Mean score & & & 5.91 & 4.55 & 3.08 \\
+& Grant spent (\%) & \multicolumn{2}{r}{21.7 overall} & 39.5 & 32.6 & 6.1 \\
+\midrule
+All agents & Run & 31/129 (24\%) & 4.68 & & & \\
+& Retrain & 29/118 (25\%) & 5.08 & & & \\
+& Reimplement & 13/125 (10\%) & 3.69 & & & \\
+& Mean score & & & 4.97 & 4.04 & 2.86 \\
+& Grant spent (\%) & \multicolumn{2}{r}{19.4 overall} & 35.4 & 26.4 & 6.5 \\
+\bottomrule
+\end{tabular}
+\caption{Reproduced runs, mean audit score, and grant spent for the 372 graded
+runs, by agent, tier, and compute band.}
+\label{tab:results}
+\end{table}
+% numbers of record: tools/anon_viewer/public/data/index.json sweeps[] and
+% runs[] (2026-09-05 read for the tier cells, 2026-09-03 for the band cells);
+% the same constants as paper_latex/figures/charts.py RESULTS and COMPUTE.
