@@ -155,7 +155,7 @@ RESULTS = [
 TIERS = ["Run", "Retrain", "Reimplement"]
 
 
-TIER_COLOR = ["#A9B2BE", SLATE, INK]   # Run, Retrain, Reimplement: a ramp
+TIER_COLOR = [GREEN, AMBER, ROSE]   # Run, Retrain, Reimplement: the viewer's tier chips
 
 
 def tier_dot(x, y, color):
