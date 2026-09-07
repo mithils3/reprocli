@@ -496,9 +496,10 @@ Appendix~\ref{app:models} records the serving settings.
 integer grade from 0 to 10 that the auditor assigns each run
 under the rubric of Appendix~\ref{app:rubric}. We also report the
 reproduction rate, the fraction of papers whose runs score 8 or higher and
-are therefore graded reproduced. Alongside both we report each model's token
-usage and total benchmark cost~\citep{kapoor2024agents}, the sum of its API
-pricing and its GPU time at \$2 per H100-hour.
+are therefore graded reproduced. Alongside both we report each agent's token
+usage and its total cost~\citep{kapoor2024agents}, the sum of its tokens at its
+vendor's list rate and the GPU time it drew from its grant at \$2 per
+H100-hour. Appendix~\ref{app:models} gives the rates and the per-agent totals.
 
 \subsection{Results}
 \label{subsec:results}
@@ -565,12 +566,18 @@ Reimplement, where no code is released, and 13 of 125 runs reproduce there.
 
 Spending stays far below the grant in every row of the table. The mean
 non-reproduced run uses 30\% of its allocation, and pooled over all 372 runs
-the agents spend 1{,}770 of the 9{,}120 H100-hours we granted. We report the
+the agents spend 1{,}770 of the 9{,}120 H100-hours we granted. Priced at the
+rates of Appendix~\ref{app:models}, the 372 runs cost \$4{,}567, which is
+\$12.28 per run and \$63 per confirmed reproduction, and GPU time is 78\% of
+that total. We report the
 agents' own verdicts as background data. Of the 359
 runs that return a parsable self-assessment, 128 claim reproduction, against 73
 audited reproductions over all 372 runs, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
 of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
+% cost: ~/sweeps/cost-2026-09-07.py over index.json runs[].tokens and
+% runs[].spent_h100, at the Table 4 rates. Token $1,026.41 + GPU $3,540.40 =
+% $4,566.81; /372 = 12.28; /73 = 62.6; GPU share 77.5%.
 % self_report field of index.json: reproduced 128, not_reproduced 208, partial
 % 23, none 13 (12 of them Qwen3.6-27B). The abstract's 30% is the mean per-run
 % spent/budget over the 299 non-reproduced runs; the pooled figure here is

@@ -101,8 +101,50 @@ overwrites the batch's existing audit, so a re-graded sweep has a single
 grader.
 
 % src: src/reclaim_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
-% TODO(source): the Muse Spark 1.2 agent tokens need an API rate here before any
-% cost row is filled; the contributor-tier rate is unverified, so no number yet.
 We price GPU time at the \$2 per H100-hour of
 Section~\ref{subsec:experimental-setup}, and grader tokens at \$2 and \$10 per
 million input and output tokens~\citep{anthropic2026pricing}.
+
+% src: tools/anon_viewer/public/data/index.json runs[].tokens and runs[].spent_h100;
+% rates read from each vendor's own endpoint listing on 2026-08-17; arithmetic in
+% ~/sweeps/cost-2026-09-07.py. Cached prompt tokens are billed at the cache-read
+% rate for DeepSeek-V4-Flash, MiniMax-M2.7, and Muse Spark 1.2.
+\paragraph{Token usage and cost.} We take each agent's rate from the model
+owner's own endpoint as listed on 2026-08-17, in dollars per million prompt and
+completion tokens: \$0.14 and \$0.28 for DeepSeek-V4-Flash, with prompt tokens
+served from cache at \$0.0028; \$0.45 and \$2.70 for Qwen3.6-27B; \$0.30 and
+\$1.20 for MiniMax-M2.7, with cache hits at \$0.06; and \$1.25 and \$4.25 for
+Muse Spark 1.2, with cache hits at \$0.15. Table~\ref{tab:cost} applies those
+rates to the 372 graded runs and adds the GPU time each agent drew from its
+grant. Four things qualify the total. We served three of the four models
+ourselves, so their token dollars are what a reader would pay to rerun the
+benchmark against the vendor's endpoint, and the hours our own serving GPUs
+spent sit outside the table. The MiniMax-M2.7 rate is the upstream model's,
+while the checkpoint we served is the 4-bit requantization of
+Table~\ref{tab:models}. Muse Spark 1.2 ran on a contributor tier and we price
+it at Meta's list rate. Our Qwen3.6-27B deployment returned no cached-token
+counts, so we cannot separate its cache hits, and Alibaba's endpoint prices no
+cache-read leg, so every Qwen3.6-27B prompt token is priced at the full rate. The table covers the agent runs, since
+the audit records retain no grader token counts.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{Tokens (M)} & \multicolumn{3}{c}{Cost (\$)} & \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-6}
+Agent & Prompt & Completion & Tokens & GPU & Total & Per run \\
+\midrule
+DeepSeek-V4-Flash & 975.6 & 9.97 & 13.88 & 1{,}273.40 & 1{,}287.28 & 14.80 \\
+Qwen3.6-27B & 446.1 & 5.81 & 216.42 & 649.14 & 865.56 & 9.62 \\
+MiniMax-M2.7 & 569.1 & 6.57 & 81.70 & 519.14 & 600.84 & 6.13 \\
+Muse Spark 1.2 & 1{,}472.0 & 32.85 & 714.42 & 1{,}098.75 & 1{,}813.17 & 18.69 \\
+\midrule
+All agents & 3{,}462.8 & 55.20 & 1{,}026.41 & 3{,}540.42 & 4{,}566.84 & 12.28 \\
+\bottomrule
+\end{tabular}
+\caption{Token usage and cost of the 372 graded runs, at the list rates of this
+appendix and \$2 per H100-hour.}
+\label{tab:cost}
+\end{table}
