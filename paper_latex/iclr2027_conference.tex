@@ -490,9 +490,7 @@ Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
 Model API. Every model runs the same harness, prompts, and per-paper budgets.
-Serving differs by model, and Appendix~\ref{app:models} records pinned
-versions, serving configuration, and decoding settings where we control them,
-together with what the hosted model leaves unrecorded.
+Appendix~\ref{app:models} records the serving settings.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
 integer grade from 0 to 10 that the auditor assigns each run
