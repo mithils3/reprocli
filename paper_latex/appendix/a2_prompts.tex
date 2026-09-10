@@ -1,40 +1,19 @@
 \subsection{Prompt templates}
 \label{app:prompts}
 
-% src: src/reclaim_repro/cli_args.py:26-42,238-240; src/reclaim_repro/loop.py:66-70,376-380;
-% src: src/reclaim_repro/transcript.py:22-26,88-96,105-107,128-155; src/reclaim_repro/compact.py:57-61,81-82,90-137;
-% src: src/reclaim_repro/tools/__init__.py:78-99; src/reclaim_vllm/tools/result_limits.py:8-11,24-38,60-62;
-% src: src/reclaim_repro/live_log.py:71-75; src/reclaim_vllm/vllm/io.py (initial_messages)
-Figure~\ref{lst:harness-messages} in Appendix~\ref{app:prompt-listings}
-collects every fixed string the model reads during an episode. The system message is stored at index 0, where compaction
-never reaches it. The final-turn instruction is appended after the harness
-removes the tools and constrains the response to the report schema of
-Appendix~\ref{app:report-format}. The harness inserts five further strings
-during an episode, namely the status line appended each round, the budget
-note, the length nudge after a turn hits the output cap, the elision
-placeholder that compaction leaves behind, and the tool-error fields. The task prompt, which
-follows the system message as the first user turn, is shown in
-Figure~\ref{lst:task-prompt} of the same appendix.
-
-
-% src: src/reclaim_repro/prompt_render.py:22-147; src/reclaim_repro/inputs.py:37-45,110-135;
-% src: src/reclaim_repro/dataset.py:82-118; src/reclaim_repro/sandbox.py:162-165,299-312;
-% src: src/reclaim_vllm/audit/h100.py:7-36; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
-The task prompt is a single 290-line template with fourteen placeholder fields
-under nine headings. Each field is filled from the paper's dataset row
-(Appendix~\ref{app:dataset-schema}), from the episode's compute ceiling, or
-from the fixed container paths of Appendix~\ref{app:sandbox}. Rendering fails
-with an error if any field is left unfilled, and every field has a fallback
-string, so the renderer writes an explicit statement of absence where a row
-lacks a value. The renderer omits \texttt{match\_target.config}, the runnable
-configuration that produces the target value, so the agent has to derive that
-configuration from the paper.
-
-% src: git 05c58a6 (2026-06-28), 5514246 (2026-06-28), 0b26215 (2026-07-01), 3c6954b (2026-07-01),
-% src: f19e28f (2026-07-04), dfc02c0 (2026-07-09), 858e1eb (2026-07-09), 728c663 (2026-07-09), d25c8d4 (2026-07-11)
-We revised the template from transcript dissections of earlier agent runs,
-and checked each revision against other models' successful runs before
-adopting it. In a cross-model audit on 2026-06-28 we removed two rules that
-were specific to one model's behavior, a push toward requesting more GPUs and
-a budget-fraction test for under-running. The template has not changed since 2026-07-11, and
-Figure~\ref{lst:task-prompt} in Appendix~\ref{app:prompt-listings} reproduces it in full.
+Figure~\ref{lst:harness-messages} in Appendix~\ref{app:prompt-listings} prints
+every fixed string the model reads: the system message stored at index 0,
+where compaction never reaches it, the final-turn instruction appended once
+the harness removes the tools, and the five strings inserted during an
+episode. The task prompt is the first user turn, a 290-line template whose
+fourteen placeholder fields under nine headings are filled from the paper's
+dataset row (Appendix~\ref{app:dataset-schema}), from the episode's compute
+ceiling, or from the container paths of Appendix~\ref{app:sandbox}. Rendering
+fails on an unfilled field, every field has a fallback string that states
+absence, and the renderer omits \texttt{match\_target.config}, so the agent
+derives the configuration that produces the target value from the paper. We
+revised the template from transcript dissections of earlier runs, checking
+each revision against other models' successful runs, removed two
+model-specific rules on 2026-06-28 (a push toward requesting more GPUs and a
+budget-fraction test for under-running), and have not changed it since
+2026-07-11, the version Figure~\ref{lst:task-prompt} prints.

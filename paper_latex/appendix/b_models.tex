@@ -1,154 +1,131 @@
 \section{Model and Serving Details}
 \label{app:models}
 
-% src: README.md:44-56, src/reclaim_serve/profiles.py:1-9, src/reclaim_repro/cli_args.py:168-187, src/reclaim_repro/__main__.py:86-95, scripts/reproduce/qwen3_27b/hard_qwen3_27b.sbatch:19-21, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-19, scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:289-330, src/reclaim_serve/endpoint.py
-We serve the three open-weight agent models on our cluster with vLLM, each from a
-per-model profile that the launcher expands into a single \texttt{vllm serve}
-command. A sweep is one batch job per model per tier, which launches the
-server and then runs that tier's papers as processes on the same node. Each
-paper's \texttt{run\_gpu} call acquires its own Slurm allocation
-(Appendix~\ref{app:harness}), so the agent's compute is allocated and metered
-separately from the serving GPUs. The model ID the server advertised is
-recorded on the run row.
-Table~\ref{tab:models} lists the served configuration of each of the three,
-taken from the tier launch scripts and the serve profiles, with the launch
-script taking precedence where the two disagree. A field marked ``not set'' is
-one the files leave unset, so the server or the checkpoint supplies it. The
-agent input ceiling is the served context window less the 32{,}768 tokens the
-harness reserves for the completion, and the \texttt{top\_p} of $0.95$ follows
-the DeepSeek-V4-Flash model card's recommendation for agentic use~\citep{deepseekai2026flashcard}. Concurrent
-papers is how many papers a job runs at once, listed for the Run, Retrain, and
+% dates: repro_runs started_at/finished_at of the three muse_spark batches
+We serve the three open-weight agent models on our cluster with vLLM, each from
+a per-model profile the launcher expands into one \texttt{vllm serve} command,
+and a sweep is one batch job per model per tier that launches the server and
+runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
+call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
+compute is metered apart from the serving GPUs, and the advertised model ID is
+recorded on the run row. Muse Spark 1.2 is reached through the Meta Model API
+between 2026-08-14 and 2026-08-23, its sweeps run as a login-node process with
+no job wall clock, and since the API advertises no context length we declare
+1{,}000{,}000 tokens. Table~\ref{tab:models} lists the four configurations.
+For the three vLLM-served models the launch script takes precedence over the
+profile where they disagree, and ``not set'' means the server or checkpoint
+supplies the value. The agent input ceiling is the served context less the
+32{,}768-token completion reservation, the \texttt{top\_p} of $0.95$ follows
+the DeepSeek-V4-Flash card's agentic
+recommendation~\citep{deepseekai2026flashcard}, and concurrent papers, the
+number of papers a job runs at once, is listed for the Run, Retrain, and
 Reimplement tiers in that order.
 
-Muse Spark 1.2 is hosted by Meta, and the harness reached it through the Meta
-Model API as \texttt{muse-spark-1.2-contributor} between 2026-08-14 and
-2026-08-23, with the same 300 tool rounds and \texttt{reasoning\_effort}
-set to \texttt{xhigh}. Its sweeps run the same per-tier loop as a process on a
-login node rather than inside a batch job, so they have no job wall clock.
-The API advertises no context length, so we declare a window of
-1{,}000{,}000 tokens to the harness, which sets the agent input ceiling at
-967{,}232 tokens.
-% src: scripts/reproduce/muse_spark/muse_spark_sweep.sh:14,26-36,67-74,113-114,133-135; repro_runs started_at/finished_at of the three muse_spark batches
-
-% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:77-137,290-301; scripts/reproduce/qwen3_27b/easy_qwen3_27b.sbatch:20-53,149-154; scripts/reproduce/minimax_m2/easy_minimax_m2.sbatch:12-45,131-142; src/reclaim_serve/profiles.py:65-74,116-143,146-198; src/reclaim_serve/config.py:28; src/reclaim_repro/cli_args.py:46-53,190-196,246-262; tasks/serve-dsv4flash-vllm-gh200.md:100; scripts/reproduce/*/{easy,medium,hard}_*.sbatch (MAX_PARALLEL)
 \begin{table}[ht]
 \centering
 \footnotesize
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.2cm}@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{2.05cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
 \toprule
-Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 \\
+Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 \\
 \midrule
 Served checkpoint &
 \texttt{deepseek-ai/\allowbreak{}DeepSeek-\allowbreak{}V4-\allowbreak{}Flash-\allowbreak{}0731} &
 \texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
-\texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} \\
+\texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} &
+\texttt{muse-\allowbreak{}spark-\allowbreak{}1.2-\allowbreak{}contributor} \\
 \addlinespace
 Advertised name & same as checkpoint & same as checkpoint &
-\texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} \\
+\texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} & same as checkpoint \\
 \addlinespace
-Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) \\
-KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set \\
-GPUs per replica & 2 & 1 & 2 \\
-Tensor parallel & 2 & 1 & 2 \\
-Served context & 409{,}600 & 262{,}144 & 196{,}608 \\
-Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 \\
+Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) & vendor-served \\
+KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set & vendor-served \\
+GPUs per replica & 2 & 1 & 2 & vendor-served \\
+Tensor parallel & 2 & 1 & 2 & vendor-served \\
+Served context & 409{,}600 & 262{,}144 & 196{,}608 & 1{,}000{,}000 declared \\
+Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 & 967{,}232 \\
 Reasoning setting & \texttt{thinking} true,
 \texttt{reasoning\_effort} \texttt{max} & checkpoint default &
-checkpoint default \\
-Temperature & not set & not set & not set \\
-\texttt{top\_p} & 0.95 & not set & not set \\
+checkpoint default & \texttt{reasoning\_effort} \texttt{xhigh} \\
+Temperature & not set & not set & not set & not set \\
+\texttt{top\_p} & 0.95 & not set & not set & not set \\
 Tool-call parser & \texttt{deepseek\_v4} & \texttt{qwen3\_coder} &
-\texttt{minimax\_m2} \\
+\texttt{minimax\_m2} & API \\
 Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
-\texttt{minimax\_m2} \\
-\texttt{max\_num\_seqs} & not set & 32 & not set \\
-Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 \\
-Tool rounds & 300 & 300 & 300 \\
+\texttt{minimax\_m2} & API \\
+\texttt{max\_num\_seqs} & not set & 32 & not set & vendor-served \\
+Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 & 8 / 8 / 8 \\
+Tool rounds & 300 & 300 & 300 & 300 \\
 \bottomrule
 \end{tabular}
-\caption{Served configuration of the three cluster-served agent models, from
-the tier launch scripts and the serve profiles.}
+\caption{Served configuration of the four agent models, from the tier launch
+scripts and the serve profiles.}
 \label{tab:models}
 \end{table}
 
-% src: scripts/reproduce/dsv4_flash/easy_dsv4_flash.sbatch:56-70,96-137, src/reclaim_serve/profiles.py:116-198, scripts/reproduce/minimax_m2/hard_minimax_m2.sbatch:9-11, src/reclaim_serve/launch.py:44-47,124-178
-Several caveats apply when comparing across models. First, reasoning effort is
-held constant within the three DeepSeek-V4-Flash sweeps and within the three
-Muse Spark 1.2 sweeps, at different settings. The Qwen3.6-27B
-and MiniMax-M2.7 launch scripts set no reasoning arguments, so effort is
-uncontrolled across models. Second, precision differs by model, and for
-MiniMax-M2.7 we serve a third-party requantization under the upstream model's
-name, so the name recorded with a run is the advertised one while the weights
-behind it are the requantized ones. W4A16 quantization~\citep{lin2023awq} is lossy by
-construction, and the harness makes no correction for it. Third, the served
-context window differs by model, so the agent input ceiling the harness
-derives from it differs by the same amount, from 163{,}840 tokens for
-MiniMax-M2.7 to the 967{,}232 declared for Muse Spark 1.2, which means a run
-that exhausts its context on one model would have had more room on another.
-Fourth, Muse Spark 1.2 runs on its vendor's servers, so its precision,
-batching, and decoding defaults are outside our control and unrecorded, and
-the request-level reasoning effort and the round budget are the settings we
-fix. Separately, we
-disable two compilation fusions for DeepSeek-V4-Flash because we observed them
-garbling this checkpoint's decoding on this hardware.
+Four caveats qualify comparisons across models. Reasoning effort is held
+constant within the three DeepSeek-V4-Flash sweeps and within the three Muse
+Spark 1.2 sweeps, at different settings, and the Qwen3.6-27B and MiniMax-M2.7
+launch scripts set none, so effort is uncontrolled across models. Precision
+differs by model, and MiniMax-M2.7 is a third-party W4A16
+requantization~\citep{lin2023awq}, lossy by construction, served under the
+upstream name with no correction. Served context differs, so the agent input
+ceiling differs, from 163{,}840 tokens to 967{,}232, and a run that exhausts
+its context on one model would have had more room on another. Muse Spark 1.2 runs on the vendor's servers, so
+its precision, batching, and decoding defaults are unrecorded, and we fix only
+the reasoning effort and the round budget. Separately, we disable two
+compilation fusions for DeepSeek-V4-Flash because we observed them garbling this
+checkpoint's decoding on this hardware.
 
-% src: src/reclaim_claude/__main__.py:1-19,74-81,282-295, src/reclaim_claude/agent.py:38-41,134-152,192-308, README.md:34,50
 We produce the grades of record with a separate grading client on the
-Anthropic Messages API, and every sweep of record passes
-\texttt{claude-sonnet-5} to that client. A grading pass is one agent loop over
-one run bundle, capped at 25 rounds. Re-grading a batch with this client
-overwrites the batch's existing audit, so a re-graded sweep has a single
-grader.
+Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
+run bundle capped at 25 rounds, and re-grading a batch overwrites its audit, so
+a re-graded sweep has one grader. We price GPU time at the \$2
+per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
+\$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
 
-% src: src/reclaim_claude/agent.py:43-73,76-115,184-187, iclr2027_conference.tex:454-456
-We price GPU time at the \$2 per H100-hour of
-Section~\ref{subsec:experimental-setup}, and grader tokens at \$2 and \$10 per
-million input and output tokens~\citep{anthropic2026pricing}.
-
-% src: tools/anon_viewer/public/data/index.json runs[].tokens and runs[].spent_h100
-% plus repro_runs prompt/completion/cached_tokens and spent_h100 for the 24
+% numbers of record: tools/anon_viewer/public/data/index.json runs[].tokens and
+% runs[].spent_h100 plus repro_runs prompt/completion/cached_tokens and spent_h100 for the 24
 % started-but-ungraded runs (2026-09-10); rates read from each vendor's own
 % endpoint listing on 2026-08-17; arithmetic as in ~/sweeps/cost-2026-09-07.py.
 % Cached prompt tokens are billed at the cache-read rate for DeepSeek-V4-Flash,
 % MiniMax-M2.7, and Muse Spark 1.2.
-\paragraph{Token usage and cost.} We take each agent's rate from the model
-owner's own endpoint as listed on 2026-08-17, in dollars per million prompt and
-completion tokens: \$0.14 and \$0.28 for DeepSeek-V4-Flash, with prompt tokens
-served from cache at \$0.0028; \$0.45 and \$2.70 for Qwen3.6-27B; \$0.30 and
-\$1.20 for MiniMax-M2.7, with cache hits at \$0.06; and \$1.25 and \$4.25 for
-Muse Spark 1.2, with cache hits at \$0.15. Table~\ref{tab:cost} applies those
-rates to the 396 runs that started, the 372 graded runs and the 24 runs of
-Appendix~\ref{app:missing-cells} that have token counts, and adds the GPU time
-each agent drew from its grant. Four things qualify the total. We served three of the four models
-ourselves, so their token dollars are what a reader would pay to rerun the
-benchmark against the vendor's endpoint, and the hours our own serving GPUs
-spent sit outside the table. The MiniMax-M2.7 rate is the upstream model's,
-while the checkpoint we served is the 4-bit requantization of
-Table~\ref{tab:models}. Muse Spark 1.2 ran on a contributor tier and we price
-it at Meta's list rate. Our Qwen3.6-27B deployment returned no cached-token
-counts, so we cannot separate its cache hits, and Alibaba's endpoint prices no
-cache-read leg, so every Qwen3.6-27B prompt token is priced at the full rate. The table covers the agent runs, since
-the audit records retain no grader token counts.
+\paragraph{Token usage and cost.} Each rate comes from that vendor's own
+endpoint listing on 2026-08-17, with cached prompt tokens billed at the
+cache-read rate where one is listed, and Table~\ref{tab:cost} covers the 396
+runs that started, the 372 graded runs and the 24 runs of
+Appendix~\ref{app:missing-cells} with token counts, plus the GPU time each
+agent drew from its grant. Three things qualify the total. The token dollars
+of the three cluster-served models are what a rerun against the vendor
+endpoint would cost, and our serving GPUs' hours sit outside the table. The
+MiniMax-M2.7 rate is the upstream model's while we served the requantization
+of Table~\ref{tab:models}. Our Qwen3.6-27B deployment returned no cached-token
+counts, and its vendor lists no cache-read rate, so all its prompt tokens are
+priced at the full rate. The audit records retain no grader
+token counts.
 
 \begin{table}[ht]
 \centering
 \footnotesize
-\begin{tabular}{@{}lrrrrrr@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
 \toprule
-& \multicolumn{2}{c}{Tokens (M)} & \multicolumn{3}{c}{Cost (\$)} & \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-6}
-Agent & Prompt & Completion & Tokens & GPU & Total & Per run \\
+& \multicolumn{3}{c}{Rate (\$/M)} & \multicolumn{2}{c}{Tokens (M)} &
+\multicolumn{3}{c}{Cost (\$)} & \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-6} \cmidrule(lr){7-9}
+Agent & Prompt & Cached & Completion & Prompt & Completion & Tokens & GPU &
+Total & Per run \\
 \midrule
-DeepSeek-V4-Flash & 1{,}077.9 & 11.11 & 15.04 & 1{,}337.64 & 1{,}352.68 & 13.66 \\
-Qwen3.6-27B & 489.1 & 6.24 & 236.93 & 797.63 & 1{,}034.56 & 10.45 \\
-MiniMax-M2.7 & 573.8 & 6.62 & 82.21 & 528.61 & 610.82 & 6.17 \\
-Muse Spark 1.2 & 1{,}494.6 & 33.53 & 724.91 & 1{,}112.34 & 1{,}837.24 & 18.56 \\
+DeepSeek-V4-Flash & 0.14 & 0.0028 & 0.28 & 1{,}077.9 & 11.11 & 15.04 & 1{,}337.64 & 1{,}352.68 & 13.66 \\
+Qwen3.6-27B & 0.45 & -- & 2.70 & 489.1 & 6.24 & 236.93 & 797.63 & 1{,}034.56 & 10.45 \\
+MiniMax-M2.7 & 0.30 & 0.06 & 1.20 & 573.8 & 6.62 & 82.21 & 528.61 & 610.82 & 6.17 \\
+Muse Spark 1.2 & 1.25 & 0.15 & 4.25 & 1{,}494.6 & 33.53 & 724.91 & 1{,}112.34 & 1{,}837.24 & 18.56 \\
 \midrule
-All agents & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12.21 \\
+All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12.21 \\
 \bottomrule
 \end{tabular}
-\caption{Token usage and cost of the 396 runs that started, at the list rates
-of this appendix and \$2 per H100-hour.}
+\caption{Token usage and cost of the 396 runs that started, at each vendor's
+list rate and \$2 per H100-hour.}
 \label{tab:cost}
 \end{table}
 
@@ -156,10 +133,10 @@ of this appendix and \$2 per H100-hour.}
 \label{app:results-table}
 
 Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
-and~\ref{fig:band-compute}. Reproduced counts a cell whose audit score is 8 or
-higher, a cell without a graded run counts as a failure at score 0 (the next
-subsection lists them), grant spent is the agent's H100-hours used over the hours granted to
-its cells, and the compute band is the paper's cap in H100-hours.
+and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
+8 or higher, a cell without a graded run counts as a failure at score 0
+(Appendix~\ref{app:missing-cells}), grant spent is H100-hours used over hours
+granted, and the band is the paper's cap in H100-hours.
 
 \begin{table}[ht]
 \centering
@@ -173,30 +150,35 @@ Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
 DeepSeek-V4-Flash & Run & 14/34 (41\%) & 5.29 & & & \\
 & Retrain & 9/33 (27\%) & 5.45 & & & \\
 & Reimplement & 4/33 (12\%) & 4.64 & & & \\
+& All tiers & 27/100 (27\%) & 5.13 & & & \\
 & Mean score & & & 6.00 & 4.10 & 3.33 \\
 & Grant spent (\%) & \multicolumn{2}{r}{26.2 overall} & 42.0 & 34.0 & 13.5 \\
 \midrule
 Qwen3.6-27B & Run & 5/34 (15\%) & 3.91 & & & \\
 & Retrain & 6/33 (18\%) & 3.58 & & & \\
 & Reimplement & 2/33 (6\%) & 3.03 & & & \\
+& All tiers & 13/100 (13\%) & 3.51 & & & \\
 & Mean score & & & 4.03 & 3.14 & 1.83 \\
 & Grant spent (\%) & \multicolumn{2}{r}{15.6 overall} & 31.0 & 23.4 & 3.1 \\
 \midrule
 MiniMax-M2.7 & Run & 3/34 (9\%) & 3.09 & & & \\
 & Retrain & 5/33 (15\%) & 3.30 & & & \\
 & Reimplement & 2/33 (6\%) & 2.70 & & & \\
+& All tiers & 10/100 (10\%) & 3.03 & & & \\
 & Mean score & & & 3.56 & 2.41 & 1.92 \\
 & Grant spent (\%) & \multicolumn{2}{r}{10.4 overall} & 26.8 & 12.0 & 2.3 \\
 \midrule
 Muse Spark 1.2 & Run & 9/34 (26\%) & 5.47 & & & \\
 & Retrain & 9/33 (27\%) & 5.85 & & & \\
 & Reimplement & 5/33 (15\%) & 3.67 & & & \\
+& All tiers & 23/100 (23\%) & 5.00 & & & \\
 & Mean score & & & 5.61 & 4.55 & 3.08 \\
 & Grant spent (\%) & \multicolumn{2}{r}{21.8 overall} & 38.9 & 32.6 & 6.1 \\
 \midrule
 All agents & Run & 31/136 (23\%) & 4.44 & & & \\
 & Retrain & 29/132 (22\%) & 4.55 & & & \\
 & Reimplement & 13/132 (10\%) & 3.51 & & & \\
+& All tiers & 73/400 (18\%) & 4.17 & & & \\
 & Mean score & & & 4.80 & 3.55 & 2.54 \\
 & Grant spent (\%) & \multicolumn{2}{r}{18.5 overall} & 34.7 & 25.5 & 6.2 \\
 \bottomrule
@@ -205,6 +187,11 @@ All agents & Run & 31/136 (23\%) & 4.44 & & & \\
 agent-paper cells, by agent, tier, and compute band.}
 \label{tab:results}
 \end{table}
+% All-tiers rows (2026-09-10): per-agent reproduced = sum of the tier cells
+% (27/13/10/23 = 73); per-agent mean over all 100 cells 5.13 / 3.51 / 3.03 /
+% 5.00 as in the Sec 5.2 numbers-of-record comment; all-agents mean over 400
+% cells = (5.13+3.51+3.03+5.00)/4 = 4.17, equal to the tier-weighted mean
+% (4.44*136 + 4.55*132 + 3.51*132)/400 = 4.17.
 % numbers of record (2026-09-10): index.json's 372 graded runs plus the 28
 % cells of tab:missing-cells (score 0, or the pinned grade 0/2/0 for the three
 % graded-unlabeled runs; spent_h100 and total_h100 from repro_runs for the 24
@@ -214,35 +201,34 @@ agent-paper cells, by agent, tier, and compute band.}
 \subsection{Cells without a graded run}
 \label{app:missing-cells}
 
-% src: repro_runs + audit_runs (Supabase, read 2026-09-10) joined to the HF
-% eval_100 tiers and tools/anon_viewer/public/data/index.json; the renderer
-% defect reproduced locally with `python -m reclaim_repro --paper-id
-% 2510.20725` (ValueError: unfilled placeholders: {O}) and fixed the same day
-% in src/reclaim_repro/prompt_render.py; the three late runs carry two pinned
-% Sonnet passes each. Policy (2026-09-10): every cell without a graded run
-% counts as a failure; the text states what each cell holds and gives no cause
-% for the 19 runs without a final report.
-Four agents over 100 papers give 400 cells, and 372 of them hold a run with a
+% numbers of record: repro_runs + audit_runs (Supabase, read 2026-09-10) joined
+% to the HF eval_100 tiers and tools/anon_viewer/public/data/index.json; the
+% renderer defect reproduced locally with `python -m reclaim_repro --paper-id
+% 2510.20725` (ValueError: unfilled placeholders: {O}) and fixed the same day;
+% the three late runs carry two pinned Sonnet passes each. Policy (2026-09-10):
+% every cell without a graded run counts as a failure; the text states what each
+% cell holds and gives no cause for the 19 runs without a final report.
+Four agents over 100 papers give 400 cells, 372 of which hold a run with a
 pinned grade and a failure-mode label. Table~\ref{tab:missing-cells} lists the
-other 28. The reproduction rates and mean scores of
-Section~\ref{subsec:results} and Table~\ref{tab:results} count every one of
-them as a failure, at score 0 where no pinned grade exists and at the pinned
-grade, 0, 2, and 0, for the three cells that hold one. The failure-mode
-counts of Section~\ref{subsec:mechanisms} cover the 372 labeled runs. In 19
-cells the run ended without a final report, so there was nothing for the
-auditor to grade. In 4 cells, the same Retrain paper for each agent, no run
-started, because the paper's dataset row states its target in a form that
-contains the characters \texttt{\{O\}} and the routine that fills the task
-prompt's placeholders (Appendix~\ref{app:prompts}) rejected the rendered
-prompt as incomplete; we have since corrected that check. In 3 cells the run
-finished and was graded after we had labeled its sweep, and in 2 the pinned
-auditor's pass started and did not return a verdict. The 24 runs that started
-are included in the compute and cost figures, and they spent 118 of the
+other 28, all counted as failures in Section~\ref{subsec:results} and
+Table~\ref{tab:results}, at score 0 or at the pinned grade, 0, 2, and 0, for
+the three that hold one, and outside the failure-mode counts of
+Section~\ref{subsec:mechanisms}. In 19 cells the run ended without a final
+report, so the auditor had nothing to grade. The 4 cells with no run share one
+Retrain
+paper whose target contains the characters \texttt{\{O\}}, which the
+placeholder-filling routine (Appendix~\ref{app:prompts}) rejected as an
+incomplete prompt, a check we have since corrected; the 3 cells with a grade
+and no label were graded after we had labeled their sweep, and in the 2 cells
+with a run and no pinned grade the auditor's pass started and returned no
+verdict. The 24 runs
+that started are in the compute and cost figures and spent 118 of the
 1{,}888 H100-hours of Section~\ref{subsec:compute}.
 
 \begin{table}[ht]
 \centering
 \footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.4cm}lrr>{\raggedright\arraybackslash}p{4.6cm}@{}}
 \toprule
 What the cell holds & Agent & Tier & $n$ & Papers \\
@@ -263,11 +249,8 @@ A pinned grade, no label & Qwen3.6-27B & Reimplement & 2 &
 \addlinespace
 A run, no pinned grade & Muse Spark 1.2 & Run & 1 & 2503.23035 \\
 & & Reimplement & 1 & 2510.08177 \\
-\midrule
-All & & & 28 & \\
 \bottomrule
 \end{tabular}
-\caption{The 28 agent-paper cells without a graded run, all counted as
-failures in the reported rates and mean scores.}
+\caption{The 28 agent-paper cells without a graded run.}
 \label{tab:missing-cells}
 \end{table}

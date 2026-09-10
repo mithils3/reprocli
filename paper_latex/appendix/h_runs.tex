@@ -16,34 +16,31 @@
 % conda, cmake, git clone, downloads = install; edit_file/write_file = write;
 % everything else = read and plan).
 
+% Run cards are about 0.4 of a page tall; the style's default bottom-float
+% limit (0.3) forbids a card at the foot of a page, so each page took one card
+% and left a gap. Allow top-and-bottom pairs inside this appendix only.
+\renewcommand{\bottomfraction}{0.6}
+\renewcommand{\floatpagefraction}{0.8}
 \newcommand{\runfacts}[8]{\noindent{\footnotesize #2, #3 tier, arXiv~#4. Run
 \texttt{#1} in the run logs. Audit #5, #6; mode #7; #8.}\par\medskip}
 
-The counts of Section~\ref{subsec:mechanisms} say how often each failure mode
-occurs and little about what the work of a reproduction looks like from inside
-a run. This appendix annotates ten of the 372 graded runs at the round level.
-In three the agent repairs a defect in the authors' release before the graded
-command runs, in three it adapts the released stack to our host and checks the
-substitute against the authors' own path, in one a faithful run falls short
-and is reported as measured, and in three a run that reached the graded
-command produces an invalid number at a round quoted below. We selected them by
-reading the dissection records of Appendix~\ref{app:taxonomy} under five
-lenses (defects in the release, host adaptation, provenance work,
-substitutions, and near misses), which nominated 37 runs; we verified 16 of the
-nominations against the event transcript at the cited rounds, one failed, and
-we kept ten of the fifteen for coverage of agents, tiers, and outcomes. Four
-of the ten are DeepSeek-V4-Flash runs and five are at the Run tier, and we did not
-balance further, since the recoveries concentrate in the strongest agent and
-in the tier where released code exists to repair. Each vignette gives the
-run's identifier in the run logs of footnote~\ref{fn:artifacts}, the pinned
-audit score and verdict, its primary mode, and a run card in the format of
-Figure~\ref{fig:overview}: the run's phases with their round ranges, one line
-per notable round quoted verbatim from the transcript, and the decisive
-round, the one in which the transcript shows the run being fixed or lost, set
-in gold. Round numbers are the transcript's own, so a tool result is cited at
-the round in which it returned. Figure~\ref{fig:run-timelines} places the ten on a
-common round axis, colored by the kind of tool call the agent made in each
-round, with the annotated episode and its decisive round marked.
+This appendix annotates ten of the 372 graded runs, three where the agent
+repairs a defect in the release, three where it adapts the stack to our host
+and checks the substitute against the authors' path, one where a faithful
+run falls short and is reported as measured, and three where a run reaching
+the graded command produces an invalid number. Five lenses (defects in the
+release, host adaptation, provenance work, substitutions, and near misses)
+over the dissection records of Appendix~\ref{app:taxonomy} nominated 37 runs,
+we verified 16 against the transcripts, one failed, and we kept ten covering
+agents, tiers, and outcomes. Four are DeepSeek-V4-Flash runs and five are at
+the Run tier, and we did not balance further, since the recoveries
+concentrate in the strongest agent and in the tier where released code exists
+to repair. Each vignette gives the run identifier in the run logs of
+footnote~\ref{fn:artifacts}, pinned audit score and verdict, primary mode,
+and a run card with the decisive round, the one in which the transcript shows
+the run being fixed or lost, set in gold. Round numbers are the transcript's
+own, so a tool result is cited at the round it returned, and
+Figure~\ref{fig:run-timelines} places the ten on one round axis.
 
 \begin{figure}[t]
 \centering
@@ -58,23 +55,17 @@ graded-pipeline launch marked.}
 \label{vig:dsv4-run-2410.18164}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2410.18164; dissection: pool.json; verified.json quotes at rounds ['Round 47', 'Round 53', 'Round 86']
 \runfacts{dsv4-run-2410.18164}{DeepSeek-V4-Flash}{Run}{2410.18164}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{94 rounds, 4.0 of 32 H100-hours}
-The pinned target is Table~1 of TabDPT: an AUC of at least 0.92 over the 72
-CC18 classification datasets (the paper reports 0.933) and an $R^2$ of at
-least 0.70 over the 35 CTR23 regression datasets (0.742). The repository's
-HEAD loads a later checkpoint, so the agent spent its first rounds on the tag
-history and pinned v1.1.14, the last release whose estimator loads the
-paper's checkpoint and which ships the paper's evaluation script. Both evaluation folds
-launched at round 46 and died at round 47 inside \code{roc\_auc\_score}. The
-agent wrote a shape probe, traced the crash to a retrieval branch that returns
-a three-dimensional array, listed the five CC18 datasets with more than ten
-classes on which the authors' own script fails, and found the authors' later
-fix-squeeze-bug commit at round 52. It reduced its own patch to a six-line
-diff, verified the output shape on all five datasets at round 77, and
-relaunched; all four Table~1 values landed within 0.002 of the paper at round
-86. The auditor scored the run 8, reproduced, and recorded the disclosed patch
-as a low-severity provenance note.
+The pinned target is Table~1 of TabDPT over 72 CC18 classification datasets
+and 35 CTR23 regression datasets, and the repository's HEAD loads a later
+checkpoint, so the agent pinned v1.1.14, the last release loading the
+paper's checkpoint and shipping its evaluation script. At round 53 the agent
+traced the crash to a retrieval branch returning a three-dimensional array, breaking
+the authors' script on the five CC18 datasets with more than ten classes,
+and the patch, verified on all five at round 77, put all four Table~1 values
+within 0.002 of the paper. The auditor logged the disclosed patch as a
+low-severity provenance note.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_1}
 \caption{Run card for DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164) at the Run tier, with the decisive round 53 in gold.}
@@ -85,23 +76,17 @@ as a low-severity provenance note.
 \label{vig:dsv4-run-2502.05795}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2502.05795; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 22', 'Round 26']
 \runfacts{dsv4-run-2502.05795}{DeepSeek-V4-Flash}{Run}{2502.05795}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{52 rounds, 6.2 of 8 H100-hours}
-The pinned target is the LayerNorm Scaling (LNS) cell of Table~1: a validation
-perplexity of 25.76 for a 130M-parameter LLaMA pretrained for 20K steps on C4.
-A CPU forward pass with \code{NORM\_TYPE=LNS} crashed at round 19. At round
-21 the agent diffed the GitHub repository against the OpenReview supplement
-and found that the LNS branch had been renamed from \code{cod} to \code{LNS}
-while the script lowercases the environment variable, so the released branch
-matched nothing and the method could never run. It changed the two
-comparisons at round 25, recorded the change as a patch, and at round 26
-confirmed on one initialization that LNS and Pre-LN produce different logits
-before spending any GPU time on training. The 20K-step LNS arm finished at
-round 41 at perplexity 24.93 and the Pre-LN arm at round 44 at 25.07, against
-the paper's 25.76 and 26.73. The auditor scored the run 8, reproduced,
-described the patch as disclosed and validated against the paper's own
-reference implementation, and flagged the narrower gap between the two arms as
-a disclosed single-seed deviation.
+The pinned target is the LayerNorm Scaling (LNS) cell of Table~1, a
+validation perplexity for LLaMA pretrained on C4. The round-21 diff against
+the OpenReview supplement showed the LNS branch renamed from \code{cod} to
+\code{LNS} while the script lowercases the environment variable, so at round
+22 the branch matched nothing; the agent changed the two comparisons, and
+round 26 confirmed different logits from Pre-LN before any GPU time went to
+training. The auditor called the patch disclosed and validated against the
+paper's own reference implementation, and flagged the narrower gap between
+the two arms as a disclosed single-seed deviation.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_2}
 \caption{Run card for DeepSeek-V4-Flash on LayerNorm Scaling (LNS) (arXiv~2502.05795) at the Run tier, with the decisive round 22 in gold.}
@@ -112,24 +97,16 @@ a disclosed single-seed deviation.
 \label{vig:muse-retrain-2510.23577}
 % viewer: https://reclaim-traces.vercel.app  run muse-retrain-2510.23577; dissection: pool.json; verified.json quotes at rounds ['Round 10', 'Round 31', 'Round 81']
 \runfacts{muse-retrain-2510.23577}{Muse Spark 1.2}{Retrain}{2510.23577}{10}{reproduced}{Reproduced (\texttt{reproduced-clean})}{82 rounds, 2.4 of 8 H100-hours}
-The pinned number is an average precision of 98.89 for GraphMixer with TAMI on
-the Wikipedia dataset, averaged over five runs with $\gamma$ set to 0.9, and
-the paper releases no trained weights. At rounds 10 and 24 the agent's
-searches of the supplementary code showed the argument parser defaulting
-$\gamma$ to 0.9, the decoder class defaulting it to 0.5, and the training
-script constructing the decoder without passing the argument, so a run of the
-released command would train at 0.5 while the command line asked for 0.9, and
-would raise no error. The agent added
-the argument at round 30 and checked the patched line at round 31. Its first
-five-seed launch at round 51 crashed after the epoch-10 evaluation on a
-misnamed method in the released code, which it corrected at round 53. The
-five seeds gave 98.88 to 98.92, mean 98.90, and the report at round 81 listed
-all three changes to the released code. The auditor scored the run 10,
-reproduced, with no flags. Muse Spark 1.2 transcripts contain a one-line opener
-per round in place of reasoning text, so the excerpts are the tool output the
-agent read and the report it wrote.
+The pinned number is an average precision for GraphMixer with TAMI on
+Wikipedia with $\gamma$ set to 0.9, and the paper releases no weights. At
+rounds 10 and 24 the agent found the decoder constructed without the
+argument, so the released command trains at its 0.5 default and raises no
+error, and the five seeds after the round-31 fix gave 98.88 to 98.92. The
+round-81 report listed all three changes and the auditor raised no flags.
+Muse Spark 1.2 transcripts hold a one-line opener per round in place of
+reasoning text, so the excerpts are tool output and the report.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_3}
 \caption{Run card for Muse Spark 1.2 on TAMI (arXiv~2510.23577) at the Retrain tier, with the decisive round 31 in gold.}
@@ -140,28 +117,18 @@ agent read and the report it wrote.
 \label{vig:dsv4-retrain-2504.12463}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-retrain-2504.12463; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 91', 'Round 94']
 \runfacts{dsv4-retrain-2504.12463}{DeepSeek-V4-Flash}{Retrain}{2504.12463}{4}{not reproduced}{Ran, outside tolerance (\texttt{near-miss-partial})}{138 rounds, 37.2 of 96 H100-hours}
-The pinned target for Default MoE is a validation perplexity of 23.48 after
-10B tokens of training in the released GPT-NeoX stack, with no released
-weights. The stack pins megablocks 0.5.1 and grouped\_gemm 0.1.4, which ship
-as source distributions with CUDA extensions, and uses flash-attn for
-attention. A build on the login node died in megablocks' setup at a CUDA
-device query at round 20; the agent rebuilt inside a GPU session, where
-megablocks and stanford-stk compiled in 74 seconds at round 21 and
-grouped\_gemm followed in the same call. Replacing flash-attn with
-torch's scaled-dot-product attention produced NaN losses at round 88. At round
-90 the agent wrote a standalone A/B probe and at round 91 found that the NaN
-came from the boolean-mask convention and that the inverted mask matched a manual attention
-path to 0.001, and at round 94 confirmed that the corrected patch reproduced
-the losses of its earlier probe of the reference path at iterations 5, 10, and
-15. The training run then
-reached 4.19B tokens and perplexity 29.83, short of the paper's 23.48 at 10B
-tokens, the baseline arm stopped at 205 iterations on the agent's own timeout,
-and the agent reported the run as not reproduced. The auditor scored it 4, not
-reproduced, with medium flags for using the training loss in the directional
+The pinned target for Default MoE is a validation perplexity in the released
+GPT-NeoX stack, which the paper ships without weights and which builds CUDA
+extensions from source. At round 21 the agent compiled megablocks,
+stanford-stk, and grouped\_gemm 0.1.4 inside a GPU session, and at round 91
+it traced the NaN losses
+from the torch attention substitution to the boolean-mask convention, while
+the baseline arm stopped at 205 iterations on the agent's own timeout, and
+the agent reported the run as not reproduced. The auditor raised medium flags for using the training loss in the directional
 comparison and for the under-trained baseline arm, and a low-severity note
-that the attention substitution had been verified loss-identical.
+that the substitution was verified loss-identical.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_4}
 \caption{Run card for DeepSeek-V4-Flash on Default MoE (arXiv~2504.12463) at the Retrain tier, with the decisive round 91 in gold.}
@@ -172,21 +139,17 @@ that the attention substitution had been verified loss-identical.
 \label{vig:muse-run-2505.14766}
 % viewer: https://reclaim-traces.vercel.app  run muse-run-2505.14766; dissection: pool.json; verified.json quotes at rounds ['Round 24', 'Round 25', 'Round 75']
 \runfacts{muse-run-2505.14766}{Muse Spark 1.2}{Run}{2505.14766}{9}{reproduced}{Reproduced (\texttt{reproduced-clean})}{89 rounds, 1.2 of 8 H100-hours}
-The pinned target is a MASE of 0.617 for Toto on the 32-query BOOMlet
-benchmark. At round 24 the editable install of the authors' repository
-replaced the CUDA build of torch with the plain PyPI wheel, and the install
-log records the change as one line among dozens in the resolution list. The agent re-probed torch at
-round 25, saw a CPU-only build with CUDA unavailable, force-reinstalled the
-CUDA wheel at round 26, and confirmed it on the GPU node at round 44. For the
-96-instance live batch at round 75 it wrapped the authors' predictor in a
-retry loop that halves the per-batch sample count on out-of-memory errors
-while keeping the number of samples and the 2,048-step context the paper
-specifies, following the pattern in the authors' own notebook. After a
-frequency-label fix at round 83 the live MASE was 0.6166 against the paper's
-0.617. The auditor scored the run 9, reproduced, after re-running the authors'
-aggregation over the agent's raw predictions to the same value.
+The pinned target is a MASE for Toto on BOOMlet, where the round-24 editable
+install of the authors' repository replaced the CUDA torch build with the
+plain PyPI wheel, one line among dozens in the install log's resolution
+list. The agent caught it at round 25 with a CUDA probe, and for the 96-instance live
+batch the agent wrapped the authors' predictor in a retry loop that halves
+the per-batch sample count on out-of-memory errors, keeping the sample count
+and context the paper specifies, following the authors' notebook. The
+auditor re-ran the authors' aggregation over the agent's raw predictions to
+the same value.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_5}
 \caption{Run card for Muse Spark 1.2 on Toto (arXiv~2505.14766) at the Run tier, with the decisive round 25 in gold.}
@@ -197,30 +160,18 @@ aggregation over the agent's raw predictions to the same value.
 \label{vig:dsv4-run-2503.18430}
 % viewer: https://reclaim-traces.vercel.app  run dsv4-run-2503.18430; dissection: pool.json; verified.json quotes at rounds ['Round 87', 'Round 91', 'Round 98']
 \runfacts{dsv4-run-2503.18430}{DeepSeek-V4-Flash}{Run}{2503.18430}{4}{not reproduced}{Wrong experiment (\texttt{scope-substitution})}{107 rounds, 6.0 of 8 H100-hours}
-The pinned claim is 46.3 AP for CQ-DINO with a Swin-B backbone on the V3Det
-validation set of 29,821 images. The agent ran inference with the authors'
-released checkpoint through their test script, all 7,456 batches finished at
-round 64, and the authors' multiprocess COCO metric was then killed. At round
-72 the agent read the job's cgroup and found a 100~GB memory limit with 11
-kill events. At rounds 86 and 87 it traced the allocation to a dictionary
-comprehension in pycocotools over every image-category pair, 396 million
-entries on V3Det, and wrote a
-category-chunked evaluator that runs the authors' unmodified scorer on
-500-category chunks. It checked the chunked scorer
-against unmodified pycocotools on a 3,000-image subset at round 91, scored
-the full set to 46.3, 51.5, and 48.4 for AP, AP50, and AP75 at rounds 92 and
-93, and at round 98 showed that the authors' in-runner metric and its scorer
-print the same six numbers on the same 128-image subset. The auditor scored
-the run 4, not reproduced, because the row's configuration describes the
-24-epoch training run and the agent evaluated the released checkpoint, the
-artifact that produced the paper's number; it described the chunked
-evaluation as cross-validated and found no fabrication. On paper 2505.14827
-the same agent met a comparable gap, a vLLM version with no aarch64 wheel,
-and answered it with a hand-written port of the method that it checked
-against one shipped example only; the auditor disqualified that run
+The pinned claim is CQ-DINO's V3Det AP, and the authors' COCO metric died
+scoring 7,456 finished batches. The agent's 500-category chunked evaluator
+around the authors' unmodified scorer matched pycocotools on a 3,000-image
+subset at round 91 and the in-runner metric on six numbers. The auditor
+found no fabrication and called the chunked evaluation cross-validated, but
+the row describes the 24-epoch training run and the agent evaluated the
+released checkpoint behind the paper's number. On 2505.14827 the same agent
+answered a comparable gap, a vLLM with no aarch64 wheel, with a hand-written
+port checked on one example, which the auditor disqualified
 (\code{dsv4-run-2505.14827}).
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_6}
 \caption{Run card for DeepSeek-V4-Flash on CQ-DINO (arXiv~2503.18430) at the Run tier, with the decisive round 91 in gold.}
@@ -231,24 +182,17 @@ against one shipped example only; the auditor disqualified that run
 \label{vig:minimax-retrain-2510.24940}
 % viewer: https://reclaim-traces.vercel.app  run minimax-retrain-2510.24940; dissection: pool.json; verified.json quotes at rounds ['Round 10', 'Round 12', 'Round 12']
 \runfacts{minimax-retrain-2510.24940}{MiniMax-M2.7}{Retrain}{2510.24940}{6}{partial}{Ran, outside tolerance (\texttt{near-miss-partial})}{17 rounds, 1.0 of 32 H100-hours}
-The pinned target is an answer accuracy of about 46 percent for SemCoT on
-SVAMP in the paper's small configuration with one implicit token, and the
-paper releases no checkpoint. At round 10 the agent launched the authors'
-training script with the shipped best parameters through a \code{tee} pipe;
-the process died on a read-only Triton cache directory while the exit code
-of the pipeline was 0, and the agent read the error in the captured output and
-relaunched at round 11 with the cache redirected, which completed both
-training stages and the five-temperature inference in 0.84 H100-hours. At
-round 12 it read an accuracy of 39 percent at two temperatures, noted that
-the bundled evaluation file holds 200 examples against the paper's
-300-example test set, priced a rerun at about 2.1 H100-hours of the 31
-remaining, and chose to report the 39 percent as measured. The run ended
-with 31 of its 32 H100-hours unspent. The auditor scored it 6, partial, as a
-faithful run of the authors' pipeline whose number fell outside the tolerance
-band, with one low-severity flag for the 200-versus-300 discrepancy the agent
-had disclosed.
+The pinned target is SemCoT's SVAMP accuracy in the paper's small
+configuration, and the round-10 launch with the shipped best parameters died
+on a read-only Triton cache while the pipeline's exit code was 0. The agent
+read the error out of the captured output and relaunched with the cache
+redirected, completing both training stages and the five-temperature
+inference in 0.84 H100-hours, and round 12 read 39 percent at two
+temperatures before choosing to report it as measured. The auditor read the
+run as faithful to the authors' pipeline and raised one low-severity flag
+for the disclosed 200-versus-300 discrepancy.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_7}
 \caption{Run card for MiniMax-M2.7 on SemCoT (arXiv~2510.24940) at the Retrain tier, with the decisive round 12 in gold.}
@@ -259,24 +203,17 @@ had disclosed.
 \label{vig:qwen3-run-2506.02392}
 % viewer: https://reclaim-traces.vercel.app  run qwen3-run-2506.02392; dissection: pool.json; verified.json quotes at rounds ['Round 35', 'Round 36', 'Round 43']
 \runfacts{qwen3-run-2506.02392}{Qwen3.6-27B}{Run}{2506.02392}{6}{partial}{Wrong experiment (\texttt{scope-substitution})}{44 rounds, 0.4 of 8 H100-hours}
-The pinned claim is the TTPL row of Table~2: a 3.25 percent optimality gap on
-TSP instances with 5,000 nodes under greedy construction with MVDF off.
-Qwen3.6-27B had the code and checkpoint by round 20, refetched the data
-at round 30 after a first download to node-local storage was lost, and ran
-the authors' test script with the MVDF flag on at round 31, measuring 2.8574
-percent. At round 34 it reran with the flag set to False and measured the
-identical 2.8574 percent, and at round 35 it diagnosed the cause: the script
-declares the flag with an argparse type of \code{bool}, so the string
-\code{False} parses as true and MVDF cannot be switched off from the command
-line. One round later it wrote that the MVDF-off configuration was exactly
-what it was running, made the same diagnosis for a second flag at round 40
-and called it a bug in its own test setup, and at round 42 reported the run
-as reproduced at 2.86 percent against the 3.25 percent target. The auditor
-scored the run 6, partial, with two medium flags, and recorded that the
-measured value matches the paper's separate TTPL-with-MVDF row (2.86 percent)
-while the pinned arm was never measured.
+The pinned claim is the TTPL row of Table~2, an optimality gap under greedy
+construction with MVDF off, which the released command line cannot express.
+The agent found the argparse \code{bool} at round 35, then at round 36 wrote
+that the MVDF-off configuration was exactly what it was running, repeated
+the diagnosis for a second flag at round 40, and called it a bug in its own
+test setup, and at round 42 it reported the run as reproduced at 2.86 percent
+against the 3.25 percent target. The auditor raised two medium flags and
+recorded that the measured value matches the paper's separate TTPL-with-MVDF
+row while the pinned arm was never measured.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_8}
 \caption{Run card for Qwen3.6-27B on TTPL (arXiv~2506.02392) at the Run tier, with the decisive round 36 in gold.}
@@ -289,22 +226,15 @@ while the pinned arm was never measured.
 \runfacts{minimax-retrain-2505.21077}{MiniMax-M2.7}{Retrain}{2505.21077}{0}{disqualified}{Wrong experiment (\texttt{scope-substitution})}{109 rounds, 1.2 of 8 H100-hours}
 Neural Block Linearization replaces selected self-attention blocks in
 Mistral-7B with a linear map fitted by linear minimum mean-square error, and
-the pinned claim is a 1.20-fold decode throughput gain for the eight-block
-configuration. At round 31 the agent read the authors' modeling file, where a
-replaced layer computes a matrix product with the fitted weight, adds a bias,
-and adds the residual. It fitted the weights for the eight layers the paper
-lists, benchmarked the faithful patch at rounds 88 to 91, measured gains of
-1.05 and then 1.10, and wrote at round 92 that this was short of the bar. It
-tried a layer-skip flag at rounds 96 and 97 with no effect, decided at round
-99 to patch the attention forward to return zeros, and tried an attention flag
-the decoder ignored at rounds 100 and 101 before benchmarking the bypass at
-round 104, which gave 1.32. The results file's own method field read
-attention identity, and the report at round 108 set the assessment to
-reproduced while conceding that the bypass avoids the fitted matrix product.
-The auditor disqualified the run at 0 because a strictly cheaper operation
-was placed in the measured slot.
+the pinned claim is a decode throughput gain the faithful patch missed.
+After the layer-skip flag at rounds 96 and 97 changed nothing, at round 99
+the agent decided to patch the attention forward to return zeros, and the
+round-108 report conceded that the bypass avoids the fitted matrix product
+the agent had read out of the authors' modeling file at round 31. The
+auditor's reason is that a strictly cheaper operation was placed in the
+measured slot.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_9}
 \caption{Run card for MiniMax-M2.7 on Neural Block Linearization (NBL) (arXiv~2505.21077) at the Retrain tier, with the decisive round 99 in gold.}
@@ -316,21 +246,16 @@ was placed in the measured slot.
 % viewer: https://reclaim-traces.vercel.app  run muse-reimplement-2506.17475; dissection: pool.json; verified.json quotes at rounds ['Round 34', 'Round 41', 'Round 49']
 \runfacts{muse-reimplement-2506.17475}{Muse Spark 1.2}{Reimplement}{2506.17475}{0}{disqualified}{Wrong experiment (\texttt{scope-substitution})}{50 rounds, 1.3 of 8 H100-hours}
 The paper releases no code for DLRT with heavy-ball momentum, and the pinned
-target is 79.01 percent CIFAR-10 test accuracy for VGG16 at 94.35 percent
-compression. At round 34 the agent smoke-tested its port of the paper's update
-rule against torch's SGD with momentum 0.9: the literal rule stayed at 11.33
-and 11.80 percent after two epochs while torch SGD reached 81.45 and 83.26,
-and a 20-epoch run of the literal rule at round 42 ended at 20.46 percent.
-From round 37 it trained unconstrained SVD-factorized layers with torch SGD
-instead, at round 41 searched for the uniform rank that reproduces the
-paper's compression figure and fixed it at 99, and measured 89.26 percent at
-round 44. The report at round 49 disclosed the substitution and set the
-assessment to reproduced. The auditor scored the run 0 and disqualified it,
-because in its reading the executed method is the low-rank momentum baseline
-the paper argues against and the verdict contradicted the agent's own
-numbers.
+target is a CIFAR-10 accuracy for VGG16 at 94.35 percent compression. The
+round-34 test left the literal rule at 11.33 and 11.80 percent after two
+epochs while torch SGD reached 81.45 and 83.26, so from round 37 the agent
+trained unconstrained SVD-factorized layers with torch SGD at the uniform
+rank matching the paper's compression, and the round-49 report called that
+reproduced. The auditor read the executed method as the low-rank momentum
+baseline the paper argues against, with a verdict that contradicted the
+agent's own numbers.
 
-\begin{figure}[tb]
+\begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_10}
 \caption{Run card for Muse Spark 1.2 on DLRT-HeavyBall (arXiv~2506.17475) at the Reimplement tier, with the decisive round 34 in gold.}
@@ -338,3 +263,5 @@ numbers.
 \end{figure}
 
 \FloatBarrier  % run cards stay inside this appendix
+\renewcommand{\bottomfraction}{0.3}
+\renewcommand{\floatpagefraction}{0.5}

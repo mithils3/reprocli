@@ -260,41 +260,32 @@ tolerance.
 paper and a target. No scripted pipeline or prepared environment is
 provided. The agent plans the reproduction, installs the paper's stack and
 reconciles its dependency errors, debugs failures, and manages its own GPU
-allocations, the same work a researcher faces when reproducing a paper. One
-open-ended task therefore exercises planning, coding, and resource
-management together. RECLAIM complements prior computational-reproducibility
-benchmarks~\citep{siegel2024corebench} by evaluating the less structured case
-in which an agent must recover and execute an experiment from the paper and its
-naturally released artifacts.
+allocations, the same work a researcher faces when reproducing a paper.
 
 \paragraph{Natural artifact availability.} We stratify papers by the artifacts
 their authors released, so each tier reflects a reproduction setting that
-actually occurs in the field, and no difficulty is manufactured by
-withholding resources. This choice also limits contamination.
+occurs in the field, and no difficulty is manufactured by withholding
+resources. This choice also limits contamination.
 Reimplement-tier papers never released code, so no reference implementation
 exists for a model to absorb during training, and across all tiers our
 cluster seldom matches the authors' hardware and software stack exactly, so
 replaying memorized artifacts is rarely enough.
 
-\paragraph{Sufficient compute.} Each paper has a GPU grant. We estimate
-it from the paper's minimal reproducible experiment and add hours for
-iteration. Section~\ref{subsec:results} reports how much of the grant runs
-actually spend.
+\paragraph{Sufficient compute.} Each paper has a GPU grant, estimated from
+the paper's minimal reproducible experiment with hours added for iteration,
+and Section~\ref{subsec:results} reports how much of it runs spend.
 
-\paragraph{Provenance-audited grading.} The benchmark records what the
-agent claims and grades what the evidence shows. Every reported number is
-traced to execution evidence, and deterministic checks zero out any number
-that was echoed from the paper and never measured. Because the audit checks how
-the number was produced, the
-agent is free to reach the result by any faithful route, and a novel
-reproduction strategy scores as well as the authors' own.
+\paragraph{Provenance-audited grading.} Every reported number is traced to
+the execution that produced it (Section~\ref{sec:auditing}). Because the
+audit checks how the number was produced, the agent is free to reach the
+result by any faithful route, and a novel reproduction strategy scores as
+well as the authors' own.
 
 \paragraph{Refresh at low human cost.} An agent classifier reads and
 verifies the candidate papers, and humans audit only the selected pool
 (Section~\ref{subsec:construction}). Each conference cycle supplies fresh
 peer-reviewed targets, so the benchmark can be rebuilt yearly from new
-NeurIPS, ICML, and ICLR submissions. The pool tracks the research frontier
-and resists saturation as agents improve.
+NeurIPS, ICML, and ICLR submissions.
 
 \subsection{Task definition}
 \label{subsec:task}
@@ -310,9 +301,8 @@ can demand while still exercising the paper's method end to end.
 
 A match target records the configuration that produces the value, the metric,
 the reported value, the scope the value is measured over, and the bar a run
-must clear, most often a point estimate within a stated or default tolerance.
-Appendix~\ref{app:dataset-schema} details the bar kinds and the tolerance
-rule.
+must clear, most often a point estimate within a stated or default tolerance
+(Appendix~\ref{app:dataset-schema}).
 
 As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
@@ -321,9 +311,8 @@ EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
 reports. A run matches when it produces that accuracy, within tolerance, from
 an experiment it actually executed.
 
-The agent receives the paper, the metric, the target value, the scope, and
-the bar shape. It does not receive the configuration. The agent must
-therefore design the experiment itself, deciding from the paper and the
+The agent receives the paper and the match target without the configuration
+that produces the value. The agent must therefore design the experiment itself, deciding from the paper and the
 released artifacts what to run, retrain, or reimplement. Because the agent
 knows the number it must hit, a bare value match proves nothing.
 
@@ -365,8 +354,7 @@ the result the agent must rebuild. Run papers
 release code, data, and weights, and the agent need only execute or evaluate them.
 Retrain papers withhold the weights, and the agent must train the model before
 evaluating. Reimplement papers withhold the code as well, and the agent must
-rebuild the method from the paper alone. Compute cost is
-derived from the paper's text if mentioned, or estimated from the MRE config.
+rebuild the method from the paper alone.
 The tiers also describe the venue as a whole, from the classifier pass alone
 since we audited by hand only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
 Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
@@ -403,8 +391,8 @@ deterministically. We fix Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
 auditor for every run of
 every agent, and we froze the rubric before grading began, so scores are
 comparable across models and no agent grades its own family~\citep{panickssery2024evaluators}. The auditor is
-adversarial by instruction. It treats the agent's final report as a set of
-unverified claims and grades what the evidence shows. It traces every
+adversarial by instruction and treats the agent's final report as a set of
+unverified claims. It traces every
 reported number to the execution that produced it, checks the executed
 protocol, split, and scale against the pinned configuration, and
 cross-checks the agent's measurements against the paper's reported values.
@@ -425,9 +413,8 @@ working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
 Three human graders scored all 396 runs that started, one grader per run,
 under the same rubric and blind to the auditor's score, and the auditor's
-verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict.
-Appendix~\ref{app:auditor-validation} gives the protocol and records how the
-auditor is held fixed across every grade of record.
+verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict
+(Appendix~\ref{app:auditor-validation}).
 % numbers of record: F1 0.82, three human graders, one per run, all 396 runs
 % that started, rubric of Appendix C, blind to the auditor's score (author,
 % 2026-09-10).
@@ -439,8 +426,7 @@ auditor is held fixed across every grade of record.
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
-loop~\citep{yao2023react}. The tools we provide leave the agent free to
-design its own experiment. A workspace shell and a metered GPU session express the
+loop~\citep{yao2023react}. A workspace shell and a metered GPU session express the
 same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
@@ -460,7 +446,6 @@ Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
 Model API. Every model runs the same harness, prompts, and per-paper budgets.
-Appendix~\ref{app:models} records the serving settings.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
 integer grade from 0 to 10 that the auditor assigns each run
@@ -469,7 +454,8 @@ reproduction rate, the fraction of papers whose runs score 8 or higher and
 are therefore graded reproduced. Alongside both we report each agent's token
 usage and its total cost~\citep{kapoor2024agents}, the sum of its tokens at its
 vendor's list rate and the GPU time it drew from its grant at \$2 per
-H100-hour. Appendix~\ref{app:models} gives the rates and the per-agent totals.
+H100-hour. Appendix~\ref{app:models} gives the serving settings, the rates,
+and the per-agent totals.
 
 \subsection{Results}
 \label{subsec:results}
@@ -530,8 +516,8 @@ non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
 the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. Priced at the
 rates of Appendix~\ref{app:models}, the 396 runs that started cost \$4{,}835, which is
 \$12.21 per run and \$66 per confirmed reproduction, and GPU time is 78\% of
-that total. We report the
-agents' own verdicts as background data. Of the 372 graded runs, 359 return a
+that total. We report the agents' own verdicts as background data. Of the 372
+graded runs, 359 return a
 parsable self-assessment and 128 claim reproduction, against 73
 audited reproductions over all 400 cells, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
@@ -551,16 +537,15 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 
 \paragraph{Failure taxonomy.}
 We label every graded run with one primary mode from the nine-mode
-vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
-tier in Figure~\ref{fig:failure-modes}. To assign the label we read the run's
+vocabulary of Appendix~\ref{app:taxonomy}, which gives each mode's evidence
+signature with transcript excerpts for three of them, and report the
+distribution by tier in Figure~\ref{fig:failure-modes}. To assign the label we read the run's
 transcript against the mode definitions and write a per-run dissection
 record. Every count in this subsection comes from those records, and every
 score and verdict in this paper comes from the auditor. Two modes are outcomes. A
 reproduced run recovers the pinned number on the authors' released
 artifact and data, and a run outside tolerance executes a faithful pipeline
-and lands short of the bar. The other seven are process failures.
-Appendix~\ref{app:taxonomy} gives each
-mode's evidence signature, with transcript excerpts for three of them. One run
+and lands short of the bar. The other seven are process failures. One run
 the auditor graded reproduced has the label Wrong artifact measured, because the
 dissection found its passing number was measured on a released checkpoint
 other than the one the row pins, so the Reproduced row holds 72 runs against
@@ -599,13 +584,11 @@ before any number was produced, while Wrong artifact measured splits
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
-DeepSeek-V4-Flash met the same packaging gaps and split on how it adapted: on one
-paper it rebuilt the package from source after the PyPI wheel failed at import
-against the installed torch and, when the authors' scorer exceeded the
-node's memory limit, rewrote it and checked the
-rewrite against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and
-on another it replaced the package by an unvalidated port that the auditor
-disqualified.
+DeepSeek-V4-Flash met the same packaging gaps and split on how it adapted. On
+one paper it rebuilt the failing package from source and, when the authors'
+scorer exceeded the node's memory limit, rewrote it and checked the rewrite
+against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
+it replaced the package by an unvalidated port that the auditor disqualified.
 % sources: resolved_modes.json for every count. aarch64 attribution: the five
 % are 2504.20571, 2506.20671, 2505.24873, 2505.10978, 2505.14827 per
 % notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:95-103,145
