@@ -701,12 +701,116 @@ number from it, and six of the seven stated the shortfall.
 \section{Limitations}
 \label{sec:limitations}
 
-Discuss limitations honestly. This can include dataset limitations, compute constraints, assumptions, failure cases, or scope boundaries.
+\paragraph{Attributing a miss to the agent.} No paper in RECLAIM has a
+human reproduction on our cluster. A run that executes a faithful pipeline
+and lands outside tolerance, the largest single class at 76 of the 372
+runs, therefore cannot be split among agent error, hardware and seed
+variance, and a claim that does not hold away from the authors' setup. The
+seven process modes are attributed from transcript evidence and the frozen
+set was host-probed before any agent ran, so this mode holds most of the
+attribution ambiguity. A paper reproduced by any agent on the pinned
+artifact is reproducible on our hardware. For the papers no agent
+reproduced, all three explanations remain open.
+
+\paragraph{Grading.} Section~\ref{sec:auditing} validates the auditor
+against a second LLM grader and against no human. The two graders disagree
+most at the score-0 cap, and the within-grader stability of the cap is
+unmeasured. The auditor also reads only what a run saved, and a run that
+measured the pinned quantity without writing the evidence to disk is graded
+as if it had not measured it.
+
+\paragraph{Contamination.} Run- and Retrain-tier papers have public
+repositories, and every agent we evaluate was released after the papers
+appeared, so the released code may be in its training data. We did not screen
+the agents for memorization of those repositories. A memorized environment
+fix or configuration would shorten a run and still count as a reproduction
+under our grading, which would inflate the rates at the two tiers with
+released code and leave the Reimplement tier less exposed. A memorization
+screen of the kind \citet{adamczewski2026mirrorcode} run would bound the
+effect.
+
+\paragraph{Scope of the sample.} The 100 papers come from one venue and one
+year, have a minimal experiment we estimate at 96 H100-hours or less, and
+exclude every paper whose minimal experiment calls a paid or closed model
+API, which removed 15 papers from the audit pool
+(Appendix~\ref{app:substitutions}). Claims that need more compute or such an
+API are absent, and the tier rates describe NeurIPS 2025. The venue-level
+tier shares of Section~\ref{subsec:construction} rest on a single classifier
+pass over a 1,000-paper sample, since we audited by hand only the selected
+pool. The match targets are ours. We pinned and audited each one, and the
+original authors did not review the target, the tolerance, or the tier
+assigned to their paper.
+
+\paragraph{Agents, harness, and host.} We evaluate four agents under one
+thin harness with at most one run per paper per agent, so a cell is a single
+sample and we report rates at the tier and band level and never per paper.
+We report point rates without interval estimates, and with one draw per cell
+a tier of about 30 runs resolves only differences of tens of points. The
+cells with no graded run are missing for reasons we have not established per
+agent, and Section~\ref{subsec:results} bounds the worst case for
+DeepSeek-V4-Flash only. The roster has no Claude, GPT, or Gemini model, and a
+stronger agent or scaffold could raise these rates. The agent ordering is
+also confounded with serving, since reasoning effort, weight precision, and
+the served context window differ across the four agents
+(Appendix~\ref{app:models}), and how each mode's share changes between the
+two weakest and the two strongest agents
+(Table~\ref{tab:failure-modes-by-agent}) is the evidence we have on
+scaling. Every run executed on one cluster of GH200 nodes, whose aarch64
+packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
+and two further Run-tier failures of that agent, disclosed here, trace to
+defects in our harness during its sweep, one allocation that ended short of
+its requested length and one partition error on a first allocation. We keep
+both runs in every count and did not relabel them after the fact. Rerunning
+a sweep needs a Slurm-scheduled GPU cluster, and the 14-paper validation
+split of Appendix~\ref{app:dataset-schema} is the entry point for a cheaper
+first pass.
+% sources. 76 outside-tolerance runs: tab:failure-modes-by-agent (26+16+7+27),
+% larger than the 72 Reproduced row. Paid-API exclusion of 15:
+% appendix/e_construction.tex tab row 2026-06-25. Classifier-only venue
+% shares: Sec 3.3 Stage I (1,000-paper sample, 687 verified; human audit
+% covers the 200-paper pool only). Model release years: all four agent bib
+% entries are 2026; NeurIPS 2025 papers are 2024/2025 arXiv IDs. Serving
+% confounds: appendix/b_models.tex "Several caveats apply" paragraph.
+% Harness defects: notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax
+% repair).md:103 (run_gpu allocations capped at ~3 minutes regardless of
+% minutes=40/60 on 2503.18430, ~8 killed mmcv builds; "Invalid partition
+% name" on first allocation, 2505.18809 never recovered), graded of record as
+% minimax-run-2503.18430 environment-fights and minimax-run-2505.18809
+% killed-before-the-number (manifest.json); dropping them moves MiniMax's
+% Run-tier rate from 3/33 to 3/31. Within-grader cap stability "unmeasured"
+% matches appendix/d_auditor_validation.tex:119; the TODO there (23/32 second
+% pass on 2652648) would change this sentence too. Interval sentence: a
+% two-proportion test on DSv4's 14/29 vs 9/28 gives z=1.2 and on 14/29 vs
+% 4/30 gives z=2.9 (computed 2026-09-10, not printed). MirrorCode memorization
+% screen: arXiv 2606.30182 Sec 4.3 and App. "Memorization screen", read
+% 2026-09-10.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Summarize the paper and its implications.
+RECLAIM measures whether an agent can reproduce the central claim of a
+machine learning paper from the artifacts its authors released, under a
+metered GPU grant, a pinned target, and an auditor that grades execution
+evidence in place of the agent's own report. Over four agents and 372 graded
+runs, the best reproduction rate falls from 48\% where code, data, and
+weights are released to 16\% where the method must be rebuilt from the paper,
+the agents leave most of their granted compute unspent, and a nine-mode
+labeling of every run separates the failures that recede between the two
+weakest and the two strongest agents from those that do not. Rebuilding a
+method without checking it against the paper falls when the two strongest
+agents are pooled against the two weakest, and measuring the wrong released
+artifact does not. We read this to mean that the strongest agent can run an
+experiment when the authors' code is released and struggles to design one
+from the paper alone. We release the benchmark, the harness, the frozen
+rubric, and every graded transcript, and the construction pipeline can
+rebuild the set from each conference cycle at low human cost, so the
+measurement can be repeated on fresh papers as agents improve. The step
+beyond it, writing code for an unpublished idea, remains open.
+% numbers: 48/32/16 best rate per tier as in the abstract (DSv4 14/29, 9/28;
+% Muse Spark 5/32); 372 runs; 1,770 of 9,120 H100-h spent; mode direction
+% from Sec 1 (reimplement-without-validating 43/188 -> 20/184, artifact-
+% provenance-mismatch 21 of 38 in the two strongest). Closing two sentences
+% match the frozen abstract (decision freeze-reclaim-abstract, 2026-09-07).
 
 \subsection*{Reproducibility statement}
 
