@@ -23,7 +23,12 @@ of record.
 
 \subsection{Agreement with human graders}
 
-% src: the human-graded subset of audited runs; F1 0.82 (author, 2026-09-10).
-On a subset of audited runs that human graders also scored, the auditor's
-verdicts agree with the human labels at an F1 of 0.82, with the human labels
-as the reference.
+% src: F1 0.82, three human graders, one per run, all 396 runs that started,
+% rubric of Appendix C, blind to the auditor's score (author, 2026-09-10).
+Three human graders scored every one of the 396 runs that started, each run
+by one grader, from the run bundle, its pinned claim, and the rubric text of
+Appendix~\ref{app:rubric}, without seeing the auditor's score or verdict.
+Taking the human label as the reference, the auditor's reproduced verdicts
+reach an F1 of 0.82. Each run has one human grade, so we report no
+inter-human agreement, and the auditor's disagreements with the human graders
+are the residual a second grader per run would measure.

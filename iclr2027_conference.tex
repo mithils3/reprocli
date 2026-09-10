@@ -423,10 +423,14 @@ forces the score to zero, and a claimed artifact wall earns no credit band. An
 LLM auditor reads more material per run than a human grader can,
 working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which is what makes auditing every run of every sweep feasible.
-On a hand-graded subset of runs the auditor's verdicts agree with the human
-labels at an F1 of 0.82, and Appendix~\ref{app:auditor-validation} records
-how the auditor is held fixed across every grade of record.
-% numbers of record: F1 0.82 on the human-graded subset (author, 2026-09-10).
+Three human graders scored all 396 runs that started, one grader per run,
+under the same rubric and blind to the auditor's score, and the auditor's
+verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict.
+Appendix~\ref{app:auditor-validation} gives the protocol and records how the
+auditor is held fixed across every grade of record.
+% numbers of record: F1 0.82, three human graders, one per run, all 396 runs
+% that started, rubric of Appendix C, blind to the auditor's score (author,
+% 2026-09-10).
 
 \section{Experiments}
 \label{sec:experiments}
@@ -682,10 +686,10 @@ pipeline and landed outside tolerance we cannot separate agent error from
 seed and hardware variance. A human replication of that subset would set the
 reference point.
 
-\paragraph{Grading.} The auditor's verdicts agree with human graders at an
-F1 of 0.82 on a hand-graded subset of runs, and the auditor sees only what a
-run saved to disk, so evidence a run computed and never wrote earns no credit.
-A larger human-graded sample is the next step.
+\paragraph{Grading.} Three human graders scored the 396 runs once each, blind
+to the auditor, and the auditor agrees with them at an F1 of 0.82, but one
+grade per run leaves inter-human agreement unmeasured, and the auditor sees
+only what a run saved to disk. A second grader per run is the next step.
 
 \paragraph{Contamination.} Every agent postdates the papers and may have
 trained on their code, and a memorized fix would still count as reproduced
