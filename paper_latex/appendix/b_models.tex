@@ -219,9 +219,9 @@ agent-paper cells, by agent, tier, and compute band.}
 % defect reproduced locally with `python -m reclaim_repro --paper-id
 % 2510.20725` (ValueError: unfilled placeholders: {O}) and fixed the same day
 % in src/reclaim_repro/prompt_render.py; the three late runs carry two pinned
-% Sonnet passes each. Counted as failures on his instruction 2026-09-10
-% ("count them as failures of the model all of them"); no cause is given for
-% the 19 runs without a final report, also on his instruction.
+% Sonnet passes each. Policy (2026-09-10): every cell without a graded run
+% counts as a failure; the text states what each cell holds and gives no cause
+% for the 19 runs without a final report.
 Four agents over 100 papers give 400 cells, and 372 of them hold a run with a
 pinned grade and a failure-mode label. Table~\ref{tab:missing-cells} lists the
 other 28. The reproduction rates and mean scores of

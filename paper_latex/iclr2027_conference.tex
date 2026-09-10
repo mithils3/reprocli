@@ -53,65 +53,33 @@ involves no such preparation. We introduce RECLAIM, 100 NeurIPS 2025 papers
 with a metered GPU-hour budget, a frozen target claim, a numeric tolerance,
 and a pinned auditor of execution evidence. The agent gets the paper and
 whatever the authors released and supplies the rest. Across four agents,
-the best reproduction rate per tier falls from 41\% at Run tier, where code,
-data, and weights are released, to 27\% at Retrain and 15\% at Reimplement,
-where the method is built from the paper alone. Compute does not explain the decline,
-since non-reproduced runs use 29\% of their allocation. Under a nine-mode
+the best reproduction rate is 41\% at Run tier, where code, data, and weights
+are released, 27\% at Retrain, and 15\% at Reimplement, where the method is
+built from the paper alone, and every agent scores lowest at Reimplement.
+Compute does not explain the gap, since non-reproduced runs use 29\% of their
+allocation. Under a nine-mode
 labeling of every graded run, most Retrain-tier misses by the strongest agent
 ran the paper's experiment but produced a number outside tolerance. We
 interpret these findings to mean the strongest agent can run an experiment
 with released code but struggles to design one from the paper alone. The
 next step toward automated research, writing code for an unpublished idea,
 remains open.
-% numbers of record, filled 2026-08-24. All pinned claude-sonnet-5, post-freeze:
-%   tier fall 48/32/13 -- DSv4-Flash easy 14/29 (2883229+2889575), medium 9/28
-%     (2896059), hard 4/30 (2918306, pinned re-audit + dissection 2026-08-12,
-%     which cleared the old "Reimplement has no pinned number" blocker). Scoped
-%     in-sentence to the strongest agent: the fall is DSv4's, never pooled.
-%     2026-09-06 (user: "make it 16% then"): the abstract now reports the best
-%     agent per tier, 48/32/16. Reimplement 16 = Muse Spark 5/32 (sweep
-%     20260820, pinned, fig:main-results); Run and Retrain stay DSv4's. The
-%     intro sentence keeps DSv4's own 48/32/13, scoped by name.
-%   "rarely runs as shipped" -- CUT 2026-09-06: unsourced frequency claim, and
-%     the body attributes Run-tier misses to the agent. Run tier is now defined
-%     inside the tier sentence instead.
-%   Run-tier environment-repair clause -- CUT, per the prior TODO: the transcript
-%     pass over the 14 reproduced easy runs was never run, and the instruction
-%     was to cut rather than soften. Repair evidence stays in the body (five
-%     shipped-code defects, easy dissection section 2).
-%   failed-run spend 30% -- mean spent_h100/budget over the 299 non-reproduced
-%     runs pooled across the 12 sweeps of record, all four agents (98 run + 89
-%     retrain + 112 reimplement), computed 2026-09-03 from
-%     tools/anon_viewer/public/data/index.json; median 15.7%, ratio of sums
-%     18.6%. DSv4 alone is 45.2% (n=60), the figure this line carried until
-%     2026-09-03. Absolute claim only: reproduced runs pool to 27.1% (n=73),
-%     so never imply failures are cheaper.
-%   Retrain misses 15 of 19 -- near-miss-partial 15 of 28 on 2896059 against 19
-%     misses (28 minus 9 reproduced). DISSECTION-derived, not auditor-derived,
-%     and the body must say so where it appears. 2026-09-04: the abstract now
-%     says "most misses" for the strongest agent and drops the two counts and
-%     the 16-32% range (user: unclear, does not belong in the abstract); the
-%     numbers stay in the body. If the body reuses the older
-%     right-experiment rate (24/28 dissection vs 22/28 audit_score>=6), pick one
-%     there and state which.
-%   matched-number range 16-32% -- Retrain tier, pinned Sonnet-5: DSv4 9/28=32%,
-%     Qwen3.6 6/26=23% (2698678+2759663), MiniMax 5/32=16% (2690187), Muse Spark
-%     9/32=28% (muse_spark 20260816T133804Z, added 2026-09-03). The four
-%     do not agree, so the sentence carried the range per the prior TODO, and
-%     the flat "stays at" claim is retired. 2026-09-04: the range left the
-%     abstract (user: unclear); it now appears in the body only.
-%   audit-score range (intro) -- 3.41 (MiniMax) to 6.43 (DSv4) is 1.9x; Muse Spark
-%     6.03 sits inside the range (2026-09-03), so the 1.9x stands. Filled
-%     2026-08-27 together with the matched-number range 16-32%, which replaces
-%     the retired flat "holding at" claim in the same sentence.
-%   Retrain verified-partial 79% (intro) -- 22/28 with audit_score>=6 on
-%     2896059, auditor-derived under the frozen rubric. The 24/28 dissection
-%     right-experiment rate is deliberately not used there; anywhere the body
-%     uses 24/28 it must state the dissection provenance.
-%   96 GPU-hour band spend -- 6.5% (sum spent / sum budget; the mean of per-run
-%     fractions is also 6.5%), pooled over the 12 sweeps of record incl. Muse
-%     Spark, 1 of 42 runs reproduced (Muse Spark, Retrain, 2508.21046, score 9,
-%     1.9 of 96 H100-h). Refilled 2026-09-03; matches fig:band-compute.
+% numbers of record (2026-09-10), pinned claude-sonnet-5, post-freeze, over all
+% 400 agent-paper cells with the 28 cells that have no graded run at score 0:
+%   best rate per tier 41/27/15 -- Run 14/34 and Retrain 9/33 are
+%     DeepSeek-V4-Flash's; Reimplement 15 is Muse Spark 1.2's 5/33 (DSv4's own
+%     Reimplement rate, 4/33 = 12, is stated by name in the intro). The drop
+%     that holds for every agent is Run -> Reimplement (every agent's lowest
+%     rate and mean score); Run vs Retrain is within noise (DSv4 14/34 vs 9/33
+%     z = 1.2 on a two-proportion test; the other three within nine points).
+%   non-reproduced spend 29% -- mean spent/budget per cell over the 327
+%     non-reproduced cells (28.9%); ratio of sums 17.7%. Reproduced cells pool
+%     to 27.1%, so never imply failures are cheaper.
+%   "most Retrain-tier misses ... outside tolerance" -- DISSECTION-derived
+%     (Ran, outside tolerance is the mode of 15 of the strongest agent's 19
+%     labeled Retrain misses); the body names the provenance where it appears.
+%   96 H100-hour band -- 48 cells spend 6.2% of their grant and 1 reproduces
+%     (Muse Spark 1.2, Retrain, 2508.21046, score 9).
 \end{abstract}
 
 \section{Introduction}
@@ -149,33 +117,38 @@ a benchmark in which we
 provide the agent with the paper and the artifacts its authors released, then
 evaluate the agent on the execution evidence it produced and on how its result
 compares with the authors' claim. Our results show that reproduction rate
-follows how much the authors release. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
+falls when the authors release no code. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
 the target result on 41\% of Run-tier papers (code, data, and weights all
 released), 27\% of Retrain-tier papers (no released weights, so the model must
 be trained first), and 12\% of Reimplement-tier papers (no released code
-either).
+either). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
+best of the four agents at that tier, while the best Run and Retrain rates are
+DeepSeek-V4-Flash's. Every agent has its lowest rate and lowest mean score at
+Reimplement, whereas between Run and Retrain only DeepSeek-V4-Flash's rate
+falls, by 14 points, and the other three agents' rates differ by at most nine
+points (Section~\ref{subsec:results}).
 
-What the authors released explains the difference between tiers. It does not
-explain the failures within a tier. At the Run tier the authors released every
-artifact the claim requires, and during construction we verified that all of
-them were retrievable, yet many of those runs still fail. Three properties of
-those failures organize the rest of this paper.
-Stronger agents achieve partial reproduction more often. On Retrain-tier
+Released code explains the difference between the Run and Reimplement tiers.
+It does not explain the failures within a tier. At the Run tier the authors
+released every artifact the claim requires, and during construction we
+verified that all of them were retrievable, yet many of those runs still
+fail. Three properties of those failures organize the rest of this paper.
+First, stronger agents achieve partial reproduction more often. On Retrain-tier
 papers the strongest agent reaches a verified partial result or better on 67\% of runs,
 which provides evidence of an emerging ability to close the loop of
-reproduction. Full recovery of
+reproduction. Second, full recovery of
 the reported number is where progress stalls, holding between 15\% and 27\%
-across four agents spanning a 1.7-fold range in mean audit score. Compute does
-not bind either, since 1 of the 48 cells in the 96 H100-hour band reproduces its
-claim (Section~\ref{subsec:compute}).
+across four agents spanning a 1.7-fold range in mean audit score. Third,
+compute does not bind either, since 1 of the 48 cells in the 96 H100-hour
+band reproduces its claim (Section~\ref{subsec:compute}).
 
 A small set of recurring failure modes accounts for those failures. Some modes
 become rarer as agents get stronger and some do not. Runs that reimplemented the
 method but did not check their result against the numbers the paper reports
 account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
-of the two strongest, and build and dependency failures fall from 19 of those
+of the two strongest, and Build and dependency failures fall from 19 of those
 runs to 5.
-Measuring the wrong artifact does not become rarer, since the two strongest
+Wrong artifact measured does not become rarer, since the two strongest
 agents account for 21 of its 38 cases, and on 7 papers the released model card
 or configuration file states a setting that differs from the one the paper
 reports. We define the taxonomy, report the per-mode
@@ -185,10 +158,10 @@ as background data.
 % numbers of record (2026-09-05): resolved per-run primary modes in
 % ~/sweeps/paper-table-2026-09-05/resolved_modes.json (index.json of 2026-09-03
 % plus the 29-run relabel pass in result.json). Agents ordered by mean audit
-% score: DSv4 5.90, Muse 5.15, Qwen3 3.88, MiniMax 3.09. reimplement-without-
+% score over all 100 cells: DSv4 5.13, Muse 5.00, Qwen3 3.51, MiniMax 3.03. reimplement-without-
 % validating: Qwen3 16/90 + MiniMax 27/98 = 43/188; DSv4 13/87 + Muse 7/97 =
 % 20/184. environment-fights: 8+11 = 19 vs 1+4 = 5. artifact-provenance-
-% mismatch per agent 6/87, 3/90, 13/98, 15/97 = 37; release-disagrees-with-paper
+% mismatch per agent 6/87, 4/90, 13/98, 15/97 = 38; release-disagrees-with-paper
 % signature in 10 runs on 7 papers (dsv4-retrain-2506.19839, dsv4-run-2505.23305,
 % dsv4-run-2510.21311, dsv4-run-2505.24873, muse-run-2505.23305,
 % muse-run-2511.16666, muse-run-2505.18456, minimax-run-2511.16666,
@@ -359,15 +332,16 @@ knows the number it must hit, a bare value match proves nothing.
 
 We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that have an
 arXiv ID, collected in the \emph{ai-conferences}
-corpus~\citep{neurips2025corpus}. Construction proceeded in three stages
-(Figure~\ref{fig:funnel}).
+corpus~\citep{neurips2025corpus}. Stage I ran on a 1,000-paper sample of that
+corpus, and every later stage works within the sample. Construction proceeded
+in three stages (Figure~\ref{fig:funnel}).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/construction_funnel}
-\caption{The construction funnel. Three stages narrow 3,414 NeurIPS 2025
-submissions to the released 100-paper benchmark, with every availability call
-and compute estimate audited by hand.}
+\caption{The construction funnel. Three stages narrow a 1,000-paper sample of
+the 3,414 NeurIPS 2025 submissions to the released 100-paper benchmark, with
+every availability call and compute estimate audited by hand.}
 \label{fig:funnel}
 \end{figure}
 
@@ -508,9 +482,9 @@ Reimplement, and the four agents span a factor of 1.7 in mean audit score,
 from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
 % numbers of record (2026-09-10): all 400 cells = index.json's 372 graded runs
 % + the 28 cells of tab:missing-cells at score 0 (three at their pinned grade
-% 0/2/0); per-agent means 5.13 / 3.51 / 3.03 / 5.00, 5.13/3.03 = 1.69. Counted
-% as failures on his instruction ("count them as failures of the model all of
-% them"). Derivation over repro_runs + audit_runs + HF eval_100 + index.json.
+% 0/2/0); per-agent means 5.13 / 3.51 / 3.03 / 5.00, 5.13/3.03 = 1.69. Policy
+% (2026-09-10): a cell without a graded run is a failure at score 0. Derivation
+% over repro_runs + audit_runs + HF eval_100 + index.json.
 
 \begin{figure}[t]
 \centering
@@ -531,8 +505,9 @@ call an audit score of 6 or more a partial result or better. At Retrain,
 DeepSeek-V4-Flash reaches one on 22 of 33 cells and Muse Spark 1.2 on 23 of 33, while
 MiniMax-M2.7 reaches one on 9 of 33, and confirmed reproduction at the same
 tier runs from 15\% to 27\%. Only DeepSeek-V4-Flash's reproduction rate falls at
-every tier. For the other three agents the Run and Retrain rates sit within
-nine points of each other, and mean score rises from Run to Retrain for three
+every tier, and even there a two-proportion test separates Run from
+Reimplement ($z = 2.7$) but not Run from Retrain ($z = 1.2$). For the other
+three agents the Run and Retrain rates sit within nine points of each other, and mean score rises from Run to Retrain for three
 of the four agents before falling at Reimplement, while Qwen3.6-27B's falls at
 each tier. Figure~\ref{fig:failure-modes}
 shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
@@ -543,7 +518,8 @@ Reimplement, where no code is released, and 13 of 132 cells reproduce there.
 % partial-or-better = audit score >= 6 over all 33 Retrain cells (index.json +
 % the missing cells at 0): DSv4 22/33, Muse 23/33, MiniMax 9/33. Qwen3.6-27B
 % means 3.91 / 3.58 / 3.03 fall at each tier once its 7 empty Retrain cells
-% count as zeros.
+% count as zeros. Two-proportion z on DSv4: 14/34 vs 9/33 -> pooled 23/67,
+% z = 1.20; 14/34 vs 4/33 -> pooled 18/67, z = 2.68 (computed 2026-09-10).
 
 Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
@@ -572,13 +548,16 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 \paragraph{Failure taxonomy.}
 We label every graded run with one primary mode from the nine-mode
 vocabulary of Appendix~\ref{app:taxonomy} and report the distribution by
-tier in Figure~\ref{fig:failure-modes}. Two modes are outcomes. A
+tier in Figure~\ref{fig:failure-modes}. To assign the label we read the run's
+transcript against the mode definitions and write a per-run dissection
+record. Every count in this subsection comes from those records, and every
+score and verdict in this paper comes from the auditor. Two modes are outcomes. A
 reproduced run recovers the pinned number on the authors' released
 artifact and data, and a run outside tolerance executes a faithful pipeline
 and lands short of the bar. The other seven are process failures.
 Appendix~\ref{app:taxonomy} gives each
 mode's evidence signature, with transcript excerpts for three of them. One run
-the auditor graded reproduced has the wrong-artifact label, because the
+the auditor graded reproduced has the label Wrong artifact measured, because the
 dissection found its passing number was measured on a released checkpoint
 other than the one the row pins, so the Reproduced row holds 72 runs against
 73 audited reproductions, with the difference in the Run column.
@@ -604,15 +583,15 @@ Appendix~\ref{app:taxonomy}.}
 \paragraph{Where the failures occur.}
 Reimplemented but did not check the result is the most common process
 failure, at 63 of 372 runs, and 38 of those fall at Reimplement. Together with
-the wrong-experiment row it accounts for 62 of the 125 Reimplement-tier
+Wrong experiment it accounts for 62 of the 125 Reimplement-tier
 runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
-18 of 33 for MiniMax-M2.7. Two modes sit almost entirely at one tier. Echoing
+18 of 33 for MiniMax-M2.7. Two modes sit almost entirely at one tier. Echoed
 a shipped number needs released code and does not occur at Reimplement, and
-never launching an experiment occurs ten times at Reimplement against once at
+Never launched an experiment occurs ten times at Reimplement against once at
 Run. Two modes concentrate in one agent each
 (Table~\ref{tab:failure-modes-by-agent}). MiniMax-M2.7 holds 11 of the 24
-build and dependency failures and Qwen3.6-27B holds 19 of the 31 runs that
-failed before producing a number, while wrong-artifact measurements split
+Build and dependency failures and Qwen3.6-27B holds 19 of the 31 Failed
+before any number was produced, while Wrong artifact measured splits
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
@@ -744,12 +723,12 @@ Reruns can start from the 14-paper validation split
 % minimax-run-2505.18809 killed-before-the-number (manifest.json); dropping
 % them moves MiniMax's Run-tier rate from 3/34 to 3/32. The within-grader cap
 % stability sentence was removed 2026-09-10 with the LLM-vs-LLM agreement
-% material (his instruction); the 23/32 second pass on 2652648 is unreported.
+% material; the 23/32 second pass on 2652648 is unreported.
 % Interval sentence: a two-proportion test on DSv4's 14/29 vs 9/28 gives
 % z=1.2 and on 14/29 vs 4/30 gives z=2.9 (computed 2026-09-10, not printed).
 % MirrorCode memorization screen: arXiv 2606.30182 Sec 4.3 and App.
 % "Memorization screen", read 2026-09-10. Cut 2026-09-10 to 2-3 lines per
-% paragraph on his instruction; the classifier-only venue-share caveat moved
+% paragraph; the classifier-only venue-share caveat moved
 % to its claim site (Sec 3.3); the 28 empty cells count as failures since
 % 2026-09-10 (Sec 5.2, App. B).
 
