@@ -1,34 +1,20 @@
 \section{Auditor Validation}
 \label{app:auditor-validation}
 
-This appendix records how the auditor of Section~\ref{sec:auditing} is held
-fixed across every grade of record and how its verdicts compare with human
-graders.
+We hold four inputs constant across every grade of record: the grader model ID,
+which is written onto every verdict row, the rubric file with its 2026-07-16
+freeze date, the audit prompt rendered per run from that rubric text and the
+pinned claim, and the shared verdict code that applies the integrity adjustment
+of Appendix~\ref{app:rubric}. Each grading pass gets an identity of its own from
+the grader model name and a UTC timestamp, which keys every row and transcript
+event the pass writes, so a later pass stays distinguishable from the grade of
+record. The grading client and its decoding settings are given in
+Appendix~\ref{app:models}.
 
-\subsection{Why the auditor is pinned}
-
-% src: src/reclaim_claude/__main__.py:1-19,74-81,265-276, src/reclaim_vllm/config/config.py:42-43, rubric_audit.md:1-15, src/reclaim_vllm/audit/audit.py:35-63
-We hold four inputs constant across every grade of record. They are the grader
-model ID, which is written onto every verdict row, the rubric file with its
-2026-07-16 freeze date, the audit prompt rendered per run from that rubric
-text and the pinned claim, and the shared verdict code that applies the
-integrity adjustment of Appendix~\ref{app:rubric}. The grading client and its
-decoding settings are given in Appendix~\ref{app:models}.
-
-% src: src/reclaim_claude/__main__.py:193-201,282-295, src/reclaim_vllm/runtime/audit_sink.py:85-104,124-129, notes/Analysis/2026-07-23 Pinned Sonnet-5 Replay (sweep 2687371).md:18-28
-Each grading pass is also given an identity of its own, formed from the grader
-model name and a UTC timestamp, and every row and transcript event the pass
-writes is keyed by it, so any later pass stays distinguishable from the grade
-of record.
-
-\subsection{Agreement with human graders}
-
-% src: F1 0.82, three human graders, one per run, all 396 runs that started,
-% rubric of Appendix C, blind to the auditor's score (author, 2026-09-10).
-Three human graders scored every one of the 396 runs that started, each run
-by one grader, from the run bundle, its pinned claim, and the rubric text of
-Appendix~\ref{app:rubric}, without seeing the auditor's score or verdict.
-Taking the human label as the reference, the auditor's reproduced verdicts
-reach an F1 of 0.82. Each run has one human grade, so we report no
-inter-human agreement, and the auditor's disagreements with the human graders
-are the residual a second grader per run would measure.
+% numbers of record: F1 0.82, three human graders, one per run, all 396 runs
+% that started, rubric of Appendix C, blind to the auditor's score (author, 2026-09-10).
+Three human graders scored all 396 runs that started, one grader per run, from
+the run bundle, its pinned claim, and the rubric text of
+Appendix~\ref{app:rubric}, blind to the auditor's score and verdict. Taking the
+human label as the reference, the auditor's reproduced verdicts reach an F1 of
+0.82. One grade per run leaves inter-human agreement unmeasured.

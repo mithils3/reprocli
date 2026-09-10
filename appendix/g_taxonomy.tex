@@ -3,58 +3,41 @@
 
 \subsection{Labeling procedure}
 
-% src: .claude/skills/analyze-sweep/SKILL.md:11-24,34-87,113
-We assign a run's primary failure mode in a transcript dissection that runs
-after the audit and separately from it. The dissection reads the run's ordered
-event transcript, the final report the agent emitted, and the audit verdict,
-rationale, and flags recorded on the run row, and it assigns exactly one
-primary mode per run. The modes are not mutually exclusive as mechanisms, so
-the label records the dominant one. A dissection never edits audit scores,
-verdicts, or flags, and a mode label therefore never moves a grade. No
-dissection uses an availability-wall label, since curation removed those
-papers from the frozen split (Appendix~\ref{app:construction}), and where a
-report asserts otherwise we relabel the run from its own evidence. We add a new mode to the taxonomy
-only on evidence from at least two runs.
-Before pooling, we remap sweep-local labels onto the nine modes. Thirty-six
-runs whose dissection gave a label outside the vocabulary, or one that
-disagreed with the pinned verdict, were re-read against the definitions below
+We assign each run's primary failure mode in a transcript dissection that runs
+after the audit and separately from it, reading the ordered event transcript,
+the final report, and the audit verdict, rationale, and flags on the run row.
+The modes are not mutually exclusive as mechanisms, so a run takes exactly one
+primary label for the dominant one, and a dissection never edits scores,
+verdicts, or flags, so a mode label never moves a grade. No dissection uses an
+availability-wall label, since curation removed those papers from the frozen
+split (Appendix~\ref{app:construction}), and where a report asserts one we
+relabel the run from its own evidence. We add a new mode only on evidence from
+at least two runs. The taxonomy has nine modes with fixed names, and before
+pooling we remap retired names, underscore spellings, and sweep-local labels
+onto them. Thirty-six runs labeled outside the vocabulary or against the
+pinned verdict were re-read against the definitions of Table~\ref{tab:taxonomy}
 and assigned by the agent's recorded behavior. The labels folded this way are
-under-determined-target, scope-collapse, unavailability-concluded-from-prose,
-context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
-report-serialization-fault and report-serialization-collapse,
-tool-call-format-collapse, protocol-drift-direction-flip,
-eval-protocol-shopping, verified-non-attempt, and success. Eleven of the
-thirty-six had an in-vocabulary label that disagreed with the pinned
-verdict, seven of them the outside-tolerance label on a disqualified run, and
-four kept their label after re-reading because the disqualifying flag concerned
-only the run's self-report.
-Figure~\ref{fig:failure-modes} and Table~\ref{tab:failure-modes-by-agent}
-print each mode under the plain-language name given beneath its slug in
-Table~\ref{tab:taxonomy}, in the same order.
+under-determined-target, scope-collapse,
+unavailability-concluded-from-prose, context-or-round-exhaustion, fabrication
+and fabrication-or-provenance-break, report-serialization-fault and
+report-serialization-collapse, tool-call-format-collapse,
+protocol-drift-direction-flip, eval-protocol-shopping, verified-non-attempt,
+and success. Eleven of them had an in-vocabulary label disagreeing with the
+pinned verdict, seven of those outside-tolerance on a disqualified run, and
+four kept their label because the flag concerned only the run's self-report.
+Figure~\ref{fig:failure-modes} and Table~\ref{tab:failure-modes-by-agent} use
+the plain-language names beneath the slugs in Table~\ref{tab:taxonomy}, in the
+same order.
 % relabel passes 2026-09-05: ~/sweeps/paper-table-2026-09-05/result.json (pass
 % 1, 29 runs) and relabel_pass2.txt (pass 2, 7 runs); resolved_modes.json holds
 % the final per-run labels.
 
 \subsection{The failure modes}
 
-% src: .claude/skills/analyze-sweep/SKILL.md:74-79; notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:118; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:155-166,231-240
-The taxonomy has nine modes with fixed names (Table~\ref{tab:taxonomy}). Before
-we count anything in a table that pools sweeps, we remap retired names,
-underscore spellings, and sweep-local labels onto the nine mode names, and the
-caption of that table says so. The band column records where the rubric text
-says a mode tends to score. The auditor grades from the run's evidence, has no
-access to the mode label, and does not apply the band column as a rule.
+The band column of Table~\ref{tab:taxonomy} gives the rubric score where the
+frozen rubric text states one, and the auditor, which grades from the run's
+evidence and has no access to the mode label, does not apply it as a rule.
 
-% Row sources for Table~\ref{tab:taxonomy}:
-%   reproduced-clean            -> SKILL.md:74; notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:380-383; rubric_audit.md:173-183,234
-%   near-miss-partial           -> notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:338-341; rubric_audit.md:183-190
-%   reimplement-without-validating -> notes/Analysis/2026-08-16 Hard Sweep 2936132 (MiniMax, pinned Sonnet).md:125-135; notes/Analysis/2026-08-03 Medium Sweep 2690187 (MiniMax, pinned Sonnet).md:75-79; rubric_audit.md:194-196
-%   environment-fights          -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:145; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:200-210
-%   artifact-provenance-mismatch -> notes/Analysis/2026-08-16 Hard Sweep 2936132 (MiniMax, pinned Sonnet).md:174-176; notes/Analysis/2026-08-11 Easy Sweep 2883229+2889575 (DSv4, pinned Sonnet).md:44; rubric_audit.md:107-108
-%   scope-substitution          -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:122; notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:171-195; rubric_audit.md:210-213,217-222
-%   stale-artifact-reliance     -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:120; notes/Analysis/2026-08-04 Easy Sweep 2859889 (Laguna INT4, pinned Sonnet).md:231-240; rubric_audit.md:111-114,144-148
-%   procrastination/wall-kill   -> notes/Analysis/medium-sweep-2896059-dsv4-analyses.json (2510.10480); notes/Analysis/hard-sweep-2936132-minimax-analyses.json (2510.25146, 2510.23429)
-%   killed-before-the-number    -> notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:121; notes/Analysis/easy-sweep-2652648-minimax-analyses.json (2510.21311); rubric_audit.md:197-209
 \begingroup
 \footnotesize
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{4.15cm}p{1.1cm}@{}}
@@ -167,20 +150,18 @@ Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
 Graded runs & 87 & 90 & 98 & 97 & 372 \\
 \bottomrule
 \end{tabular}
-\caption{Primary failure mode by agent over the 372 graded runs.}
+\caption{Primary failure mode by agent.}
 \label{tab:failure-modes-by-agent}
 \end{table}
 % numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/resolved_modes.json.
 
 \subsection{Failure taxonomy examples}
 
-% src: notes/Analysis/2026-08-16 Hard Sweep 2936132 (MiniMax, pinned Sonnet).md:125-147; notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56); notes/Analysis/hard-sweep-2936132-minimax-runs.json (model, batch_id)
 The signature of \texttt{reimplement-without-validating} is a reference the
 paper supplies that the run never checks against. On arXiv paper 2510.08177
 the agent wrote its own version of the paper's baseline, scored it below the
-value the paper reports for that same baseline, and then kept building on its
-own version. The disagreement is visible in the
-agent's own closing numbers, and the run never returned to it.
+value the paper reports for that same baseline, and kept building on its own
+version.
 
 \begin{agentturn}{Round 56, agent.\ Paper 2510.08177, MiniMax-M2.7, sweep 2936132.}
 Best All: 40.82\% (ep 20)\\
@@ -190,26 +171,23 @@ Our CE-only baseline: 54.21\%\\
 Gap vs target: -25.08\%
 \end{agentturn}
 
-% src: notes/Analysis/hard-sweep-2936132-minimax-analyses.json (run 2936132-2510.08177-bf5a5f, round 56)
 The third and fourth lines are the paper's own baseline and the agent's
-reimplementation of it. That gap persisted to the end of the run.
+reimplementation of it, and the disagreement, visible in the agent's own
+closing numbers, persisted to the end of the run.
 
-% src: notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:176-181; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2505.10039-47d383, round 6); notes/Analysis/hard-sweep-2918306-dsv4-runs.json (model, batch_id)
 The signature of \texttt{scope-substitution} is a round in which the agent
 names the pinned arm and then chooses a different one. On arXiv paper
-2505.10039 the agent made that choice at round 6, before writing any code,
-giving implementation cost as the reason. It never measured the pinned arm,
-and the graded number came from the arm it chose instead.
+2505.10039 the agent made that choice at round 6 before writing any code,
+giving implementation cost as the reason, never measured the pinned arm, and
+produced the graded number from the arm it chose instead.
 
 \begin{agentturn}{Round 6, agent.\ Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
-% src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2505.10039-47d383, round 6)
 Neither arm had released code, so either arm required a port, and the agent
 chose between them on implementation effort.
 
-% src: notes/Analysis/2026-08-12 Hard Sweep 2918306 (DSv4, pinned Sonnet).md:313-321; notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
 The signature of \texttt{environment-fights} is a version incompatibility in
 the released stack that persists long enough to corrupt the run's own data. On
 arXiv paper 2511.20906 an incompatible pair of robosuite and mujoco versions
@@ -221,6 +199,5 @@ break.
 This is the smoking gun: **the saved abs dataset is broken** -{}- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 
-% src: notes/Analysis/hard-sweep-2918306-dsv4-analyses.json (run 2918306-2511.20906-eaec57, round 233)
 The defect is in the released code as it runs on this host, and the run
 exhausted its budget on it.

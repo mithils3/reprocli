@@ -4,28 +4,21 @@
 \subsection{Agent loop}
 \label{app:tool-loop}
 
-% src: src/reclaim_repro/loop.py:62-160,236-264,291-306,328-424,441-501, src/reclaim_repro/cli_args.py:31-44,189-206,243-281, src/reclaim_repro/inputs.py:104-141, src/reclaim_repro/transcript.py:22-32,38-99,102-104,107-157, src/reclaim_repro/compact.py, src/reclaim_repro/tools/__init__.py:76-99, prompts/prompt_reproduce.txt:141
-Each episode runs a single paper with a single model. The conversation opens
-with a fixed system message followed by a task prompt rendered from the paper's
-dataset row (Appendix~\ref{app:prompts}), after which model turns alternate
-with tool results. Every request includes the tools of
-Appendix~\ref{app:toolset} together with an ephemeral status line that tells
-the model how many rounds it has used and how many remain. A single turn may
-issue several tool calls, which the harness executes in order, appending one
-truncated JSON result per call. When the conversation approaches the served
-context window, a compaction step rewrites it, eliding older tool results and
-leaving in their place a placeholder that records the character count and the
-on-disk file holding the full text. An episode ends when the model returns a
-turn with no tool call, when it reaches the round cap, when the episode's
-compute budget is exhausted, when the context overflows in a way elision cannot relieve, or on
-an unrecoverable error. Whichever way it ends, the harness issues one final
-request with the tools
-removed and the response constrained to the report schema of
-Appendix~\ref{app:report-format}. Table~\ref{tab:knobs} lists the loop's code
-defaults, and the launch scripts of Appendix~\ref{app:models} record the value
-a sweep set where one was set.
+Each episode runs one paper with one model, opening with a fixed system
+message and a task prompt rendered from the paper's dataset row
+(Appendix~\ref{app:prompts}), and every request includes the tools of
+Appendix~\ref{app:toolset} and an ephemeral status line giving the rounds used and
+remaining. A turn may issue several tool calls, which the harness executes in
+order, appending one truncated JSON result each. Near the served context
+window a compaction step elides older tool results, leaving a placeholder with
+the character count and the on-disk path of the elided text. An episode ends
+when the model returns no tool call, reaches the round cap, exhausts its
+compute budget, overflows the context beyond what elision relieves, or hits an
+unrecoverable error, and the harness then issues one final tool-free request
+constrained to the report schema of Appendix~\ref{app:report-format}.
+Table~\ref{tab:knobs} lists the code defaults, and the launch scripts of
+Appendix~\ref{app:models} record the values a sweep set.
 
-% src: src/reclaim_repro/cli_args.py:48,55-62,189-206, src/reclaim_repro/loop.py:95-119,236-264,328-424, src/reclaim_repro/tools/__init__.py:76-99, src/reclaim_vllm/tools/result_limits.py:8-38,69-73, src/reclaim_vllm/config/config.py:12-17, src/reclaim_repro/compact.py, src/reclaim_repro/budget.py:1-69, src/reclaim_repro/tools/run_gpu.py:55-92,131-150,302-356, src/reclaim_repro/cluster.py:60-87, src/reclaim_repro/gpu_session.py:36-101, src/reclaim_repro/sandbox.py:154-166,216-258,325-409, src/reclaim_repro/env.py, src/reclaim_repro/report.py:190-214, src/reclaim_repro/live_log.py:14-25,191-266, src/reclaim_repro/telemetry_sink.py:29-135
 \begin{table}[ht]
 \centering
 \footnotesize
@@ -49,8 +42,8 @@ Tool result elided in the rewritten span & longer than 1{,}000 characters &
 compaction \\
 Compute ceiling per episode & 8, 32, or 96 H100-hours, the upper edge of the
 paper's band (Section~\ref{subsec:construction}) & budget \\
-GPUs per session & default 1, limited to the node size, which is four on the
-GH200 nodes we use & GPU session \\
+GPUs per session & default 1, limited to the node size, four on the GH200
+nodes we use & GPU session \\
 Session wall cap & default 30 minutes, maximum 1{,}440 & GPU session \\
 Compute charge & GPU count $\times$ hours held $\times$ hardware multiplier,
 in H100-equivalent hours & budget meter \\
@@ -75,16 +68,14 @@ enforces each.}
 \subsection{Tools}
 \label{app:toolset}
 
-% src: src/reclaim_repro/tools/__init__.py:1-63
-The model acts through the seven tools listed in Table~\ref{tab:tools}. There
-is no file-reading tool, so the agent reads files through the shell with
-\texttt{grep}, \texttt{sed}, and \texttt{cat}. There is also no web search,
-which means the agent can only fetch URLs it already knows or can construct.
+The model acts through the seven tools of Table~\ref{tab:tools}, and because
+there is no file-reading tool and no web search, it reads files through the
+shell with \texttt{grep}, \texttt{sed}, and \texttt{cat} and can fetch only
+URLs it already knows or can construct.
 
 \begin{table}[ht]
 \centering
 \small
-% src: src/reclaim_repro/tools/workspace_bash.py, files.py:55-79,357-383, plan.py:463-539, fetch.py:321-335, partitions.py:426-437, run_gpu.py:58-92,369-436
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.4cm}@{}}
 \toprule
@@ -119,21 +110,16 @@ caps each enforces.}
 \subsection{Hardware setup and compute accounting}
 \label{app:gpu-metering}
 
-% src: src/reclaim_repro/gpu_session.py:1-101, src/reclaim_repro/slurm.py:1-30,144-183, src/reclaim_repro/tools/run_gpu.py:1-37,55-71,82-92,95-208,302-356, src/reclaim_repro/budget.py:1-69, src/reclaim_repro/context.py:26-47, src/reclaim_repro/cluster.py:60-87, src/reclaim_repro/loop.py:345-355, src/reclaim_repro/evidence.py:116-131, src/reclaim_repro/sandbox.py:239-245
-\texttt{run\_gpu} holds a single Slurm allocation across calls. The first call
-acquires it with a fixed GPU count and wall cap, and later calls reuse it with
-no further queue wait. As the allocation nears its wall cap the harness
-releases it and acquires a replacement, and at the end of the episode it
-releases whatever it still holds. Time spent waiting in the queue is not
-charged against the budget. Time on a held node is charged, including the idle
-time while the model reasons between commands, and the harness
-refuses to acquire any allocation whose worst-case cost would exceed the
-remaining budget. Charges are applied between rounds for the wall-clock time
-held since the previous charge, and once the budget is exhausted the harness
-releases the session and issues the final report turn. Step output is
-streamed to a numbered log under \texttt{evidence/} while the step runs, so a
-step killed at the wall still leaves its output on disk.
-Figure~\ref{lst:slurm-lifecycle} shows the allocation lifecycle.
+\texttt{run\_gpu} holds one Slurm allocation across calls, as
+Figure~\ref{lst:slurm-lifecycle} shows. The first call acquires it with a fixed
+GPU count and wall cap, later calls reuse it with no further queue wait, and
+near the wall cap the harness releases and re-acquires. Queue time is not
+charged, held time is charged including idle time while the model reasons, and
+the harness refuses any allocation whose worst-case cost exceeds the remaining
+budget. Charges apply between rounds for the wall time held since the previous
+charge, and once the budget is exhausted the harness releases the session and
+issues the final report turn. Step output streams to a numbered log under
+\texttt{evidence/}, so a step killed at the wall still leaves output.
 
 \begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle}
 # acquire once; returns the instant the allocation is granted, then stays up
@@ -149,50 +135,47 @@ $ scancel <jobid>
 \subsection{Environment details}
 \label{app:sandbox}
 
-% src: src/reclaim_repro/sandbox.py:1-35,51-59,92-166,216-258,280-409, src/reclaim_repro/__main__.py:38-46, src/reclaim_repro/cluster.py:25-36,80-86, src/reclaim_repro/env.py, scripts/cluster/build_cuda_sandbox.sh:1-80
-Every shell step runs inside an Apptainer container~\citep{kurtzer2017singularity} whose image is a
-read-only CUDA 12.9 and cuDNN development root with git, a C and C++ build chain,
-\texttt{uv}, and Python 3.12. PyTorch is not preinstalled. Only bound paths
-are visible inside the container. The workspace and evidence directories are
-mounted read-write at \texttt{/repro/workspace} and \texttt{/repro/evidence},
-the paper's reference copy read-only at \texttt{/repro/reference}, and
-node-local \texttt{/tmp} and the shared package caches read-write. The host
-home directory is not mounted, and Apptainer runs with \texttt{-{}-cleanenv}
-and \texttt{-{}-no-home}. The harness forwards the Hugging Face token, the cache
-locations, and the proxy settings through an environment allowlist, so no
-secret appears on a command line.
+Every shell step runs inside an Apptainer
+container~\citep{kurtzer2017singularity} whose image is a read-only CUDA 12.9
+and cuDNN development root with git, a C and C++ build chain, \texttt{uv}, and
+Python 3.12 but no preinstalled PyTorch. Only bound paths are visible, the
+workspace and evidence directories read-write at \texttt{/repro/workspace} and
+\texttt{/repro/evidence}, the paper's reference copy read-only at
+\texttt{/repro/reference}, and node-local \texttt{/tmp} and the shared package
+caches read-write. The host home is not mounted, Apptainer runs with
+\texttt{-{}-cleanenv} and \texttt{-{}-no-home}, and the harness forwards the
+Hugging Face token, cache locations, and proxy settings through an environment
+allowlist, so no secret appears on a command line.
 
 \subsection{Run bundle and report format}
 \label{app:report-format}
 
-% src: src/reclaim_repro/inputs.py:41-49,84-98, src/reclaim_repro/workspace.py:1-66, src/reclaim_repro/reference.py:1-17,110-127, src/reclaim_repro/cleanup.py, src/reclaim_repro/evidence.py:1-19,45-56,110-141, src/reclaim_repro/tools/run_gpu.py:248-287, src/reclaim_repro/loop.py:388-401, src/reclaim_repro/live_log.py:1-25,191-266, src/reclaim_repro/telemetry_sink.py:29-135, src/reclaim_repro/gpu_usage.py
-Each run writes a self-contained directory, the run bundle, at
-\texttt{<runs-dir>/\allowbreak<arxiv\_id>/\allowbreak<budget>h/\allowbreak<run\_id>/}, which is the object the
-auditor reads. The writable \texttt{workspace/} contains the agent's clones and
-scripts, and the read-only \texttt{reference/} contains the paper's LaTeX
-sources, its OpenReview supplement, a file manifest, and an \texttt{info.json}
-of IDs. The \texttt{evidence/} directory has four fixed entries
-(\texttt{commands.log}, \texttt{trajectory.jsonl}, \texttt{env.lock}, and
-\texttt{patches/}), one numbered log per GPU step, \texttt{plan.md}, and the
-\texttt{REPORT.md} that the task prompt requires. Per-run token counts and
-GPU-utilization samples are recorded alongside the bundle. The harness never
-re-executes the agent's scoring command.
+Each run writes a self-contained run bundle at
+\texttt{<runs-dir>/\allowbreak<arxiv\_id>/\allowbreak<budget>h/\allowbreak<run\_id>/}.
+The writable \texttt{workspace/} holds the agent's clones and scripts. The
+read-only \texttt{reference/} holds the paper's LaTeX sources, its OpenReview
+supplement, a file manifest, and an \texttt{info.json} of IDs. The
+\texttt{evidence/} directory holds four fixed entries (\texttt{commands.log},
+\texttt{trajectory.jsonl}, \texttt{env.lock}, and \texttt{patches/}), plus
+one numbered log per GPU step, \texttt{plan.md}, and the \texttt{REPORT.md}
+the task prompt requires. Per-run token counts and GPU-utilization samples are
+recorded alongside, and the harness never re-executes the agent's scoring
+command.
 
-% src: src/reclaim_repro/report.py:1-24,104-214, src/reclaim_repro/cli_args.py:37-44,270-273, src/reclaim_repro/loop.py:504-515
 On the final, tool-free turn the model's output is constrained to a JSON
-schema, and the returned object is saved as \texttt{report.json} beside
-\texttt{evidence/}. Table~\ref{tab:report-schema} lists its fields. The harness
-overwrites \texttt{paper\_id} with the ID it dispatched, so the model's
-echoed ID cannot alter provenance, and it records a
-\texttt{report\_status} together with the loop's \texttt{exit\_reason}. Output
-that fails to parse, or that fails the structural check, is still written, as
-a malformed report whose \texttt{report\_status} is \texttt{degraded} and
-which includes the validation errors and an excerpt of the raw output.
+schema and saved as \texttt{report.json} beside \texttt{evidence/}, with the
+fields of Table~\ref{tab:report-schema}. The harness overwrites
+\texttt{paper\_id} with the ID it dispatched, so the model's echoed ID cannot
+alter provenance, and records a
+\texttt{report\_status} with the loop's
+\texttt{exit\_reason}, and output that fails to parse or fails the structural
+check is still written as a malformed report whose \texttt{report\_status} is
+\texttt{degraded} and which includes the validation errors and an excerpt of
+the raw output.
 
 \begin{table}[ht]
 \centering
 \small
-% src: src/reclaim_repro/report.py:40-102
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{9.2cm}@{}}
 \toprule
@@ -220,15 +203,8 @@ open first. \\
 \label{tab:report-schema}
 \end{table}
 
-% src: src/reclaim_repro/report.py:11-14,37-40, src/reclaim_repro/cleanup.py:1-40, prompts/prompt_reproduce.txt:277-290
-Because every measurement includes its own citation array, a number with no
-cited evidence file can be identified as unsupported without reading the
-transcript. The \texttt{agent\_assessment} field is the agent's own verdict on
-its run, and Section~\ref{subsec:mechanisms}
-compares this self-reported outcome with the audited grade. Since the auditor
-grades from \texttt{report.json} and \texttt{evidence/}
-(Section~\ref{sec:auditing}), the harness prunes the agent's virtual
-environment and any oversized files from the workspace once the episode
-finishes.
+Once the episode finishes the harness prunes the agent's virtual environment
+and any oversized files from the workspace, and the auditor grades from
+\texttt{report.json} and \texttt{evidence/} (Section~\ref{sec:auditing}).
 
 \input{appendix/a2_prompts}

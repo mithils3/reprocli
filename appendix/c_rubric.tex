@@ -3,69 +3,79 @@
 
 \subsection{Grading procedure}
 
-% src: rubric_audit.md:17-31; prompts/prompt_audit.txt:1-9,5-9,54-58,138-139; src/reclaim_vllm/audit/inputs.py:1-9; src/reclaim_vllm/audit/audit.py:1-12
-Each audit grades a single agent's attempt at a single paper's central claim.
-The auditor receives the claim with its pinned match target, a manifest of the
-agent's run bundle, and the frozen rubric text of Figure~\ref{lst:rubric-text},
-and it explores the bundle with the tools of Table~\ref{tab:audit-tools}, which
-the auditor receives under these limits. Every path argument is resolved
-against the run directory, and the tools reject absolute paths, backslashes,
-and parent references, so a grade can only cite the bundle under audit. It
-first places the run in the highest quality band whose conditions the cited
-evidence meets, then applies an integrity adjustment that can only lower the
-score. The rubric sets a low-score prior, so a run with no evidence scores
-low, and the auditor does not treat a printed number as verified. The auditor
-returns no verdict string. The verdict is derived from its
-row in code (Appendix~\ref{app:rubric-finalizer}).
+Each audit grades one agent's attempt at one paper's central claim. The
+auditor receives the claim with its pinned match target, a manifest of the run
+bundle, and the frozen rubric text (Figure~\ref{lst:rubric-text}), and
+it explores the bundle with the tools of Table~\ref{tab:audit-tools}, whose path
+arguments resolve against the run directory and reject absolute paths,
+backslashes, and parent references, so a grade can only cite the bundle under
+audit. It places the run in the highest quality band the cited evidence meets,
+then applies an integrity adjustment that can only lower the score. The rubric
+sets a low-score prior, so a run with no evidence scores low, and a printed number is not treated as verified. The
+auditor returns no verdict string, since the verdict is derived from its row in
+code (Appendix~\ref{app:rubric-finalizer}), and it returns a confidence and a
+one-paragraph rationale which, below confidence 0.6 or after a judgment call,
+must say what a human should examine and which file to open. Where
+recomputation is inexpensive it recomputes metrics from the stored predictions
+and outputs, and the 60\,s shell timeout rules out re-running training or
+evaluation; the prompt template is Figure~\ref{lst:audit-prompt}.
 
-% src: rubric_audit.md:33-43,35-85,87-91,93-97,99-127,150-164
+\begin{table}[ht]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{10.6cm}@{}}
+\toprule
+Tool & Function and limits \\
+\midrule
+\texttt{list\_run\_files} & Lists files and directories in the run bundle,
+optionally recursive. At most 200 entries, flagged when truncated. Prunes the
+\texttt{.git}, \texttt{\_\_pycache\_\_}, \texttt{.venv}, and
+\texttt{node\_modules} subtrees. \\
+\texttt{read\_run\_file} & Reads one text file by relative path. Default cap
+40{,}000 characters, maximum 200{,}000, flagged when truncated. \\
+\texttt{bash} & Runs one shell command with the run bundle as the working
+directory. Timeout 60\,s, after which the whole process group is killed.
+Returns stdout, stderr, and the exit code. \\
+\texttt{write\_run\_file} & Writes a new text file of up to 200{,}000 characters
+into the bundle, such as a re-scoring script to run with \texttt{bash} and cite.
+Refuses to overwrite an existing file, so agent artifacts stay intact. \\
+\bottomrule
+\end{tabular}
+\caption{The four run-directory tools available to the auditor, with the
+function and limits of each.}
+\label{tab:audit-tools}
+\end{table}
+
 The auditor works through six criteria, citing bundle evidence for each. C1
-fixes the target from the pinned tuple in the dataset row, choosing only the
-comparison operator and tolerance appropriate to the pinned bar kind. C2
-verifies that the agent ran code that computed the metric, and checks
-the executed dataset, split, checkpoint, and model size against the pinned
-scope. C3 locates the measured value and cites the file and line it came from,
-and C4 tests the number's provenance. C5 applies the C1 criterion to the
-measured and reference pair, and C6 checks that the run reproduced the
-experiment the claim rests on. For a relational claim, every check is applied
-to the baseline side with the same rigor. Two of the six criteria can end the
-grade, since a claim with no checkable target and a number with no execution
-trace both score 0.
-
-% src: rubric_audit.md:99-148; prompts/prompt_audit.txt:86-105; src/reclaim_vllm/schema/audit.py:29-39
-Each provenance break that C4 finds is recorded as a typed flag with cited
-evidence and one of three severities, and any high-severity flag caps the
-score at 0. The rubric holds the graded quantity to a stricter standard than
-the inputs. Released weights, datasets, splits, configs, and code are inputs
-the agent is expected to consume, whereas the graded quantity must have been
-computed in this run from model outputs this run produced. A value the agent reads from a
-shipped results file and discloses as such therefore caps the band at 4
-without raising a flag. The same value placed in the target slot as this run's
-own measurement is fabricated provenance.
-
-% src: src/reclaim_vllm/schema/audit.py:66-125,90-94; src/reclaim_claude/agent.py:155-178; rubric_audit.md:238-246; prompts/prompt_audit.txt:135-139
-Alongside the score, the auditor returns a confidence and a one-paragraph
-rationale. Whenever confidence falls below 0.6, or a judgment call shaped the
-score, the rationale must say what a human spot-check should examine and which
-file to open.
+fixes the target from the pinned tuple with the bar kind's operator and
+tolerance. C2 verifies that code ran which computed the metric on the pinned
+dataset, split, checkpoint, and model size. C3 locates the measured value with
+its file and line. C4 tests its provenance. C5 applies C1 to the measured and
+reference pair. C6 checks that the experiment is the one the claim rests on.
+Relational claims get the same checks on the baseline side. C1 and C2 can end
+the grade, since a claim with no checkable target and a number with no
+execution trace both score 0. Each C4
+break is a typed flag with cited evidence and one of three severities, and any
+high-severity flag caps the score at 0. Released weights, datasets, splits,
+configs, and code are inputs, whereas the graded quantity must be computed in
+this run from this run's model outputs, so a value read from a shipped results
+file and disclosed caps the band at 4 without a flag, while the same value in
+the target slot is fabricated provenance.
 
 \subsection{Score scale and verdicts}
 
-% src: rubric_audit.md:166-171,224-236; src/reclaim_vllm/audit/audit.py:74-90
 Table~\ref{tab:rubric} lists the quality bands and the verdict derived from
 each score, where a score of 1 yields \texttt{unverifiable} when the auditor
-also reports that execution was not verified. We froze the rubric text on 2026-07-16, three days after the
-dataset freeze, and every pinned-auditor grade reported in this paper
-postdates that freeze.
+also reports that execution was not verified. We froze the rubric text on
+2026-07-16, three days after the dataset freeze, and every pinned-auditor grade
+reported in this paper postdates that freeze. No band credits a claimed
+artifact wall, an agent's report that a required artifact could not be
+obtained, since curation removed those papers from the frozen split
+(Appendix~\ref{app:construction}), so the auditor grades what the run achieved
+and writes a curation escalation into \texttt{methodology\_notes} for human
+review.
 
-% src: rubric_audit.md:3-15,204-209,228-232
-No band gives credit for a claimed artifact wall, that is, an agent's report
-that a required artifact could not be obtained. Curation rules these walls out
-of the frozen split (Appendix~\ref{app:construction}). A claimed wall is therefore graded on what
-the run achieved, and the auditor writes a curation escalation into
-\texttt{methodology\_notes} for human review.
-
-% src: rubric_audit.md:166-236; src/reclaim_vllm/audit/audit.py:74-90
 {\small
 \begin{longtable}{@{}c l >{\raggedright\arraybackslash}p{6.14cm} l@{}}
 \toprule
@@ -140,50 +150,9 @@ Table~\ref{tab:rubric}.}
 \subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
 
-% src: src/reclaim_vllm/audit/audit.py:1-12,25-63,74-116
 Figure~\ref{lst:audit-finalizer} reproduces the code that runs after the model
 returns, verbatim except for one section sign written out as a word. Every
 verdict string reported in this paper comes from that code, and the
 \texttt{reproduced} boolean behind the headline rate uses its threshold of 8.
 
-% src: src/reclaim_vllm/audit/audit.py:35-63,74-90 via paper_latex/tables/gen_audit_finalizer.py
 \codefile[lst:audit-finalizer]{Python}{Verdict derivation code}{prompts/audit_finalizer.py}
-
-\subsection{Auditor prompt and tools}
-
-% src: prompts/prompt_audit.txt:35-58,79-84; src/reclaim_vllm/tools/run_dir_tools.py:1-19,274-288; src/reclaim_vllm/config/config.py:50-54
-Where recomputation is inexpensive, the auditor recomputes metrics from the
-stored predictions and outputs, and the 60\,s shell timeout rules out
-re-running training or evaluation. Figure~\ref{lst:audit-prompt} in
-Appendix~\ref{app:prompt-listings} shows the prompt template.
-
-% src: src/reclaim_vllm/tools/run_dir_tools.py:42-247,274-288; src/reclaim_vllm/config/config.py:50-54
-\begin{table}[ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{10.6cm}@{}}
-\toprule
-Tool & Function and limits \\
-\midrule
-\texttt{list\_run\_files} & List files and directories in the run bundle,
-optionally recursive. At most 200 entries are returned and the result says
-whether it truncated. The \texttt{.git}, \texttt{\_\_pycache\_\_},
-\texttt{.venv}, and \texttt{node\_modules} subtrees are pruned. \\
-\texttt{read\_run\_file} & Read one text file by relative path. The default cap
-is 40{,}000 characters and the maximum is 200{,}000, and the result flags a
-truncated read. \\
-\texttt{bash} & Run one shell command with the run bundle as the working
-directory. The timeout is 60\,s, after which the whole process group is killed.
-Returns stdout, stderr, and the exit code. \\
-\texttt{write\_run\_file} & Write a new text file of up to 200{,}000 characters
-into the bundle, such as a re-scoring script to run with \texttt{bash} and cite.
-It refuses to overwrite an existing file, so agent artifacts stay intact. \\
-\bottomrule
-\end{tabular}
-\caption{The four run-directory tools available to the auditor, with the
-function and limits of each.}
-\label{tab:audit-tools}
-\end{table}
-
-% src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
