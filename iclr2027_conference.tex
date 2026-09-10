@@ -701,11 +701,11 @@ number from it, and six of the seven stated the shortfall.
 \section{Limitations and Future Work}
 \label{sec:limitations}
 
-\paragraph{Attributing a miss to the agent.} No paper in RECLAIM has a human
-reproduction on our cluster, so the 76 runs that executed a faithful pipeline
-and landed outside tolerance cannot be split among agent error, seed and
-hardware variance, and a claim that fails away from the authors' setup. Human
-replications of that subset would settle the split.
+\paragraph{Attributing a miss to the agent.} RECLAIM has no human
+reproduction on our cluster, so for the 76 runs that executed a faithful
+pipeline and landed outside tolerance we cannot separate agent error from
+seed and hardware variance. A human replication of that subset would set the
+reference point.
 
 \paragraph{Grading.} Section~\ref{sec:auditing} validates the auditor against
 a second LLM grader and no human, and the two disagree most at the score-0
