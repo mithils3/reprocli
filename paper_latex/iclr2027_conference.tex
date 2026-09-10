@@ -38,6 +38,10 @@
 % \iclrfinalcopy
 
 \begin{document}
+% The style's flushbottom stretches the paragraph and section skips whenever a
+% page cannot fill exactly (widow and club penalties are 10000, and the
+% appendix has breakable verbatim boxes), so the whole paper is ragged bottom.
+\raggedbottom
 
 \maketitle
 
@@ -854,14 +858,11 @@ of Illinois. DeltaAI is a joint effort of the University of Illinois
 Urbana-Champaign and its National Center for Supercomputing
 Applications~\citep{bode2025deltaai}.
 
-\raggedbottom
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
 \clearpage  % appendices start on a fresh page
 \appendix
-% The appendix pages carry breakable verbatim boxes that cannot always fill a
-% page, and flushbottom then stretches the heading skips around them.
 
 \input{appendix/a_harness}
 \input{appendix/b_models}
