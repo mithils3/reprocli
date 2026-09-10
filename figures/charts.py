@@ -143,14 +143,15 @@ text.n { font-variant-numeric: tabular-nums; }
 
 # ============================================ fig: results by agent and tier
 # numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
-# sweeps[] (n, n_reproduced, mean_score); grant spent = 100 * sum(spent_h100) /
-# sum(budget_h100) over the agent's runs.
+# 2026-09-10: all 400 agent-paper cells; the 28 cells without a graded run count
+# as failures at score 0 (three at their pinned grade), see tab:missing-cells.
+# grant spent = 100 * sum(spent_h100) / sum(budget_h100) over the agent's cells.
 RESULTS = [
-    ("DeepSeek-V4-Flash", [(14, 29), (9, 28), (4, 30)], [6.21, 6.43, 5.10], 32.0),
-    ("Qwen3.6-27B", [(5, 34), (6, 26), (2, 30)], [3.91, 4.54, 3.27], 15.5),
-    ("MiniMax-M2.7", [(3, 33), (5, 32), (2, 33)], [3.18, 3.41, 2.70], 10.3),
-    ("Muse Spark 1.2", [(9, 33), (9, 32), (5, 32)], [5.64, 6.03, 3.78], 21.7),
-    ("All agents", [(31, 129), (29, 118), (13, 125)], [4.68, 5.08, 3.69], 19.4),
+    ("DeepSeek-V4-Flash", [(14, 34), (9, 33), (4, 33)], [5.29, 5.45, 4.64], 26.2),
+    ("Qwen3.6-27B", [(5, 34), (6, 33), (2, 33)], [3.91, 3.58, 3.03], 15.6),
+    ("MiniMax-M2.7", [(3, 34), (5, 33), (2, 33)], [3.09, 3.30, 2.70], 10.4),
+    ("Muse Spark 1.2", [(9, 34), (9, 33), (5, 33)], [5.47, 5.85, 3.67], 21.8),
+    ("All agents", [(31, 136), (29, 132), (13, 132)], [4.44, 4.55, 3.51], 18.5),
 ]
 TIERS = ["Run", "Retrain", "Reimplement"]
 
@@ -208,7 +209,7 @@ def fig_results():
     """Two dot-plot panels, reproduction rate and mean audit score, one row per
     agent and one dot per tier, plus a strip for the share of the grant spent.
     The exact values are in the appendix results table."""
-    b = head("reproduction rate and audit score by agent and tier", "372 graded runs")
+    b = head("reproduction rate and audit score by agent and tier", "400 agent-paper cells")
     ky = 56
     for x, tier, c in zip((X0, X0 + 60, X0 + 140), TIERS, TIER_COLOR):
         b.append(tier_dot(x + 4, ky - 4, c))
@@ -216,7 +217,7 @@ def fig_results():
     p1, p2, pw = 160, 384, 176
     gx = 574
     hy = 78
-    b.append(text(p1, hy, "reproduced, % of graded runs", 12, INK, SANS, 600))
+    b.append(text(p1, hy, "reproduced, % of cells", 12, INK, SANS, 600))
     b.append(text(p2, hy, "mean audit score", 12, INK, SANS, 600))
     b.append(text(gx, hy, "grant spent", 12, INK, SANS, 600))
 
@@ -304,15 +305,15 @@ def fig_modes():
 
 
 # ============================================ fig: score and spending by cap
-# numbers of record (2026-09-03): pinned grades over the 12 sweeps of record;
-# band = the run's budget; spent = sum(spent_h100) / sum(budget_h100) per cell.
-BANDS, BANDRUNS = [8, 32, 96], [228, 102, 42]
+# numbers of record (2026-09-10): all 400 cells, the 28 without a graded run at
+# score 0; band = the paper's cap; spent = sum(spent_h100) / sum(budget_h100).
+BANDS, BANDRUNS = [8, 32, 96], [236, 116, 48]
 COMPUTE = [
-    ("DeepSeek-V4-Flash", [6.21, 5.67, 4.44], [43.3, 43.9, 16.7]),
-    ("Qwen3.6-27B", [4.18, 3.79, 2.22], [31.8, 20.5, 2.6]),
-    ("MiniMax-M2.7", [3.62, 2.50, 1.92], [27.3, 11.9, 2.3]),
-    ("Muse Spark 1.2", [5.91, 4.55, 3.08], [39.5, 32.6, 6.1]),
-    ("All agents", [4.97, 4.04, 2.86], [35.4, 26.4, 6.5]),
+    ("DeepSeek-V4-Flash", [6.00, 4.10, 3.33], [42.0, 34.0, 13.5]),
+    ("Qwen3.6-27B", [4.03, 3.14, 1.83], [31.0, 23.4, 3.1]),
+    ("MiniMax-M2.7", [3.56, 2.41, 1.92], [26.8, 12.0, 2.3]),
+    ("Muse Spark 1.2", [5.61, 4.55, 3.08], [38.9, 32.6, 6.1]),
+    ("All agents", [4.80, 3.55, 2.54], [34.7, 25.5, 6.2]),
 ]
 
 
@@ -356,7 +357,7 @@ def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
                           halo=True))
     for x, band, n in zip(xs, BANDS, BANDRUNS):
         b.append(text(x, top + ph + 18, str(band), 12, INK, SANS, 600, "middle"))
-        b.append(text(x, top + ph + 31, f"{n} runs", 11, FAINT, SANS, 400, "middle"))
+        b.append(text(x, top + ph + 31, f"{n} cells", 11, FAINT, SANS, 400, "middle"))
 
 
 def fig_compute():
