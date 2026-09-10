@@ -679,8 +679,8 @@ Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
 (Figure~\ref{fig:band-compute}). Mean score falls with band for each of the
 four agents, and the 48 cells in the 96 H100-hour band spend 6.2\% of the
-compute granted to them. The bands hold 59, 29, and 12 papers, so the 96-hour
-cells rest on 12 cells per agent. The gradient tracks the scale of the experiment the paper demands.
+compute granted to them. The bands hold 59, 29, and 12 papers, so each agent's
+96-hour value rests on 12 cells. The gradient tracks the scale of the experiment the paper demands.
 Agents handle short evaluation-style experiments well, loading a released
 checkpoint, running an inference pass, and recomputing a metric, but they rarely
 complete a full training run. At Retrain, where the training
