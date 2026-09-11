@@ -52,20 +52,6 @@ scripts and the serve profiles.}
 \label{tab:models}
 \end{table}
 
-Four caveats qualify comparisons across models. Reasoning effort is held
-constant within the three DeepSeek-V4-Flash sweeps and within the three Muse
-Spark 1.2 sweeps, at different settings, and the Qwen3.6-27B and MiniMax-M2.7
-launch scripts set none, so effort is uncontrolled across models. Precision
-differs by model, and MiniMax-M2.7 is a third-party W4A16
-requantization~\citep{lin2023awq}, lossy by construction, served under the
-upstream name with no correction. Served context differs, so the agent input
-ceiling differs, from 163{,}840 tokens to 967{,}232, and a run that exhausts
-its context on one model would have had more room on another. Muse Spark 1.2 runs on the vendor's servers, so
-its precision, batching, and decoding defaults are unrecorded, and we fix only
-the reasoning effort and the round budget. Separately, we disable two
-compilation fusions for DeepSeek-V4-Flash because we observed them garbling this
-checkpoint's decoding on this hardware.
-
 We produce the grades of record with a separate grading client on the
 Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
 run bundle capped at 25 rounds, and re-grading a batch overwrites its audit, so
