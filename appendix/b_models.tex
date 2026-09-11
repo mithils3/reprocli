@@ -10,14 +10,6 @@ call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
 compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
 through the Meta Model API between 2026-08-14 and 2026-08-23.
 Table~\ref{tab:models} lists the four configurations.
-For the three vLLM-served models the launch script takes precedence over the
-profile where they disagree, and ``not set'' means the server or checkpoint
-supplies the value. The agent input ceiling is the served context less the
-32{,}768-token completion reservation, the \texttt{top\_p} of $0.95$ follows
-the DeepSeek-V4-Flash card's agentic
-recommendation~\citep{deepseekai2026flashcard}, and concurrent papers, the
-number of papers a job runs at once, is listed for the Run, Retrain, and
-Reimplement tiers in that order.
 
 \begin{table}[ht]
 \centering
@@ -52,7 +44,6 @@ Tool-call parser & \texttt{deepseek\_v4} & \texttt{qwen3\_coder} &
 Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
 \texttt{minimax\_m2} & API \\
 \texttt{max\_num\_seqs} & not set & 32 & not set & vendor-served \\
-Concurrent papers & 10 / 10 / 12 & 6 / 10 / 6 & 6 / 10 / 12 & 8 / 8 / 8 \\
 Tool rounds & 300 & 300 & 300 & 300 \\
 \bottomrule
 \end{tabular}
