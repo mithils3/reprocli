@@ -7,10 +7,9 @@ a per-model profile the launcher expands into one \texttt{vllm serve} command,
 and a sweep is one batch job per model per tier that launches the server and
 runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
 call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
-compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached through the Meta Model API
-between 2026-08-14 and 2026-08-23, its sweeps run as a login-node process with
-no job wall clock, and since the API advertises no context length we declare
-1{,}000{,}000 tokens. Table~\ref{tab:models} lists the four configurations.
+compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
+through the Meta Model API between 2026-08-14 and 2026-08-23.
+Table~\ref{tab:models} lists the four configurations.
 For the three vLLM-served models the launch script takes precedence over the
 profile where they disagree, and ``not set'' means the server or checkpoint
 supplies the value. The agent input ceiling is the served context less the
