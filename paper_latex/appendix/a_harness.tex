@@ -65,15 +65,12 @@ caps each enforces.}
 \label{app:gpu-metering}
 
 \texttt{run\_gpu} holds one Slurm allocation across calls, as
-Figure~\ref{lst:slurm-lifecycle} shows. The first call acquires it with a fixed
-GPU count and wall cap, later calls reuse it with no further queue wait, and
-near the wall cap the harness releases and re-acquires. Queue time is not
-charged, held time is charged including idle time while the model reasons, and
-the harness refuses any allocation whose worst-case cost exceeds the remaining
-budget. Charges apply between rounds for the wall time held since the previous
-charge, and once the budget is exhausted the harness releases the session and
-issues the final report turn. Step output streams to a numbered log under
-\texttt{evidence/}, so a step killed at the wall still leaves output.
+Figure~\ref{lst:slurm-lifecycle} shows, acquiring it on the first call with a
+fixed GPU count and wall cap and re-acquiring near the cap. Queue time is free,
+and held time is charged between rounds, idle time while the model reasons
+included. The harness refuses any allocation whose worst-case cost exceeds the
+remaining budget, and once the budget is exhausted it releases the session and
+issues the final report turn.
 
 \begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle}
 # acquire once; returns the instant the allocation is granted, then stays up
