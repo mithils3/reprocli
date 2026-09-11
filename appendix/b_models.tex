@@ -93,8 +93,8 @@ per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
 \paragraph{Token usage and cost.} Each rate comes from that vendor's own
 endpoint listing on 2026-08-17, with cached prompt tokens billed at the
 cache-read rate where one is listed, and Table~\ref{tab:cost} covers the 396
-runs that started, the 372 graded runs and the 24 runs of
-Appendix~\ref{app:missing-cells} with token counts, plus the GPU time each
+runs that started, the 372 graded runs and the 24 ungraded runs
+with token counts, plus the GPU time each
 agent drew from its grant. Three things qualify the total. The token dollars
 of the three cluster-served models are what a rerun against the vendor
 endpoint would cost, and our serving GPUs' hours sit outside the table. The
@@ -134,8 +134,8 @@ list rate and \$2 per H100-hour.}
 
 Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
 and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
-8 or higher, a cell without a graded run counts as a failure at score 0
-(Appendix~\ref{app:missing-cells}), grant spent is H100-hours used over hours
+8 or higher, a cell without a graded run counts as a failure at score 0,
+grant spent is H100-hours used over hours
 granted, and the band is the paper's cap in H100-hours.
 
 \begin{table}[ht]
@@ -193,64 +193,7 @@ agent-paper cells, by agent, tier, and compute band.}
 % cells = (5.13+3.51+3.03+5.00)/4 = 4.17, equal to the tier-weighted mean
 % (4.44*136 + 4.55*132 + 3.51*132)/400 = 4.17.
 % numbers of record (2026-09-10): index.json's 372 graded runs plus the 28
-% cells of tab:missing-cells (score 0, or the pinned grade 0/2/0 for the three
+% cells without a graded run (score 0, or the pinned grade 0/2/0 for the three
 % graded-unlabeled runs; spent_h100 and total_h100 from repro_runs for the 24
 % runs that started, 0 of 8 h for the four 2510.20725 cells); the same
 % constants as paper_latex/figures/charts.py RESULTS and COMPUTE.
-
-\subsection{Cells without a graded run}
-\label{app:missing-cells}
-
-% numbers of record: repro_runs + audit_runs (Supabase, read 2026-09-10) joined
-% to the HF eval_100 tiers and tools/anon_viewer/public/data/index.json; the
-% renderer defect reproduced locally with `python -m reclaim_repro --paper-id
-% 2510.20725` (ValueError: unfilled placeholders: {O}) and fixed the same day;
-% the three late runs carry two pinned Sonnet passes each. Policy (2026-09-10):
-% every cell without a graded run counts as a failure; the text states what each
-% cell holds and gives no cause for the 19 runs without a final report.
-Four agents over 100 papers give 400 cells, 372 of which hold a run with a
-pinned grade and a failure-mode label. Table~\ref{tab:missing-cells} lists the
-other 28, all counted as failures in Section~\ref{subsec:results} and
-Table~\ref{tab:results}, at score 0 or at the pinned grade, 0, 2, and 0, for
-the three that hold one, and outside the failure-mode counts of
-Section~\ref{subsec:mechanisms}. In 19 cells the run ended without a final
-report, so the auditor had nothing to grade. The 4 cells with no run share one
-Retrain
-paper whose target contains the characters \texttt{\{O\}}, which the
-placeholder-filling routine (Appendix~\ref{app:prompts}) rejected as an
-incomplete prompt, a check we have since corrected; the 3 cells with a grade
-and no label were graded after we had labeled their sweep, and in the 2 cells
-with a run and no pinned grade the auditor's pass started and returned no
-verdict. The 24 runs
-that started are in the compute and cost figures and spent 118 of the
-1{,}888 H100-hours of Section~\ref{subsec:compute}.
-
-\begin{table}[ht]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.4cm}lrr>{\raggedright\arraybackslash}p{4.6cm}@{}}
-\toprule
-What the cell holds & Agent & Tier & $n$ & Papers \\
-\midrule
-A run without a final report & DeepSeek-V4-Flash & Run & 5 &
-2504.12397, 2505.10475, 2505.24864, 2506.01511, 2506.18896 \\
-& & Retrain & 4 & 2410.19933, 2506.10943, 2510.19784, 2511.00119 \\
-& & Reimplement & 3 & 2505.22596, 2506.20024, 2510.15194 \\
-& Qwen3.6-27B & Retrain & 6 & 2503.09657, 2506.08898, 2506.19839,
-2510.05874, 2510.19314, 2510.19784 \\
-& & Reimplement & 1 & 2506.20024 \\
-\addlinespace
-No run & all four & Retrain & 4 & 2510.20725 \\
-\addlinespace
-A pinned grade, no label & Qwen3.6-27B & Reimplement & 2 &
-2510.25529, 2511.19808 \\
-& MiniMax-M2.7 & Run & 1 & 2506.18896 \\
-\addlinespace
-A run, no pinned grade & Muse Spark 1.2 & Run & 1 & 2503.23035 \\
-& & Reimplement & 1 & 2510.08177 \\
-\bottomrule
-\end{tabular}
-\caption{The 28 agent-paper cells without a graded run.}
-\label{tab:missing-cells}
-\end{table}
