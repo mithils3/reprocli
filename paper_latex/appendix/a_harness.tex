@@ -16,54 +16,8 @@ when the model returns no tool call, reaches the round cap, exhausts its
 compute budget, overflows the context beyond what elision relieves, or hits an
 unrecoverable error, and the harness then issues one final tool-free request
 constrained to the report schema of Appendix~\ref{app:report-format}.
-Table~\ref{tab:knobs} lists the code defaults, and the launch scripts of
-Appendix~\ref{app:models} record the values a sweep set.
-
-\begin{table}[ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{6.2cm}l@{}}
-\toprule
-Parameter & Value & Where enforced \\
-\midrule
-Rounds per episode & 300 & agent loop \\
-Model output per turn & 32{,}768 tokens & agent loop \\
-Reasoning kept from a turn cut at the output cap & 2{,}000 characters & agent loop \\
-Length nudges before the final turn & 2 & agent loop \\
-Tool result returned to the model & 40{,}000 serialized characters, at least
-200 of each string & tool wrapper \\
-Retries of a transient tool error & 1 & tool wrapper \\
-Compaction trigger & 0.70 of the served context window less the completion
-reservation & compaction \\
-Recent turns kept verbatim & 20{,}000 tokens, sized at three characters per
-token & compaction \\
-Tool result elided in the rewritten span & longer than 1{,}000 characters &
-compaction \\
-Compute ceiling per episode & 8, 32, or 96 H100-hours, the upper edge of the
-paper's band (Section~\ref{subsec:construction}) & budget \\
-GPUs per session & default 1, limited to the node size, four on the GH200
-nodes we use & GPU session \\
-Session wall cap & default 30 minutes, maximum 1{,}440 & GPU session \\
-Compute charge & GPU count $\times$ hours held $\times$ hardware multiplier,
-in H100-equivalent hours & budget meter \\
-Hardware multiplier & 1.0 for the H100 reference unit and for the GH200 nodes
-we allocate on & budget meter \\
-Wall warning and re-acquire threshold & 120\,s left on the allocation & GPU
-session \\
-Output returned from a step killed at the wall & last 4{,}000 characters & GPU
-session \\
-Grace before an ungranted allocation request is abandoned & the hold's wall
-cap plus 8 hours, overridable from the environment & GPU session \\
-Cores a CPU step is pinned to & 12 & sandbox \\
-Address space of a CPU step & 16\,GiB & sandbox \\
-Excerpt kept in a malformed report & 4{,}000 characters & report writer \\
-\bottomrule
-\end{tabular}
-\caption{Harness parameters, their code defaults, and the component that
-enforces each.}
-\label{tab:knobs}
-\end{table}
+The launch scripts of Appendix~\ref{app:models} record the values a sweep
+set.
 
 \subsection{Tools}
 \label{app:toolset}
