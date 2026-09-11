@@ -107,8 +107,7 @@ supplement, a file manifest, and an \texttt{info.json} of IDs. The
 \texttt{trajectory.jsonl}, \texttt{env.lock}, and \texttt{patches/}), plus
 one numbered log per GPU step, \texttt{plan.md}, and the \texttt{REPORT.md}
 the task prompt requires. Per-run token counts and GPU-utilization samples are
-recorded alongside, and the harness never re-executes the agent's scoring
-command.
+recorded alongside.
 
 On the final, tool-free turn the model's output is constrained to a JSON
 schema and saved as \texttt{report.json} beside \texttt{evidence/}, with the
