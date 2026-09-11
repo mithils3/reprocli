@@ -462,16 +462,16 @@ and the per-agent totals.
 
 Figure~\ref{fig:main-results} reports every agent-paper cell, and
 Table~\ref{tab:results} in Appendix~\ref{app:models} lists the values. Each
-agent has one cell per paper, and a cell without a graded run counts as a
-failure at score 0. Appendix~\ref{app:missing-cells} lists the 28 such cells,
-and the failure-mode labels of Section~\ref{subsec:mechanisms} cover the 372
-graded runs. The auditor confirms reproduction on 73 of the 400 cells.
+agent has one cell per paper, a cell without a graded run counts as a
+failure at score 0, and the failure-mode labels of
+Section~\ref{subsec:mechanisms} cover the 372 graded runs. The auditor
+confirms reproduction on 73 of the 400 cells.
 DeepSeek-V4-Flash is the strongest of the four agents. It recovers the pinned
 number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
 Reimplement, and the four agents span a factor of 1.7 in mean audit score,
 from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
 % numbers of record (2026-09-10): all 400 cells = index.json's 372 graded runs
-% + the 28 cells of tab:missing-cells at score 0 (three at their pinned grade
+% + the 28 cells without a graded run at score 0 (three at their pinned grade
 % 0/2/0); per-agent means 5.13 / 3.51 / 3.03 / 5.00, 5.13/3.03 = 1.69. Policy
 % (2026-09-10): a cell without a graded run is a failure at score 0. Derivation
 % over repro_runs + audit_runs + HF eval_100 + index.json.

@@ -48,7 +48,7 @@ each run while the sweep is still in progress, over a vLLM endpoint capped at
 in-sweep grades. We resume a killed job with \texttt{RESUME=1}, which skips
 papers whose verdict is already on disk, regrades nothing, and retries any
 paper whose run ended without a verdict, and a paper that produces no bundle
-counts as a failure at score 0 (Appendix~\ref{app:missing-cells}). When
+counts as a failure at score 0. When
 grading a batch we take each paper's newest attempt and drop runs still in
 progress unless \texttt{-{}-include-running} is passed, since a half-written
 bundle measures the harness. Each verdict row
