@@ -47,21 +47,8 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-The auditor works through six criteria, citing bundle evidence for each. C1
-fixes the target from the pinned tuple with the bar kind's operator and
-tolerance. C2 verifies that code ran which computed the metric on the pinned
-dataset, split, checkpoint, and model size. C3 locates the measured value with
-its file and line. C4 tests its provenance. C5 applies C1 to the measured and
-reference pair. C6 checks that the experiment is the one the claim rests on.
-Relational claims get the same checks on the baseline side. C1 and C2 can end
-the grade, since a claim with no checkable target and a number with no
-execution trace both score 0. Each C4
-break is a typed flag with cited evidence and one of three severities, and any
-high-severity flag caps the score at 0. Released weights, datasets, splits,
-configs, and code are inputs, whereas the graded quantity must be computed in
-this run from this run's model outputs, so a value read from a shipped results
-file and disclosed caps the band at 4 without a flag, while the same value in
-the target slot is fabricated provenance.
+The auditor works through six criteria, citing bundle evidence for each, as
+the prompt of Figure~\ref{lst:audit-prompt} states.
 
 \subsection{Score scale and verdicts}
 
