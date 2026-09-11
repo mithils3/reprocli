@@ -93,10 +93,7 @@ Python 3.12 but no preinstalled PyTorch. Only bound paths are visible, the
 workspace and evidence directories read-write at \texttt{/repro/workspace} and
 \texttt{/repro/evidence}, the paper's reference copy read-only at
 \texttt{/repro/reference}, and node-local \texttt{/tmp} and the shared package
-caches read-write. The host home is not mounted, Apptainer runs with
-\texttt{-{}-cleanenv} and \texttt{-{}-no-home}, and the harness forwards the
-Hugging Face token, cache locations, and proxy settings through an environment
-allowlist, so no secret appears on a command line.
+caches read-write. The host home is not mounted.
 
 \subsection{Run bundle and report format}
 \label{app:report-format}
