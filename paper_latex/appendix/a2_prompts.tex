@@ -11,9 +11,5 @@ dataset row (Appendix~\ref{app:dataset-schema}), from the episode's compute
 ceiling, or from the container paths of Appendix~\ref{app:sandbox}. Rendering
 fails on an unfilled field, every field has a fallback string that states
 absence, and the renderer omits \texttt{match\_target.config}, so the agent
-derives the configuration that produces the target value from the paper. We
-revised the template from transcript dissections of earlier runs, checking
-each revision against other models' successful runs, removed two
-model-specific rules on 2026-06-28 (a push toward requesting more GPUs and a
-budget-fraction test for under-running), and have not changed it since
-2026-07-11, the version Figure~\ref{lst:task-prompt} prints.
+derives the configuration that produces the target value from the paper.
+Figure~\ref{lst:task-prompt} prints the template.
