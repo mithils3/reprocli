@@ -65,12 +65,9 @@ per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
 % endpoint listing on 2026-08-17; arithmetic as in ~/sweeps/cost-2026-09-07.py.
 % Cached prompt tokens are billed at the cache-read rate for DeepSeek-V4-Flash,
 % MiniMax-M2.7, and Muse Spark 1.2.
-\paragraph{Token usage and cost.} Each rate comes from that vendor's own
-endpoint listing on 2026-08-17, with cached prompt tokens billed at the
-cache-read rate where one is listed, and Table~\ref{tab:cost} covers the 396
-runs that started, the 372 graded runs and the 24 ungraded runs
-with token counts, plus the GPU time each
-agent drew from its grant. Three things qualify the total. The token dollars
+\paragraph{Token usage and cost.} We take token pricing from each model's
+provider, and Table~\ref{tab:cost} lists the totals. Three things qualify the
+total. The token dollars
 of the three cluster-served models are what a rerun against the vendor
 endpoint would cost, and our serving GPUs' hours sit outside the table. The
 MiniMax-M2.7 rate is the upstream model's while we served the requantization
