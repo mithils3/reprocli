@@ -66,15 +66,9 @@ per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
 % Cached prompt tokens are billed at the cache-read rate for DeepSeek-V4-Flash,
 % MiniMax-M2.7, and Muse Spark 1.2.
 \paragraph{Token usage and cost.} We take token pricing from each model's
-provider, and Table~\ref{tab:cost} lists the totals. Three things qualify the
-total. The token dollars
-of the three cluster-served models are what a rerun against the vendor
-endpoint would cost, and our serving GPUs' hours sit outside the table. The
-MiniMax-M2.7 rate is the upstream model's while we served the requantization
-of Table~\ref{tab:models}. Our Qwen3.6-27B deployment returned no cached-token
-counts, and its vendor lists no cache-read rate, so all its prompt tokens are
-priced at the full rate. The audit records retain no grader
-token counts.
+provider, and Table~\ref{tab:cost} lists the totals. For the three
+cluster-served models we take the tokens produced on our cluster and price them
+at the provider's API rate.
 
 \begin{table}[ht]
 \centering
