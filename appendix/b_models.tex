@@ -68,7 +68,9 @@ per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
 \paragraph{Token usage and cost.} We take token pricing from each model's
 provider, and Table~\ref{tab:cost} lists the totals. For the three
 cluster-served models we take the tokens produced on our cluster and price them
-at the provider's API rate.
+at the provider's API rate. Figure~\ref{fig:app-b-tokens} shows the tokens of
+each graded run by agent, and Figure~\ref{fig:app-b-cost} its cost and the
+split between tokens and GPU time.
 
 \begin{table}[ht]
 \centering
@@ -93,6 +95,22 @@ All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12
 \caption{Token usage and cost of the 396 runs that started.}
 \label{tab:cost}
 \end{table}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_tokens}
+\caption{Prompt, cached prompt, and completion tokens per graded run by agent,
+one dot per run on a shared log axis with the median ticked.}
+\label{fig:app-b-tokens}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_cost}
+\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost},
+with the ratio of token cost to GPU cost at right and a dashed line at parity.}
+\label{fig:app-b-cost}
+\end{figure}
 
 \subsection{Results by agent, tier, and compute band}
 \label{app:results-table}

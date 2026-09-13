@@ -9,7 +9,9 @@ message and a task prompt rendered from the paper's dataset row
 (Appendix~\ref{app:prompts}), and every request includes the tools of
 Appendix~\ref{app:toolset} and an ephemeral status line giving the rounds used and
 remaining. A turn may issue several tool calls, which the harness executes in
-order, appending one truncated JSON result each. Near the served context
+order, appending one truncated JSON result each, and
+Figure~\ref{fig:app-a-round-anatomy} shows one round as the event
+transcript records it. Near the served context
 window a compaction step elides older tool results, leaving a placeholder with
 the character count and the on-disk path of the elided text. An episode ends
 when the model returns no tool call, reaches the round cap, exhausts its
@@ -18,6 +20,15 @@ unrecoverable error, and the harness then issues one final tool-free request
 constrained to the report schema of Appendix~\ref{app:report-format}.
 The launch scripts of Appendix~\ref{app:models} record the values a sweep
 set.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_A_round_anatomy}
+\caption{Round 97 of MiniMax-M2.7 on FairImagen (arXiv~2510.21363) as the
+event transcript records it, from the reasoning to the metered
+\texttt{run\_gpu} result.}
+\label{fig:app-a-round-anatomy}
+\end{figure}
 
 \subsection{Tools}
 \label{app:toolset}

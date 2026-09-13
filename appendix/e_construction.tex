@@ -83,3 +83,23 @@ dropped any paper whose minimal experiment calls a paid or closed model API.
 The Stage II rule then selected the evaluation split from what remained, the
 development split took the cheapest eligible papers left in each tier, and
 Appendix~\ref{app:dataset-schema} gives their sizes.
+Figure~\ref{fig:app-ef-compute-strip} shows the audited compute of the 100
+evaluation papers by tier, and Figure~\ref{fig:app-ef-arxiv-months} shows
+their arXiv posting months.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_EF_compute_strip}
+\caption{The audited compute of the 100 evaluation papers, one dot per paper
+on a log axis, with a bar at each tier's median and papers below the axis
+floor in the leftmost slot.}
+\label{fig:app-ef-compute-strip}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_EF_arxiv_months}
+\caption{The 100 evaluation papers by the month of their arXiv identifier,
+stacked by tier.}
+\label{fig:app-ef-arxiv-months}
+\end{figure}
