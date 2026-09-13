@@ -372,7 +372,7 @@ any rate back to the venue level.
 
 \textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
 opening the evidence behind each availability call and re-deriving each compute
-estimate (Appendices~\ref{app:human-audit} and~\ref{app:recompute}). Papers whose artifacts proved
+estimate (Appendix~\ref{app:human-audit}). Papers whose artifacts proved
 inaccessible or that depended on paid third-party APIs failed the audit and
 were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
@@ -683,7 +683,7 @@ bound the effect.
 \paragraph{Scope.} The 100 papers come from one venue and one year, have a
 minimal experiment we estimate at 96 H100-hours or less, and exclude papers
 whose experiment calls a paid or closed model API (15 in the audit pool,
-Appendix~\ref{app:substitutions}). No author reviewed our match targets. We
+Appendix~\ref{app:splits}). No author reviewed our match targets. We
 plan a second venue.
 
 \paragraph{Agents.} Each cell holds at most one run, reported without
@@ -735,9 +735,9 @@ method without checking it against the paper falls when the two strongest
 agents are pooled against the two weakest, and measuring the wrong released
 artifact does not. We read this to mean that the strongest agent can run an
 experiment when the authors' code is released and struggles to design one
-from the paper alone. We release the benchmark, the harness, the frozen
-rubric, and every graded transcript, and the construction pipeline can
-rebuild the set from each conference cycle at low human cost, so the
+from the paper alone. The harness, the frozen rubric, and every graded
+transcript accompany this submission, the benchmark itself follows after
+review, and the construction pipeline can rebuild the set from each conference cycle at low human cost, so the
 measurement can be repeated on fresh papers as agents improve. The step
 beyond it, writing code for an unpublished idea, remains open.
 % numbers: 48/32/16 best rate per tier as in the abstract (DSv4 14/29, 9/28;
@@ -758,8 +758,8 @@ window, and states the serving configuration it ran under.
 frozen before any reported sweep was graded, and
 Appendix~\ref{app:auditor-validation} reports the auditor's agreement with
 human graders.
-\item \textbf{Dataset.} Appendix~\ref{app:dataset-schema} documents every field
-and both splits.
+\item \textbf{Dataset.} The audited benchmark is released after review, and
+Appendix~\ref{app:dataset-schema} documents every field and both splits.
 \item \textbf{Artifacts.} Code, batch scripts, and the run bundles
 are submitted as anonymized supplementary material, and
 Appendix~\ref{app:running} gives the commands that serve a model, run a

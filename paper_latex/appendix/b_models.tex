@@ -8,7 +8,7 @@ and a sweep is one batch job per model per tier that launches the server and
 runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
 call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
 compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
-through the Meta Model API between 2026-08-14 and 2026-08-23.
+through the Meta Model API.
 Table~\ref{tab:models} lists the four configurations.
 
 \begin{table}[ht]
