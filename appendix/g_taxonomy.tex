@@ -151,11 +151,9 @@ Graded runs & 87 & 90 & 98 & 97 & 372 \\
 
 \subsection{Failure taxonomy examples}
 
-The signature of \texttt{reimplement-without-validating} is a reference the
-paper supplies that the run never checks against. On arXiv paper 2510.08177
-the agent wrote its own version of the paper's baseline, scored it below the
-value the paper reports for that same baseline, and kept building on its own
-version.
+For \texttt{reimplement-without-validating}, on paper 2510.08177 the agent
+wrote its own version of the paper's baseline, scored it below the paper's
+number for that baseline, and kept building on its version anyway.
 
 \begin{agentturn}{Round 56, agent.\ Paper 2510.08177, MiniMax-M2.7, sweep 2936132.}
 Best All: 40.82\% (ep 20)\\
@@ -165,33 +163,28 @@ Our CE-only baseline: 54.21\%\\
 Gap vs target: -25.08\%
 \end{agentturn}
 
-The third and fourth lines are the paper's own baseline and the agent's
-reimplementation of it, and the disagreement, visible in the agent's own
-closing numbers, persisted to the end of the run.
+The third and fourth lines are the paper's baseline and the agent's copy of
+it. The gap was still there at the end of the run.
 
-The signature of \texttt{scope-substitution} is a round in which the agent
-names the pinned arm and then chooses a different one. On arXiv paper
-2505.10039 the agent made that choice at round 6 before writing any code,
-giving implementation cost as the reason, never measured the pinned arm, and
-produced the graded number from the arm it chose instead.
+For \texttt{scope-substitution}, on paper 2505.10039 the agent picked a
+different arm from the pinned one at round 6, before writing any code, because
+it was easier to implement. It never measured the pinned arm and reported the
+number from the arm it chose.
 
 \begin{agentturn}{Round 6, agent.\ Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
-Neither arm had released code, so either arm required a port, and the agent
-chose between them on implementation effort.
+Neither arm had released code, so both needed a port, and the agent chose
+the easier one.
 
-The signature of \texttt{environment-fights} is a version incompatibility in
-the released stack that persists long enough to corrupt the run's own data. On
-arXiv paper 2511.20906 an incompatible pair of robosuite and mujoco versions
-silently broke the released absolute-action dataset converter, and the agent
-had already trained on the corrupted output by the time it discovered the
-break.
+For \texttt{environment-fights}, on paper 2511.20906 an incompatible pair of
+robosuite and mujoco versions silently broke the released dataset converter.
+The agent had already trained on the broken output when it found the problem.
 
 \begin{agentturn}{Round 233, agent.\ Paper 2511.20906, DeepSeek-V4-Flash-0731, sweep 2918306.}
 This is the smoking gun: **the saved abs dataset is broken** -{}- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 
 The defect is in the released code as it runs on this host, and the run
-exhausted its budget on it.
+spent the rest of its budget on it.
