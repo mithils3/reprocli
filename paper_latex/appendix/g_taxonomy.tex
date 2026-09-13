@@ -17,7 +17,7 @@ under-determined-target, scope-collapse, unavailability-concluded-from-prose,
 context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
 report-serialization-fault and report-serialization-collapse,
 tool-call-format-collapse, protocol-drift-direction-flip,
-eval-protocol-shopping, verified-non-attempt, and success. Eleven of the 36
+eval-protocol-shopping, verified-non-attempt, and success. Ten of the 36
 had a valid label that disagreed with the pinned verdict. Seven of those were
 labeled outside-tolerance on a disqualified run, and four kept their label
 because the flag concerned only the run's self-report.
@@ -123,6 +123,28 @@ value for the pinned metric anywhere in the run bundle. &
 \end{longtable}
 \endgroup
 
+Figure~\ref{fig:app-g-relabel-flow} shows where the two passes moved the 36
+runs, and Figure~\ref{fig:app-g-agent-tier} splits
+Table~\ref{tab:failure-modes-by-agent} by tier.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/app_G_relabel_flow}
+\caption{The 36 runs the two relabel passes re-read, from the label each
+carried to its mode of record, with ribbons in the color of the destination
+mode and widths in runs.}
+\label{fig:app-g-relabel-flow}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/app_G_agent_tier}
+\caption{Primary failure mode by agent and tier over the 372 graded runs, each
+bar normalized to its sweep's run count, in the order and colors of
+Figure~\ref{fig:failure-modes}.}
+\label{fig:app-g-agent-tier}
+\end{figure}
+
 \begin{table}[ht]
 \centering
 \fontsize{8}{9.6}\selectfont
@@ -176,7 +198,17 @@ The EAP method shows the largest gap and is the cleanest to implement (single fo
 \end{agentturn}
 
 Neither arm had released code, so both needed a port, and the agent chose
-the easier one.
+the easier one. Figure~\ref{fig:app-g-exit-by-mode} shows the rounds used and
+the share of the grant spent at exit for every graded run by mode.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_G_exit_by_mode}
+\caption{Rounds used and share of the H100 grant spent at exit, one dot per
+graded run, with each mode's median as a tick. Never launched an experiment
+and Echoed a shipped number exit earliest.}
+\label{fig:app-g-exit-by-mode}
+\end{figure}
 
 For \texttt{environment-fights}, on paper 2511.20906 an incompatible pair of
 robosuite and mujoco versions silently broke the released dataset converter.

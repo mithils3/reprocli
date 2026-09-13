@@ -677,21 +677,21 @@ only what a run saved to disk. A second grader per run is the next step.
 
 \paragraph{Contamination.} Every agent postdates the papers and may have
 trained on their code, and a memorized fix would still count as reproduced
-under our grading, inflating the two released-code tiers. We ran no
-memorization screen, and that of \citet{adamczewski2026mirrorcode} would
-bound the effect.
+under our grading, inflating the two released-code tiers.
 
-\paragraph{Scope.} The 100 papers come from one venue and one year, have a
-minimal experiment we estimate at 96 H100-hours or less, and exclude papers
+\paragraph{Scope.} The 100 papers come from one venue and one year, carry a
+pinned experiment that fits under a 96 H100-hour cap, and exclude papers
 whose experiment calls a paid or closed model API (15 in the audit pool,
-Appendix~\ref{app:splits}). No author reviewed our match targets. We
-plan a second venue.
+Appendix~\ref{app:splits}).
 
-\paragraph{Agents.} Each cell holds at most one run, reported without
-intervals, and about 30 runs per tier resolve only differences of tens of
-points. The roster omits Claude, GPT, and Gemini, and serving settings
-confound the ordering (Appendix~\ref{app:models}). We plan repeated runs and
-a closed frontier agent.
+\paragraph{Agents.} Each cell holds at most one run and the rates are point
+estimates, so we read the large gaps between agents and leave close pairs
+within a tier unranked. The roster omits Claude, GPT, and Gemini, and the
+four agents ran under different precisions, context windows, and reasoning
+settings (Table~\ref{tab:models}), so the ordering compares served
+configurations as much as models. Repeated runs and the closed frontier
+models are for groups with access to them, and the harness already drives
+one vendor-served agent over its API (Appendix~\ref{app:models}).
 
 \paragraph{Harness and host.} All runs used one GH200 cluster, whose aarch64
 packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
