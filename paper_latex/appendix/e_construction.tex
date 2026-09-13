@@ -16,16 +16,10 @@ a \texttt{.tex} file and 1,547 with a supplement.
 \label{app:classifier}
 
 We sampled 1,000 papers uniformly from the corpus rows with LaTeX source, and
-MiniMax-M2.7~\citep{minimax2026m2}, served on vLLM at a 196,608-token context
-with requests capped at 128,000 input tokens, classified them on 2026-06-11.
+MiniMax-M2.7~\citep{minimax2026m2} classified them.
 Each classification runs an agent loop over ten tools, five over GitHub, three
 over Hugging Face, a URL fetch, and a supplement reader, and every artifact
-signal records how a tool established it. Three guards bound the loop: a
-10-round cap, a repeated-call cutoff, and a context budget. Each is recorded in
-the verification status, and a row enters the pool only if every applicable
-signal was tool-established and the loop exited naturally. The final tool-free turn
-returns strict JSON with neither score nor tier, and the saved tool
-conversation lets us re-open any call. The prompt is
+signal records how a tool established it. The prompt is
 Figure~\ref{lst:classifier-prompt}, where \texttt{\{PAPER\_TEXT\}} stands for
 the rendered paper, its supplement manifest with text excerpts, and its LaTeX
 source.
@@ -45,7 +39,7 @@ stated figures differ by more than 20\% of the larger, assigns a band from the
 ladder 0--8, 8--32, 32--96, and above 96 H100-hours, and raises a human-review
 flag when the basis is unspecified or the recompute disagrees.
 
-\begin{table}[t]
+\begin{table}[!ht]
 \centering
 \small
 \begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
