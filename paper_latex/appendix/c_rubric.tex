@@ -37,21 +37,19 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-The auditor works through six criteria, citing bundle evidence for each, as
-the prompt of Figure~\ref{lst:audit-prompt} states.
-
 \subsection{Score scale and verdicts}
 
-Table~\ref{tab:rubric} lists the quality bands and the verdict derived from
-each score, where a score of 1 yields \texttt{unverifiable} when the auditor
-also reports that execution was not verified. We froze the rubric text on
-2026-07-16, three days after the dataset freeze, and every pinned-auditor grade
-reported in this paper postdates that freeze. No band credits a claimed
-artifact wall, an agent's report that a required artifact could not be
-obtained, since curation removed those papers from the frozen split
-(Appendix~\ref{app:construction}), so the auditor grades what the run achieved
-and writes a curation escalation into \texttt{methodology\_notes} for human
-review.
+Table~\ref{tab:rubric} lists the score bands and the verdict each score maps
+to. A score of 1 becomes \texttt{unverifiable} when the auditor also reports
+that it found no evidence the code ran. We froze the rubric text on 2026-07-16,
+three days after the dataset freeze, and every pinned-auditor grade in this
+paper was produced after that date. An agent that reports it could not obtain
+a required artifact, such as weights or a dataset, gets no credit for that
+report. We had already removed every paper with a missing artifact from the
+frozen split (Appendix~\ref{app:construction}), so such a report is a failure
+of the run, and the auditor scores what the run did. If the auditor believes
+the artifact is missing, it says so in \texttt{methodology\_notes} so that we
+can recheck the paper.
 
 {\small
 \begin{longtable}{@{}c l >{\raggedright\arraybackslash}p{6.14cm} l@{}}
