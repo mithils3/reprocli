@@ -6,19 +6,9 @@
 Each audit grades one agent's attempt at one paper's central claim. The
 auditor receives the claim with its pinned match target, a manifest of the run
 bundle, and the frozen rubric text (Figure~\ref{lst:rubric-text}), and
-it explores the bundle with the tools of Table~\ref{tab:audit-tools}, whose path
-arguments resolve against the run directory and reject absolute paths,
-backslashes, and parent references, so a grade can only cite the bundle under
-audit. It places the run in the highest quality band the cited evidence meets,
-then applies an integrity adjustment that can only lower the score. The rubric
-sets a low-score prior, so a run with no evidence scores low, and a printed number is not treated as verified. The
-auditor returns no verdict string, since the verdict is derived from its row in
-code (Appendix~\ref{app:rubric-finalizer}), and it returns a confidence and a
-one-paragraph rationale which, below confidence 0.6 or after a judgment call,
-must say what a human should examine and which file to open. Where
-recomputation is inexpensive it recomputes metrics from the stored predictions
-and outputs, and the 60\,s shell timeout rules out re-running training or
-evaluation; the prompt template is Figure~\ref{lst:audit-prompt}.
+it explores the bundle with the tools of Table~\ref{tab:audit-tools}. It places the run in the highest quality band the cited evidence meets,
+then applies an integrity adjustment. The rubric
+sets a low-score prior, so a run with no evidence scores low, and a printed number is not treated as verified.
 
 \begin{table}[ht]
 \centering
