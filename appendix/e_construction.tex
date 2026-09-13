@@ -32,33 +32,7 @@ Code computes score and tier from the four signal booleans. Missing code adds
 public benchmark; scores of 0, 1, and 2 map to \texttt{Easy} (Run),
 \texttt{Medium} (Retrain), and \texttt{Hard} (Reimplement), and 3 stays
 \texttt{Hard} when the data are available or standard and is otherwise
-\texttt{Artifact-Blocked}, as is any higher score. The same code re-derives
-compute as GPU count times wall-clock hours times the multiplier of
-Table~\ref{tab:h100-multipliers}, flags a mismatch when the recomputed and
-stated figures differ by more than 20\% of the larger, assigns a band from the
-ladder 0--8, 8--32, 32--96, and above 96 H100-hours, and raises a human-review
-flag when the basis is unspecified or the recompute disagrees.
-
-\begin{table}[!ht]
-\centering
-\small
-\begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
-\toprule
-GPU & $\times$ & GPU & $\times$ & GPU & $\times$ \\
-\midrule
-H100 SXM  & 1.00 & B100 SXM   & 1.77 & L40S      & 0.37 \\
-H100 PCIe & 0.76 & B200 SXM   & 2.27 & L40       & 0.18 \\
-H100 NVL  & 0.84 & B300 SXM   & 2.27 & L4        & 0.12 \\
-H200 SXM  & 1.00 & A100 80GB  & 0.32 & A40       & 0.15 \\
-H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
-          &      & A800       & 0.32 & A10/A10G  & 0.13 \\
-          &      &            &      & A16 board & 0.07 \\
-\bottomrule
-\end{tabular}
-\caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
-the classifier prompt. H100 SXM is 1.00 by definition.}
-\label{tab:h100-multipliers}
-\end{table}
+\texttt{Artifact-Blocked}, as is any higher score.
 
 \subsection{Stage II: compute capping and stratified selection}
 \label{app:selection}
@@ -137,6 +111,27 @@ GPU-hour figure divided by the GPU count first. Ninety of the 100 rows
 changed, the audited total fell from 4,426 to 1,922 H100-hours and the median
 row from 35 to 2.5 hours, and we kept the four rows whose released weights are
 only the base model as small training runs.
+
+\begin{table}[!ht]
+\centering
+\small
+\begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
+\toprule
+GPU & $\times$ & GPU & $\times$ & GPU & $\times$ \\
+\midrule
+H100 SXM  & 1.00 & B100 SXM   & 1.77 & L40S      & 0.37 \\
+H100 PCIe & 0.76 & B200 SXM   & 2.27 & L40       & 0.18 \\
+H100 NVL  & 0.84 & B300 SXM   & 2.27 & L4        & 0.12 \\
+H200 SXM  & 1.00 & A100 80GB  & 0.32 & A40       & 0.15 \\
+H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
+          &      & A800       & 0.32 & A10/A10G  & 0.13 \\
+          &      &            &      & A16 board & 0.07 \\
+\bottomrule
+\end{tabular}
+\caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
+the classifier prompt. H100 SXM is 1.00 by definition.}
+\label{tab:h100-multipliers}
+\end{table}
 
 \subsection{Changes to the evaluation split since release}
 \label{app:substitutions}
