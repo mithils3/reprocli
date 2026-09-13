@@ -44,7 +44,7 @@ taking the cheapest rows in each band first. The pool is twice the benchmark
 size so that the human audit could drop rows and every tier kept replacements
 (Table~\ref{tab:audit-pool}).
 
-\begin{table}[t]
+\begin{table}[!ht]
 \centering
 \small
 \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -69,90 +69,17 @@ summed audited compute.}
 \label{app:human-audit}
 
 For every pool paper we opened the evidence behind each availability call and
-recorded a verdict on each of the four signals. The reviewer never types a
-score; the review form recomputes it from the verdicts by the formula of
-Appendix~\ref{app:extraction}, and compute bands are not re-judged. Verdicts
-override the model one signal at a time: a disagreement flips that signal's
-boolean, leaves the other signals as they were, and the deterministic scorer
-recomputes score and tier. Because a Reimplement-tier assignment rests on no
+recorded a verdict on each of the four signals. A disagreement replaces the model's verdict on that signal, and code recomputes the score and tier from the verdicts. Because a Reimplement-tier assignment rests on no
 code having been located, we re-checked those rows with
-GPT-5.5~\citep{openai2026gpt55} under web search, and on 2026-07-13 we
+GPT-5.5~\citep{openai2026gpt55} under web search, and we
 submitted every claimed wall in that tier to one adversarial prober and two
 independent refuters.
 
 \subsection{The evaluation and development splits}
 \label{app:splits}
 
-The split builder applies the human verdicts to the model values the reviewers
-saw, recomputes score and tier, drops any paper whose minimal experiment calls
-a paid or closed model API, and runs the Stage II selection rule over what
-remains. The development split is drawn from the cheapest eligible papers left
-in each tier, so the two splits are disjoint by construction, and
+We applied the human verdicts, recomputed each paper's score and tier, and
+dropped any paper whose minimal experiment calls a paid or closed model API.
+The Stage II rule then selected the evaluation split from what remained, the
+development split took the cheapest eligible papers left in each tier, and
 Appendix~\ref{app:dataset-schema} gives their sizes.
-
-\subsection{Compute re-estimation}
-\label{app:recompute}
-
-After the split was first released, a pass completed on 2026-07-01 re-derived every evaluation row's H100-hour
-figure, the compute of the minimal reproducible experiment, evaluation-only
-when the weights are released and otherwise the smallest training run that
-shows the effect. Each row is GPU count times wall-clock hours times the
-multiplier of Table~\ref{tab:h100-multipliers}, with any reported total
-GPU-hour figure divided by the GPU count first. Ninety of the 100 rows
-changed, the audited total fell from 4,426 to 1,922 H100-hours and the median
-row from 35 to 2.5 hours, and we kept the four rows whose released weights are
-only the base model as small training runs.
-
-\begin{table}[!ht]
-\centering
-\small
-\begin{tabular}{@{}lr@{\hskip 2em}lr@{\hskip 2em}lr@{}}
-\toprule
-GPU & $\times$ & GPU & $\times$ & GPU & $\times$ \\
-\midrule
-H100 SXM  & 1.00 & B100 SXM   & 1.77 & L40S      & 0.37 \\
-H100 PCIe & 0.76 & B200 SXM   & 2.27 & L40       & 0.18 \\
-H100 NVL  & 0.84 & B300 SXM   & 2.27 & L4        & 0.12 \\
-H200 SXM  & 1.00 & A100 80GB  & 0.32 & A40       & 0.15 \\
-H200 NVL  & 0.84 & A100 40GB  & 0.32 & A30       & 0.17 \\
-          &      & A800       & 0.32 & A10/A10G  & 0.13 \\
-          &      &            &      & A16 board & 0.07 \\
-\bottomrule
-\end{tabular}
-\caption{H100-equivalent multipliers applied to reported GPU-hours, quoted from
-the classifier prompt. H100 SXM is 1.00 by definition.}
-\label{tab:h100-multipliers}
-\end{table}
-
-\subsection{Changes to the evaluation split since release}
-\label{app:substitutions}
-
-A paper leaves the evaluation split only when its central claim turns out to
-be unreproducible in the sandbox by construction, and a model failure never
-removes one. Each replacement is the next-cheapest audited pool row of the
-same tier (Table~\ref{tab:swaps}).
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{@{}llrr>{\raggedright\arraybackslash}p{6.4cm}@{}}
-\toprule
-Date & Tier & Out & In & Reason class \\
-\midrule
-2026-06-25 & mixed & 12 & 12 & Re-selection from the human verdicts, with 15 paid-API papers excluded from the pool beforehand \\
-2026-07-06 & Run & 4 & 4 & Observed permission wall or artifact never released, net over three commits that also restored four papers whose claimed wall did not hold \\
-2026-07-07 & Run & 1 & 1 & Paid API in the anchor and the label file never released \\
-2026-07-09 & Retrain, Reimplement & 3 & 3 & Compute policy, cap lowered to 96 H100-hours \\
-2026-07-10 & Run & 1 & 1 & Ground-truth traces for the anchor never released \\
-2026-07-11 & Retrain & 4 & 4 & Never released, self-contradicting artifact, or a dependency with no aarch64 build \\
-2026-07-13 & Reimplement & 2 & 2 & Implementation never released, and a simulator with no aarch64 build \\
-2026-07-14 & Reimplement & 2 & 2 & No artifact anywhere, and compute that cannot be bounded inside the tier budget \\
-\bottomrule
-\end{tabular}
-\caption{Membership changes to the evaluation split since the initial release
-on 2026-06-19. Tier composition held at 34/33/33 after every change.}
-\label{tab:swaps}
-\end{table}
-
-We host-probed every removal and insertion, so an agent working on the frozen
-split meets artifacts the probe found reachable.

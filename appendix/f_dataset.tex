@@ -1,14 +1,12 @@
 \section{Dataset Fields}
 \label{app:dataset-schema}
 
-We submit the audited benchmark as anonymized supplementary material, which
-the \texttt{datasets} library~\citep{lhoest2021datasets} loads by name, with
-two splits and no \texttt{train} split. The \texttt{test} split is the
-100-paper frozen benchmark, marked \texttt{split="eval"}, and the
-\texttt{validation} split is the 14-paper development set, marked
-\texttt{split="dev"} (Table~\ref{tab:splits}); they load as
-\texttt{split="test"} and \texttt{split="validation"}
-(Figure~\ref{lst:load-dataset}), and no arXiv ID appears in both. Every row holds the 25 top-level fields and four nested objects of
+We release the audited benchmark after review as a \texttt{datasets}
+dataset~\citep{lhoest2021datasets} with two splits and no \texttt{train}
+split. The \texttt{test} split is the 100-paper frozen benchmark, marked
+\texttt{split="eval"}, and the \texttt{validation} split is the 14-paper
+development set, marked \texttt{split="dev"} (Table~\ref{tab:splits}), and no
+arXiv ID appears in both. Every row holds the 25 top-level fields and four nested objects of
 Table~\ref{tab:schema}, fixed before any agent starts. Figure~\ref{lst:example-row} shows the SharpZO row of
 Section~\ref{subsec:task} (score 0, Run tier, 0.07 H100-hours, band
 \texttt{0-8}), long text fields truncated and the rest verbatim. Rows return
@@ -109,36 +107,15 @@ Field & Type & Description \\
 \end{longtable}
 }
 
-Four properties hold across the released rows and can be checked from the
-file. Tier is a function of score, 0 to Run, 1 to Retrain, 2 and 3 to
-Reimplement; \texttt{selection\_band} equals \texttt{h100\_band} on every
-row; and \texttt{audited\_h100\_hours} differs from
-\texttt{h100\_estimate.hours} on exactly the 6 rows, 3 per split, with
-\texttt{h100\_hours\_adjudicated} set. Of the 400 signal entries in the
-evaluation split, 388 record a tool call and 12 are \texttt{not\_applicable},
-and every signal set to true was tool-established except on 2503.02809, whose
-pinned configuration runs on synthetic data, so \texttt{dataset\_available} is
-both true and \texttt{not\_applicable}. Across both splits 13 signals are
-\texttt{not\_applicable}, 12 of them false, and 10 of those 12 are
-\texttt{weights\_available} on papers needing no released checkpoint.
-
 \codefile[lst:example-row]{json}{One evaluation row (2506.20990)}{prompts/example_row.json}
 
 \paragraph{Match targets and tolerance.} For 62 of the 100 evaluation papers
 the match bar is a point estimate, for 21 a stated baseline the run must beat,
 for 14 a reported threshold it must clear, for 1 the size of a reported delta,
-and for 1 a reported range it must fall inside. One row, 2505.10475, entered as
-a late replacement and has no \texttt{match\_bar\_kind} field. A run matches a
+and for 1 a reported range it must fall inside. A run matches a
 point estimate when its measured value lies within the authors' stated
 tolerance, or within 5\% relative when the paper states none
 (Figure~\ref{lst:rubric-text}).
-
-\begin{codebox}[lst:load-dataset]{Python}{Loading the splits}
-from datasets import load_dataset
-
-eval100 = load_dataset("<anonymized>/reclaim", split="test")
-dev14 = load_dataset("<anonymized>/reclaim", split="validation")
-\end{codebox}
 
 \paragraph{The evaluation and development papers.} Tables~\ref{tab:eval100}
 and~\ref{tab:dev14} list the 100 evaluation and 14 development papers with the
