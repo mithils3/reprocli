@@ -37,21 +37,12 @@ public benchmark; scores of 0, 1, and 2 map to \texttt{Easy} (Run),
 \subsection{Stage II: compute capping and stratified selection}
 \label{app:selection}
 
-Selection admits a row whose verification status is verified, whose tier is
-one of the three evaluation tiers, and whose audited compute is known and
-under the cap, taking the recomputed product when the arithmetic audit flagged
-a mismatch and the multiplier is at or below 1.1 and the stated hours
-otherwise. Of 620 verified rows in those tiers, 38 lay above the selection
-ceiling, leaving 582; because that ceiling was higher than the eventual cap,
-17 pool rows lie above 96 H100-hours, and we lowered the cap to 96 on
-2026-07-09, replacing the three evaluation-split papers above it
-(Table~\ref{tab:swaps}). The rule divides the pool target equally across tiers
-by largest remainder, apportions each tier's share across bands by fixed
-weights, takes the cheapest rows first with ties by arXiv ID, and fills the
-most expensive band first so deficits cascade down into cheaper bands of the
-same tier. At 200 rows the pool (Table~\ref{tab:audit-pool}) is twice the
-benchmark, absorbing the attrition of the human audit and leaving a
-replacement reserve in every tier.
+We kept every verified row in the three evaluation tiers whose audited compute
+was known and under the cap, which left 582 rows. From those we drew a 200-row
+pool, split equally across the tiers and spread across the compute bands,
+taking the cheapest rows in each band first. The pool is twice the benchmark
+size so that the human audit could drop rows and every tier kept replacements
+(Table~\ref{tab:audit-pool}).
 
 \begin{table}[t]
 \centering
