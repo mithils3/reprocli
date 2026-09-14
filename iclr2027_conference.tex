@@ -686,18 +686,14 @@ Appendix~\ref{app:splits}).
 
 \paragraph{Agents.} Each cell holds at most one run and the rates are point
 estimates, so we read the large gaps between agents and leave close pairs
-within a tier unranked. The roster omits Claude, GPT, and Gemini, and the
-four agents ran under different precisions, context windows, and reasoning
-settings (Table~\ref{tab:models}), so the ordering compares served
-configurations as much as models. Repeated runs and the closed frontier
-models are for groups with access to them, and the harness already drives
-one vendor-served agent over its API (Appendix~\ref{app:models}).
+within a tier unranked. The roster omits Claude, GPT, and Gemini. Repeated
+runs and the closed frontier models are for groups with access to them, and
+the harness already drives one vendor-served agent over its API
+(Appendix~\ref{app:models}).
 
 \paragraph{Harness and host.} All runs used one GH200 cluster, whose aarch64
 packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
 and two more trace to harness defects, kept in every count and not relabeled.
-Reruns can start from the 14-paper validation split
-(Appendix~\ref{app:dataset-schema}).
 % sources. 76 outside-tolerance runs: tab:failure-modes-by-agent (26+16+7+27),
 % larger than the 72 Reproduced row. Paid-API exclusion of 15:
 % appendix/e_construction.tex tab row 2026-06-25. Model release years: all
@@ -739,8 +735,9 @@ experiment when the authors' code is released and struggles to design one
 from the paper alone. The harness, the frozen rubric, and every graded
 transcript accompany this submission, the benchmark itself follows after
 review, and the construction pipeline can rebuild the set from each conference cycle at low human cost, so the
-measurement can be repeated on fresh papers as agents improve. The step
-beyond it, writing code for an unpublished idea, remains open.
+measurement can be repeated on fresh papers as agents improve. The steps
+beyond it, conducting experiments end to end on unpublished ideas and
+recursive self-improvement, remain open.
 % numbers: 48/32/16 best rate per tier as in the abstract (DSv4 14/29, 9/28;
 % Muse Spark 5/32); 372 runs; 1,770 of 9,120 H100-h spent; mode direction
 % from Sec 1 (reimplement-without-validating 43/188 -> 20/184, artifact-
