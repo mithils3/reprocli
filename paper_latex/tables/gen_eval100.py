@@ -64,7 +64,7 @@ def tex(text: str) -> str:
 
 
 def clip(text: str, limit: int) -> str:
-    text = " ".join(text.split())
+    text = re.sub(r"\s*±\s*", "±", " ".join(text.split()))  # one spacing for every ± in the lockfile
     if len(text) <= limit:
         return text
     head = text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:.")
@@ -106,9 +106,9 @@ def cells(row: dict) -> list[str]:
 
 # Band and H100-h get fixed widths so the eval and dev tables share one geometry.
 COLSPEC = (
-    "@{}l@{\\hspace{4pt}}l@{\\hspace{4pt}}>{\\centering\\arraybackslash}p{0.95cm}@{\\hspace{4pt}}"
-    ">{\\raggedleft\\arraybackslash}p{1.1cm}@{\\hspace{5pt}}"
-    "p{3.2cm}@{\\hspace{5pt}}p{1.85cm}@{\\hspace{5pt}}p{3.0cm}@{}"
+    "@{}l@{\\hspace{4pt}}l@{\\hspace{4pt}}>{\\centering\\arraybackslash}p{0.9cm}@{\\hspace{4pt}}"
+    ">{\\raggedleft\\arraybackslash}p{1.1cm}@{\\hspace{8pt}}"
+    "p{3.2cm}@{\\hspace{5pt}}p{1.6cm}@{\\hspace{5pt}}p{3.3cm}@{}"
 )
 HEAD = "arXiv & Tier & Band & H100-h & Metric & Bar & Target value \\\\"
 

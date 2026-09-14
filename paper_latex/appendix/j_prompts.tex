@@ -64,7 +64,8 @@ reasoning brief.
 % src: src/reclaim_repro/prompt_render.py:22-147; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
 The first user turn (Appendix~\ref{app:prompts}).
 
-\promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}
+{\tcbset{rbFrame/.append style={break at=-15.2pt/0pt/0pt/-10pt/0pt}}%
+\promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}}
 
 \subsection{Auditor prompt}
 % src: prompts/prompt_audit.txt (copied verbatim to paper_latex/prompts/prompt_audit.txt); src/reclaim_vllm/audit/inputs.py:30-101
@@ -77,10 +78,12 @@ manifest, and the rubric text (Appendix~\ref{app:rubric}).
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
 The frozen rubric, which the auditor receives in full.
 
-\promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}
+{\tcbset{rbFrame/.append style={break at=0pt/0pt/-18pt/0pt}}%
+\promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}}
 
 \subsection{Classifier prompt}
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
 The Stage-I classifier prompt of Appendix~\ref{app:classifier}.
 
-\promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}
+{\tcbset{rbFrame/.append style={break at=-10pt/0pt/0pt/-21pt/0pt}}%
+\promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}}

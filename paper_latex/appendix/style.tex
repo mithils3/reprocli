@@ -98,6 +98,16 @@
   xleftmargin=1.4em,
 }
 
+% A blank line in a listing is vertical glue instead of an empty line box, so a box that breaks
+% at a blank line drops it from both parts. Unbroken boxes keep the same spacing.
+\makeatletter
+\patchcmd{\lst@DoNewLines}{{\lsthk@OnEmptyLine \lst@NewLine}}{{\lsthk@OnEmptyLine \lst@EmptyLine}}{}{\errmessage{lst@DoNewLines patch failed}}
+\def\lst@EmptyLine{%
+    \ifx\lst@OutputBox\@gobble\else \par\vskip\baselineskip \fi
+    \global\advance\lst@newlines\m@ne
+    \lst@newlinetrue}
+\makeatother
+
 % Common frame. Verbatim boxes share the document figure counter, so they print
 % and cross-reference as Figure N alongside the body figures.
 \tcbset{
@@ -107,6 +117,7 @@
     boxrule=0.5pt, arc=1.5pt,
     left=5pt, right=5pt, top=4pt, bottom=4pt,
     toptitle=2.5pt, bottomtitle=2.5pt,
+    topsep at break=6pt, bottomsep at break=6pt,  % a split part keeps the padding of a whole box
     fonttitle=\bfseries\footnotesize,
     before skip=8pt plus 2pt, after skip=10pt plus 2pt,
     lefttitle=5pt, righttitle=5pt,

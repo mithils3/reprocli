@@ -56,7 +56,7 @@ body {{ width:{WIDTH}px; font-family:'JBMono',monospace; background:#fff; }}
 .ln.o::before {{ background:#fff; border-color:#9AA3AE; }}
 .ln.f::before {{ background:var(--navy); border-color:var(--navy); }}
 .ln.none::before {{ display:none; }}
-.txt {{ white-space:pre-wrap; overflow-wrap:anywhere; flex:1; min-width:0; }}
+.txt {{ white-space:pre-wrap; overflow-wrap:anywhere; flex:1; min-width:0; padding-right:14px; }}
 .key {{ color:var(--gray); }}
 .think {{ color:var(--navy); font-style:italic; }}
 .p {{ color:var(--teal); font-weight:500; }}
@@ -70,7 +70,7 @@ body {{ width:{WIDTH}px; font-family:'JBMono',monospace; background:#fff; }}
 .right {{ margin-left:auto; display:flex; align-items:center; gap:10px; padding-top:2px; }}
 .rn {{ font-size:17px; color:var(--cgray); }}
 .gpu {{ font-size:17px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:2px 9px; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:17px; color:var(--cgray); margin-top:8px; padding-left:4px; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:17px; color:var(--cgray); margin-top:16px; padding-left:4px; }}
 .legend span {{ white-space:nowrap; }}
 .legend .sw {{ display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:#FCF3D9; border:1.5px solid var(--gold); }}
 """

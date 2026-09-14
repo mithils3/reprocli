@@ -3,10 +3,10 @@
 
 We release the audited benchmark on Hugging Face (footnote~\ref{fn:artifacts}) as a
 \texttt{datasets} dataset~\citep{lhoest2021datasets} with two splits and no \texttt{train}
-split. The \texttt{test} split is the 100-paper frozen benchmark, marked
-\texttt{split="eval"}, and the \texttt{validation} split is the 14-paper
-development set, marked \texttt{split="dev"} (Table~\ref{tab:splits}), and no
-arXiv ID appears in both. Every row holds the 25 top-level fields and four nested objects of
+split. The \texttt{test} split, marked \texttt{split="eval"}, is the 100-paper
+frozen benchmark, and the \texttt{validation} split, marked \texttt{split="dev"},
+is the 14-paper development set (Table~\ref{tab:splits}), and no arXiv ID
+appears in both. Every row holds the 25 top-level fields and four nested objects of
 Table~\ref{tab:schema}, fixed before any agent starts. Figure~\ref{lst:example-row} shows the SharpZO row of
 Section~\ref{subsec:task} (score 0, Run tier, 0.07 H100-hours, band
 \texttt{0-8}), long text fields truncated and the rest verbatim. Rows return
@@ -33,7 +33,7 @@ All         & 100 & 59 & 29 & 12 & 1{,}153.8 & 14 \\
 \end{table}
 
 {\footnotesize
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{5.0cm}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{5.95cm}@{}}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{4.95cm}>{\raggedright\arraybackslash}p{1.95cm}>{\raggedright\arraybackslash}p{5.65cm}@{}}
 \toprule
 Field & Type & Description \\
 \midrule
@@ -72,11 +72,11 @@ Field & Type & Description \\
 \texttt{h100\_arithmetic\_mismatch} & bool or null & Flag set when estimate arithmetic disagreed. \\
 \texttt{h100\_hours\_adjudicated} & bool & Whether the recompute replaced the stated estimate. \\
 \texttt{h100\_needs\_human\_review} & bool & Whether the estimate was flagged for review. \\
-\addlinespace
 \texttt{paper\_kind} & string & Paper type. All rows are \texttt{empirical}. \\
 \texttt{verification\_status} & string & Classifier verification state. All rows are \texttt{verified}. \\
 \texttt{web\_verification} & string & Web-retrieval state. All rows are \texttt{available}. \\
 \texttt{exit\_reason} & string & Classifier exit reason. All rows are \texttt{natural}. \\
+\addlinespace
 \multicolumn{3}{@{}>{\raggedright\arraybackslash}p{13.4cm}@{}}{\emph{\texttt{verified\_links} (lists of tool-confirmed URLs, empty when none located)}} \\
 \texttt{paper\_or\_project} & list of strings & Paper or project-page URLs. \\
 \texttt{code} & list of strings & Code repository URLs. \\

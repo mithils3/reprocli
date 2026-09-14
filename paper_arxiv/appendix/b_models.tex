@@ -15,7 +15,7 @@ Table~\ref{tab:models} lists the four configurations.
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{2.05cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{3.05cm}@{}}
 \toprule
 Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 \\
 \midrule
@@ -24,10 +24,8 @@ Served checkpoint &
 \texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
 \texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} &
 \texttt{muse-\allowbreak{}spark-\allowbreak{}1.2-\allowbreak{}contributor} \\
-\addlinespace
 Advertised name & same as checkpoint & same as checkpoint &
 \texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} & same as checkpoint \\
-\addlinespace
 Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) & vendor-served \\
 KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set & vendor-served \\
 GPUs per replica & 2 & 1 & 2 & vendor-served \\
@@ -56,7 +54,7 @@ We produce the grades of record with a separate grading client on the
 Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
 run bundle capped at 25 rounds, and re-grading a batch overwrites its audit, so
 a re-graded sweep has one grader. We price GPU time at the \$2
-per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
+per \mbox{H100-hour} of Section~\ref{subsec:experimental-setup} and grader tokens at
 \$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
 
 % numbers of record: tools/anon_viewer/public/data/index.json runs[].tokens and
@@ -74,9 +72,10 @@ split between tokens and GPU time.
 
 \begin{table}[ht]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}lrrrrrrrrr@{}}
+\fontsize{7.5}{9}\selectfont
+\setlength{\tabcolsep}{0pt}
+% wider gaps at the Rate | Tokens | Cost | Per run boundaries; the table fills the text width
+\begin{tabular}{@{}l@{\hspace{9pt}}r@{\hspace{4.5pt}}r@{\hspace{4.5pt}}r@{\hspace{9pt}}r@{\hspace{4.5pt}}r@{\hspace{9pt}}r@{\hspace{4.5pt}}r@{\hspace{4.5pt}}r@{\hspace{9pt}}r@{}}
 \toprule
 & \multicolumn{3}{c}{Rate (\$/M)} & \multicolumn{2}{c}{Tokens (M)} &
 \multicolumn{3}{c}{Cost (\$)} & \\
@@ -127,7 +126,7 @@ granted, and the band is the paper's cap in H100-hours.
 \begin{tabular}{@{}llrrrrr@{}}
 \toprule
 & & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
-\cmidrule(lr){3-4} \cmidrule(lr){5-7}
+\cmidrule(lr){3-4} \cmidrule(l){5-7}
 Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
 \midrule
 DeepSeek-V4-Flash & Run & 14/34 (41\%) & 5.29 & & & \\
