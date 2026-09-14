@@ -1,0 +1,840 @@
+\RequirePackage{fix-cm}  % CM math fonts at the 6.5pt listing size
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2027_conference,times}
+
+% Common packages. These do not change the ICLR style parameters.
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+% URLs break only after / ? = & _, never inside a word, at a hyphen or at a dot. The colon keeps its
+% relation class (so // stays together) but its break penalty is raised to infinity.
+\def\UrlBreaks{\do\/\do\?\do\=\do\&\do\_}
+\def\UrlBigBreaks{}
+% Punctuation left out of every url list falls back to the math fonts, so list it as ordinary.
+\def\UrlOrds{\do\*\do\-\do\~\do\'\do\"\do\.\do\@\do\\\do\!\do\|\do\;\do\>\do\]\do\)\do\,\do\+\do\#\do\<\do\[\do\(}
+\mathchardef\UrlBigBreakPenalty=10000
+\renewcommand{\UrlFont}{\small\ttfamily}  % 9pt Courier sits level with 10pt Times and lets long URLs fit a line
+\usepackage{graphicx}
+\usepackage{rotating}  % sidewaysfigure for the run-timelines page in Appendix H
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\input{appendix/style}  % code, prompt, and schema boxes for the appendices
+\usepackage{microtype}
+\usepackage{etoolbox}
+\usepackage{needspace}
+\usepackage{placeins}  % \FloatBarrier keeps each run card inside its vignette
+% Table captions sit below the tabular: give them clearance from the bottom rule.
+\AtBeginEnvironment{table}{\setlength{\abovecaptionskip}{6pt}\setlength{\belowcaptionskip}{0pt}}
+\setlength{\LTcapwidth}{\dimexpr\textwidth-2.3pt\relax}  % longtable captions span the text block (longtable centres them 1.1pt left)
+\makeatletter
+\patchcmd{\LT@makecaption}{\reset@font}{\reset@font\normalsize}{}{}  % caption stays 10pt inside \small tables
+\makeatother
+
+\title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
+
+\author{Mithil Salunkhe, Haochen Ding, Samridhi Verma, Volodymyr Kindratenko \\
+University of Illinois Urbana-Champaign \\
+\texttt{\{mithils3,hd9,sv49,kindrtnk\}@illinois.edu}
+}
+
+\iclrfinalcopy  % arXiv preprint: authors shown, running header set below the title
+
+\begin{document}
+% The style's flushbottom stretches the paragraph and section skips whenever a
+% page cannot fill exactly (widow and club penalties are 10000, and the
+% appendix has breakable verbatim boxes), so the whole paper is ragged bottom.
+\raggedbottom
+
+\maketitle
+\lhead{Preprint. Under review.}
+
+\begin{abstract}
+AI agents can now take released code, set up its environment, run the
+experiments, and write up the results. Existing benchmarks prepare the agent's
+environment and saturate quickly, whereas reproducing a published paper
+involves no such preparation. We introduce RECLAIM, 100 NeurIPS 2025 papers
+with a metered GPU-hour budget, a frozen target claim, a numeric tolerance,
+and a pinned auditor of execution evidence. The agent gets the paper and
+whatever the authors released and supplies the rest. Across four agents,
+the best reproduction rate is 41\% at Run tier, where code, data, and weights
+are released, 27\% at Retrain, and 15\% at Reimplement, where the method is
+built from the paper alone, and every agent scores lowest at Reimplement.
+Compute does not explain the gap, since non-reproduced runs use 29\% of their
+allocation. Under a nine-mode
+labeling of every graded run, most Retrain-tier misses by the strongest agent
+ran the paper's experiment but produced a number outside tolerance. We
+interpret these findings to mean the strongest agent can run an experiment
+with released code but struggles to design one from the paper alone. The
+next step toward automated research, writing code for an unpublished idea,
+remains open.
+% numbers of record (2026-09-10), pinned claude-sonnet-5, post-freeze, over all
+% 400 agent-paper cells with the 28 cells that have no graded run at score 0:
+%   best rate per tier 41/27/15 -- Run 14/34 and Retrain 9/33 are
+%     DeepSeek-V4-Flash's; Reimplement 15 is Muse Spark 1.2's 5/33 (DSv4's own
+%     Reimplement rate, 4/33 = 12, is stated by name in the intro). The drop
+%     that holds for every agent is Run -> Reimplement (every agent's lowest
+%     rate and mean score); Run vs Retrain is within noise (DSv4 14/34 vs 9/33
+%     z = 1.2 on a two-proportion test; the other three within nine points).
+%   non-reproduced spend 29% -- mean spent/budget per cell over the 327
+%     non-reproduced cells (28.9%); ratio of sums 17.7%. Reproduced cells pool
+%     to 27.1%, so never imply failures are cheaper.
+%   "most Retrain-tier misses ... outside tolerance" -- DISSECTION-derived
+%     (Ran, outside tolerance is the mode of 15 of the strongest agent's 19
+%     labeled Retrain misses); the body names the provenance where it appears.
+%   96 H100-hour band -- 48 cells spend 6.2% of their grant and 1 reproduces
+%     (Muse Spark 1.2, Retrain, 2508.21046, score 9).
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+AI agents do a growing share of the engineering behind machine learning
+research. They implement, execute, and debug large-scale experiments and
+software projects~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, and they are already deployed on this work
+in the real world~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
+static benchmarks tend to saturate soon after they are
+released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping}, so evaluation has to move
+closer to the workflows agents are deployed into. Reproducing a published ML paper by
+obtaining results consistent with those its authors report is an ideal
+ground for that evaluation, both for its direct value to the field and for
+its difficulty~\citep{siegel2024corebench,starace2025paperbench}. In ML
+research, published results are often not easy to reproduce. One sustained
+replication effort reproduced only 162 of 255 attempted papers without
+using the authors' code~\citep{raff2019step}, and independent studies
+attribute the shortfall to missing code, missing data, and underspecified
+experimental detail~\citep{gundersen2018state,henderson2018deep,
+pineau2021improving,gundersen2022sources}. Reproduction is also a
+prerequisite for recursively
+self-improving systems, since a model that improves itself must first
+re-implement and verify the research it builds
+on~\citep{favaro2026recursive}. Both Anthropic and OpenAI report that their
+researchers increasingly delegate the running of experiments to agents and
+retain the judgment of which results to
+trust~\citep{favaro2026recursive,openai2026acceleration}.
+
+To support this evaluation, we introduce RECLAIM,\footnote{\renewcommand{\UrlFont}{\fontsize{8}{9}\selectfont\ttfamily}Code:
+\textcolor{blue}{\href{https://github.com/mithils3/reclaim}{\nolinkurl{github.com/mithils3/reclaim}}}.
+Run logs: \textcolor{blue}{\href{https://reclaim-traces.vercel.app}{\nolinkurl{reclaim-traces.vercel.app}}}.\\
+Dataset: \textcolor{blue}{\href{https://huggingface.co/datasets/Mithilss/reprobench-splits}{\nolinkurl{huggingface.co/datasets/Mithilss/reprobench-splits}}}.\label{fn:artifacts}}
+a benchmark in which we
+provide the agent with the paper and the artifacts its authors released, then
+evaluate the agent on the execution evidence it produced and on how its result
+compares with the authors' claim. Our results show that reproduction rate
+falls when the authors release no code. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
+the target result on 41\% of Run-tier papers (code, data, and weights all
+released), 27\% of Retrain-tier papers (no released weights, so the model must
+be trained first), and 12\% of Reimplement-tier papers (no released code
+either). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
+best of the four agents at that tier, while the best Run and Retrain rates are
+DeepSeek-V4-Flash's. Every agent has its lowest rate and lowest mean score at
+Reimplement, whereas between Run and Retrain only DeepSeek-V4-Flash's rate
+falls, by 14 points, and the other three agents' rates differ by at most nine
+points (Section~\ref{subsec:results}).
+
+Released code explains the difference between the Run and Reimplement tiers.
+It does not explain the failures within a tier. At the Run tier the authors
+released every artifact the claim requires, and during construction we
+verified that all of them were retrievable, yet many of those runs still
+fail. Three properties of those failures organize the rest of this paper.
+First, stronger agents achieve partial reproduction more often. On Retrain-tier
+papers the strongest agent reaches a verified partial result or better on 67\% of runs,
+which provides evidence of an emerging ability to close the loop of
+reproduction. Second, full recovery of
+the reported number is where progress stalls, holding between 15\% and 27\%
+across four agents spanning a 1.7-fold range in mean audit score. Third,
+compute does not bind either, since 1 of the 48 cells in the 96 H100-hour
+band reproduces its claim (Section~\ref{subsec:compute}).
+
+A small set of recurring failure modes accounts for those failures. Some modes
+become rarer as agents get stronger and some do not. Runs that reimplemented the
+method but did not check their result against the numbers the paper reports
+account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
+of the two strongest, and Build and dependency failures fall from 19 of those
+runs to 5.
+Wrong artifact measured does not become rarer, since the two strongest
+agents account for 21 of its 38 cases, and on 7 papers the released model card
+or configuration file states a setting that differs from the one the paper
+reports. We define the taxonomy, report the per-mode
+counts, and give the transcript evidence in Section~\ref{subsec:mechanisms}. Agent
+self-reports track none of this reliably, so we report claimed and audited counts
+as background data.
+% numbers of record (2026-09-05): resolved per-run primary modes in
+% ~/sweeps/paper-table-2026-09-05/resolved_modes.json (index.json of 2026-09-03
+% plus the 29-run relabel pass in result.json). Agents ordered by mean audit
+% score over all 100 cells: DSv4 5.13, Muse 5.00, Qwen3 3.51, MiniMax 3.03. reimplement-without-
+% validating: Qwen3 16/90 + MiniMax 27/98 = 43/188; DSv4 13/87 + Muse 7/97 =
+% 20/184. environment-fights: 8+11 = 19 vs 1+4 = 5. artifact-provenance-
+% mismatch per agent 6/87, 4/90, 13/98, 15/97 = 38; release-disagrees-with-paper
+% signature in 10 runs on 7 papers (dsv4-retrain-2506.19839, dsv4-run-2505.23305,
+% dsv4-run-2510.21311, dsv4-run-2505.24873, muse-run-2505.23305,
+% muse-run-2511.16666, muse-run-2505.18456, minimax-run-2511.16666,
+% minimax-run-2505.18456, minimax-run-2505.10475), read from failure_mode_detail.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/reclaim_overview}
+\caption{Overview of RECLAIM and its evaluation pipeline. The figure shows an
+example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
+\label{fig:overview}
+\end{figure}
+
+
+\section{Related Work}
+\label{sec:related-work}
+
+\paragraph{Repository and terminal agents.}
+Agent evaluations have moved from isolated code generation to long-horizon
+work inside real repositories and terminals~\citep{jimenez2024swebench,
+merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
+lu2026frontiercode,tang2024mlbench,kwa2025long}. SWE-bench grades patches for
+real GitHub issues using
+the tests from the pull request that resolved the issue~\citep{jimenez2024swebench}, and
+Terminal-Bench 2.0 poses command-line tasks inside prepared containers with
+executable checks written in advance~\citep{merrill2026terminalbench}. Both
+fix the objective, the environment, and the verifier before the agent
+starts. A reproduction begins earlier, with the agent choosing the
+experiment that establishes the claim and building an environment that can
+run it. MirrorCode asks agents to rebuild entire programs from behavior
+alone, with a black-box reference implementation the agent can query
+throughout~\citep{adamczewski2026mirrorcode}. The reference makes the target
+checkable at every step. A paper provides no such reference, and the number
+to check exists only once the experiment runs. Agents stop early in both
+settings. \citet{adamczewski2026mirrorcode} report that 97.4\% of their runs
+submitted before using half the token budget and that agents submit once the
+visible tests pass. We report the same early stopping in
+Section~\ref{subsec:results}, with no test to pass.
+
+\paragraph{ML engineering and experimentation.}
+A second family targets the machine-learning workflow itself, from model
+development through research engineering~\citep{huang2024mlagentbench,
+nathani2025mlgym,jing2025dsbench,zhang2025datascibench,
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench,xu2026autolab}. MLE-bench is
+representative, with agents building and refining pipelines for Kaggle
+competitions under a fixed compute budget and each submission scored
+against the historical leaderboard for that
+competition~\citep{chan2024mlebench}. Because the method is the agent's to
+choose and success is a score to maximize rather than a specific
+published quantity to recover, these benchmarks reward any solution that scores well
+and leave open whether an agent can run a prescribed method and
+configuration in an environment its authors never used and reach the
+number they reported.
+
+\paragraph{Scientific reproduction.}
+A growing line of benchmarks measures how well agents reproduce, reimplement,
+extend, or audit published research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
+xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
+edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
+wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce,
+ye2025replicationbench,alizadeh2026socsci,li2026reprorepo,hu2026sabench,huang2026automat}, and
+three of them bracket the design space. CORE-Bench asks agents to rerun the
+released code of computationally reproducible papers and recover known
+artifacts~\citep{siegel2024corebench}, a setting frontier models have since
+effectively saturated~\citep{favaro2026recursive,nadgir2026saturation}. PaperBench lies at the
+opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
+with the authors' code withheld, grading the attempt against hierarchical
+rubrics co-developed with the original authors~\citep{starace2025paperbench}.
+EXP-Bench withholds the paper itself and hands the agent a research
+question, a high-level method description, and starter code to design and
+run the experiments from~\citep{kon2025expbench}. In all three the release state is settled
+before the run begins, by withholding the code or by selection. Most keep
+only papers whose code is already public and already runs, and the stricter
+protocols exclude the rest on the stated reasoning that there is no need to include
+an irreproducible paper. That builds a clean coding task, but it fixes the
+variable RECLAIM exists to measure, and a benchmark assembled only from
+papers that shipped working code cannot say what happens on the papers that
+did not.
+Outside benchmarks, the ICML 2026 Open Reproductions challenge instructed its
+LLM judge to treat each agent logbook's self-assessment as untrusted, and its
+organizers re-verified every claimed falsification~\citep{abid2026reproducing}.
+
+\section{RECLAIM}
+\label{sec:reclaim}
+
+RECLAIM (\textbf{Re}producing \textbf{Cla}ims \textbf{i}n \textbf{M}achine Learning) evaluates whether an
+autonomous agent can reproduce the central
+empirical result of a machine learning paper from whatever artifacts its
+authors actually released. Each of the 100 papers in the benchmark poses one
+task, and the agent must recover a single pinned result within a stated
+tolerance.
+\subsection{Features of RECLAIM}
+\label{subsec:features}
+
+\paragraph{End-to-end reproduction.} Each task hands the agent a recent
+paper and a target. No scripted pipeline or prepared environment is
+provided. The agent plans the reproduction, installs the paper's stack and
+reconciles its dependency errors, debugs failures, and manages its own GPU
+allocations, the same work a researcher faces when reproducing a paper.
+
+\paragraph{Natural artifact availability.} We stratify papers by the artifacts
+their authors released, so each tier reflects a reproduction setting that
+occurs in the field, and no difficulty is manufactured by withholding
+resources. This choice also limits contamination.
+Reimplement-tier papers never released code, so no reference implementation
+exists for a model to absorb during training, and across all tiers our
+cluster seldom matches the authors' hardware and software stack exactly, so
+replaying memorized artifacts is rarely enough.
+
+\paragraph{Sufficient compute.} Each paper has a GPU grant, estimated from
+the paper's minimal reproducible experiment with hours added for iteration,
+and Section~\ref{subsec:results} reports how much of it runs spend.
+
+\paragraph{Provenance-audited grading.} Every reported number is traced to
+the execution that produced it (Section~\ref{sec:auditing}). Because the
+audit checks how the number was produced, the agent is free to reach the
+result by any faithful route, and a novel reproduction strategy scores as
+well as the authors' own.
+
+\paragraph{Refresh at low human cost.} An agent classifier reads and
+verifies the candidate papers, and humans audit only the selected pool
+(Section~\ref{subsec:construction}). Each conference cycle supplies fresh
+peer-reviewed targets, so the benchmark can be rebuilt yearly from new
+NeurIPS, ICML, and ICLR submissions.
+
+\subsection{Task definition}
+\label{subsec:task}
+
+Each paper has one reproduction target, which we call the \emph{match
+target} and fix before any agent runs. The match target is the cheapest
+configuration the authors report that still establishes the paper's central
+empirical claim, together with the value that configuration produces. Papers
+usually headline their largest model or their full benchmark suite, but the
+same claim typically also follows from a smaller supporting experiment, and we
+pin that one. Pinning the smallest supporting configuration bounds the compute a task
+can demand while still exercising the paper's method end to end.
+
+A match target records the configuration that produces the value, the metric,
+the reported value, the scope the value is measured over, and the bar a run
+must clear, most often a point estimate within a stated or default tolerance
+(Appendix~\ref{app:dataset-schema}).
+
+As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
+zeroth-order method improves prompt tuning for vision-language models using
+forward passes alone. Its match target pins a test accuracy of 79.42\% on the
+EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
+reports. A run matches when it produces that accuracy, within tolerance, from
+an experiment it actually executed.
+
+The agent receives the paper and the match target without the configuration
+that produces the value. The agent must therefore design the experiment itself, deciding from the paper and the
+released artifacts what to run, retrain, or reimplement. Because the agent
+knows the number it must hit, a bare value match proves nothing.
+
+\subsection{Benchmark construction}
+\label{subsec:construction}
+
+We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that have an
+arXiv ID, collected in the \emph{ai-conferences}
+corpus~\citep{neurips2025corpus}. Stage I ran on a 1,000-paper sample of that
+corpus, and every later stage works within the sample. Construction proceeded
+in three stages (Figure~\ref{fig:funnel}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/construction_funnel}
+\caption{The construction funnel. Three stages narrow a 1,000-paper sample of
+the 3,414 NeurIPS 2025 submissions to the released 100-paper benchmark, with
+every availability call and compute estimate audited by hand.}
+\label{fig:funnel}
+\end{figure}
+
+\textbf{Stage I: Artifact-verified classification.} For each submission we
+retrieved the raw LaTeX source together with any OpenReview supplementary
+material, since some authors ship code only in the supplement
+(Appendix~\ref{app:corpus}).
+A classifier agent built on MiniMax-M2.7~\citep{minimax2026m2} read each paper,
+extracted its central empirical claim, pinned its match target, and audited four
+artifact signals: released code, released datasets, released model weights, and
+whether the required datasets are standard public benchmarks
+(Appendix~\ref{app:classifier}). An artifact counts
+as available when a tool call is able to access it. Artifacts that are
+unpublished or behind a paywall, a sign-up form, or a permission request are
+classified as not available for this benchmark. We ran the classifier on a 1,000-paper
+sample, and it fully verified 687 papers. Removing non-empirical papers and
+papers with blocked artifacts leaves 620 eligible for evaluation.
+
+Artifact availability assigns each paper to a tier that records how much of
+the result the agent must rebuild. Run papers
+release code, data, and weights, and the agent need only execute or evaluate them.
+Retrain papers withhold the weights, and the agent must train the model before
+evaluating. Reimplement papers withhold the code as well, and the agent must
+rebuild the method from the paper alone.
+The tiers also describe the venue as a whole, from the classifier pass alone
+since we audited by hand only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
+Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
+
+\textbf{Stage II: Compute capping and stratified selection.} We estimated the
+compute each match target requires in H100-hours, taking the paper's reported
+hardware and wall-clock time where stated and deriving the estimate from the
+pinned configuration otherwise (Appendix~\ref{app:selection}). We cap the
+benchmark at 96 H100-hours and drop every paper estimated above it. We sampled a 200-paper audit pool
+stratified by tier and compute band. We allocate the pool equally across
+tiers because tier is the variable under test, and equal cells measure each
+tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
+dozen papers, and the venue proportions reported above let readers reweight
+any rate back to the venue level.
+
+\textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
+opening the evidence behind each availability call and re-deriving each compute
+estimate (Appendix~\ref{app:human-audit}). Papers whose artifacts proved
+inaccessible or that depended on paid third-party APIs failed the audit and
+were replaced from the audited pool. We
+exclude paid APIs so that reproduction cost stays bounded and
+GPU-denominated. Only 20 of
+the 100 shipped compute estimates could be taken directly from the paper. We
+derived the rest from the pinned configuration. The need to reconstruct these
+estimates is one instance of the broader documentation gaps that impede
+reproduction in AI research~\citep{gundersen2018state}.
+\section{Auditing}
+\label{sec:auditing}
+
+Every finished run is graded by an LLM auditor~\citep{zheng2023judging} that reads the
+run's evidence directory and transcript and assigns the 0--10 score of
+Appendix~\ref{app:rubric}, from which the categorical verdict is derived
+deterministically. We fix Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
+auditor for every run of
+every agent, and we froze the rubric before grading began, so scores are
+comparable across models and no agent grades its own family~\citep{panickssery2024evaluators}. The auditor is
+adversarial by instruction and treats the agent's final report as a set of
+unverified claims. It traces every
+reported number to the execution that produced it, checks the executed
+protocol, split, and scale against the pinned configuration, and
+cross-checks the agent's measurements against the paper's reported values.
+When the recorded evidence does not settle a claim, it writes and executes
+its own scoring scripts over the run's saved outputs and recomputes
+metrics directly from the raw artifacts. It inspects
+and recomputes but never re-runs the reproduction, so a grade reflects the
+evidence the run actually produced.
+
+The auditor's discretion is bounded in code. Every violation it finds is
+recorded as a typed anti-cheat flag with a severity, and the scoring code
+applies the integrity adjustment of Appendix~\ref{app:rubric}. A
+high-severity flag, such as a number echoed
+from the paper, a hardcoded constant, or a proxy value in the target slot,
+forces the score to zero, and a claimed artifact wall earns no credit band. An
+LLM auditor reads more material per run than a human grader can,
+working through hundreds of tool rounds, logs, and saved outputs in
+minutes, which is what makes auditing every run of every sweep feasible.
+Three human graders scored all 396 runs that started, one grader per run,
+under the same rubric and blind to the auditor's score, and the auditor's
+verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict
+(Appendix~\ref{app:auditor-validation}).
+% numbers of record: F1 0.82, three human graders, one per run, all 396 runs
+% that started, rubric of Appendix C, blind to the auditor's score (author,
+% 2026-09-10).
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Experimental Setup}
+\label{subsec:experimental-setup}
+
+\paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
+loop~\citep{yao2023react}. A workspace shell and a metered GPU session express the
+same workflows a human reproducer runs on a cluster, and the harness adds no
+guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
+supplement, the verified links to the released artifacts, and the match
+target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
+GPU, holding a Slurm allocation~\citep{yoo2003slurm} whose wall clock is metered against the
+run's fixed H100-hour grant. The agent chooses its own partitions,
+allocation sizes, and session lengths, so every run also exercises the
+budgeting and scheduling decisions that real reproduction work demands.
+Each run ends with a structured report in which the agent states what it
+ran, what it measured, and whether it believes the result reproduced. This
+self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
+prompts, the tools, and session mechanics.
+
+\paragraph{Models.} We evaluate four models:
+DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
+Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
+Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
+served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
+Model API. Every model runs the same harness, prompts, and per-paper budgets.
+
+\paragraph{Metrics.} Our primary metric is the mean reproduction score, an
+integer grade from 0 to 10 that the auditor assigns each run
+under the rubric of Appendix~\ref{app:rubric}. We also report the
+reproduction rate, the fraction of papers whose runs score 8 or higher and
+are therefore graded reproduced. Alongside both we report each agent's token
+usage and its total cost~\citep{kapoor2024agents}, the sum of its tokens at its
+vendor's list rate and the GPU time it drew from its grant at \$2 per
+H100-hour. Appendix~\ref{app:models} gives the serving settings, the rates,
+and the per-agent totals.
+
+\subsection{Results}
+\label{subsec:results}
+
+Figure~\ref{fig:main-results} reports every agent-paper cell, and
+Table~\ref{tab:results} in Appendix~\ref{app:models} lists the values. Each
+agent has one cell per paper, 400 in all. In 28 of them the agent failed and
+produced nothing for the grader to grade, so they count as failures at score
+0, and the failure-mode labels of Section~\ref{subsec:mechanisms} cover the
+372 graded runs. The auditor confirms reproduction on 73 of the 400 cells.
+DeepSeek-V4-Flash is the strongest of the four agents. It recovers the pinned
+number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
+Reimplement, and the four agents span a factor of 1.7 in mean audit score,
+from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
+% numbers of record (2026-09-10): all 400 cells = index.json's 372 graded runs
+% + the 28 cells without a graded run at score 0 (three at their pinned grade
+% 0/2/0); per-agent means 5.13 / 3.51 / 3.03 / 5.00, 5.13/3.03 = 1.69. Policy
+% (2026-09-10): a cell without a graded run is a failure at score 0. Derivation
+% over repro_runs + audit_runs + HF eval_100 + index.json.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/results_by_tier}
+\caption{Reproduction rate and mean audit score by agent and tier, and the share
+of the granted H100-hours each agent spent.}
+\label{fig:main-results}
+\end{figure}
+% numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
+% sweeps[] (n, n_reproduced, mean_score); reproduced = audit score >= 8 =
+% verdict reproduced on all 372 runs. Grant spent = 100 * sum(spent_h100) /
+% sum(budget_h100) over the agent's runs: 636.7/1992.0, 324.6/2088.0,
+% 259.6/2512.0, 549.4/2528.0, all 1770.2/9120.0. All-agents means are over all
+% runs in the tier (4.68/5.08/3.69), not means of the four rows.
+
+The agents differ more in how far they get than in how often they finish. We
+call an audit score of 6 or more a partial result or better. At Retrain,
+DeepSeek-V4-Flash reaches one on 22 of 33 cells and Muse Spark 1.2 on 23 of 33, while
+MiniMax-M2.7 reaches one on 9 of 33, and confirmed reproduction at the same
+tier runs from 15\% to 27\%. Only DeepSeek-V4-Flash's reproduction rate falls at
+every tier, and even there a two-proportion test separates Run from
+Reimplement ($z = 2.7$) but not Run from Retrain ($z = 1.2$). For the other
+three agents the Run and Retrain rates sit within nine points of each other, and mean score rises from Run to Retrain for three
+of the four agents before falling at Reimplement, while Qwen3.6-27B's falls at
+each tier. Figure~\ref{fig:failure-modes}
+shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
+and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
+more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
+Every agent's lowest reproduction rate and lowest mean score are at
+Reimplement, where no code is released, and 13 of 132 cells reproduce there.
+% partial-or-better = audit score >= 6 over all 33 Retrain cells (index.json +
+% the missing cells at 0): DSv4 22/33, Muse 23/33, MiniMax 9/33. Qwen3.6-27B
+% means 3.91 / 3.58 / 3.03 fall at each tier once its 7 empty Retrain cells
+% count as zeros. Two-proportion z on DSv4: 14/34 vs 9/33 -> pooled 23/67,
+% z = 1.20; 14/34 vs 4/33 -> pooled 18/67, z = 2.68 (computed 2026-09-10).
+
+Spending stays far below the grant for every agent and every tier. The mean
+non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
+the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. Priced at the
+rates of Appendix~\ref{app:models}, the 396 runs that started cost \$4{,}835, which is
+\$12.21 per run and \$66 per confirmed reproduction, and GPU time is 78\% of
+that total. We report the agents' own verdicts as background data. Of the 372
+graded runs, 359 return a
+parsable self-assessment and 128 claim reproduction, against 73
+audited reproductions over all 400 cells, and the disagreement runs in both
+directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
+of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
+% cost (2026-09-10): the cost-2026-09-07.py rates over index.json's 372 runs
+% plus the 24 started-but-ungraded runs' repro_runs tokens and spent_h100.
+% Token $1,059.08 + GPU $3,776.22 = $4,835.30; /396 = 12.21; /73 = 66.2; GPU
+% share 78.1%. Spend: 1,888.1 of 10,208 H100-h over 400 cells (18.5%); mean
+% per-cell spent/budget over the 327 non-reproduced cells 28.9%.
+% self_report field of index.json: reproduced 128, not_reproduced 208, partial
+% 23, none 13 (12 of them Qwen3.6-27B). The abstract's 30% is the mean per-run
+% spent/budget over the 299 non-reproduced runs; the pooled figure here is
+% hours over hours (19.4% all runs, 18.6% non-reproduced).
+
+\subsection{Failure mechanisms}
+\label{subsec:mechanisms}
+
+\paragraph{Failure taxonomy.}
+We label every graded run with one primary mode from the nine-mode
+vocabulary of Appendix~\ref{app:taxonomy}, which gives each mode's evidence
+signature with transcript excerpts for three of them, and report the
+distribution by tier in Figure~\ref{fig:failure-modes}. To assign the label we read the run's
+transcript against the mode definitions and write a per-run dissection
+record. Every count in this subsection comes from those records, and every
+score and verdict in this paper comes from the auditor. Two modes are outcomes. A
+reproduced run recovers the pinned number on the authors' released
+artifact and data, and a run outside tolerance executes a faithful pipeline
+and lands short of the bar. The other seven are process failures. One run
+the auditor graded reproduced has the label Wrong artifact measured, because the
+dissection found its passing number was measured on a released checkpoint
+other than the one the row pins, so the Reproduced row holds 72 runs against
+73 audited reproductions, with the difference in the Run column.
+% the one run: muse-run-2505.18456 (audit 8; adlm-medium/large 262B/524B
+% checkpoints against a pinned 110B row).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/failure_modes}
+\caption{Primary failure mode by tier over the 372 graded runs, in the order of
+Appendix~\ref{app:taxonomy}.}
+\label{fig:failure-modes}
+\end{figure}
+% numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
+% resolved_modes.json = index.json field "mode" with two relabel passes
+% applied: 29 runs (25 "other" plus 4 label/verdict conflicts; evidence in
+% result.json) and the 7 outside-tolerance runs with a disqualified verdict
+% (4 moved; evidence in relabel_pass2.txt). Rows are the slugs reproduced-clean,
+% near-miss-partial, reimplement-without-validating, environment-fights,
+% artifact-provenance-mismatch, scope-substitution, stale-artifact-reliance,
+% procrastination/wall-kill, killed-before-the-number.
+
+\paragraph{Where the failures occur.}
+Reimplemented but did not check the result is the most common process
+failure, at 63 of 372 runs, and 38 of those fall at Reimplement. Together with
+Wrong experiment it accounts for 62 of the 125 Reimplement-tier
+runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
+18 of 33 for MiniMax-M2.7. Two modes sit almost entirely at one tier. Echoed
+a shipped number needs released code and does not occur at Reimplement, and
+Never launched an experiment occurs ten times at Reimplement against once at
+Run. Two modes concentrate in one agent each
+(Table~\ref{tab:failure-modes-by-agent}). MiniMax-M2.7 holds 11 of the 24
+Build and dependency failures and Qwen3.6-27B holds 19 of the 31 Failed
+before any number was produced, while Wrong artifact measured splits
+between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
+depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
+cases trace to packages without aarch64 wheels on our GH200 nodes, and
+DeepSeek-V4-Flash met the same packaging gaps and split on how it adapted. On
+one paper it rebuilt the failing package from source and, when the authors'
+scorer exceeded the node's memory limit, rewrote it and checked the rewrite
+against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
+it replaced the package by an unvalidated port that the auditor disqualified.
+% sources: resolved_modes.json for every count. aarch64 attribution: the five
+% are 2504.20571, 2506.20671, 2505.24873, 2505.10978, 2505.14827 per
+% notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:95-103,145
+% (pre-pinned-grade era; mode reasoning is transcript-based). The same note
+% attributes 2503.18430 to a run_gpu allocation cap of ~3 minutes in our own
+% harness at the time (8 killed mmcv builds), a harness confound to disclose in
+% Limitations. DSv4 adaptation split: notes/Analysis/2026-08-11 Easy Sweep
+% 2883229+2889575 (DSv4, pinned Sonnet).md:52 (2503.18430 valid chunked scorer;
+% 2505.14827 unvalidated port, disqualified).
+
+\paragraph{What the successful runs do.}
+Most runs that recover the target result run the authors' own entrypoint. The
+dissection records describe it for 58 of the 73, against 160 of the 299 runs
+that fail. Where they patch released code they disclose the patch and show
+that the graded computation is unchanged, and where the method has to be
+rebuilt they check the rebuilt component against a quantity the paper reports
+before spending compute on it. Reduced-scale smoke tests separate the two
+groups only weakly, since the records mention them in 45 of the 73 successful runs
+and 148 of the 299 failed ones. Appendix~\ref{app:annotated-runs} shows these
+behaviors at the round level in ten annotated runs.
+% sources: dissection records (analysis.* fields of the run records) read
+% 2026-09-05: smoke test mentioned in 45/73 audited-
+% reproduced and 148/299 failed records; reuse of released entrypoint in 58/73
+% vs 160/299. Report lines: notes/Analysis/2026-08-03 Medium Sweep 2690187
+% (MiniMax, pinned Sonnet).md:255-266; 2026-08-24 Hard Sweep muse_spark-
+% 20260820T205201Z (Muse Spark 1.2, pinned Sonnet).md:198-209.
+
+\subsection{Compute does not bind reproduction}
+\label{subsec:compute}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/compute_bands}
+\caption{Mean audit score and share of the granted GPU-hours spent, by the
+compute band of the paper.}
+\label{fig:band-compute}
+\end{figure}
+% numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
+% sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
+% 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
+% run's budget (agrees with eval_100 h100_band on every run); spent = sum of
+% spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
+% counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
+% Muse Spark 56/29/12; 8-band 228 runs, 32-band 102, 96-band 42. Bands are
+% named by their ceiling on the 0-8 / 8-32 / 32-96 ladder of Appendix E. One
+% 96-band run reproduces (Muse Spark, Retrain, 2508.21046). Recompute:
+% tools/anon_viewer/concordance.py band rows.
+
+\paragraph{Score falls with the paper's compute band.}
+Reproduction scores fall as the paper's compute band grows, even though no
+band comes close to exhausting the grant we assign it
+(Figure~\ref{fig:band-compute}). Mean score falls with band for each of the
+four agents, and the 48 cells in the 96 H100-hour band spend 6.2\% of the
+compute granted to them. The bands hold 59, 29, and 12 papers, so each agent's
+96-hour value rests on 12 cells. The gradient tracks the scale of the experiment the paper demands.
+Agents handle short evaluation-style experiments well, loading a released
+checkpoint, running an inference pass, and recomputing a metric, but they rarely
+complete a full training run. At Retrain, where the training
+itself is the missing step, 8 of the 16 cells in the 96 H100-hour band spent
+under 5\% of their grant, and 15 of the 16 did not reproduce. Seven of the
+band's 42 graded runs ran a shrunken version of the paper's training and reported a
+number from it, and six of the seven stated the shortfall.
+% 96-band from index.json: 42 runs = 15 Retrain + 27 Reimplement (no Run-tier
+% paper sits in the band); Retrain spent/budget < 0.05: 7/15, reproduced 1/15
+% (muse-retrain-2508.21046); Reimplement < 0.05: 22/27. Pooled 29/42 is
+% confounded with Reimplement having no code to launch, so it is not printed. Shrunken-training runs, read from the dissection records 2026-09-05:
+% dsv4-retrain-2504.12463, dsv4-retrain-2505.02391, dsv4-retrain-2506.19839,
+% qwen3-retrain-2504.12463, muse-retrain-2506.19839, muse-reimplement-
+% 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
+% shortfall).
+
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+\paragraph{Attributing a miss to the agent.} RECLAIM has no human
+reproduction on our cluster, so for the 76 runs that executed a faithful
+pipeline and landed outside tolerance we cannot separate agent error from
+seed and hardware variance. A human replication of that subset would set the
+reference point.
+
+\paragraph{Grading.} Three human graders scored the 396 runs once each, blind
+to the auditor, and the auditor agrees with them at an F1 of 0.82, but one
+grade per run leaves inter-human agreement unmeasured, and the auditor sees
+only what a run saved to disk. A second grader per run is the next step.
+
+\paragraph{Contamination.} Every agent postdates the papers and may have
+trained on their code, and a memorized fix would still count as reproduced
+under our grading, inflating the two released-code tiers.
+
+\paragraph{Scope.} The 100 papers come from one venue and one year, carry a
+pinned experiment that fits under a 96 H100-hour cap, and exclude papers
+whose experiment calls a paid or closed model API (15 in the audit pool,
+Appendix~\ref{app:splits}).
+
+\paragraph{Agents.} Each cell holds at most one run and the rates are point
+estimates, so we read the large gaps between agents and leave close pairs
+within a tier unranked. The roster omits Claude, GPT, and Gemini. Repeated
+runs and the closed frontier models are for groups with access to them, and
+the harness already drives one vendor-served agent over its API
+(Appendix~\ref{app:models}).
+
+\paragraph{Harness and host.} All runs used one GH200 cluster, whose aarch64
+packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
+and two more trace to harness defects, kept in every count and not relabeled.
+% sources. 76 outside-tolerance runs: tab:failure-modes-by-agent (26+16+7+27),
+% larger than the 72 Reproduced row. Paid-API exclusion of 15:
+% appendix/e_construction.tex tab row 2026-06-25. Model release years: all
+% four agent bib entries are 2026; NeurIPS 2025 papers are 2024/2025 arXiv
+% IDs. Serving confounds: appendix/b_models.tex "Several caveats apply"
+% paragraph. Harness defects: notes/Analysis/2026-07-20 Easy Sweep 2652648
+% (MiniMax repair).md:103 (run_gpu allocations capped at ~3 minutes
+% regardless of minutes=40/60 on 2503.18430, ~8 killed mmcv builds; "Invalid
+% partition name" on first allocation, 2505.18809 never recovered), graded of
+% record as minimax-run-2503.18430 environment-fights and
+% minimax-run-2505.18809 killed-before-the-number (manifest.json); dropping
+% them moves MiniMax's Run-tier rate from 3/34 to 3/32. The within-grader cap
+% stability sentence was removed 2026-09-10 with the LLM-vs-LLM agreement
+% material; the 23/32 second pass on 2652648 is unreported.
+% Interval sentence: a two-proportion test on DSv4's 14/29 vs 9/28 gives
+% z=1.2 and on 14/29 vs 4/30 gives z=2.9 (computed 2026-09-10, not printed).
+% MirrorCode memorization screen: arXiv 2606.30182 Sec 4.3 and App.
+% "Memorization screen", read 2026-09-10. Cut 2026-09-10 to 2-3 lines per
+% paragraph; the classifier-only venue-share caveat moved
+% to its claim site (Sec 3.3); the 28 empty cells count as failures since
+% 2026-09-10 (Sec 5.2, App. B).
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+RECLAIM measures whether an agent can reproduce the central claim of a
+machine learning paper from the artifacts its authors released, under a
+metered GPU grant, a pinned target, and an auditor that grades execution
+evidence in place of the agent's own report. Over four agents and 400
+agent-paper cells, the best reproduction rate falls from 41\% where code, data, and
+weights are released to 15\% where the method must be rebuilt from the paper,
+the agents leave most of their granted compute unspent, and a nine-mode
+labeling of every run separates the failures that recede between the two
+weakest and the two strongest agents from those that do not. Rebuilding a
+method without checking it against the paper falls when the two strongest
+agents are pooled against the two weakest, and measuring the wrong released
+artifact does not. We read this to mean that the strongest agent can run an
+experiment when the authors' code is released and struggles to design one
+from the paper alone. The harness, the frozen rubric, and every graded
+transcript accompany this submission, the benchmark itself follows after
+review, and the construction pipeline can rebuild the set from each conference cycle at low human cost, so the
+measurement can be repeated on fresh papers as agents improve. The steps
+beyond it, conducting experiments end to end on unpublished ideas and
+recursive self-improvement, remain open.
+% numbers: 48/32/16 best rate per tier as in the abstract (DSv4 14/29, 9/28;
+% Muse Spark 5/32); 372 runs; 1,770 of 9,120 H100-h spent; mode direction
+% from Sec 1 (reimplement-without-validating 43/188 -> 20/184, artifact-
+% provenance-mismatch 21 of 38 in the two strongest). Closing two sentences
+% match the frozen abstract (decision freeze-reclaim-abstract, 2026-09-07).
+
+\subsection*{Reproducibility statement}
+
+\begin{itemize}
+\item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
+budget enforcement, the sandbox, and the prompts in full.
+\item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
+served revision, or for the hosted model to an API identifier and an access
+window, and states the serving configuration it ran under.
+\item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
+frozen before any reported sweep was graded, and
+Appendix~\ref{app:auditor-validation} reports the auditor's agreement with
+human graders.
+\item \textbf{Dataset.} The audited benchmark is released on Hugging Face
+(footnote~\ref{fn:artifacts}), and Appendix~\ref{app:dataset-schema} documents
+every field and both splits.
+\item \textbf{Artifacts.} Code, batch scripts, and the run bundles
+are released in the RECLAIM repository, and
+Appendix~\ref{app:running} gives the commands that serve a model, run a
+paper, and grade a run. The runs behind the reported numbers can also be
+read at \url{https://reclaim-traces.vercel.app}, a viewer that
+shows each transcript verbatim with paths and identifiers redacted, together
+with its audit score and its primary failure mode. The code
+repository and the dataset are linked from footnote~\ref{fn:artifacts} on the first page.
+\end{itemize}
+
+An agent rollout is sampled and interacts with a live machine, so a rerun does
+not recover our transcripts turn for turn. The run bundles make the
+grading stage reproducible from our artifacts where the rollout stage is not.
+
+\subsection*{AI use statement}
+
+Large language models are the object of study in this work. The agent models
+under evaluation and the model that grades their reports are described in
+Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
+property of the benchmark rather than author assistance. Our own use of
+generative AI tools was as follows.
+
+\begin{itemize}
+\item \textbf{Dataset.} We used them to extract and normalize the per-paper
+metadata that forms the released dataset, including the artifact-availability
+signals and the pinned match targets. Every extracted field was reviewed by an
+author before the dataset was frozen.
+\item \textbf{Implementation.} We used them to implement parts of the harness,
+the serving stack, and the analysis scripts.
+\item \textbf{Grading.} We used them to grade agent reports and to assign
+failure modes. That is a methodological choice, and
+Appendix~\ref{app:auditor-validation} reports how the auditor's verdicts
+compare with human graders.
+\item \textbf{Writing and figures.} We used them to draft and edit sections of
+this paper, to produce the plotting code behind its figures, and to search and
+summarize related literature. Every citation was checked against the cited
+paper by an author.
+\item \textbf{Not used.} We did not use generative AI tools to generate
+synthetic datasets, to develop theoretical models, to formulate or prove
+mathematical claims, or for translation. The hypotheses this paper tests, the
+availability-tiered design of the benchmark, and the audit protocol are the
+authors' own, and generative AI tools did not propose or refine them.
+\end{itemize}
+
+We have reviewed all AI-assisted work, and we take responsibility for the
+final content of this paper, including text, claims, and artifacts produced
+with the aid of generative AI.
+
+\subsubsection*{Acknowledgments}  % template: unnumbered third-level heading, last item before the references
+
+% src: funding acknowledgement, kept verbatim by author directive 2026-08-30; own section by directive 2026-09-05 (grant rules)
+This research used the DeltaAI advanced computing and data resource, which is
+supported by the National Science Foundation (award OAC 2320345) and the State
+of Illinois. DeltaAI is a joint effort of the University of Illinois
+Urbana-Champaign and its National Center for Supercomputing
+Applications~\citep{bode2025deltaai}.
+
+\bibliography{iclr2027_conference}
+\bibliographystyle{iclr2027_conference}
+
+\clearpage  % appendices start on a fresh page
+\appendix
+
+\input{appendix/a_harness}
+\input{appendix/b_models}
+\input{appendix/c_rubric}
+\input{appendix/d_auditor_validation}
+\input{appendix/e_construction}
+\input{appendix/f_dataset}
+\input{appendix/g_taxonomy}
+\input{appendix/h_runs}
+\input{appendix/i_running}
+\input{appendix/j_prompts}
+
+\end{document}

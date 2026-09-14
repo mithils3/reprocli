@@ -1,0 +1,15 @@
+\subsection{Prompt templates}
+\label{app:prompts}
+
+Figure~\ref{lst:harness-messages} in Appendix~\ref{app:prompt-listings} prints
+every fixed string the model reads: the system message stored at index 0,
+where compaction never reaches it, the final-turn instruction appended once
+the harness removes the tools, and the five strings inserted during an
+episode. The task prompt is the first user turn, a 290-line template whose
+fourteen placeholder fields under nine headings are filled from the paper's
+dataset row (Appendix~\ref{app:dataset-schema}), from the episode's compute
+ceiling, or from the container paths of Appendix~\ref{app:sandbox}. Rendering
+fails on an unfilled field, every field has a fallback string that states
+absence, and the renderer omits \texttt{match\_target.config}, so the agent
+derives the configuration that produces the target value from the paper.
+Figure~\ref{lst:task-prompt} prints the template.

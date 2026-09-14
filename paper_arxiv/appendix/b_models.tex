@@ -1,0 +1,182 @@
+\section{Model and Serving Details}
+\label{app:models}
+
+% dates: repro_runs started_at/finished_at of the three muse_spark batches
+We serve the three open-weight agent models on our cluster with vLLM, each from
+a per-model profile the launcher expands into one \texttt{vllm serve} command,
+and a sweep is one batch job per model per tier that launches the server and
+runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
+call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
+compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
+through the Meta Model API.
+Table~\ref{tab:models} lists the four configurations.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{2.05cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
+\toprule
+Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 \\
+\midrule
+Served checkpoint &
+\texttt{deepseek-ai/\allowbreak{}DeepSeek-\allowbreak{}V4-\allowbreak{}Flash-\allowbreak{}0731} &
+\texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
+\texttt{cyankiwi/\allowbreak{}MiniMax-\allowbreak{}M2.7-\allowbreak{}AWQ-\allowbreak{}4bit} &
+\texttt{muse-\allowbreak{}spark-\allowbreak{}1.2-\allowbreak{}contributor} \\
+\addlinespace
+Advertised name & same as checkpoint & same as checkpoint &
+\texttt{MiniMaxAI/\allowbreak{}MiniMax-\allowbreak{}M2.7} & same as checkpoint \\
+\addlinespace
+Precision & native INT8/FP8 & FP8 & 4-bit AWQ (W4A16) & vendor-served \\
+KV cache dtype & \texttt{fp8} & \texttt{fp8} & not set & vendor-served \\
+GPUs per replica & 2 & 1 & 2 & vendor-served \\
+Tensor parallel & 2 & 1 & 2 & vendor-served \\
+Served context & 409{,}600 & 262{,}144 & 196{,}608 & 1{,}000{,}000 declared \\
+Agent input ceiling & 376{,}832 & 229{,}376 & 163{,}840 & 967{,}232 \\
+Reasoning setting & \texttt{thinking} true,
+\texttt{reasoning\_effort} \texttt{max} & checkpoint default &
+checkpoint default & \texttt{reasoning\_effort} \texttt{xhigh} \\
+Temperature & not set & not set & not set & not set \\
+\texttt{top\_p} & 0.95 & not set & not set & not set \\
+Tool-call parser & \texttt{deepseek\_v4} & \texttt{qwen3\_coder} &
+\texttt{minimax\_m2} & API \\
+Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
+\texttt{minimax\_m2} & API \\
+\texttt{max\_num\_seqs} & not set & 32 & not set & vendor-served \\
+Tool rounds & 300 & 300 & 300 & 300 \\
+\bottomrule
+\end{tabular}
+\caption{Served configuration of the four agent models, from the tier launch
+scripts and the serve profiles.}
+\label{tab:models}
+\end{table}
+
+We produce the grades of record with a separate grading client on the
+Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
+run bundle capped at 25 rounds, and re-grading a batch overwrites its audit, so
+a re-graded sweep has one grader. We price GPU time at the \$2
+per H100-hour of Section~\ref{subsec:experimental-setup} and grader tokens at
+\$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
+
+% numbers of record: tools/anon_viewer/public/data/index.json runs[].tokens and
+% runs[].spent_h100 plus repro_runs prompt/completion/cached_tokens and spent_h100 for the 24
+% started-but-ungraded runs (2026-09-10); rates read from each vendor's own
+% endpoint listing on 2026-08-17; arithmetic as in ~/sweeps/cost-2026-09-07.py.
+% Cached prompt tokens are billed at the cache-read rate for DeepSeek-V4-Flash,
+% MiniMax-M2.7, and Muse Spark 1.2.
+\paragraph{Token usage and cost.} We take token pricing from each model's
+provider, and Table~\ref{tab:cost} lists the totals. For the three
+cluster-served models we take the tokens produced on our cluster and price them
+at the provider's API rate. Figure~\ref{fig:app-b-tokens} shows the tokens of
+each graded run by agent, and Figure~\ref{fig:app-b-cost} its cost and the
+split between tokens and GPU time.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+& \multicolumn{3}{c}{Rate (\$/M)} & \multicolumn{2}{c}{Tokens (M)} &
+\multicolumn{3}{c}{Cost (\$)} & \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-6} \cmidrule(lr){7-9}
+Agent & Prompt & Cached & Completion & Prompt & Completion & Tokens & GPU &
+Total & Per run \\
+\midrule
+DeepSeek-V4-Flash & 0.14 & 0.0028 & 0.28 & 1{,}077.9 & 11.11 & 15.04 & 1{,}337.64 & 1{,}352.68 & 13.66 \\
+Qwen3.6-27B & 0.45 & -- & 2.70 & 489.1 & 6.24 & 236.93 & 797.63 & 1{,}034.56 & 10.45 \\
+MiniMax-M2.7 & 0.30 & 0.06 & 1.20 & 573.8 & 6.62 & 82.21 & 528.61 & 610.82 & 6.17 \\
+Muse Spark 1.2 & 1.25 & 0.15 & 4.25 & 1{,}494.6 & 33.53 & 724.91 & 1{,}112.34 & 1{,}837.24 & 18.56 \\
+\midrule
+All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12.21 \\
+\bottomrule
+\end{tabular}
+\caption{Token usage and cost of the 396 runs that started.}
+\label{tab:cost}
+\end{table}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_tokens}
+\caption{Prompt, cached prompt, and completion tokens per graded run by agent,
+one dot per run on a shared log axis with the median ticked.}
+\label{fig:app-b-tokens}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_cost}
+\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost},
+with the ratio of token cost to GPU cost at right and a dashed line at parity.}
+\label{fig:app-b-cost}
+\end{figure}
+
+\subsection{Results by agent, tier, and compute band}
+\label{app:results-table}
+
+Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
+and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
+8 or higher, a cell without a graded run counts as a failure at score 0,
+grant spent is H100-hours used over hours
+granted, and the band is the paper's cap in H100-hours.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-7}
+Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
+\midrule
+DeepSeek-V4-Flash & Run & 14/34 (41\%) & 5.29 & & & \\
+& Retrain & 9/33 (27\%) & 5.45 & & & \\
+& Reimplement & 4/33 (12\%) & 4.64 & & & \\
+& All tiers & 27/100 (27\%) & 5.13 & & & \\
+& Mean score & & & 6.00 & 4.10 & 3.33 \\
+& Grant spent (\%) & \multicolumn{2}{r}{26.2 overall} & 42.0 & 34.0 & 13.5 \\
+\midrule
+Qwen3.6-27B & Run & 5/34 (15\%) & 3.91 & & & \\
+& Retrain & 6/33 (18\%) & 3.58 & & & \\
+& Reimplement & 2/33 (6\%) & 3.03 & & & \\
+& All tiers & 13/100 (13\%) & 3.51 & & & \\
+& Mean score & & & 4.03 & 3.14 & 1.83 \\
+& Grant spent (\%) & \multicolumn{2}{r}{15.6 overall} & 31.0 & 23.4 & 3.1 \\
+\midrule
+MiniMax-M2.7 & Run & 3/34 (9\%) & 3.09 & & & \\
+& Retrain & 5/33 (15\%) & 3.30 & & & \\
+& Reimplement & 2/33 (6\%) & 2.70 & & & \\
+& All tiers & 10/100 (10\%) & 3.03 & & & \\
+& Mean score & & & 3.56 & 2.41 & 1.92 \\
+& Grant spent (\%) & \multicolumn{2}{r}{10.4 overall} & 26.8 & 12.0 & 2.3 \\
+\midrule
+Muse Spark 1.2 & Run & 9/34 (26\%) & 5.47 & & & \\
+& Retrain & 9/33 (27\%) & 5.85 & & & \\
+& Reimplement & 5/33 (15\%) & 3.67 & & & \\
+& All tiers & 23/100 (23\%) & 5.00 & & & \\
+& Mean score & & & 5.61 & 4.55 & 3.08 \\
+& Grant spent (\%) & \multicolumn{2}{r}{21.8 overall} & 38.9 & 32.6 & 6.1 \\
+\midrule
+All agents & Run & 31/136 (23\%) & 4.44 & & & \\
+& Retrain & 29/132 (22\%) & 4.55 & & & \\
+& Reimplement & 13/132 (10\%) & 3.51 & & & \\
+& All tiers & 73/400 (18\%) & 4.17 & & & \\
+& Mean score & & & 4.80 & 3.55 & 2.54 \\
+& Grant spent (\%) & \multicolumn{2}{r}{18.5 overall} & 34.7 & 25.5 & 6.2 \\
+\bottomrule
+\end{tabular}
+\caption{Reproduced cells, mean audit score, and grant spent over all 400
+agent-paper cells, by agent, tier, and compute band.}
+\label{tab:results}
+\end{table}
+% All-tiers rows (2026-09-10): per-agent reproduced = sum of the tier cells
+% (27/13/10/23 = 73); per-agent mean over all 100 cells 5.13 / 3.51 / 3.03 /
+% 5.00 as in the Sec 5.2 numbers-of-record comment; all-agents mean over 400
+% cells = (5.13+3.51+3.03+5.00)/4 = 4.17, equal to the tier-weighted mean
+% (4.44*136 + 4.55*132 + 3.51*132)/400 = 4.17.
+% numbers of record (2026-09-10): index.json's 372 graded runs plus the 28
+% cells without a graded run (score 0, or the pinned grade 0/2/0 for the three
+% graded-unlabeled runs; spent_h100 and total_h100 from repro_runs for the 24
+% runs that started, 0 of 8 h for the four 2510.20725 cells); the same
+% constants as paper_latex/figures/charts.py RESULTS and COMPUTE.

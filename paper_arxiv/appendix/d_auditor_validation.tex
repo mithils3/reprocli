@@ -1,0 +1,19 @@
+\section{Auditor Validation}
+\label{app:auditor-validation}
+
+We hold four inputs constant across every grade of record: the grader model ID,
+which is written onto every verdict row, the frozen rubric file, the audit prompt rendered per run from that rubric text and the
+pinned claim, and the shared verdict code that applies the integrity adjustment
+of Appendix~\ref{app:rubric}. Each grading pass gets an identity of its own from
+the grader model name and a UTC timestamp, which keys every row and transcript
+event the pass writes, so a later pass stays distinguishable from the grade of
+record. The grading client and its decoding settings are given in
+Appendix~\ref{app:models}.
+
+% numbers of record: F1 0.82, three human graders, one per run, all 396 runs
+% that started, rubric of Appendix C, blind to the auditor's score (author, 2026-09-10).
+Three human graders scored all 396 runs that started, one grader per run, from
+the run bundle, its pinned claim, and the rubric text of
+Appendix~\ref{app:rubric}, blind to the auditor's score and verdict. Taking the
+human label as the reference, the auditor's reproduced verdicts reach an F1 of
+0.82.

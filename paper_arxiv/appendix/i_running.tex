@@ -1,0 +1,57 @@
+\section{Setup Details}
+\label{app:running}
+
+The RECLAIM repository (footnote~\ref{fn:artifacts}) holds the dataset pipeline,
+the reproduction agent of Appendix~\ref{app:harness}, the auditor of
+Appendix~\ref{app:rubric}, the serving layer they share, the batch scripts
+behind every sweep, and the run bundles the grades were computed on, and the
+prompt templates and rubric of Appendix~\ref{app:prompt-listings} are printed
+verbatim from it. Figure~\ref{lst:running-commands} gives the commands that
+serve a model, run one paper, and grade one run.
+
+\begin{codebox}[lst:running-commands]{bash}{Serving, running, and grading}
+# Serve the agent model and publish the address other nodes reach it at.
+$ PYTHONPATH=src python3 -m reclaim_serve \
+    --model <hf-id-or-path> \
+    --served-model-name <model-id> \
+    --port 8000 \
+    --tensor-parallel-size <tp> \
+    --endpoint-file <endpoint-file>
+$ export RECLAIM_ENDPOINT_FILE=<endpoint-file>
+
+# Run one paper of the frozen benchmark against it.
+$ PYTHONPATH=src python3 -m reclaim_repro \
+    --paper-id <arxiv-id> \
+    --split eval \
+    --run-id <run-id> \
+    --runs-dir <runs-dir> \
+    --vllm-server-url <endpoint-url> \
+    --served-model-name <model-id>
+
+# Hosted model: same run command, its API as the server URL, key and window exported.
+$ export RECLAIM_API_KEY=<api-key> RECLAIM_CONTEXT_LENGTH=<window>
+$ PYTHONPATH=src python3 -m reclaim_repro ... \
+    --vllm-server-url https://api.meta.ai/v1 --served-model-name <model-id>
+
+# Grade the bundle with the pinned grader (hosted sweeps: --batch <model>-<timestamp>).
+$ PYTHONPATH=src python3 -m reclaim_claude \
+    --batch slurm-<jobid> \
+    --runs-dir <runs-dir> \
+    --split eval \
+    --model claude-sonnet-5 \
+    --extracted-output <verdicts.jsonl>
+\end{codebox}
+
+A tier job runs its papers in ascending order of compute ceiling and grades
+each run while the sweep is still in progress, over a vLLM endpoint capped at
+40 tool rounds. The pinned pass of Appendix~\ref{app:models} overwrites those
+in-sweep grades. We resume a killed job with \texttt{RESUME=1}, which skips
+papers whose verdict is already on disk, regrades nothing, and retries any
+paper whose run ended without a verdict, and a paper that produces no bundle
+counts as a failure at score 0. When
+grading a batch we take each paper's newest attempt and drop runs still in
+progress unless \texttt{-{}-include-running} is passed, since a half-written
+bundle measures the harness. Each verdict row
+records the score, the rationale, and any anti-cheat flags against the run
+bundle of Appendix~\ref{app:report-format}, and we regenerate every table in
+this paper from the frozen split files and those run records.
