@@ -107,11 +107,11 @@ def fig_verdict_flow():
     terms = [("disqualified", "score 0", ROSE), ("unverifiable", "score 1, no execution", SLATE),
              ("not reproduced", "score 1 to 5", SLATE), ("partial", "score 6 to 7", AMBER),
              ("reproduced", "score 8 to 10", GREEN)]
-    tw, gap = 118, 11.5
+    tw, gap = 120.8, 8
     for i, (name, sub, c) in enumerate(terms):
         x = X0 + i * (tw + gap)
         box(b, x, 296, tw, 36, [name, sub], fill=c, stroke=None, color="#FFFFFF",
-            size=11.5, first_weight=600)
+            size=11, first_weight=600)
     page("app_CD_verdict_flow", b, 350)
 
 

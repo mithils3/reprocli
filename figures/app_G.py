@@ -213,7 +213,7 @@ def fig_relabel(runs):
     b.append(text(X1, 58, "mode of record", 12, INK, SANS, 600, "end"))
     unit, gap = 6.0, 8.5
     top = 74
-    lxn, rxn, nw = 240, 392, 7
+    lxn, rxn, nw = 240, 372, 7
     ly, lpos = top, {}
     for rw in lefts:
         h = unit * left_tot[rw]

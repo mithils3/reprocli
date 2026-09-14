@@ -24,11 +24,29 @@
 \usepackage{etoolbox}
 \usepackage{needspace}
 \usepackage{placeins}  % \FloatBarrier keeps each run card inside its vignette
+% Figure captions sit closer to their own figure than to the next float.
+\AtBeginEnvironment{figure}{\setlength{\abovecaptionskip}{7pt}}
 % Table captions sit below the tabular: give them clearance from the bottom rule.
 \AtBeginEnvironment{table}{\setlength{\abovecaptionskip}{6pt}\setlength{\belowcaptionskip}{0pt}}
 \setlength{\LTcapwidth}{\dimexpr\textwidth-2.3pt\relax}  % longtable captions span the text block (longtable centres them 1.1pt left)
+\setlength{\LTpost}{3pt}  % caption-to-text gap after a longtable matches a table float's
 \makeatletter
 \patchcmd{\LT@makecaption}{\reset@font}{\reset@font\normalsize}{}{}  % caption stays 10pt inside \small tables
+% A float-only page stacks its floats from the top at the text-page separation instead of
+% spreading them down the page.
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{\floatsep}
+\setlength{\@fpbot}{0pt plus 1fil}
+% A reference URL cannot break inside a word, so the line before it, or a URL line ending at a
+% slash, stretched its word spaces. The block before a URL (the only block of the .bbl that opens
+% with U) or a single slash in a URL may instead end its line short, at a penalty that keeps ordinary
+% lines full.
+\apptocmd{\thebibliography}{%
+  \renewcommand\newblock{\@ifnextchar U%
+    {\hskip 0pt plus 1fil\relax\penalty500\hskip .11em plus .33em minus .07em\relax\hskip 0pt plus -1fil\relax}%
+    {\hskip .11em plus .33em minus .07em\relax}}%
+  \expandafter\def\expandafter\UrlSpecials\expandafter{\UrlSpecials\do\/{\@ifnextchar/{\mathchar"002F\mathchar"002F\@gobble}{\mathchar"002F\mskip 0mu plus 1fil\relax\penalty2000\mskip 0mu plus -1fil\relax}}}%
+}{}{}
 \makeatother
 
 \title{RECLAIM: Can Agents Reproduce the Claims of Machine Learning Papers?}
@@ -335,7 +353,7 @@ every availability call and compute estimate audited by hand.}
 \label{fig:funnel}
 \end{figure}
 
-\textbf{Stage I: Artifact-verified classification.} For each submission we
+\paragraph{Stage I: Artifact-verified classification.} For each submission we
 retrieved the raw LaTeX source together with any OpenReview supplementary
 material, since some authors ship code only in the supplement
 (Appendix~\ref{app:corpus}).
@@ -360,7 +378,7 @@ The tiers also describe the venue as a whole, from the classifier pass alone
 since we audited by hand only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
 Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
 
-\textbf{Stage II: Compute capping and stratified selection.} We estimated the
+\paragraph{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
 hardware and wall-clock time where stated and deriving the estimate from the
 pinned configuration otherwise (Appendix~\ref{app:selection}). We cap the
@@ -371,7 +389,7 @@ tier's reproduction rate with equal precision. Proportional sampling would leave
 dozen papers, and the venue proportions reported above let readers reweight
 any rate back to the venue level.
 
-\textbf{Stage III: Human audit.} We audited every paper in the pool by hand,
+\paragraph{Stage III: Human audit.} We audited every paper in the pool by hand,
 opening the evidence behind each availability call and re-deriving each compute
 estimate (Appendix~\ref{app:human-audit}). Papers whose artifacts proved
 inaccessible or that depended on paid third-party APIs failed the audit and
@@ -762,7 +780,7 @@ Appendix~\ref{app:dataset-schema} documents every field and both splits.
 are submitted as anonymized supplementary material, and
 Appendix~\ref{app:running} gives the commands that serve a model, run a
 paper, and grade a run. The runs behind the reported numbers can also be
-read at \url{https://reclaim-traces.vercel.app}, an anonymized viewer that
+read at \href{https://reclaim-traces.vercel.app}{\nolinkurl{reclaim-traces.vercel.app}}, an anonymized viewer that
 shows each transcript verbatim with paths and identifiers redacted, together
 with its audit score and its primary failure mode. The anonymized code
 repository is linked from footnote~\ref{fn:artifacts} on the first page.

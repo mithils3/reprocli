@@ -51,8 +51,8 @@ median.}
 \subsection{Score scale and verdicts}
 
 Table~\ref{tab:rubric} lists the score bands and the verdict each score maps
-to. A score of 1 becomes \texttt{unverifiable} when the auditor also reports
-that it found no evidence the code ran. We froze the rubric text three days
+to. When the auditor also reports that it found no evidence the code ran, a
+score of 1 becomes \texttt{unverifiable}. We froze the rubric text three days
 after the dataset freeze, and every pinned-auditor grade in this paper was
 produced after that freeze. An agent that reports it could not obtain
 a required artifact, such as weights or a dataset, gets no credit for that
@@ -158,5 +158,9 @@ Figure~\ref{fig:score-dist}.}
 \label{fig:app-cd-verdict-flow}
 \end{figure}
 
-\FloatBarrier  % both figures print before the listing
+% The listing is a float-page figure so that Appendix D fills the page after Table 7, and the
+% barrier at the end of Appendix D prints it after Figure 13.
+\begin{figure}[p]
+\tcbset{rbFrame/.append style={unbreakable}}
 \codefile[lst:audit-finalizer]{Python}{Verdict derivation code}{prompts/audit_finalizer.py}
+\end{figure}
