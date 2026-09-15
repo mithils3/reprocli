@@ -14,7 +14,7 @@
 \mathchardef\UrlBigBreakPenalty=10000
 \renewcommand{\UrlFont}{\small\ttfamily}  % 9pt Courier sits level with 10pt Times and lets long URLs fit a line
 \usepackage{graphicx}
-\usepackage{rotating}  % sidewaysfigure for the run-timelines page in Appendix H
+\usepackage{rotating}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -85,22 +85,6 @@ interpret these findings to mean the strongest agent can run an experiment
 with released code but struggles to design one from the paper alone. The
 next step toward automated research, writing code for an unpublished idea,
 remains open.
-% numbers of record (2026-09-10), pinned claude-sonnet-5, post-freeze, over all
-% 400 agent-paper cells with the 28 cells that have no graded run at score 0:
-%   best rate per tier 41/27/15 -- Run 14/34 and Retrain 9/33 are
-%     DeepSeek-V4-Flash's; Reimplement 15 is Muse Spark 1.2's 5/33 (DSv4's own
-%     Reimplement rate, 4/33 = 12, is stated by name in the intro). The drop
-%     that holds for every agent is Run -> Reimplement (every agent's lowest
-%     rate and mean score); Run vs Retrain is within noise (DSv4 14/34 vs 9/33
-%     z = 1.2 on a two-proportion test; the other three within nine points).
-%   non-reproduced spend 29% -- mean spent/budget per cell over the 327
-%     non-reproduced cells (28.9%); ratio of sums 17.7%. Reproduced cells pool
-%     to 27.1%, so never imply failures are cheaper.
-%   "most Retrain-tier misses ... outside tolerance" -- DISSECTION-derived
-%     (Ran, outside tolerance is the mode of 15 of the strongest agent's 19
-%     labeled Retrain misses); the body names the provenance where it appears.
-%   96 H100-hour band -- 48 cells spend 6.2% of their grant and 1 reproduces
-%     (Muse Spark 1.2, Retrain, 2508.21046, score 9).
 \end{abstract}
 
 \section{Introduction}
@@ -177,17 +161,6 @@ reports. We define the taxonomy, report the per-mode
 counts, and give the transcript evidence in Section~\ref{subsec:mechanisms}. Agent
 self-reports track none of this reliably, so we report claimed and audited counts
 as background data.
-% numbers of record (2026-09-05): resolved per-run primary modes in
-% ~/sweeps/paper-table-2026-09-05/resolved_modes.json (index.json of 2026-09-03
-% plus the 29-run relabel pass in result.json). Agents ordered by mean audit
-% score over all 100 cells: DSv4 5.13, Muse 5.00, Qwen3 3.51, MiniMax 3.03. reimplement-without-
-% validating: Qwen3 16/90 + MiniMax 27/98 = 43/188; DSv4 13/87 + Muse 7/97 =
-% 20/184. environment-fights: 8+11 = 19 vs 1+4 = 5. artifact-provenance-
-% mismatch per agent 6/87, 4/90, 13/98, 15/97 = 38; release-disagrees-with-paper
-% signature in 10 runs on 7 papers (dsv4-retrain-2506.19839, dsv4-run-2505.23305,
-% dsv4-run-2510.21311, dsv4-run-2505.24873, muse-run-2505.23305,
-% muse-run-2511.16666, muse-run-2505.18456, minimax-run-2511.16666,
-% minimax-run-2505.18456, minimax-run-2505.10475), read from failure_mode_detail.
 
 \begin{figure}[t]
 \centering
@@ -437,9 +410,6 @@ Three human graders scored all 396 runs that started, one grader per run,
 under the same rubric and blind to the auditor's score, and the auditor's
 verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict
 (Appendix~\ref{app:auditor-validation}).
-% numbers of record: F1 0.82, three human graders, one per run, all 396 runs
-% that started, rubric of Appendix C, blind to the auditor's score (author,
-% 2026-09-10).
 
 \section{Experiments}
 \label{sec:experiments}
@@ -492,11 +462,6 @@ DeepSeek-V4-Flash is the strongest of the four agents. It recovers the pinned
 number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
 Reimplement, and the four agents span a factor of 1.7 in mean audit score,
 from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
-% numbers of record (2026-09-10): all 400 cells = index.json's 372 graded runs
-% + the 28 cells without a graded run at score 0 (three at their pinned grade
-% 0/2/0); per-agent means 5.13 / 3.51 / 3.03 / 5.00, 5.13/3.03 = 1.69. Policy
-% (2026-09-10): a cell without a graded run is a failure at score 0. Derivation
-% over repro_runs + audit_runs + HF eval_100 + index.json.
 
 \begin{figure}[t]
 \centering
@@ -505,12 +470,6 @@ from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
 of the granted H100-hours each agent spent.}
 \label{fig:main-results}
 \end{figure}
-% numbers of record (2026-09-05): tools/anon_viewer/public/data/index.json
-% sweeps[] (n, n_reproduced, mean_score); reproduced = audit score >= 8 =
-% verdict reproduced on all 372 runs. Grant spent = 100 * sum(spent_h100) /
-% sum(budget_h100) over the agent's runs: 636.7/1992.0, 324.6/2088.0,
-% 259.6/2512.0, 549.4/2528.0, all 1770.2/9120.0. All-agents means are over all
-% runs in the tier (4.68/5.08/3.69), not means of the four rows.
 
 The agents differ more in how far they get than in how often they finish. We
 call an audit score of 6 or more a partial result or better. At Retrain,
@@ -527,11 +486,6 @@ and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
 more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
 Every agent's lowest reproduction rate and lowest mean score are at
 Reimplement, where no code is released, and 13 of 132 cells reproduce there.
-% partial-or-better = audit score >= 6 over all 33 Retrain cells (index.json +
-% the missing cells at 0): DSv4 22/33, Muse 23/33, MiniMax 9/33. Qwen3.6-27B
-% means 3.91 / 3.58 / 3.03 fall at each tier once its 7 empty Retrain cells
-% count as zeros. Two-proportion z on DSv4: 14/34 vs 9/33 -> pooled 23/67,
-% z = 1.20; 14/34 vs 4/33 -> pooled 18/67, z = 2.68 (computed 2026-09-10).
 
 Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
@@ -544,15 +498,6 @@ parsable self-assessment and 128 claim reproduction, against 73
 audited reproductions over all 400 cells, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
 of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
-% cost (2026-09-10): the cost-2026-09-07.py rates over index.json's 372 runs
-% plus the 24 started-but-ungraded runs' repro_runs tokens and spent_h100.
-% Token $1,059.08 + GPU $3,776.22 = $4,835.30; /396 = 12.21; /73 = 66.2; GPU
-% share 78.1%. Spend: 1,888.1 of 10,208 H100-h over 400 cells (18.5%); mean
-% per-cell spent/budget over the 327 non-reproduced cells 28.9%.
-% self_report field of index.json: reproduced 128, not_reproduced 208, partial
-% 23, none 13 (12 of them Qwen3.6-27B). The abstract's 30% is the mean per-run
-% spent/budget over the 299 non-reproduced runs; the pooled figure here is
-% hours over hours (19.4% all runs, 18.6% non-reproduced).
 
 \subsection{Failure mechanisms}
 \label{subsec:mechanisms}
@@ -572,8 +517,6 @@ the auditor graded reproduced has the label Wrong artifact measured, because the
 dissection found its passing number was measured on a released checkpoint
 other than the one the row pins, so the Reproduced row holds 72 runs against
 73 audited reproductions, with the difference in the Run column.
-% the one run: muse-run-2505.18456 (audit 8; adlm-medium/large 262B/524B
-% checkpoints against a pinned 110B row).
 
 \begin{figure}[t]
 \centering
@@ -582,14 +525,6 @@ other than the one the row pins, so the Reproduced row holds 72 runs against
 Appendix~\ref{app:taxonomy}.}
 \label{fig:failure-modes}
 \end{figure}
-% numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
-% resolved_modes.json = index.json field "mode" with two relabel passes
-% applied: 29 runs (25 "other" plus 4 label/verdict conflicts; evidence in
-% result.json) and the 7 outside-tolerance runs with a disqualified verdict
-% (4 moved; evidence in relabel_pass2.txt). Rows are the slugs reproduced-clean,
-% near-miss-partial, reimplement-without-validating, environment-fights,
-% artifact-provenance-mismatch, scope-substitution, stale-artifact-reliance,
-% procrastination/wall-kill, killed-before-the-number.
 
 \paragraph{Where the failures occur.}
 Reimplemented but did not check the result is the most common process
@@ -611,15 +546,6 @@ one paper it rebuilt the failing package from source and, when the authors'
 scorer exceeded the node's memory limit, rewrote it and checked the rewrite
 against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
 it replaced the package by an unvalidated port that the auditor disqualified.
-% sources: resolved_modes.json for every count. aarch64 attribution: the five
-% are 2504.20571, 2506.20671, 2505.24873, 2505.10978, 2505.14827 per
-% notes/Analysis/2026-07-20 Easy Sweep 2652648 (MiniMax repair).md:95-103,145
-% (pre-pinned-grade era; mode reasoning is transcript-based). The same note
-% attributes 2503.18430 to a run_gpu allocation cap of ~3 minutes in our own
-% harness at the time (8 killed mmcv builds), a harness confound to disclose in
-% Limitations. DSv4 adaptation split: notes/Analysis/2026-08-11 Easy Sweep
-% 2883229+2889575 (DSv4, pinned Sonnet).md:52 (2503.18430 valid chunked scorer;
-% 2505.14827 unvalidated port, disqualified).
 
 \paragraph{What the successful runs do.}
 Most runs that recover the target result run the authors' own entrypoint. The
@@ -631,12 +557,6 @@ before spending compute on it. Reduced-scale smoke tests separate the two
 groups only weakly, since the records mention them in 45 of the 73 successful runs
 and 148 of the 299 failed ones. Appendix~\ref{app:annotated-runs} shows these
 behaviors at the round level in ten annotated runs.
-% sources: dissection records (analysis.* fields of the run records) read
-% 2026-09-05: smoke test mentioned in 45/73 audited-
-% reproduced and 148/299 failed records; reuse of released entrypoint in 58/73
-% vs 160/299. Report lines: notes/Analysis/2026-08-03 Medium Sweep 2690187
-% (MiniMax, pinned Sonnet).md:255-266; 2026-08-24 Hard Sweep muse_spark-
-% 20260820T205201Z (Muse Spark 1.2, pinned Sonnet).md:198-209.
 
 \subsection{Compute does not bind reproduction}
 \label{subsec:compute}
@@ -648,16 +568,6 @@ behaviors at the round level in ten annotated runs.
 compute band of the paper.}
 \label{fig:band-compute}
 \end{figure}
-% numbers of record (2026-09-03): pinned claude-sonnet-5 grades over the 12
-% sweeps of record (the 9 in tools/anon_viewer/manifest.json plus muse_spark
-% 20260814T135227Z / 20260816T133804Z / 20260820T205201Z), 372 runs. Band = the
-% run's budget (agrees with eval_100 h100_band on every run); spent = sum of
-% spent_h100 over sum of budget per cell; Papers = eval_100.jsonl h100_band
-% counts. Per-agent n by band: DSv4 57/21/9, Qwen3.6 57/24/9, MiniMax 58/28/12,
-% Muse Spark 56/29/12; 8-band 228 runs, 32-band 102, 96-band 42. Bands are
-% named by their ceiling on the 0-8 / 8-32 / 32-96 ladder of Appendix E. One
-% 96-band run reproduces (Muse Spark, Retrain, 2508.21046). Recompute:
-% tools/anon_viewer/concordance.py band rows.
 
 \paragraph{Score falls with the paper's compute band.}
 Reproduction scores fall as the paper's compute band grows, even though no
@@ -673,14 +583,6 @@ itself is the missing step, 8 of the 16 cells in the 96 H100-hour band spent
 under 5\% of their grant, and 15 of the 16 did not reproduce. Seven of the
 band's 42 graded runs ran a shrunken version of the paper's training and reported a
 number from it, and six of the seven stated the shortfall.
-% 96-band from index.json: 42 runs = 15 Retrain + 27 Reimplement (no Run-tier
-% paper sits in the band); Retrain spent/budget < 0.05: 7/15, reproduced 1/15
-% (muse-retrain-2508.21046); Reimplement < 0.05: 22/27. Pooled 29/42 is
-% confounded with Reimplement having no code to launch, so it is not printed. Shrunken-training runs, read from the dissection records 2026-09-05:
-% dsv4-retrain-2504.12463, dsv4-retrain-2505.02391, dsv4-retrain-2506.19839,
-% qwen3-retrain-2504.12463, muse-retrain-2506.19839, muse-reimplement-
-% 2506.02882, minimax-retrain-2504.12463 (the one that did not state the
-% shortfall).
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
@@ -715,27 +617,6 @@ the harness already drives one vendor-served agent over its API
 \paragraph{Harness and host.} All runs used one GH200 cluster, whose aarch64
 packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
 and two more trace to harness defects, kept in every count and not relabeled.
-% sources. 76 outside-tolerance runs: tab:failure-modes-by-agent (26+16+7+27),
-% larger than the 72 Reproduced row. Paid-API exclusion of 15:
-% appendix/e_construction.tex tab row 2026-06-25. Model release years: all
-% four agent bib entries are 2026; NeurIPS 2025 papers are 2024/2025 arXiv
-% IDs. Serving confounds: appendix/b_models.tex "Several caveats apply"
-% paragraph. Harness defects: notes/Analysis/2026-07-20 Easy Sweep 2652648
-% (MiniMax repair).md:103 (run_gpu allocations capped at ~3 minutes
-% regardless of minutes=40/60 on 2503.18430, ~8 killed mmcv builds; "Invalid
-% partition name" on first allocation, 2505.18809 never recovered), graded of
-% record as minimax-run-2503.18430 environment-fights and
-% minimax-run-2505.18809 killed-before-the-number (manifest.json); dropping
-% them moves MiniMax's Run-tier rate from 3/34 to 3/32. The within-grader cap
-% stability sentence was removed 2026-09-10 with the LLM-vs-LLM agreement
-% material; the 23/32 second pass on 2652648 is unreported.
-% Interval sentence: a two-proportion test on DSv4's 14/29 vs 9/28 gives
-% z=1.2 and on 14/29 vs 4/30 gives z=2.9 (computed 2026-09-10, not printed).
-% MirrorCode memorization screen: arXiv 2606.30182 Sec 4.3 and App.
-% "Memorization screen", read 2026-09-10. Cut 2026-09-10 to 2-3 lines per
-% paragraph; the classifier-only venue-share caveat moved
-% to its claim site (Sec 3.3); the 28 empty cells count as failures since
-% 2026-09-10 (Sec 5.2, App. B).
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -759,11 +640,6 @@ review, and the construction pipeline can rebuild the set from each conference c
 measurement can be repeated on fresh papers as agents improve. The steps
 beyond it, conducting experiments end to end on unpublished ideas and
 recursive self-improvement, remain open.
-% numbers: 48/32/16 best rate per tier as in the abstract (DSv4 14/29, 9/28;
-% Muse Spark 5/32); 372 runs; 1,770 of 9,120 H100-h spent; mode direction
-% from Sec 1 (reimplement-without-validating 43/188 -> 20/184, artifact-
-% provenance-mismatch 21 of 38 in the two strongest). Closing two sentences
-% match the frozen abstract (decision freeze-reclaim-abstract, 2026-09-07).
 
 \subsection*{Reproducibility statement}
 
@@ -828,9 +704,8 @@ We have reviewed all AI-assisted work, and we take responsibility for the
 final content of this paper, including text, claims, and artifacts produced
 with the aid of generative AI.
 
-\subsubsection*{Acknowledgments}  % template: unnumbered third-level heading, last item before the references
+\subsubsection*{Acknowledgments}
 
-% src: funding acknowledgement, kept verbatim by author directive 2026-08-30; own section by directive 2026-09-05 (grant rules)
 This research used the DeltaAI advanced computing and data resource, which is
 supported by the National Science Foundation (award OAC 2320345) and the State
 of Illinois. DeltaAI is a joint effort of the University of Illinois

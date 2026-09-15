@@ -1,21 +1,6 @@
 \section{Annotated Runs}
 \label{app:annotated-runs}
 
-% Ten runs chosen from the 372 graded runs for what they show about the work
-% of reproduction. Selection and verification: workflow wf_06a298e6-e22
-% (2026-09-06): five lenses over the dissection records nominated 37 runs, 16
-% were verified against the event transcripts in tools/anon_viewer/public/
-% data/runs/, 15 passed (minimax-run-2502.05795 refuted: the silent fallback
-% followed the agent's own file substitution), and ten were kept for coverage.
-% Every quote is verbatim from the run's event transcript; audit score,
-% verdict, and mode are from ~/sweeps/paper-table-2026-09-05/
-% resolved_modes.json. Run ids are the ones the run-log viewer uses. Prose,
-% figure data, and the generator: ~/sweeps/vignettes-2026-09-06/.
-% Figure: figures/run_timelines.html via make_fig_portrait.py + activity.py (per-round
-% class from the tool call: run_gpu or a script launch = execute; pip, uv,
-% conda, cmake, git clone, downloads = install; edit_file/write_file = write;
-% everything else = read and plan).
-
 % Run cards are about 0.4 of a page tall; the style's default bottom-float
 % limit (0.3) forbids a card at the foot of a page, so each page took one card
 % and left a gap. Allow top-and-bottom pairs inside this appendix only.
@@ -44,7 +29,6 @@ Figure~\ref{fig:run-timelines} places the ten on one round axis.
 
 \subsection{The released tag crashed its own evaluation script on five multiclass datasets}
 \label{vig:dsv4-run-2410.18164}
-% viewer: https://reclaim-traces.vercel.app  run dsv4-run-2410.18164; dissection: pool.json; verified.json quotes at rounds ['Round 47', 'Round 53', 'Round 86']
 \runfacts{dsv4-run-2410.18164}{DeepSeek-V4-Flash}{Run}{2410.18164}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{94 rounds, 4.0 of 32~H100-hours}
 The pinned target is Table~1 of TabDPT over 72 CC18 classification datasets
 and 35 CTR23 regression datasets, and the repository's HEAD loads a later
@@ -74,7 +58,6 @@ low-severity provenance note.
 
 \subsection{A renamed branch made LayerNorm Scaling dead code in the released repository}
 \label{vig:dsv4-run-2502.05795}
-% viewer: https://reclaim-traces.vercel.app  run dsv4-run-2502.05795; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 22', 'Round 26']
 \runfacts{dsv4-run-2502.05795}{DeepSeek-V4-Flash}{Run}{2502.05795}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{52 rounds, 6.2 of 8~H100-hours}
 The pinned target is the LayerNorm Scaling (LNS) cell of Table~1, a
 validation perplexity for LLaMA pretrained on C4. The round-21 diff against
@@ -103,7 +86,6 @@ the two arms as a disclosed single-seed deviation.
 
 \subsection{A hyperparameter the released training script never forwarded}
 \label{vig:muse-retrain-2510.23577}
-% viewer: https://reclaim-traces.vercel.app  run muse-retrain-2510.23577; dissection: pool.json; verified.json quotes at rounds ['Round 10', 'Round 31', 'Round 81']
 \runfacts{muse-retrain-2510.23577}{Muse Spark 1.2}{Retrain}{2510.23577}{10}{reproduced}{Reproduced (\texttt{reproduced-clean})}{82 rounds, 2.4 of 8~H100-hours}
 The pinned number is an average precision for GraphMixer with TAMI on
 Wikipedia with $\gamma$ set to 0.9, and the paper releases no weights. At
@@ -132,7 +114,6 @@ reasoning text, so the excerpts are tool output and the report.
 
 \subsection{A host substitution checked against the reference path before training}
 \label{vig:dsv4-retrain-2504.12463}
-% viewer: https://reclaim-traces.vercel.app  run dsv4-retrain-2504.12463; dissection: pool.json; verified.json quotes at rounds ['Round 21', 'Round 91', 'Round 94']
 \runfacts{dsv4-retrain-2504.12463}{DeepSeek-V4-Flash}{Retrain}{2504.12463}{4}{not reproduced}{Ran, outside tolerance (\texttt{near-miss-partial})}{138 rounds, 37.2 of 96~H100-hours}
 The pinned target for Default MoE is a validation perplexity in the released
 GPT-NeoX stack, which the paper ships without weights and which builds CUDA
@@ -163,7 +144,6 @@ that the substitution was verified loss-identical.
 
 \subsection{A CPU-only torch installed by the authors' repository, caught by re-probing CUDA}
 \label{vig:muse-run-2505.14766}
-% viewer: https://reclaim-traces.vercel.app  run muse-run-2505.14766; dissection: pool.json; verified.json quotes at rounds ['Round 24', 'Round 25', 'Round 75']
 \runfacts{muse-run-2505.14766}{Muse Spark 1.2}{Run}{2505.14766}{9}{reproduced}{Reproduced (\texttt{reproduced-clean})}{89 rounds, 1.2 of 8~H100-hours}
 The pinned target is a MASE for Toto on BOOMlet, where the round-24 editable
 install of the authors' repository replaced the CUDA torch build with the
@@ -193,7 +173,6 @@ the same value.
 
 \subsection{A memory-forced rewrite of the scorer, checked two ways, on the wrong experiment}
 \label{vig:dsv4-run-2503.18430}
-% viewer: https://reclaim-traces.vercel.app  run dsv4-run-2503.18430; dissection: pool.json; verified.json quotes at rounds ['Round 87', 'Round 91', 'Round 98']
 \runfacts{dsv4-run-2503.18430}{DeepSeek-V4-Flash}{Run}{2503.18430}{4}{not reproduced}{Wrong experiment (\texttt{scope-substitution})}{107 rounds, 6.0 of 8~H100-hours}
 The pinned claim is CQ-DINO's V3Det AP, and the authors' COCO metric died
 scoring 7,456 finished batches. The agent's 500-category chunked evaluator
@@ -224,7 +203,6 @@ port checked on one example, which the auditor disqualified
 
 \subsection{A masked crash caught from the log, then a shortfall reported as measured}
 \label{vig:minimax-retrain-2510.24940}
-% viewer: https://reclaim-traces.vercel.app  run minimax-retrain-2510.24940; dissection: pool.json; verified.json quotes at rounds ['Round 10', 'Round 12', 'Round 12']
 \runfacts{minimax-retrain-2510.24940}{MiniMax-M2.7}{Retrain}{2510.24940}{6}{partial}{Ran, outside tolerance (\texttt{near-miss-partial})}{17 rounds, 1.0 of 32~H100-hours}
 The pinned target is SemCoT's SVAMP accuracy in the paper's small
 configuration, and the round-10 launch with the shipped best parameters died
@@ -253,7 +231,6 @@ for the disclosed 200-versus-300 discrepancy.
 
 \subsection{A flag stuck on, diagnosed and then reported against the paper's flag-off row}
 \label{vig:qwen3-run-2506.02392}
-% viewer: https://reclaim-traces.vercel.app  run qwen3-run-2506.02392; dissection: pool.json; verified.json quotes at rounds ['Round 35', 'Round 36', 'Round 43']
 \runfacts{qwen3-run-2506.02392}{Qwen3.6-27B}{Run}{2506.02392}{6}{partial}{Wrong experiment (\texttt{scope-substitution})}{44 rounds, 0.4 of 8~H100-hours}
 The pinned claim is the TTPL row of Table~2, an optimality gap under greedy
 construction with MVDF off, which the released command line cannot express.
@@ -283,7 +260,6 @@ row while the pinned arm was never measured.
 
 \subsection{Attention replaced by zeros after the faithful patch missed the bar}
 \label{vig:minimax-retrain-2505.21077}
-% viewer: https://reclaim-traces.vercel.app  run minimax-retrain-2505.21077; dissection: pool.json; verified.json quotes at rounds ['Round 92', 'Round 99', 'Round 108']
 \runfacts{minimax-retrain-2505.21077}{MiniMax-M2.7}{Retrain}{2505.21077}{0}{disqualified}{Wrong experiment (\texttt{scope-substitution})}{109 rounds, 1.2 of 8~H100-hours}
 Neural Block Linearization replaces selected self-attention blocks in
 Mistral-7B with a linear map fitted by linear minimum mean-square error, and
@@ -313,7 +289,6 @@ measured slot.
 
 \subsection{The literal update rule diverged, so a standard optimizer was reported in its place}
 \label{vig:muse-reimplement-2506.17475}
-% viewer: https://reclaim-traces.vercel.app  run muse-reimplement-2506.17475; dissection: pool.json; verified.json quotes at rounds ['Round 34', 'Round 41', 'Round 49']
 \runfacts{muse-reimplement-2506.17475}{Muse Spark 1.2}{Reimplement}{2506.17475}{0}{disqualified}{Wrong experiment (\texttt{scope-substitution})}{50 rounds, 1.3 of 8~H100-hours}
 The paper releases no code for DLRT with heavy-ball momentum, and the pinned
 target is a \mbox{CIFAR-10} accuracy for VGG16 at 94.35 percent compression. The
