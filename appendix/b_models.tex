@@ -1,7 +1,6 @@
 \section{Model and Serving Details}
 \label{app:models}
 
-% dates: repro_runs started_at/finished_at of the three muse_spark batches
 We serve the three open-weight agent models on our cluster with vLLM, each from
 a per-model profile the launcher expands into one \texttt{vllm serve} command,
 and a sweep is one batch job per model per tier that launches the server and
@@ -57,12 +56,6 @@ a re-graded sweep has one grader. We price GPU time at the \$2
 per \mbox{H100-hour} of Section~\ref{subsec:experimental-setup} and grader tokens at
 \$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
 
-% numbers of record: tools/anon_viewer/public/data/index.json runs[].tokens and
-% runs[].spent_h100 plus repro_runs prompt/completion/cached_tokens and spent_h100 for the 24
-% started-but-ungraded runs (2026-09-10); rates read from each vendor's own
-% endpoint listing on 2026-08-17; arithmetic as in ~/sweeps/cost-2026-09-07.py.
-% Cached prompt tokens are billed at the cache-read rate for DeepSeek-V4-Flash,
-% MiniMax-M2.7, and Muse Spark 1.2.
 \paragraph{Token usage and cost.} We take token pricing from each model's
 provider, and Table~\ref{tab:cost} lists the totals. For the three
 cluster-served models we take the tokens produced on our cluster and price them
@@ -169,13 +162,3 @@ All agents & Run & 31/136 (23\%) & 4.44 & & & \\
 agent-paper cells, by agent, tier, and compute band.}
 \label{tab:results}
 \end{table}
-% All-tiers rows (2026-09-10): per-agent reproduced = sum of the tier cells
-% (27/13/10/23 = 73); per-agent mean over all 100 cells 5.13 / 3.51 / 3.03 /
-% 5.00 as in the Sec 5.2 numbers-of-record comment; all-agents mean over 400
-% cells = (5.13+3.51+3.03+5.00)/4 = 4.17, equal to the tier-weighted mean
-% (4.44*136 + 4.55*132 + 3.51*132)/400 = 4.17.
-% numbers of record (2026-09-10): index.json's 372 graded runs plus the 28
-% cells without a graded run (score 0, or the pinned grade 0/2/0 for the three
-% graded-unlabeled runs; spent_h100 and total_h100 from repro_runs for the 24
-% runs that started, 0 of 8 h for the four 2510.20725 cells); the same
-% constants as paper_latex/figures/charts.py RESULTS and COMPUTE.
