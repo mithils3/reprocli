@@ -159,60 +159,35 @@ TIERS = ["Run", "Retrain", "Reimplement"]
 TIER_COLOR = [GREEN, AMBER, ROSE]   # Run, Retrain, Reimplement: the viewer's tier chips
 
 
-def tier_dot(x, y, color):
-    return (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.2" fill="{color}" '
-            f'stroke="#FFFFFF" stroke-width="1.6"/>')
+BAR_H, BAR_GAP = 6.5, 1.5    # one bar per tier, three per agent row
 
 
-def spread(xs, gap=14, step=6.0):
-    """Vertical offsets for dots whose x positions collide, so every tier
-    stays visible while x keeps its true value."""
-    order = sorted(range(len(xs)), key=lambda i: xs[i])
-    groups, cur = [], [order[0]]
-    for i in order[1:]:
-        if xs[i] - xs[cur[-1]] < gap:
-            cur.append(i)
-        else:
-            groups.append(cur)
-            cur = [i]
-    groups.append(cur)
-    dy = [0.0] * len(xs)
-    for g in groups:
-        for k, i in enumerate(g):
-            dy[i] = (k - (len(g) - 1) / 2) * 2 * step
-    return dy
-
-
-def dot_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
-    """One dot-plot panel: a row per agent, one dot per tier on a shared axis,
-    the three dots joined by a hairline so the spread reads at a glance."""
+def bar_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
+    """One grouped-bar panel: a row per agent, one bar per tier in legend
+    order against a gridded axis. Height never encodes anything, so a row
+    reads left to right only; the exact values are in the appendix table."""
     def X(v):
         return px + pw * v / vmax
     bottom = rows[-1][0] + pitch - 6
     for t in ticks:
         b.append(line(X(t), top - 4, X(t), bottom, TRACK))
         b.append(text(X(t), bottom + 14, f"{t}{unit}", 11, FAINT, SANS, 400, "middle"))
+    group = 3 * BAR_H + 2 * BAR_GAP
     for y, vals in rows:
-        cy = y + pitch / 2 - 3
-        xs = [X(v) for v in vals]
-        dys = spread(xs)
-        pts = sorted(zip(xs, dys))
-        if pts[-1][0] - pts[0][0] >= 12:
-            path = " ".join(f"{x:.1f},{cy + dy:.1f}" for x, dy in pts)
-            b.append(f'<polyline points="{path}" fill="none" stroke="{LINE_STRONG}" '
-                     f'stroke-width="1.5" stroke-linejoin="round"/>')
-        for x, dy, c in zip(xs, dys, TIER_COLOR):
-            b.append(tier_dot(x, cy + dy, c))
+        y0 = y + (pitch - group) / 2 - 3
+        for k, (v, c) in enumerate(zip(vals, TIER_COLOR)):
+            by = y0 + k * (BAR_H + BAR_GAP)
+            b.append(rect(px, by, X(v) - px, BAR_H, c, 1))
 
 
 def fig_results():
-    """Two dot-plot panels, reproduction rate and mean audit score, one row per
-    agent and one dot per tier, plus a strip for the share of the grant spent.
-    The exact values are in the appendix results table."""
+    """Two grouped-bar panels, reproduction rate and mean audit score, one
+    row per agent and one bar per tier, plus a strip for the share of the
+    grant spent. The exact values are in the appendix results table."""
     b = head("reproduction rate and audit score by agent and tier", "400 agent-paper cells")
     ky = 56
     for x, tier, c in zip((X0, X0 + 60, X0 + 140), TIERS, TIER_COLOR):
-        b.append(tier_dot(x + 4, ky - 4, c))
+        b.append(swatch(x, ky - 8, c))
         b.append(text(x + 14, ky, tier, 12, MID))
     p1, p2, pw = 160, 384, 176
     gx = 574
@@ -221,7 +196,7 @@ def fig_results():
     b.append(text(p2, hy, "mean audit score", 12, INK, SANS, 600))
     b.append(text(gx, hy, "grant spent", 12, INK, SANS, 600))
 
-    top, pitch = 88, 26
+    top, pitch = 88, 30
     rows = []
     for gi, (agent, repro, score, spent) in enumerate(RESULTS):
         y = top + gi * pitch + (8 if agent == "All agents" else 0)
@@ -236,9 +211,9 @@ def fig_results():
         b.append(rect(gx, cy - 2, 40, 4, TRACK, 2))
         b.append(rect(gx, cy - 2, 40 * spent / 100, 4, SLATE, 1))
         b.append(text(gx + 50, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600))
-    dot_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
+    bar_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
               50, [0, 10, 20, 30, 40, 50], top, pitch, "%")
-    dot_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
+    bar_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
               8, [0, 2, 4, 6, 8], top, pitch, "")
     page("results_by_tier", b, rows[-1][0] + pitch + 22)
 
