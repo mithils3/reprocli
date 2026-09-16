@@ -28,7 +28,8 @@ Reimplement & 33  & 16 & 9  & 8  & 630.18    & 5  \\
 All         & 100 & 59 & 29 & 12 & 1{,}153.8 & 14 \\
 \bottomrule
 \end{tabular}
-\caption{Composition of the two splits by tier and compute band in H100-hours.}
+\caption{Composition of the two splits by tier and compute band, with papers
+binned by the audited H100-hour estimate.}
 \label{tab:splits}
 \end{table}
 
@@ -54,8 +55,8 @@ Field & Type & Description \\
 \texttt{custom\_id} & string & arXiv ID, the primary key. \\
 \texttt{central\_claim} & string & The paper's central empirical claim in one sentence. \\
 \texttt{claim\_evidence} & string & Quoted paper text grounding the claim. \\
-\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim. \\
-\texttt{agent\_task} & string & The reproduction instruction handed to the agent. \\
+\texttt{mre\_config} & string & Prose recipe for the cheapest configuration that tests the claim, withheld from the agent. \\
+\texttt{agent\_task} & string & Classifier-written reproduction instruction, released with the row and shown to neither the agent nor the auditor. \\
 \texttt{verified\_links} & object & Tool-confirmed artifact URLs. \\
 \texttt{signals} & object & Per-artifact availability audit. \\
 \texttt{match\_target} & object & The quantity a run must match. \\

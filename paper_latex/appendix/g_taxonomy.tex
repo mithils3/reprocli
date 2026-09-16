@@ -18,38 +18,43 @@ context-or-round-exhaustion, fabrication and fabrication-or-provenance-break,
 report-serialization-fault and report-serialization-collapse,
 tool-call-format-collapse, protocol-drift-direction-flip,
 eval-protocol-shopping, verified-non-attempt, and success. Ten of the 36
-had a valid label that disagreed with the pinned verdict. Seven of those were
-labeled outside-tolerance on a disqualified run, and four kept their label
-because the flag concerned only the run's self-report.
+had a valid label that disagreed with the pinned verdict, and seven of those
+ten were labeled outside-tolerance on a disqualified run. We kept the label on
+four runs, three of them from inside that seven, where the only high-severity
+flag concerned the run's self-report. The fourth is outside the seven, and we
+kept it as a provenance mismatch because the dissection found its passing value
+was measured on a sibling checkpoint the dataset row does not pin.
 Figure~\ref{fig:failure-modes} and Table~\ref{tab:failure-modes-by-agent} use
 the plain-language names under the slugs in Table~\ref{tab:taxonomy}, in the
 same order.
 
 \subsection{The failure modes}
 
-The band column of Table~\ref{tab:taxonomy} lists the rubric score the frozen
-rubric text gives a mode, where it names one. The auditor never sees the mode
-label and grades only from the run's evidence.
+The rubric anchor column of Table~\ref{tab:taxonomy} names the band of the
+frozen rubric in Appendix~\ref{app:rubric} whose conditions match the mode's
+evidence signature. Because the auditor never sees the mode label and grades
+each run from that run's own evidence, observed scores spread around the
+anchor.
 
 \begingroup
 \footnotesize
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{4.15cm}p{1.1cm}@{}}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{3.65cm}>{\raggedright\arraybackslash}p{1.6cm}@{}}
 \toprule
-Mode & Definition & Evidence signature & Band \\
+Mode & Definition & Evidence signature & Rubric anchor \\
 \midrule
 \endfirsthead
 \multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:taxonomy}, continued.} \\[3pt]
 \toprule
-Mode & Definition & Evidence signature & Band \\
+Mode & Definition & Evidence signature & Rubric anchor \\
 \midrule
 \endhead
 \midrule
 \endfoot
 \bottomrule
 \noalign{\vskip 6pt}
-\caption{The nine failure modes, one primary mode per run. Band is the score
-the frozen rubric text of Appendix~\ref{app:rubric} gives that mode, or -- where
-it gives none.}
+\caption{The nine failure modes, one primary mode per run. The rubric anchor is
+the band whose conditions match the mode's evidence signature, and scores spread
+around it.}
 \label{tab:taxonomy}\\
 \endlastfoot
 \texttt{reproduced-\allowbreak clean}\newline \emph{Reproduced} &
@@ -79,7 +84,7 @@ and the experiment never produces a valid number. &
 Repeated install, compile, and binary-compatibility failures against the
 authors' pinned versions, with the same packages failing across runs on the
 same host. &
--- \\
+2 \\
 \addlinespace
 \texttt{artifact-\allowbreak provenance-\allowbreak mismatch}\newline \emph{Wrong artifact measured} &
 The agent measures a different checkpoint, dataset, split, or scale from the
@@ -87,7 +92,7 @@ one the dataset row names. &
 A downloaded artifact whose model card, README, or example disagrees with the
 dataset row, and a measurement taken on it. The
 \texttt{wrong\_\allowbreak split\_\allowbreak scale\_\allowbreak dataset} flag marks the same break. &
--- \\
+0 with a high flag \\
 \addlinespace
 \texttt{scope-\allowbreak substitution}\newline \emph{Wrong experiment} &
 The agent runs a different experiment from the one the pinned claim is
@@ -109,7 +114,7 @@ The agent spends its rounds reading, downloading, and probing, never runs the
 pinned pipeline, and stops or is cut off with most of its compute unused. &
 Rounds spent on search and setup, the agent's own estimate that the pinned
 run fits the budget, and an exit with most of the allocation unused. &
--- \\
+1 or 2 \\
 \addlinespace
 \texttt{killed-\allowbreak before-\allowbreak the-\allowbreak number}\newline \emph{Failed before any number was produced} &
 The environment and artifacts work, the pipeline runs, and the run ends

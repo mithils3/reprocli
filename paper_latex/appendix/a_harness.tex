@@ -34,9 +34,13 @@ event transcript records it, from the reasoning to the metered
 \label{app:toolset}
 
 The model acts through the seven tools of Table~\ref{tab:tools}, and because
-there is no file-reading tool and no web search, it reads files through the
-shell with \texttt{grep}, \texttt{sed}, and \texttt{cat} and can fetch only
-URLs it already knows or can construct.
+there is no file-reading tool and no general web search, it reads files through
+the shell with \texttt{grep}, \texttt{sed}, and \texttt{cat} and can fetch only
+URLs it already knows or can construct. We granted one exception in the task
+prompt, a third-party library-documentation search at \texttt{context7.com} the
+model may query through \texttt{fetch\_url}, and since no harness code path
+depends on that service, a failed fetch returns an error and the episode
+continues.
 
 \begin{table}[ht]
 \centering
@@ -51,7 +55,7 @@ directory, on the node that runs the harness, with no GPU passed through.
 Cloning, installs, edits, inspection. Timeout default 900\,s, maximum
 3{,}600\,s. Returns stdout, stderr, exit code, and duration. \\
 \texttt{write\_file} & Write a UTF-8 file under the workspace or evidence roots,
-up to 200{,}000 characters. \\
+up to 200{,}000 characters, overwriting an existing file at that path. \\
 \texttt{edit\_file} & Replace one exact string in an existing file. The match
 must be unique unless \texttt{replace\_all} is set. A bare repo-relative path is
 located by suffix search when it resolves to exactly one file. \\
@@ -81,7 +85,10 @@ fixed GPU count and wall cap and re-acquiring near the cap. Queue time is free,
 and held time is charged between rounds, idle time while the model reasons
 included. The harness refuses any allocation whose worst-case cost exceeds the
 remaining budget, and once the budget is exhausted it releases the session and
-issues the final report turn.
+issues the final report turn. The meter charges GPU count times held wall clock
+times a hardware multiplier, which is 1.0 for the single GH200 profile every run
+used, so the per-hardware figures the task prompt prints guide the agent's
+planning and never enter the charge.
 
 \begin{codebox}[lst:slurm-lifecycle]{bash}{Allocation lifecycle}
 # acquire once; returns the instant the allocation is granted, then stays up
@@ -100,7 +107,9 @@ $ scancel <jobid>
 Every shell step runs inside an Apptainer
 container~\citep{kurtzer2017singularity} whose image is a read-only CUDA 12.9
 and cuDNN development root with git, a C and C++ build chain, \texttt{uv}, and
-Python 3.12 but no preinstalled PyTorch. Only bound paths are visible, the
+Python 3.12 but no preinstalled PyTorch, and since that image is aarch64 like the
+GH200 Grace hosts, every dependency the agent installs needs an aarch64 wheel or
+a source build. Only bound paths are visible, the
 workspace and evidence directories read-write at \texttt{/repro/workspace} and
 \texttt{/repro/evidence}, the paper's reference copy read-only at
 \texttt{/repro/reference}, and node-local \texttt{/tmp} and the shared package
@@ -118,7 +127,11 @@ supplement, a file manifest, and an \texttt{info.json} of IDs. The
 \texttt{trajectory.jsonl}, \texttt{env.lock}, and \texttt{patches/}), plus
 one numbered log per GPU step, \texttt{plan.md}, and the \texttt{REPORT.md}
 the task prompt requires. Per-run token counts and GPU-utilization samples are
-recorded alongside.
+recorded alongside. We bind \texttt{evidence/} read-write, so the agent
+can rewrite the harness-written \texttt{commands.log} and
+\texttt{trajectory.jsonl}, and we add no integrity check that would detect such
+an edit. We therefore instruct the auditor to read the bundle as unverified
+claims and to trace every number to the command that produced it.
 
 On the final, tool-free turn the model's output is constrained to a JSON
 schema and saved as \texttt{report.json} beside \texttt{evidence/}, with the

@@ -37,12 +37,24 @@ public benchmark; scores of 0, 1, and 2 map to \texttt{Easy} (Run),
 \subsection{Stage II: compute capping and stratified selection}
 \label{app:selection}
 
-We kept every verified row in the three evaluation tiers whose audited compute
-was known and under the cap, which left 582 rows. From those we drew a 200-row
-pool, split equally across the tiers and spread across the compute bands,
-taking the cheapest rows in each band first. The pool is twice the benchmark
-size so that the human audit could drop rows and every tier kept replacements
-(Table~\ref{tab:audit-pool}).
+We kept every verified row in the three evaluation tiers with an adjudicated
+compute estimate, 620 rows, and took a 200-row pool from them, split equally
+across the tiers and spread across the compute bands, cheapest first within
+each band. The pool is twice the benchmark size so that the human audit could
+drop rows and every tier kept replacements (Table~\ref{tab:audit-pool}). We
+applied the 96 H100-hour cap to the evaluation split after the human audit,
+replacing three over-cap papers with cheaper same-tier rows from the same
+audited pool, so no evaluation paper exceeds the cap although
+Table~\ref{tab:audit-pool} still shows pool rows above it. Cheapest-first
+changed nothing in seven of the twelve tier-by-band strata, whose quotas took
+every eligible row, and it selects from the bottom in the two oversubscribed
+ones. The 13 Run-tier rows from the 0 to 8 band are the bottom ninth percentile
+of 148 eligible rows, and the 13 Retrain-tier rows from that band all have an
+adjudicated estimate of zero hours among 215 eligible rows with a median of
+1.0. The band quotas bias the pool in the opposite direction, to a median of
+14.78 H100-hours against 3.00 for the eligible set, so the pool favors the
+cheapest configurations inside the two cheapest bands and expensive papers
+across bands.
 
 \begin{table}[!ht]
 \centering
@@ -59,9 +71,9 @@ Reimplement (\texttt{Hard})  & 66 & 24 & 23 & 11 & 8 & 14 & 4 & 2,190 \\
 Total & 200 & 50 & 97 & 36 & 17 & 50 & 13 & 5,905 \\
 \bottomrule
 \end{tabular}
-\caption{The 200-paper audit pool by tier and compute band, with the rows
-flagged for compute review, the rows whose hours the recompute revised, and the
-summed audited compute.}
+\caption{The 200-paper audit pool by tier and pre-audit H100-hour band, with
+rows flagged for compute review, rows the automatic arithmetic check revised,
+and summed audited compute.}
 \label{tab:audit-pool}
 \end{table}
 
@@ -71,9 +83,12 @@ summed audited compute.}
 For every pool paper we opened the evidence behind each availability call and
 recorded a verdict on each of the four signals. A disagreement replaces the model's verdict on that signal, and code recomputes the score and tier from the verdicts. Because a Reimplement-tier assignment rests on no
 code having been located, we re-checked those rows with
-GPT-5.5~\citep{openai2026gpt55} under web search, and we
-submitted every claimed wall in that tier to one adversarial prober and two
-independent refuters.
+GPT-5.5~\citep{openai2026gpt55} under web search, and we ran two independent
+LLM agents with web search against every claimed wall in that tier, one asking
+whether an alternate route to the pinned metric exists inside the paper's
+compute band and one re-checking whether the missing-artifact signal still
+held. We upheld a wall only when both agents failed to find a route, and two
+papers stayed eligible because one agent found one.
 
 \subsection{The evaluation and development splits}
 \label{app:splits}
