@@ -52,7 +52,11 @@ median.}
 
 Table~\ref{tab:rubric} lists the score bands and the verdict each score maps
 to. When the auditor also reports that it found no evidence the code ran, a
-score of 1 becomes \texttt{unverifiable}. We froze the rubric text three days
+score of 1 becomes \texttt{unverifiable}. The rubric's criteria sections also
+direct a score of 0 for a claim with no checkable target and for a printed
+number with no execution trace, so a run in either state can be graded 0 or 1
+depending on which part of the rubric the auditor applies, and we print the
+rubric as it ran. We froze the rubric text three days
 after the dataset freeze, and every pinned-auditor grade in this paper was
 produced after that freeze. An agent that reports it could not obtain
 a required artifact, such as weights or a dataset, gets no credit for that
@@ -121,10 +125,13 @@ retrieved benchmark answer the graded value runs through. &
 }
 
 Figure~\ref{fig:score-dist} shows how the 372 graded runs fall across the scale.
-The distribution has a mode at 4, where a run executes something the auditor can
-grade and lands well short of the bar, and a second at 0, where an integrity
-flag zeroes the score. Figure~\ref{fig:app-cd-flag-kinds} shows the flags the
-auditor raised, by kind and severity.
+The distribution has a mode at 4 with 72 runs, where a run executes something
+the auditor can grade and lands well short of the bar, and a second at 6 with 60
+runs, where the right quantity ran with sound provenance and the result clearly
+misses the bar. Two smaller peaks are close together at 0 and 8, the 53 runs an
+integrity flag zeroed and the 52 runs the auditor accepted as reproductions.
+Figure~\ref{fig:app-cd-flag-kinds} shows the flags the auditor raised, by kind
+and severity.
 
 \begin{figure}[ht]
 \centering
