@@ -34,7 +34,7 @@ The pinned target is Table~1 of TabDPT over 72 CC18 classification datasets
 and 35 CTR23 regression datasets, and the repository's HEAD loads a later
 checkpoint, so the agent pinned v1.1.14, the last release loading the
 paper's checkpoint and shipping its evaluation script. At round 53 the agent
-traced the crash to a retrieval branch returning a three-dimensional array, breaking
+traced the crash to a retrieval branch returning a three-dimensional array (Figure~\ref{fig:card-dsv4-run-2410.18164}), breaking
 the authors' script on the five CC18 datasets with more than ten classes, and
 the patch, verified on all five at round 77 as
 Figure~\ref{fig:app-h1-zoom-1} shows, put all four Table~1 values
@@ -63,7 +63,7 @@ The pinned target is the LayerNorm Scaling (LNS) cell of Table~1, a
 validation perplexity for LLaMA pretrained on C4. The round-21 diff against
 the OpenReview supplement showed the LNS branch renamed from \code{cod} to
 \code{LNS} while the script lowercases the environment variable, so at round
-22 the branch matched nothing, as Figure~\ref{fig:app-h1-zoom-2} shows; the agent changed the two comparisons, and
+22 the branch matched nothing, as Figures~\ref{fig:card-dsv4-run-2502.05795} and~\ref{fig:app-h1-zoom-2} show; the agent changed the two comparisons, and
 round 26 confirmed different logits from Pre-LN before any GPU time went to
 training. The auditor called the patch disclosed and validated against the
 paper's own reference implementation, and flagged the narrower gap between
@@ -92,7 +92,7 @@ Wikipedia with $\gamma$ set to 0.9, and the paper releases no weights. At
 rounds 10 and 24 the agent found the decoder constructed without the
 argument, as Figure~\ref{fig:app-h1-zoom-3} shows, so the released command
 trains at its 0.5 default and raises no
-error, and the five seeds after the round-31 fix gave 98.88 to 98.92. The
+error, and the five seeds after the round-31 fix (Figure~\ref{fig:card-muse-retrain-2510.23577}) gave 98.88 to 98.92. The
 round-81 report listed all three changes and the auditor raised no flags.
 Muse Spark 1.2 transcripts hold a one-line opener per round in place of
 reasoning text, so the excerpts are tool output and the report.
@@ -121,7 +121,7 @@ extensions from source. At round 21 the agent compiled megablocks,
 stanford-stk, and grouped\_gemm 0.1.4 inside a GPU session, and at round 91
 it traced the NaN losses
 from the torch attention substitution to the boolean-mask convention, as
-Figure~\ref{fig:app-h1-zoom-4} shows, while
+Figures~\ref{fig:card-dsv4-retrain-2504.12463} and~\ref{fig:app-h1-zoom-4} show, while
 the baseline arm stopped at 205 iterations on the agent's own timeout, and
 the agent reported the run as not reproduced. The auditor raised medium flags for using the training loss in the directional
 comparison and for the under-trained baseline arm, and a low-severity note
@@ -149,7 +149,7 @@ The pinned target is a MASE for Toto on BOOMlet, where the round-24 editable
 install of the authors' repository replaced the CUDA torch build with the
 plain PyPI wheel, one line among dozens in the install log's resolution
 list. The agent caught it at round 25 with a CUDA probe, as
-Figure~\ref{fig:app-h1-zoom-5} shows, and for the 96-instance live
+Figures~\ref{fig:card-muse-run-2505.14766} and~\ref{fig:app-h1-zoom-5} show, and for the 96-instance live
 batch the agent wrapped the authors' predictor in a retry loop that halves
 the per-batch sample count on out-of-memory errors, keeping the sample count
 and context the paper specifies, following the authors' notebook. The
@@ -178,7 +178,7 @@ The pinned claim is CQ-DINO's V3Det AP, and the authors' COCO metric died
 scoring 7,456 finished batches. The agent's 500-category chunked evaluator
 around the authors' unmodified scorer matched pycocotools on a 3,000-image
 subset at round 91 and the in-runner metric on six numbers, as
-Figure~\ref{fig:app-h1-zoom-6} shows. The auditor
+Figures~\ref{fig:card-dsv4-run-2503.18430} and~\ref{fig:app-h1-zoom-6} show. The auditor
 found no fabrication and called the chunked evaluation cross-validated, but
 the row describes the 24-epoch training run and the agent evaluated the
 released checkpoint behind the paper's number. On 2505.14827 the same agent
@@ -209,7 +209,7 @@ configuration, and the round-10 launch with the shipped best parameters died
 on a read-only Triton cache while the pipeline's exit code was 0. The agent
 read the error out of the captured output and relaunched with the cache
 redirected, completing both training stages and the five-temperature
-inference in 0.84 H100-hours, and round 12, shown in Figure~\ref{fig:app-h1-zoom-7}, read 39 percent at two
+inference in 0.84 H100-hours, and round 12, shown in Figures~\ref{fig:card-minimax-retrain-2510.24940} and~\ref{fig:app-h1-zoom-7}, read 39 percent at two
 temperatures before choosing to report it as measured. The auditor read the
 run as faithful to the authors' pipeline and raised one low-severity flag
 for the disclosed 200-versus-300 discrepancy.
@@ -236,7 +236,7 @@ The pinned claim is the TTPL row of Table~2, an optimality gap under greedy
 construction with MVDF off, which the released command line cannot express.
 The agent found the argparse \code{bool} at round 35, then at round 36 wrote
 that the MVDF-off configuration was exactly what it was running, as
-Figure~\ref{fig:app-h1-zoom-8} shows, repeated
+Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
 the diagnosis for a second flag at round 40, and called it a bug in its own
 test setup, and at round 42 it reported the run as reproduced at 2.86 percent
 against the 3.25 percent target. The auditor raised two medium flags and
@@ -266,7 +266,7 @@ Mistral-7B with a linear map fitted by linear minimum mean-square error, and
 the pinned claim is a decode throughput gain the faithful patch missed.
 After the layer-skip flag at rounds 96 and 97 changed nothing, at round 99
 the agent decided to patch the attention forward to return zeros, as
-Figure~\ref{fig:app-h1-zoom-9} shows, and the
+Figures~\ref{fig:card-minimax-retrain-2505.21077} and~\ref{fig:app-h1-zoom-9} show, and the
 round-108 report conceded that the bypass avoids the fitted matrix product
 the agent had read out of the authors' modeling file at round 31. The
 auditor's reason is that a strictly cheaper operation was placed in the
@@ -292,7 +292,7 @@ measured slot.
 \runfacts{muse-reimplement-2506.17475}{Muse Spark 1.2}{Reimplement}{2506.17475}{0}{disqualified}{Wrong experiment (\texttt{scope-substitution})}{50 rounds, 1.3 of 8~H100-hours}
 The paper releases no code for DLRT with heavy-ball momentum, and the pinned
 target is a \mbox{CIFAR-10} accuracy for VGG16 at 94.35 percent compression. The
-round-34 test left the literal rule at 11.33 and 11.80 percent after two
+round-34 test (Figure~\ref{fig:card-muse-reimplement-2506.17475}) left the literal rule at 11.33 and 11.80 percent after two
 epochs while torch SGD reached 81.45 and 83.26, so from round 37 the agent
 trained unconstrained SVD-factorized layers with torch SGD at the uniform
 rank matching the paper's compression, as Figure~\ref{fig:app-h1-zoom-10}

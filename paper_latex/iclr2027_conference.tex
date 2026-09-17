@@ -65,24 +65,22 @@
 \maketitle
 
 \begin{abstract}
-AI agents can now take released code, set up its environment, run the
-experiments, and write up the results. Existing benchmarks prepare the agent's
-environment and saturate quickly, whereas reproducing a published paper
-involves no such preparation. We introduce RECLAIM, 100 NeurIPS 2025 papers
-with a metered GPU-hour budget, a frozen target, an explicit numerical match
-criterion, and a pinned auditor of execution evidence. The agent gets the
-paper and whatever the authors released and supplies the rest. Papers sit in
-three tiers by what their authors released, and because the tiers hold
-different papers a comparison across them is observational. Across four
-agents the best rate at each tier is 41\% at Run, where code, data, and
-weights are released, 27\% at Retrain, and 15\% at Reimplement, where the
-method is built from the paper alone, with two agents between them setting
-those three rates and every agent lowest at Reimplement. Runs that do not
-reproduce spend on average 29\% of their GPU allocation, so most failures
-arrive before the allocation is exhausted. Under a nine-mode labeling of
-every graded run, the most common process failure is reimplementing the
-method and never checking any stage of it against a number the paper
-reports, on 63 of the 372 graded runs.
+We ask whether AI agents can reproduce machine learning papers by running
+experiments that match reported numbers under a stated criterion. Existing
+benchmarks prepare the agent's software environment, and agents soon score
+near the maximum, whereas a paper comes with no such setup. We introduce
+RECLAIM, a benchmark of 100 NeurIPS 2025 papers, each with a target number
+fixed before any run and a GPU-hour budget. The agent gets the paper and
+whatever its authors released. One fixed language model grades runs from their logs and outputs. Three tiers group papers by what authors released. Run
+papers release code, data, and weights. Retrain papers release no weights, so
+the agent trains the model. Reimplement papers release no code, so the agent
+writes it. Because tiers hold different papers, comparisons across them are
+observational. Across four agents, the best per-tier reproduction rate is 41\% at Run,
+27\% at Retrain, and 15\% at Reimplement, where every agent scores lowest.
+Failed attempts use on average 29\% of their GPU budget, so most fail before
+exhausting it. Of nine failure modes, the most common process failure, on 63 of
+372 graded runs, is reimplementing the method without checking any stage
+against a reported number.
 \end{abstract}
 
 \section{Introduction}
@@ -119,7 +117,7 @@ Run logs: \textcolor{blue}{\href{https://reclaim-traces.vercel.app}{\nolinkurl{r
 a benchmark in which we
 provide the agent with the paper and the artifacts its authors released, then
 evaluate the agent on the execution evidence it produced and on how its result
-compares with the authors' claim. Our results show that reproduction rate
+compares with the authors' claim (Figure~\ref{fig:overview}). Our results show that reproduction rate
 falls when the authors release no code. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
 the target result on 41\% of Run-tier papers (code, data, and weights all
 released), 27\% of Retrain-tier papers (no released weights, so the model must
@@ -317,8 +315,7 @@ As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
 forward passes alone. Its match target pins a test accuracy of 79.42\% on the
 EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
-reports. A run matches when it produces that accuracy, within tolerance, from
-an experiment it actually executed.
+reports. A run matches when it produces that accuracy, within tolerance, from an experiment it executed.
 
 The agent receives the paper and the match target without the configuration
 that produces the value. The agent must therefore design the experiment itself, deciding from the paper and the
@@ -331,8 +328,7 @@ knows the number it must hit, a bare value match proves nothing.
 We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that have an
 arXiv ID, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Stage I ran on a 1,000-paper sample of that
-corpus, and every later stage works within the sample. Construction proceeded
-in three stages (Figure~\ref{fig:funnel}).
+corpus, and later stages use only that sample. Construction had three stages (Figure~\ref{fig:funnel}).
 
 \begin{figure}[t]
 \centering
@@ -408,10 +404,9 @@ reported number to the execution that produced it, checks the executed
 protocol, split, and scale against the pinned configuration, and
 cross-checks the agent's measurements against the paper's reported values.
 When the recorded evidence does not settle a claim, it writes and executes
-its own scoring scripts over the run's saved outputs and recomputes
-metrics directly from the raw artifacts. It inspects
+its own scoring scripts over the run's saved outputs and recomputes metrics from the raw artifacts. It inspects
 and recomputes but never re-runs the reproduction, so a grade reflects the
-evidence the run actually produced.
+evidence the run produced.
 
 The auditor's discretion is bounded in code. Every violation it finds is
 recorded as a typed anti-cheat flag with a severity, and the scoring code
@@ -468,13 +463,12 @@ and the per-agent totals.
 \subsection{Results}
 \label{subsec:results}
 
-Figure~\ref{fig:main-results} reports every agent-paper cell, and
-Table~\ref{tab:results} in Appendix~\ref{app:models} lists the values. Each
+Figure~\ref{fig:main-results} reports every agent-paper cell. Each
 agent has one cell per paper, 400 in all. In 28 of them the agent failed and
 produced nothing for the grader to grade, so they count as failures at score
 0, and the failure-mode labels of Section~\ref{subsec:mechanisms} cover the
 372 graded runs. The auditor confirms reproduction on 73 of the 400 cells.
-DeepSeek-V4-Flash is the strongest of the four agents. It recovers the pinned
+DeepSeek-V4-Flash is the strongest agent. It recovers the pinned
 number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
 Reimplement, and the four agents span a factor of 1.7 in mean audit score,
 from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
@@ -505,8 +499,7 @@ Reimplement, where no code is released, and 13 of 132 cells reproduce there.
 
 Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
-the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. Priced at the
-rates of Appendix~\ref{app:models}, the 396 runs that started cost \$4{,}835, which is
+the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. The 396 runs that started cost \$4{,}835, which is
 \$12.21 per run and \$66 per confirmed reproduction, and GPU time is 78\% of
 that total. We report the agents' own verdicts as background data. Of the 372
 graded runs, 359 return a
@@ -544,24 +537,20 @@ Appendix~\ref{app:taxonomy}.}
 
 \paragraph{Where the failures occur.}
 Reimplemented but did not check the result is the most common process
-failure, at 63 of 372 runs, and 38 of those fall at Reimplement. Together, that mode and
-Wrong experiment account for 62 of the 125 Reimplement-tier
+failure, at 63 of 372 runs, and 38 of those fall at Reimplement. That mode and Wrong experiment account for 62 of the 125 Reimplement-tier
 runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
 18 of 33 for MiniMax-M2.7. Two modes sit almost entirely at one tier. Echoed
 a shipped number needs released code and does not occur at Reimplement, and
 Never launched an experiment occurs ten times at Reimplement against once at
-Run. Two modes concentrate in one agent each
-(Table~\ref{tab:failure-modes-by-agent}). MiniMax-M2.7 holds 11 of the 24
+Run. Two modes concentrate in one agent each. MiniMax-M2.7 holds 11 of the 24
 Build and dependency failures and Qwen3.6-27B holds 19 of the 31 Failed
 before any number was produced, while Wrong artifact measured splits
 between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
-DeepSeek-V4-Flash met the same packaging gaps and split on how it adapted. On
-one paper it rebuilt the failing package from source and, when the authors'
-scorer exceeded the node's memory limit, rewrote it and checked the rewrite
-against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
-it replaced the package by an unvalidated port that the auditor disqualified.
+DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
+one paper it rebuilt the failing package from source and, when the authors' scorer hit the job memory cap, rewrote and checked it against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
+it replaced the package with an unvalidated port the auditor disqualified.
 
 \paragraph{What the successful runs do.}
 Most runs that recover the target result run the authors' own entrypoint. The
@@ -580,8 +569,7 @@ behaviors at the round level in ten annotated runs.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/compute_bands}
-\caption{Mean audit score and share of the granted GPU-hours spent, by the
-compute band of the paper.}
+\caption{Mean audit score and share of granted GPU-hours spent, by the paper's compute band.}
 \label{fig:band-compute}
 \end{figure}
 
@@ -615,13 +603,9 @@ grade per run leaves inter-human agreement unmeasured, and the auditor sees
 only what a run saved to disk. A second grader per run is the next step.
 
 \paragraph{Contamination.} Every agent postdates the papers and may have
-trained on their code, and a memorized fix would still count as reproduced
-under our grading, inflating the two released-code tiers.
+trained on their code, and a memorized fix would count as reproduced under our grading, inflating the released-code tiers.
 
-\paragraph{Scope.} The 100 papers come from one venue and one year, carry a
-pinned experiment that fits under a 96 H100-hour cap, and exclude papers
-whose experiment calls a paid or closed model API (15 in the audit pool,
-Appendix~\ref{app:splits}).
+\paragraph{Scope.} The 100 papers come from one venue and one year, carry a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed model API (15 in the audit pool, Figure~\ref{fig:funnel}).
 
 \paragraph{Agents.} Each cell holds at most one run and the rates are point
 estimates, so we read the large gaps between agents and leave close pairs
@@ -630,9 +614,7 @@ runs and the closed frontier models are for groups with access to them, and
 the harness already drives one vendor-served agent over its API
 (Appendix~\ref{app:models}).
 
-\paragraph{Harness and host.} All runs used one GH200 cluster, whose aarch64
-packaging gaps account for five of MiniMax-M2.7's Run-tier build failures,
-and two more trace to harness defects, kept in every count and not relabeled.
+\paragraph{Harness and host.} All runs used one GH200 cluster. Missing aarch64 wheels caused five of MiniMax-M2.7's Run-tier build failures, and harness defects caused two other failures, all counted.
 
 \section{Conclusion}
 \label{sec:conclusion}
