@@ -65,23 +65,22 @@
 \maketitle
 
 \begin{abstract}
-We ask whether AI agents can reproduce machine learning papers by rerunning
-their experiments and getting the reported results. Existing benchmarks prepare
-the agent's software environment and quickly become too easy, whereas papers
-come with no setup. We introduce RECLAIM, a benchmark of 100 NeurIPS 2025
-papers. Each has a GPU-hour budget and a target number with a pass rule, both
-fixed before any run. The agent gets the paper and whatever its authors
-released. One fixed language model grades runs from their logs and outputs.
-Three tiers group papers by what authors released. Run papers release code,
-data, and weights. Retrain papers release no weights, so the agent trains the
-model. Reimplement papers release no code, so the agent writes it. Because
-tiers hold different papers, comparisons across them are observational. Across
-four agents, the best per-tier reproduction rate is 41\% at Run, 27\% at
-Retrain, and 15\% at Reimplement, where every agent scores lowest. Failed
-attempts use on average 29\% of their GPU budget, so most fail before
-exhausting it. Across nine failure types, the most common mistake, in 63 of
-372 graded runs, is writing the method without checking any part against a
-number in the paper.
+We ask whether AI agents can reproduce machine learning results. Existing
+benchmarks set up the agent's software and soon become too easy. RECLAIM, a
+benchmark of 100 NeurIPS 2025 papers, leaves setup to the agent. For each
+paper we fix in advance a reported number, how close a result must come to
+reproduce it, and a GPU-hour budget. The agent gets the paper and its authors'
+release, which decides the paper's tier. Run-tier papers include code, data,
+and weights to run. Retrain-tier papers lack weights, so the agent trains the
+model. Reimplement-tier papers also lack code, so the agent writes it. One
+separate language model grades runs from their logs and outputs instead of
+agents' reports. Tiers hold different papers, so tier differences are
+observational. Of four agents, each attempting every paper once, whichever
+agent is best in each tier reproduces 41\% of papers at Run, 27\% at Retrain,
+and 15\% at Reimplement, where every agent does worst. Failed attempts use on
+average 29\% of their GPU budget, so most stop with budget left. The most
+common of nine failure types, in 63 of 372 graded runs, is writing the method
+without checking any part against numbers the paper reports.
 \end{abstract}
 
 \section{Introduction}
