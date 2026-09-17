@@ -65,22 +65,23 @@
 \maketitle
 
 \begin{abstract}
-We ask whether AI agents can reproduce machine learning papers by running
-experiments that match reported numbers under a stated criterion. Existing
-benchmarks prepare the agent's software environment, and agents soon score
-near the maximum, whereas a paper comes with no such setup. We introduce
-RECLAIM, a benchmark of 100 NeurIPS 2025 papers, each with a target number
-fixed before any run and a GPU-hour budget. The agent gets the paper and
-whatever its authors released. One fixed language model grades runs from their logs and outputs. Three tiers group papers by what authors released. Run
-papers release code, data, and weights. Retrain papers release no weights, so
-the agent trains the model. Reimplement papers release no code, so the agent
-writes it. Because tiers hold different papers, comparisons across them are
-observational. Across four agents, the best per-tier reproduction rate is 41\% at Run,
-27\% at Retrain, and 15\% at Reimplement, where every agent scores lowest.
-Failed attempts use on average 29\% of their GPU budget, so most fail before
-exhausting it. Of nine failure modes, the most common process failure, on 63 of
-372 graded runs, is reimplementing the method without checking any stage
-against a reported number.
+We ask whether AI agents can reproduce machine learning papers by rerunning
+their experiments and getting the reported results. Existing benchmarks prepare
+the agent's software environment and quickly become too easy, whereas papers
+come with no setup. We introduce RECLAIM, a benchmark of 100 NeurIPS 2025
+papers. Each has a GPU-hour budget and a target number with a pass rule, both
+fixed before any run. The agent gets the paper and whatever its authors
+released. One fixed language model grades runs from their logs and outputs.
+Three tiers group papers by what authors released. Run papers release code,
+data, and weights. Retrain papers release no weights, so the agent trains the
+model. Reimplement papers release no code, so the agent writes it. Because
+tiers hold different papers, comparisons across them are observational. Across
+four agents, the best per-tier reproduction rate is 41\% at Run, 27\% at
+Retrain, and 15\% at Reimplement, where every agent scores lowest. Failed
+attempts use on average 29\% of their GPU budget, so most fail before
+exhausting it. Across nine failure types, the most common mistake, in 63 of
+372 graded runs, is writing the method without checking any part against a
+number in the paper.
 \end{abstract}
 
 \section{Introduction}
@@ -93,7 +94,7 @@ merrill2026terminalbench}, and they are already deployed on this work
 in the real world~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
 static benchmarks tend to saturate soon after they are
 released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping}, so evaluation has to move
-closer to the workflows agents are deployed into. Reproducing a published ML paper by
+closer to the workflows agents are deployed into. Reproducing a published machine learning (ML) paper by
 obtaining results consistent with those its authors report is an ideal
 ground for that evaluation, both for its direct value to the field and for
 its difficulty~\citep{siegel2024corebench,starace2025paperbench}. In ML
