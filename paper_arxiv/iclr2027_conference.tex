@@ -73,19 +73,18 @@ Reproducing a machine learning paper involves most research steps, from
 installing software and debugging to running experiments, work that AI agents
 increasingly do. We introduce RECLAIM, a benchmark of 100 NeurIPS 2025 papers
 that can be rebuilt yearly from new conferences. For each paper we fix in
-advance the result to reproduce, what counts as a match, and a GPU-hour budget.
-An agent must reproduce that result using the paper and whatever its authors
-released, which sets the tier. Run-tier releases include code, data, and
-weights; Retrain-tier releases lack weights, so the agent trains the model;
-Reimplement-tier releases also lack code, so the agent writes it. The tiers
-hold different papers, so cross-tier comparisons are observational. A separate
-language model grades runs from logs and outputs rather than agents' reports.
-We run four agents once per paper; the best agent in each tier reproduces only
-41\% of Run-tier papers, 27\% at Retrain, and 15\% at Reimplement, where every
-agent does worst. Failed attempts use on average 29\% of their budget, so most
-stop with budget left. The most common agent error is writing the method
-without checking any part against the paper's numbers, in 63 of 372 graded
-runs.
+advance the result to reproduce, what counts as a successful reproduction, and
+a GPU-hour budget. An agent must reproduce that result using the paper and
+whatever its authors released, and what they released decides the difficulty
+tier. Run-tier releases include code, data, and weights; Retrain-tier releases
+lack weights, so the agent trains the model; Reimplement-tier releases also
+lack code, so the agent writes it. A separate language model grades runs from
+logs and outputs rather than agents' reports. We run four agents once per
+paper; the best agent in each tier reproduces only 41\% of Run-tier papers,
+27\% at Retrain, and 15\% at Reimplement, where every agent does worst. Failed
+attempts use on average 29\% of their budget, so most stop with budget left.
+The most common agent error is writing the method without checking any part
+against the paper's numbers, in 63 of 372 graded runs.
 \end{abstract}
 
 \section{Introduction}
