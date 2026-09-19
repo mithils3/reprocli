@@ -407,14 +407,21 @@ PAIRS = [("two weakest agents", "Qwen3.6-27B, MiniMax-M2.7", 188),
 
 def fig_strength():
     """One row per process failure, one bar per agent pair with the run count
-    at its end. Bar length is the share of the pair's graded runs, so the two
-    columns compare directly; a rule splits the modes that fall from the rest."""
+    at its end, then the change from the weakest pair to the strongest. Bar
+    length is the share of the pair's graded runs, so the two columns compare
+    directly; a rule splits the modes that fall from the rest, and a totals
+    row sums the seven modes."""
     b = head("failure modes differ between weak and strong agents")
-    pxs, pw, vmax = (282, 470), 140, 25.0
+    pxs, pw, vmax, dx = (282, 442), 130, 25.0, X1
     for px, (h1, h2, _) in zip(pxs, PAIRS):
         b.append(text(px, 53, h1, 12, INK, SANS, 600))
         b.append(text(px, 66, h2, 11, MUTED))
-    top, pitch, bh = 73, 17, 9
+    b.append(text(dx, 53, "change", 12, INK, SANS, 600, "end"))
+
+    def delta(n):
+        return f"\u2212{-n}" if n < 0 else f"+{n}" if n > 0 else "0"
+
+    top, pitch, bh = 71, 16, 9
     y = top
     for i, (mode, mi, weak, strong) in enumerate(STRENGTH):
         if i == 4:
@@ -426,10 +433,20 @@ def fig_strength():
             w = pw * (100 * n / total) / vmax
             b.append(rect(px, cy - bh / 2, w, bh, MODE_COLOR[mi], 2))
             b.append(text(px + w + 6, cy + 4, str(n), 11.5, INK, SANS, 600))
+        b.append(text(dx, cy + 4, delta(strong - weak), 11.5, INK, SANS, 600, "end",
+                      tnum=True))
         y += pitch
     for px in pxs:
         b.append(line(px - 0.5, top + 1, px - 0.5, y - 1, LINE_STRONG))
-    page("modes_by_strength", b, y + 14)
+    b.append(line(X0, y + 3.5, X1, y + 3.5, LINE_STRONG))
+    y += 8
+    cy = y + pitch / 2
+    tw, ts = sum(r[2] for r in STRENGTH), sum(r[3] for r in STRENGTH)
+    b.append(text(X0, cy + 4, "All seven failure modes", 12, INK, SANS, 600))
+    for px, n in zip(pxs, (tw, ts)):
+        b.append(text(px, cy + 4, str(n), 11.5, INK, SANS, 600))
+    b.append(text(dx, cy + 4, delta(ts - tw), 11.5, INK, SANS, 600, "end", tnum=True))
+    page("modes_by_strength", b, y + pitch + 8)
 
 
 CHARTS = {
