@@ -174,13 +174,13 @@ alone, with a black-box reference implementation the agent can query
 throughout, which makes the target checkable at every step. In both settings
 agents are observed to stop early. \citet{adamczewski2026mirrorcode} report
 that 97.4\% of MirrorCode runs submitted before using half the token budget and
-that agents submit once the visible tests pass, and we report the same early
+that agents submit once the visible tests pass, and we report similar early
 stopping in Section~\ref{subsec:results}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/modes_by_strength}
-\caption{Agent mistakes in the graded runs of the two weakest and two strongest
+\caption{Process failures in the graded runs of the two weakest and two strongest
 agents. The four above the rule become rarer with stronger agents, and the other
 three move by at most four runs.}
 \label{fig:modes-by-strength}
@@ -210,8 +210,8 @@ results hold. The systems' own studies show that manuscript review is an unrelia
 10 where human reviewers scored the same papers 3.8, and the share of AI-Researcher papers
 judged comparable to the human original moves from 13.64\% to 81.82\% with the judging
 model~\citep{tang2025airesearcher}. Scientist-Bench, released with AI-Researcher, is the
-closest prior setting to our Reimplement tier. It gives the agent the references and datasets
-of a recent top-tier paper, without the paper itself, and asks for the method to be built from
+closest prior setting to our Reimplement tier. It gives the agent 15 to 20 of a recent top-tier paper's references and its
+datasets, without the paper itself, and asks for the method to be built from
 a description, and it grades by LLM pairwise comparison against the human paper where we grade
 by numerical match against a frozen target on execution evidence.
 
@@ -277,8 +277,8 @@ the released code, but our cluster seldom matches the authors' hardware and
 software stack, so repeating a memorized setup is often not enough.
 
 \paragraph{Sufficient compute.} Each paper is provided with an adequate GPU
-grant, which we estimate from the paper's minimal reproducible experiment for
-its central claim.
+grant, which we set from our estimate of the paper's minimal reproducible
+experiment for its central claim.
 
 \paragraph{Provenance-audited grading.} Every reported number is traced to
 the execution that produced it (Section~\ref{sec:auditing}). Because the
@@ -308,7 +308,9 @@ can demand while still exercising the paper's method end to end.
 A match target records the configuration of the experiment we target, the
 metric, the reported value, the scope the value is measured over, and the
 performance a run must clear.\footnote{Appendix~\ref{app:dataset-schema}
-documents every field.}
+documents every field. For 62 of the 100 papers that performance is a point
+estimate within a tolerance, and for the rest it is a baseline, a threshold, a
+difference, or a range.}
 
 As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
@@ -436,7 +438,7 @@ session mechanics.} We believe this keeps the comparison fair, since each model
 is optimized for a different agent scaffold and a heavily engineered harness
 would favor the models it was tuned on, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
-target without its configuration. \texttt{run\_gpu} lets the agent use its GPU
+target without its configuration. The agent works in a workspace shell, and \texttt{run\_gpu} lets it use its GPU
 grant. It holds a Slurm allocation~\citep{yoo2003slurm,jette2023slurm} whose wall clock is counted against the
 run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
@@ -582,7 +584,7 @@ compute granted to them while 1 of them reproduces its claim. The bands hold 59,
 96-hour value rests on 12 cells. We hypothesize that the papers that need more
 GPU-hours are also more complex to reproduce, since they more often demand a
 full training run where the cheaper papers demand an evaluation pass over a
-released checkpoint. Under a uniform four-hour single-GPU budget, NatureBench
+released checkpoint. Under a four-hour wall-clock budget for every task, NatureBench
 attributes 24.4\% of its failed runs to insufficient budget or
 time~\citep{wang2026naturebench}, whereas our grants are sized to each pinned
 experiment.
@@ -621,7 +623,7 @@ evidence in place of the agent's own report. Over four agents and 400
 agent-paper cells, the best reproduction rate falls from 41\% where code, data, and
 weights are released to 15\% where the method must be rebuilt from the paper,
 the agents leave most of their granted compute unspent, and a nine-mode
-labeling of every run separates the failures that recede between the two
+labeling of every graded run separates the failures that recede between the two
 weakest and the two strongest agents from those that do not. Rebuilding a
 method without checking it against the paper falls when the two strongest
 agents are pooled against the two weakest, and measuring the wrong released
