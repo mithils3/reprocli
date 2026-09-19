@@ -57,8 +57,9 @@ a re-graded sweep has one grader. We price GPU time at the \$2
 per \mbox{H100-hour} of Section~\ref{subsec:experimental-setup} and grader tokens at
 \$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
 
-\paragraph{Token usage and cost.} We take token pricing from each model's
-provider, and Table~\ref{tab:cost} lists the totals. For the three
+\paragraph{Token usage and cost.} We take token pricing from OpenRouter's
+listing of each model provider's own endpoint, and Table~\ref{tab:cost} lists
+the totals. For the three
 cluster-served models we take the tokens produced on our cluster and price them
 at the provider's API rate. Figure~\ref{fig:app-b-tokens} shows the tokens of
 each graded run by agent, and Figure~\ref{fig:app-b-cost} its cost and the
