@@ -174,7 +174,7 @@ Graded runs & 87 & 90 & 98 & 97 & 372 \\
 
 \subsection{Failure taxonomy examples}
 
-For \texttt{reimplement-without-validating}, on paper 2510.08177 the agent
+For \texttt{reimplement-without-validating}, on paper 2510.08177~\citep{luo2025rebalancing} the agent
 wrote its own version of the paper's baseline, scored it below the paper's
 number for that baseline, and kept building on its version anyway.
 
@@ -189,7 +189,7 @@ Gap vs target: -25.08\%
 The third and fourth lines are the paper's baseline and the agent's copy of
 it. The gap was still there at the end of the run.
 
-For \texttt{scope-substitution}, on paper 2505.10039 the agent picked a
+For \texttt{scope-substitution}, on paper 2505.10039~\citep{chen2025circuit} the agent picked a
 different arm from the pinned one at round 6, before writing any code, because
 it was easier to implement. It never measured the pinned arm and reported the
 number from the arm it chose.
@@ -211,7 +211,7 @@ and Echoed a shipped number exit earliest.}
 \label{fig:app-g-exit-by-mode}
 \end{figure}
 
-For \texttt{environment-fights}, on paper 2511.20906 an incompatible pair of
+For \texttt{environment-fights}, on paper 2511.20906~\citep{chun2025dasip} an incompatible pair of
 robosuite and mujoco versions silently broke the released dataset converter.
 The agent had already trained on the broken output when it found the problem.
 

@@ -1,7 +1,8 @@
 \section{Model and Serving Details}
 \label{app:models}
 
-We serve the three open-weight agent models on our cluster with vLLM, each from
+We serve the three open-weight agent
+models~\citep{deepseekai2026flashcard,qwen2026fp8card,cyankiwi2026minimaxawq,lin2023awq} on our cluster with vLLM, each from
 a per-model profile the launcher expands into one \texttt{vllm serve} command,
 and a sweep is one batch job per model per tier that launches the server and
 runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
