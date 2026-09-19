@@ -198,9 +198,8 @@ nathani2025mlgym,jing2025dsbench,zhang2025datascibench,
 wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench,xu2026autolab,rank2026posttrainbench}. MLE-bench is
 representative, with agents building and refining pipelines for Kaggle
 competitions under a fixed compute budget and each submission scored
-against the historical leaderboard for that
-competition~\citep{chan2024mlebench}. Because the method is the agent's to
-choose and success is a score to maximize rather than a specific
+against the historical leaderboard~\citep{chan2024mlebench}. Because the method is the agent's to
+choose and success is a score to maximize rather than a
 published quantity to recover, these benchmarks reward any solution that scores well
 and leave open whether an agent can run a prescribed method and
 configuration in an environment its authors never used and reach the
@@ -210,7 +209,7 @@ number they reported.
 A third family already automates the sequence from an idea through code and experiments to a
 written manuscript~\citep{lu2024aiscientist,lu2026automation}. These systems are evaluated by
 reviewing the manuscript they write, and the review does not check whether the reported
-results hold. The systems' own studies show that manuscript review is an unreliable measure.
+results hold. Their own studies show that such review is unreliable.
 \citet{schmidgall2025agentlab} report LLM reviewers scoring their generated papers 6.1 out of
 10 where human reviewers scored the same papers 3.8, and the share of AI-Researcher papers
 judged comparable to the human original moves from 13.64\% to 81.82\% with the judging
@@ -456,8 +455,8 @@ self-assessment is a claim for the auditor to grade.
 DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken,deepseekai2026flashcard},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
-served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
-Model API. All four run the same harness, prompts, and budgets.
+run on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
+Model API. All use the same harness, prompts, and budgets.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
 integer grade from 0 to 10 that the auditor assigns each run
