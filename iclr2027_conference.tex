@@ -88,10 +88,10 @@ runs.
 \label{sec:introduction}
 
 AI agents do a growing share of the engineering behind machine learning
-research. They implement, execute, and debug large-scale experiments and
-software projects~\citep{jimenez2024swebench,chan2024mlebench,
-merrill2026terminalbench}, and they are already deployed on this work
-in the real world~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
+research. They implement, execute, and debug software projects and machine
+learning pipelines~\citep{jimenez2024swebench,chan2024mlebench,
+merrill2026terminalbench}, and usage studies show that people already use them
+for software work in practice~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
 static benchmarks tend to saturate soon after they are
 released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping,akhtar2026plateau}, so evaluation has to move
 closer to the workflows agents are deployed into. Reproducing a published machine learning (ML) paper by
@@ -103,13 +103,11 @@ replication effort reproduced only 162 of 255 attempted papers without
 using the authors' code~\citep{raff2019step}, and independent studies
 attribute the shortfall to missing code, missing data, and underspecified
 experimental detail~\citep{gundersen2018state,henderson2018deep,
-pineau2021improving,gundersen2022sources,gundersen2025unreasonable}. Reproduction is also a
-prerequisite for recursively
-self-improving systems, since a model that improves itself must first
-re-implement and verify the research it builds
-on~\citep{favaro2026recursive}. Both Anthropic and OpenAI report that their
-researchers increasingly delegate the running of experiments to agents and
-retain the judgment of which results to
+pineau2021improving,gundersen2022sources,gundersen2025unreasonable}. Reproduction is also
+discussed as a prerequisite for the original research that a recursively
+self-improving system would conduct, and both Anthropic and OpenAI report that
+their researchers increasingly delegate the running of experiments to agents
+and retain the judgment of which results to
 trust~\citep{favaro2026recursive,openai2026acceleration}.
 
 To support this evaluation, we introduce RECLAIM,\footnote{\renewcommand{\UrlFont}{\fontsize{8}{9}\selectfont\ttfamily}Code:
@@ -118,45 +116,35 @@ Run logs: \textcolor{blue}{\href{https://reclaim-traces.vercel.app}{\nolinkurl{r
 a benchmark in which we
 provide the agent with the paper and the artifacts its authors released, then
 evaluate the agent on the execution evidence it produced and on how its result
-compares with the authors' claim (Figure~\ref{fig:overview}). Our results show that reproduction rate
-falls when the authors release no code. The strongest agent we evaluate, DeepSeek-V4-Flash, recovers
-the target result on 41\% of Run-tier papers (code, data, and weights all
-released), 27\% of Retrain-tier papers (no released weights, so the model must
-be trained first), and 12\% of Reimplement-tier papers (no released code
+compares with the authors' claim (Figure~\ref{fig:overview}). Our results show that the rate at
+which agents are able to reproduce the results of a paper falls considerably
+when no code is available. DeepSeek-V4-Flash, the strongest agent we evaluate, reproduces
+41\% of Run-tier papers (code, data, and weights all
+released), 27\% of Retrain-tier papers (no weights, so the model must
+be trained first), and 12\% of Reimplement-tier papers (no code
 either). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
-best of the four agents at that tier, while the best Run and Retrain rates are
-DeepSeek-V4-Flash's. Every agent has its lowest rate and lowest mean score at
-Reimplement, whereas between Run and Retrain only DeepSeek-V4-Flash's rate
-falls, by 14 points, and the other three agents' rates differ by at most nine
-points (Section~\ref{subsec:results}).
+best at that tier, while the best Run and Retrain rates are
+DeepSeek-V4-Flash's. We observe that every agent performs worst at the
+Reimplement tier (Section~\ref{subsec:results}).
 
-Released code explains the difference between the Run and Reimplement tiers.
-It does not explain the failures within a tier. At the Run tier the authors
-released every artifact the claim requires, and during construction we
-verified that all of them were retrievable, yet many of those runs still
-fail. Three properties of those failures organize the rest of this paper.
-First, stronger agents achieve partial reproduction more often. On Retrain-tier
-papers the strongest agent reaches a verified partial result or better on 67\% of runs,
+While missing code is a plausible reason for an agent to fail, the failures at
+the Run tier are more perplexing. At this tier the
+authors released the artifacts the reproduction requires, which we verified,
+yet every agent still fails on most of its papers. Our analysis of the results
+yields three observations.
+First, while stronger agents do not always recover the full result, they
+achieve partial reproduction at a far higher rate. On Retrain-tier
+papers the strongest agent reaches a verified partial result or better on 67\% of runs
+and the weakest on 27\%,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Second, full recovery of
 the reported number is where progress stalls, holding between 15\% and 27\%
 across four agents spanning a 1.7-fold range in mean audit score. Third,
 compute does not bind either, since 1 of the 48 cells in the 96 H100-hour
-band reproduces its claim (Section~\ref{subsec:compute}).
-
-A small set of recurring failure modes accounts for those failures. Some modes
-become rarer as agents get stronger and some do not. Runs that reimplemented the
-method but did not check their result against the numbers the paper reports
-account for 43 of the 188 runs of the two weakest agents and 20 of the 184 runs
-of the two strongest, and Build and dependency failures fall from 19 of those
-runs to 5.
-Wrong artifact measured does not become rarer, since the two strongest
-agents account for 21 of its 38 cases, and on 7 papers the released model card
-or configuration file states a setting that differs from the one the paper
-reports. We define the taxonomy, report the per-mode
-counts, and give the transcript evidence in Section~\ref{subsec:mechanisms}. Agent
-self-reports track none of this reliably, so we report claimed and audited counts
-as background data.
+band reproduces its claim (Section~\ref{subsec:compute}). A small set of agent
+mistakes accounts for a majority of the failures, and some of them become rarer
+as agents become stronger while others do not
+(Figure~\ref{fig:modes-by-strength}, Section~\ref{subsec:mechanisms}).
 
 \begin{figure}[t]
 \centering
@@ -172,8 +160,7 @@ example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
 
 \paragraph{Repository and terminal agents.}
 Agent evaluations have moved from isolated code generation to long-horizon
-work inside real repositories and terminals~\citep{jimenez2024swebench,
-merrill2026terminalbench,miserendino2025swelancer,deng2025swebenchpro,
+work inside real repositories and terminals~\citep{miserendino2025swelancer,deng2025swebenchpro,
 lu2026frontiercode,tang2024mlbench,kwa2025long}. SWE-bench grades patches for
 real GitHub issues using
 the tests from the pull request that resolved the issue~\citep{jimenez2024swebench}, and
@@ -184,13 +171,20 @@ starts. A reproduction begins earlier, with the agent choosing the
 experiment that establishes the claim and building an environment that can
 run it. MirrorCode asks agents to rebuild entire programs from behavior
 alone, with a black-box reference implementation the agent can query
-throughout~\citep{adamczewski2026mirrorcode}. The reference makes the target
-checkable at every step. A paper provides no such reference, and the number
-to check exists only once the experiment runs. Agents stop early in both
-settings. \citet{adamczewski2026mirrorcode} report that 97.4\% of their runs
-submitted before using half the token budget and that agents submit once the
-visible tests pass. We report the same early stopping in
-Section~\ref{subsec:results}, with no test to pass.
+throughout, which makes the target checkable at every step. In both settings
+agents are observed to stop early. \citet{adamczewski2026mirrorcode} report
+that 97.4\% of MirrorCode runs submitted before using half the token budget and
+that agents submit once the visible tests pass, and we report the same early
+stopping in Section~\ref{subsec:results}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/modes_by_strength}
+\caption{Agent mistakes in the graded runs of the two weakest and two strongest
+agents. The four above the rule become rarer with stronger agents, and the other
+three move by at most four runs.}
+\label{fig:modes-by-strength}
+\end{figure}
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
@@ -209,46 +203,49 @@ number they reported.
 
 \paragraph{Autonomous research systems.}
 A third family already automates the sequence from an idea through code and experiments to a
-written manuscript~\citep{lu2024aiscientist,lu2026automation,schmidgall2025agentlab,tang2025airesearcher}. They
-are evaluated on the quality of that manuscript rather than on whether its results hold, and
-the systems supply the evidence that the difference matters, since
+written manuscript~\citep{lu2024aiscientist,lu2026automation}. These systems are evaluated by
+reviewing the manuscript they write, and the review does not check whether the reported
+results hold. The systems' own studies show that manuscript review is an unreliable measure.
 \citet{schmidgall2025agentlab} report LLM reviewers scoring their generated papers 6.1 out of
 10 where human reviewers scored the same papers 3.8, and the share of AI-Researcher papers
 judged comparable to the human original moves from 13.64\% to 81.82\% with the judging
 model~\citep{tang2025airesearcher}. Scientist-Bench, released with AI-Researcher, is the
-closest prior setting to our Reimplement tier, supplying recent top-tier papers with their
-reference material and asking for the method to be built from a description, and it grades by
-LLM pairwise comparison against the human paper where we grade by numerical match against a
-frozen target on execution evidence.
+closest prior setting to our Reimplement tier. It gives the agent the references and datasets
+of a recent top-tier paper, without the paper itself, and asks for the method to be built from
+a description, and it grades by LLM pairwise comparison against the human paper where we grade
+by numerical match against a frozen target on execution evidence.
 
 \paragraph{Scientific reproduction.}
 A growing line of benchmarks measures how well agents reproduce, reimplement,
-extend, or audit published research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
-xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
+extend, or audit published research~\citep{bogin2024super,
+xiang2025scireplicate,hua2025researchcodebench,
 edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
 wang2026researchenvbench,xiao2025csrbench,seo2025paper2code,zhao2025autoreproduce,
 ye2025replicationbench,alizadeh2026socsci,li2026reprorepo,hu2026sabench,huang2026automat,
-kim2026autoexperiment,yan2025lmrbench,hu2025reproducibility}, and
-three of them bracket the design space. CORE-Bench asks agents to rerun the
+yan2025lmrbench,hu2025reproducibility}, and
+four of them span the design space. CORE-Bench asks agents to rerun the
 released code of computationally reproducible papers and recover known
-artifacts~\citep{siegel2024corebench}, a setting frontier models have since
-effectively saturated~\citep{favaro2026recursive,nadgir2026saturation}. PaperBench lies at the
+artifacts~\citep{siegel2024corebench}, a setting recent models have since
+effectively saturated~\citep{nadgir2026saturation}. PaperBench lies at the
 opposite extreme and has agents replicate 20 ICML 2024 papers from scratch
 with the authors' code withheld, grading the attempt against hierarchical
 rubrics co-developed with the original authors~\citep{starace2025paperbench}.
 EXP-Bench withholds the paper itself and hands the agent a research
 question, a high-level method description, and starter code to design and
-run the experiments from~\citep{kon2025expbench}. In all three the release state is settled
+run the experiments from~\citep{kon2025expbench}. AutoExperiment varies how much code the
+agent starts from by masking up to five functions in the working repositories
+of four papers~\citep{kim2026autoexperiment}. In all four the release state is settled
 before the run begins, by withholding the code or by selection. Most keep
 only papers whose code is already public and already runs, and CORE-Bench
 excludes the rest on the stated reasoning that there is no need to include
-an irreproducible paper~\citep{siegel2024corebench}. That builds a clean coding task, but it fixes the
+an irreproducible paper. That builds a clean coding task, but it fixes the
 variable RECLAIM exists to measure, and a benchmark assembled only from
 papers that shipped working code cannot say what happens on the papers that
 did not.
-MLReplicate grades the 45 manuscripts that six autonomous research systems produced, finds
-fabricated or unsupported claims in 59\% of the ones its automated review accepted, and states
-that it does not validate the experiments behind them~\citep{gaddipati2026mlreplicate}.
+MLReplicate grades the 45 manuscripts that six autonomous research systems produced. Its
+automated review accepted 10 of them, human reviewers found fabricated or unsupported claims
+in 59\% of their reviews of those 10, and the benchmark states that it does not validate the
+experiments behind them~\citep{gaddipati2026mlreplicate}.
 Outside benchmarks, the ICML 2026 Open Reproductions challenge instructed its
 LLM judge to treat each agent logbook's self-assessment as untrusted, and its
 organizers re-verified every claimed falsification~\citep{abid2026reproducing}.
@@ -259,7 +256,7 @@ organizers re-verified every claimed falsification~\citep{abid2026reproducing}.
 RECLAIM (\textbf{Re}producing \textbf{Cla}ims \textbf{i}n \textbf{M}achine Learning) evaluates whether an
 autonomous agent can reproduce the central
 empirical result of a machine learning paper from whatever artifacts its
-authors actually released. Each of the 100 papers in the benchmark poses one
+authors released. Each of the 100 papers in the benchmark poses one
 task, and the agent must recover a single pinned result within a stated
 tolerance.
 \subsection{Features of RECLAIM}
@@ -273,16 +270,15 @@ allocations, the same work a researcher faces when reproducing a paper.
 
 \paragraph{Natural artifact availability.} We stratify papers by the artifacts
 their authors released, so each tier reflects a reproduction setting that
-occurs in the field, and no difficulty is manufactured by withholding
-resources. This choice also limits contamination.
-Reimplement-tier papers never released code, so no reference implementation
-exists for a model to absorb during training, and across all tiers our
-cluster seldom matches the authors' hardware and software stack exactly, so
-replaying memorized artifacts is rarely enough.
+occurs in the field. Because the authors of Reimplement-tier papers released
+no code, the risk that a model was trained directly on a reference
+implementation is lower at that tier. At the other tiers a model may have seen
+the released code, but our cluster seldom matches the authors' hardware and
+software stack, so repeating a memorized setup is often not enough.
 
-\paragraph{Sufficient compute.} Each paper has a GPU grant, estimated from
-the paper's minimal reproducible experiment with hours added for iteration,
-and Section~\ref{subsec:results} reports how much of it runs spend.
+\paragraph{Sufficient compute.} Each paper is provided with an adequate GPU
+grant, which we estimate from the paper's minimal reproducible experiment for
+its central claim.
 
 \paragraph{Provenance-audited grading.} Every reported number is traced to
 the execution that produced it (Section~\ref{sec:auditing}). Because the
@@ -299,30 +295,27 @@ NeurIPS, ICML, and ICLR submissions~\citep[cf.][]{white2025livebench,jain2025liv
 \subsection{Task definition}
 \label{subsec:task}
 
-Each paper has one reproduction target, which we call the \emph{match
-target} and fix before any agent runs. The match target is the cheapest
+For every paper in the dataset we select one reproduction target that matches
+the paper's central claim as closely as we can. We call it the \emph{match
+target} and fix it before any agent runs. The match target is the cheapest
 configuration the authors report that still establishes the paper's central
 empirical claim, together with the value that configuration produces. Papers
 usually headline their largest model or their full benchmark suite, but the
-same claim typically also follows from a smaller supporting experiment, and we
+same claim can typically also be replicated in a smaller-scale experiment, and we
 pin that one. Pinning the smallest supporting configuration bounds the compute a task
 can demand while still exercising the paper's method end to end.
 
-A match target records the configuration that produces the value, the metric,
-the reported value, the scope the value is measured over, and the bar a run
-must clear, most often a point estimate within a stated or default tolerance
-(Appendix~\ref{app:dataset-schema}).
+A match target records the configuration of the experiment we target, the
+metric, the reported value, the scope the value is measured over, and the
+performance a run must clear.\footnote{Appendix~\ref{app:dataset-schema}
+documents every field.}
 
 As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
 forward passes alone. Its match target pins a test accuracy of 79.42\% on the
 EuroSAT~\citep{helber2019eurosat} test set under a 16-shot CLIP~\citep{radford2021clip} ViT-B/16 configuration the paper
-reports. A run matches when it produces that accuracy, within tolerance, from an experiment it executed.
-
-The agent receives the paper and the match target without the configuration
-that produces the value. The agent must therefore design the experiment itself, deciding from the paper and the
-released artifacts what to run, retrain, or reimplement. Because the agent
-knows the number it must hit, a bare value match proves nothing.
+reports. A run has successfully reproduced the paper when it produces that
+accuracy, within tolerance, from an experiment it ran itself.
 
 \subsection{Benchmark construction}
 \label{subsec:construction}
@@ -337,7 +330,7 @@ corpus, and later stages use only that sample. Construction had three stages (Fi
 \includegraphics[width=\textwidth]{figures/construction_funnel}
 \caption{The construction funnel. Three stages narrow a 1,000-paper sample of
 the 3,414 NeurIPS 2025 submissions to the released 100-paper benchmark, with
-every availability call and compute estimate audited by hand.}
+every availability call and compute estimate manually audited.}
 \label{fig:funnel}
 \end{figure}
 
@@ -350,9 +343,9 @@ extracted its central empirical claim, pinned its match target, and audited four
 artifact signals: released code, released datasets, released model weights, and
 whether the required datasets are standard public benchmarks
 (Appendix~\ref{app:classifier}). An artifact counts
-as available when a tool call is able to access it. Artifacts that are
-unpublished or behind a paywall, a sign-up form, or a permission request are
-classified as not available for this benchmark. We ran the classifier on a 1,000-paper
+as available when a tool call can access it. Artifacts that are
+unpublished or behind a paywall, a sign-up form, or a permission request
+count as unavailable. We ran the classifier on a 1,000-paper
 sample, and it fully verified 687 papers. Removing non-empirical papers and
 papers with blocked artifacts leaves 620 eligible for evaluation.
 
@@ -364,8 +357,12 @@ Retrain papers release no weights, so the agent trains the model before
 evaluating. Reimplement papers release no code either, so the agent rebuilds
 the method from the paper, while the datasets its experiments need stay public.
 The tiers also describe the venue as a whole, from the classifier pass alone
-since we audited by hand only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
+since we manually audited only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
 Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
+Paper2Code reports that 19.5\% of the papers accepted to three 2024 venues link
+a GitHub repository in their arXiv abstract~\citep{seo2025paper2code}, a count
+that misses code linked only in the paper body or the supplement, which our
+classifier reads.
 
 \paragraph{Stage II: Compute capping and stratified selection.} We estimated the
 compute each match target requires in H100-hours, taking the paper's reported
@@ -379,9 +376,9 @@ tier's reproduction rate with equal precision. Proportional sampling would leave
 dozen papers, and the venue proportions reported above let readers reweight
 any rate back to the venue level.
 
-\paragraph{Stage III: Human audit.} We audited every paper in the pool by hand,
-opening the evidence behind each availability call and re-deriving each compute
-estimate (Appendix~\ref{app:human-audit}). Papers whose artifacts proved
+\paragraph{Stage III: Human audit.} We manually audited every paper in the
+pool, opening the evidence behind each availability call
+(Appendix~\ref{app:human-audit}). Papers whose artifacts proved
 inaccessible or that depended on paid third-party APIs failed the audit and
 were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
@@ -396,10 +393,10 @@ reproduction in AI research~\citep{gundersen2018state,dodge2019show,henderson202
 Every finished run is graded by an LLM auditor~\citep{zheng2023judging,zhuge2025agent} that reads the
 run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
-deterministically. We fix Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
+deterministically. We use Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
 auditor for every run of
 every agent, and we froze the rubric before grading began, so scores are
-comparable across models and no agent grades its own family~\citep{panickssery2024evaluators}. The auditor is
+comparable across models. The auditor is
 adversarial by instruction and treats the agent's final report as a set of
 unverified claims. It traces every
 reported number to the execution that produced it, checks the executed
@@ -415,14 +412,16 @@ recorded as a typed anti-cheat flag with a severity, and the scoring code
 applies the integrity adjustment of Appendix~\ref{app:rubric}. A
 high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
-forces the score to zero, and a claimed artifact wall earns no credit band. An
-LLM auditor reads more material per run than a human grader can,
-working through hundreds of tool rounds, logs, and saved outputs in
-minutes, which is what makes auditing every run of every sweep feasible.
+forces the score to zero, and a claimed artifact wall earns no credit band. We
+use an LLM auditor because it reads more material per run than a human grader
+can, working through hundreds of tool rounds, logs, and saved outputs in
+minutes, which makes auditing every run of every sweep feasible.
 Three human graders scored all 396 runs that started, one grader per run,
 under the same rubric and blind to the auditor's score, and the auditor's
 verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict
-(Appendix~\ref{app:auditor-validation}).
+(Appendix~\ref{app:auditor-validation}). For comparison, PaperBench reports an
+F1 of 0.83 for its LLM judge against human labels on individual rubric
+items~\citep{starace2025paperbench}.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -431,26 +430,27 @@ verdicts agree with theirs at an F1 of 0.82 on the reproduced verdict
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
-loop~\citep{yao2023react}. A workspace shell and a metered GPU session express the
-same workflows a human reproducer runs on a cluster, and the harness adds no
-guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
+loop~\citep{yao2023react}, and the harness adds no special guidance beyond
+it.\footnote{Appendix~\ref{app:harness} gives the prompts, the tools, and the
+session mechanics.} We believe this keeps the comparison fair, since each model
+is optimized for a different agent scaffold and a heavily engineered harness
+would favor the models it was tuned on, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
-target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
-GPU, holding a Slurm allocation~\citep{yoo2003slurm,jette2023slurm} whose wall clock is metered against the
+target without its configuration. \texttt{run\_gpu} lets the agent use its GPU
+grant. It holds a Slurm allocation~\citep{yoo2003slurm,jette2023slurm} whose wall clock is counted against the
 run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
 budgeting and scheduling decisions that real reproduction work demands.
 Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
-self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} gives the
-prompts, the tools, and session mechanics.
+self-assessment is a claim for the auditor to grade.
 
 \paragraph{Models.} We evaluate four models:
 DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken,deepseekai2026flashcard},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
-Model API. Every model runs the same harness, prompts, and per-paper budgets.
+Model API. All four run the same harness, prompts, and budgets.
 
 \paragraph{Metrics.} Our primary metric is the mean reproduction score, an
 integer grade from 0 to 10 that the auditor assigns each run
@@ -459,17 +459,17 @@ reproduction rate, the fraction of papers whose runs score 8 or higher and
 are therefore graded reproduced. Alongside both we report each agent's token
 usage and its total cost~\citep{kapoor2024agents,kapoor2026hal}, the sum of its tokens at its
 vendor's list rate and the GPU time it drew from its grant at \$2 per
-H100-hour. Appendix~\ref{app:models} gives the serving settings, the rates,
-and the per-agent totals.
+H100-hour.\footnote{Appendix~\ref{app:models} gives the serving settings, the
+rates, and the per-agent totals.}
 
 \subsection{Results}
 \label{subsec:results}
 
 Figure~\ref{fig:main-results} reports every agent-paper cell. Each
-agent has one cell per paper, 400 in all. In 28 of them the agent failed and
-produced nothing for the grader to grade, so they count as failures at score
-0, and the failure-mode labels of Section~\ref{subsec:mechanisms} cover the
-372 graded runs. The auditor confirms reproduction on 73 of the 400 cells.
+agent has one cell per paper, 400 in all. Twenty-eight of them are model
+failures that produced nothing for the grader to grade and score 0, and
+Section~\ref{subsec:mechanisms} covers the 372 graded runs. The auditor
+confirms reproduction on 73 of the 400 cells.
 DeepSeek-V4-Flash is the strongest agent. It recovers the pinned
 number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
 Reimplement, and the four agents span a factor of 1.7 in mean audit score,
@@ -514,20 +514,15 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 \label{subsec:mechanisms}
 
 \paragraph{Failure taxonomy.}
-We label every graded run with one primary mode from the nine-mode
-vocabulary of Appendix~\ref{app:taxonomy}, which gives each mode's evidence
-signature with transcript excerpts for three of them, and report the
-distribution by tier in Figure~\ref{fig:failure-modes}. To assign the label we read the run's
+We label every graded run with one of nine primary modes and report the
+distribution by tier in Figure~\ref{fig:failure-modes}. The mode names describe
+themselves, and Appendix~\ref{app:taxonomy} defines each one in full. To assign the label we read the run's
 transcript against the mode definitions and write a per-run dissection
 record. Every count in this subsection comes from those records, and every
 score and verdict in this paper comes from the auditor. Two modes are outcomes. A
 reproduced run recovers the pinned number on the authors' released
 artifact and data, and a run outside tolerance executes a faithful pipeline
-and lands short of the bar. The other seven are process failures. One run
-the auditor graded reproduced has the label Wrong artifact measured, because the
-dissection found its passing number was measured on a released checkpoint
-other than the one the row pins, so the Reproduced row holds 72 runs against
-73 audited reproductions, with the difference in the Run column.
+and lands short of the bar. The other seven are process failures.
 
 \begin{figure}[t]
 \centering
@@ -547,7 +542,10 @@ Never launched an experiment occurs ten times at Reimplement against once at
 Run. Two modes concentrate in one agent each. MiniMax-M2.7 holds 11 of the 24
 Build and dependency failures and Qwen3.6-27B holds 19 of the 31 Failed
 before any number was produced, while Wrong artifact measured splits
-between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. The build failures
+between MiniMax-M2.7 and Muse Spark 1.2 at 13 and 15 of 38. That mode does not
+become rarer with stronger agents (Figure~\ref{fig:modes-by-strength}), and on 7
+papers the released model card or configuration file states a setting that
+differs from the one the paper reports. The build failures
 depend on the host as well as the agent. Five of MiniMax-M2.7's eight Run-tier
 cases trace to packages without aarch64 wheels on our GH200 nodes, and
 DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
@@ -561,9 +559,9 @@ that fail. Where they patch released code they disclose the patch and show
 that the graded computation is unchanged, and where the method has to be
 rebuilt they check the rebuilt component against a quantity the paper reports
 before spending compute on it. Reduced-scale smoke tests separate the two
-groups only weakly, since the records mention them in 45 of the 73 successful runs
-and 148 of the 299 failed ones. Appendix~\ref{app:annotated-runs} shows these
-behaviors at the round level in ten annotated runs.
+groups only weakly, appearing in 45 of the 73 successful runs
+and 148 of the 299 failed ones.\footnote{Appendix~\ref{app:annotated-runs} shows
+these behaviors at the round level in ten annotated runs.}
 
 \subsection{Compute does not bind reproduction}
 \label{subsec:compute}
@@ -580,15 +578,14 @@ Reproduction scores fall as the paper's compute band grows, even though no
 band comes close to exhausting the grant we assign it
 (Figure~\ref{fig:band-compute}). Mean score falls with band for each of the
 four agents, and the 48 cells in the 96 H100-hour band spend 6.2\% of the
-compute granted to them. The bands hold 59, 29, and 12 papers, so each agent's
-96-hour value rests on 12 cells. The gradient tracks the scale of the experiment the paper demands.
-Agents handle short evaluation-style experiments well, loading a released
-checkpoint, running an inference pass, and recomputing a metric, but they rarely
-complete a full training run. At Retrain, where the training
-itself is the missing step, 8 of the 16 cells in the 96 H100-hour band spent
-under 5\% of their grant, and 15 of the 16 did not reproduce. Seven of the
-band's 42 graded runs ran a shrunken version of the paper's training and reported a
-number from it, and six of the seven stated the shortfall.
+compute granted to them while 1 of them reproduces its claim. The bands hold 59, 29, and 12 papers, so each agent's
+96-hour value rests on 12 cells. We hypothesize that the papers that need more
+GPU-hours are also more complex to reproduce, since they more often demand a
+full training run where the cheaper papers demand an evaluation pass over a
+released checkpoint. Under a uniform four-hour single-GPU budget, NatureBench
+attributes 24.4\% of its failed runs to insufficient budget or
+time~\citep{wang2026naturebench}, whereas our grants are sized to each pinned
+experiment.
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
@@ -596,34 +593,30 @@ number from it, and six of the seven stated the shortfall.
 \paragraph{Attributing a miss to the agent.} RECLAIM has no human
 reproduction on our cluster, so for the 76 runs that executed a faithful
 pipeline and landed outside tolerance we cannot separate agent error from
-seed and hardware variance. A human replication of that subset would set the
-reference point.
-
-\paragraph{Grading.} Three human graders scored the 396 runs once each, blind
-to the auditor, and the auditor agrees with them at an F1 of 0.82, but one
-grade per run leaves inter-human agreement unmeasured, and the auditor sees
-only what a run saved to disk. A second grader per run is the next step.
+seed and hardware variance. An exhaustive human reproduction of these papers
+would separate agent errors from errors in the papers themselves. We did not
+pursue one because of the human effort it would take and the
+difficulty of confirming the intended practice with every paper's authors.
 
 \paragraph{Contamination.} Every agent postdates the papers and may have
 trained on their code, and a memorized fix would count as reproduced under our grading, inflating the released-code tiers.
 
-\paragraph{Scope.} The 100 papers come from one venue and one year, carry a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed model API (15 in the audit pool, Figure~\ref{fig:funnel}).
+\paragraph{Scope.} The 100 papers come from one venue and year, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}).
 
 \paragraph{Agents.} Each cell holds at most one run and the rates are point
-estimates, so we read the large gaps between agents and leave close pairs
-within a tier unranked~\citep{bjarnason2026randomness}. The roster omits Claude, GPT, and Gemini. Repeated
-runs and the closed frontier models are for groups with access to them, and
-the harness already drives one vendor-served agent over its API
+estimates, so we read large gaps between agents and leave close pairs
+within a tier unranked~\citep{bjarnason2026randomness}. The roster omits Claude, GPT, and Gemini
+because of cost. Repeated
+runs and closed frontier models are for groups with access to them, and
+the harness already drives one hosted agent over its API
 (Appendix~\ref{app:models}).
-
-\paragraph{Harness and host.} All runs used one GH200 cluster. Missing aarch64 wheels caused five of MiniMax-M2.7's Run-tier build failures, and harness defects caused two other failures, all counted.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 RECLAIM measures whether an agent can reproduce the central claim of a
 machine learning paper from the artifacts its authors released, under a
-metered GPU grant, a pinned target, and an auditor that grades execution
+fixed GPU grant, a pinned target, and an auditor that grades execution
 evidence in place of the agent's own report. Over four agents and 400
 agent-paper cells, the best reproduction rate falls from 41\% where code, data, and
 weights are released to 15\% where the method must be rebuilt from the paper,
@@ -648,9 +641,9 @@ RECLAIM measures and the one that recursive self-improvement would depend on.
 \begin{itemize}
 \item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
 budget enforcement, the sandbox, and the prompts in full.
-\item \textbf{Models.} Appendix~\ref{app:models} pins each evaluated model to a
-served revision, or for the hosted model to an API identifier and an access
-window, and states the serving configuration it ran under.
+\item \textbf{Models.} Appendix~\ref{app:models} names the checkpoint we served
+for each evaluated model, or for the hosted model its API identifier, and
+states the serving configuration it ran under.
 \item \textbf{Grading.} Appendix~\ref{app:rubric} gives the audit rubric,
 frozen before any reported sweep was graded, and
 Appendix~\ref{app:auditor-validation} reports the auditor's agreement with
@@ -731,13 +724,13 @@ lin2025autop2c,lin2026bagen,liu2025empirical,liu2026budget,luo2025more,madaan202
 magnusson2023reproducibility,massenkoff2026cadences,masters2026rollout,miao2026recodeh,%
 miller2024adding,milliken2025installamatic,moukpe2026deltamlbench,muttakin2026state,%
 nasem2019reproducibility,neurips2026checklist,neurips2026mlrc,oconnell2026claroaibench,%
-olszewski2023get,openai2025preparedness,openai2026swebench,owen2024interviewing,pape2026silent,%
-parikh2025malt,peng2026can,plesser2018reproducibility,prasad2026baitbench,prathifkumar2025memory,%
+olszewski2023get,openai2025preparedness,openai2026swebench,owen2024interviewing,%
+panickssery2024evaluators,pape2026silent,parikh2025malt,peng2026can,plesser2018reproducibility,prasad2026baitbench,prathifkumar2025memory,%
 qiang2025mledojo,qiang2026mlesmith,qiu2026prbench,rabanser2026towards,ranathunga2024shoulders,%
 rein2025hcast,riddell2024quantifying,riehl2026ara,roberts2024cutoff,schwartz2020green,%
 semmelrock2025reproducibility,shabtay2025livexiv,shah2026automating,sinha2023mlrc,%
 smyth2026overclaiming,snelleman2026cost,tan2025judgebench,thomson2025evolving,tian2024scicode,%
-vonarx2025recent,wang2025openhands,wang2026deploybench,wang2026firebench,wang2026naturebench,%
+vonarx2025recent,wang2025openhands,wang2026deploybench,wang2026firebench,%
 wang2026searchtime,wang2026solved,wieling2018reproducibility,wu2025antileakbench,%
 wu2026innovatorbench,xu2025agentcompany,yang2024sweagent,yang2026programbench,yao2025taubench,%
 yeon2026inferencebench,yu2025utboost,yuan2025understanding,zhang2025swebenchlive,zhang2025which,%
