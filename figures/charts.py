@@ -387,71 +387,71 @@ def fig_scores():
     page("score_distribution", b, top + ph + 52)
 
 
-# ================================ fig: process failures by agent strength
+# ==================================== fig: failure modes by agent strength
 # numbers of record: tab:failure-modes-by-agent (Appendix G), pooled as the two
 # weakest agents by mean audit score (Qwen3.6-27B + MiniMax-M2.7, 188 graded
-# runs) and the two strongest (DeepSeek-V4-Flash + Muse Spark 1.2, 184).
-# (mode, MODES index, weakest pair, strongest pair); first four fall, last three do not.
+# runs, 23 labeled Reproduced) and the two strongest (DeepSeek-V4-Flash + Muse
+# Spark 1.2, 184 graded runs, 49 labeled Reproduced).
+# (mode, MODES index, weakest pair, strongest pair), sorted by the change in the
+# mode's share of graded runs; the first four fall, the last four do not.
 STRENGTH = [
     ("Reimplemented but did not check the result", 2, 43, 20),
     ("Failed before any number was produced", 8, 25, 6),
     ("Build and dependency failures", 3, 19, 5),
     ("Wrong experiment", 5, 27, 19),
-    ("Wrong artifact measured", 4, 17, 21),
-    ("Never launched an experiment", 7, 6, 7),
     ("Echoed a shipped number", 6, 5, 4),
+    ("Never launched an experiment", 7, 6, 7),
+    ("Wrong artifact measured", 4, 17, 21),
+    ("Ran, outside tolerance", 1, 23, 53),
 ]
 PAIRS = [("two weakest agents", "Qwen3.6-27B, MiniMax-M2.7", 188),
          ("two strongest agents", "DeepSeek-V4-Flash, Muse Spark 1.2", 184)]
 
 
 def fig_strength():
-    """One row per process failure, one bar per agent pair labeled with the
-    share of the pair's graded runs, then the change from the weakest pair to
-    the strongest in percentage points. A rule splits the modes that fall from
-    the rest, and a totals row sums the seven modes. Shares and changes are
-    computed from the counts and rounded once."""
+    """One row per failure mode, one bar per agent pair with the run count at
+    its end, then the change in the mode's share of the pair's graded runs, in
+    percentage points. Bar length is that share, so the two columns compare
+    directly. A rule splits the modes that fall from the rest, and the totals
+    row is every graded run that did not reproduce, so its change is the change
+    in the failure rate and equals the sum of the rows."""
     b = head("failure modes differ between weak and strong agents")
-    pxs, pw, vmax, dx = (282, 442), 120, 25.0, X1
+    pxs, pw, vmax, dx = (282, 442), 130, 30.0, X1
     for px, (h1, h2, _) in zip(pxs, PAIRS):
         b.append(text(px, 53, h1, 12, INK, SANS, 600))
         b.append(text(px, 66, h2, 11, MUTED))
     b.append(text(dx, 53, "change (pts)", 12, INK, SANS, 600, "end"))
     totals = [t for _, _, t in PAIRS]
 
-    def share(n, total):
-        return 100 * n / total
-
-    def delta(v):
-        r = round(v, 1)
+    def delta(weak, strong):
+        r = round(100 * strong / totals[1] - 100 * weak / totals[0], 1)
         return f"\u2212{-r:.1f}" if r < 0 else f"+{r:.1f}" if r > 0 else "0.0"
 
-    top, pitch, bh = 71, 16, 9
+    top, pitch, bh = 71, 15.5, 9
     y = top
     for i, (mode, mi, weak, strong) in enumerate(STRENGTH):
         if i == 4:
             b.append(line(X0, y + 3.5, X1, y + 3.5, LINE_STRONG))
-            y += 8
+            y += 7
         cy = y + pitch / 2
         b.append(text(X0, cy + 4, mode, 12, MID))
         for px, n, total in zip(pxs, (weak, strong), totals):
-            w = pw * share(n, total) / vmax
+            w = pw * (100 * n / total) / vmax
             b.append(rect(px, cy - bh / 2, w, bh, MODE_COLOR[mi], 2))
-            b.append(text(px + w + 6, cy + 4, f"{share(n, total):.1f}%", 11.5, INK, SANS, 600))
-        b.append(text(dx, cy + 4, delta(share(strong, totals[1]) - share(weak, totals[0])),
-                      11.5, INK, SANS, 600, "end", tnum=True))
+            b.append(text(px + w + 6, cy + 4, str(n), 11.5, INK, SANS, 600))
+        b.append(text(dx, cy + 4, delta(weak, strong), 11.5, INK, SANS, 600, "end", tnum=True))
         y += pitch
     for px in pxs:
         b.append(line(px - 0.5, top + 1, px - 0.5, y - 1, LINE_STRONG))
     b.append(line(X0, y + 3.5, X1, y + 3.5, LINE_STRONG))
-    y += 8
+    y += 7
     cy = y + pitch / 2
     tw, ts = sum(r[2] for r in STRENGTH), sum(r[3] for r in STRENGTH)
-    b.append(text(X0, cy + 4, "All seven failure modes", 12, INK, SANS, 600))
-    for px, n, total in zip(pxs, (tw, ts), totals):
-        b.append(text(px, cy + 4, f"{share(n, total):.1f}%", 11.5, INK, SANS, 600))
-    b.append(text(dx, cy + 4, delta(share(ts, totals[1]) - share(tw, totals[0])), 11.5, INK,
-                  SANS, 600, "end", tnum=True))
+    assert (tw, ts) == (188 - 23, 184 - 49)
+    b.append(text(X0, cy + 4, "All runs that did not reproduce", 12, INK, SANS, 600))
+    for px, n in zip(pxs, (tw, ts)):
+        b.append(text(px, cy + 4, str(n), 11.5, INK, SANS, 600))
+    b.append(text(dx, cy + 4, delta(tw, ts), 11.5, INK, SANS, 600, "end", tnum=True))
     page("modes_by_strength", b, y + pitch + 8)
 
 
