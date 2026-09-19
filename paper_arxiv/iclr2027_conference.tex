@@ -97,7 +97,7 @@ software projects~\citep{jimenez2024swebench,chan2024mlebench,
 merrill2026terminalbench}, and they are already deployed on this work
 in the real world~\citep{handa2025economic,huang2025aiwork,murphyhill2026adoption}. As their capabilities rise,
 static benchmarks tend to saturate soon after they are
-released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping}, so evaluation has to move
+released~\citep{kiela2021dynabench,phan2025hle,ott2022mapping,akhtar2026plateau}, so evaluation has to move
 closer to the workflows agents are deployed into. Reproducing a published machine learning (ML) paper by
 obtaining results consistent with those its authors report is an ideal
 ground for that evaluation, both for its direct value to the field and for
@@ -107,7 +107,7 @@ replication effort reproduced only 162 of 255 attempted papers without
 using the authors' code~\citep{raff2019step}, and independent studies
 attribute the shortfall to missing code, missing data, and underspecified
 experimental detail~\citep{gundersen2018state,henderson2018deep,
-pineau2021improving,gundersen2022sources}. Reproduction is also a
+pineau2021improving,gundersen2022sources,gundersen2025unreasonable}. Reproduction is also a
 prerequisite for recursively
 self-improving systems, since a model that improves itself must first
 re-implement and verify the research it builds
@@ -201,7 +201,7 @@ Section~\ref{subsec:results}, with no test to pass.
 A second family targets the machine-learning workflow itself, from model
 development through research engineering~\citep{huang2024mlagentbench,
 nathani2025mlgym,jing2025dsbench,zhang2025datascibench,
-wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench,xu2026autolab}. MLE-bench is
+wijk2024rebench,zhang2025mlrcbench,lupidi2026airsbench,xu2026autolab,rank2026posttrainbench}. MLE-bench is
 representative, with agents building and refining pipelines for Kaggle
 competitions under a fixed compute budget and each submission scored
 against the historical leaderboard for that
@@ -217,8 +217,9 @@ A growing line of benchmarks measures how well agents reproduce, reimplement,
 extend, or audit published research~\citep{siegel2024corebench,starace2025paperbench,bogin2024super,
 xiang2025scireplicate,kon2025expbench,hua2025researchcodebench,
 edwards2025rexbench,zhao2025speedrunning,nguyen2026replicatorbench,
-wang2026researchenvbench,seo2025paper2code,zhao2025autoreproduce,
-ye2025replicationbench,alizadeh2026socsci,li2026reprorepo,hu2026sabench,huang2026automat}, and
+wang2026researchenvbench,xiao2025csrbench,seo2025paper2code,zhao2025autoreproduce,
+ye2025replicationbench,alizadeh2026socsci,li2026reprorepo,hu2026sabench,huang2026automat,
+kim2026autoexperiment,yan2025lmrbench,hu2025reproducibility}, and
 three of them bracket the design space. CORE-Bench asks agents to rerun the
 released code of computationally reproducible papers and recover known
 artifacts~\citep{siegel2024corebench}, a setting frontier models have since
@@ -230,9 +231,9 @@ EXP-Bench withholds the paper itself and hands the agent a research
 question, a high-level method description, and starter code to design and
 run the experiments from~\citep{kon2025expbench}. In all three the release state is settled
 before the run begins, by withholding the code or by selection. Most keep
-only papers whose code is already public and already runs, and the stricter
-protocols exclude the rest on the stated reasoning that there is no need to include
-an irreproducible paper. That builds a clean coding task, but it fixes the
+only papers whose code is already public and already runs, and CORE-Bench
+excludes the rest on the stated reasoning that there is no need to include
+an irreproducible paper~\citep{siegel2024corebench}. That builds a clean coding task, but it fixes the
 variable RECLAIM exists to measure, and a benchmark assembled only from
 papers that shipped working code cannot say what happens on the papers that
 did not.
@@ -281,7 +282,7 @@ well as the authors' own.
 verifies the candidate papers, and humans audit only the selected pool
 (Section~\ref{subsec:construction}). Each conference cycle supplies fresh
 peer-reviewed targets, so the benchmark can be rebuilt yearly from new
-NeurIPS, ICML, and ICLR submissions.
+NeurIPS, ICML, and ICLR submissions~\citep[cf.][]{white2025livebench,jain2025livecodebench,badertdinov2025swerebench}.
 
 \subsection{Task definition}
 \label{subsec:task}
@@ -303,7 +304,7 @@ must clear, most often a point estimate within a stated or default tolerance
 As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
 forward passes alone. Its match target pins a test accuracy of 79.42\% on the
-EuroSAT test set under a 16-shot CLIP ViT-B/16 configuration the paper
+EuroSAT~\citep{helber2019eurosat} test set under a 16-shot CLIP~\citep{radford2021clip} ViT-B/16 configuration the paper
 reports. A run matches when it produces that accuracy, within tolerance, from an experiment it executed.
 
 The agent receives the paper and the match target without the configuration
@@ -376,11 +377,11 @@ GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
 derived the rest from the pinned configuration. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
-reproduction in AI research~\citep{gundersen2018state}.
+reproduction in AI research~\citep{gundersen2018state,dodge2019show,henderson2020towards}.
 \section{Auditing}
 \label{sec:auditing}
 
-Every finished run is graded by an LLM auditor~\citep{zheng2023judging} that reads the
+Every finished run is graded by an LLM auditor~\citep{zheng2023judging,zhuge2025agent} that reads the
 run's evidence directory and transcript and assigns the 0--10 score of
 Appendix~\ref{app:rubric}, from which the categorical verdict is derived
 deterministically. We fix Claude Sonnet 5~\citep{anthropic2026sonnet5} as the
@@ -423,7 +424,7 @@ same workflows a human reproducer runs on a cluster, and the harness adds no
 guidance beyond them, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
 supplement, the verified links to the released artifacts, and the match
 target of Section~\ref{subsec:task}. \texttt{run\_gpu} is the only path to a
-GPU, holding a Slurm allocation~\citep{yoo2003slurm} whose wall clock is metered against the
+GPU, holding a Slurm allocation~\citep{yoo2003slurm,jette2023slurm} whose wall clock is metered against the
 run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
 budgeting and scheduling decisions that real reproduction work demands.
@@ -433,7 +434,7 @@ self-assessment is a claim for the auditor to grade. Appendix~\ref{app:harness} 
 prompts, the tools, and session mechanics.
 
 \paragraph{Models.} We evaluate four models:
-DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken},
+DeepSeek-V4-Flash~\citep{deepseekai2026deepseekv4highlyefficientmilliontoken,deepseekai2026flashcard},
 Qwen3.6-27B~\citep{qwen3.6-27b}, MiniMax-M2.7~\citep{minimax2026m2}, and
 Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 served on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
@@ -444,7 +445,7 @@ integer grade from 0 to 10 that the auditor assigns each run
 under the rubric of Appendix~\ref{app:rubric}. We also report the
 reproduction rate, the fraction of papers whose runs score 8 or higher and
 are therefore graded reproduced. Alongside both we report each agent's token
-usage and its total cost~\citep{kapoor2024agents}, the sum of its tokens at its
+usage and its total cost~\citep{kapoor2024agents,kapoor2026hal}, the sum of its tokens at its
 vendor's list rate and the GPU time it drew from its grant at \$2 per
 H100-hour. Appendix~\ref{app:models} gives the serving settings, the rates,
 and the per-agent totals.
@@ -598,7 +599,7 @@ trained on their code, and a memorized fix would count as reproduced under our g
 
 \paragraph{Agents.} Each cell holds at most one run and the rates are point
 estimates, so we read the large gaps between agents and leave close pairs
-within a tier unranked. The roster omits Claude, GPT, and Gemini. Repeated
+within a tier unranked~\citep{bjarnason2026randomness}. The roster omits Claude, GPT, and Gemini. Repeated
 runs and the closed frontier models are for groups with access to them, and
 the harness already drives one vendor-served agent over its API
 (Appendix~\ref{app:models}).
@@ -701,6 +702,36 @@ of Illinois. DeltaAI is a joint effort of the University of Illinois
 Urbana-Champaign and its National Center for Supercomputing
 Applications~\citep{bode2025deltaai}.
 
+% Related work listed in the references without a main-text discussion (citation audit 2026-09-19).
+\nocite{acm2020artifact,advani2026false,agarwal2021deep,anthropic2026rsp,arora2025setupbench,%
+arvan2022reproducibility,baker2016scientists,baumgartner2026scicoqa,becker2025rct,becker2026survey,%
+belz2023missing,bhat2026rescore,bianchi2026agents4science,bouthillier2021accounting,%
+bouzenia2025executionagent,bouzenia2025understanding,bowyer2025position,bragg2026astabench,%
+cemri2025why,chan2026measuring,chen2025contamination,chen2025mlrbench,chen2025scienceagentbench,%
+chun2026wasted,coakley2022examining,coakley2026shift,cochran1977sampling,colelough2026neurosymbolic,%
+deng2024newterm,deshpande2025trail,ding2026verificationgap,eliseeva2025envbench,eth2025software,%
+falck2026training,faroughy2026colliderbench,fei2026autoresearch,ferraridacrema2019really,%
+gaddipati2026mlreplicate,garikaparthi2026researchgym,gdm2026fsf,gundersen2021fundamental,haldar2025rating,%
+hans2026codingagents,hochlehnert2025sober,hong2026agentactionbench,hong2026can,hu2025repo2run,%
+hu2026reproagent,huang2026grounded,jiang2026repllm,kaddour2026agentic,kampa2026onegc,%
+kapoor2023leakage,kirgis2026log,kohler2026readpaper,kong2026autoresearch,krakovna2020specification,%
+li2025autobencher,li2025deepcode,li2026tacit,liang2026swebench,liesenfeld2024rethinking,%
+lin2025autop2c,lin2026bagen,liu2025empirical,liu2026budget,lu2026automation,luo2025more,madaan2024quantifying,%
+magnusson2023reproducibility,massenkoff2026cadences,masters2026rollout,miao2026recodeh,%
+miller2024adding,milliken2025installamatic,moukpe2026deltamlbench,muttakin2026state,%
+nasem2019reproducibility,neurips2026checklist,neurips2026mlrc,oconnell2026claroaibench,%
+olszewski2023get,openai2025preparedness,openai2026swebench,owen2024interviewing,pape2026silent,%
+parikh2025malt,peng2026can,plesser2018reproducibility,prasad2026baitbench,prathifkumar2025memory,%
+qiang2025mledojo,qiang2026mlesmith,qiu2026prbench,rabanser2026towards,ranathunga2024shoulders,%
+rein2025hcast,riddell2024quantifying,riehl2026ara,roberts2024cutoff,schwartz2020green,%
+semmelrock2025reproducibility,shabtay2025livexiv,shah2026automating,sinha2023mlrc,%
+smyth2026overclaiming,snelleman2026cost,tan2025judgebench,thomson2025evolving,tian2024scicode,%
+vonarx2025recent,wang2025openhands,wang2026deploybench,wang2026firebench,wang2026naturebench,%
+wang2026searchtime,wang2026solved,wieling2018reproducibility,wu2025antileakbench,%
+wu2026innovatorbench,xu2025agentcompany,yang2024sweagent,yang2026programbench,yao2025taubench,%
+yeon2026inferencebench,yu2025utboost,yuan2025understanding,zhang2025swebenchlive,zhang2025which,%
+zhong2026impossiblebench,zhou2025reflective,zhou2026creditbudgeted,zhu2025establishing,zhu2025where,%
+zhuang2022randomness}
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
