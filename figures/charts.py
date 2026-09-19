@@ -401,15 +401,15 @@ STRENGTH = [
     ("Never launched an experiment", 7, 6, 7),
     ("Echoed a shipped number", 6, 5, 4),
 ]
-PAIRS = [("two weakest agents, 188 runs", "Qwen3.6-27B, MiniMax-M2.7", 188),
-         ("two strongest agents, 184 runs", "DeepSeek-V4-Flash, Muse Spark 1.2", 184)]
+PAIRS = [("two weakest agents", "Qwen3.6-27B, MiniMax-M2.7", 188),
+         ("two strongest agents", "DeepSeek-V4-Flash, Muse Spark 1.2", 184)]
 
 
 def fig_strength():
     """One row per process failure, one bar per agent pair with the run count
     at its end. Bar length is the share of the pair's graded runs, so the two
     columns compare directly; a rule splits the modes that fall from the rest."""
-    b = head("process failures, weakest and strongest agents")
+    b = head("failure modes differ between weak and strong agents")
     pxs, pw, vmax = (282, 470), 140, 25.0
     for px, (h1, h2, _) in zip(pxs, PAIRS):
         b.append(text(px, 53, h1, 12, INK, SANS, 600))
