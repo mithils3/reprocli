@@ -10,9 +10,10 @@ Three deviations from a literal reading of 3.2, all to preserve its intent:
     prefix, so letting rule 9 fire first would shred the id and defeat the
     lookup.
   * Rule 5 rewrites the account name inside `github.com/<account>/...` and
-    `Mithilss/reprobench-splits` before rule 11 can see them, so rule 11 also
-    matches the post-rule-5 forms `github.com/[user]/...` and
-    `[user]/reprobench-splits`. Without that the repo and dataset paths survive.
+    `Mithilss/reclaim` before rule 11 can see them, so rule 11 also matches the
+    post-rule-5 forms `github.com/[user]/...` and `[user]/reclaim`. Without that
+    the repo and dataset paths survive. The dataset's former id,
+    `reprobench-splits`, still appears in older transcripts, so rule 11 keeps it.
   * Rule 4's node pattern `\bgh\d{3}\b` is case-insensitive and so swallows
     GH200 before rule 10 can turn it into `[GPU]`. The node pattern carries a
     negative lookahead for 200; no compute node is named gh200.
@@ -390,7 +391,7 @@ def _rule_sources():
         (r"\bgrace[\s_-]+(?:cpu|superchip|cores?|node)s?\b", "[GPU]", re.I),
         (_GRACE, _grace_repl, re.I),
         # 11. repos / datasets / harness
-        (r"Mithilss/reprobench-splits|\[user\]/reprobench-splits", "[dataset]", re.I),
+        (r"(?:Mithilss|\[user\])/(?:reclaim|reprobench-splits)\b", "[dataset]", re.I),
         (r"github\.com/mithils3\S*|github\.com/\[user\]\S*", "[repo]", re.I),
         (r"reprocli\w*", "harness", re.I),
         (r"rjnkpoxwdslkgxjliakq", "[storage]", re.I),
@@ -944,6 +945,7 @@ CASES = [
      "nvidia-smi shows NVIDIA [GPU], [GPU-spec] free"),
     ("a Grace Hopper superchip", "a [GPU] superchip"),
     # 11 repos / datasets / harness
+    ("hf download Mithilss/reclaim", "hf download [dataset]"),
     ("hf download Mithilss/reprobench-splits", "hf download [dataset]"),
     ("git clone https://github.com/mithils3/reprocli.git",
      "git clone https://[repo]"),
@@ -1288,6 +1290,7 @@ ID_CASES = [
 GATE_CASES = [
     ("the RECLAIM lockfile pins the claim", []),
     ("the ReproBench lockfile pins the claim", ["reprobench"]),
+    ("hf download Mithilss/reclaim", ["mithil"]),
     ("hf download Mithilss/reprobench-splits", ["mithil", "reprobench"]),
     # Muse Spark 1.2 is on the roster since 2026-09-03, so its name passes
     ("served Muse Spark on eight nodes", []),

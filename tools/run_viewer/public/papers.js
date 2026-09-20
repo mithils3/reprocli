@@ -78,7 +78,7 @@
       const cnt = (s) => allP.filter((p) => p.set === s).length;
       const seg = [["all", "all", allP.length], ["test", "test", cnt("test")], ["dev", "dev", cnt("dev")]]
         .map(([v, l, c]) => `<button class="seg-btn ${this.set === v ? "active" : ""}" data-set="${v}">${l}<span class="seg-c">${c}</span></button>`).join("");
-      return `<div class="ov-head"><div><h1>Papers</h1><div class="ov-sub">${allP.length} papers in reprobench-splits — shown by the claim each agent is reproducing.</div></div>
+      return `<div class="ov-head"><div><h1>Papers</h1><div class="ov-sub">${allP.length} papers in RECLAIM — shown by the claim each agent is reproducing.</div></div>
         <div class="ov-actions"><div class="set-seg">${seg}</div><input id="pp-search" class="s-search" type="search" placeholder="search claim / arxiv / model…" value="${esc(this.search)}" /></div></div>
         <table class="stats-table papers-table"><thead><tr>${ths}</tr></thead><tbody>${body || `<tr><td colspan="9" class="empty small">No papers match.</td></tr>`}</tbody></table>`;
     },

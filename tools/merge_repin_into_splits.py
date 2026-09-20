@@ -1,4 +1,4 @@
-"""Overlay re-pinned claim fields onto the frozen reprobench-splits rows.
+"""Overlay re-pinned claim fields onto the frozen RECLAIM rows.
 
 The re-run regenerates the classifier output (now carrying a pinned, coherent
 ``match_target`` tuple) for exactly the 115 frozen papers. The released splits also
@@ -17,7 +17,7 @@ Base files are the canonical loose JSONL on the Hub
 
     python tools/merge_repin_into_splits.py \
         --repin outputs/v6/repin_eval_dev_115_extracted.jsonl \
-        --splits-repo Mithilss/reprobench-splits \
+        --splits-repo Mithilss/reclaim \
         --out-eval outputs/v6/eval_100.jsonl \
         --out-dev  outputs/v6/dev_split.jsonl
 

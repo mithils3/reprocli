@@ -16,7 +16,7 @@ human verification and run inspection, and the paper itself
 ## Status (2026-08-07)
 
 - **Dataset frozen 2026-07-13.** The benchmark is published as the HF dataset
-  `Mithilss/reprobench-splits`: split `test` = the 100-paper eval set
+  `Mithilss/reclaim`: split `test` = the 100-paper eval set
   (34/33/33 across the Easy/Medium/Hard artifact tiers, band-stratified by
   compute), split `validation` = the disjoint 14-paper dev set. There is no
   `train` split. The lockfile is the *audited selection* (each paper's central
@@ -113,7 +113,7 @@ paper's pinned success bar:
 
 ```bash
 PYTHONPATH=src python3 src/run_arxiv_prompt_vllm.py --mode audit \
-  --claims hf://datasets/Mithilss/reprobench-splits/eval_100.jsonl \
+  --claims hf://datasets/Mithilss/reclaim/eval_100.jsonl \
   --runs-dir <runs-dir> --vllm-server-url http://<host>:8000/v1
 ```
 

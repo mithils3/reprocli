@@ -42,7 +42,7 @@ META = HERE          # where manifest.json and export_report.md land
 DRY = False
 NOTES = os.path.normpath(os.path.join(HERE, "..", "..", "notes", "Analysis"))
 SUPABASE_URL = "https://rjnkpoxwdslkgxjliakq.supabase.co"
-HF_EVAL = ("https://huggingface.co/datasets/Mithilss/reprobench-splits"
+HF_EVAL = ("https://huggingface.co/datasets/Mithilss/reclaim"
            "/resolve/main/eval_100.jsonl")
 PAGE = 1000
 # --cache: transcript rows fetched once are reused from here (local only).

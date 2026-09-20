@@ -48,7 +48,7 @@ SPLIT_CLAIMS = {
     "eval": "eval_100.jsonl",
     "test": "eval_100.jsonl",
 }
-CLAIMS_REPO = "hf://datasets/Mithilss/reprobench-splits"
+CLAIMS_REPO = "hf://datasets/Mithilss/reclaim"
 REQUEST_TIMEOUT = 900.0
 WRITE_LOCK = threading.Lock()
 

@@ -1,5 +1,5 @@
 /* estimates.js — per-paper lockfile facts, pulled straight from the canonical
-   dataset's raw JSONL files (Mithilss/reprobench-splits) served with CORS by
+   dataset's raw JSONL files (Mithilss/reclaim) served with CORS by
    the HF Hub. We fetch resolve/main/*.jsonl instead of the datasets-server
    /rows API because the datasets-server 503s during Hub viewer outages while
    file resolve stays up. Reloads periodically so a refreshed lockfile shows up
@@ -11,7 +11,7 @@
 "use strict";
 
 (function () {
-  const BASE = "https://huggingface.co/datasets/Mithilss/reprobench-splits/resolve/main/";
+  const BASE = "https://huggingface.co/datasets/Mithilss/reclaim/resolve/main/";
   const FILES = [
     { file: "eval_100.jsonl", set: "test" },
     { file: "dev_split.jsonl", set: "dev" },

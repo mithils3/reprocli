@@ -17,7 +17,7 @@
 
 ## Goal
 Recompute each paper's H100-hour figure for the eval-100 split of the HF dataset
-`Mithilss/reprobench-splits` (test split = `eval_100.jsonl`, 100 rows), then reupload the
+`Mithilss/reclaim` (test split = `eval_100.jsonl`, 100 rows), then reupload the
 corrected `eval_100.jsonl` to that same HF repo (write auth, user `Mithilss`).
 
 ## What the number means (load-bearing definition)
@@ -233,5 +233,5 @@ Availability signals live under
 4. Assemble corrected `eval_100.jsonl` (change only moved rows; preserve everything else).
 5. Diff summary: old→new hours, band migrations, biggest movers, and flag any
    `selection_band` vs `h100_band` mismatch.
-6. Reupload `eval_100.jsonl` to `Mithilss/reprobench-splits` (HF write auth, user
+6. Reupload `eval_100.jsonl` to `Mithilss/reclaim` (HF write auth, user
    `Mithilss`).

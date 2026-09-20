@@ -1,6 +1,6 @@
 """Trend analysis of the published eval-100 + dev-14 splits.
 
-Reads the released HF dataset ``Mithilss/reprobench-splits`` (``eval_100.jsonl``
+Reads the released HF dataset ``Mithilss/reclaim`` (``eval_100.jsonl``
 + ``dev_split.jsonl``) directly, falling back to the byte-identical local
 builder output if offline. Prints the tables that back
 ``notes/Analysis/Split Analysis (eval-100 + dev-14).md``: artifact-signal
@@ -25,7 +25,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HF_BASE = "https://huggingface.co/datasets/Mithilss/reprobench-splits/resolve/main"
+HF_BASE = "https://huggingface.co/datasets/Mithilss/reclaim/resolve/main"
 EVAL_URL, DEV_URL = f"{HF_BASE}/eval_100.jsonl", f"{HF_BASE}/dev_split.jsonl"
 LOCAL_EVAL = ROOT / "outputs/v5/audit_pool_eval100_extracted.jsonl"  # byte-identical mirror
 LOCAL_DEV = ROOT / "outputs/v5/audit_pool_dev15_extracted.jsonl"

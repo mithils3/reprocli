@@ -59,7 +59,7 @@ class ReproCliSmokeTests(unittest.TestCase):
         argv = [
             "--paper-id", "2505.18513",
             "--split", "eval",
-            "--lockfile", "Mithilss/reprobench-splits",
+            "--lockfile", "Mithilss/reclaim",
             "--run-id", "12345-2505.18513-abc123",
             "--tool-rounds", "300",
             "--served-model-name", "MiniMaxAI/MiniMax-M2.7",
@@ -67,7 +67,7 @@ class ReproCliSmokeTests(unittest.TestCase):
             "--save-round-jsonl",
         ]
         args = parse_repro_args(argv)
-        self.assertEqual(args.lockfile, "Mithilss/reprobench-splits")
+        self.assertEqual(args.lockfile, "Mithilss/reclaim")
         self.assertEqual(args.tool_rounds, 300)
         self.assertEqual(args.cluster_profile.gpus_per_node, 4)
         self.assertTrue(args.save_round_jsonl)
@@ -91,7 +91,7 @@ class AuditRunnerCliSmokeTests(unittest.TestCase):
             "--served-model-name", "deepseek/deepseek-v4-pro",
             "--model", "deepseek/deepseek-v4-pro",
             "--runs-dir", "/tmp/grade_root",
-            "--claims", "hf://datasets/Mithilss/reprobench-splits/dev_split.jsonl",
+            "--claims", "hf://datasets/Mithilss/reclaim/dev_split.jsonl",
             "--paper-ids-file", "/tmp/audit_ids.txt",
             "--tool-rounds", "25",
             "--output", "/tmp/audit_2505.18513.jsonl",
@@ -112,7 +112,7 @@ class AuditRunnerCliSmokeTests(unittest.TestCase):
             "--served-model-name", "MiniMaxAI/MiniMax-M2.7",
             "--model", "MiniMaxAI/MiniMax-M2.7",
             "--runs-dir", "/tmp/grade_2505.18513",
-            "--claims", "hf://datasets/Mithilss/reprobench-splits/eval_100.jsonl",
+            "--claims", "hf://datasets/Mithilss/reclaim/eval_100.jsonl",
             "--paper-ids-file", "/tmp/ids.txt",
             "--tool-rounds", "40",
             "--max-input-tokens", "128000",

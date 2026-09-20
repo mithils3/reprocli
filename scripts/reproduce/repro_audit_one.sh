@@ -36,7 +36,7 @@ case "$SPLIT" in
   dev|validation) CLAIMS_FILE=dev_split.jsonl ;;
   *)              CLAIMS_FILE=eval_100.jsonl ;;
 esac
-CLAIMS="${CLAIMS:-hf://datasets/Mithilss/reprobench-splits/${CLAIMS_FILE}}"
+CLAIMS="${CLAIMS:-hf://datasets/Mithilss/reclaim/${CLAIMS_FILE}}"
 export SUPABASE_URL="${SUPABASE_URL:-https://rjnkpoxwdslkgxjliakq.supabase.co}"
 
 # Resolve the repo root (two levels up) so src/ and outputs/ resolve wherever this runs.

@@ -74,7 +74,7 @@ MiniMax 3.18 / 3.41 / 2.70; reproduced 14/9/4, 5/6/2, 3/5/2.
 Auditor transcript: when the pinned grade came from an `audit_runs` row,
 that row's `audit_events` become `audit_events` in the bundle; else null.
 
-Papers: `eval_100.jsonl` from HF dataset `Mithilss/reprobench-splits`
+Papers: `eval_100.jsonl` from HF dataset `Mithilss/reclaim`
 (field names in `tools/run_viewer/public/estimates.js` lines 36-55). Snapshot
 `arxiv_id, tier (renamed), band, claim, predicted_h100, kind, paper_url,
 code_url`. Report any included run whose arxiv is not in eval_100 (expected 0).
@@ -173,7 +173,7 @@ Apply in order; case-insensitive unless noted.
    -> `\1=[job]`; `slurm-?\d+\.(out|err)` -> `job.\1`; every known 7-digit job
    id (all `slurm-*` batch ids plus 2678961, 2889476, 2666353) as `\b\d{7}\b` -> `[job]`.
 10. Hardware: `GH200(\s*\d+GB)?` -> `[GPU]`; `Grace Hopper` -> `[GPU]`.
-11. Repos/datasets/harness: `Mithilss/reprobench-splits` -> `[dataset]`;
+11. Repos/datasets/harness: `Mithilss/reclaim` and the former id `Mithilss/reprobench-splits` -> `[dataset]`;
     `github\.com/mithils3\S*` -> `[repo]`; `reprocli\w*` -> `harness`;
     `rjnkpoxwdslkgxjliakq` -> `[storage]`; `agent-logs\.vercel\.app` -> `[viewer]`;
     `ReproBench` -> `RECLAIM`.

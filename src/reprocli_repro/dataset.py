@@ -1,6 +1,6 @@
 """Lockfile loading + per-row field accessors for the reproduce episodes.
 
-Source of truth is a **Hugging Face dataset** (default ``Mithilss/reprobench-splits``),
+Source of truth is a **Hugging Face dataset** (default ``Mithilss/reclaim``),
 not a local JSON file. That dataset publishes two named splits: ``test`` (the 100-paper
 frozen benchmark, ``split="eval"`` in-row) and ``validation`` (the disjoint 14-paper
 ``dev`` split); there is no ``train`` split, so the loader defaults to ``test`` and
@@ -24,7 +24,7 @@ from typing import Iterable
 from reprocli_vllm.audit import h100
 from reprocli_vllm.runtime.mre_records import load_mre_records
 
-DEFAULT_LOCKFILE_DATASET = "Mithilss/reprobench-splits"
+DEFAULT_LOCKFILE_DATASET = "Mithilss/reclaim"
 # The reproduction agent reproduces the frozen benchmark by default; "validation"
 # (the 14-paper dev split) is for development. "train" does not exist here.
 DEFAULT_LOCKFILE_SPLIT = "test"

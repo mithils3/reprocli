@@ -81,7 +81,7 @@ paper says "a GH200 cluster", the site may too; if it says nothing, redact it.
 
 - Swap `supabase-data.js` for a static loader reading `data/*.json`. Same interface, so the
   rest of the app is untouched.
-- **`estimates.js` hardcodes `https://huggingface.co/datasets/Mithilss/reprobench-splits/`.**
+- **`estimates.js` hardcodes `https://huggingface.co/datasets/Mithilss/reclaim/`.**
   That handle deanonymizes on sight. Bundle the needed rows into `data/estimates.json` and
   cut the remote fetch.
 - Delete the Live tab and the host strip (`live.css`, `hoststrip.js`, `fleet.js`, `hosts.js`)

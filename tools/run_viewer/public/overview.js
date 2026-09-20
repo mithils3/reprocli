@@ -49,7 +49,7 @@
       const E = window.Estimates;
       return [...new Set(this.overviewRuns().filter((r) => r.model && (!E || E.row(r.arxiv_id))).map((r) => r.model))].sort();
     },
-    // only papers present in reprobench-splits (have a lockfile row); then by set
+    // only papers present in RECLAIM (have a lockfile row); then by set
     allPapers() { return window.Report.papers(this.modelRuns()).filter((p) => p.inDataset); },
     papers() { const ps = this.allPapers(); return this.set === "all" ? ps : ps.filter((p) => p.set === this.set); },
     setRuns() { const ok = new Set(this.papers().map((p) => p.arxiv_id)); return this.modelRuns().filter((r) => ok.has(r.arxiv_id)); },
@@ -182,7 +182,7 @@
       el.innerHTML = `
         <div class="ov-head">
           <div><h1>Reproduction worksheet</h1>
-            <div class="ov-sub">Agents reproducing ML papers from <b>reprobench-splits</b> under a fixed H100·h budget — each curve is a run burning compute toward the paper's claim. ${esc(this.busy ? this.msg : "")}</div></div>
+            <div class="ov-sub">Agents reproducing ML papers from <b>RECLAIM</b> under a fixed H100·h budget — each curve is a run burning compute toward the paper's claim. ${esc(this.busy ? this.msg : "")}</div></div>
           <div class="ov-actions"><div class="set-seg" title="filter by dataset split">${seg}</div><select id="ov-model" title="scope the whole worksheet to one agent model">${opts([["all", "all models"], ...this.models().map((m) => [m, m])], this.model)}</select><button id="ov-csv" class="filt">⬇ CSV</button><button id="ov-refresh" class="filt" ${this.busy ? "disabled" : ""}>↻</button></div>
         </div>
         ${this.thesisHtml(papers, sm)}
