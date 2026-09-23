@@ -390,6 +390,12 @@ def fig_split(runs):
                   SANS, 400, "middle"))
     b.append(text(X0, bottom + 56, f"one {skipped[0][0]} run ({skipped[0][1]}) spent no GPU "
                   "time and is not shown", 11.5, FAINT))
+    if CONTEXT_OPACITY > 0:
+        lab = "the other agents' runs"
+        lx = X1 - text_width(lab, 11.5, 400)
+        b.append(f'<circle cx="{lx - 7:.2f}" cy="{bottom + 52:.2f}" r="2.2" fill="{CONTEXT}" '
+                 f'fill-opacity="{CONTEXT_OPACITY}"/>')
+        b.append(text(X1, bottom + 56, lab, 11.5, FAINT, SANS, 400, "end"))
     page("app_B_split", b, math.ceil(bottom + 68))
 
 
