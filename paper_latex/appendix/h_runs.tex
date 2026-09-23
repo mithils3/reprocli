@@ -243,7 +243,8 @@ file against the 300 the paper states.
 \label{vig:qwen3-run-2506.02392}
 \runfacts{qwen3-run-2506.02392}{Qwen3.6-27B}{Run}{2506.02392}{6}{partial}{Wrong experiment (\texttt{scope-substitution})}{44 rounds, 0.4 of 8~H100-hours}
 The pinned claim is the TTPL~\citep{chen2025ttpl} row of Table~2, an optimality gap under greedy
-construction with MVDF off, which the released command line cannot express.
+construction with MVDF off, and the released script parses the MVDF flag with
+\code{type=bool}, which reads the string \code{False} as true.
 The agent found the argparse \code{bool} at round 35, then at round 36 wrote
 that the MVDF-off configuration was exactly what it was running, as
 Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
