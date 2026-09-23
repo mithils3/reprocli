@@ -11,14 +11,26 @@ compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
 through the Meta Model API.
 Table~\ref{tab:models} lists the four configurations.
 
-\begin{table}[ht]
-\centering
-\footnotesize
+{\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{3.05cm}@{}}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{3.05cm}@{}}
 \toprule
 Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 \\
 \midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\footnotesize\itshape Table~\ref{tab:models}, continued.} \\[3pt]
+\toprule
+Setting & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 \\
+\midrule
+\endhead
+\midrule
+\endfoot
+\bottomrule
+\noalign{\vskip 6pt}
+\caption{Served configuration of the four agent models, from the tier launch
+scripts and the serve profiles.}
+\label{tab:models} \\
+\endlastfoot
 Served checkpoint &
 \texttt{deepseek-ai/\allowbreak{}DeepSeek-\allowbreak{}V4-\allowbreak{}Flash-\allowbreak{}0731} &
 \texttt{Qwen/\allowbreak{}Qwen3.6-\allowbreak{}27B-\allowbreak{}FP8} &
@@ -43,12 +55,8 @@ Reasoning parser & \texttt{deepseek\_v4} & \texttt{qwen3} &
 \texttt{minimax\_m2} & API \\
 \texttt{max\_num\_seqs} & not set & 32 & not set & vendor-served \\
 Tool rounds & 300 & 300 & 300 & 300 \\
-\bottomrule
-\end{tabular}
-\caption{Served configuration of the four agent models, from the tier launch
-scripts and the serve profiles.}
-\label{tab:models}
-\end{table}
+\end{longtable}
+}
 
 We produce the grades of record with a separate grading client on the
 Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
@@ -64,6 +72,20 @@ cluster-served models we take the tokens produced on our cluster and price them
 at that listed rate. Figure~\ref{fig:app-b-tokens} shows the tokens of
 each graded run by agent, and Figure~\ref{fig:app-b-cost} its cost and the
 split between tokens and GPU time.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_tokens}
+\caption{Prompt, cached prompt, and completion tokens per graded run by agent on a shared log axis, one tick per run, with a bar over the middle half of runs and the median in black.}
+\label{fig:app-b-tokens}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_cost}
+\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost}, with the median ticked, the ratio of token cost to GPU cost at right, and a dashed line at parity.}
+\label{fig:app-b-cost}
+\end{figure}
 
 \begin{table}[ht]
 \centering
@@ -90,20 +112,6 @@ All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12
 \label{tab:cost}
 \end{table}
 
-\begin{figure}[htb]
-\centering
-\includegraphics[width=\textwidth]{figures/app_B_tokens}
-\caption{Prompt, cached prompt, and completion tokens per graded run by agent on a shared log axis, one tick per run, with a bar over the middle half of runs and the median in black.}
-\label{fig:app-b-tokens}
-\end{figure}
-
-\begin{figure}[htb]
-\centering
-\includegraphics[width=\textwidth]{figures/app_B_cost}
-\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost}, with the median ticked, the ratio of token cost to GPU cost at right, and a dashed line at parity.}
-\label{fig:app-b-cost}
-\end{figure}
-
 \subsection{Results by agent, tier, and compute band}
 \label{app:results-table}
 
@@ -113,52 +121,63 @@ and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
 grant spent is H100-hours used over hours
 granted, and the band is the paper's H100-hour grant.
 
-\begin{table}[ht]
-\centering
-\footnotesize
-\begin{tabular}{@{}llrrrrr@{}}
+{\footnotesize
+\begin{longtable}{@{}llrrrrr@{}}
 \toprule
 & & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
 \cmidrule(lr){3-4} \cmidrule(l){5-7}
 Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
 \midrule
-DeepSeek-V4-Flash & Run & 14/34 (41\%) & 5.29 & & & \\
-& Retrain & 9/33 (27\%) & 5.45 & & & \\
-& Reimplement & 4/33 (12\%) & 4.64 & & & \\
-& All tiers & 27/100 (27\%) & 5.13 & & & \\
-& Mean score & & & 6.00 & 4.10 & 3.33 \\
-& Grant spent (\%) & \multicolumn{2}{r}{26.2 overall} & 42.0 & 34.0 & 13.5 \\
+\endfirsthead
+\multicolumn{7}{@{}l}{\footnotesize\itshape Table~\ref{tab:results}, continued.} \\[3pt]
+\toprule
+& & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
+\cmidrule(lr){3-4} \cmidrule(l){5-7}
+Agent & Tier or measure & Reproduced & Mean score & 8 h & 32 h & 96 h \\
 \midrule
-Qwen3.6-27B & Run & 5/34 (15\%) & 3.91 & & & \\
-& Retrain & 6/33 (18\%) & 3.58 & & & \\
-& Reimplement & 2/33 (6\%) & 3.03 & & & \\
-& All tiers & 13/100 (13\%) & 3.51 & & & \\
-& Mean score & & & 4.03 & 3.14 & 1.83 \\
-& Grant spent (\%) & \multicolumn{2}{r}{15.6 overall} & 31.0 & 23.4 & 3.1 \\
-\midrule
-MiniMax-M2.7 & Run & 3/34 (9\%) & 3.09 & & & \\
-& Retrain & 5/33 (15\%) & 3.30 & & & \\
-& Reimplement & 2/33 (6\%) & 2.70 & & & \\
-& All tiers & 10/100 (10\%) & 3.03 & & & \\
-& Mean score & & & 3.56 & 2.41 & 1.92 \\
-& Grant spent (\%) & \multicolumn{2}{r}{10.4 overall} & 26.8 & 12.0 & 2.3 \\
-\midrule
-Muse Spark 1.2 & Run & 9/34 (26\%) & 5.47 & & & \\
-& Retrain & 9/33 (27\%) & 5.85 & & & \\
-& Reimplement & 5/33 (15\%) & 3.67 & & & \\
-& All tiers & 23/100 (23\%) & 5.00 & & & \\
-& Mean score & & & 5.61 & 4.55 & 3.08 \\
-& Grant spent (\%) & \multicolumn{2}{r}{21.8 overall} & 38.9 & 32.6 & 6.1 \\
-\midrule
-All agents & Run & 31/136 (23\%) & 4.44 & & & \\
-& Retrain & 29/132 (22\%) & 4.55 & & & \\
-& Reimplement & 13/132 (10\%) & 3.51 & & & \\
-& All tiers & 73/400 (18\%) & 4.17 & & & \\
-& Mean score & & & 4.80 & 3.55 & 2.54 \\
-& Grant spent (\%) & \multicolumn{2}{r}{18.5 overall} & 34.7 & 25.5 & 6.2 \\
+\endhead
+\endfoot
 \bottomrule
-\end{tabular}
+\noalign{\vskip 6pt}
 \caption{Reproduced cells, mean audit score, and grant spent over all 400
 agent-paper cells, by agent, tier, and compute band.}
-\label{tab:results}
-\end{table}
+\label{tab:results} \\
+\endlastfoot
+DeepSeek-V4-Flash & Run & 14/34 (41\%) & 5.29 & & & \\*
+& Retrain & 9/33 (27\%) & 5.45 & & & \\*
+& Reimplement & 4/33 (12\%) & 4.64 & & & \\*
+& All tiers & 27/100 (27\%) & 5.13 & & & \\*
+& Mean score & & & 6.00 & 4.10 & 3.33 \\*
+& Grant spent (\%) & \multicolumn{2}{r}{26.2 overall} & 42.0 & 34.0 & 13.5 \\
+\midrule
+Qwen3.6-27B & Run & 5/34 (15\%) & 3.91 & & & \\*
+& Retrain & 6/33 (18\%) & 3.58 & & & \\*
+& Reimplement & 2/33 (6\%) & 3.03 & & & \\*
+& All tiers & 13/100 (13\%) & 3.51 & & & \\*
+& Mean score & & & 4.03 & 3.14 & 1.83 \\*
+& Grant spent (\%) & \multicolumn{2}{r}{15.6 overall} & 31.0 & 23.4 & 3.1 \\
+\midrule
+MiniMax-M2.7 & Run & 3/34 (9\%) & 3.09 & & & \\*
+& Retrain & 5/33 (15\%) & 3.30 & & & \\*
+& Reimplement & 2/33 (6\%) & 2.70 & & & \\*
+& All tiers & 10/100 (10\%) & 3.03 & & & \\*
+& Mean score & & & 3.56 & 2.41 & 1.92 \\*
+& Grant spent (\%) & \multicolumn{2}{r}{10.4 overall} & 26.8 & 12.0 & 2.3 \\
+\midrule
+Muse Spark 1.2 & Run & 9/34 (26\%) & 5.47 & & & \\*
+& Retrain & 9/33 (27\%) & 5.85 & & & \\*
+& Reimplement & 5/33 (15\%) & 3.67 & & & \\*
+& All tiers & 23/100 (23\%) & 5.00 & & & \\*
+& Mean score & & & 5.61 & 4.55 & 3.08 \\*
+& Grant spent (\%) & \multicolumn{2}{r}{21.8 overall} & 38.9 & 32.6 & 6.1 \\
+\midrule
+All agents & Run & 31/136 (23\%) & 4.44 & & & \\*
+& Retrain & 29/132 (22\%) & 4.55 & & & \\*
+& Reimplement & 13/132 (10\%) & 3.51 & & & \\*
+& All tiers & 73/400 (18\%) & 4.17 & & & \\*
+& Mean score & & & 4.80 & 3.55 & 2.54 \\*
+& Grant spent (\%) & \multicolumn{2}{r}{18.5 overall} & 34.7 & 25.5 & 6.2 \\
+\end{longtable}
+}
+
+\FloatBarrier  % no Appendix C float prints above the continued part of Table 5

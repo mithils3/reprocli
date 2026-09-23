@@ -12,7 +12,7 @@ sets a low-score prior, so a run with no evidence scores low, and a printed numb
 Figure~\ref{fig:app-cd-auditor-effort} shows how many tool rounds the auditor
 spent per run, by verdict.
 
-\begin{table}[ht]
+\begin{table}[tb]
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -39,7 +39,7 @@ function and limits of each.}
 \label{tab:audit-tools}
 \end{table}
 
-\begin{figure}[htb]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_auditor_effort}
 \caption{Tool rounds the auditor spent per run, by verdict. Each row is scaled to its own tallest bar, and the dashed line marks the median.}
@@ -131,14 +131,14 @@ integrity flag zeroed and the 52 runs the auditor accepted as reproductions with
 Figure~\ref{fig:app-cd-flag-kinds} shows the flags the auditor raised, by kind
 and severity.
 
-\begin{figure}[ht]
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/score_distribution}
 \caption{Audit scores, colored by the verdict bands of Table~\ref{tab:rubric}.}
 \label{fig:score-dist}
 \end{figure}
 
-\begin{figure}[htb]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_flag_kinds}
 \caption{Anti-cheat flags the auditor raised over the 372 graded runs, by kind
@@ -147,6 +147,9 @@ flag.}
 \label{fig:app-cd-flag-kinds}
 \end{figure}
 
+% The score and flag figures print before this subsection, so its two figures, which
+% cannot share a page, fit on the page it starts on and the next.
+\FloatBarrier
 \subsection{Deterministic verdict derivation}
 \label{app:rubric-finalizer}
 
@@ -154,7 +157,7 @@ Figure~\ref{fig:app-cd-verdict-flow} shows the derivation code of
 Figure~\ref{lst:audit-finalizer} as a flow from the
 auditor's report to the verdict of record.
 
-\begin{figure}[htb]
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_verdict_flow}
 \caption{The verdict derivation of the code in Figure~\ref{lst:audit-finalizer}. The integrity checks run
@@ -163,9 +166,10 @@ Figure~\ref{fig:score-dist}.}
 \label{fig:app-cd-verdict-flow}
 \end{figure}
 
-% The listing is a float-page figure so that Appendix D fills the page after Table 7, and the
-% barrier at the end of Appendix D prints it after Figure 13.
-\begin{figure}[p]
+\begin{figure}[tb]
+\centering
 \tcbset{rbFrame/.append style={unbreakable}}
 \codefile[lst:audit-finalizer]{Python}{Verdict derivation code}{prompts/audit_finalizer.py}
 \end{figure}
+
+\FloatBarrier  % the Appendix B and C floats print before Appendix D

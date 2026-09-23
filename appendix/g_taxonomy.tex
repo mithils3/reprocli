@@ -28,6 +28,31 @@ Figure~\ref{fig:failure-modes} and Table~\ref{tab:failure-modes-by-agent} use
 the plain-language names under the slugs in Table~\ref{tab:taxonomy}, in the
 same order.
 
+\begin{table}[t]
+\centering
+\fontsize{8}{9.6}\selectfont
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Mode & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 & All \\
+\midrule
+Reproduced & 27 & 13 & 10 & 22 & 72 \\
+Ran, outside tolerance & 26 & 16 & 7 & 27 & 76 \\
+Reimplemented but did not check the result & 13 & 16 & 27 & 7 & 63 \\
+Build and dependency failures & 1 & 8 & 11 & 4 & 24 \\
+Wrong artifact measured & 6 & 4 & 13 & 15 & 38 \\
+Wrong experiment & 9 & 11 & 16 & 10 & 46 \\
+Echoed a shipped number & 1 & 1 & 4 & 3 & 9 \\
+Never launched an experiment & 2 & 2 & 4 & 5 & 13 \\
+Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
+\midrule
+Graded runs & 87 & 90 & 98 & 97 & 372 \\
+\bottomrule
+\end{tabular}
+\caption{Primary failure mode by agent.}
+\label{tab:failure-modes-by-agent}
+\end{table}
+
 \subsection{The failure modes}
 
 The rubric anchor column of Table~\ref{tab:taxonomy} names the band of the
@@ -149,31 +174,6 @@ bar normalized to its sweep's run count, in the order and colors of
 Figure~\ref{fig:failure-modes}.}
 \label{fig:app-g-agent-tier}
 \end{figure}
-
-\begin{table}[ht]
-\centering
-\fontsize{8}{9.6}\selectfont
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-Mode & DeepSeek-V4-Flash & Qwen3.6-27B & MiniMax-M2.7 & Muse Spark 1.2 & All \\
-\midrule
-Reproduced & 27 & 13 & 10 & 22 & 72 \\
-Ran, outside tolerance & 26 & 16 & 7 & 27 & 76 \\
-Reimplemented but did not check the result & 13 & 16 & 27 & 7 & 63 \\
-Build and dependency failures & 1 & 8 & 11 & 4 & 24 \\
-Wrong artifact measured & 6 & 4 & 13 & 15 & 38 \\
-Wrong experiment & 9 & 11 & 16 & 10 & 46 \\
-Echoed a shipped number & 1 & 1 & 4 & 3 & 9 \\
-Never launched an experiment & 2 & 2 & 4 & 5 & 13 \\
-Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
-\midrule
-Graded runs & 87 & 90 & 98 & 97 & 372 \\
-\bottomrule
-\end{tabular}
-\caption{Primary failure mode by agent.}
-\label{tab:failure-modes-by-agent}
-\end{table}
 
 \subsection{Failure taxonomy examples}
 
