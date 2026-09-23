@@ -50,7 +50,7 @@
            {×}{{$\times$}}1 {·}{{$\cdot$}}1 {≠}{{$\neq$}}1 {≥}{{$\geq$}}1
            {≤}{{$\leq$}}1 {≈}{{$\approx$}}1 {…}{{\ldots}}1 {’}{{'}}1
            {“}{{``}}1 {”}{{''}}1 {✓}{{$\checkmark$}}1 {✗}{{$\times$}}1
-           {•}{{$\bullet$}}1 {←}{{$\leftarrow$}}1 {↔}{{<->}}3
+           {•}{{$\bullet$}}1 {←}{{$\leftarrow$}}1 {↔}{{$\leftrightarrow$}}1
            {≡}{{$\equiv$}}1 {⁻}{{$^-$}}1 {²}{{$^2$}}1 {°}{{$^\circ$}}1
            {∞}{{$\infty$}}1 {≫}{{$\gg$}}1 {≪}{{$\ll$}}1 {μ}{{$\mu$}}1
            {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {σ}{{$\sigma$}}1 {Δ}{{$\Delta$}}1
@@ -145,7 +145,7 @@
 }
 % \begin{codebox}[label]{language}{Title} ... \end{codebox}   language in {bash,Python,json}
 \newtcblisting[use counter from=promptbox]{codebox}[3][]{
-  rbFrame, listing only, listing options={style=rbCode, language=#2, deletekeywords={eval}},
+  rbFrame, listing only, listing options={style=rbCode, language=#2, deletekeywords={eval,exec}},
   colback=rbCodeBack, colframe=rbCodeFrame, colbacktitle=rbCodeFrame!8!white, coltitle=rbCodeFrame,
   title={Figure~\thetcbcounter:\ #3}, title after break={Figure~\thetcbcounter\ (continued):\ #3}, label={#1},
 }

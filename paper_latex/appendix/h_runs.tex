@@ -51,7 +51,7 @@ low-severity provenance note.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_H1_zoom_1}
-\caption{Decisive round 53 of DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164), with the agent's reasoning, the tool call, and its result.}
+\caption{Decisive round 53 of DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164), where the agent picks the fix, and round 77, where the patched script runs on the GPU.}
 \label{fig:app-h1-zoom-1}
 \end{figure}
 \FloatBarrier  % each vignette keeps its card and panel
@@ -87,16 +87,6 @@ the two arms as a disclosed single-seed deviation.
 \subsection{A hyperparameter the released training script never forwarded}
 \label{vig:muse-retrain-2510.23577}
 \runfacts{muse-retrain-2510.23577}{Muse Spark 1.2}{Retrain}{2510.23577}{10}{reproduced}{Reproduced (\texttt{reproduced-clean})}{82 rounds, 2.4 of 8~H100-hours}
-The pinned number is an average precision for GraphMixer with TAMI~\citep{yu2025tami} on
-Wikipedia with $\gamma$ set to 0.9, and the paper releases no weights. At
-rounds 10 and 24 the agent found the decoder constructed without the
-argument, as Figure~\ref{fig:app-h1-zoom-3} shows, so the released command
-trains at its 0.5 default and raises no
-error, and the five seeds after the round-31 fix (Figure~\ref{fig:card-muse-retrain-2510.23577}) gave 98.88 to 98.92. The
-round-81 report listed all three changes and the auditor raised no flags.
-Muse Spark 1.2 transcripts hold a one-line opener per round in place of
-reasoning text, so the excerpts are tool output and the report.
-
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_3}
@@ -110,6 +100,16 @@ reasoning text, so the excerpts are tool output and the report.
 \caption{Decisive round 31 of Muse Spark 1.2 on TAMI (arXiv~2510.23577), with the one-line opener the transcript carries in place of reasoning, the tool call, and its result.}
 \label{fig:app-h1-zoom-3}
 \end{figure}
+
+The pinned number is an average precision for GraphMixer with TAMI~\citep{yu2025tami} on
+Wikipedia with $\gamma$ set to 0.9, and the paper releases no weights. At
+rounds 10 and 24 the agent found the decoder constructed without the
+argument, as Figure~\ref{fig:app-h1-zoom-3} shows, so the released command
+trains at its 0.5 default and raises no
+error, and the five seeds after the round-31 fix (Figure~\ref{fig:card-muse-retrain-2510.23577}) gave 98.88 to 98.92. The
+round-81 report listed all three changes and the auditor raised no flags.
+Muse Spark 1.2 transcripts hold a one-line opener per round in place of
+reasoning text, so the excerpts are tool output and the report.
 \FloatBarrier  % each vignette keeps its card and panel
 
 \subsection{A host substitution checked against the reference path before training}
@@ -174,18 +174,6 @@ the same value.
 \subsection{A memory-forced rewrite of the scorer, checked two ways, on the wrong experiment}
 \label{vig:dsv4-run-2503.18430}
 \runfacts{dsv4-run-2503.18430}{DeepSeek-V4-Flash}{Run}{2503.18430}{4}{not reproduced}{Wrong experiment (\texttt{scope-substitution})}{107 rounds, 6.0 of 8~H100-hours}
-The pinned claim is CQ-DINO's V3Det AP~\citep{sun2025cqdino}, and the authors' COCO metric died
-scoring 7,456 finished batches. The agent's 500-category chunked evaluator
-around the authors' unmodified scorer matched pycocotools on a 3,000-image
-subset at round 91 and the in-runner metric on six numbers, as
-Figures~\ref{fig:card-dsv4-run-2503.18430} and~\ref{fig:app-h1-zoom-6} show. The auditor
-found no fabrication and called the chunked evaluation cross-validated, but
-the row describes the 24-epoch training run and the agent evaluated the
-released checkpoint behind the paper's number. On 2505.14827~\citep{zhuang2025mixture} the same agent
-answered a comparable gap, a vLLM with no aarch64 wheel, with a hand-written
-port checked on one example, which the auditor disqualified
-(\code{dsv4-run-2505.14827}).
-
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_6}
@@ -199,6 +187,18 @@ port checked on one example, which the auditor disqualified
 \caption{Decisive round 91 of DeepSeek-V4-Flash on CQ-DINO (arXiv~2503.18430), with the agent's reasoning, the tool call, and its result.}
 \label{fig:app-h1-zoom-6}
 \end{figure}
+
+The pinned claim is CQ-DINO's V3Det AP~\citep{sun2025cqdino}, and the authors' COCO metric died
+scoring 7,456 finished batches. The agent's 500-category chunked evaluator
+around the authors' unmodified scorer matched pycocotools on a 3,000-image
+subset at round 91 and the in-runner metric on six numbers, as
+Figures~\ref{fig:card-dsv4-run-2503.18430} and~\ref{fig:app-h1-zoom-6} show. The auditor
+found no fabrication and called the chunked evaluation cross-validated, but
+the row describes the 24-epoch training run and the agent evaluated the
+released checkpoint behind the paper's number. On 2505.14827~\citep{zhuang2025mixture} the same agent
+answered a comparable gap, a vLLM with no aarch64 wheel, with a hand-written
+port checked on one example, which the auditor disqualified
+(\code{dsv4-run-2505.14827}).
 \FloatBarrier  % each vignette keeps its card and panel
 
 \subsection{A masked crash caught from the log, then a shortfall reported as measured}
@@ -232,17 +232,6 @@ for the disclosed 200-versus-300 discrepancy.
 \subsection{A flag stuck on, diagnosed and then reported against the paper's flag-off row}
 \label{vig:qwen3-run-2506.02392}
 \runfacts{qwen3-run-2506.02392}{Qwen3.6-27B}{Run}{2506.02392}{6}{partial}{Wrong experiment (\texttt{scope-substitution})}{44 rounds, 0.4 of 8~H100-hours}
-The pinned claim is the TTPL~\citep{chen2025ttpl} row of Table~2, an optimality gap under greedy
-construction with MVDF off, which the released command line cannot express.
-The agent found the argparse \code{bool} at round 35, then at round 36 wrote
-that the MVDF-off configuration was exactly what it was running, as
-Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
-the diagnosis for a second flag at round 40, and called it a bug in its own
-test setup, and at round 42 it reported the run as reproduced at 2.86 percent
-against the 3.25 percent target. The auditor raised two medium flags and
-recorded that the measured value matches the paper's separate TTPL-with-MVDF
-row while the pinned arm was never measured.
-
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_8}
@@ -256,6 +245,17 @@ row while the pinned arm was never measured.
 \caption{Decisive round 36 of Qwen3.6-27B on TTPL (arXiv~2506.02392), with the agent's reasoning, the tool call, and its result.}
 \label{fig:app-h1-zoom-8}
 \end{figure}
+
+The pinned claim is the TTPL~\citep{chen2025ttpl} row of Table~2, an optimality gap under greedy
+construction with MVDF off, which the released command line cannot express.
+The agent found the argparse \code{bool} at round 35, then at round 36 wrote
+that the MVDF-off configuration was exactly what it was running, as
+Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
+the diagnosis for a second flag at round 40, and called it a bug in its own
+test setup, and at round 42 it reported the run as reproduced at 2.86 percent
+against the 3.25 percent target. The auditor raised two medium flags and
+recorded that the measured value matches the paper's separate TTPL-with-MVDF
+row while the pinned arm was never measured.
 \FloatBarrier  % each vignette keeps its card and panel
 
 \subsection{Attention replaced by zeros after the faithful patch missed the bar}
@@ -298,7 +298,7 @@ trained unconstrained SVD-factorized layers with torch SGD at the uniform
 rank matching the paper's compression, as Figure~\ref{fig:app-h1-zoom-10}
 shows, and the round-49 report called that reproduced. The auditor read
 the executed method as the low-rank momentum
-baseline the paper argues against, with a verdict that contradicted the
+baseline the paper argues against, and the report's verdict as contradicting the
 agent's own numbers.
 
 \begin{figure}[tb]

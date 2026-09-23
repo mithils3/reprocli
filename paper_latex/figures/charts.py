@@ -171,7 +171,7 @@ def bar_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
     bottom = rows[-1][0] + pitch - 6
     for t in ticks:
         b.append(line(X(t), top - 4, X(t), bottom, TRACK))
-        b.append(text(X(t), bottom + 14, f"{t}{unit}", 11, FAINT, SANS, 400, "middle"))
+        b.append(text(X(t), bottom + 14, f"{t}{unit}", 11.5, FAINT, SANS, 400, "middle"))
     group = 3 * BAR_H + 2 * BAR_GAP
     for y, vals in rows:
         y0 = y + (pitch - group) / 2 - 3
@@ -205,16 +205,15 @@ def fig_results():
         total = agent == "All agents"
         ink = MUTED if total else INK
         cy = y + pitch / 2 - 3
-        if total:
-            b.append(line(X0, y - 6, X1, y - 6, LINE_STRONG))
         b.append(text(X0, cy + 4.5, agent, 12, ink, SANS, 600))
         b.append(rect(gx, cy - 2, 40, 4, TRACK, 2))
         b.append(rect(gx, cy - 2, 40 * spent / 100, 4, SLATE, 1))
-        b.append(text(gx + 50, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600))
+        b.append(text(X1, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600, "end", tnum=True))
     bar_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
               50, [0, 10, 20, 30, 40, 50], top, pitch, "%")
     bar_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
               8, [0, 2, 4, 6, 8], top, pitch, "")
+    b.append(line(X0, rows[-1][0] - 6, X1, rows[-1][0] - 6, LINE_STRONG))
     page("results_by_tier", b, rows[-1][0] + pitch + 22)
 
 
@@ -256,7 +255,7 @@ def fig_modes():
         if label == "All agents":
             y += 8
             b.append(line(X0, y - 8.5, X1, y - 8.5, LINE_STRONG))
-        b.append(text(bx - 12, y + 13, label, 12.5, MUTED if idx == 4 else INK,
+        b.append(text(bx - 12, y + 13, label, 12, MUTED if idx == 4 else INK,
                       SANS, 600, "end"))
         b.append(f'<clipPath id="clip{si}"><rect x="{bx}" y="{y}" width="{bw}" '
                  f'height="{bh}" rx="4"/></clipPath><g clip-path="url(#clip{si})">')
@@ -296,13 +295,13 @@ def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
     """One slope panel: gridlines with axis numerals at ax, three points per
     agent at xs, value labels at both ends with a leader where a label had to
     move off its point."""
-    px, pw = xs[0] - 40, xs[2] - xs[0] + 48
+    tx, gx0, gx1 = xs[0] - 40, xs[0] - 17, xs[2] + 8
 
     def Y(v):
         return top + ph - ph * v / ymax
-    b.append(text(px, top - 12, label, 12, INK, SANS, 600))
+    b.append(text(tx, top - 12, label, 12, INK, SANS, 600))
     for t in ticks:
-        b.append(line(px, Y(t), px + pw, Y(t), LINE if t == 0 else TRACK))
+        b.append(line(gx0, Y(t), gx1, Y(t), LINE if t == 0 else TRACK))
         b.append(text(ax, Y(t) + 4, str(t), 11, FAINT, SANS, 400, "end"))
     for name, vals in series:
         c = AGENT_COLOR[name]
@@ -328,10 +327,10 @@ def slope_panel(b, ax, xs, top, ph, label, ymax, ticks, series, fmt):
             c, y0 = AGENT_COLOR[name], Y(dict(series)[name][col])
             if abs(ly - y0) > 3:
                 b.append(line(xs[col] + sg * 6, y0, xs[col] + sg * 20, ly, c, 0.9))
-            b.append(text(xs[col] + sg * 23, ly + 4, fmt(val), 11.5, c, SANS, 600, anchor,
+            b.append(text(xs[col] + sg * 23, ly + 4, fmt(val), 12, c, SANS, 600, anchor,
                           halo=True))
     for x, band, n in zip(xs, BANDS, BANDRUNS):
-        b.append(text(x, top + ph + 18, str(band), 12, INK, SANS, 600, "middle"))
+        b.append(text(x, top + ph + 18, f"{band} h", 12, INK, SANS, 600, "middle"))
         b.append(text(x, top + ph + 31, f"{n} cells", 11, FAINT, SANS, 400, "middle"))
 
 
@@ -357,8 +356,12 @@ def fig_compute():
 # numbers of record: audit.score over the 372 runs of
 # tools/anon_viewer/public/data/index.json, read 2026-09-07.
 HIST = [53, 10, 47, 17, 72, 14, 60, 26, 52, 16, 5]
-HIST_KEY = [("disqualified (0)", ROSE), ("not reproduced (1 to 5)", SLATE),
+HIST_KEY = [("disqualified (0)", ROSE), ("not reproduced or unverifiable (1 to 5)", SLATE),
             ("partial (6 to 7)", AMBER), ("reproduced (8 to 10)", GREEN)]
+
+
+# legend x offsets: equal label-to-swatch gaps, last label ends at X1
+KEY_X = [22.0, 149.2, 405.7, 527.4]
 
 
 def score_color(s):
@@ -367,8 +370,7 @@ def score_color(s):
 
 def fig_scores():
     b = head("score distribution", "372 graded runs")
-    for i, (name, color) in enumerate(HIST_KEY):
-        kx = X0 + i * (X1 - X0) / 4
+    for kx, (name, color) in zip(KEY_X, HIST_KEY):
         b.append(swatch(kx, 48, color))
         b.append(text(kx + 15, 56, name, 12, MID))
     top, ph, colw, gapw = 84, 110, 44, 12

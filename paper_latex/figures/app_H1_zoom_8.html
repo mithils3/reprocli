@@ -7,43 +7,45 @@
 @font-face { font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }
 :root { --navy:#1F3A5F; --teal:#3E8E8C; --gold:#E3B341; --red:#C2483B; --ink:#2E3440; --gray:#6B7280; --cgray:#8C939E; }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { width:1280px; font-family:'InterF',sans-serif; background:#fff; }
+body { width:1280px; font-family:'InterF',sans-serif; background:#fff; text-rendering:geometricPrecision; }
 .wrap { width:1280px; padding:4px; }
 .term { background:#F7F6F3; border:2px solid var(--navy); border-radius:14px; overflow:hidden; }
 .term-bar { display:flex; align-items:center; gap:9px; background:#E6E9ED; padding:9px 16px; }
 .dot { width:15px; height:15px; border-radius:50%; }
-.term-bar .title { font-family:'JBMono',monospace; font-size:18px; color:var(--gray); margin-left:8px; }
-.term-body { padding:8px 16px 10px 16px; font-family:'JBMono',monospace; font-size:19px; line-height:1.28; font-feature-settings:'liga' 0,'calt' 0; }
-.blk { padding:5px 10px 6px 10px; border-radius:8px; margin:0 -4px; }
+.term-bar .title { font-family:'JBMono',monospace; font-size:21px; color:var(--gray); margin-left:8px; }
+.term-body { padding:8px 10px 10px 10px; font-family:'JBMono',monospace; font-size:21px; line-height:27px; font-feature-settings:'liga' 0,'calt' 0; }
+.blk { padding:5px 8px 6px 8px; border-radius:8px; margin:0 -4px; }
 .blk + .blk { margin-top:5px; }
 .blk.key { background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }
 .rh { display:flex; align-items:center; gap:10px; margin-bottom:2px; }
-.rh .pt { font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; }
+.rh .pt { font-size:21px; font-weight:600; letter-spacing:0.8px; color:#8A919C; white-space:nowrap; }
 .rh .pr { flex:1; height:1.5px; background:#E4E7EB; }
 .blk.key .rh .pr { background:rgba(140,107,31,.35); }
-.row { display:grid; grid-template-columns:88px 1fr; align-items:baseline; }
-.g { font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; padding-top:1px; }
+.row { display:grid; grid-template-columns:92px 1fr; align-items:baseline; }
+.g { font-size:21px; font-weight:600; letter-spacing:0.8px; color:#8A919C; white-space:nowrap; padding-top:1px; }
 .t { white-space:pre; }
 .think { color:var(--navy); font-style:italic; }
-.p { color:var(--teal); font-weight:500; }
+.p { color:var(--teal); font-weight:500; white-space:pre; }
 .cmd { color:var(--ink); }
 .out { color:#4A5568; }
 .err { color:var(--red); font-weight:500; }
 .el { color:var(--cgray); }
+.kl { background:rgba(227,179,65,.5); color:var(--ink); font-weight:500; border-radius:3px; padding:0 1px 0 3px; margin:0 -1px 0 -3px; }
+.t.key { background:rgba(227,179,65,0.45); color:var(--ink); font-weight:500; border-radius:3px; padding:0 3px; margin:0 0 2px -3px; justify-self:start; }
 .call { display:flex; align-items:baseline; gap:10px; }
 .call .t { flex:1; }
 .right { margin-left:auto; display:flex; align-items:center; gap:10px; white-space:nowrap; }
-.rn { font-size:17px; color:var(--cgray); }
-.gpu { font-size:17px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:1px 9px; }
-.tag { font-size:17px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:1px 9px; }
-.tn { font-size:17px; color:var(--gray); background:#EEF0F2; border:1px solid #D8DCE1; border-radius:6px; padding:1px 9px; }
-.meta { display:flex; justify-content:flex-end; font-size:17px; color:var(--cgray); white-space:pre; margin-top:1px; }
-.legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-family:'JBMono',monospace; font-size:17px; color:var(--cgray); margin-top:4px; padding-left:4px; }
+.rn { font-size:21px; color:var(--cgray); }
+.gpu { font-size:21px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:1px 9px; }
+.tag { font-size:21px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:1px 9px; }
+.tn { font-size:21px; color:var(--gray); background:#EEF0F2; border:1px solid #D8DCE1; border-radius:6px; padding:1px 9px; }
+.meta { display:flex; justify-content:flex-end; font-size:21px; color:var(--cgray); white-space:pre; margin-top:1px; }
+.legend { display:flex; flex-wrap:wrap; gap:4px 30px; font-family:'JBMono',monospace; font-size:21px; color:var(--cgray); margin-top:4px; padding-left:4px; }
 .legend span { white-space:nowrap; }
 .legend .err { font-weight:500; }
 .legend .sw { display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }
 </style></head><body><div class="wrap">
 <div class="term"><div class="term-bar"><span class="dot" style="background:#DF7065;"></span><span class="dot" style="background:#EEC252;"></span><span class="dot" style="background:#6BB770;"></span><span class="title">qwen3-run-2506.02392 &middot; decisive round 36 of 44</span></div>
-<div class="term-body"><div class="blk"><div class="rh"><span class="pt">ROUND 35 &middot; THE ROUND BEFORE</span><span class="pr"></span><span class="right"><span class="tn">call not shown</span><span class="rn">r35</span></span></div><div class="row"><span class="g">agent</span><span class="t think">The gap is the same with and without MVDF (2.86%), which seems wrong. Let me look more carefully</span></div><div class="row"><span class="g"></span><span class="t think">at the `--MVDF False` argument - since argparse with `type=bool` converts any string to True.</span></div><div class="row"><span class="g"></span><span class="t think">… With `type=bool`, `"False"` string evaluates to `bool("False")` which is `True`. This is a</span></div><div class="row"><span class="g"></span><span class="t think">known argparse bug.</span></div></div><div class="blk key"><div class="rh"><span class="pt">ROUND 36 &middot; DECISIVE</span><span class="pr"></span><span class="right"><span class="gpu">GPU</span><span class="tn">run_gpu</span><span class="tag">decisive</span><span class="rn">r36</span></span></div><div class="row"><span class="g">agent</span><span class="t think">And the MVDF ablation (tab:ablation_aug): - w/o MVDF: 3.25% for TSP5K - POMO aug: 2.22% -</span></div><div class="row"><span class="g"></span><span class="t think">TTPL-MVDF: 2.86%</span></div><div class="row"><span class="g"></span><span class="t think">So the 3.25% corresponds to TTPL projection WITHOUT MVDF, which is exactly what I'm running. I</span></div><div class="row"><span class="g"></span><span class="t think">got 2.86% which is actually better than the reported 3.25%.</span></div><div class="row"><span class="g">call</span><div class="call"><span class="p">$ </span><span class="t cmd">… python lehd/TSP/test_tsp.py \ --problem_size 5000 \ --coor_projection False \</span></div></div><div class="row"><span class="g"></span><div class="call"><span class="p">  </span><span class="t cmd">  --MVDF False \ --RRC_budget 0 \ 2&gt;&amp;1 | tee /repro/evidence/tsp5k_no_proj_run.log</span></div></div><div class="row"><span class="g">result</span><span class="t out">[timestamp] test_tsp.py(142) : model_params{… 'knearest': True, 'coor_projection': True}</span></div><div class="row"><span class="g"></span><span class="t out">[timestamp] TSPTester.py(143) :  Gap: 2.7210%</span></div><div class="meta">rc 0 · 0.0308 H100-h</div></div></div></div>
-<div class="legend"><span>agent = the agent's words</span><span>$ = the tool call</span><span>result = stdout, stderr</span><span><span class="err">error</span> = a failed line</span><span>rc = exit code</span><span><span class="sw"></span> decisive round</span></div>
+<div class="term-body"><div class="blk"><div class="rh"><span class="pt">ROUND 35 &middot; THE ROUND BEFORE</span><span class="pr"></span><span class="right"><span class="tn">call not shown</span><span class="rn">r35</span></span></div><div class="row"><span class="g">agent</span><span class="t think">The gap is the same with and without MVDF (2.86%), which seems wrong. Let me look more</span></div><div class="row"><span class="g"></span><span class="t think">carefully at the `--MVDF False` argument - since argparse with `type=bool` converts any</span></div><div class="row"><span class="g"></span><span class="t think">string to True.</span></div><div class="row"><span class="g"></span><span class="t think">… With `type=bool`, `"False"` string evaluates to `bool("False")` which is `True`. This</span></div><div class="row"><span class="g"></span><span class="t think">is a known argparse bug.</span></div></div><div class="blk key"><div class="rh"><span class="pt">ROUND 36 &middot; DECISIVE</span><span class="pr"></span><span class="right"><span class="gpu">GPU</span><span class="tn">run_gpu</span><span class="tag">decisive</span><span class="rn">r36</span></span></div><div class="row"><span class="g">agent</span><span class="t think">And the MVDF ablation (tab:ablation_aug):</span></div><div class="row"><span class="g"></span><span class="t think">- w/o MVDF: 3.25% for TSP5K</span></div><div class="row"><span class="g"></span><span class="t think">- POMO aug: 2.22%</span></div><div class="row"><span class="g"></span><span class="t think">- TTPL-MVDF: 2.86%</span></div><div class="row"><span class="g"></span><span class="t think">So the 3.25% corresponds to TTPL projection WITHOUT MVDF, which is exactly what I'm</span></div><div class="row"><span class="g"></span><span class="t think">running. I got 2.86% which is actually better than the reported 3.25%.</span></div><div class="row"><span class="g">call</span><div class="call"><span class="p">$ </span><span class="t cmd">… python lehd/TSP/test_tsp.py \ --problem_size 5000 \ --coor_projection False \</span></div></div><div class="row"><span class="g"></span><div class="call"><span class="p">  </span><span class="t cmd">  --MVDF False \ --RRC_budget 0 \ 2&gt;&amp;1 | tee /repro/evidence/tsp5k_no_proj_run.log</span></div></div><div class="row"><span class="g">result</span><span class="t out">[timestamp] test_tsp.py(142) : model_params{… 'knearest': True, 'coor_projection': True}</span></div><div class="row"><span class="g"></span><span class="t out">[timestamp] TSPTester.py(143) :  Gap: 2.7210%</span></div><div class="meta">rc 0 · 0.0308 H100-h</div></div></div></div>
+<div class="legend"><span>agent = the agent's words</span><span>$ = the tool call</span><span>result = stdout, stderr</span><span>rc = exit code</span><span><span class="sw"></span> decisive round</span></div>
 </div></body></html>

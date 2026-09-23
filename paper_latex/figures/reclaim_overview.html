@@ -162,15 +162,17 @@ body { width: 1720px; font-family: 'InterF', sans-serif; background: #fff; }
 .g.ok { color: var(--green); }
 .g.fl { color: #C9A02E; display: inline-flex; align-items: center; height: 27px; }
 .g.fl .flag { display: block; }
+.g.bad { color: var(--red); display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 27px; }
+.g.bad .cross { display: block; }
 .verdicts { display: flex; align-items: center; gap: 10px; margin-top: 15px; position: relative; }
 .verdict { border-radius: 10px; padding: 8px 14px 10px 14px; text-align: center; }
 .verdict .lab { font-size: 17px; font-weight: 600; color: var(--gray); letter-spacing: .6px; white-space: nowrap; }
 .verdict .val { font-family: 'JBMono', monospace; font-size: 22px; font-weight: 500; margin-top: 2px; }
 .v-claim { background: #fff; border: 2px solid var(--navy); }
 .v-claim .val { color: var(--navy); }
-.v-audit { background: var(--green); border: 2px solid var(--green); }
+.v-audit { background: var(--red); border: 2px solid var(--red); }
 .v-audit .val { color: #fff; }
-.v-audit .lab { color: #DFEEE4; }
+.v-audit .lab { color: #F6DEDA; }
 .vs { font-size: 19px; font-weight: 600; color: var(--gray); }
 .stamp-img { position: absolute; right: -8px; top: -16px; width: 50px; height: 50px; transform: rotate(-12deg); }
 .gap-note { font-family: 'JBMono', monospace; font-size: 19px; font-style: italic; color: var(--gray); margin-top: 12px; }
@@ -221,7 +223,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="step on s1"><span class="tn">&#9656; Run</span><span>execute what shipped</span></div>
             <div class="step s2"><span class="tn">Retrain</span><img src="icons/lock.png"><span>weights withheld</span></div>
             <div class="step s3"><span class="tn">Reimplement</span><img src="icons/lock.png"><span>code withheld too</span></div>
-            <div class="cliff-note"><b>the availability cliff</b><br>success falls as the release thins</div>
+            <div class="cliff-note">success falls as the release thins</div>
           </div>
           <div class="band-row"><img src="icons/gpu.png">budget 8 H100-h</div>
         </div>
@@ -237,7 +239,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
         <div class="agent-bar">
           <img class="robot" src="icons/robot.png">
           <span class="t">Reproduction agent</span>
-          <span class="model-chip">deepseek-v4</span>
+          <span class="model-chip">DeepSeek-V4-Flash</span>
           <div class="tool-chips">
             <span class="tool">workspace_bash</span><span class="tool">write_file</span>
             <span class="tool">fetch_url</span>
@@ -252,7 +254,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <span class="dot" style="background:#DF7065;"></span>
             <span class="dot" style="background:#EEC252;"></span>
             <span class="dot" style="background:#6BB770;"></span>
-            <span class="title">run 2889575 &middot; 107 rounds &middot; 6.0 of 8 H100-h</span>
+            <span class="title">107 rounds &middot; 6.0 of 8 H100-h</span>
           </div>
           <div class="term-body">
             <div class="phase"><span class="pt">PLAN &middot; r0&ndash;4</span><span class="pr"></span></div>
@@ -264,17 +266,17 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <div class="ln"><span class="p">$</span><span class="cmd">pip install mmcv==2.2.0</span></div>
             <div class="ln e"><span class="err">  mmcv/_ext&hellip;so: undefined symbol</span></div>
             <div class="ln th"><span class="think">wheel built for an older torch. build it</span></div>
-            <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 pip install -e mmcv/</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 &hellip;pip install &hellip;mmcv-2.2.0</span></div>
             <div class="phase"><span class="pt">RUN &middot; r62&ndash;64</span><span class="pr"></span></div>
             <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu tools/test.py</span><span class="cm"># 29,821 imgs</span><span class="gpu">GPU</span></div>
             <div class="ln e"><span class="err">  srun: task 0: Out Of Memory</span></div>
             <div class="phase"><span class="pt">RESCUE &amp; SCORE &middot; r65&ndash;92</span><span class="pr"></span></div>
             <div class="ln th"><span class="think">OOM again, but the preds survived in /tmp</span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/results.bbox.json evidence/</span></div>
-            <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu chunked_eval.py</span><span class="cm"># score them</span><span class="gpu">GPU</span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">run_gpu &hellip;chunked_coco_eval.py --full</span><span class="gpu">GPU</span></div>
             <div class="phase"><span class="pt">VERIFY &amp; REPORT &middot; r93&ndash;106</span><span class="pr"></span></div>
             <div class="ln th"><span class="think">my scorer agrees with COCOeval, twice</span></div>
-            <div class="ln"><span class="p">$</span><span class="cmd">write_file report.json</span></div>
+            <div class="ln"><span class="p">$</span><span class="cmd">write_file &hellip;/evidence/REPORT.md</span></div>
           </div>
         </div>
         <div class="result"><span class="num">bbox_mAP 0.463 0.515 0.484</span><span class="match">= paper&rsquo;s 46.3 / 51.5 / 48.4 &#10003;</span></div>
@@ -305,13 +307,13 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
               <div class="audit-sub">re-derives the verdict from the evidence</div></div>
             </div>
             <div class="check"><span class="g ok">&#10003;</span><span>metric recomputed from raw predictions</span></div>
-            <div class="check"><span class="g ok">&#10003;</span><span>exact checkpoint, sibling rows ruled out</span></div>
             <div class="check"><span class="g ok">&#10003;</span><span>AP<sub>S/M/L</sub> values not in the paper: no echo</span></div>
-            <div class="check"><span class="g fl"><svg class="flag" width="18" height="18" viewBox="0 0 24 24" aria-label="flag"><path d="M5 2.5h2.4V22H5z" fill="#C9A02E"/><path d="M7.4 3.5h11.6l-3.2 4.6 3.2 4.6H7.4z" fill="#C9A02E"/></svg></span><span>training arm untested (released ckpt only)</span></div>
+            <div class="check"><span class="g bad"><svg class="cross" width="16" height="16" viewBox="0 0 16 16" aria-label="cross"><path d="M3 3L13 13M13 3L3 13" stroke="#C2483B" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg></span><span>row is the 24-epoch training run</span></div>
+            <div class="check"><span class="g bad"><svg class="cross" width="16" height="16" viewBox="0 0 16 16" aria-label="cross"><path d="M3 3L13 13M13 3L3 13" stroke="#C2483B" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg></span><span>agent evaluated the released checkpoint</span></div>
             <div class="verdicts">
               <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">AP 46.3 &#10003;</div></div>
               <span class="vs">vs</span>
-              <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">AP 46.3 &#10003;</div></div>
+              <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">not reproduced</div></div>
             </div>
             <div class="gap-note">RECLAIM scores the audited verdict</div>
           </div>
@@ -354,7 +356,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     line(term.r + 3, out.cy, out.l - 3, out.cy);
     // output -> audit (vertical = handoff to auditor)
     line(out.cx, out.b + 3, out.cx, audit.t - 3);
-    // the availability cliff: falling arrow beside the tier steps
+    // falling arrow beside the tier steps
     const s1 = box(q('.step.s1')), s3 = box(q('.step.s3'));
     const rel = box(q('.cliff').closest('.card'));
     const cx = rel.r - 21;

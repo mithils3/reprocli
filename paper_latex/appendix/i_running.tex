@@ -4,10 +4,10 @@
 The anonymized repository (footnote~\ref{fn:artifacts}) holds the dataset pipeline,
 the reproduction agent of Appendix~\ref{app:harness}, the auditor of
 Appendix~\ref{app:rubric}, the serving layer they share, the batch scripts
-behind every sweep, and the run bundles the grades were computed on, and the
+behind every sweep, and the run bundles the grades were computed on. The
 prompt templates and rubric of Appendix~\ref{app:prompt-listings} are printed
 verbatim from it. Figure~\ref{lst:running-commands} gives the commands that
-serve a model, run one paper, and grade one run.
+serve a model, run one paper, and grade a sweep.
 
 \begin{codebox}[lst:running-commands]{bash}{Serving, running, and grading}
 # Serve the agent model and publish the address other nodes reach it at.
@@ -33,7 +33,7 @@ $ export RECLAIM_API_KEY=<api-key> RECLAIM_CONTEXT_LENGTH=<window>
 $ PYTHONPATH=src python3 -m reclaim_repro ... \
     --vllm-server-url https://api.meta.ai/v1 --served-model-name <model-id>
 
-# Grade the bundle with the pinned grader (hosted sweeps: --batch <model>-<timestamp>).
+# Grade a sweep with the pinned auditor (hosted sweeps: --batch <model>-<timestamp>).
 $ PYTHONPATH=src python3 -m reclaim_claude \
     --batch slurm-<jobid> \
     --runs-dir <runs-dir> \
@@ -43,8 +43,8 @@ $ PYTHONPATH=src python3 -m reclaim_claude \
 \end{codebox}
 
 A tier job runs its papers in ascending order of compute ceiling and grades
-each run while the sweep is still in progress, over a vLLM endpoint capped at
-40 tool rounds. The pinned pass of Appendix~\ref{app:models} overwrites those
+each run while the sweep is still in progress. This in-sweep auditor runs on a
+vLLM endpoint and is capped at 40 tool rounds. The pinned pass of Appendix~\ref{app:models} overwrites those
 in-sweep grades. We resume a killed job with \texttt{RESUME=1}, which skips
 papers whose verdict is already on disk, regrades nothing, and retries any
 paper whose run ended without a verdict, and a paper that produces no bundle

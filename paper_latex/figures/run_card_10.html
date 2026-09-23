@@ -12,11 +12,11 @@ body { width:1280px; font-family:'InterF',sans-serif; background:#fff; }
 .term { background:#F7F6F3; border:2px solid var(--navy); border-radius:14px; overflow:hidden; }
 .term-bar { display:flex; align-items:center; gap:9px; background:#E6E9ED; padding:9px 16px; }
 .dot { width:15px; height:15px; border-radius:50%; }
-.term-bar .title { font-family:'JBMono',monospace; font-size:18px; color:var(--gray); margin-left:8px; }
-.term-body { position:relative; padding:12px 16px 16px 50px; font-family:'JBMono',monospace; font-size:20px; line-height:1.5; font-feature-settings:'liga' 0,'calt' 0; }
+.term-bar .title { font-family:'JBMono',monospace; font-size:21px; color:var(--gray); margin-left:8px; }
+.term-body { position:relative; padding:12px 16px 16px 50px; font-family:'JBMono',monospace; font-size:21px; line-height:1.5; font-feature-settings:'liga' 0,'calt' 0; }
 .term-body::before { content:''; position:absolute; left:27px; top:16px; bottom:16px; width:2.5px; background:#D8DCE1; }
 .phase { display:flex; align-items:center; gap:10px; margin:5px 0 1px -32px; }
-.phase .pt { font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; background:#F7F6F3; position:relative; z-index:1; padding:0 6px 0 4px; }
+.phase .pt { font-size:21px; font-weight:600; letter-spacing:1.6px; color:var(--gray); white-space:nowrap; background:#F7F6F3; position:relative; z-index:1; padding:0 6px 0 4px; }
 .phase .pr { flex:1; height:1.5px; background:#E4E7EB; }
 .phase:first-child { margin-top:0; }
 .ln { position:relative; display:flex; align-items:center; gap:11px; white-space:pre; border-radius:6px; }
@@ -25,7 +25,7 @@ body { width:1280px; font-family:'InterF',sans-serif; background:#fff; }
 .ln.e::before { background:var(--red); border-color:var(--red); }
 .ln.g::before { background:var(--teal); border-color:var(--teal); width:13px; height:13px; }
 .ln.th::before { background:#fff; border-color:var(--navy); }
-.ln.key { background:rgba(227,179,65,.22); box-shadow:0 0 0 1.5px rgba(140,107,31,.55); margin:2px 0 2px -6px; padding:0 8px 0 6px; }
+.ln.key { background:rgba(227,179,65,.22); box-shadow:0 0 0 1.5px rgba(140,107,31,.55); margin:2px -8px 2px -6px; padding:2px 8px 2px 6px; }
 .ln.key::before { left:-19px; }
 .p { color:var(--teal); font-weight:500; }
 .cmd { color:var(--ink); }
@@ -36,18 +36,18 @@ body { width:1280px; font-family:'InterF',sans-serif; background:#fff; }
 .plan { color:var(--navy); font-weight:500; }
 .think { color:var(--navy); font-style:italic; }
 .right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-.rn { font-size:15px; color:var(--cgray); }
-.gpu { font-size:15px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:2px 9px; }
-.tag { font-size:15px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:2px 9px; }
-.result { display:flex; align-items:center; gap:14px; border:1.5px solid; border-radius:9px; padding:7px 13px; margin-top:12px; font-size:18px; font-family:'JBMono',monospace; white-space:nowrap; }
+.rn { font-size:21px; color:var(--gray); }
+.gpu { font-size:21px; line-height:1.2; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:0 7px; }
+.tag { font-size:21px; line-height:1.2; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:0 7px; }
+.result { display:flex; align-items:center; gap:14px; border:1.5px solid; border-radius:9px; padding:7px 13px; margin-top:12px; font-size:21px; font-family:'JBMono',monospace; white-space:nowrap; }
 .result .num { color:var(--navy); font-weight:700; }
 .result .match { font-weight:700; margin-left:auto; }
 .result.good { background:var(--greenbg); border-color:var(--green); } .result.good .match { color:#2A6B40; }
 .result.warn { background:#FCF3D9; border-color:var(--gold); } .result.warn .match { color:#8C6B1F; }
 .result.bad { background:#F9E8E6; border-color:var(--red); } .result.bad .match { color:#8F3229; }
-.legend { display:flex; gap:15px; font-family:'JBMono',monospace; font-size:16px; color:var(--cgray); margin-top:6px; padding-left:4px; }
+.legend { display:flex; gap:15px; font-family:'JBMono',monospace; font-size:21px; color:var(--gray); margin-top:6px; padding-left:4px; }
 .legend span { white-space:nowrap; }
-.legend .sw { display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }
+.legend .sw { display:inline-block; width:22px; height:17px; vertical-align:-2px; border-radius:4px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }
 </style></head><body><div class="wrap">
 <div class="term"><div class="term-bar"><span class="dot" style="background:#DF7065;"></span><span class="dot" style="background:#EEC252;"></span><span class="dot" style="background:#6BB770;"></span><span class="title">muse-reimplement-2506.17475 &middot; 50 rounds &middot; 1.3 of 8 H100-h</span></div>
 <div class="term-body"><div class="phase"><span class="pt">PLAN &amp; FETCH &middot; r0&ndash;22</span><span class="pr"></span></div><div class="ln pl"><span class="plan">[plan]</span><span class="cmd">Test accuracy = 79.01% on CIFAR-10 test set…HeavyBall for VGG16</span><span class="right"><span class="rn">r0</span></span></div><div class="ln"><span class="p">$</span><span class="cmd">cat …/latex/alg_heavyball.tex</span><span class="right"><span class="rn">r6</span></span></div><div class="ln"><span class="p">$</span><span class="cmd">fetch_url…https://github.com/Schotthoefer</span><span class="cm"># no released code</span><span class="right"><span class="rn">r21</span></span></div><div class="phase"><span class="pt">PORT &middot; r23&ndash;30</span><span class="pr"></span></div><div class="ln"><span class="p">$</span><span class="cmd">cat &gt; …/repro_dlrt/train_vgg_cifar.py &lt;&lt; 'PY'</span><span class="right"><span class="rn">r29</span></span></div><div class="phase"><span class="pt">RUN &amp; DEBUG &middot; r31&ndash;36</span><span class="pr"></span></div><div class="ln g"><span class="p">$</span><span class="cmd">…train_vgg_cifar.py --mode baseline --pretrained --epochs 2…--rank 100</span><span class="right"><span class="gpu">GPU</span><span class="rn">r31</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">python /tmp/test_heavyball_optimizer.py</span><span class="cm"># paper rule vs torch SGD</span><span class="right"><span class="gpu">GPU</span><span class="rn">r34</span></span></div><div class="ln o key"><span class="out">  Optim paper…epoch 2 acc 11.80…Optim torchsgd…epoch 2 acc 83.26</span><span class="right"><span class="tag">decisive</span><span class="rn">r34</span></span></div><div class="phase"><span class="pt">TRAIN &amp; SCORE &middot; r37&ndash;45</span><span class="pr"></span></div><div class="ln g"><span class="p">$</span><span class="cmd">…train_vgg_original.py --mode lowrank…--epochs 20…--momentum 0.9</span><span class="right"><span class="gpu">GPU</span><span class="rn">r37</span></span></div><div class="ln"><span class="p">$</span><span class="cmd"># Try to find r that gives 94.35 exactly</span><span class="right"><span class="rn">r41</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">…train_vgg_original_heavyball.py…--epochs 20…--optim paper</span><span class="right"><span class="gpu">GPU</span><span class="rn">r42</span></span></div><div class="ln e"><span class="err">  FINAL acc 20.46 cr 0.00</span><span class="right"><span class="rn">r42</span></span></div><div class="ln g"><span class="p">$</span><span class="cmd">…train_vgg_original.py --mode lowrank…--rank 99</span><span class="cm"># best 89.26 at cr 94.35%</span><span class="right"><span class="gpu">GPU</span><span class="rn">r44</span></span></div><div class="phase"><span class="pt">REPORT &middot; r46&ndash;49</span><span class="pr"></span></div><div class="ln th"><span class="think">measured 89.26% &gt; target 79.01% (cleared by +10.25 pp)</span><span class="right"><span class="rn">r48</span></span></div><div class="ln th"><span class="think">Used PyTorch SGD(momentum=0.9, lr=0.001) as practical HeavyBall</span><span class="right"><span class="rn">r49</span></span></div></div></div>

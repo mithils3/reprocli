@@ -40,13 +40,13 @@ body {{ width:{WIDTH}px; font-family:'JBMono',monospace; background:#fff; }}
 .term {{ background:#F7F6F3; border:2px solid var(--navy); border-radius:14px; overflow:hidden; }}
 .term-bar {{ display:flex; align-items:center; gap:9px; background:#E6E9ED; padding:9px 16px; }}
 .dot {{ width:15px; height:15px; border-radius:50%; }}
-.term-bar .title {{ font-size:18px; color:var(--gray); margin-left:8px; }}
-.term-body {{ position:relative; padding:12px 16px 14px 50px; font-size:19px; line-height:1.5; font-feature-settings:'liga' 0,'calt' 0; }}
+.term-bar .title {{ font-size:21px; color:var(--gray); margin-left:8px; }}
+.term-body {{ position:relative; padding:12px 16px 14px 50px; font-size:22px; line-height:1.5; font-feature-settings:'liga' 0,'calt' 0; }}
 .term-body::before {{ content:''; position:absolute; left:27px; top:16px; bottom:16px; width:2.5px; background:#D8DCE1; }}
 .ev {{ display:flex; align-items:center; gap:10px; margin:6px 0 1px -32px; }}
 .ev:first-child {{ margin-top:0; }}
-.ev .kind {{ font-size:17px; font-weight:700; letter-spacing:1.4px; color:#4E5866; white-space:nowrap; background:#F7F6F3; position:relative; z-index:1; padding:0 6px 0 4px; }}
-.ev .meta {{ font-size:17px; color:var(--cgray); white-space:nowrap; }}
+.ev .kind {{ font-size:21px; font-weight:700; letter-spacing:1.4px; color:#4E5866; white-space:nowrap; background:#F7F6F3; position:relative; z-index:1; padding:0 6px 0 4px; }}
+.ev .meta {{ font-size:21px; color:var(--cgray); white-space:nowrap; }}
 .ev .pr {{ flex:1; height:1.5px; background:#E4E7EB; }}
 .ln {{ position:relative; display:flex; align-items:flex-start; gap:11px; min-height:28px; }}
 .ln::before {{ content:''; position:absolute; left:-25px; top:14px; transform:translate(-50%,-50%); width:11px; height:11px; border-radius:50%; background:#fff; border:2.5px solid var(--teal); z-index:1; }}
@@ -65,12 +65,12 @@ body {{ width:{WIDTH}px; font-family:'JBMono',monospace; background:#fff; }}
 .err {{ color:var(--red); font-weight:500; }}
 .el {{ color:var(--cgray); }}
 .chips {{ display:flex; flex-wrap:wrap; gap:8px 10px; padding:3px 0 2px; }}
-.chip {{ font-size:17px; color:var(--ink); background:#EEF0F2; border:1px solid #D0D5DB; border-radius:6px; padding:1px 9px; white-space:nowrap; }}
+.chip {{ font-size:21px; color:var(--ink); background:#EEF0F2; border:1px solid #D0D5DB; border-radius:6px; padding:1px 9px; white-space:nowrap; }}
 .chip.gold {{ font-weight:500; color:#8C6B1F; background:#FCF3D9; border-color:var(--gold); }}
 .right {{ margin-left:auto; display:flex; align-items:center; gap:10px; padding-top:2px; }}
-.rn {{ font-size:17px; color:var(--cgray); }}
-.gpu {{ font-size:17px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:2px 9px; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:17px; color:var(--cgray); margin-top:16px; padding-left:4px; }}
+.rn {{ font-size:21px; color:var(--cgray); }}
+.gpu {{ font-size:21px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:2px 9px; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:21px; color:var(--cgray); margin-top:16px; padding-left:4px; }}
 .legend span {{ white-space:nowrap; }}
 .legend .sw {{ display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:#FCF3D9; border:1.5px solid var(--gold); }}
 """
@@ -124,7 +124,7 @@ def fig_round_anatomy():
     lines = cr["stdout"].rstrip("\n").split("\n")
     # head + a contiguous elided middle + tail, so the elision count is exactly
     # the lines of the record that the panel does not print.
-    keep_head, keep_tail = 1, 11
+    keep_head, keep_tail = 1, 7
     elided = len(lines) - keep_head - keep_tail
     shown = [(i, s) for i, s in enumerate(lines) if i < keep_head or i >= len(lines) - keep_tail]
     first, any_bad = True, False
@@ -147,7 +147,7 @@ def fig_round_anatomy():
                        f'<span class="rn">r{ROUND + 1}</span>'))
     # spend as of this round, so the title closes against the remaining_h100 chip
     spent = run["budget_h100"] - cr["remaining_h100"]
-    title = (f"{RUN_ID} · event transcript · round {ROUND} of {run['rounds']} · "
+    title = (f"{RUN_ID} · round {ROUND} of {run['rounds']} · "
              f"{spent:.1f} of {run['budget_h100']:.0f} H100-h spent by this round")
     legend = ['<span><span style="color:#1F3A5F;">&#9675;</span> <i>reasoning</i></span>',
               '<span><span style="color:#3E8E8C;">&#9679;</span> GPU command</span>',

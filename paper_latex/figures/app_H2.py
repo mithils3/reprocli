@@ -75,7 +75,7 @@ def diamond(b, x, y, s=5):
 
 def triangle(b, x, y, s=5):
     pts = f"{x - s:.1f},{y + s:.1f} {x + s:.1f},{y + s:.1f} {x:.1f},{y - s + 1:.1f}"
-    b.append(f'<polygon points="{pts}" fill="{RED}"/>')
+    b.append(f'<polygon points="{pts}" fill="{RED}" stroke="#FFFFFF" stroke-width="4" paint-order="stroke" stroke-linejoin="round"/>')
 
 
 # ================================================== fig: resource trace
@@ -111,13 +111,13 @@ def fig_resource(data):
     b.append(rect(X0, ky - 9, 14, 10, LANE_BG, 2))   # the key is the mark: EXEC at
     b.append(f'<rect x="{X0}" y="{ky - 9}" width="14" height="10" rx="2" '
              f'fill="{EXEC}" fill-opacity="0.6"/>')     # 0.6 over the lane, as drawn
-    b.append(text(X0 + 20, ky, "H100-hours charged", 12, MID))
-    b.append(line(190, ky - 4, 206, ky - 4, NAVY, 1.8))
-    b.append(text(211, ky, "wall-clock", 12, MID))
-    diamond(b, 296, ky - 4)
-    b.append(text(306, ky, "decisive round", 12, MID))
-    triangle(b, 412, ky - 4)
-    b.append(text(422, ky, "first graded-pipeline launch", 12, MID))
+    b.append(text(X0 + 20, ky, "H100-h charged", 12, MID))
+    b.append(line(149.6, ky - 4, 165.6, ky - 4, NAVY, 1.8))   # keys 16px after each label
+    b.append(text(170.6, ky, "wall-clock", 12, MID))
+    diamond(b, 250.3, ky - 4)
+    b.append(text(260.3, ky, "decisive round", 12, MID))
+    triangle(b, 364.6, ky - 4)
+    b.append(text(374.6, ky, "first graded-pipeline launch", 12, MID))
 
     tx0, tx1 = 190, X1 - 108
     maxr = max(run["rounds"] for _, run, _, _ in data)
@@ -244,7 +244,12 @@ def audit_calls(audit_events):
 def chip(b, x, cy, verdict, score):
     ink, bg, border = CHIP[verdict]
     s = f"{score} {WORD[verdict]}"
-    w = 12 + 6.6 * len(s)
+    try:
+        from PIL import ImageFont
+        s_w = ImageFont.truetype(str(FIGS / "fonts/ttf/Inter-SemiBold.ttf"), 115).getlength(s) / 10
+    except (ImportError, OSError):
+        s_w = 5.95 * len(s)
+    w = 12 + s_w
     b.append(f'<rect x="{x:.1f}" y="{cy - 9:.1f}" width="{w:.1f}" height="18" rx="5" '
              f'fill="{bg}" stroke="{border}" stroke-width="1"/>')
     b.append(text(x + 6, cy + 4, s, 11.5, ink, SANS, 600))
@@ -301,9 +306,9 @@ def fig_auditor(data):
         rx = tx1 + 12
         w = chip(b, rx, cy, au["verdict"], au["score"])
         fx = rx + w + 10
-        for f in au["flags"]:
+        for f in sorted(au["flags"], key=lambda f: {"high": 0, "med": 1, "medium": 1, "low": 2}[f["severity"]]):
             b.append(f'<circle cx="{fx + 4:.1f}" cy="{cy:.1f}" r="3.6" fill="{FLAG_COLOR[f["severity"]]}"/>')
-            fx += 9
+            fx += 10
     ay = top + len(data) * pitch - pitch + lh + 8
     b.append(line(tx0, ay, tx0 + maxc * unit, ay, LINE_STRONG, 1))
     for t in range(0, maxc + 1, 5):

@@ -39,13 +39,13 @@
 \setlength{\@fpbot}{0pt plus 1fil}
 % A reference URL cannot break inside a word, so the line before it, or a URL line ending at a
 % slash, stretched its word spaces. The block before a URL (the only block of the .bbl that opens
-% with U) or a single slash in a URL may instead end its line short, at a penalty that keeps ordinary
+% with U) or a single slash or underscore in a URL may instead end its line short, at a penalty that keeps ordinary
 % lines full.
 \apptocmd{\thebibliography}{%
   \renewcommand\newblock{\@ifnextchar U%
     {\hskip 0pt plus 1fil\relax\penalty500\hskip .11em plus .33em minus .07em\relax\hskip 0pt plus -1fil\relax}%
     {\hskip .11em plus .33em minus .07em\relax}}%
-  \expandafter\def\expandafter\UrlSpecials\expandafter{\UrlSpecials\do\/{\@ifnextchar/{\mathchar"002F\mathchar"002F\@gobble}{\mathchar"002F\mskip 0mu plus 1fil\relax\penalty2000\mskip 0mu plus -1fil\relax}}}%
+  \expandafter\def\expandafter\UrlSpecials\expandafter{\UrlSpecials\do\/{\@ifnextchar/{\mathchar"002F\mathchar"002F\@gobble}{\mathchar"002F\mskip 0mu plus 1fil\relax\penalty2000\mskip 0mu plus -1fil\relax}}\do\_{\mathchar"005F\mskip 0mu plus 1fil\relax\penalty\UrlBreakPenalty\mskip 0mu plus -1fil\relax}}%
 }{}{}
 \makeatother
 
@@ -307,7 +307,7 @@ empirical claim, together with the value that configuration produces. Papers
 usually headline their largest model or their full benchmark suite, but the
 same claim can typically also be replicated in a smaller-scale experiment, and we
 pin that one. Pinning the smallest supporting configuration bounds the compute a task
-can demand while still exercising the paper's method end to end.
+can demand while still exercising the paper's method.
 
 A match target records the configuration of the experiment we target, the
 metric, the reported value, the scope the value is measured over, and the
@@ -334,9 +334,7 @@ corpus, and later stages use only that sample. Construction had three stages (Fi
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/construction_funnel}
-\caption{The construction funnel. Three stages narrow a 1,000-paper sample of
-the 3,414 NeurIPS 2025 submissions to the released 100-paper benchmark, with
-every availability call and compute estimate manually audited.}
+\caption{Three stages narrow a 1,000-paper sample to the released 100-paper benchmark, with every availability call and compute estimate manually audited.}
 \label{fig:funnel}
 \end{figure}
 
@@ -364,7 +362,7 @@ evaluating. Reimplement papers release no code either, so the agent rebuilds
 the method from the paper, while the datasets its experiments need stay public.
 The tiers also describe the venue as a whole, from the classifier pass alone
 since we manually audited only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
-Reimplement, while 5\% are blocked outright and 5\% are non-empirical.
+Reimplement, while 5\% are blocked and 5\% are non-empirical.
 Paper2Code reports that 19.5\% of the papers accepted to three 2024 venues link
 a GitHub repository in their arXiv abstract~\citep{seo2025paper2code}, a count
 that misses code linked only in the paper body or the supplement, which our
@@ -418,7 +416,7 @@ recorded as a typed anti-cheat flag with a severity, and the scoring code
 applies the integrity adjustment of Appendix~\ref{app:rubric}. A
 high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
-forces the score to zero, and a claimed artifact wall earns no credit band. We
+forces the score to zero, and a reported missing artifact earns no credit. We
 use an LLM auditor because it reads more material per run than a human grader
 can, working through hundreds of tool rounds, logs, and saved outputs in
 minutes, which makes auditing every run of every sweep feasible.
@@ -446,7 +444,7 @@ target without its configuration. The agent works in a workspace shell, and \tex
 grant. It holds a Slurm allocation~\citep{yoo2003slurm,jette2023slurm} whose wall clock is counted against the
 run's fixed H100-hour grant. The agent chooses its own partitions,
 allocation sizes, and session lengths, so every run also exercises the
-budgeting and scheduling decisions that real reproduction work demands.
+budgeting and scheduling decisions that reproduction work demands.
 Each run ends with a structured report in which the agent states what it
 ran, what it measured, and whether it believes the result reproduced. This
 self-assessment is a claim for the auditor to grade.
@@ -522,7 +520,7 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 \paragraph{Failure taxonomy.}
 We label every graded run with one of nine primary modes and report the
 distribution by tier in Figure~\ref{fig:failure-modes}. The mode names describe
-themselves, and Appendix~\ref{app:taxonomy} defines each one in full. To assign the label we read the run's
+themselves, and Appendix~\ref{app:taxonomy} defines each one. To assign the label we read the run's
 transcript against the mode definitions and write a per-run dissection
 record. Every count in this subsection comes from those records, and every
 score and verdict in this paper comes from the auditor. Two modes are outcomes. A
@@ -646,7 +644,7 @@ RECLAIM measures and the one that recursive self-improvement would depend on.
 
 \begin{itemize}
 \item \textbf{Harness.} Appendix~\ref{app:harness} specifies the agent loop,
-budget enforcement, the sandbox, and the prompts in full.
+budget enforcement, and the sandbox, and Appendix~\ref{app:prompt-listings} prints the prompts in full.
 \item \textbf{Models.} Appendix~\ref{app:models} names the checkpoint we served
 for each evaluated model, or for the hosted model its API identifier, and
 states the serving configuration it ran under.
@@ -674,7 +672,7 @@ grading stage reproducible from our artifacts where the rollout stage is not.
 \subsection*{AI use statement}
 
 Large language models are the object of study in this work. The agent models
-under evaluation and the model that grades their reports are described in
+under evaluation and the model that grades their runs are described in
 Appendices~\ref{app:harness}--\ref{app:auditor-validation}, and their use is a
 property of the benchmark rather than author assistance. Our own use of
 generative AI tools was as follows.
@@ -686,7 +684,7 @@ signals and the pinned match targets. Every extracted field was reviewed by an
 author before the dataset was frozen.
 \item \textbf{Implementation.} We used them to implement parts of the harness,
 the serving stack, and the analysis scripts.
-\item \textbf{Grading.} We used them to grade agent reports and to assign
+\item \textbf{Grading.} We used them to grade agent runs and to assign
 failure modes. That is a methodological choice, and
 Appendix~\ref{app:auditor-validation} reports how the auditor's verdicts
 compare with human graders.

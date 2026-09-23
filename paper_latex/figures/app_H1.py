@@ -23,8 +23,10 @@ from charts import OUT  # noqa: E402  figures/ output dir
 DATA = os.path.expanduser('~/PyCharmProjects/reprocli/tools/anon_viewer/public/data/runs')
 VIG = json.load(open(os.path.expanduser('~/sweeps/vignettes-2026-09-06/vignettes.json')))
 WIDTH = 1280
-COLS = 96          # widest display line, 19px JetBrains Mono inside the content column
+COLS = 88          # widest display line: 21px JetBrains Mono lays out at a 13px advance in the 1148px text column
+CMD_COLS = 85      # a call line also carries the 2-char $ prompt and the 10px gap: (1148 - 10 - 26) / 13
 E = '…'
+KEY_TINT_ALPHA = .45   # gold fill behind a '*' key result line; lower to tone it down
 
 CSS = f'''
 @font-face {{ font-family: 'JBMono'; src: url('fonts/ttf/JetBrainsMono-Regular.ttf'); font-weight: 400; }}
@@ -34,38 +36,40 @@ CSS = f'''
 @font-face {{ font-family: 'InterF'; src: url('fonts/ttf/Inter-SemiBold.ttf'); font-weight: 600; }}
 :root {{ --navy:#1F3A5F; --teal:#3E8E8C; --gold:#E3B341; --red:#C2483B; --ink:#2E3440; --gray:#6B7280; --cgray:#8C939E; }}
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{ width:{WIDTH}px; font-family:'InterF',sans-serif; background:#fff; }}
+body {{ width:{WIDTH}px; font-family:'InterF',sans-serif; background:#fff; text-rendering:geometricPrecision; }}
 .wrap {{ width:{WIDTH}px; padding:4px; }}
 .term {{ background:#F7F6F3; border:2px solid var(--navy); border-radius:14px; overflow:hidden; }}
 .term-bar {{ display:flex; align-items:center; gap:9px; background:#E6E9ED; padding:9px 16px; }}
 .dot {{ width:15px; height:15px; border-radius:50%; }}
-.term-bar .title {{ font-family:'JBMono',monospace; font-size:18px; color:var(--gray); margin-left:8px; }}
-.term-body {{ padding:8px 16px 10px 16px; font-family:'JBMono',monospace; font-size:19px; line-height:1.28; font-feature-settings:'liga' 0,'calt' 0; }}
-.blk {{ padding:5px 10px 6px 10px; border-radius:8px; margin:0 -4px; }}
+.term-bar .title {{ font-family:'JBMono',monospace; font-size:21px; color:var(--gray); margin-left:8px; }}
+.term-body {{ padding:8px 10px 10px 10px; font-family:'JBMono',monospace; font-size:21px; line-height:27px; font-feature-settings:'liga' 0,'calt' 0; }}
+.blk {{ padding:5px 8px 6px 8px; border-radius:8px; margin:0 -4px; }}
 .blk + .blk {{ margin-top:5px; }}
 .blk.key {{ background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }}
 .rh {{ display:flex; align-items:center; gap:10px; margin-bottom:2px; }}
-.rh .pt {{ font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; }}
+.rh .pt {{ font-size:21px; font-weight:600; letter-spacing:0.8px; color:#8A919C; white-space:nowrap; }}
 .rh .pr {{ flex:1; height:1.5px; background:#E4E7EB; }}
 .blk.key .rh .pr {{ background:rgba(140,107,31,.35); }}
-.row {{ display:grid; grid-template-columns:88px 1fr; align-items:baseline; }}
-.g {{ font-size:17px; font-weight:600; letter-spacing:1.6px; color:#8A919C; white-space:nowrap; padding-top:1px; }}
+.row {{ display:grid; grid-template-columns:92px 1fr; align-items:baseline; }}
+.g {{ font-size:21px; font-weight:600; letter-spacing:0.8px; color:#8A919C; white-space:nowrap; padding-top:1px; }}
 .t {{ white-space:pre; }}
 .think {{ color:var(--navy); font-style:italic; }}
-.p {{ color:var(--teal); font-weight:500; }}
+.p {{ color:var(--teal); font-weight:500; white-space:pre; }}
 .cmd {{ color:var(--ink); }}
 .out {{ color:#4A5568; }}
 .err {{ color:var(--red); font-weight:500; }}
 .el {{ color:var(--cgray); }}
+.kl {{ background:rgba(227,179,65,.5); color:var(--ink); font-weight:500; border-radius:3px; padding:0 1px 0 3px; margin:0 -1px 0 -3px; }}
+.t.key {{ background:rgba(227,179,65,{KEY_TINT_ALPHA}); color:var(--ink); font-weight:500; border-radius:3px; padding:0 3px; margin:0 0 2px -3px; justify-self:start; }}
 .call {{ display:flex; align-items:baseline; gap:10px; }}
 .call .t {{ flex:1; }}
 .right {{ margin-left:auto; display:flex; align-items:center; gap:10px; white-space:nowrap; }}
-.rn {{ font-size:17px; color:var(--cgray); }}
-.gpu {{ font-size:17px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:1px 9px; }}
-.tag {{ font-size:17px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:1px 9px; }}
-.tn {{ font-size:17px; color:var(--gray); background:#EEF0F2; border:1px solid #D8DCE1; border-radius:6px; padding:1px 9px; }}
-.meta {{ display:flex; justify-content:flex-end; font-size:17px; color:var(--cgray); white-space:pre; margin-top:1px; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:6px 16px; font-family:'JBMono',monospace; font-size:17px; color:var(--cgray); margin-top:4px; padding-left:4px; }}
+.rn {{ font-size:21px; color:var(--cgray); }}
+.gpu {{ font-size:21px; font-weight:500; color:var(--teal); background:#E7F0EF; border:1px solid var(--teal); border-radius:6px; padding:1px 9px; }}
+.tag {{ font-size:21px; font-weight:500; color:#8C6B1F; background:#FCF3D9; border:1px solid var(--gold); border-radius:6px; padding:1px 9px; }}
+.tn {{ font-size:21px; color:var(--gray); background:#EEF0F2; border:1px solid #D8DCE1; border-radius:6px; padding:1px 9px; }}
+.meta {{ display:flex; justify-content:flex-end; font-size:21px; color:var(--cgray); white-space:pre; margin-top:1px; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:4px 30px; font-family:'JBMono',monospace; font-size:21px; color:var(--cgray); margin-top:4px; padding-left:4px; }}
 .legend span {{ white-space:nowrap; }}
 .legend .err {{ font-weight:500; }}
 .legend .sw {{ display:inline-block; width:22px; height:14px; vertical-align:-1px; border-radius:4px; background:rgba(227,179,65,.22); border:1.5px solid rgba(140,107,31,.55); }}
@@ -104,17 +108,17 @@ def frags(text):
     return [norm(f) for f in text.split(E) if norm(f)]
 
 
-def check(corpus, rid, r, text):
+def check(corpus, rid, r, text, cols=COLS):
     for f in frags(text):
         assert f in corpus, f'{rid} r{r}: not verbatim: {f!r}'
-    assert len(text) <= COLS, f'{rid} r{r}: {len(text)} chars > {COLS}: {text!r}'
+    assert len(text) <= cols, f'{rid} r{r}: {len(text)} chars > {cols}: {text!r}'
 
 
 def wrap(s):
     return textwrap.wrap(s, COLS, break_long_words=False, break_on_hyphens=False)
 
 
-def elide(s, keep=COLS):
+def elide(s, keep=CMD_COLS):
     """Head and tail of one over-long line around a single … mark."""
     s = s.split('\n')[0]
     if len(s) <= keep:
@@ -142,7 +146,7 @@ P['dsv4-run-2410.18164'] = [
              '153:        if pred_val.ndim == 1:',
              '155:        return pred_val']),
     dict(r=77, agent=['Let me run the verification on the held GPU session.'],
-         cmd=['… python /repro/workspace/verify_fix.py > /repro/evidence/verify_fix2.log 2>&1; echo "EXIT=$?" …'],
+         cmd=['… python /repro/workspace/verify_fix.py > /repro/evidence/verify_fix2.log 2>&1 …'],
          res=['[vowel] pred_val.shape=(99, 11) (expect (n, 11)) t=6.9s', '[vowel] OK', '…',
               '[Devnagari] pred_val.shape=(9200, 46) (expect (n, 46)) t=341.6s', '[Devnagari] OK',
               'FIX VERIFY DONE']),
@@ -150,61 +154,64 @@ P['dsv4-run-2410.18164'] = [
 
 P['dsv4-run-2502.05795'] = [
     dict(r=21, agent=["The forward lowercases NORM_TYPE (`'lns'`) but the branch checks `norm_type == 'LNS'` — a case mismatch that would make the LNS branch dead code and crash with `use_cache=True`."],
-         cmd=['diff /repro/reference/supplement/Code/…/modeling_llama.py peft_pretraining/modeling_llama.py'],
-         res=['427c427', "<         elif norm_type == 'cod':", '---', ">         elif norm_type == 'LNS':",
+         cmd=['… diff /repro/reference/…/modeling_llama.py peft_pretraining/modeling_llama.py && …',
+              '… grep -n "NORM_TYPE\\|norm_type" peft_pretraining/modeling_llama.py | head -40'],
+         res=['…', '427c427', "<         elif norm_type == 'cod':", '---', ">         elif norm_type == 'LNS':", '…',
               "403:        norm_type = os.getenv('NORM_TYPE', 'pre').lower()"]),
     dict(r=22, agent=[
         "… So running `bash run_130m.sh LNS 3` on the released repo would NOT actually apply LNS. This is a genuine bug in the released code.",
-    ], cmd=['… cp /repro/reference/supplement/Code/…/modeling_llama.py /tmp/modeling_ref.py &&',
-            '  NORM_TYPE=cod POST_NUM=3 .venv/bin/python -c "… print(\'REFERENCE cod version fwd loss:\', …'],
-        res=['!cannot allocate memory for thread-local data: ABORT', '!cannot allocate memory for thread-local data: ABORT']),
+    ], cmd=['… cp /repro/reference/supplement/…/modeling_llama.py /tmp/modeling_ref.py &&',
+            '  NORM_TYPE=cod POST_NUM=3 .venv/bin/python -c "… print(\'REFERENCE cod version …'],
+        res=['…', '!cannot allocate memory for thread-local data: ABORT', '…']),
 ]
 
 P['muse-retrain-2510.23577'] = [
-    dict(r=29, agent=['Target is clear — GraphMixer + TAMI at 98.89 AP on Wikipedia. Applying the gamma fix and launching the full reproduction.'],
-         cmd=["cat /repro/workspace/repo/train_link_prediction.py | sed -n '128,131p'"],
-         res=['        link_predictor = HistoricalDecoder(input_dim1=node_raw_features.shape[1], input_dim2=…',
-              '        hidden_dim=node_raw_features.shape[1], output_dim=1, device=args.device)']),
-    dict(r=31, agent=['Training pipeline patched — installing final dependencies and launching the Wikipedia AP verification.'],
+    dict(r=24, agent=['Gamma bug spotted — applying the fix and queuing the full Wikipedia training run.'],
+         cmd=['grep -n "gamma\\|HistoricalDecoder" /repro/workspace/repo/train_link_prediction.py', '…'],
+         res=['---FILE_EDIT_NEEDED---', '…',
+              'link_predictor = HistoricalDecoder(input_dim1=node_raw_features.shape[1], …',
+              '    hidden_dim=node_raw_features.shape[1], output_dim=1, device=args.device)']),
+    dict(r=31, key='gamma=args.gamma', agent=['Training pipeline patched — installing final dependencies and launching the Wikipedia AP verification.'],
          cmd=['uv pip install --python /repro/workspace/.venv/bin/python py-tgb dill 2>&1 | tail -30', '…',
               'grep -n "HistoricalDecoder" /repro/workspace/repo/train_link_prediction.py -A2'],
          res=['Installed 8 packages in 724ms', '…', '---check train gamma fix---',
-              '128:    link_predictor = HistoricalDecoder(input_dim1=node_raw_features.shape[1], input_dim2=…',
-              '129-  hidden_dim=node_raw_features.shape[1], output_dim=1, device=args.device, gamma=args.gamma)',
-              "54:    parser.add_argument('--gamma', type=float, default=0.9, help='gamma hyperparameter …"]),
+              '128:    link_predictor = HistoricalDecoder(input_dim1=node_raw_features.shape[1], …',
+              '129-  hidden_dim=node_raw_features.shape[1], output_dim=1, … gamma=args.gamma)',
+              "54:    parser.add_argument('--gamma', type=float, default=0.9, …"]),
 ]
 
 P['dsv4-retrain-2504.12463'] = [
     dict(r=91, agent=['Let me run the debug script in the held session.'],
-         cmd=['… cd /repro/workspace/repo && /repro/workspace/.venv/bin/python debug_sdpa.py 2>&1 | tail -6'],
+         cmd=['… cd /repro/workspace/repo && … python debug_sdpa.py 2>&1 | tail -6'],
          res=['SDPA out shape: (2, 16, 64, 64) expected (2, 16, 64, 64)', '!manual NaN: False SDPA NaN: True',
-              '!max abs diff: nan', 'True=allowed convention max diff: 0.0009765625']),
+              '!max abs diff: nan', '*True=allowed convention max diff: 0.0009765625']),
     dict(r=93, agent=['Mask inversion fixed. Let me re-run the probe to verify non-NaN loss matching the global probe (it10=7.98, it15=6.27) and confirm the speedup.'],
-         cmd=['timeout 3400 $PY deepy.py train.py configs/probe.yml > /repro/evidence/probe_sdpa2.log 2>&1'],
-         res=['iteration        5/      15 | … lm_loss: 1.064303E+01 | … number of nan iterations:   0 |',
-              'iteration       10/      15 | … lm_loss: 7.981583E+00 | … number of nan iterations:   0 |',
-              'iteration       15/      15 | … lm_loss: 6.272543E+00 | … number of nan iterations:   0 |']),
+         cmd=['… $PY deepy.py train.py configs/probe.yml > /repro/evidence/probe_sdpa2.log 2>&1'],
+         res=['iteration        5/      15 | … lm_loss: 1.064303E+01 | … nan iterations:   0 |',
+              'iteration       10/      15 | … lm_loss: 7.981583E+00 | … nan iterations:   0 |',
+              'iteration       15/      15 | … lm_loss: 6.272543E+00 | … nan iterations:   0 |']),
 ]
 
 P['muse-run-2505.14766'] = [
     dict(r=24, agent=["Benchmark scope is clear — pulling Toto's 151M checkpoint and the BOOMlet dataset for live verification."],
-         cmd=['uv pip install --python /repro/workspace/.venv/bin/python -e repo 2>&1 | tail -30'],
-         res=['…', ' + toto-ts==0.2.0 (from file:///repro/workspace/repo)']),
+         cmd=['uv pip install --python /repro/workspace/.venv/bin/python -e repo 2>&1 | tail -30 …'],
+         res=['…', ' - torch==2.13.0+cu129', ' + torch==2.7.0', ' + tornado==6.5.8',
+              ' + toto-ts==0.2.0 (from file:///repro/workspace/repo) …']),
     dict(r=25, agent=[],
-         cmd=['… python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())" 2>&1',
-              'uv pip list --python /repro/workspace/.venv/bin/python 2>&1 | grep -i torch | head -20'],
+         cmd=['… python -c "… print(torch.__version__); print(torch.cuda.is_available())" 2>&1',
+              'uv pip list --python /repro/workspace/.venv/bin/python 2>&1 | grep -i torch …'],
          res=['!2.7.0+cpu', '!False', '…', 'torch                     2.7.0', '…',
               'torchvision               0.28.0+cu129']),
 ]
 
 P['dsv4-run-2503.18430'] = [
     dict(r=91, agent=['Let me re-run the validation on the held session (still held, ~143 min left).'],
-         cmd=['… python tools/chunked_coco_eval.py --validate 3000 2>&1 | grep -E "chunk |FULL eval|allclose|…'],
-         res=['chunk 27/27 (204 cats) in 10.1s', 'precision allclose: True | max abs diff: 0.0',
+         cmd=['… python tools/chunked_coco_eval.py --validate 3000 … | grep -E "chunk |…|allclose|…'],
+         res=['chunk 27/27 (204 cats) in 10.1s', '*precision allclose: True | max abs diff: 0.0',
               "chunked stats: ['0.500', '0.556', '0.521', '0.215', '0.307', '0.582']"]),
     dict(r=92, agent=[
         '… the chunked evaluation produces EXACTLY the same precision array as the full pycocotools COCOeval on the 3000-image subset.',
-    ], cmd=['… python tools/chunked_coco_eval.py --full 2>&1 | tee /repro/evidence/full_chunked_eval.log | …'],
+    ], cmd=['… python tools/chunked_coco_eval.py --full 2>&1 | tee …/full_chunked_eval.log | …'],
         res=['chunked eval total 3955.9s',
              '===== FINAL RESULT (COCO AP @ maxDets=300) =====',
              'bbox_mAP_copypaste: 0.463 0.515 0.484 0.184 0.298 0.518']),
@@ -212,7 +219,7 @@ P['dsv4-run-2503.18430'] = [
 
 P['minimax-retrain-2510.24940'] = [
     dict(r=10, agent=[],
-         cmd=['… main.py --mode semcot --dataset svamp --config small --use_best_params --num_exps 1 …',
+         cmd=['… main.py --mode semcot --dataset svamp --config small --use_best_params …',
               '  … 2>&1 | tee /repro/evidence/semcot_svamp_run.log'],
          res=['Traceback (most recent call last):', '…', '    os.makedirs(self.cache_dir, exist_ok=True)',
               "!OSError: [Errno 30] Read-only file system: '/home/[user]/.triton'"]),
@@ -230,7 +237,8 @@ P['qwen3-run-2506.02392'] = [
         '… With `type=bool`, `"False"` string evaluates to `bool("False")` which is `True`. This is a known argparse bug.',
     ]),
     dict(r=36, agent=[
-        'And the MVDF ablation (tab:ablation_aug): - w/o MVDF: 3.25% for TSP5K - POMO aug: 2.22% - TTPL-MVDF: 2.86%',
+        'And the MVDF ablation (tab:ablation_aug):', '- w/o MVDF: 3.25% for TSP5K', '- POMO aug: 2.22%',
+        '- TTPL-MVDF: 2.86%',
         "So the 3.25% corresponds to TTPL projection WITHOUT MVDF, which is exactly what I'm running. I got 2.86% which is actually better than the reported 3.25%.",
     ], cmd=['… python lehd/TSP/test_tsp.py \\ --problem_size 5000 \\ --coor_projection False \\',
             '  --MVDF False \\ --RRC_budget 0 \\ 2>&1 | tee /repro/evidence/tsp5k_no_proj_run.log'],
@@ -256,7 +264,7 @@ P['muse-reimplement-2506.17475'] = [
               '            # p = p + lr * v', '            p.data.add_(v, alpha=self.lr)'],
          res=[]),
     dict(r=37, agent=[],
-         cmd=['… --mode lowrank --pretrained --epochs 20 --batch_size 128 --lr 0.001 --momentum 0.9 --rank 100'],
+         cmd=['… --mode lowrank --pretrained --epochs 20 … --lr 0.001 --momentum 0.9 --rank 100'],
          res=['Compressed 7662228 orig 134301514 cr 94.29% total 7662228', '…',
               'Epoch 20/20 tr_loss 0.0960 tr_acc 96.75 te_loss 0.4619 te_acc 88.46 time 5.0s',
               'BEST acc 89.02']),
@@ -264,6 +272,14 @@ P['muse-reimplement-2506.17475'] = [
 
 
 # ---------------------------------------------------------------- rendering
+def hl(ln, key):
+    """Escape one line; set the spec's key phrase, where the line carries it, on the gold keyline."""
+    if not key or key not in ln:
+        return esc(ln)
+    a, b = ln.split(key, 1)
+    return f'{esc(a)}<span class="kl">{esc(key)}</span>{esc(b)}'
+
+
 def row(label, body):
     return f'<div class="row"><span class="g">{label}</span>{body}</div>'
 
@@ -310,19 +326,20 @@ def block(rid, corpus, events, spec, dr):
         if c.get('detail_kind') != 'command':
             cmd = f'{c["tool_name"]} {cmd}'   # a path or a query, not a shell line: name the tool
         lines = spec.get('cmd') or [elide(cmd)]
+        key = spec.get('key')
         for i, ln in enumerate(lines):
-            check(corpus, rid, r, ln)
+            check(corpus, rid, r, ln, CMD_COLS)
             if ln == E:
                 inner = f'<span class="t el">{E}</span>'
             else:
-                inner = f'<span class="p">{"$" if i == 0 else " "} </span><span class="t cmd">{esc(ln)}</span>'
+                inner = f'<span class="p">{"$" if i == 0 else " "} </span><span class="t cmd">{hl(ln, key)}</span>'
             body += row('call' if i == 0 else '', f'<div class="call">{inner}</div>')
         for i, ln in enumerate(spec.get('res', [])):
-            bad = ln.startswith('!')
-            ln = ln[1:] if bad else ln
+            bad, key = ln.startswith('!'), ln.startswith('*')
+            ln = ln[1:] if bad or key else ln
             check(corpus, rid, r, ln)
-            cls = 'el' if ln == E else 'err' if bad else 'out'
-            body += row('result' if i == 0 else '', f'<span class="t {cls}">{esc(ln)}</span>')
+            cls = 'el' if ln == E else 'err' if bad else 'key' if key else 'out'
+            body += row('result' if i == 0 else '', f'<span class="t {cls}">{hl(ln, spec.get("key"))}</span>')
         meta = fmt_meta(rs)
         if meta:
             body += f'<div class="meta">{esc(meta)}</div>'
@@ -334,11 +351,12 @@ def render(v):
     run, corpus, events = load(rid)
     blocks = ''.join(block(rid, corpus.get(s['r'], ''), events.get(s['r'], []), s, dr) for s in P[rid])
     title = f'{rid} &middot; decisive round {dr} of {run["rounds"]}'
-    legend = ('<span>agent = the agent\'s words</span><span>$ = the tool call</span>'
-              '<span>result = stdout, stderr</span>'
-              '<span><span class="err">error</span> = a failed line</span>'
-              '<span>rc = exit code</span>'
-              '<span><span class="sw"></span> decisive round</span>')
+    has_err = any(ln.startswith('!') for s in P[rid] for ln in s.get('res', []))
+    legend = (('<span>agent = the agent\'s words</span>' if any(s.get('agent') for s in P[rid]) else '')
+              + '<span>$ = the tool call</span><span>result = stdout, stderr</span>'
+              + ('<span><span class="err">error</span> = a failed line</span>' if has_err else '')
+              + ('<span>rc = exit code</span>' if 'class="meta">rc ' in blocks else '')
+              + '<span><span class="sw"></span> decisive round</span>')
     return f'''<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">
 <div class="term"><div class="term-bar"><span class="dot" style="background:#DF7065;"></span><span class="dot" style="background:#EEC252;"></span><span class="dot" style="background:#6BB770;"></span><span class="title">{title}</span></div>
