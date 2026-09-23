@@ -10,7 +10,7 @@ def finalize_audit_row(parsed: dict[str, Any], tool_loop: dict[str, Any]) -> dic
 
     score = _normalize_score(parsed.get("score"))
     execution = bool(parsed.get("execution_verified"))
-    # Enforce the Section 3 rule in code, not in the prompt: a high-severity provenance
+    # Enforce the rubric's C4 rule in code, not in the prompt: a high-severity provenance
     # flag caps the score at 0 regardless of what the auditor assigned.
     if score is not None and high_flags and score > SCORE_MIN:
         row["reported_score"] = score

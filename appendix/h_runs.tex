@@ -303,8 +303,8 @@ The paper releases no code for DLRT with heavy-ball momentum~\citep{schotthofer2
 target is a \mbox{CIFAR-10} accuracy for VGG16 at 94.35 percent compression. The
 round-34 test (Figure~\ref{fig:card-muse-reimplement-2506.17475}) left the literal rule at 11.33 and 11.80 percent after two
 epochs while torch SGD reached 81.45 and 83.26, so from round 37 the agent
-trained unconstrained SVD-factorized layers with torch SGD at the uniform
-rank matching the paper's compression, as Figure~\ref{fig:app-h1-zoom-10}
+trained unconstrained SVD-factorized layers with torch SGD at a uniform
+rank that gave 94.29 percent compression, as Figure~\ref{fig:app-h1-zoom-10}
 shows, and the round-49 report called that reproduced. The auditor read
 the executed method as the low-rank momentum
 baseline the paper argues against, and the report's verdict as contradicting the
