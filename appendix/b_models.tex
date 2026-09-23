@@ -93,16 +93,14 @@ All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_B_tokens}
-\caption{Prompt, cached prompt, and completion tokens per graded run by agent,
-one dot per run on a shared log axis with the median ticked.}
+\caption{Prompt, cached prompt, and completion tokens per graded run by agent on a shared log axis, one tick per run, with a bar over the middle half of runs and the median in black.}
 \label{fig:app-b-tokens}
 \end{figure}
 
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_B_cost}
-\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost},
-with the ratio of token cost to GPU cost at right and a dashed line at parity.}
+\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost}, with the median ticked, the ratio of token cost to GPU cost at right, and a dashed line at parity.}
 \label{fig:app-b-cost}
 \end{figure}
 
@@ -113,7 +111,7 @@ Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
 and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
 8 or higher, a cell without a graded run counts as a failure at score 0,
 grant spent is H100-hours used over hours
-granted, and the band is the paper's cap in H100-hours.
+granted, and the band is the paper's H100-hour grant.
 
 \begin{table}[ht]
 \centering

@@ -36,35 +36,15 @@ def by_tier(key):
     return [[key(r) for r in ROWS if r["tier"] == t] for t, _ in TIERS]
 
 
-def swarm(xs, d):
-    """Beeswarm offsets: place dots in x order at the smallest |dy| that keeps
-    every pair at least d apart, in half steps so columns interlock."""
-    order = sorted(range(len(xs)), key=lambda i: xs[i])
-    placed, dys = [], [0.0] * len(xs)
-    for i in order:
-        x = xs[i]
-        for step in range(0, 60):
-            found = None
-            for sign in (1, -1):
-                dy = sign * step * d / 2
-                if all((x - px) ** 2 + (dy - py) ** 2 >= d * d - 1e-6 for px, py in placed):
-                    found = dy
-                    break
-            if found is not None:
-                break
-        placed.append((x, found))
-        dys[i] = found
-    return dys
-
-
 # ======================================= fig: audited compute, one dot per paper
 FLOOR, CEIL = 0.01, 100.0
 BANDS = [8, 32, 96]
+STACK = "dots"   # dial: "dots" stacks one dot per paper per bin, "bars" draws one bar per bin
 
 
 def fig_compute_strip():
     b = head("audited compute of the 100 evaluation papers by tier",
-             "one dot per paper; bar at the tier median")
+             "one dot per paper; tick at the tier median")
     hours = by_tier(lambda r: r["audited_h100_hours"])
     px, slot_w, gap = 118, 26, 18
     lx0, lx1 = px + slot_w + gap, X1 - 6
@@ -73,8 +53,14 @@ def fig_compute_strip():
     def X(h):
         return lx0 + (lx1 - lx0) * (math.log10(h) - math.log10(FLOOR)) / (math.log10(CEIL) - math.log10(FLOOR))
 
-    top, pitch, r = 76, 66, 3.5
-    d = 2 * r + 1.2
+    def column(h):
+        k = int((X(h) - lx0) / d)
+        if h in BANDS and abs((X(h) - lx0) / d - round((X(h) - lx0) / d)) < 1e-9:
+            k -= 1
+        return lx0 + (k + 0.5) * d
+
+    top, pitch, r = 76, 72, 3.5
+    d = 8.2
     bottom = top + 3 * pitch
     # band labels above the rows, boundaries as strong lines, decades faint
     # the first span starts at the slot, since papers under the floor are in band 0 to 8
@@ -82,7 +68,7 @@ def fig_compute_strip():
     for i, name in enumerate(["0 to 8", "8 to 32", "32 to 96"]):
         b.append(text((edges[i] + edges[i + 1]) / 2, top - 10, name, 11.5, MUTED, SANS, 500, "middle"))
     b.append(text(X0, top - 10, "band", 11.5, MUTED, SANS, 500))
-    for v in (FLOOR, 0.1, 1):
+    for v in (0.1, 1):
         b.append(line(X(v), top - 2, X(v), bottom, TRACK))
     for v in BANDS:
         b.append(line(X(v), top - 2, X(v), bottom, LINE_STRONG))
@@ -91,23 +77,22 @@ def fig_compute_strip():
     for (tier, label), vals, color in zip(TIERS, hours, TIER_COLOR):
         y = top + TIERS.index((tier, label)) * pitch
         cy = y + pitch / 2
+        baseline = y + pitch - 11
         b.append(text(X0, cy - 1, label, 12.5, INK, SANS, 600))
         b.append(text(X0, cy + 13, f"{len(vals)} papers", 11.5, MUTED))
-        if label != "Reimplement":
-            b.append(line(px, y + pitch, lx1, y + pitch, TRACK))
+        b.append(line(px, baseline, lx1, baseline, TRACK))
         med = sorted(vals)[len(vals) // 2] if len(vals) % 2 else (
             sorted(vals)[len(vals) // 2 - 1] + sorted(vals)[len(vals) // 2]) / 2
         mx = slot_cx if med < FLOOR else X(med)
-        b.append(rect(mx - 1.2, y + 5, 2.4, pitch - 10, MID, 1))
-        low = [h for h in vals if h < FLOOR]
-        high = [h for h in vals if h >= FLOOR]
-        for k, _ in enumerate(low):
-            b.append(f'<circle cx="{slot_cx:.1f}" cy="{cy + (k - (len(low) - 1) / 2) * d:.1f}" '
-                     f'r="{r}" fill="{color}" stroke="#FFFFFF" stroke-width="1.2"/>')
-        xs = [X(h) for h in high]
-        for x, dy in zip(xs, swarm(xs, d)):
-            b.append(f'<circle cx="{x:.1f}" cy="{cy + dy:.1f}" r="{r}" fill="{color}" '
-                     f'stroke="#FFFFFF" stroke-width="1.2"/>')
+        stacks = Counter(slot_cx if h < FLOOR else column(h) for h in vals)
+        for cx, n in sorted(stacks.items()):
+            if STACK == "bars":
+                b.append(rect(cx - 3.25, baseline - n * d, 6.5, n * d, color, 0))
+                continue
+            for j in range(n):
+                b.append(f'<circle cx="{cx:.1f}" cy="{baseline - r - 0.6 - j * d:.1f}" r="{r}" '
+                         f'fill="{color}" stroke="#FFFFFF" stroke-width="1.2"/>')
+        b.append(rect(mx - 1.2, baseline + 2, 2.4, 7, MID, 1))
     ay = bottom + 16
     b.append(text(slot_cx, ay, f"<{FLOOR:g}", 11.5, MUTED, SANS, 400, "middle"))
     for v, s in ((0.1, "0.1"), (1, "1")):
@@ -119,6 +104,10 @@ def fig_compute_strip():
 
 
 # ============================================ fig: papers per arXiv month
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
 def fig_arxiv_months():
     b = head("arXiv posting month of the 100 evaluation papers",
              "month from the arXiv identifier, stacked by tier")
@@ -159,8 +148,8 @@ def fig_arxiv_months():
         if total:
             b.append(text(x + bw / 2, yy - 5, str(total), 11.5, INK, SANS, 600, "middle"))
         mm = int(k[2:])
-        if mm in (1, 4, 7, 10):
-            b.append(text(x + bw / 2, base + 15, ["Jan", "Apr", "Jul", "Oct"][(mm - 1) // 3],
+        if mm in (1, 4, 7, 10) or i == 0:
+            b.append(text(x + bw / 2, base + 15, MONTHS[mm - 1],
                           11.5, FAINT, SANS, 400, "middle"))
         if mm == 1 and i:
             b.append(line(X0 + i * slot, base - ph - 4, X0 + i * slot, base + 30, LINE, 1, "2 3"))

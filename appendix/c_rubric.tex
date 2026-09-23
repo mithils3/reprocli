@@ -42,9 +42,7 @@ function and limits of each.}
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_auditor_effort}
-\caption{Tool rounds the auditor spent per run, by verdict, over the 372 graded
-runs. Each row is scaled to its own tallest bar, and the dashed line marks the
-median.}
+\caption{Tool rounds the auditor spent per run, by verdict. Each row is scaled to its own tallest bar, and the dashed line marks the median.}
 \label{fig:app-cd-auditor-effort}
 \end{figure}
 
@@ -128,16 +126,15 @@ Figure~\ref{fig:score-dist} shows how the 372 graded runs fall across the scale.
 The distribution has a mode at 4 with 72 runs, where a run executes something
 the auditor can grade and lands well short of the bar, and a second at 6 with 60
 runs, where the right quantity ran with sound provenance and the result clearly
-misses the bar. Two smaller peaks are close together at 0 and 8, the 53 runs an
-integrity flag zeroed and the 52 runs the auditor accepted as reproductions.
+misses the bar. Two smaller peaks of nearly equal height sit at 0 and 8, the 53 runs an
+integrity flag zeroed and the 52 runs the auditor accepted as reproductions with minor caveats.
 Figure~\ref{fig:app-cd-flag-kinds} shows the flags the auditor raised, by kind
 and severity.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/score_distribution}
-\caption{Audit scores over the 372 graded runs, colored by the verdict bands of
-Table~\ref{tab:rubric}.}
+\caption{Audit scores, colored by the verdict bands of Table~\ref{tab:rubric}.}
 \label{fig:score-dist}
 \end{figure}
 
@@ -160,8 +157,8 @@ auditor's report to the verdict of record.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_verdict_flow}
-\caption{The verdict derivation of the finalizer code. The integrity checks run
-first, and the score then reads off as a band, colored as in
+\caption{The verdict derivation of the code in Figure~\ref{lst:audit-finalizer}. The integrity checks run
+first, and the score then maps to a band, colored as in
 Figure~\ref{fig:score-dist}.}
 \label{fig:app-cd-verdict-flow}
 \end{figure}

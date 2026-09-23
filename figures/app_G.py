@@ -94,7 +94,7 @@ def fig_agent_tier(runs):
     for gi, (mk, mname) in enumerate(MODELS):
         if gi:
             b.append(line(X0, y - gap / 2, X1, y - gap / 2, LINE))
-        b.append(text(X0, y + pitch + bh / 2 + 4.5, mname, 12.5, INK, SANS, 600))
+        b.append(text(X0, y + pitch + bh / 2 + 4.5, mname, 12, INK, SANS, 600))
         for ti, (tk, tname) in enumerate(TIERS):
             counts = [ct[(mk, tk, s)] for s in SLUGS]
             total = sum(counts)
@@ -107,33 +107,7 @@ def fig_agent_tier(runs):
 
 
 # ============================================ fig: rounds and spend at exit
-def swarm(xs, r, lanes):
-    """Beeswarm offsets: each dot takes the lane nearest the centre line in
-    which it touches no dot already placed; x keeps its true value. When every
-    lane is taken it goes to the lane where its nearest neighbour is farthest,
-    so no dot ends up under another."""
-    order = sorted(range(len(xs)), key=lambda i: xs[i])
-    placed, dy = [], [0.0] * len(xs)
-    cand = [0.0]
-    for k in range(1, lanes + 1):
-        cand += [k * (2 * r + 0.3), -k * (2 * r + 0.3)]
-    for i in order:
-        x = xs[i]
-        best, best_gap = cand[0], -1.0
-        for c in cand:
-            gap = min(((x - px) ** 2 + (c - py) ** 2 for px, py in placed),
-                      default=(2 * r) ** 2)
-            if gap >= (2 * r) ** 2:
-                best = c
-                break
-            if gap > best_gap:
-                best, best_gap = c, gap
-        placed.append((x, best))
-        dy[i] = best
-    return dy
-
-
-def strip_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit, title, r=2.0):
+def strip_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit, title):
     def X(v):
         return px + pw * min(v, vmax) / vmax
     bottom = top + len(rows) * pitch
@@ -141,14 +115,15 @@ def strip_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit, title, r=2.0):
     for t in ticks:
         b.append(line(X(t), top - 2, X(t), bottom, TRACK))
         b.append(text(X(t), bottom + 14, f"{t}{unit}", 11.5, FAINT, SANS, 400, "middle"))
-    for ri, (vals, color) in enumerate(rows):
+    for ri, (vals, color, slug) in enumerate(rows):
         cy = top + ri * pitch + pitch / 2
-        xs = [X(v) for v in vals]
-        for x, d in zip(xs, swarm(xs, r, 4)):
-            b.append(f'<circle cx="{x:.1f}" cy="{cy + d:.1f}" r="{r}" fill="{color}" '
-                     f'fill-opacity="0.85"/>')
+        op = (0.9 if slug in FOCUS else 0.35) if FOCUS_ON else 0.45
+        for v in vals:
+            x = X(v)
+            b.append(f'<line x1="{x:.1f}" y1="{cy - 8:.1f}" x2="{x:.1f}" y2="{cy + 8:.1f}" '
+                     f'stroke="{color}" stroke-width="1" stroke-opacity="{op}"/>')
         med = X(statistics.median(vals))
-        b.append(line(med, cy - pitch / 2 + 2, med, cy + pitch / 2 - 2, INK, 1.6))
+        b.append(line(med, cy - 13, med, cy + 13, INK, 1.6))
 
 
 LABEL2 = {
@@ -157,34 +132,42 @@ LABEL2 = {
     "Never launched an experiment": ["Never launched", "an experiment"],
     "Failed before any number was produced": ["Failed before any number", "was produced"],
 }
+FOCUS = {"procrastination/wall-kill", "stale-artifact-reliance"}
+FOCUS_ON = True
 
 
 def fig_exit(runs):
-    """Two dot strips per mode, every graded run as one dot: the rounds the
-    run used and the share of its H100 grant it had spent when it exited."""
+    """Two rug strips per mode, every graded run as one tick: the rounds the
+    run used and the share of its H100 grant it had spent when it exited.
+    FOCUS_ON = False drops the emphasis on the two early-exit modes."""
     b = head("rounds used and grant spent at exit, by primary mode",
-             "one dot per run; 372 graded runs")
+             "one tick per run; 372 graded runs")
     ky = 56
     b.append(line(X0 + 3, ky - 10, X0 + 3, ky + 1, INK, 1.6))
     b.append(text(X0 + 12, ky, "median of the mode", 12, MID))
-    top, pitch = 84, 38
+    top, pitch = 84, 34
     lx = 186
     for i, name in enumerate(NAMES):
         cy = top + i * pitch + pitch / 2
         lines = LABEL2.get(name, [name])
+        focus = SLUGS[i] in FOCUS
+        fill, wt = (INK, 600) if focus else (MID, 500)
+        if not FOCUS_ON:
+            fill, wt = INK, 500
         for k, s in enumerate(lines):
             dy = (k - (len(lines) - 1) / 2) * 13.5
-            b.append(text(lx, cy + 4.2 + dy, s, 11.5, INK, SANS, 500, "end"))
+            b.append(text(lx, cy + 4.2 + dy, s, 11.5, fill, SANS, wt, "end"))
         if i:
             b.append(line(X0, top + i * pitch, X1 - 14, top + i * pitch, TRACK))
     p1, pw1 = lx + 20, 172
     p2 = p1 + pw1 + 38
     pw2 = X1 - 14 - p2
     by_mode = [[r for r in runs if r["mode"] == s] for s in SLUGS]
-    strip_panel(b, p1, pw1, [([r["rounds"] for r in rs], c) for rs, c in zip(by_mode, MODE_COLOR)],
+    strip_panel(b, p1, pw1, [([r["rounds"] for r in rs], c, sl) for rs, c, sl in zip(by_mode, MODE_COLOR, SLUGS)],
                 300, [0, 100, 200, 300], top, pitch, "", "rounds at exit")
     strip_panel(b, p2, pw2,
-                [([100 * r["spent"] / r["budget"] for r in rs], c) for rs, c in zip(by_mode, MODE_COLOR)],
+                [([100 * r["spent"] / r["budget"] for r in rs], c, sl)
+                 for rs, c, sl in zip(by_mode, MODE_COLOR, SLUGS)],
                 100, [0, 25, 50, 75, 100], top, pitch, "%", "grant spent at exit")
     page("app_G_exit_by_mode", b, top + 9 * pitch + 30)
 

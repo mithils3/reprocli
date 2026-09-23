@@ -71,18 +71,18 @@ def fig_verdict_flow():
     arrow(b, [(cx, 86), (cx, 104)])
     # decision 1
     box(b, cx - 165, 104, 330, 30, ["any high-severity flag, or a raw score of 0?"],
-        fill=TRACK, stroke=None, weight=600)
+        fill=TRACK, stroke=None, weight=600, size=11.5)
     lx = 82
     arrow(b, [(cx - 165, 119), (lx, 119), (lx, 150)])
     b.append(text((cx - 165 + lx) / 2, 114, "yes", 11.5, MUTED, SANS, 500, "middle"))
-    box(b, X0, 150, 120, 50, ["score set to 0", "a higher reported", "score is kept"],
+    box(b, X0, 150, 120, 50, ["score set to 0", "a higher reported", "score is logged"],
         color=MID, size=11.5, first_weight=600, first_color=INK)
     arrow(b, [(lx, 200), (lx, 296)])
     arrow(b, [(cx, 134), (cx, 164)])
     b.append(text(cx + 6, 153, "no", 11.5, MUTED, SANS, 500))
     # decision 2
     box(b, cx - 100, 164, 200, 30, ["execution verified?"], fill=TRACK, stroke=None,
-        weight=600)
+        weight=600, size=11.5)
     bx, hx = 210, 470
     arrow(b, [(cx - 100, 179), (bx, 179), (bx, 214)])
     b.append(text((cx - 100 + bx) / 2, 174, "no", 11.5, MUTED, SANS, 500, "middle"))
@@ -154,7 +154,7 @@ def fig_flag_kinds():
         b.append(text(kx + 15, ky, label, 12, MID))
     bx, bw, bh, pitch, top = 214, 310, 16, 26, 96
     vmax = max(sum(by[k].values()) for k, _ in KIND_NAME)
-    b.append(text(bx + bw + 12, top - 12, "flags", 11.5, MUTED, SANS, 600))
+    b.append(text(bx + bw + 40, top - 12, "flags", 11.5, MUTED, SANS, 600, "end"))
     b.append(text(X1, top - 26, "runs", 11.5, MUTED, SANS, 600, "end"))
     b.append(text(X1, top - 12, "disqualified", 11.5, MUTED, SANS, 600, "end"))
     for i, (kind, name) in enumerate(rows):
@@ -162,18 +162,20 @@ def fig_flag_kinds():
         n = sum(by[kind].values())
         b.append(text(bx - 12, y + 12, name, 12, INK if n else FAINT, SANS, 500, "end"))
         x = bx
+        prev_w = 0
         for sev, c in SEV:
             w = bw * by[kind][sev] / vmax
             if w > 0:
                 b.append(rect(x, y, w, bh, c, 0))
-                if x > bx:
+                if x > bx and prev_w >= 4 and w >= 4:
                     b.append(line(x, y, x, y + bh, "#FFFFFF", 1))
+                prev_w = w
                 s = str(by[kind][sev])
                 if w >= 6.4 * len(s) + 8:
                     b.append(text(x + w / 2, y + 12, s, 11.5, "#FFFFFF", SANS, 600, "middle"))
             x += w
-        b.append(text(bx + bw + 12, y + 12, str(n), 12, INK if n else FAINT, SANS, 600,
-                      tnum=True))
+        b.append(text(bx + bw + 40, y + 12, str(n), 12, INK if n else FAINT, SANS, 600,
+                      "end", tnum=True))
         z = len(zeroed[kind])
         b.append(text(X1, y + 12, str(z) if z else "0", 12, ROSE if z else FAINT, SANS, 600,
                       "end", tnum=True))

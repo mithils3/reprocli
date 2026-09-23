@@ -1,11 +1,10 @@
 \section{Prompts}
 \label{app:prompt-listings}
 
-This appendix reproduces every prompt the pipeline sends to a model, in
-pipeline order: the agent's harness messages and task prompt, the auditor's
-prompt and rubric, and the dataset classifier's prompt. Placeholder fields
-are set in color, and each listing is printed verbatim as it ran, so the
-listings include internal identifiers that the paper's own numbering and
+This appendix reproduces every prompt the pipeline sends to a model: the agent's harness messages and task prompt, the auditor's
+prompt and rubric, and the dataset classifier's prompt. Uppercase placeholder fields
+are set in color, and each prompt is printed verbatim as it ran, so the
+prompts include internal identifiers that the paper's own numbering and
 naming do not use.
 
 \subsection{Harness messages}
@@ -63,7 +62,7 @@ reasoning brief.
 % src: src/reclaim_repro/prompt_render.py:22-147; prompts/prompt_reproduce.txt:1-290 (byte-identical to paper_latex/prompts/prompt_reproduce.txt)
 The first user turn (Appendix~\ref{app:prompts}).
 
-{\tcbset{rbFrame/.append style={break at=-15.2pt/0pt/0pt/-10pt/0pt}}%
+{\tcbset{rbFrame/.append style={break at=-15.2pt/0pt/0pt/-33pt/0pt}}%
 \promptfile[lst:task-prompt]{Task prompt template}{prompts/prompt_reproduce.txt}}
 
 \subsection{Auditor prompt}
@@ -71,18 +70,19 @@ The first user turn (Appendix~\ref{app:prompts}).
 Rendered for each graded run from the pinned claim, the run-directory
 manifest, and the rubric text (Appendix~\ref{app:rubric}).
 
-\promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}
+{\tcbset{rbFrame/.append style={break at=-9pt/-16pt/0pt}}%
+\promptfile[lst:audit-prompt]{Auditor prompt template}{prompts/prompt_audit.txt}}
 
 \subsection{Audit rubric}
 % src: rubric_audit.md (copied verbatim to paper_latex/prompts/rubric_audit.md); src/reclaim_vllm/audit/inputs.py:96-101
 The frozen rubric, which the auditor receives in full.
 
-{\tcbset{rbFrame/.append style={break at=0pt/0pt/-18pt/0pt}}%
+{\tcbset{rbFrame/.append style={break at=-17pt/0pt}}%
 \promptfile[lst:rubric-text]{Frozen audit rubric}{prompts/rubric_audit.md}}
 
 \subsection{Classifier prompt}
 % src: paper_latex/prompts/prompt_classifier.txt, verbatim copy of prompts/prompt.txt:1-558
 The Stage-I classifier prompt of Appendix~\ref{app:classifier}.
 
-{\tcbset{rbFrame/.append style={break at=-10pt/0pt/0pt/-21pt/0pt}}%
+{\tcbset{rbFrame/.append style={break at=-25pt/-44pt/0pt/-44pt/-35pt/0pt/-35pt/-33pt/0pt}}%
 \promptfile[lst:classifier-prompt]{Stage-I classifier prompt}{prompts/prompt_classifier.txt}}

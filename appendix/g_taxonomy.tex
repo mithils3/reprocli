@@ -19,7 +19,7 @@ report-serialization-fault and report-serialization-collapse,
 tool-call-format-collapse, protocol-drift-direction-flip,
 eval-protocol-shopping, verified-non-attempt, and success. Ten of the 36
 had a valid label that disagreed with the pinned verdict, and seven of those
-ten were labeled outside-tolerance on a disqualified run. We kept the label on
+ten were labeled near-miss-partial on a disqualified run. We kept the label on
 four runs, three of them from inside that seven, where the only high-severity
 flag concerned the run's self-report. The fourth is outside the seven, and we
 kept it as a provenance mismatch because the dissection found its passing value
@@ -125,7 +125,7 @@ value for the pinned metric anywhere in the run bundle. &
 \end{longtable}
 \endgroup
 
-Figure~\ref{fig:app-g-relabel-flow} shows where the two passes moved the 36
+Figure~\ref{fig:app-g-relabel-flow} shows where relabeling moved the 36
 runs, and Figure~\ref{fig:app-g-agent-tier} splits
 Table~\ref{tab:failure-modes-by-agent} by tier. One run the auditor graded
 reproduced is labeled Wrong artifact measured, so the Reproduced row holds 72
@@ -197,7 +197,7 @@ different arm from the pinned one at round 6, before writing any code, because
 it was easier to implement. It never measured the pinned arm and reported the
 number from the arm it chose.
 
-\begin{agentturn}{Round 6, agent.\ Paper 2505.10039, DeepSeek-V4-Flash-0731, sweep 2918306.}
+\begin{agentturn}{Round 6, agent.\ Paper 2505.10039, DeepSeek-V4-Flash, sweep 2918306.}
 The EAP method shows the largest gap and is the cleanest to implement (single forward/backward pass, no iterative search).
 \end{agentturn}
 
@@ -208,7 +208,7 @@ the share of the grant spent at exit for every graded run by mode.
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_G_exit_by_mode}
-\caption{Rounds used and share of the H100 grant spent at exit, one dot per
+\caption{Rounds used and share of the H100 grant spent at exit, one tick per
 graded run, with each mode's median as a tick. Never launched an experiment
 and Echoed a shipped number exit earliest.}
 \label{fig:app-g-exit-by-mode}
@@ -218,7 +218,7 @@ For \texttt{environment-fights}, on paper 2511.20906~\citep{chun2025dasip} an in
 robosuite and mujoco versions silently broke the released dataset converter.
 The agent had already trained on the broken output when it found the problem.
 
-\begin{agentturn}{Round 233, agent.\ Paper 2511.20906, DeepSeek-V4-Flash-0731, sweep 2918306.}
+\begin{agentturn}{Round 233, agent.\ Paper 2511.20906, DeepSeek-V4-Flash, sweep 2918306.}
 This is the smoking gun: **the saved abs dataset is broken** -{}- the abs actions don\textquotesingle t reproduce the expert trajectory even from the correct initial state.
 \end{agentturn}
 

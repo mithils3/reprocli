@@ -138,8 +138,8 @@ schema and saved as \texttt{report.json} beside \texttt{evidence/}, with the
 fields of Table~\ref{tab:report-schema}. The harness overwrites
 \texttt{paper\_id} with the ID it dispatched, so the model's echoed ID cannot
 alter provenance, and records a
-\texttt{report\_status} with the loop's
-\texttt{exit\_reason}, and output that fails to parse or fails the structural
+\texttt{report\_status} and the loop's
+\texttt{exit\_reason}. Output that fails to parse or fails the structural
 check is still written as a malformed report whose \texttt{report\_status} is
 \texttt{degraded} and which includes the validation errors and an excerpt of
 the raw output.
