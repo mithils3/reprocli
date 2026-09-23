@@ -70,8 +70,8 @@ listing of each model provider's own endpoint, and Table~\ref{tab:cost} lists
 the totals. For the three
 cluster-served models we take the tokens produced on our cluster and price them
 at that listed rate. Figure~\ref{fig:app-b-tokens} shows the tokens of
-each graded run by agent, and Figure~\ref{fig:app-b-cost} its cost and the
-split between tokens and GPU time.
+each graded run by agent, Figure~\ref{fig:app-b-cost} its cost, and
+Figure~\ref{fig:app-b-split} the split between tokens and GPU time.
 
 \begin{figure}[ht]
 \centering
@@ -83,8 +83,15 @@ split between tokens and GPU time.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/app_B_cost}
-\caption{Cost per graded run by agent at the rates of Table~\ref{tab:cost}, with the median ticked, the ratio of token cost to GPU cost at right, and a dashed line at parity.}
+\caption{Cost per run by agent at the rates of Table~\ref{tab:cost}, with the median ticked.}
 \label{fig:app-b-cost}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/app_B_split}
+\caption{Token cost against GPU cost per run by agent. The dashed line marks equal cost.}
+\label{fig:app-b-split}
 \end{figure}
 
 \begin{table}[ht]
@@ -112,6 +119,7 @@ All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12
 \label{tab:cost}
 \end{table}
 
+\FloatBarrier  % Table~\ref{tab:cost} prints before the Table 5 longtable starts
 \subsection{Results by agent, tier, and compute band}
 \label{app:results-table}
 

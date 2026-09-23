@@ -121,10 +121,8 @@ which agents are able to reproduce the results of a paper falls considerably
 when no code is available. DeepSeek-V4-Flash, the strongest agent we evaluate, reproduces
 41\% of Run-tier papers (code, data, and weights all
 released), 27\% of Retrain-tier papers (no weights, so the model must
-be trained first), and 12\% of Reimplement-tier papers (no code). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
-best at that tier, while the best Run and Retrain rates are
-DeepSeek-V4-Flash's. We observe that every agent performs worst at the
-Reimplement tier (Section~\ref{subsec:results}).
+be trained first), and 12\% of Reimplement-tier papers (no code). Muse Spark 1.2 reproduces 15\% of Reimplement-tier papers, the
+best rate at that tier.
 
 While missing code is a plausible reason for an agent to fail, the failures at
 the Run tier are more perplexing. At this tier the
@@ -156,9 +154,8 @@ example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
 \begin{figure}[b]
 \centering
 \includegraphics[width=\textwidth]{figures/modes_by_strength}
-\caption{Failure counts for the two weakest and two strongest agents, with the change
-in each mode's share of graded runs in percentage points. The top four become
-rarer with stronger agents.}
+\caption{Failure counts for the two weakest and two strongest agents. The top
+four failures become rarer with stronger agents.}
 \label{fig:modes-by-strength}
 \end{figure}
 
@@ -306,9 +303,7 @@ can demand while still exercising the paper's method.
 A match target records the configuration of the experiment we target, the
 metric, the reported value, the scope the value is measured over, and the
 performance a run must clear.\footnote{Appendix~\ref{app:dataset-schema}
-documents every field. For 62 of the 100 papers that performance is a point
-estimate within a tolerance, and for the rest it is a baseline, a threshold, a
-difference, or a range.}
+documents every field.}
 
 As a running example, SharpZO~\citep{yang2025sharpzo} claims that a two-stage
 zeroth-order method improves prompt tuning for vision-language models using
@@ -463,11 +458,8 @@ rates, and the per-agent totals.}
 \subsection{Results}
 \label{subsec:results}
 
-Figure~\ref{fig:main-results} reports every agent-paper cell. Each
-agent has one cell per paper, 400 in all. Twenty-eight of them are model
-failures that produced nothing for the grader to grade and score 0, and
-Section~\ref{subsec:mechanisms} covers the 372 graded runs. The auditor
-confirms reproduction on 73 of the 400 cells.
+The auditor confirms reproduction on 73 of the 400 agent-paper cells
+(Figure~\ref{fig:main-results}).
 DeepSeek-V4-Flash is the strongest agent. It recovers the pinned
 number on 14 of 34 Run-tier papers, 9 of 33 at Retrain, and 4 of 33 at
 Reimplement, and the four agents span a factor of 1.7 in mean audit score,
@@ -501,10 +493,9 @@ Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
 the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. The 396 runs that started cost \$4{,}835, which is
 \$12.21 per run and \$66 per confirmed reproduction, and GPU time is 78\% of
-that total. We report the agents' own verdicts as background data. Of the 372
-graded runs, 359 return a
-parsable self-assessment and 128 claim reproduction, against 73
-audited reproductions over all 400 cells, and the disagreement runs in both
+that total. We report the agents' own verdicts as background data. Agents
+return a parsable self-assessment on 359 runs and claim reproduction on 128,
+against 73 audited reproductions, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 10
 of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 
