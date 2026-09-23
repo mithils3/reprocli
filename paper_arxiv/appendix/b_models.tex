@@ -5,8 +5,8 @@ We serve the three open-weight agent
 models~\citep{deepseekai2026flashcard,qwen2026fp8card,cyankiwi2026minimaxawq,lin2023awq} on our cluster with vLLM, each from
 a per-model profile the launcher expands into one \texttt{vllm serve} command,
 and a sweep is one batch job per model per tier that launches the server and
-runs that tier's papers as processes on the same node. Each \texttt{run\_gpu}
-call takes its own Slurm allocation (Appendix~\ref{app:harness}), so agent
+runs that tier's papers as processes on the same node. The agent's \texttt{run\_gpu}
+calls hold their own Slurm allocation (Appendix~\ref{app:harness}), so agent
 compute is metered apart from the serving GPUs. Muse Spark 1.2 is reached
 through the Meta Model API.
 Table~\ref{tab:models} lists the four configurations.

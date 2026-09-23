@@ -1,3 +1,4 @@
+\pdfoutput=1
 \RequirePackage{fix-cm}  % CM math fonts at the 6.5pt listing size
 \documentclass{article} % For LaTeX2e
 \usepackage{iclr2027_conference,times}
@@ -65,7 +66,7 @@
 \raggedbottom
 
 \maketitle
-\vspace{-11pt}  % the third author line (affiliations) so that Section 6 still opens on page 8
+\vspace{-11pt}
 \lhead{Preprint. Under review.}
 
 \begin{abstract}
@@ -152,7 +153,7 @@ as agents become stronger while others do not
 \centering
 \includegraphics[width=\textwidth]{figures/reclaim_overview}
 \caption{Overview of RECLAIM and its evaluation pipeline. The figure shows an
-example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
+example run with Qwen3.6-27B on the TTPL paper~\citep{chen2025ttpl}.}
 \label{fig:overview}
 \end{figure}
 
@@ -428,8 +429,8 @@ items~\citep{starace2025paperbench}.
 \label{subsec:experimental-setup}
 
 \paragraph{Agent harness.} We run every agent in a thin ReAct-style agent
-loop~\citep{yao2023react}, and the harness adds no special guidance beyond
-it.\footnote{Appendix~\ref{app:harness} gives the prompts, the tools, and the
+loop~\citep{yao2023react}, and the harness adds no model-specific
+guidance.\footnote{Appendix~\ref{app:harness} gives the prompts, the tools, and the
 session mechanics.} We believe this keeps the comparison fair, since each model
 is optimized for a different agent scaffold and a heavily engineered harness
 would favor the models it was tuned on, so outcomes measure the model. The agent receives the paper's LaTeX source, its OpenReview
@@ -511,8 +512,8 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 We label each run with one of nine primary modes and report the
 distribution over the 400 cells by tier in Figure~\ref{fig:failure-modes}, where
 28 cells carry no label. The mode names describe
-themselves, and Appendix~\ref{app:taxonomy} defines each one. To assign the label we read the run's
-transcript against the mode definitions and write a per-run dissection
+themselves, and Appendix~\ref{app:taxonomy} defines each one. To assign the label, a language model reads the run's
+transcript against the mode definitions and writes a per-run dissection
 record. Every count in this subsection comes from those records, and every
 score and verdict in this paper comes from the auditor. Two modes are outcomes. A
 reproduced run recovers the pinned number within tolerance from an experiment
@@ -620,7 +621,8 @@ labeling of the runs separates the failures that recede between the two
 weakest and the two strongest agents from those that do not. Rebuilding a
 method without checking it against the paper falls when the two strongest
 agents are pooled against the two weakest, and measuring the wrong released
-artifact does not. We read this to mean that the strongest agent can run an
+artifact does not. We read DeepSeek-V4-Flash's fall from 41\% at Run to 12\% at
+Reimplement to mean that the strongest agent can run an
 experiment when the authors' code is released and struggles to design one
 from the paper alone. The harness, the frozen rubric, and every graded
 transcript are released with this paper together with the benchmark itself,
