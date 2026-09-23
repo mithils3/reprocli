@@ -78,7 +78,7 @@ a GPU-hour budget. An agent must reproduce that result using the paper and
 whatever its authors released. What the authors released decides the
 difficulty tier. Run-tier releases include code, data, and weights;
 Retrain-tier releases lack weights, so the agent trains the model;
-Reimplement-tier releases also lack code, so the agent writes it. A separate
+Reimplement-tier releases lack code, so the agent writes it. A separate
 language model grades runs from logs and outputs rather than agents' reports.
 We run four agents once per paper; the best agent in each tier reproduces only
 41\% of Run-tier papers, 27\% at Retrain, and 15\% at Reimplement, where every
@@ -126,8 +126,7 @@ which agents are able to reproduce the results of a paper falls considerably
 when no code is available. DeepSeek-V4-Flash, the strongest agent we evaluate, reproduces
 41\% of Run-tier papers (code, data, and weights all
 released), 27\% of Retrain-tier papers (no weights, so the model must
-be trained first), and 12\% of Reimplement-tier papers (no code
-either). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
+be trained first), and 12\% of Reimplement-tier papers (no code). The abstract's 15\% at Reimplement is Muse Spark 1.2's rate, the
 best at that tier, while the best Run and Retrain rates are
 DeepSeek-V4-Flash's. We observe that every agent performs worst at the
 Reimplement tier (Section~\ref{subsec:results}).
@@ -143,10 +142,10 @@ papers the strongest agent reaches a verified partial result or better on 67\% o
 and the weakest on 27\%,
 which provides evidence of an emerging ability to close the loop of
 reproduction. Second, full recovery of
-the reported number is where progress stalls, holding between 15\% and 27\%
-across four agents spanning a 1.7-fold range in mean audit score. Third,
-compute does not bind either, since 1 of the 48 cells in the 96 H100-hour
-band reproduces its claim (Section~\ref{subsec:compute}). A small set of agent
+the reported number is where progress stalls, holding between 15\% and 27\% at the Retrain tier
+across four agents whose overall mean audit scores span a 1.7-fold range. Third,
+compute does not bind either, since the 48 cells in the 96 H100-hour
+band spend 6.2\% of the compute granted to them and 1 of them reproduces its claim (Section~\ref{subsec:compute}). A small set of agent
 mistakes accounts for a majority of the failures, and some of them become rarer
 as agents become stronger while others do not
 (Figure~\ref{fig:modes-by-strength}, Section~\ref{subsec:mechanisms}).
@@ -185,8 +184,8 @@ starts. A reproduction begins earlier, with the agent choosing the
 experiment that establishes the claim and building an environment that can
 run it. MirrorCode asks agents to rebuild entire programs from behavior
 alone, with a black-box reference implementation the agent can query
-throughout, which makes the target checkable at every step. In both settings
-agents are observed to stop early. \citet{adamczewski2026mirrorcode} report
+throughout, which makes the target checkable at every step. In both MirrorCode and paper
+reproduction, agents are observed to stop early. \citet{adamczewski2026mirrorcode} report
 that 97.4\% of MirrorCode runs submitted before using half the token budget and
 that agents submit once the visible tests pass, and we report similar early
 stopping in Section~\ref{subsec:results}.
@@ -326,7 +325,7 @@ accuracy, within tolerance, from an experiment it ran itself.
 \subsection{Benchmark construction}
 \label{subsec:construction}
 
-We construct RECLAIM from the 3,414 NeurIPS 2025 submissions that have an
+We construct RECLAIM from the 3,414 NeurIPS 2025 papers that have an
 arXiv ID, collected in the \emph{ai-conferences}
 corpus~\citep{neurips2025corpus}. Stage I ran on a 1,000-paper sample of that
 corpus, and later stages use only that sample. Construction had three stages (Figure~\ref{fig:funnel}).
@@ -338,7 +337,7 @@ corpus, and later stages use only that sample. Construction had three stages (Fi
 \label{fig:funnel}
 \end{figure}
 
-\paragraph{Stage I: Artifact-verified classification.} For each submission we
+\paragraph{Stage I: Artifact-verified classification.} For each paper we
 retrieved the raw LaTeX source together with any OpenReview supplementary
 material, since some authors ship code only in the supplement
 (Appendix~\ref{app:corpus}).
@@ -358,7 +357,7 @@ the result the agent must rebuild, and every tier reflects what that paper's
 authors chose to release. Run papers
 release code, data, and weights, and the agent need only execute or evaluate them.
 Retrain papers release no weights, so the agent trains the model before
-evaluating. Reimplement papers release no code either, so the agent rebuilds
+evaluating. Reimplement papers release no code, so the agent rebuilds
 the method from the paper, while the datasets its experiments need stay public.
 The tiers also describe the venue as a whole, from the classifier pass alone
 since we manually audited only the selected pool. Among the 687 verified papers, 33\% fall in Run, 44\% in Retrain, and 13\% in
@@ -376,8 +375,8 @@ benchmark at 96 H100-hours and apply that cap to the evaluation split once the
 human audit has settled every estimate. We took a 200-paper audit pool
 stratified by tier and compute band, cheapest first within each band. We allocate the pool equally across
 tiers because tier is the variable under test, and equal cells measure each
-tier's reproduction rate with equal precision. Proportional sampling would leave the Reimplement tier with roughly a
-dozen papers, and the venue proportions reported above let readers reweight
+tier's reproduction rate with equal precision. Proportional sampling would leave the 100-paper benchmark with roughly a
+dozen Reimplement papers, and the venue proportions reported above let readers reweight
 any rate back to the venue level.
 
 \paragraph{Stage III: Human audit.} We manually audited every paper in the
@@ -388,7 +387,7 @@ were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
 GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
-derived the rest from the pinned configuration. The need to reconstruct these
+estimated the rest. The need to reconstruct these
 estimates is one instance of the broader documentation gaps that impede
 reproduction in AI research~\citep{gundersen2018state,dodge2019show,henderson2020towards}.
 \section{Auditing}
@@ -418,7 +417,7 @@ high-severity flag, such as a number echoed
 from the paper, a hardcoded constant, or a proxy value in the target slot,
 forces the score to zero, and a reported missing artifact earns no credit. We
 use an LLM auditor because it reads more material per run than a human grader
-can, working through hundreds of tool rounds, logs, and saved outputs in
+can, working through a run's dozens to hundreds of tool rounds, logs, and saved outputs in
 minutes, which makes auditing every run of every sweep feasible.
 Three human graders scored all 396 runs that started, one grader per run,
 under the same rubric and blind to the auditor's score, and the auditor's
@@ -524,8 +523,8 @@ themselves, and Appendix~\ref{app:taxonomy} defines each one. To assign the labe
 transcript against the mode definitions and write a per-run dissection
 record. Every count in this subsection comes from those records, and every
 score and verdict in this paper comes from the auditor. Two modes are outcomes. A
-reproduced run recovers the pinned number on the authors' released
-artifact and data, and a run outside tolerance executes a faithful pipeline
+reproduced run recovers the pinned number within tolerance from an experiment
+it ran itself, using the released artifacts its tier provides, and a run outside tolerance executes a faithful pipeline
 and lands short of the bar. The other seven are process failures.
 
 \begin{figure}[t]
@@ -558,7 +557,7 @@ it replaced the package with an unvalidated port the auditor disqualified.
 
 \paragraph{What the successful runs do.}
 Most runs that recover the target result run the authors' own entrypoint. The
-dissection records describe it for 58 of the 73, against 160 of the 299 runs
+dissection records describe it for 58 of the 73,\footnote{Figures~\ref{fig:modes-by-strength} and~\ref{fig:failure-modes} count 72 Reproduced runs because one audited reproduction is labeled Wrong artifact measured (Appendix~\ref{app:taxonomy}).} against 160 of the 299 runs
 that fail. Where they patch released code they disclose the patch and show
 that the graded computation is unchanged, and where the method has to be
 rebuilt they check the rebuilt component against a quantity the paper reports
@@ -632,8 +631,8 @@ agents are pooled against the two weakest, and measuring the wrong released
 artifact does not. We read this to mean that the strongest agent can run an
 experiment when the authors' code is released and struggles to design one
 from the paper alone. The harness, the frozen rubric, and every graded
-transcript accompany this submission, the benchmark itself follows after
-review, and the construction pipeline can rebuild the set from each conference cycle at low human cost, so the
+transcript are released with this paper together with the benchmark itself,
+and the construction pipeline can rebuild the set from each conference cycle at low human cost, so the
 measurement can be repeated on fresh papers as agents improve. Systems that take an
 idea through experiments to a manuscript are already
 running~\citep{lu2024aiscientist,schmidgall2025agentlab,tang2025airesearcher}, and what

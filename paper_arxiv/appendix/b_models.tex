@@ -60,8 +60,8 @@ Tool rounds & 300 & 300 & 300 & 300 \\
 
 We produce the grades of record with a separate grading client on the
 Anthropic Messages API with \texttt{claude-sonnet-5}, one agent loop over one
-run bundle capped at 25 rounds, and re-grading a batch overwrites its audit, so
-a re-graded sweep has one grader. We price GPU time at the \$2
+run bundle capped at 25 rounds, and re-grading a batch overwrites the verdict
+stored on each run's record, so a re-graded sweep has one grader. We price GPU time at the \$2
 per \mbox{H100-hour} of Section~\ref{subsec:experimental-setup} and grader tokens at
 \$2 and \$10 per million input and output tokens~\citep{anthropic2026pricing}.
 

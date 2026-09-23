@@ -5,9 +5,9 @@ We hold four inputs constant across every grade of record: the grader model ID,
 which is written onto every verdict row, the frozen rubric file, the audit prompt (Figure~\ref{lst:audit-prompt}) rendered per run from that rubric text and the
 pinned claim, and the shared verdict code that applies the integrity adjustment
 of Appendix~\ref{app:rubric}. Each grading pass gets an identity of its own from
-the grader model name and a UTC timestamp, which keys every row and transcript
-event the pass writes, so a later pass stays distinguishable from the grade of
-record. The grading client is given in
+the grader model name and a UTC timestamp, which keys the audit transcript
+the pass writes, so the transcripts of different passes stay
+distinguishable. The grading client is given in
 Appendix~\ref{app:models}.
 
 Three human graders scored all 396 runs that started, one grader per run, from

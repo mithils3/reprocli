@@ -7,7 +7,7 @@ Appendix~\ref{app:rubric}, the serving layer they share, the batch scripts
 behind every sweep, and the run bundles the grades were computed on. The
 prompt templates and rubric of Appendix~\ref{app:prompt-listings} are printed
 verbatim from it. Figure~\ref{lst:running-commands} gives the commands that
-serve a model, run one paper, and grade a sweep.
+serve a model, run one paper, and grade the runs.
 
 \begin{codebox}[lst:running-commands]{bash}{Serving, running, and grading}
 # Serve the agent model and publish the address other nodes reach it at.
@@ -33,9 +33,9 @@ $ export RECLAIM_API_KEY=<api-key> RECLAIM_CONTEXT_LENGTH=<window>
 $ PYTHONPATH=src python3 -m reclaim_repro ... \
     --vllm-server-url https://api.meta.ai/v1 --served-model-name <model-id>
 
-# Grade a sweep with the pinned auditor (hosted sweeps: --batch <model>-<timestamp>).
+# Grade the newest local run of each paper in papers.txt (one arXiv id per line).
 $ PYTHONPATH=src python3 -m reclaim_claude \
-    --batch slurm-<jobid> \
+    --paper-ids-file papers.txt \
     --runs-dir <runs-dir> \
     --split eval \
     --model claude-sonnet-5 \
