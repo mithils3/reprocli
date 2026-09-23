@@ -165,8 +165,7 @@ body { width: 980px; font-family: 'InterF', sans-serif; font-size: var(--S); bac
 .v-audit { background: var(--red); border: 1.2px solid var(--red); flex-direction: column; align-items: flex-start; gap: 0; }
 .v-audit .val { color: #fff; }
 .v-audit .lab { color: #F6DEDA; }
-.v-audit.partial { background: #B8740C; border-color: #B8740C; }
-.v-audit.partial .lab { color: #FBEBD2; }
+.v-audit .sub { color: #F6DEDA; line-height: 20px; }
 .stamp-img { position: absolute; right: 10px; top: 12px; width: 30px; height: 30px; transform: rotate(-12deg); }
 .gap-note { font-style: italic; color: var(--gray); margin-top: 6px; line-height: 20px; }
 
@@ -200,8 +199,8 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
         <div class="card">
           <div class="card-hdr"><img src="icons/target.png"><span class="t">Match target</span></div>
           <div class="spec">
-            <span class="k">metric</span>gap (%)<br>
-            <span class="k">target</span>3.25% &plusmn;5%<br>
+            <span class="k">target</span>gap 3.25%<br>
+            <span class="k">match</span>3.09&ndash;3.41<br>
             <span class="k">scope</span>TSP5K test
           </div>
         </div>
@@ -268,9 +267,9 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
           <div class="kicker"><div class="num">3</div><div class="word">THE REPORT</div></div>
           <div class="out-card">
             <div class="filetree">
-              <span class="f">report.json</span><br>
-              <span class="claim-chip">claims: "reproduced"</span><br>
-              <span class="f">evidence/</span> commands.log
+              <span class="f">REPORT.md</span><br>
+              <span class="claim-chip">claims: "REPRODUCED"</span><br>
+              <span class="f">evidence/</span> tsp5k_run.log
             </div>
           </div>
         </div>
@@ -280,12 +279,12 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
           <div class="audit-card">
             <img class="stamp-img" src="icons/stamp.png">
             <div class="audit-hdr"><img src="icons/detective.png"><span class="t">Adversarial audit</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="check"><path d="M1.5 6.5L4.6 9.4L10.5 2.8" stroke="#3C8252" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><span>authors&rsquo; pipeline ran on the released checkpoint</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>type=bool kept MVDF on in both runs</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>pinned row is MVDF off, 3.25%</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="check"><path d="M1.5 6.5L4.6 9.4L10.5 2.8" stroke="#3C8252" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><span>ran the authors&rsquo; pipeline</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>type=bool kept MVDF on</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>2.86% is outside 3.09&ndash;3.41</span></div>
             <div class="verdicts">
               <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">2.86% &#10003;</div></div>
-              <div class="verdict v-audit partial"><div class="lab">THE AUDIT FINDS</div><div class="val">partial, score 6</div></div>
+              <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">not reproduced</div><div class="sub">partial result, score 6</div></div>
             </div>
             <div class="gap-note">RECLAIM scores the audited verdict</div>
           </div>
