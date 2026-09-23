@@ -438,7 +438,7 @@ def fig_strength():
     its end, then the change in the mode's share of the pair's graded runs, in
     percentage points. Bar length is that share, so the two columns compare
     directly. A rule splits the modes that fall from the rest, and the totals
-    row is every graded run that did not reproduce, so its change is the change
+    row is every cell that did not reproduce, so its change is the change
     in the failure rate and equals the sum of the rows."""
     b = head("failure modes differ between weak and strong agents")
     pxs, pw, vmax, dx = (282, 442), 130, 30.0, X1
@@ -473,7 +473,7 @@ def fig_strength():
     cy = y + pitch / 2
     tw, ts = sum(r[2] for r in STRENGTH), sum(r[3] for r in STRENGTH)
     assert (tw, ts) == (200 - 23, 200 - 49)
-    b.append(text(X0, cy + 4, "All runs that did not reproduce", 12, INK, SANS, 600))
+    b.append(text(X0, cy + 4, "All cells that did not reproduce", 12, INK, SANS, 600))
     for px, n in zip(pxs, (tw, ts)):
         b.append(text(px, cy + 4, str(n), 11.5, INK, SANS, 600))
     b.append(text(dx, cy + 4, delta(tw, ts), 11.5, INK, SANS, 600, "end", tnum=True))

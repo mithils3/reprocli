@@ -319,7 +319,7 @@ def text_width(s, size, weight=600):
 
 def fig_split(runs):
     b = head("token cost and GPU cost per run")
-    px0, gap, S, H = 76, 36, 269, 160
+    px0, gap, S, H = 76, 48, 263, 160
     lo, hi = -2.0, 2.0
     ticks = [(0.01, "$0.01"), (0.1, "$0.10"), (1, "$1"), (10, "$10"), (100, "$100")]
     pts, skipped = {}, []
