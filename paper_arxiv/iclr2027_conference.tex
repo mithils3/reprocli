@@ -84,7 +84,7 @@ We run four agents once per paper; the best agent in each tier reproduces only
 41\% of Run-tier papers, 27\% at Retrain, and 15\% at Reimplement, where every
 agent does worst. Failed attempts use on average 29\% of their budget, so most
 stop with budget left. The most common agent error is writing the method
-without checking any part against the paper's numbers, in 63 of 372 graded
+without checking any part against the paper's numbers, in 63 of 400
 runs.
 \end{abstract}
 
@@ -489,8 +489,8 @@ three agents the Run and Retrain rates sit within nine points of each other, and
 of the four agents before falling at Reimplement, while Qwen3.6-27B's mean score falls at
 each tier. Figure~\ref{fig:failure-modes}
 shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
-and land outside tolerance, 37 of 118 against 24 of 129 at Run, and Run has
-more measurements on the wrong released artifact, 18 of 129 against 9 of 118.
+and land outside tolerance, 37 of 132 against 24 of 136 at Run, and Run has
+more measurements on the wrong released artifact, 18 of 136 against 9 of 132.
 Every agent's lowest reproduction rate and lowest mean score are at
 Reimplement, where no code is released, and 13 of 132 cells reproduce there.
 
@@ -508,8 +508,9 @@ of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 27.
 \label{subsec:mechanisms}
 
 \paragraph{Failure taxonomy.}
-We label every graded run with one of nine primary modes and report the
-distribution by tier in Figure~\ref{fig:failure-modes}. The mode names describe
+We label each run with one of nine primary modes and report the
+distribution over the 400 cells by tier in Figure~\ref{fig:failure-modes}, where
+28 cells carry no label. The mode names describe
 themselves, and Appendix~\ref{app:taxonomy} defines each one. To assign the label we read the run's
 transcript against the mode definitions and write a per-run dissection
 record. Every count in this subsection comes from those records, and every
@@ -521,15 +522,15 @@ and lands short of the bar. The other seven are process failures.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/failure_modes}
-\caption{Primary failure mode by tier over the 372 graded runs, in the order of
+\caption{Primary failure mode by tier over the 400 cells, in the order of
 Appendix~\ref{app:taxonomy}.}
 \label{fig:failure-modes}
 \end{figure}
 
 \paragraph{Where the failures occur.}
 Reimplemented but did not check the result is the most common process
-failure, at 63 of 372 runs, and 38 of those fall at Reimplement. That mode and Wrong experiment account for 62 of the 125 Reimplement-tier
-runs, and the share is similar across agents, from 12 of 30 for Qwen3.6-27B to
+failure, at 63 of the 400 cells, and 38 of those fall at Reimplement. That mode and Wrong experiment account for 62 of the 132 Reimplement-tier
+cells, and the share is similar across agents, from 12 of 33 for Qwen3.6-27B to
 18 of 33 for MiniMax-M2.7. Two modes sit almost entirely at one tier. Echoed
 a shipped number needs released code and does not occur at Reimplement, and
 Never launched an experiment occurs ten times at Reimplement against once at
@@ -548,7 +549,7 @@ it replaced the package with an unvalidated port the auditor disqualified.
 
 \paragraph{What the successful runs do.}
 Most runs that recover the target result run the authors' own entrypoint. The
-dissection records describe it for 58 of the 73,\footnote{Figures~\ref{fig:modes-by-strength} and~\ref{fig:failure-modes} count 72 Reproduced runs because one audited reproduction is labeled Wrong artifact measured (Appendix~\ref{app:taxonomy}).} against 160 of the 299 runs
+dissection records describe it for 58 of the 73,\footnote{Figures~\ref{fig:modes-by-strength} and~\ref{fig:failure-modes} count 72 Reproduced runs because one audited reproduction is labeled Wrong artifact measured (Appendix~\ref{app:taxonomy}).} against 160 of the 299 labeled runs
 that fail. Where they patch released code they disclose the patch and show
 that the graded computation is unchanged, and where the method has to be
 rebuilt they check the rebuilt component against a quantity the paper reports
@@ -615,7 +616,7 @@ evidence in place of the agent's own report. Over four agents and 400
 agent-paper cells, the best reproduction rate falls from 41\% where code, data, and
 weights are released to 15\% where the method must be rebuilt from the paper,
 the agents leave most of their granted compute unspent, and a nine-mode
-labeling of every graded run separates the failures that recede between the two
+labeling of the runs separates the failures that recede between the two
 weakest and the two strongest agents from those that do not. Rebuilding a
 method without checking it against the paper falls when the two strongest
 agents are pooled against the two weakest, and measuring the wrong released

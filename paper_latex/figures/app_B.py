@@ -217,7 +217,7 @@ def name_width(s):
 
 
 def fig_tokens(runs):
-    b = head("tokens per run by agent", "372 graded runs")
+    b = head("tokens per run by agent")
     px, pw, lo, hi = 92, 510, 3.4, 8.0
     ticks = [(1e4, "10k"), (1e5, "100k"), (1e6, "1M"), (1e7, "10M"), (1e8, "100M")]
     b.append(text(X1, 54, "median", 11.5, MUTED, SANS, 600, "end"))

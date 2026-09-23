@@ -14,7 +14,7 @@ import statistics
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from charts import (FAINT, INK, LINE, LINE_STRONG, MID, MODE_COLOR, MUTED,  # noqa: E402
+from charts import (FAINT, INK, LINE, LINE_STRONG, MID, MODE_COLOR, MODE_FILL, MUTED,  # noqa: E402
                     SANS, TRACK, X0, X1, head, line, page, rect, swatch, text)
 
 DATA = pathlib.Path(os.path.expanduser("~/PyCharmProjects/reprocli/tools/anon_viewer/public/data"))
@@ -30,6 +30,7 @@ NAMES = ["Reproduced", "Ran, outside tolerance", "Reimplemented but did not chec
 MODELS = [("dsv4", "DeepSeek-V4-Flash"), ("qwen3", "Qwen3.6-27B"),
           ("minimax", "MiniMax-M2.7"), ("muse", "Muse Spark 1.2")]
 TIERS = [("run", "Run"), ("retrain", "Retrain"), ("reimplement", "Reimplement")]
+CELLS = {"run": 34, "retrain": 33, "reimplement": 33}
 
 
 def load():
@@ -51,12 +52,12 @@ def load():
     return runs
 
 
-def legend(b, y0, pitch=17):
+def legend(b, y0, pitch=17, names=NAMES):
     cols = [X0, 352]
-    for i, name in enumerate(NAMES):
+    for i, name in enumerate(names):
         cx = cols[0] if i < 5 else cols[1]
         y = y0 + (i if i < 5 else i - 5) * pitch
-        b.append(swatch(cx, y - 8, MODE_COLOR[i]))
+        b.append(swatch(cx, y - 8, MODE_FILL[i]))
         b.append(text(cx + 15, y, name, 12, MID))
     return y0 + 5 * pitch
 
@@ -69,12 +70,13 @@ def stacked_bar(b, key, bx, y, bw, bh, counts, total):
     for mi, n in enumerate(counts):
         w = bw * n / total
         if w > 0:
-            b.append(rect(cx, y, w, bh, MODE_COLOR[mi], 0))
+            b.append(rect(cx, y, w, bh, MODE_FILL[mi], 0))
             if cx > bx and w >= 4:
                 b.append(line(cx, y, cx, y + bh, "#FFFFFF", 1))
             s = str(n)
             if w >= 6.4 * len(s) + 10:
-                b.append(text(cx + w / 2, y + bh / 2 + 4.2, s, 11.5, "#FFFFFF", SANS, 600,
+                b.append(text(cx + w / 2, y + bh / 2 + 4.2, s, 11.5,
+                              MID if mi == len(MODE_COLOR) else "#FFFFFF", SANS, 600,
                               "middle"))
         cx += w
     b.append("</g>")
@@ -86,8 +88,8 @@ def fig_agent_tier(runs):
     sees which modes concentrate where. Counts print inside segments wide
     enough to hold them; the row total is at the right."""
     ct = collections.Counter((r["model"], r["tier"], r["mode"]) for r in runs)
-    b = head("primary failure mode by agent and tier", "share of the sweep's graded runs")
-    top = legend(b, 58) + 8
+    b = head("primary failure mode by agent and tier")
+    top = legend(b, 58, names=NAMES + ["No label"]) + 8
     bx, bh, pitch, gap = 236, 16, 22, 12
     bw = X1 - bx - 58
     y = top
@@ -96,12 +98,16 @@ def fig_agent_tier(runs):
             b.append(line(X0, y - gap / 2, X1, y - gap / 2, LINE))
         b.append(text(X0, y + pitch + bh / 2 + 4.5, mname, 12, INK, SANS, 600))
         for ti, (tk, tname) in enumerate(TIERS):
+            # 2026-09-23: each bar is the sweep's cells; cells without a label
+            # (no graded run, or graded after the sweep was labeled) fill the end
             counts = [ct[(mk, tk, s)] for s in SLUGS]
-            total = sum(counts)
+            total = CELLS[tk]
+            counts.append(total - sum(counts))
+            assert counts[-1] >= 0
             ry = y + ti * pitch
             b.append(text(bx - 10, ry + bh / 2 + 4.2, tname, 12, MUTED, SANS, 400, "end"))
             stacked_bar(b, f"{mk}{tk}", bx, ry, bw, bh, counts, total)
-            b.append(text(bx + bw + 8, ry + bh / 2 + 4.2, f"{total} runs", 11.5, MUTED))
+            b.append(text(bx + bw + 8, ry + bh / 2 + 4.2, f"{total} cells", 11.5, MUTED))
         y += 3 * pitch + gap
     page("app_G_agent_tier", b, y - gap + 12)
 
@@ -140,8 +146,7 @@ def fig_exit(runs):
     """Two rug strips per mode, every graded run as one tick: the rounds the
     run used and the share of its H100 grant it had spent when it exited.
     FOCUS_ON = False drops the emphasis on the two early-exit modes."""
-    b = head("rounds used and grant spent at exit, by primary mode",
-             "one tick per run; 372 graded runs")
+    b = head("rounds used and grant spent at exit, by primary mode")
     ky = 56
     b.append(line(X0 + 3, ky - 10, X0 + 3, ky + 1, INK, 1.6))
     b.append(text(X0 + 12, ky, "median of the mode", 12, MID))

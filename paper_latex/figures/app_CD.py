@@ -145,8 +145,7 @@ def fig_flag_kinds():
     assert all(s in ("low", "med", "high") for c in by.values() for s in c), by
     rows = sorted(KIND_NAME, key=lambda kn: (-sum(by[kn[0]].values()), kn[1]))
     n_dq = len({rid for s in zeroed.values() for rid in s})
-    b = head("anti-cheat flags by kind and severity",
-             f"{total} flags on {len(runs)} graded runs")
+    b = head("anti-cheat flags by kind and severity", f"{total} flags")
     ky = 56
     for kx, (sev, c), label in zip((X0, X0 + 70, X0 + 150), SEV,
                                    ("low", "med", "high, zeroes the score")):
@@ -211,8 +210,7 @@ def fig_auditor_effort():
         per[r["audit"]["verdict"]].append(audit_rounds(r["id"]))
     assert set(per) == set(VERDICT_ORDER), set(per)
     assert max(max(v) for v in per.values()) <= CAP
-    b = head("auditor tool rounds per run, by verdict",
-             f"{len(runs)} graded runs; bars scaled within each row")
+    b = head("auditor tool rounds per run, by verdict")
     top, pitch, bar_h = 60, 52, 36
     px, pw = 150, X1 - 150
     binw = pw / CAP
