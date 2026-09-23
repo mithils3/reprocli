@@ -83,8 +83,10 @@ JS = """
     }
   }
 
-  // 4b. clipped nowrap text
+  // 4b. clipped nowrap text (rotated SVG labels report their unrotated scroll
+  // width, so they are skipped here; checks 1 and 3 still see their boxes)
   for (const el of els) {
+    if (el.closest('[transform*="rotate"]')) continue;
     if (!el.childElementCount && el.textContent.trim() &&
         (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 2)) {
       const st = getComputedStyle(el);

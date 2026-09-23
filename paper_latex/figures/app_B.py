@@ -266,68 +266,134 @@ def fig_tokens(runs):
 
 
 # ================================================= fig: cost per run by agent
-# Left: total cost per run (tokens at the provider rate plus GPU time at $2 per
-# H100-hour). Right: token cost over GPU cost per run, with the parity line at
-# 1 (dashed) and, over the runs that have a ratio, a count of those on the token
-# side. One row pitch for all four agents, sized to the densest swarm.
+# Total cost per run (tokens at the provider rate plus GPU time at $2 per
+# H100-hour), one beeswarm row per agent with the median ticked and printed at
+# right. One row pitch for all four agents, sized to the densest swarm.
 def fig_cost(runs):
-    b = head("cost per run by agent",
-             "372 graded runs; tokens at provider rates, GPU time at $2 per H100-hour")
-    lx, lw, llo, lhi = 146, 156, -2.0, 2.0
-    rx, rw, rlo, rhi = 346, 250, -3.0, 2.0
-    hy, top = 62, 72
+    b = head("cost per run by agent")
+    lx, lw, llo, lhi = 146, 440, -2.0, 2.0
+    top = 58
     rows = []
     for key, name in AGENTS:
         rs = [r for r in runs if r["model"] == key]
-        tok = [token_cost(r) for r in rs]
-        gpu = [r["spent_h100"] * GPU for r in rs]
-        total = [a + g for a, g in zip(tok, gpu)]
-        ratio = [a / g for a, g in zip(tok, gpu) if g > 0]
-        omitted = [r for r, g in zip(rs, gpu) if g == 0]
+        total = [token_cost(r) + r["spent_h100"] * GPU for r in rs]
+        assert 10 ** llo < min(total) and max(total) < 10 ** lhi, (name, min(total), max(total))
         lxs = positions(lx, lw, llo, lhi, total)
-        rxs = positions(rx, rw, rlo, rhi, ratio)
-        rows.append((name, rs, total, ratio, omitted, lxs, rxs, max(band(lxs), band(rxs))))
+        rows.append((name, total, lxs, band(lxs)))
     half = max(row[-1] for row in rows)
     pitch = 2 * half + 2 * R + CLEAR
     bottom = top + 4 * pitch
-    b.append(text(lx, hy, "total cost per run", 12, INK, SANS, 600))
-    b.append(text(rx, hy, "token cost over GPU cost", 12, INK, SANS, 600))
-    b.append(text(X1, hy, "tokens cost more", 11.5, MUTED, SANS, 600, "end"))
+    b.append(text(X1, top - 6, "median", 11.5, MUTED, SANS, 600, "end"))
     grid = []
     log_axis(grid, lx, lw, llo, lhi, top - 2, bottom,
-             [(0.01, "$0.01"), (0.1, "$0.10"), (1, "$1"), (10, "$10"), (100, "$100")], "")
-    log_axis(grid, rx, rw, rlo, rhi, top - 2, bottom,
-             [(0.001, "0.001"), (0.01, "0.01"), (0.1, "0.1"), (1, "1"), (10, "10"),
-              (100, "100")], "")
-    xp = rx + rw * (0 - rlo) / (rhi - rlo)
-    grid.append(line(xp, top - 2, xp, bottom, LINE_STRONG, 1.2, "4 3"))
+             [(0.01, "$0.01"), (0.1, "$0.10"), (1, "$1"), (10, "$10"), (100, "$100")],
+             "dollars per run, log scale")
     b[1:1] = grid
-    skipped = []
-    for i, (name, rs, total, ratio, omitted, lxs, rxs, _) in enumerate(rows):
-        c = AGENT_COLOR[name]
+    for i, (name, total, lxs, _) in enumerate(rows):
         cy = top + i * pitch + pitch / 2
         b.append(text(X0, cy + 4, name, 12, INK, SANS, 600))
-        strip(b, lxs, cy, c, half, positions(lx, lw, llo, lhi, [median(total)])[0])
-        strip(b, rxs, cy, c, half, positions(rx, rw, rlo, rhi, [median(ratio)])[0])
-        over = sum(v > 1 for v in ratio)
-        b.append(text(X1, cy + 4, f"{over} of {len(ratio)}", 11.5, INK, SANS, 600, "end",
+        strip(b, lxs, cy, AGENT_COLOR[name], half, positions(lx, lw, llo, lhi, [median(total)])[0])
+        b.append(text(X1, cy + 4, f"${median(total):.2f}", 11.5, INK, SANS, 600, "end",
                       tnum=True))
-        skipped += [(name, r["arxiv_id"]) for r in omitted]
-    # axis titles sit 33px under the axis, the log_axis offset, so the tick row
-    # keeps 4px of clearance in both figures
-    b.append(text(lx + lw / 2, bottom + 33, "dollars per run, log scale", 11.5, MUTED, SANS,
-                  400, "middle"))
-    b.append(text(rx, bottom + 33, "GPU side", 11.5, MUTED))
-    b.append(text(rx + rw, bottom + 33, "token side", 11.5, MUTED, SANS, 400, "end"))
-    assert skipped == [("MiniMax-M2.7", "2505.18809")], skipped
-    b.append(text(X0, bottom + 53,
-                  f"one {skipped[0][0]} run ({skipped[0][1]}) spent no GPU time, so it "
-                  "has a total cost at left and no ratio or count at right", 11.5, FAINT))
     print(f"app_B_cost: closest dot centers {check_marks():.2f}px, row pitch {pitch:.1f}px")
-    page("app_B_cost", b, math.ceil(bottom + 65))
+    page("app_B_cost", b, math.ceil(bottom + 44))
 
 
-CHARTS = {"app_B_tokens": fig_tokens, "app_B_cost": fig_cost}
+# ======================================== fig: token cost against GPU cost
+# One log-log scatter per agent, one dot per run, GPU cost across and token
+# cost up on the same four decades, so the dashed diagonal is equal cost and
+# the shaded half above it is where tokens cost more. The other agents' runs
+# sit underneath in gray for comparison. Runs with no GPU time have no place
+# on a log axis and are named in the note.
+SHADE_OPACITY = 1.0     # the dial: 1 loud, 0.5 quiet, 0 drops the shaded half
+CONTEXT_OPACITY = 0.55  # the dial: 0.55 loud, 0.3 quiet, 0 drops the gray runs
+SHADE = "#F3EFE4"
+CONTEXT = "#B9B3A3"
+
+
+def text_width(s, size, weight=600):
+    from PIL import ImageFont
+    font = {400: "Inter-Regular", 600: "Inter-SemiBold"}[weight]
+    return ImageFont.truetype(str(FIGS / f"fonts/ttf/{font}.ttf"), size).getlength(s)
+
+
+def fig_split(runs):
+    b = head("token cost and GPU cost per run")
+    px0, gap, S, H = 76, 36, 269, 160
+    lo, hi = -2.0, 2.0
+    ticks = [(0.01, "$0.01"), (0.1, "$0.10"), (1, "$1"), (10, "$10"), (100, "$100")]
+    pts, skipped = {}, []
+    for key, name in AGENTS:
+        rs = [r for r in runs if r["model"] == key]
+        pts[name] = [(token_cost(r), r["spent_h100"] * GPU) for r in rs if r["spent_h100"] > 0]
+        skipped += [(name, r["arxiv_id"]) for r in rs if r["spent_h100"] == 0]
+        for t, g in pts[name]:
+            assert 10 ** lo < min(t, g) and max(t, g) < 10 ** hi, (name, t, g)
+    assert skipped == [("MiniMax-M2.7", "2505.18809")], skipped
+
+    def X(px, v):
+        return px + S * (math.log10(v) - lo) / (hi - lo)
+
+    def Y(bot, v):
+        return bot - H * (math.log10(v) - lo) / (hi - lo)
+
+    tops = [68, 68 + H + 38]
+    for i, (key, name) in enumerate(AGENTS):
+        px, top = px0 + (i % 2) * (S + gap), tops[i // 2]
+        bot = top + H
+        c = AGENT_COLOR[name]
+        if SHADE_OPACITY > 0:
+            b.append(f'<polygon points="{px},{bot} {px},{top} {px + S},{top}" fill="{SHADE}" '
+                     f'fill-opacity="{SHADE_OPACITY}"/>')
+        for v, _ in ticks:
+            b.append(line(X(px, v), top, X(px, v), bot, TRACK))
+            b.append(line(px, Y(bot, v), px + S, Y(bot, v), TRACK))
+        b.append(line(px, bot + 0.5, px + S, bot + 0.5, LINE))
+        b.append(line(px, bot, px + S, top, LINE_STRONG, 1.2, "4 3"))
+        if CONTEXT_OPACITY > 0:
+            for other, ps in pts.items():
+                if other != name:
+                    b += [f'<circle cx="{X(px, g):.2f}" cy="{Y(bot, t):.2f}" r="1.5" '
+                          f'fill="{CONTEXT}" fill-opacity="{CONTEXT_OPACITY}"/>' for t, g in ps]
+        b += [f'<circle cx="{X(px, g):.2f}" cy="{Y(bot, t):.2f}" r="2.2" fill="{c}" '
+              f'stroke="#FFFFFF" stroke-width="0.6"/>' for t, g in pts[name]]
+        over = sum(t > g for t, g in pts[name])
+        b.append(text(px, top - 8, name, 12, c, SANS, 600))
+        # the count sits in the shaded half it counts; the first panel also
+        # names the other half, in its empty lower corner
+        lead = "tokens cost more on "
+        keys = [(lead, px + 8, top + 16, "start", MUTED, 400),
+                (f"{over} of {len(pts[name])}", px + 8 + text_width(lead, 11.5, 400),
+                 top + 16, "start", INK, 600)]
+        if i == 0:
+            keys.append(("GPU costs more", px + S - 8, bot - 6, "end", MUTED, 400))
+        for s, x, y, anchor, fill, weight in keys:
+            w = text_width(s, 11.5, weight)
+            x0 = x if anchor == "start" else x - w
+            for other in pts.values():
+                for t, g in other:
+                    assert not (x0 - 3 < X(px, g) < x0 + w + 3 and
+                                y - 12 < Y(bot, t) < y + 4), (name, s, t, g)
+            b.append(text(x, y, s, 11.5, fill, SANS, weight, anchor))
+        if i % 2 == 0:
+            for v, s in ticks:
+                b.append(text(px - 7, Y(bot, v) + 4, s, 11.5, FAINT, SANS, 400, "end"))
+        if i // 2 == 1:
+            for v, s in ticks:
+                b.append(text(X(px, v), bot + 18, s, 11.5, FAINT, SANS, 400, "middle"))
+    bottom = tops[1] + H
+    mid = (tops[0] + bottom) / 2
+    b.append(f'<g transform="rotate(-90 {X0 + 9:.1f} {mid:.1f})">'
+             + text(X0 + 9, mid, "token cost per run, log scale", 11.5, MUTED, SANS, 400,
+                    "middle") + "</g>")
+    b.append(text(px0 + S + gap / 2, bottom + 36, "GPU cost per run, log scale", 11.5, MUTED,
+                  SANS, 400, "middle"))
+    b.append(text(X0, bottom + 56, f"one {skipped[0][0]} run ({skipped[0][1]}) spent no GPU "
+                  "time and is not shown", 11.5, FAINT))
+    page("app_B_split", b, math.ceil(bottom + 68))
+
+
+CHARTS = {"app_B_tokens": fig_tokens, "app_B_cost": fig_cost, "app_B_split": fig_split}
 
 if __name__ == "__main__":
     check_rates()

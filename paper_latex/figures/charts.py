@@ -184,7 +184,7 @@ def fig_results():
     """Two grouped-bar panels, reproduction rate and mean audit score, one
     row per agent and one bar per tier, plus a strip for the share of the
     grant spent. The exact values are in the appendix results table."""
-    b = head("every agent scores lowest at Reimplement", "400 agent-paper cells")
+    b = head("every agent scores lowest at Reimplement")
     ky = 56
     for x, tier, c in zip((X0, X0 + 60, X0 + 140), TIERS, TIER_COLOR):
         b.append(swatch(x, ky - 8, c))
