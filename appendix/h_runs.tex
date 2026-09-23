@@ -116,7 +116,7 @@ rounds 10 and 24 the agent found the decoder constructed without the
 argument, as Figure~\ref{fig:app-h1-zoom-3} shows, so the released command
 trains at its 0.5 default and raises no
 error, and the five seeds after the round-31 fix (Figure~\ref{fig:card-muse-retrain-2510.23577}) gave 98.88 to 98.92. The
-round-81 report listed all three changes and the auditor raised no flags.
+round-81 report listed every change and the auditor raised no flags.
 Muse Spark 1.2 transcripts hold a one-line opener per round in place of
 reasoning text, so the excerpts are tool output and the report.
 \FloatBarrier  % each vignette keeps its card and panel
@@ -221,7 +221,8 @@ redirected, completing both training stages and the five-temperature
 inference in 0.84 H100-hours, and round 12, shown in Figures~\ref{fig:card-minimax-retrain-2510.24940} and~\ref{fig:app-h1-zoom-7}, read 39 percent at two
 temperatures before choosing to report it as measured. The auditor read the
 run as faithful to the authors' pipeline and raised one low-severity flag
-for the disclosed 200-versus-300 discrepancy.
+for the disclosed evaluation set, 200 SVAMP examples in the authors' bundled
+file against the 300 the paper states.
 
 \begin{figure}[tb]
 \centering
@@ -284,14 +285,14 @@ measured slot.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_9}
-\caption{Run card for MiniMax-M2.7 on Neural Block Linearization (NBL) (arXiv~2505.21077) at the Retrain tier, with the decisive round 99 in gold.}
+\caption{Run card for MiniMax-M2.7 on Neural Block Linearization (arXiv~2505.21077) at the Retrain tier, with the decisive round 99 in gold.}
 \label{fig:card-minimax-retrain-2505.21077}
 \end{figure}
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_H1_zoom_9}
-\caption{Round 96 of MiniMax-M2.7 on Neural Block Linearization (NBL) (arXiv~2505.21077), the layer-skip benchmark, and the decisive round 99 with the file the agent wrote.}
+\caption{Round 96 of MiniMax-M2.7 on Neural Block Linearization (arXiv~2505.21077), the layer-skip benchmark, and the decisive round 99 with the file the agent wrote.}
 \label{fig:app-h1-zoom-9}
 \end{figure}
 \FloatBarrier  % each vignette keeps its card and panel

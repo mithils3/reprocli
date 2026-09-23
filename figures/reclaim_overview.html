@@ -117,6 +117,14 @@ body { width: 980px; font-family: 'InterF', sans-serif; font-size: var(--S); bac
 .ln.e::before { background: var(--red); }
 .ln.g::before { width: 11px; height: 11px; }
 .ln.pl::after, .ln.e::after, .ln.g::after { display: none; }
+.ln.th::before { background: var(--navy); }
+.ln.o::before { width: 8px; height: 8px; background: #B5BBC4; }
+.ln.o::after { width: 4px; height: 4px; }
+.th { font-family: 'InterF', sans-serif; font-style: italic; color: var(--navy); }
+.out { color: var(--gray); padding-left: 9px; }
+.ln.wr { white-space: normal; align-items: flex-start; }
+.ln.wr::before, .ln.wr::after { top: 11px; }
+.ln.wr > span { flex: 1 1 auto; min-width: 0; white-space: normal; }
 .phase { display: flex; align-items: center; gap: 6px; margin: 3px 0 0 -21px; }
 .phase .pt { font-family: 'InterF', sans-serif; font-weight: 600; letter-spacing: 1.1px; line-height: 19px; color: #8A919C; white-space: nowrap; background: #F7F6F3; position: relative; z-index: 1; padding: 0 4px 0 2px; }
 .phase .pr { flex: 1; height: 1px; background: #E0E3E8; }
@@ -157,6 +165,8 @@ body { width: 980px; font-family: 'InterF', sans-serif; font-size: var(--S); bac
 .v-audit { background: var(--red); border: 1.2px solid var(--red); flex-direction: column; align-items: flex-start; gap: 0; }
 .v-audit .val { color: #fff; }
 .v-audit .lab { color: #F6DEDA; }
+.v-audit.partial { background: #B8740C; border-color: #B8740C; }
+.v-audit.partial .lab { color: #FBEBD2; }
 .stamp-img { position: absolute; right: 10px; top: 12px; width: 30px; height: 30px; transform: rotate(-12deg); }
 .gap-note { font-style: italic; color: var(--gray); margin-top: 6px; line-height: 20px; }
 
@@ -180,18 +190,19 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
         <div class="stack1"></div><div class="stack2"></div>
 
         <div class="card paper-card">
-          <img class="page" src="icons/pg-01.png">
+          <img class="page" src="icons/pg-ttpl.png">
           <div>
-            <div class="paper-title">CQ-DINO</div>
-            <div class="paper-venue">NeurIPS 2025<br>arXiv 2503.18430</div>
+            <div class="paper-title">TTPL</div>
+            <div class="paper-venue">NeurIPS 2025<br>arXiv 2506.02392</div>
           </div>
         </div>
 
         <div class="card">
           <div class="card-hdr"><img src="icons/target.png"><span class="t">Match target</span></div>
           <div class="spec">
-            <span class="k">target</span>AP 46.3 &plusmn;5%<br>
-            <span class="k">scope</span>V3Det val
+            <span class="k">metric</span>gap (%)<br>
+            <span class="k">target</span>3.25% &plusmn;5%<br>
+            <span class="k">scope</span>TSP5K test
           </div>
         </div>
 
@@ -216,7 +227,7 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
         <div class="agent-bar">
           <img class="robot" src="icons/robot.png">
           <span class="t">Reproduction agent</span>
-          <span class="model-chip">DeepSeek-V4-Flash</span>
+          <span class="model-chip">Qwen3.6-27B</span>
           <div class="tool-chips">
             <span class="tool">workspace_bash</span>
             <span class="tool hot"><img src="icons/gpu.png">run_gpu</span>
@@ -230,27 +241,25 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
             <span class="dot" style="background:#DF7065;"></span>
             <span class="dot" style="background:#EEC252;"></span>
             <span class="dot" style="background:#6BB770;"></span>
-            <span class="title">107 rounds &middot; 6.0 of 8 H100-h</span>
+            <span class="title">44 rounds &middot; 0.4 of 8 H100-h</span>
           </div>
           <div class="term-body">
-            <div class="phase"><span class="pt">PLAN &amp; FETCH &middot; r0&ndash;11</span><span class="pr"></span></div>
-            <div class="ln pl"><span class="plan">[plan]</span><span class="cmd">46.3% AP on V3Det validation&hellip;</span></div>
-            <div class="ln"><span class="p">$</span><span class="cmd">gdown &hellip;</span><span class="cm"># released checkpoint</span></div>
-            <div class="phase"><span class="pt">BUILD &middot; r12&ndash;47</span><span class="pr"></span></div>
-            <div class="ln e"><span class="err">mmcv/_ext&hellip;so: undefined symbol: &hellip;</span></div>
-            <div class="ln"><span class="p">$</span><span class="cmd">FORCE_CUDA=1 &hellip;mmcv_src/mmcv-2.2.0 &hellip;</span></div>
-            <div class="phase"><span class="pt">PATCH &amp; EVAL &middot; r48&ndash;64</span><span class="pr"></span></div>
-            <div class="ln g"><span class="p">$</span><span class="cmd">&hellip;/test.py &hellip;</span><span class="cm"># 29,821 images</span><span class="gpu">GPU</span></div>
-            <div class="ln e"><span class="err">&hellip;task 0: Out Of Memory</span></div>
-            <div class="phase"><span class="pt">DEBUG &amp; RESCUE &middot; r65&ndash;90</span><span class="pr"></span></div>
-            <div class="ln"><span class="p">$</span><span class="cmd">cp /tmp/&hellip;/results.bbox.json &hellip;</span></div>
-            <div class="phase"><span class="pt">SCORE &amp; VERIFY &middot; r91&ndash;99</span><span class="pr"></span></div>
-            <div class="ln g"><span class="p">$</span><span class="cmd">&hellip;chunked_coco_eval.py --full &hellip;</span><span class="gpu">GPU</span></div>
-            <div class="phase"><span class="pt">REPORT &middot; r100&ndash;106</span><span class="pr"></span></div>
+            <div class="phase"><span class="pt">PLAN &amp; FETCH &middot; r0&ndash;30</span><span class="pr"></span></div>
+            <div class="ln pl"><span class="plan">[plan]</span><span class="cmd">optimality gap (%) = 3.25%&hellip;</span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">gdown &hellip;drive.google.com/uc?id=&hellip;</span><span class="gpu">GPU</span></div>
+            <div class="phase"><span class="pt">EVAL &middot; r31&ndash;34</span><span class="pr"></span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">test_tsp.py &hellip;5000 &hellip;--MVDF True</span><span class="gpu">GPU</span></div>
+            <div class="ln o"><span class="out">Gap: 2.8574%</span></div>
+            <div class="ln g"><span class="p">$</span><span class="cmd">test_tsp.py &hellip;5000 &hellip;--MVDF False</span><span class="gpu">GPU</span></div>
+            <div class="ln o"><span class="out">Gap: 2.8574%</span><span class="cm"># identical number</span></div>
+            <div class="phase"><span class="pt">DEBUG &middot; r35&ndash;37</span><span class="pr"></span></div>
+            <div class="ln th"><span class="th">&hellip;`type=bool` converts any string to True</span></div>
+            <div class="ln th wr"><span class="th">&hellip;TTPL projection WITHOUT MVDF, which is exactly what I'm running</span></div>
+            <div class="phase"><span class="pt">REPORT &middot; r38&ndash;43</span><span class="pr"></span></div>
             <div class="ln"><span class="p">$</span><span class="cmd">write_file &hellip;/evidence/REPORT.md</span></div>
           </div>
         </div>
-        <div class="result"><span class="num">bbox_mAP 0.463 0.515 0.484</span><br><span class="match">= paper&rsquo;s 46.3 / 51.5 / 48.4 &#10003;</span></div>
+        <div class="result"><span class="num">Gap: 2.8574%</span><br><span class="match">= paper&rsquo;s TTPL-MVDF row, 2.86% &#10003;</span></div>
       </div>
 
       <!-- 3 report and 4 audit -->
@@ -271,12 +280,12 @@ svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
           <div class="audit-card">
             <img class="stamp-img" src="icons/stamp.png">
             <div class="audit-hdr"><img src="icons/detective.png"><span class="t">Adversarial audit</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="check"><path d="M1.5 6.5L4.6 9.4L10.5 2.8" stroke="#3C8252" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><span>metric recomputed from raw predictions</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>row is the 24-epoch training run</span></div>
-            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>agent evaluated the released checkpoint</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="check"><path d="M1.5 6.5L4.6 9.4L10.5 2.8" stroke="#3C8252" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><span>authors&rsquo; pipeline ran on the released checkpoint</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>type=bool kept MVDF on in both runs</span></div>
+            <div class="check"><span class="g"><svg width="12" height="12" viewBox="0 0 12 12" aria-label="cross"><path d="M2.2 2.2L9.8 9.8M9.8 2.2L2.2 9.8" stroke="#C2483B" stroke-width="1.9" stroke-linecap="round" fill="none"/></svg></span><span>pinned row is MVDF off, 3.25%</span></div>
             <div class="verdicts">
-              <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">AP 46.3 &#10003;</div></div>
-              <div class="verdict v-audit"><div class="lab">THE AUDIT FINDS</div><div class="val">not reproduced</div></div>
+              <div class="verdict v-claim"><div class="lab">THE RUN CLAIMS</div><div class="val">2.86% &#10003;</div></div>
+              <div class="verdict v-audit partial"><div class="lab">THE AUDIT FINDS</div><div class="val">partial, score 6</div></div>
             </div>
             <div class="gap-note">RECLAIM scores the audited verdict</div>
           </div>
