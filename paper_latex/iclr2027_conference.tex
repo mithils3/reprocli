@@ -154,6 +154,15 @@ example run with DeepSeek-V4-Flash on the CQ-DINO paper~\citep{sun2025cqdino}.}
 \label{fig:overview}
 \end{figure}
 
+\begin{figure}[b]
+\centering
+\includegraphics[width=\textwidth]{figures/modes_by_strength}
+\caption{Failure counts for the two weakest and two strongest agents, with the change
+in each mode's share of graded runs in percentage points. The top four become
+rarer with stronger agents.}
+\label{fig:modes-by-strength}
+\end{figure}
+
 
 \section{Related Work}
 \label{sec:related-work}
@@ -176,15 +185,6 @@ agents are observed to stop early. \citet{adamczewski2026mirrorcode} report
 that 97.4\% of MirrorCode runs submitted before using half the token budget and
 that agents submit once the visible tests pass, and we report similar early
 stopping in Section~\ref{subsec:results}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/modes_by_strength}
-\caption{Failure counts for the two weakest and two strongest agents, with the change
-in each mode's share of graded runs in percentage points. The top four become
-rarer with stronger agents.}
-\label{fig:modes-by-strength}
-\end{figure}
 
 \paragraph{ML engineering and experimentation.}
 A second family targets the machine-learning workflow itself, from model
