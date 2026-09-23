@@ -122,16 +122,17 @@ retrieved benchmark answer the graded value runs through. &
 \end{longtable}
 }
 
-Figure~\ref{fig:score-dist} shows how the 372 graded runs fall across the scale.
-The distribution has a mode at 4 with 72 runs, where a run executes something
+Figure~\ref{fig:score-dist} shows how the 400 cells fall across the scale, with
+the 25 cells that have no graded run counted at 0. Among graded runs the
+distribution has a mode at 4 with 72 runs, where a run executes something
 the auditor can grade and lands well short of the bar, and a second at 6 with 60
 runs, where the right quantity ran with sound provenance and the result clearly
-misses the bar. Two smaller peaks of nearly equal height sit at 0 and 8, the 53 runs an
-integrity flag zeroed and the 52 runs the auditor accepted as reproductions with minor caveats.
+misses the bar. Two smaller peaks of nearly equal height sit at 0 and 8, the 55 runs the
+auditor zeroed for an integrity break and the 52 runs the auditor accepted as reproductions with minor caveats.
 Figure~\ref{fig:app-cd-flag-kinds} shows the flags the auditor raised, by kind
 and severity.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/score_distribution}
 \caption{Audit scores, colored by the verdict bands of Table~\ref{tab:rubric}.}
@@ -141,7 +142,7 @@ and severity.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_flag_kinds}
-\caption{Anti-cheat flags the auditor raised over the 372 graded runs, by kind
+\caption{Anti-cheat flags the auditor raised, by kind
 and severity, with the runs each kind disqualified through a high-severity
 flag.}
 \label{fig:app-cd-flag-kinds}
@@ -157,7 +158,7 @@ Figure~\ref{fig:app-cd-verdict-flow} shows the derivation code of
 Figure~\ref{lst:audit-finalizer} as a flow from the
 auditor's report to the verdict of record.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/app_CD_verdict_flow}
 \caption{The verdict derivation of the code in Figure~\ref{lst:audit-finalizer}. The integrity checks run

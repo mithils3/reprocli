@@ -45,8 +45,9 @@ Wrong experiment & 9 & 11 & 16 & 10 & 46 \\
 Echoed a shipped number & 1 & 1 & 4 & 3 & 9 \\
 Never launched an experiment & 2 & 2 & 4 & 5 & 13 \\
 Failed before any number was produced & 2 & 19 & 6 & 4 & 31 \\
+No label & 13 & 10 & 2 & 3 & 28 \\
 \midrule
-Graded runs & 87 & 90 & 98 & 97 & 372 \\
+Cells & 100 & 100 & 100 & 100 & 400 \\
 \bottomrule
 \end{tabular}
 \caption{Primary failure mode by agent.}
@@ -169,8 +170,8 @@ mode and widths in runs.}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/app_G_agent_tier}
-\caption{Primary failure mode by agent and tier over the 372 graded runs, each
-bar normalized to its sweep's run count, in the order and colors of
+\caption{Primary failure mode by agent and tier over the 400 cells, each
+bar normalized to its sweep's cells, in the order and colors of
 Figure~\ref{fig:failure-modes}.}
 \label{fig:app-g-agent-tier}
 \end{figure}
@@ -203,13 +204,13 @@ The EAP method shows the largest gap and is the cleanest to implement (single fo
 
 Neither arm had released code, so both needed a port, and the agent chose
 the easier one. Figure~\ref{fig:app-g-exit-by-mode} shows the rounds used and
-the share of the grant spent at exit for every graded run by mode.
+the share of the grant spent at exit for every labeled run by mode.
 
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{figures/app_G_exit_by_mode}
 \caption{Rounds used and share of the H100 grant spent at exit, one tick per
-graded run, with each mode's median as a tick. Never launched an experiment
+labeled run, with each mode's median as a tick. Never launched an experiment
 and Echoed a shipped number exit earliest.}
 \label{fig:app-g-exit-by-mode}
 \end{figure}

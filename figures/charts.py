@@ -26,6 +26,7 @@ MAGENTA = "#B23E90"  # never launched
 SLATE = "#5F6B7A"    # failed before any number
 
 MODE_COLOR = [GREEN, AMBER, ROSE, TEAL, VIOLET, CLAY, BLUE, MAGENTA, SLATE]
+NOLABEL = "#D3CDBD"  # the 28 cells without a mode label, and the 25 without a grade
 
 AGENT_COLOR = {
     "DeepSeek-V4-Flash": BLUE,
@@ -219,7 +220,9 @@ def fig_results():
 
 # ============================================== fig: failure modes by tier
 # numbers of record (2026-09-05): ~/sweeps/paper-table-2026-09-05/
-# resolved_modes.json; rows in the order of Appendix G.
+# resolved_modes.json; rows in the order of Appendix G. 2026-09-23: totals are
+# the 400 cells, and the 28 cells without a label (25 without a graded run, 3
+# graded after their sweep was labeled) fill a light "No label" segment.
 MODES = [
     ("Reproduced", 30, 29, 13, 72),
     ("Ran, outside tolerance", 24, 37, 15, 76),
@@ -230,22 +233,25 @@ MODES = [
     ("Echoed a shipped number", 7, 2, 0, 9),
     ("Never launched an experiment", 1, 2, 10, 13),
     ("Failed before any number was produced", 14, 8, 9, 31),
+    ("No label", 7, 14, 7, 28),
 ]
-STACKS = [("Run", 1, 129), ("Retrain", 2, 118), ("Reimplement", 3, 125),
-          ("All agents", 4, 372)]
+STACKS = [("Run", 1, 136), ("Retrain", 2, 132), ("Reimplement", 3, 132),
+          ("All agents", 4, 400)]
+assert all(sum(m[i] for m in MODES) == t for _, i, t in STACKS)
+MODE_FILL = MODE_COLOR + [NOLABEL]
 
 
 def fig_modes():
     """A legend that doubles as the all-tier count table, then one stacked
     bar per tier with the count printed inside every segment wide enough to
     hold it, and an all-agents bar ruled off below."""
-    b = head("primary failure mode by tier", "one primary mode per run; 372 graded runs")
+    b = head("primary failure mode by tier")
     cols = [(X0, 330), (352, X1)]
     ly, lp = 58, 17
     for i, mode in enumerate(MODES):
         cx, cend = cols[0] if i < 5 else cols[1]
         y = ly + (i if i < 5 else i - 5) * lp
-        b.append(swatch(cx, y - 8, MODE_COLOR[i]))
+        b.append(swatch(cx, y - 8, MODE_FILL[i]))
         b.append(text(cx + 15, y, mode[0], 12, MID))
         b.append(text(cend, y, str(mode[4]), 12, INK, SANS, 600, "end", tnum=True))
 
@@ -264,16 +270,17 @@ def fig_modes():
         for mi, mode in enumerate(MODES):
             w = bw * mode[idx] / total
             if w > 0:
-                b.append(rect(cx, y, w, bh, MODE_COLOR[mi], 0))
+                b.append(rect(cx, y, w, bh, MODE_FILL[mi], 0))
                 if cx > bx and w >= 4:
                     b.append(line(cx, y, cx, y + bh, "#FFFFFF", 1))
                 s = str(mode[idx])
                 if w >= 6.4 * len(s) + 8:
-                    b.append(text(cx + w / 2, y + 13, s, 11.5, "#FFFFFF", SANS, 600,
+                    b.append(text(cx + w / 2, y + 13, s, 11.5,
+                                  MID if MODE_FILL[mi] == NOLABEL else "#FFFFFF", SANS, 600,
                                   "middle"))
             cx += w
         b.append("</g>")
-        b.append(text(bx + bw + 8, y + 13, f"{total} runs", 12, MUTED))
+        b.append(text(bx + bw + 8, y + 13, f"{total} cells", 12, MUTED))
 
     page("failure_modes", b, top + 3 * pitch + 8 + bh + 20)
 
@@ -354,8 +361,13 @@ def fig_compute():
 
 # ================================================== fig: score distribution
 # numbers of record: audit.score over the 372 runs of
-# tools/anon_viewer/public/data/index.json, read 2026-09-07.
-HIST = [53, 10, 47, 17, 72, 14, 60, 26, 52, 16, 5]
+# tools/anon_viewer/public/data/index.json, read 2026-09-07, plus the pinned
+# grades 0, 2, and 0 of the three cells graded after their sweep was labeled
+# (2026-09-10 table of the 28 cells, reprocli 876194d^); the other 25 cells
+# have no graded run and count as 0 (2026-09-23: the chart covers all 400 cells).
+HIST = [55, 10, 48, 17, 72, 14, 60, 26, 52, 16, 5]
+NOGRADE = 25
+assert sum(HIST) + NOGRADE == 400
 HIST_KEY = [("disqualified (0)", ROSE), ("not reproduced or unverifiable (1 to 5)", SLATE),
             ("partial (6 to 7)", AMBER), ("reproduced (8 to 10)", GREEN)]
 
@@ -369,17 +381,26 @@ def score_color(s):
 
 
 def fig_scores():
-    b = head("score distribution", "372 graded runs")
+    b = head("score distribution")
     for kx, (name, color) in zip(KEY_X, HIST_KEY):
         b.append(swatch(kx, 48, color))
         b.append(text(kx + 15, 56, name, 12, MID))
     top, ph, colw, gapw = 84, 110, 44, 12
     hx = X0 + ((X1 - X0) - (11 * colw + 10 * gapw)) / 2
-    ymax = max(HIST)
+    ymax = HIST[0] + NOGRADE
     for s, n in enumerate(HIST):
         x = hx + s * (colw + gapw)
         hgt = ph * n / ymax
         b.append(rect(x, top + ph - hgt, colw, hgt, score_color(s), 0))
+        if s == 0:
+            g = ph * NOGRADE / ymax
+            b.append(rect(x, top + ph - hgt - g, colw, g, NOLABEL, 0))
+            b.append(line(x, top + ph - hgt, x + colw, top + ph - hgt, "#FFFFFF", 1))
+            # the gray segment is labeled in place, clear of bars 1 to 3 and their counts
+            b.append(text(x + colw + 6, top + ph - hgt - g / 2 + 4, "no graded run, counted as 0",
+                          11.5, MUTED))
+            hgt += g
+            n += NOGRADE
         b.append(text(x + colw / 2, top + ph - hgt - 6, str(n), 11.5, INK, SANS, 600,
                       "middle"))
         b.append(text(x + colw / 2, top + ph + 16, str(s), 12, INK, SANS, 600, "middle"))
@@ -391,9 +412,10 @@ def fig_scores():
 
 # ==================================== fig: failure modes by agent strength
 # numbers of record: tab:failure-modes-by-agent (Appendix G), pooled as the two
-# weakest agents by mean audit score (Qwen3.6-27B + MiniMax-M2.7, 188 graded
-# runs, 23 labeled Reproduced) and the two strongest (DeepSeek-V4-Flash + Muse
-# Spark 1.2, 184 graded runs, 49 labeled Reproduced).
+# weakest agents by mean audit score (Qwen3.6-27B + MiniMax-M2.7, 200 cells,
+# 23 labeled Reproduced, 12 without a label) and the two strongest
+# (DeepSeek-V4-Flash + Muse Spark 1.2, 200 cells, 49 labeled Reproduced, 16
+# without a label). 2026-09-23: shares are over each pair's 200 cells.
 # (mode, MODES index, weakest pair, strongest pair), sorted by the change in the
 # mode's share of graded runs; the first four fall, the last four do not.
 STRENGTH = [
@@ -405,9 +427,10 @@ STRENGTH = [
     ("Never launched an experiment", 7, 6, 7),
     ("Wrong artifact measured", 4, 17, 21),
     ("Ran, outside tolerance", 1, 23, 53),
+    ("No label", 9, 12, 16),
 ]
-PAIRS = [("two weakest agents", "Qwen3.6-27B, MiniMax-M2.7", 188),
-         ("two strongest agents", "DeepSeek-V4-Flash, Muse Spark 1.2", 184)]
+PAIRS = [("two weakest agents", "Qwen3.6-27B, MiniMax-M2.7", 200),
+         ("two strongest agents", "DeepSeek-V4-Flash, Muse Spark 1.2", 200)]
 
 
 def fig_strength():
@@ -439,7 +462,7 @@ def fig_strength():
         b.append(text(X0, cy + 4, mode, 12, MID))
         for px, n, total in zip(pxs, (weak, strong), totals):
             w = pw * (100 * n / total) / vmax
-            b.append(rect(px, cy - bh / 2, w, bh, MODE_COLOR[mi], 2))
+            b.append(rect(px, cy - bh / 2, w, bh, MODE_FILL[mi], 2))
             b.append(text(px + w + 6, cy + 4, str(n), 11.5, INK, SANS, 600))
         b.append(text(dx, cy + 4, delta(weak, strong), 11.5, INK, SANS, 600, "end", tnum=True))
         y += pitch
@@ -449,7 +472,7 @@ def fig_strength():
     y += 7
     cy = y + pitch / 2
     tw, ts = sum(r[2] for r in STRENGTH), sum(r[3] for r in STRENGTH)
-    assert (tw, ts) == (188 - 23, 184 - 49)
+    assert (tw, ts) == (200 - 23, 200 - 49)
     b.append(text(X0, cy + 4, "All runs that did not reproduce", 12, INK, SANS, 600))
     for px, n in zip(pxs, (tw, ts)):
         b.append(text(px, cy + 4, str(n), 11.5, INK, SANS, 600))
