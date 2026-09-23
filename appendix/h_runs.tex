@@ -27,6 +27,22 @@ the run being fixed or lost, set in gold. Round numbers are the transcript's
 own, so a tool result is cited at the round it returned, and
 Figure~\ref{fig:run-timelines} places the ten on one round axis.
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\textwidth]{figures/run_card_1}
+\caption{Run card for DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164) at the Run tier, with the decisive round 53 in gold.}
+\label{fig:card-dsv4-run-2410.18164}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{figures/run_timelines}
+\caption{Activity of the ten annotated runs by round, colored by the kind
+of tool call, with the annotated episode, its decisive round, and the first
+graded-pipeline launch marked.}
+\label{fig:run-timelines}
+\end{figure}
+
 \subsection{The released tag crashed its own evaluation script on five multiclass datasets}
 \label{vig:dsv4-run-2410.18164}
 \runfacts{dsv4-run-2410.18164}{DeepSeek-V4-Flash}{Run}{2410.18164}{8}{reproduced}{Reproduced (\texttt{reproduced-clean})}{94 rounds, 4.0 of 32~H100-hours}
@@ -40,13 +56,6 @@ the patch, verified on all five at round 77 as
 Figure~\ref{fig:app-h1-zoom-1} shows, put all four Table~1 values
 within 0.002 of the paper. The auditor logged the disclosed patch as a
 low-severity provenance note.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\textwidth]{figures/run_card_1}
-\caption{Run card for DeepSeek-V4-Flash on TabDPT (arXiv~2410.18164) at the Run tier, with the decisive round 53 in gold.}
-\label{fig:card-dsv4-run-2410.18164}
-\end{figure}
 
 \begin{figure}[tb]
 \centering
@@ -232,6 +241,17 @@ for the disclosed 200-versus-300 discrepancy.
 \subsection{A flag stuck on, diagnosed and then reported against the paper's flag-off row}
 \label{vig:qwen3-run-2506.02392}
 \runfacts{qwen3-run-2506.02392}{Qwen3.6-27B}{Run}{2506.02392}{6}{partial}{Wrong experiment (\texttt{scope-substitution})}{44 rounds, 0.4 of 8~H100-hours}
+The pinned claim is the TTPL~\citep{chen2025ttpl} row of Table~2, an optimality gap under greedy
+construction with MVDF off, which the released command line cannot express.
+The agent found the argparse \code{bool} at round 35, then at round 36 wrote
+that the MVDF-off configuration was exactly what it was running, as
+Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
+the diagnosis for a second flag at round 40, and called it a bug in its own
+test setup, and at round 42 it reported the run as reproduced at 2.86 percent
+against the 3.25 percent target. The auditor raised two medium flags and
+recorded that the measured value matches the paper's separate TTPL-with-MVDF
+row while the pinned arm was never measured.
+
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\textwidth]{figures/run_card_8}
@@ -245,17 +265,6 @@ for the disclosed 200-versus-300 discrepancy.
 \caption{Decisive round 36 of Qwen3.6-27B on TTPL (arXiv~2506.02392), with the agent's reasoning, the tool call, and its result.}
 \label{fig:app-h1-zoom-8}
 \end{figure}
-
-The pinned claim is the TTPL~\citep{chen2025ttpl} row of Table~2, an optimality gap under greedy
-construction with MVDF off, which the released command line cannot express.
-The agent found the argparse \code{bool} at round 35, then at round 36 wrote
-that the MVDF-off configuration was exactly what it was running, as
-Figures~\ref{fig:card-qwen3-run-2506.02392} and~\ref{fig:app-h1-zoom-8} show, repeated
-the diagnosis for a second flag at round 40, and called it a bug in its own
-test setup, and at round 42 it reported the run as reproduced at 2.86 percent
-against the 3.25 percent target. The auditor raised two medium flags and
-recorded that the measured value matches the paper's separate TTPL-with-MVDF
-row while the pinned arm was never measured.
 \FloatBarrier  % each vignette keeps its card and panel
 
 \subsection{Attention replaced by zeros after the faithful patch missed the bar}
