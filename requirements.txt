@@ -4,4 +4,5 @@ anthropic
 datasets
 huggingface_hub
 openreview-py
-vllm
+vllm==0.25.1  # rebuilt venv 2026-11-06; DSv4/MiniMax/Qwen (triton GDN) serve verified on this version
+flashinfer-python==0.6.13
