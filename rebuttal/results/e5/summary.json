@@ -1,0 +1,46 @@
+{
+  "index_runs": 372,
+  "index_runs_with_run_dir": 372,
+  "index_runs_without_run_dir": 0,
+  "run_dirs_found": 760,
+  "run_dirs_not_in_index": 388,
+  "runs_checked": 372,
+  "runs_with_unmatched_entry": 3,
+  "runs_with_write_attempt": 360,
+  "runs_with_mention_only": 5,
+  "runs_with_late_mtime": 63,
+  "entries_total": 49585,
+  "entries_checked": 45861,
+  "entries_unmatched": 3,
+  "entries_explained": 185,
+  "host_rows_not_checked": 3724,
+  "write_attempts_total": 6244,
+  "runs_with_write_to_logs": 1,
+  "runs_with_write_to_evidence_dir": 360,
+  "runs_with_unmatched_by_status": {
+    "value_mismatch": 3
+  },
+  "by_model": {
+    "dsv4": {
+      "runs": 87,
+      "runs_with_unmatched": 0,
+      "runs_with_write_attempt": 86
+    },
+    "minimax": {
+      "runs": 98,
+      "runs_with_unmatched": 0,
+      "runs_with_write_attempt": 94
+    },
+    "muse": {
+      "runs": 97,
+      "runs_with_unmatched": 2,
+      "runs_with_write_attempt": 97
+    },
+    "qwen3": {
+      "runs": 90,
+      "runs_with_unmatched": 1,
+      "runs_with_write_attempt": 83
+    }
+  },
+  "match_rule": "whitespace-normalized substring of agent.full.log, then an anchored tool call with the same command/path and the same rc (and cost/remaining for run_gpu rows)"
+}
