@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""E7: re-derive each eval claim's target from its paper with gpt-6.1-sol, then compare with the frozen tuple.
+"""E7 v2: check each frozen target against its paper with gpt-6.1-sol (flex, reasoning high).
 
-Runs on DeltaAI with python3.12 (stdlib only, OPENAI_API_KEY in the environment):
-  python3.12 rebuttal/e7_rederive.py fetch [--limit N]    paper PDFs to text, cached in PAPERS_DIR
-  python3.12 rebuttal/e7_rederive.py run [--limit N]      API calls, resumes from rederived.jsonl
-  python3.12 rebuttal/e7_rederive.py compare              comparison.csv, disagreements.csv, summary.json
+Step 1 (value-blind lookup): find the paper's value for the frozen metric, dataset/split and configuration.
+Step 2 (tuple check): the claim sentence unmasked plus the frozen tuple; judge metric, configuration and value support.
+Both steps use the Responses API with a strict json_schema. Runs on DeltaAI with python3.12, stdlib only,
+OPENAI_API_KEY in the environment:
+  e7_rederive.py fetch [--limit N]    paper text to PAPERS_DIR
+  e7_rederive.py run [--limit N]      API calls; resumes from results/e7/rederived.jsonl
+  e7_rederive.py compare              comparison.csv, disagreements.csv, summary.json
 """
 import argparse
 import csv
@@ -14,7 +17,6 @@ import math
 import os
 import re
 import subprocess
-import sys
 import threading
 import time
 import urllib.error
@@ -28,43 +30,73 @@ CLAIMS = WORK / "e7" / "eval_100.jsonl"
 PAPERS_DIR = WORK / "e7" / "papers"
 LEDGER = WORK / "spend.jsonl"
 RESULTS = Path(__file__).resolve().parent / "results" / "e7"
+URL = "https://api.openai.com/v1/responses"
 MODEL = "gpt-6.1-sol"
-URL = "https://api.openai.com/v1/chat/completions"
 PRICES = {"flex": (1.00, 0.05, 5.00), "standard": (2.00, 0.10, 10.00)}  # per M tokens: in, cached in, out
 ITEM_CAP = 20.0
 OPENAI_CAP = 700.0
 MAX_PAPER_CHARS = 800_000  # about 200k tokens at 4 characters per token
 TOLERANCE = 0.05
 THREADS = 4
-NUM_RE = re.compile(r"\d+(?:[.,]\d+)*(?:[eE][-+]?\d+)?")
-NUM_TEXT = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
-PROMPT = """Below is the full text of a research paper, extracted from its PDF (tables may be flattened).
+S1 = {
+    "type": "object",
+    "properties": {
+        "found": {"type": "boolean"},
+        "value": {"type": "string"},
+        "units": {"type": "string"},
+        "table_or_figure": {"type": "string"},
+        "quote": {"type": "string"},
+    },
+    "required": ["found", "value", "units", "table_or_figure", "quote"],
+    "additionalProperties": False,
+}
+S2 = {
+    "type": "object",
+    "properties": {
+        "metric_ok": {"type": "boolean"},
+        "config_ok": {"type": "boolean"},
+        "value_supported": {"type": "boolean"},
+        "quote": {"type": "string"},
+        "problem": {"type": "string"},
+    },
+    "required": ["metric_ok", "config_ok", "value_supported", "quote", "problem"],
+    "additionalProperties": False,
+}
 
-<paper>
+SYS = "You read research papers and answer with the JSON object only. Copy numbers exactly as the paper prints them."
+
+LOOKUP = """<paper>
 {paper}
 </paper>
 
-A reader wrote the sentence below about one result in this paper. Every number in it has been replaced with [X]. Find the result in the paper that the sentence describes and copy its value exactly as the paper prints it. Do not guess a value the paper does not print.
+Find the number this paper reports for exactly one cell of its results:
+- metric: {metric}
+- dataset and split: {scope}
+- configuration: {config}
 
-<claim>
-{claim}
-</claim>
+Copy the value as printed, without the unit. Give the unit as printed, the table or figure label, and the verbatim sentence or table row that states it. If the paper does not report this cell, set found to false and leave the other four fields as empty strings. Do not guess, and do not use a value from another cell."""
 
-Return a JSON object with these keys:
-- "metric": the metric name as the paper writes it
-- "dataset_split": the dataset and split the result is reported on
-- "configuration": the model, method, setting or table row that produced the number, in the paper's words
-- "value": the number exactly as printed, as a string, without the unit
-- "units": the unit as printed ("%", "kB", "" if none)
-- "table_or_figure": the table or figure label holding the number
-- "quote": the sentence or table row that states the value, copied verbatim"""
+TUPLE = """<paper>
+{paper}
+</paper>
+
+A reader wrote this claim about the paper:
+<claim>{claim}</claim>
+
+The claim was turned into this target tuple:
+- metric: {metric}
+- dataset and split: {scope}
+- configuration: {config}
+- value: {value}
+
+Answer from the paper and the claim only.
+- metric_ok: is the tuple's metric the one the claim sentence refers to?
+- config_ok: is the tuple's configuration the one the claim sentence refers to?
+- value_supported: does the paper report this value for this metric, dataset and split, and configuration?
+Give a verbatim quote from the paper that bears on value_supported. In problem, say in one sentence what is wrong, or leave it empty if nothing is."""
 
 LOCK = threading.Lock()
-
-
-def mask_numbers(text):
-    return NUM_RE.sub("[X]", text)
 
 
 def load_claims(path=CLAIMS):
@@ -82,7 +114,7 @@ def fetch(claims, limit):
         if out.exists() and out.stat().st_size > 0:
             continue
         pdf = PAPERS_DIR / f"{aid}.pdf"
-        req = urllib.request.Request(f"https://arxiv.org/pdf/{aid}", headers={"User-Agent": "reprocli-e7/1.0"})
+        req = urllib.request.Request(f"https://arxiv.org/pdf/{aid}", headers={"User-Agent": "reprocli-e7/2.0"})
         with urllib.request.urlopen(req, timeout=180) as r:
             pdf.write_bytes(r.read())
         subprocess.run(["pdftotext", "-layout", str(pdf), str(out)], check=True)
@@ -90,7 +122,7 @@ def fetch(claims, limit):
         time.sleep(3)
 
 
-def ledger_total(item=None, provider=None):
+def ledger_total(item=None, provider=None, version=None):
     if not LEDGER.exists():
         return 0.0
     total = 0.0
@@ -98,7 +130,8 @@ def ledger_total(item=None, provider=None):
         if not line.strip():
             continue
         d = json.loads(line)
-        if (item is None or d.get("item") == item) and (provider is None or d.get("provider") == provider):
+        if ((item is None or d.get("item") == item) and (provider is None or d.get("provider") == provider)
+                and (version is None or d.get("version") == version)):
             total += d.get("usd", 0.0)
     return total
 
@@ -110,11 +143,21 @@ def append_ledger(entry):
             f.write(json.dumps(entry) + "\n")
 
 
-def cost_of(usage, tier):
-    cached = (usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0)
-    inp, out = usage["prompt_tokens"], usage["completion_tokens"]
+def cost_of(inp, cached, out, tier):
     p_in, p_cached, p_out = PRICES[tier]
-    return (inp - cached) * p_in / 1e6 + cached * p_cached / 1e6 + out * p_out / 1e6, inp, cached, out
+    return (inp - cached) * p_in / 1e6 + cached * p_cached / 1e6 + out * p_out / 1e6
+
+
+def charge(payload, tier_used, step, aid):
+    u = payload.get("usage") or {}
+    cached = (u.get("input_tokens_details") or {}).get("cached_tokens", 0)
+    inp, out = u.get("input_tokens", 0), u.get("output_tokens", 0)
+    tier = "flex" if tier_used == "flex" else "standard"
+    usd = cost_of(inp, cached, out, tier)
+    append_ledger({"ts": dt.datetime.now().isoformat(timespec="seconds"), "item": "E7", "version": "v2",
+                   "provider": "openai", "model": MODEL, "step": step, "custom_id": aid,
+                   "in": inp, "cached": cached, "out": out, "usd": round(usd, 6), "tier": tier_used})
+    return usd
 
 
 def post(body, key):
@@ -156,42 +199,79 @@ def call_model(body, key):
     return None, f"http_{status}:{payload.get('error_type', '')}"
 
 
-def derive_one(row, key, done_ids):
-    aid = row["custom_id"]
-    paper = (PAPERS_DIR / f"{aid}.txt").read_text(errors="replace")[:MAX_PAPER_CHARS]
-    claim = mask_numbers(row["central_claim"])
+def out_text(payload):
+    for item in payload.get("output", []):
+        if item.get("type") == "message":
+            for c in item.get("content", []):
+                if c.get("type") == "output_text":
+                    return c.get("text")
+    return None
+
+
+def check(obj, schema):
+    if not isinstance(obj, dict) or set(obj) != set(schema["required"]):
+        return "keys"
+    for k, spec in schema["properties"].items():
+        want = {"boolean": bool, "string": str}[spec["type"]]
+        if not isinstance(obj[k], want):
+            return f"type:{k}"
+    if "found" in obj:
+        if obj["found"] and not all(obj[k].strip() for k in ("value", "units", "table_or_figure", "quote")):
+            return "found_but_blank"
+    elif not obj["quote"].strip():
+        return "quote_blank"
+    return None
+
+
+def ask(step, user, schema, key, aid):
+    """Ask once; re-ask once on a schema failure. Returns (object, tier_used, error)."""
     body = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": "You extract numeric results from research papers. Answer with a JSON object only."},
-            {"role": "user", "content": PROMPT.format(paper=paper, claim=claim)},
-        ],
-        "reasoning_effort": "high",
-        "max_completion_tokens": 24000,
-        "response_format": {"type": "json_object"},
+        "input": [{"role": "system", "content": SYS}, {"role": "user", "content": user}],
+        "reasoning": {"effort": "high"},
+        "text": {"format": {"type": "json_schema", "name": f"e7_step{step}", "strict": True, "schema": schema}},
+        "max_output_tokens": 32000,
         "service_tier": "flex",
     }
-    rec = {"custom_id": aid, "tier": row["tier"], "claim_masked": claim}
-    payload, tier_used = call_model(body, key)
-    if payload is None:
-        rec.update(error=tier_used)
-    else:
-        choice = payload["choices"][0]
-        usd, inp, cached, out = cost_of(payload["usage"], "flex" if tier_used == "flex" else "standard")
-        append_ledger({"ts": dt.datetime.now().isoformat(timespec="seconds"), "item": "E7", "provider": "openai",
-                       "model": MODEL, "in": inp, "cached": cached, "out": out, "usd": round(usd, 6),
-                       "tier": tier_used, "custom_id": aid})
-        rec.update(tier_used=tier_used, finish_reason=choice.get("finish_reason"), usd=round(usd, 6),
-                   in_tokens=inp, cached_tokens=cached, out_tokens=out, error=None)
-        content = choice.get("message", {}).get("content") or ""
-        rec["raw_head"] = content[:600]
+    err = None
+    for _ in range(2):
+        payload, tier_used = call_model(body, key)
+        if payload is None:
+            return None, None, tier_used
+        charge(payload, tier_used, step, aid)
+        if payload.get("status") != "completed":
+            err = "incomplete:" + str((payload.get("incomplete_details") or {}).get("reason"))
+            continue
+        text = out_text(payload)
+        if not text:
+            err = "no_text"
+            continue
         try:
-            obj = json.loads(content)
-            rec["keys"] = sorted(obj) if isinstance(obj, dict) else type(obj).__name__
-            rec.update({k: v for k, v in obj.items()
-                        if k in ("metric", "dataset_split", "configuration", "value", "units", "table_or_figure", "quote")})
-        except (json.JSONDecodeError, AttributeError):
-            rec.update(error="parse_error")
+            obj = json.loads(text)
+        except json.JSONDecodeError:
+            err = "json"
+            continue
+        err = check(obj, schema)
+        if err is None:
+            return obj, tier_used, None
+    return None, tier_used, f"schema:{err}"
+
+
+def derive_one(row, key):
+    aid = row["custom_id"]
+    t = row["match_target"]
+    paper = (PAPERS_DIR / f"{aid}.txt").read_text(errors="replace")[:MAX_PAPER_CHARS]
+    u1 = LOOKUP.format(paper=paper, metric=t["metric"], scope=t["scope"], config=t["config"])
+    u2 = TUPLE.format(paper=paper, claim=row["central_claim"], metric=t["metric"], scope=t["scope"],
+                      config=t["config"], value=t["value"])
+    s1, tier1, e1 = ask(1, u1, S1, key, aid)
+    s2, tier2, e2 = ask(2, u2, S2, key, aid)
+    rec = {"custom_id": aid, "tier": row["tier"], "step1_tier": tier1, "step2_tier": tier2,
+           "step1_error": e1, "step2_error": e2}
+    if s1:
+        rec.update({f"lookup_{k}": v for k, v in s1.items()})
+    if s2:
+        rec.update({f"tuple_{k}": v for k, v in s2.items()})
     with LOCK:
         with (RESULTS / "rederived.jsonl").open("a") as f:
             f.write(json.dumps(rec) + "\n")
@@ -206,122 +286,138 @@ def run(claims, limit):
     if out.exists():
         done = {json.loads(l)["custom_id"] for l in out.read_text().splitlines() if l.strip()}
     if ledger_total(provider="openai") + ITEM_CAP > OPENAI_CAP:
-        sys.exit("OpenAI ledger total would pass the $700 cap")
+        raise SystemExit("OpenAI ledger total would pass the $700 cap")
     todo = [r for r in claims[:limit] if r["custom_id"] not in done]
     print("todo", len(todo), "already done", len(done), flush=True)
     with ThreadPoolExecutor(max_workers=THREADS) as pool:
-        futures = []
-        for row in todo:
-            futures.append(pool.submit(lambda r=row: (
-                None if ledger_total("E7") >= ITEM_CAP else derive_one(r, key, done))))
+        futures = [pool.submit(lambda r=row: None if ledger_total("E7") >= ITEM_CAP else derive_one(r, key))
+                   for row in todo]
         for f in futures:
             rec = f.result()
             if rec is None:
-                print("E7 cap reached, stopping", flush=True)
+                print("E7 item cap reached, stopping", flush=True)
                 break
-            print(rec["custom_id"], rec.get("value"), rec.get("error") or "", rec.get("usd", ""), flush=True)
-    print("E7 ledger total", round(ledger_total("E7"), 4), flush=True)
+            print(rec["custom_id"], rec.get("lookup_value"), rec.get("lookup_found"),
+                  rec.get("tuple_value_supported"), rec.get("step1_error") or "", rec.get("step2_error") or "",
+                  flush=True)
+    print("E7 ledger total", round(ledger_total("E7"), 4), "v2", round(ledger_total("E7", version="v2"), 4), flush=True)
 
 
 def parse_num(s):
     if s is None:
         return None
-    m = NUM_TEXT.search(str(s).replace(",", ""))
+    m = re.search(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", str(s).replace(",", ""))
     return float(m.group()) if m else None
-
-
-def tokens(s):
-    return set(re.findall(r"[a-z0-9]+", str(s or "").lower()))
-
-
-def same(a, b, match_at, check_at):
-    ta, tb = tokens(a), tokens(b)
-    if not ta or not tb:
-        return "check"
-    jac = len(ta & tb) / len(ta | tb)
-    if jac >= match_at:
-        return "match"
-    return "check" if (ta & tb) else "mismatch"
 
 
 def wilson(k, n, z=1.959964):
     if n == 0:
-        return 0.0, 0.0
+        return [0.0, 0.0]
     p = k / n
     denom = 1 + z * z / n
     center = (p + z * z / (2 * n)) / denom
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
-    return max(0.0, round(center - half, 4)), min(1.0, round(center + half, 4))
+    return [round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)]
+
+
+def value_gap(tv_str, dv_str, dv_units):
+    """Relative gap after percent-vs-fraction normalization. Returns (gap, note)."""
+    tv, dv = parse_num(tv_str), parse_num(dv_str)
+    if tv is None or dv is None:
+        return None, ""
+    pct_f = "%" in str(tv_str)
+    pct_d = "%" in f"{dv_str} {dv_units}"
+    note = ""
+    if pct_f and not pct_d and abs(dv) <= 1:
+        dv, note = dv * 100, "derived fraction x100"
+    elif pct_d and not pct_f and abs(tv) <= 1:
+        dv, note = dv / 100, "derived percent /100"
+    if tv == 0:
+        return (0.0 if dv == 0 else math.inf), note
+    return abs(dv - tv) / abs(tv), note
 
 
 def compare(claims):
-    rederived = {}
+    recs = {}
     for line in (RESULTS / "rederived.jsonl").read_text().splitlines():
         if line.strip():
             d = json.loads(line)
-            rederived[d["custom_id"]] = d
+            recs[d["custom_id"]] = d
     rows = []
     for c in claims:
         t = c["match_target"]
-        d = rederived.get(c["custom_id"], {"error": "missing"})
-        if d.get("error"):
-            metric = config = "check"
-            gap, reason = None, d["error"]
-        else:
-            metric = same(t["metric"], d.get("metric"), 0.8, 0.25)
-            config = same(t["config"], d.get("configuration"), 0.6, 0.3)
-            tv, dv = parse_num(t["value"]), parse_num(d.get("value"))
-            if tv is None or dv is None:
-                gap = None
-            elif tv == 0:
-                gap = 0.0 if dv == 0 else math.inf
-            else:
-                gap = abs(dv - tv) / abs(tv)
-            reason = ";".join(k for k, ok in (("metric", metric == "match"), ("config", config == "match"),
-                                             ("value", gap is not None and gap <= TOLERANCE)) if not ok)
-        agree = metric == "match" and config == "match" and gap is not None and gap <= TOLERANCE
+        d = recs.get(c["custom_id"], {})
+        found = d.get("lookup_found")
+        gap, note = value_gap(t["value"], d.get("lookup_value"), d.get("lookup_units"))
+        value_agree = bool(found) and gap is not None and gap <= TOLERANCE
+        t_ok = [d.get(f"tuple_{k}") for k in ("metric_ok", "config_ok", "value_supported")]
+        reasons = []
+        if not found:
+            reasons.append("not_found" if found is False else "lookup_error")
+        elif not value_agree:
+            reasons.append("value_gap" if gap is not None else "value_unparsed")
+        for name, ok in zip(("metric", "config", "value_supported"), t_ok):
+            if ok is False:
+                reasons.append(f"tuple_{name}")
+            elif ok is None:
+                reasons.append(f"tuple_error")
+                break
+        if d.get("step1_error") or d.get("step2_error"):
+            reasons.append("schema_error")
         rows.append({
             "custom_id": c["custom_id"], "tier": c["tier"],
-            "metric_frozen": t["metric"], "metric_derived": d.get("metric", ""), "metric_match": metric,
-            "config_frozen": t["config"], "config_derived": d.get("configuration", ""), "config_match": config,
-            "scope_frozen": t["scope"], "split_derived": d.get("dataset_split", ""),
-            "value_frozen": t["value"], "value_derived": d.get("value", ""), "units_derived": d.get("units", ""),
-            "gap_rel": "" if gap is None else (round(gap, 6) if math.isfinite(gap) else "inf"),
-            "tolerance": TOLERANCE, "agree": agree, "failed_checks": reason,
-            "quote": d.get("quote", ""), "error": d.get("error") or "",
+            "metric_frozen": t["metric"], "scope_frozen": t["scope"], "config_frozen": t["config"],
+            "value_frozen": t["value"],
+            "lookup_found": found, "lookup_value": d.get("lookup_value", ""), "lookup_units": d.get("lookup_units", ""),
+            "lookup_table": d.get("lookup_table_or_figure", ""), "lookup_quote": d.get("lookup_quote", ""),
+            "pct_normalization": note, "gap_rel": "" if gap is None else (round(gap, 6) if math.isfinite(gap) else "inf"),
+            "value_agree": value_agree,
+            "tuple_metric_ok": t_ok[0], "tuple_config_ok": t_ok[1], "tuple_value_supported": t_ok[2],
+            "tuple_quote": d.get("tuple_quote", ""), "tuple_problem": d.get("tuple_problem", ""),
+            "step1_error": d.get("step1_error") or "", "step2_error": d.get("step2_error") or "",
+            "disagree": bool(reasons) or not value_agree, "reasons": ";".join(reasons),
         })
     fields = list(rows[0].keys())
     with (RESULTS / "comparison.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(rows)
-    dis = [r for r in rows if not r["agree"]]
+    dis = [r for r in rows if r["disagree"]]
     with (RESULTS / "disagreements.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(dis)
-    n = len(rows)
-    k = sum(r["agree"] for r in rows)
-    lo, hi = wilson(k, n)
-    by_tier = {}
-    for tier in ("Easy", "Medium", "Hard"):
-        sub = [r for r in rows if r["tier"] == tier]
-        kt = sum(r["agree"] for r in sub)
-        tlo, thi = wilson(kt, len(sub))
-        by_tier[tier] = {"agree": kt, "n": len(sub), "wilson95": [tlo, thi]}
+
+    def tally(sub, key):
+        return sum(1 for r in sub if r[key] is True), len(sub)
+
+    tiers = ("Easy", "Medium", "Hard")
     summary = {
-        "model": MODEL, "service_tier": "flex", "tolerance_default": TOLERANCE,
-        "agree": k, "n": n, "wilson95": [lo, hi], "interval": "Wilson score 95%",
-        "by_tier": by_tier,
-        "errors": sum(1 for r in rows if r["error"]),
-        "tier_fallback_standard": sum(1 for d in rederived.values() if d.get("tier_used") == "standard_fallback"),
-        "metric_match_counts": {v: sum(r["metric_match"] == v for r in rows) for v in ("match", "check", "mismatch")},
-        "config_match_counts": {v: sum(r["config_match"] == v for r in rows) for v in ("match", "check", "mismatch")},
-        "value_within_tolerance": sum(1 for r in rows if r["gap_rel"] not in ("", "inf") and float(r["gap_rel"]) <= TOLERANCE),
-        "value_within_tolerance_wilson95": list(wilson(sum(1 for r in rows if r["gap_rel"] not in ("", "inf") and float(r["gap_rel"]) <= TOLERANCE), n)),
-        "numeric_value_derived": sum(1 for r in rows if r["gap_rel"] != ""),
-        "total_usd_e7_ledger": round(ledger_total("E7"), 4),
+        "model": MODEL, "api": "responses", "service_tier": "flex", "reasoning_effort": "high",
+        "tolerance": TOLERANCE, "interval": "Wilson score 95%", "n": len(rows),
+        "step1_value_agree": dict(zip(("k", "n"), tally(rows, "value_agree"))),
+        "step1_not_found": sum(1 for r in rows if r["lookup_found"] is False),
+        "step2": {},
+        "by_tier": {},
+        "rows_disagree": len(dis),
+        "schema_errors": {"step1": sum(1 for r in rows if r["step1_error"]), "step2": sum(1 for r in rows if r["step2_error"])},
+        "cost_v2_usd": round(ledger_total("E7", version="v2"), 4),
+        "cost_e7_ledger_total_usd": round(ledger_total("E7"), 4),
     }
+    summary["step1_value_agree"]["wilson95"] = wilson(summary["step1_value_agree"]["k"], len(rows))
+    for key in ("tuple_metric_ok", "tuple_config_ok", "tuple_value_supported"):
+        k, n = tally(rows, key)
+        summary["step2"][key] = {"k": k, "n": n, "wilson95": wilson(k, n)}
+    for tier in tiers:
+        sub = [r for r in rows if r["tier"] == tier]
+        summary["by_tier"][tier] = {
+            "n": len(sub),
+            "step1_value_agree": tally(sub, "value_agree")[0],
+            "not_found": sum(1 for r in sub if r["lookup_found"] is False),
+            "tuple_metric_ok": tally(sub, "tuple_metric_ok")[0],
+            "tuple_config_ok": tally(sub, "tuple_config_ok")[0],
+            "tuple_value_supported": tally(sub, "tuple_value_supported")[0],
+        }
     (RESULTS / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 
