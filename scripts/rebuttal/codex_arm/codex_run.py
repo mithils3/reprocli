@@ -299,12 +299,12 @@ def main(argv: list[str] | None = None) -> int:
 
     (ep,) = inputs.prepare_episodes(args)
     task = own.task_text if own.task_text is not None else paper_task_text(ep.row, budget=ep.budget, harness="codex")
-    (ep.run_paths.run_dir / "task.txt").write_text(task + "\n", encoding="utf-8")
     sb = sandbox.from_run_paths(
         ep.run_paths, image=args.cluster_profile.apptainer_image,
         cpus=args.cluster_profile.sandbox_cpus, mem_gb=args.cluster_profile.sandbox_mem_gb,
     )
     workspace.prepare_workspace(ep.run_paths, arxiv_id=ep.arxiv_id, materialize_ref=False)
+    (ep.run_paths.run_dir / "task.txt").write_text(task + "\n", encoding="utf-8")
     ctx = inputs.build_context(ep)
     ctx.cluster = args.cluster_profile
     ctx.sandbox = sb
