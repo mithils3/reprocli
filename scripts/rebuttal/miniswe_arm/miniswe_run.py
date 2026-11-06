@@ -181,6 +181,20 @@ def task_text(args: argparse.Namespace) -> str:
     return render_reproduce_prompt(template, row, budget=args.paper_budget_h100).strip()
 
 
+def close_tool_calls(messages: list[dict]) -> list[dict]:
+    """Answer each tool call that has no result yet. A submission ends the run before its result is added, and the API
+    rejects a history whose tool calls have no matching tool message."""
+    answered = {m.get("tool_call_id") for m in messages if m.get("role") == "tool"}
+    out = []
+    for m in messages:
+        out.append(m)
+        for call in (m.get("tool_calls") or []) if m.get("role") == "assistant" else []:
+            if call.get("id") not in answered:
+                out.append({"role": "tool", "tool_call_id": call.get("id"),
+                            "content": "The run ended before this command was executed."})
+    return out
+
+
 def probe_path(image: str) -> str:
     """PATH the image gives a login shell, so /repro/bin can go in front of it without dropping the image's tools."""
     done = subprocess.run(["apptainer", "exec", "--cleanenv", "--no-home", image, "bash", "-lc", 'printf %s "$PATH"'],
@@ -277,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
 
     content = ""
     try:
-        messages = [m for m in agent.messages if m.get("role") != "exit"]
+        messages = close_tool_calls([m for m in agent.messages if m.get("role") != "exit"])
         messages.append({"role": "user", "content": FINAL_PROMPT})
         content = model.final_report(messages, report_mod.REPORT_RESPONSE_FORMAT)
     except Exception:
