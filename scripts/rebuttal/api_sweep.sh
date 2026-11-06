@@ -97,7 +97,9 @@ VENV="${VENV:-${ROOT}/.venv}"
 export PYTHONPATH="${ROOT}/src:${PYTHONPATH:-}"
 
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
-export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/hf_cache}"
+export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/.cache}"
+# Plain HTTP for the bundle: the xet path stalled mid-shard (2026-11-06) and 3 smokes waited on its lock.
+export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 export APPTAINERENV_HF_HOME="${APPTAINERENV_HF_HOME:-/tmp/hf_cache}"
 RUNS_DIR="${RUNS_DIR:-${REPRO_WORK_ROOT}/agent_runs}"
 [[ -z "${HF_TOKEN:-}" ]] && echo "WARNING: HF_TOKEN unset; lockfile/bundle download may fail." >&2
