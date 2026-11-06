@@ -6,12 +6,11 @@
 set -euo pipefail
 : "${SEED:?set SEED}"; export SEED
 SRC=/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2506.10351/8h/2883229-2506.10351-832e14/workspace
-RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/2506.10351/seed$SEED
-R=$RUN/repro
+RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/work/2506.10351/seed$SEED
+R=${R_OVERRIDE:-$RUN/repro}
 if [ ! -d "$R/workspace" ]; then
   mkdir -p "$R/workspace" "$R/evidence"
   (cd "$SRC" && tar -cf - --exclude=./Cached-Supernets --exclude=./.venv .) | (cd "$R/workspace" && tar -xf -)
-  ln -s "$SRC/.venv" "$R/workspace/.venv"
 fi
 # PATCH (not in transcript): transcript line 284 copies the wrappers and then runs expB (1259 s); only the copy is kept here, expB is not part of the scored number
 mkdir -p "$R/evidence" && cp "$R/workspace/evidence"/run_exp*.sh "$R/evidence/"

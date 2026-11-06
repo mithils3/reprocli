@@ -6,12 +6,11 @@
 set -euo pipefail
 : "${SEED:?set SEED}"; export SEED
 SRC=/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2505.17836/8h/20260816T133804Z-2505.17836-5f483b/workspace
-RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/2505.17836/seed$SEED
-R=$RUN/repro
+RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/work/2505.17836/seed$SEED
+R=${R_OVERRIDE:-$RUN/repro}
 if [ ! -d "$R/workspace" ]; then
   mkdir -p "$R/workspace" "$R/evidence"
   (cd "$SRC" && tar -cf - --exclude=./Cached-Supernets --exclude=./.venv .) | (cd "$R/workspace" && tar -xf -)
-  ln -s "$SRC/.venv" "$R/workspace/.venv"
 fi
 # PATCH (not in transcript): the config sets experiment.seed (line 2); the original used 42
 rg -q '^  seed: 42$' "$R/workspace/repo/configs/exp_target.yaml" && sed -i "s/^  seed: 42$/  seed: $SEED/" "$R/workspace/repo/configs/exp_target.yaml"

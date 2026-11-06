@@ -7,12 +7,11 @@ set -euo pipefail
 # SUBST ["--seed 42 --out $R/evidence/results_m1_100.json", "--seed $SEED --out $R/evidence/results_m1_100.json"]
 : "${SEED:?set SEED}"; export SEED
 SRC=/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2510.07501/8h/20260816T133804Z-2510.07501-b58d86/workspace
-RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/2510.07501/seed$SEED
-R=$RUN/repro
+RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/work/2510.07501/seed$SEED
+R=${R_OVERRIDE:-$RUN/repro}
 if [ ! -d "$R/workspace" ]; then
   mkdir -p "$R/workspace" "$R/evidence"
   (cd "$SRC" && tar -cf - --exclude=./Cached-Supernets --exclude=./.venv .) | (cd "$R/workspace" && tar -xf -)
-  ln -s "$SRC/.venv" "$R/workspace/.venv"
 fi
 # L1181 ts 14:04:03 dur 79s gpus 1
 PYTHONUNBUFFERED=1 $R/workspace/.venv/bin/python $R/workspace/final_m1.py --reps 100 --n 2000 --large_n 300000 --seed $SEED --out $R/evidence/results_m1_100.json 2>&1 | tee $R/evidence/run_m1_100.log; cat $R/evidence/results_m1_100.json | head -n 100

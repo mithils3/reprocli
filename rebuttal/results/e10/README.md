@@ -1,17 +1,18 @@
-# E10 environment check: selection and rerun scripts
+# E10 environment check: selection, scripts, reruns
 
-Selection: `runs` in `resolved_modes.json` with mode near-miss-partial (appendix H: "Ran, outside tolerance"), tiers run and retrain, paper band 0-8. Best run per paper by audit score (tie: lower spent_h100). `random.Random(22528)`: `sample(sorted run papers, 6)`, then `sample(sorted retrain papers, 4)`. All selected workspaces exist on DeltaAI.
+Selection: near-miss-partial runs (appendix H: "Ran, outside tolerance"), tiers run and retrain, band 0-8. Best run per paper by audit score (tie: lower spent). Order: `random.Random(22528)` (6 Run, then 4 Retrain), alternates from the same stream. Only clean single command chains qualify.
 
-Scripts: `scripts/<arxiv_id>.rerun.sh`. Each line of transcript code carries its `# L<n>` line in `evidence/commands.log`. `check` matched 10 of 10, 2 of 2, 2 of 2, 1 of 1 entries. Lines marked PATCH are not in the transcript (seed flag, copied wrappers).
+Excluded:
+- 2503.09657: transcript used --kl_topk 2048 (paper 8192), so not faithful.
+- 2505.15201: no seed argument; the code seeds from hash(method); target is a magnitude bar.
+- 2505.18809, 2510.21311, 2510.23574: final number depends on hand-edited code or node-local /tmp checkpoints from many steps.
+- 2505.24864: 20-prompt pilot, budget exhausted.
+- 2506.20990, 2502.06684, 2505.14766: report degraded, no scoring command.
+- 2505.21077, 2506.06991, 2506.20233, 2509.16391, 2510.21363, 2504.20571, 2505.19154: spans several GPU sessions.
+- 2505.19713, 2505.24873, 2511.00090: 39 to 76 GPU steps.
 
-Estimated GPU-hours per seed: 7.30; two seeds: 14.6 (limit 90).
+Result: Run 1 of 6 papers, Retrain 2 of 4. Band 0-8 clean pool exhausted.
 
-Skipped:
-- Run 2505.18809, 2510.21311, 2510.23574: final number depends on hand-edited code or a node-local /tmp checkpoint from many earlier steps.
-- Run 2505.24864: 20-prompt pilot, budget exhausted; not the paper's pipeline.
-- Run 2506.20990: report degraded, no scoring command.
-- Retrain 2505.21077: reported ratio spans benchmark rounds from four GPU sessions.
+Scripts: `scripts/<arxiv_id>.rerun.sh`, checked against `commands.log` by line (`# L<n>`). Run through `jobs/*.sbatch` on ghx4 with `cuda1290-agent.sif`; PATCH lines are not in the transcript. Status and job ids: `/work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json`.
 
-Result: 1 Run paper of 6 and 3 Retrain papers of 4 are scripted.
-
-Caveats: 2503.09657 keeps the transcript's `--kl_topk 2048` (paper: 8192). The data shuffle seed is fixed at 0 (`src/data_utils.py:71`), so SEED changes search and pruning only.
+Caveat: the data shuffle seed is fixed at 0 (src/data_utils.py:71), so SEED changes search and pruning only (not used in this subset).

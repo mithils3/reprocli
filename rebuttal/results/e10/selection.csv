@@ -1,5 +1,4 @@
 paper,tier,band,model,run id,score,measured,target,gap,workspace_exists,seed_mechanism,est_gpu_hours
-2503.09657,retrain,0-8,dsv4,dsv4-retrain-2503.09657,6,23.36,16.17,+7.19,yes,"--seed flag on search_sparsity_dist.py and prune_to_supernet.py (default 0); helper scripts patched to pass SEED",6.9
 2505.17836,retrain,0-8,muse,muse-retrain-2505.17836,6,0.03947,~0.05,-0.0105 (approx),yes,"experiment.seed in configs/exp_target.yaml, read at run_experiments.py:73",0.03
 2510.07501,retrain,0-8,muse,muse-retrain-2510.07501,6,-0.2241,-0.20,-0.0241,yes,"--seed argparse in final_m1.py (default 123); command passes 42, replaced by SEED",0.02
 2506.10351,run,0-8,dsv4,dsv4-run-2506.10351,7,94.19,93.12,+1.07,yes,"--seed 42 hard-coded in run_expC_fromscratch.sh line 14; sed to SEED",0.35
