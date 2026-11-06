@@ -43,6 +43,20 @@ class BuildAcquireTests(unittest.TestCase):
         # Acquire holds the node only; the command is spliced in later by build_srun.
         self.assertNotIn("srun", argv)
 
+    def test_account_env_override_reaches_the_salloc_line(self):
+        import os
+        old = os.environ.get("REPROCLI_SLURM_ACCOUNT")
+        os.environ["REPROCLI_SLURM_ACCOUNT"] = "betw-dtai-gh"
+        try:
+            argv = build_acquire(resolve_cluster("deltaai"), gpus=1, minutes=10)
+        finally:
+            if old is None:
+                del os.environ["REPROCLI_SLURM_ACCOUNT"]
+            else:
+                os.environ["REPROCLI_SLURM_ACCOUNT"] = old
+        self.assertEqual(argv[argv.index("-A") + 1], "betw-dtai-gh")
+        self.assertNotIn("bfvr-dtai-gh", argv)
+
     def test_partition_override_replaces_the_profile_default(self):
         # The model picks a pool (from list_partitions) without touching the account.
         argv = build_acquire(

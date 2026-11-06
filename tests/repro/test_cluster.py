@@ -57,5 +57,17 @@ class ClusterDefaultsTests(unittest.TestCase):
             )
 
 
+def test_slurm_account_defaults_to_bfvr_when_env_unset(monkeypatch):
+    monkeypatch.delenv("REPROCLI_SLURM_ACCOUNT", raising=False)
+    assert resolve_cluster("deltaai").account == "bfvr-dtai-gh"
+    assert cluster_defaults()["deltaai"]["account"] == "bfvr-dtai-gh"
+
+
+def test_slurm_account_env_var_overrides_default(monkeypatch):
+    monkeypatch.setenv("REPROCLI_SLURM_ACCOUNT", "betw-dtai-gh")
+    assert resolve_cluster("deltaai").account == "betw-dtai-gh"
+    assert cluster_defaults()["deltaai"]["account"] == "betw-dtai-gh"
+
+
 if __name__ == "__main__":
     unittest.main()

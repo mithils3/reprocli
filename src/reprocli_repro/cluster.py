@@ -17,10 +17,19 @@ serve the brain charge ``betw-dtai-gh``.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, replace
 from typing import Any
 
 DEFAULT_CLUSTER = "deltaai"
+
+# Env override for the Slurm account, read per call (not at import) so runs can charge
+# another allocation (e.g. betw-dtai-gh) without editing the profile.
+SLURM_ACCOUNT_ENV = "REPROCLI_SLURM_ACCOUNT"
+
+
+def _slurm_account(default: str | None) -> str | None:
+    return os.environ.get(SLURM_ACCOUNT_ENV) or default
 
 # DeltaAI's mandatory-sandbox image. We default to a raw NVIDIA CUDA image (12.9 + cuDNN,
 # the ``devel`` flavor so ``nvcc`` and the host compilers are present) rather than an NGC
@@ -96,7 +105,7 @@ def cluster_defaults() -> dict[str, dict[str, Any]]:
     """
     return {
         name: {
-            "account": c.account,
+            "account": _slurm_account(c.account),
             "default_partition": c.partition,
             "gpus_per_node": c.gpus_per_node,
             "hw": c.hw,
@@ -118,6 +127,7 @@ def resolve_cluster(
         raise SystemExit(f"unknown cluster {name!r}; choose from {', '.join(_PROFILES)}")
     return replace(
         base,
+        account=_slurm_account(base.account),
         partition=partition if partition is not None else base.partition,
         apptainer_image=apptainer_image if apptainer_image is not None else base.apptainer_image,
     )
