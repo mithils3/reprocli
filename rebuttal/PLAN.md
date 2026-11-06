@@ -4,7 +4,7 @@ GOAL: move YGTR from 2 (weak reject) to at least 3, and move T29u and rqBN from 
 DONE-WHEN: four replies (general, T29u, rqBN, YGTR) are posted, every number in them traces to a file under `rebuttal/results/`, and the revised PDF compiles with the main text inside 10 pages.
 MUST-NOT-CHANGE: the frozen eval-100 split, the frozen rubric and pinned auditor (claude-sonnet-5) for every grade of record, the four-agent roster of the main results, the run directories under `/work/nvme/bfvr/`, and the paused Distillation files and jobs.
 
-Scope: the three official reviews only; the PAT feedback is set aside (Mithil, 2026-11-06). Revision 2 (2026-11-06, his answers to v1): GPU work runs on betw-dtai-gh; OpenAI budget $750 and Meta budget $500; the frontier arms use the GPT-6 series and Muse Wonder (v1 named gpt-5.6-sol because the price lookup matched only names starting with gpt-5 and missed GPT-6); the 6 cells that failed outside the agent are rerun; the human-grader item is parked because the original labels exist. Revision 3 (same day): the OpenAI arms run on OpenAI's flex tier, its low-priority service at half the standard price, which grows the OpenAI subset from 12 to 24 papers.
+Scope: the three official reviews only; the PAT feedback is set aside (Mithil, 2026-11-06). Revision 2 (2026-11-06, his answers to v1): GPU work runs on betw-dtai-gh; OpenAI budget $750 and Meta budget $500; Haochen and Samridhi take no tasks, so agents do their work and Mithil checks it; the frontier arms use the GPT-6 series and Muse Wonder (v1 named gpt-5.6-sol because the price lookup matched only names starting with gpt-5 and missed GPT-6); the 6 cells that failed outside the agent are rerun; the human-grader item is parked because the original labels exist. Revision 3 (same day): the OpenAI arms run on OpenAI's flex tier, its low-priority service at half the standard price, which grows the OpenAI subset from 12 to 24 papers.
 
 ## 0. Where we stand and how a score moves
 
@@ -12,7 +12,7 @@ The three reviewers agree that the task design is sound and carefully disclosed.
 
 Recommendation: run current frontier models from two labs in production harnesses on the same stratified papers. OpenAI's GPT-6 series supplies gpt-6.1-sol and gpt-6.1-terra in both our harness and Codex CLI on 24 papers, plus the flagship gpt-6-astra in Codex CLI on 8, all on the half-price flex tier. Meta's Muse Wonder runs in our harness and in mini-SWE-agent, and since Muse Spark 1.2 is already in the paper, it also gives a same-family comparison on the same papers. Whichever way the results fall they answer YGTR: if frontier agents still fail in the same ways, the taxonomy generalizes; if a production harness lifts the rate, the paper gains a measured harness effect that no other reproduction benchmark reports. T29u and rqBN mostly want the auditor and the logs measured, which existing data and short analyses answer. What would change this: if the first runs show any model costing more than 1.5 times its estimate, or flex refuses so often that runs fall back to standard prices, gpt-6-astra drops to 4 papers before anything else shrinks.
 
-**Simulated reception of v1 (2026-11-06).** Three agents read v1 as the reviewers would. YGTR would move from 2 to 3 (Informativeness 1 to 2) if the frontier and harness arms come with a paired test and human failure-mode labels, and stays below 4 while the headline numbers come from the four weaker models; v2's wider frontier set raises the chance of 3. T29u would move to 4 if the 7/8 boundary table and the repeat runs come back clean. rqBN would move to 4 given a full confusion matrix, inter-human agreement and a real tamper check on the logs. Their requested fixes are folded in below.
+**Simulated reception of v1 (2026-11-06).** Three agents read v1 as the reviewers would. YGTR would move from 2 to 3 (Informativeness 1 to 2) if the frontier and harness arms come with a paired test and a human check of the failure-mode labels, and stays below 4 while the headline numbers come from the four weaker models; v2's wider frontier set raises the chance of 3. T29u would move to 4 if the 7/8 boundary table and the repeat runs come back clean. rqBN would move to 4 given a full confusion matrix, inter-human agreement and a real tamper check on the logs. Their requested fixes are folded in below.
 
 ## 1. Every reviewer concern, grouped
 
@@ -52,9 +52,9 @@ How the code handles the logs today (checked 2026-11-06): the harness process wr
 | Concern | Type | What answers it |
 | :- | :- | :- |
 | Sensitivity of conclusions to the match target and the default 5% relative tolerance | NEW (analysis) | E6: rescore at 1%, 2%, 5% and 10% relative and at 1 and 2 absolute points; rescore 30 papers against independently derived targets; count claims under the default |
-| How claims, configurations, target tuples and tolerances were validated, and annotator agreement | NEW | Stage III (`appendix/e_construction.tex:80-92`) audited availability calls only and never validated targets, so the reply says so; E7 adds a second annotator on 30 papers |
+| How claims, configurations, target tuples and tolerances were validated, and annotator agreement | NEW | Stage III (`appendix/e_construction.tex:80-92`) audited availability calls only and never validated targets, so the reply says so; E7 has a model from another lab re-derive all 100 targets blind and Mithil settles every disagreement |
 
-The default is defined at `appendix/f_dataset.tex:116-118` and `rubric_audit.md:50-58` at the repo root (the copy the code loads, `src/reprocli_vllm/config/config.py:33`). Memory `lockfile-is-audited-selection` notes the auditor restates the target tuple at grade time, so E7 compares the second annotator with the tuple the auditor actually used.
+The default is defined at `appendix/f_dataset.tex:116-118` and `rubric_audit.md:50-58` at the repo root (the copy the code loads, `src/reprocli_vllm/config/config.py:33`). Memory `lockfile-is-audited-selection` notes the auditor restates the target tuple at grade time, so E7 compares the re-derived tuple with the tuple the auditor actually used.
 
 ### E. Environment and attribution (YGTR W2, Q2, Q3; rqBN Q1)
 
@@ -115,7 +115,7 @@ Risks that push cost up: reasoning tokens bill as output; flex prices hold only 
 - **Arms.** gpt-6.1-sol, thin and Codex, all 24 papers (48 runs, $268). gpt-6.1-terra, thin and Codex, all 24 papers (48 runs, $134). gpt-6-astra in Codex on the first 8 papers, at least two per tier (8 runs, $247), as the strongest model in the configuration a researcher would actually use. Smoke: the wiring is the same for every OpenAI model, so smoke runs use gpt-6.1-terra once per harness on a development paper (2 runs, $6). Expected total $655, leaving $95 for standard-price fallbacks and overruns.
 - **Sizing rule.** The core 12 papers launch first for every arm, papers 13 to 24 next, gpt-6-astra last. If measured cost projects the total above $700, gpt-6-astra drops to 4 papers, then papers 13 to 24 are dropped from gpt-6.1-terra's Codex arm. A spend check runs after each finished run and stops launches at $700.
 - **Log conversion check.** The auditor was validated on thin-loop logs, so the Codex smoke runs are graded twice, once from the raw event stream and once from the converted logs, and must get the same verdict.
-- **Fixed in advance (written into `subset.json` before launch).** The harness effect is the paired difference in reproduced papers per model, tested with an exact McNemar test and read against the flip rate E3 measures; a difference below that flip rate is reported as no measured effect. Haochen and Samridhi label the failure mode of every failing frontier run with the paper's taxonomy, independently and blind to the LLM labels, and "same failure modes" means the share of the paper's top three modes falls inside the 95% interval of the open agents' shares. We report how many runs per arm hit the input cap or Codex's own compaction.
+- **Fixed in advance (written into `subset.json` before launch).** The harness effect is the paired difference in reproduced papers per model, tested with an exact McNemar test and read against the flip rate E3 measures; a difference below that flip rate is reported as no measured effect. Every failing frontier run gets its failure mode from the same labeling pass that produced the paper's labels, so the comparison with the open agents is like for like, and Mithil labels a random 20 of those runs himself, blind to the pass's labels, to report how often he agrees with it. "Same failure modes" means the share of the paper's top three modes falls inside the 95% interval of the open agents' shares. We report how many runs per arm hit the input cap or Codex's own compaction.
 - **GPU-hours.** Muse Spark used 21.8% of its grant, so expect 0.218 x 688 = 150 per 24-paper arm: four such arms 600, plus astra about 50, about 650 in all, more if flex latency lengthens GPU holds. Ceiling about 3,010.
 - **Time.** Codex wrapper, thin-harness configs and the flex field 1.5 days, smoke half a day, runs up to 48 hours plus flex delays. Any run still going at 2026-11-12 18:00 CT is stopped, graded on what it produced, and reported as stopped.
 - **What changes the reply.** If the frontier models land inside or near the open models' range per tier and fail in the same modes by the rule above, the reply says the taxonomy holds for current frontier agents. If Codex beats our harness by more than the flip rate, the reply reports the harness effect with its p-value and which modes it removed. If gpt-6-astra in Codex reproduces most of its papers, the abstract changes to say frontier agents close much of the gap, and the reply leads with that.
@@ -149,16 +149,17 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 
 ### E6. Tolerance sensitivity (CPU analysis)
 
-- **What.** For each graded run, take the measured value and target tuple from the audit record and recompute the match at 1%, 2%, 5% and 10% relative, and for percentage metrics at 1 and 2 absolute points; count claims under the default; rescore the E7 papers against the second annotator's targets.
+- **What.** For each graded run, take the measured value and target tuple from the audit record and recompute the match at 1%, 2%, 5% and 10% relative, and for percentage metrics at 1 and 2 absolute points; count claims under the default; rescore every paper whose E7 target differs from the frozen one against the target Mithil settles on.
 - **Limit.** Tightening can move a reproduced run to partial and loosening a number-only partial to reproduced; runs that failed for other reasons do not move.
 - **Where and time.** Delta CPU or claude-vps (about 400 rows), half a day including pulling audit rows.
 - **What changes the reply.** Small movement at 2% and 10% supports "conclusions are insensitive to the default"; a collapse at 1% goes in as a table with the argument from E3's run-to-run spread.
 
-### E7. Target validation agreement (people)
+### E7. Target validation (model re-derivation, Mithil settles disagreements)
 
-- **What.** Samridhi re-derives the target tuple and minimal configuration for 30 eval papers, 10 per tier, from the paper alone, blind to the frozen value. Report exact agreement on metric and configuration and the relative difference on the value.
-- **Time.** About 15 minutes per paper, 7.5 hours, first run, no baseline.
-- **What changes the reply.** At least 26 of 30 gives an inter-annotator figure; lower agreement goes in as a measured limitation with the disagreeing papers named.
+- **What.** gpt-6.1-sol on flex, a different lab's model from both the auditor and the Claude model that drafted the targets, reads each of the 100 eval papers and writes the target tuple and minimal configuration from the paper alone, blind to the frozen value. A script compares metric, configuration and value with the frozen tuple. Mithil reads only the papers where they disagree and records which side the paper supports.
+- **Example of one comparison.** For a paper whose frozen target is top-1 accuracy 76.4 on ImageNet at the ResNet-50 setting, a re-derived 76.1 at the same metric and setting agrees on metric and configuration and differs by 0.3/76.4 = 0.4% on value, inside the 5% default, so it needs no check; a re-derived target from a different table row goes to Mithil.
+- **Cost and time.** About 30k input tokens per paper, 3M in all, about $5 on flex; one hour of agent work. Mithil's time depends on the disagreement count, about 10 minutes each, first run, no baseline.
+- **What changes the reply.** The reply reports agreement on metric and configuration out of 100, the value gap, and how many disagreements Mithil resolved in favor of the frozen target. It calls the second deriver a model and says so plainly; a frozen target found wrong is corrected and its runs rescored.
 
 ### E8. Attribution bound and rerun of the 6 non-agent cells
 
@@ -176,7 +177,7 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 
 ### E10. Environment check: re-execution of faithful pipelines (GPU)
 
-- **What.** For up to 6 Run-tier and 4 Retrain-tier papers (0-8 band) whose faithful pipeline landed outside tolerance (24 such runs at Run, 37 at Retrain), Haochen extracts the final command sequence from the best run's transcript and re-runs it with two new seeds on GH200, with no agent. The reply calls this an environment check.
+- **What.** For up to 6 Run-tier and 4 Retrain-tier papers (0-8 band) whose faithful pipeline landed outside tolerance (24 such runs at Run, 37 at Retrain), an agent extracts the final command sequence from the best run's transcript and re-runs it with two new seeds on GH200, with no model in the loop, and Mithil checks each extracted sequence against the transcript before it is submitted. The reply calls this an environment check.
 - **GPU-hours.** Run 6 x 2 x 2 = 24, Retrain up to its 8-hour grant 4 x 2 x 8 = 64, about 90; ceiling 180.
 - **What changes the reply.** Misses that recur on two seeds belong to the environment or the paper, and the reply and Limitations count them; hits mean the original miss was seed variance or agent error.
 
@@ -190,10 +191,11 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 | E1 gpt-6-astra, flex, Codex, 8 papers | 247 | | 50 / 260 |
 | E2 Muse Wonder, thin 12 + mini-SWE-agent 6 | | 401 | 113 / 550 |
 | E3 DeepSeek-V4-Flash repeats, agents + 4 brain jobs | | | 564 / 1,072 |
+| E7 target re-derivation, gpt-6.1-sol flex, 100 papers | 5 | | |
 | E8 rerun of 2510.20725 (4 agents) + 2 re-audits | | 7 | 45 / 70 |
 | E10 environment check | | | 90 / 180 |
 | E5, E6, E8, E9 analyses | | | CPU, under 50 core-hours on bgnp-delta-cpu |
-| **Total** | **655 of 750** | **453 of 500** | **about 1,477 / 4,924** |
+| **Total** | **660 of 750** | **453 of 500** | **about 1,477 / 4,924** |
 
 Expected GPU use is 24% of betw-dtai-gh's 6,168 hours; the worst case, every run spending its full grant, is 80%, which would crowd the queued Distillation jobs, so a GPU check after the core 12 papers decides whether papers 13 to 24 launch. Grading on the Anthropic key is extra and measured at smoke. Claude Code as a harness stays out: it bills to Anthropic, and Codex CLI and mini-SWE-agent already cover the production-harness question.
 
@@ -214,18 +216,18 @@ Compile, then read every rendered page for split floats, early page ends and une
 
 ## 4. Schedule, 2026-11-07 to 2026-11-14
 
-Owners: **M** Mithil, **H** Haochen, **S** Samridhi. "Agents" means Claude workers launched from Mithil's session; Mithil checks each result.
+Mithil is the only person working on the rebuttal; Haochen and Samridhi take no tasks (Mithil, 2026-11-06). "Agents" means Claude workers launched from Mithil's session, and Mithil checks each result. His own hands-on time is the key setup, the E4 label file, E7 disagreements, the 20 blind failure-mode labels, checking E10 command sequences, and approving each reply.
 
-| Day | M | H | S |
-| :- | :- | :- | :- |
-| Sat 11-07 | OpenAI and Meta keys are in DeltaAI `~/.bashrc` (confirmed 2026-11-06); set the $750 OpenAI project budget and a Meta limit. Locate DeltaAI checkout, land the account override, confirm the hour unit on a tiny betw job. Copy `~/sweeps/paper-table-2026-09-05/` to `/work/nvme/bfvr/msalunkhe/rebuttal/`. Agents freeze `subset.json`, check the Codex aarch64 binary, start E5, E6, E9 scripts | Read the taxonomy (Appendix G); pick E10 papers | Start E7 (10 papers) |
-| Sun 11-08 | Agents build the OpenAI and Meta thin-harness configs with the flex field, the Codex wrapper and the mini-SWE-agent wrapper; 4 smoke runs; size arms from measured cost. Review E5, E6, E9 outputs | Extract E10 command sequences | E7 (10 more) |
-| Mon 11-09 | Launch E1, E2, E3 brain jobs and E8 rerun. Draft T29u and rqBN replies | Launch E10 runs (via M's account setup) | Finish E7 (30) |
-| Tue 11-10 | Monitor runs and spend; audit finished runs. Supply the E4 label file | Read E10 results | E6 rescore against E7 targets with M |
-| Wed 11-11 | E4 matrix. **Post wave 1: T29u and rqBN replies** with E4, E5, E6, E7 and intervals, saying frontier results follow | Begin blind failure-mode labels on finished frontier runs | Same, independently |
-| Thu 11-12 | Runs finish (48-hour limit); audit the rest; E8 bound and rerun grades; McNemar tests. Start paper revisions under `m-paper` | Finish labels | Finish labels |
-| Fri 11-13 | Frontier tables and appendix; compile; page read. Draft YGTR and general replies | Review YGTR reply against the numbers | Review general reply |
-| Sat 11-14 | **Post wave 2: YGTR reply, general reply, revised PDF.** Answer wave-1 follow-ups | | |
+| Day | Mithil | Agents |
+| :- | :- | :- |
+| Sat 11-07 | Set the $750 OpenAI project budget and a Meta limit. Copy `~/sweeps/paper-table-2026-09-05/` to `/work/nvme/bfvr/msalunkhe/rebuttal/` | Locate the DeltaAI checkout, land the account override, confirm the hour unit on a tiny betw job; freeze `subset.json`; check the Codex aarch64 binary; write and run E5, E6, E9; start E7 re-derivation; pick E10 papers |
+| Sun 11-08 | Review E5, E6, E9 outputs; check E10 command sequences | Build the OpenAI and Meta thin-harness configs with the flex field, the Codex wrapper and the mini-SWE-agent wrapper; 4 smoke runs; size arms from measured cost; extract E10 sequences; finish E7 comparison |
+| Mon 11-09 | Approve launches; settle E7 disagreements | Launch E1, E2, E3 brain jobs, the E8 rerun and E10; draft T29u and rqBN replies |
+| Tue 11-10 | Supply the E4 label file; read the T29u and rqBN drafts | Monitor runs and spend; audit finished runs; E6 rescore on settled E7 targets |
+| Wed 11-11 | **Post wave 1: T29u and rqBN replies** | E4 matrix; label failure modes on finished frontier runs with the paper's labeling pass; draw Mithil's random 20 |
+| Thu 11-12 | Label the 20 frontier runs blind | Runs finish or stop at 18:00 CT; audit the rest; E8 bound and rerun grades; McNemar tests; start paper revisions under `m-paper` |
+| Fri 11-13 | Read the revised PDF and the YGTR and general drafts | Frontier tables and appendix; compile; one agent per page reads spacing; one reader agent per reply with no context checks every number against `rebuttal/results/` |
+| Sat 11-14 | **Post wave 2: YGTR reply, general reply, revised PDF.** Answer wave-1 follow-ups | |
 
 Two waves give T29u and rqBN three days to respond before the deadline.
 
@@ -235,7 +237,7 @@ Two waves give T29u and rqBN three days to respond before the deadline.
 2. The second E3 repeat (two runs per paper), saving about 280 GPU-hours.
 3. Papers 13 to 24 for gpt-6.1-terra (both harnesses), then for gpt-6.1-sol's Codex arm.
 4. E10 down to the 6 Run-tier papers.
-5. E7 down to 15 papers.
+5. Mithil's blind check of the frontier labels down to 10 runs.
 
 Never cut: gpt-6.1-sol in both harnesses on the core 12, gpt-6-astra in Codex, the E8 rerun, E5 and E9. YGTR's score depends on the first two, the rerun is approved, and the last two directly answer soundness questions.
 
@@ -255,18 +257,18 @@ Each reply thanks the reviewer in one sentence and names what changed, answers i
 
 - **Single run per cell.** "We added 95% intervals to every rate (best agent at Run: 14/34, [26%, 58%]) and ran DeepSeek-V4-Flash twice more on 12 stratified papers; its verdict flipped on [k] of 12 ([interval]), and we now rank two agents only where intervals widened by that rate do not overlap. This measures one agent's spread, and the paper says so."
 - **Disagreements, 7/8 boundary, high-severity flags (Q1).** "Appendix D now gives the confusion matrix of auditor against human verdicts [counts]; at the 7/8 boundary they agree on [m] of [n] runs, and on high-severity flags on [p] of [q]."
-- **Tolerance and match target (Q2).** "[c] of the 100 claims use the default 5% relative tolerance. At 2% the best-agent rate changes by [d, e, f] papers at Run, Retrain and Reimplement, and at 10% by [g, h, i] (new table in Appendix F). Rescoring 30 papers against targets a second annotator derived on their own changes [j] verdicts."
+- **Tolerance and match target (Q2).** "[c] of the 100 claims use the default 5% relative tolerance. At 2% the best-agent rate changes by [d, e, f] papers at Run, Retrain and Reimplement, and at 10% by [g, h, i] (new table in Appendix F). Rescoring against targets re-derived independently changes [j] verdicts."
 
 ### Reviewer rqBN
 
 - **Auditor metrics.** The confusion matrix, precision [x], recall [y], per-tier F1 [r/t/i] and mean absolute difference on the 0 to 10 scale [d], from the human labels.
 - **Writable logs.** "You are right, and our paper overstated the safeguard: the auditor prompt never told the auditor to distrust these logs, and we correct that sentence. The harness writes both files, but the agent could rewrite them. We compared both with the host-side transcript, which lies outside the sandbox, for all 396 runs and found [0] edits; the check catches any edit the agent made through its own commands. New runs write a hash-chained log on the host."
 - **Human-expert baseline (Q1).** "A human reproduction across three tiers is beyond our resources, and Limitations says so. As an environment check we re-ran the faithful agents' own pipelines with two new seeds on [n] Run and Retrain papers whose faithful run missed; [k] also miss on our hardware, which bounds how much of the gap belongs to the environment."
-- **Validation of claims and targets (Q2).** "Stage III audited availability calls only, and targets had no second annotator until now. A second annotator re-derived the target for 30 papers blind to the frozen value and agreed on metric and configuration for [a/30], with the value within [v]% on [b/30]."
+- **Validation of claims and targets (Q2).** "Stage III audited availability calls only, and targets had no independent check until now. A model from a different lab than our auditor re-derived all 100 targets from the papers, blind to the frozen values, and agreed on metric and configuration for [a/100]; an author read every disagreement and found the frozen target wrong in [k], which we corrected and rescored."
 
 ### Reviewer YGTR
 
-- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra, gpt-6.1-sol and gpt-6.1-terra from OpenAI on up to 24 stratified papers and Muse Wonder from Meta on 12, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled by two annotators blind to our LLM labels." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
+- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra, gpt-6.1-sol and gpt-6.1-terra from OpenAI on up to 24 stratified papers and Muse Wonder from Meta on 12, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled with the same procedure as the paper's runs; an author's blind labels agree with it on [x] of 20." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
 - **Hardware (W2).** "We cannot fully separate the hardware from agent error, and we bound it three ways. Missing aarch64 wheels explain [k] of the 24 build-and-dependency failures; removing all 24 from the denominators moves the best Run-tier rate from 41% to at most [x]%; and re-running the faithful agents' own pipelines with two new seeds, [k2] of [n] still missed on our hardware."
 - **Single run (W2).** The E3 sentence.
 - **Checkpoint fetching (Q2).** "We scanned all [396] transcripts for checkpoint downloads; [n] Retrain or Reimplement runs downloaded a checkpoint, [k] of them a third-party checkpoint of the claimed model, and [none] of those were graded reproduced."
