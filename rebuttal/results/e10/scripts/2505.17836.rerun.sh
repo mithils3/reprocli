@@ -1,7 +1,7 @@
 #!/bin/bash
 # E10 environment check. Run muse-retrain-2505.17836 (2505.17836, muse-wonder-1.0, tier retrain).
 # SRC_LOG=/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2505.17836/8h/20260816T133804Z-2505.17836-5f483b/evidence/commands.log
-# Original: default seed 0. Wall 0.01 h. Measured 0.03947 (final_mean, average normalized absolute error, 100 trials, t=80000, 2D Grid n=500); target ~0.05 (GoRank estimate at t=80000).
+# Original: default seed 0. Wall 0.12 h. Measured 0.03947 (final_mean, average normalized absolute error, 100 trials, t=80000, 2D Grid n=500); target ~0.05 (GoRank estimate at t=80000).
 # Usage: SEED=1 bash rerun.sh   (new seeds 1 and 2). Lines marked PATCH are not in the transcript.
 set -euo pipefail
 : "${SEED:?set SEED}"; export SEED
@@ -14,6 +14,11 @@ if [ ! -d "$R/workspace" ]; then
 fi
 # PATCH (not in transcript): the config sets experiment.seed (line 2); the original used 42
 rg -q '^  seed: 42$' "$R/workspace/repo/configs/exp_target.yaml" && sed -i "s/^  seed: 42$/  seed: $SEED/" "$R/workspace/repo/configs/exp_target.yaml"
+# L1 ts 13:40:47 dur 148s gpus 0
+uv venv $R/workspace/.venv --python 3.12 2>&1 | tail -20
+uv pip install --python $R/workspace/.venv/bin/python --index-url https://download.pytorch.org/whl/cu129 torch torchvision torchaudio 2>&1 | tail -20
+ls -la $R/workspace/.venv/bin/python
+ls -la $R/reference/ 2>&1 | head -50
 # L159 ts 13:47:33 dur 98s gpus 1
 cd $R/workspace/repo && PYTHONUNBUFFERED=1 $R/workspace/.venv/bin/python run_experiments.py --exp_name exp_target 2>&1 | tee $R/evidence/exp_target_run.log
 echo "EXIT:$?"

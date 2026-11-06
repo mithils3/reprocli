@@ -16,3 +16,5 @@ Result: Run 1 of 6 papers, Retrain 2 of 4. Band 0-8 clean pool exhausted.
 Scripts: `scripts/<arxiv_id>.rerun.sh`, checked against `commands.log` by line (`# L<n>`). Run through `jobs/*.sbatch` on ghx4 with `cuda1290-agent.sif`; PATCH lines are not in the transcript. Status and job ids: `/work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json`.
 
 Caveat: the data shuffle seed is fixed at 0 (src/data_utils.py:71), so SEED changes search and pruning only (not used in this subset).
+
+Status (2026-11-06): no workspace keeps its .venv, so each script rebuilds it from the transcript setup entries inside the job (uv venv and pip installs). Jobs use `jobs/<paper>_s<seed>.sbatch`, state in `/work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json`. Smoke job 3540299 failed at container start (missing venv, now fixed); resubmitted as 3540342 (pending). reruns.csv is pending.
