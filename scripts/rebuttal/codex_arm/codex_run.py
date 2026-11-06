@@ -274,6 +274,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("OPENAI_API_KEY is not set; source it from ~/.bashrc first (value is never printed).")
     os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", "betw-dtai-gh")
     os.environ.setdefault("APPTAINERENV_OPENAI_API_KEY", os.environ["OPENAI_API_KEY"])
+    os.environ.setdefault("APPTAINERENV_CODEX_API_KEY", os.environ["OPENAI_API_KEY"])  # codex exec reads this one
 
     harness_argv = ["--paper-id", own.paper_id, "--runs-dir", own.runs_dir, "--model", own.model,
                     "--budget-h100-hours", str(own.budget_h100_hours)]
