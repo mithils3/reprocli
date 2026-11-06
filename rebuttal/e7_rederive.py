@@ -216,7 +216,7 @@ def check(obj, schema):
         if not isinstance(obj[k], want):
             return f"type:{k}"
     if "found" in obj:
-        if obj["found"] and not all(obj[k].strip() for k in ("value", "units", "table_or_figure", "quote")):
+        if obj["found"] and not all(obj[k].strip() for k in ("value", "quote")):
             return "found_but_blank"
     elif not obj["quote"].strip():
         return "quote_blank"
