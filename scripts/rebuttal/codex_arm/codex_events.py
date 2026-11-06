@@ -47,6 +47,7 @@ class Recorder:
         self.phase = "work"
         self.turns: list[dict[str, Any]] = []
         self.thread_id: str | None = None
+        self.failure: str | None = None  # message of the latest failed turn or error event
         self._lock = threading.Lock()
         self.full_log = self.run_dir / "agent.full.log"
 
@@ -63,9 +64,11 @@ class Recorder:
             self.thread_id = event.get("thread_id")
             self._write([f"session {self.thread_id} phase={self.phase} model={self.model}"])
         elif kind == "turn.completed":
+            self.failure = None
             self._turn(event.get("usage") or {})
         elif kind in ("turn.failed", "error"):
             message = (event.get("error") or {}).get("message") or event.get("message") or ""
+            self.failure = message
             self._write([f"ERROR {kind}: {message}"])
         elif kind in ("item.completed", "item.updated"):
             self._item(event.get("item") or {}, final=kind == "item.completed")
@@ -166,13 +169,16 @@ class Recorder:
         return target
 
 
-def request_usage(codex_home: Path) -> dict[str, Any]:
-    """Per model request input tokens, from the rollout files Codex keeps under CODEX_HOME.
+def rollout_requests(codex_home: Path, model: str) -> list[dict[str, Any]]:
+    """Every billed model request under CODEX_HOME, read from the session rollouts.
 
-    ``turn.completed`` sums a turn's requests, so the per-request maximum (the flex 256k ceiling)
-    has to come from ``token_count`` events in the session rollout.
+    A failed turn can still bill requests that the event stream never reports as usage, so
+    the rollout ``token_count`` events are the source of truth. Resumed sessions may copy
+    earlier history into a new rollout file; requests are de-duplicated on the cumulative
+    token totals, which only grow.
     """
-    requests: list[int] = []
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for rollout in sorted(Path(codex_home).glob("sessions/**/rollout-*.jsonl")):
         for line in rollout.read_text(encoding="utf-8").splitlines():
             try:
@@ -180,16 +186,42 @@ def request_usage(codex_home: Path) -> dict[str, Any]:
             except ValueError:
                 continue
             payload = row.get("payload") or {}
-            if row.get("type") == "event_msg" and payload.get("type") == "token_count":
-                last = ((payload.get("info") or {}).get("last_token_usage") or {})
-                if "input_tokens" in last:
-                    requests.append(int(last["input_tokens"]))
-    return {"requests": requests, "max_request_input_tokens": max(requests) if requests else 0}
+            if row.get("type") != "event_msg" or payload.get("type") != "token_count":
+                continue
+            info = payload.get("info") or {}
+            last = info.get("last_token_usage") or {}
+            if "input_tokens" not in last:
+                continue
+            key = json.dumps(info.get("total_token_usage"), sort_keys=True) or str(last)
+            if key in seen:
+                continue
+            seen.add(key)
+            inp = int(last.get("input_tokens") or 0)
+            cached = int(last.get("cached_input_tokens") or 0)
+            out = int(last.get("output_tokens") or 0)
+            rows.append({
+                "index": len(rows),
+                "input_tokens": inp,
+                "cached_input_tokens": cached,
+                "output_tokens": out,
+                "reasoning_output_tokens": int(last.get("reasoning_output_tokens") or 0),
+                "usd": round(turn_usd(model, inp, cached, out), 6),
+            })
+    return rows
 
 
-def attach_requests(run_dir: Path, codex_home: Path) -> None:
-    """Add the per-request input counts to usage.json."""
+def attach_requests(run_dir: Path, codex_home: Path, model: str) -> dict[str, Any]:
+    """Write the per-request rows and rollout totals into usage.json; return the totals."""
     target = Path(run_dir) / "usage.json"
-    payload = json.loads(target.read_text(encoding="utf-8"))
-    payload.update(request_usage(codex_home))
+    payload = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
+    requests = rollout_requests(codex_home, model)
+    keys = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens")
+    totals = {k: sum(r[k] for r in requests) for k in keys}
+    totals["usd"] = round(sum(r["usd"] for r in requests), 6)
+    totals["requests"] = len(requests)
+    payload["requests"] = requests
+    payload["max_request_input_tokens"] = max((r["input_tokens"] for r in requests), default=0)
+    payload["totals"] = totals
+    payload["totals_source"] = "rollout token_count events (includes requests inside failed turns)"
     target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return totals

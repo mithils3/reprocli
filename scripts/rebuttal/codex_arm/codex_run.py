@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import re
 import json
 import os
 import shlex
@@ -68,27 +69,46 @@ CONTAINER_FINAL = f"{CONTAINER_IO}/final_message.json"
 # to 256k and it compacts its own history once the prompt passes 200k.
 CONTEXT_WINDOW = 256000
 AUTO_COMPACT_LIMIT = 200000
+# Rate limits and 5xx errors are retried inside Codex with its own backoff; a turn that still
+# fails with one of them is resumed by the launcher (MAX_RESUMES times, exponential backoff).
+REQUEST_RETRIES = 100
+MAX_RESUMES = 50
+RESUME_BACKOFF_BASE = 30
+RESUME_BACKOFF_CAP = 600
+TRANSIENT = re.compile(
+    r"429|rate.?limit|too many requests|overloaded|unexpected status 5\d\d|internal server error|"
+    r"bad gateway|service unavailable|gateway timeout|stream closed|timed out",
+    re.IGNORECASE,
+)
+RESUME_PROMPT = ("Continue the task from where it stopped. The previous request failed on a provider "
+                 "error (rate limit or server error), which is not the end of the task.")
 EXEC_FLAGS = (
     "--json --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "
     "-c model_reasoning_effort=high -c service_tier=flex "
-    f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT}"
+    f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT} "
+    f"-c model_providers.openai.request_max_retries={REQUEST_RETRIES} "
+    f"-c model_providers.openai.stream_max_retries={REQUEST_RETRIES}"
 )
 
 
-def codex_body(model: str, prompt: str, *, resume: bool, final_extra: str = "") -> str:
-    """The bash body run inside the sandbox: put the run_gpu shim on PATH, then exec codex."""
-    if resume:
-        head = f"exec {CONTAINER_CODEX} exec resume --last {EXEC_FLAGS} -m {shlex.quote(model)}"
-        head += f" --output-schema {CONTAINER_SCHEMA} -o {CONTAINER_FINAL}"
-    else:
-        head = (f"exec {CONTAINER_CODEX} exec {EXEC_FLAGS} -C /repro/workspace "
-                f"-m {shlex.quote(model)}")
+def codex_body(model: str, prompt: str, *, kind: str = "work") -> str:
+    """The bash body run inside the sandbox: put the run_gpu shim on PATH, then exec codex.
+
+    ``work`` starts the session, ``resume`` continues it after a transient failure, and
+    ``final`` continues it once more with the report schema and no new work.
+    """
+    head = {
+        "work": f"exec {CONTAINER_CODEX} exec {EXEC_FLAGS} -C /repro/workspace -m {shlex.quote(model)}",
+        "resume": f"exec {CONTAINER_CODEX} exec resume --last {EXEC_FLAGS} -m {shlex.quote(model)}",
+        "final": (f"exec {CONTAINER_CODEX} exec resume --last {EXEC_FLAGS} -m {shlex.quote(model)} "
+                  f"--output-schema {CONTAINER_SCHEMA} -o {CONTAINER_FINAL}"),
+    }[kind]
     return (
         # Runtime thread caps: the login node allows 1000 threads+procs per user.
         f"export PATH={CONTAINER_SHIM_DIR}/bin:$PATH CODEX_HOME={CONTAINER_HOME} "
         "TOKIO_WORKER_THREADS=4 RAYON_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 "
         f"CODEX_ARM_BRIDGE={CONTAINER_BRIDGE}; "
-        f"{head} {final_extra}-- {shlex.quote(prompt)}"
+        f"{head} -- {shlex.quote(prompt)}"
     )
 
 
@@ -206,6 +226,7 @@ class Run:
         # its children carry the tag in their environment.
         os.environ["APPTAINERENV_CODEX_ARM_RUN"] = self.tag
         self.stop_reason: str | None = None
+        self.resumes: list[dict[str, Any]] = []
         self.proc: subprocess.Popen | None = None
 
     def _launch(self, body: str, label: str) -> subprocess.Popen:
@@ -304,6 +325,7 @@ class Run:
             signal_all(signal.SIGKILL)
 
     def _phase(self, body: str, label: str, events_path: Path) -> int:
+        self.recorder.failure = None
         proc = self._launch(body, label)
         reader = threading.Thread(target=self._stream, args=(proc, events_path), daemon=True)
         reader.start()
@@ -314,20 +336,51 @@ class Run:
         done.set()
         return code
 
+    def _transient(self, rc: int) -> bool:
+        failure = self.recorder.failure
+        if failure is None:
+            return False
+        return bool(TRANSIENT.search(failure))
+
+    def _wait(self, seconds: float) -> None:
+        """Sleep, but return early when the run is stopped (budget, wall clock, signal)."""
+        deadline = time.monotonic() + seconds
+        while self.stop_reason is None and time.monotonic() < deadline:
+            time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
+
     def execute(self, task: str, final_prompt: str) -> tuple[str, str]:
-        """Run both phases. Returns (exit_reason, final report content)."""
+        """Run the work phase (resumed after transient provider errors), then the final pass.
+
+        Returns (exit_reason, final report content). A rate limit or 5xx is never a reason
+        for the agent to stop: the same session is resumed after a backoff, up to MAX_RESUMES.
+        """
         events_path = self.io_dir.parent / "codex_events.jsonl"
         self.bridge.start()
-        rc = self._phase(codex_body(self.model, task, resume=False), "work", events_path)
+        rc = self._phase(codex_body(self.model, task, kind="work"), "work", events_path)
+        while self.stop_reason is None and self._transient(rc):
+            if len(self.resumes) >= MAX_RESUMES:
+                self.recorder.log_line(f"GIVE UP after {MAX_RESUMES} resumes")
+                self.stop_reason = "error"
+                break
+            n = len(self.resumes) + 1
+            backoff = min(RESUME_BACKOFF_CAP, RESUME_BACKOFF_BASE * 2 ** (n - 1))
+            failure = (self.recorder.failure or "")[:300]
+            self.resumes.append({
+                "n": n, "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "after": failure, "backoff_s": backoff,
+            })
+            self.recorder.log_line(f"RESUME {n}/{MAX_RESUMES} after {backoff}s backoff; failure: {failure}")
+            self._wait(backoff)
+            if self.stop_reason is not None:
+                break
+            rc = self._phase(codex_body(self.model, RESUME_PROMPT, kind="resume"), f"resume{n}", events_path)
         if self.stop_reason is None and rc != 0:
             self.stop_reason = "error"
         exit_reason = self.stop_reason or "natural"
         gpu_session.release(self.ctx, exit_reason)
 
         self.bridge.refusing = True
-        final_extra = ""
-        self._phase(codex_body(self.model, final_prompt, resume=True, final_extra=final_extra),
-                    "final", events_path)
+        self._phase(codex_body(self.model, final_prompt, kind="final"), "final", events_path)
         final = self.io_dir / "final_message.json"
         content = final.read_text(encoding="utf-8") if final.exists() else ""
         self.bridge.stop.set()
@@ -405,8 +458,11 @@ def main(argv: list[str] | None = None) -> int:
         "model": own.model,
         "budget_h100_hours": own.budget_h100_hours,
         "wall_hours": own.wall_hours,
-        "work_command": codex_body(own.model, task, resume=False),
-        "final_command": codex_body(own.model, args.final_no_tools_message, resume=True),
+        "work_command": codex_body(own.model, task, kind="work"),
+        "resume_command": codex_body(own.model, RESUME_PROMPT, kind="resume"),
+        "final_command": codex_body(own.model, args.final_no_tools_message, kind="final"),
+        "request_retries": REQUEST_RETRIES,
+        "max_resumes": MAX_RESUMES,
         "task_text": task,
         "context_window": CONTEXT_WINDOW,
         "auto_compact_token_limit": AUTO_COMPACT_LIMIT,
@@ -431,9 +487,12 @@ def main(argv: list[str] | None = None) -> int:
         gpu_session.teardown_all([ctx])
     report_mod.write_episode_report(ctx, content, exit_reason)
     usage = recorder.write_usage()
-    attach_requests(run_dir, io_dir / "codex_home")
-    totals = recorder.totals()
-    recorder.log_line(f"DONE exit_reason={exit_reason} usd={totals['usd']} turns={totals['turns']}")
+    totals = attach_requests(run_dir, io_dir / "codex_home", own.model)
+    run_meta = json.loads((run_dir / "codex_run.json").read_text(encoding="utf-8"))
+    run_meta["resumes"] = run.resumes
+    (run_dir / "codex_run.json").write_text(json.dumps(run_meta, indent=2) + "\n", encoding="utf-8")
+    recorder.log_line(f"DONE exit_reason={exit_reason} usd={totals['usd']} requests={totals['requests']} "
+                      f"resumes={len(run.resumes)}")
     append_ledger(Path(own.ledger), {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "item": own.item,
@@ -443,6 +502,7 @@ def main(argv: list[str] | None = None) -> int:
         "cached": totals["cached_input_tokens"],
         "out": totals["output_tokens"],
         "usd": totals["usd"],
+        "requests": totals["requests"],
         "run_dir": str(run_dir),
         "arm": "codex",
     })
