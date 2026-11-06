@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# One BLAS/OpenMP thread per harness process: numpy's OpenBLAS starts 64 threads per process, and 8 runs on one login node hit the 1000-pid user cgroup (2026-11-06 Codex crash).
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 # Rebuttal API-model runs: reproduce the subset papers (rebuttal/subset.json) on OpenAI
 # or the Meta Model API through the thin harness. Derived from
 # scripts/reproduce/muse_spark/muse_spark_sweep.sh, which is unchanged.

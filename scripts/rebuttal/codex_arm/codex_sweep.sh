@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# One BLAS/OpenMP thread per harness process: numpy's OpenBLAS starts 64 threads per process, and 8 runs on one login node hit the 1000-pid user cgroup (2026-11-06 Codex crash).
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 # Codex-arm sweep: one codex_run.py per paper, on DeltaAI login node.
 #   MODEL=gpt-6.1-terra RANKS=1-12 nohup scripts/rebuttal/codex_arm/codex_sweep.sh > sweep.log 2>&1 &
 #   MODEL=gpt-6.1-terra SMOKE=1 scripts/rebuttal/codex_arm/codex_sweep.sh
