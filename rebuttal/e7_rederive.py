@@ -183,11 +183,15 @@ def derive_one(row, key, done_ids):
                        "tier": tier_used, "custom_id": aid})
         rec.update(tier_used=tier_used, finish_reason=choice.get("finish_reason"), usd=round(usd, 6),
                    in_tokens=inp, cached_tokens=cached, out_tokens=out, error=None)
+        content = choice.get("message", {}).get("content") or ""
+        rec["raw_head"] = content[:600]
         try:
-            rec.update({k: v for k, v in json.loads(choice["message"]["content"]).items()
+            obj = json.loads(content)
+            rec["keys"] = sorted(obj) if isinstance(obj, dict) else type(obj).__name__
+            rec.update({k: v for k, v in obj.items()
                         if k in ("metric", "dataset_split", "configuration", "value", "units", "table_or_figure", "quote")})
-        except (json.JSONDecodeError, TypeError, KeyError):
-            rec.update(error="parse_error", raw_head=str(choice.get("message", {}).get("content"))[:300])
+        except (json.JSONDecodeError, AttributeError):
+            rec.update(error="parse_error")
     with LOCK:
         with (RESULTS / "rederived.jsonl").open("a") as f:
             f.write(json.dumps(rec) + "\n")
@@ -247,7 +251,7 @@ def wilson(k, n, z=1.959964):
     denom = 1 + z * z / n
     center = (p + z * z / (2 * n)) / denom
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
-    return round(center - half, 4), round(center + half, 4)
+    return max(0.0, round(center - half, 4)), min(1.0, round(center + half, 4))
 
 
 def compare(claims):
