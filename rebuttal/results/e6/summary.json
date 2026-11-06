@@ -53,9 +53,57 @@
   "qwen3-run-2505.24873": "clearly misses the bar on the pinned scope; no flags",
   "qwen3-run-2511.00090": "miss on the measured speedup; low flags only"
  },
+ "tier_sizes": {
+  "run": 34,
+  "retrain": 33,
+  "reimplement": 33
+ },
+ "reproduced_overall_index": 73,
+ "reproduced_point_estimate_index": 51,
+ "reproduced_not_point_estimate_index": {
+  "threshold": 10,
+  "direction": 11,
+  "magnitude": 1
+ },
+ "falls_by_setting": {
+  "rel1": 17,
+  "rel2": 8,
+  "rel10": 0
+ },
+ "falls_at_best_agent_at_5pct": {
+  "rel1": [
+   "dsv4-run-2502.05795 (best at 5%)",
+   "dsv4-run-2503.23035 (best at 5%)",
+   "dsv4-run-2504.20571 (best at 5%)",
+   "dsv4-run-2505.18809 (best at 5%)",
+   "dsv4-run-2506.20990 (best at 5%)",
+   "dsv4-retrain-2510.21363 (best at 5%)",
+   "muse-retrain-2505.24680 (best at 5%)",
+   "muse-reimplement-2503.02809 (best at 5%)"
+  ],
+  "rel2": [
+   "dsv4-run-2502.05795 (best at 5%)",
+   "dsv4-run-2503.23035 (best at 5%)",
+   "dsv4-retrain-2510.21363 (best at 5%)"
+  ],
+  "rel10": []
+ },
+ "best_agent_at_5pct": {
+  "run": [
+   "dsv4"
+  ],
+  "retrain": [
+   "dsv4",
+   "muse"
+  ],
+  "reimplement": [
+   "muse"
+  ]
+ },
  "cells": {
   "dsv4/run": {
-   "n": 29,
+   "n": 34,
+   "runs_present": 29,
    "S0_index": 14,
    "rel1": 9,
    "rel2": 12,
@@ -66,7 +114,8 @@
    "claim_stated": 14
   },
   "dsv4/retrain": {
-   "n": 28,
+   "n": 33,
+   "runs_present": 28,
    "S0_index": 9,
    "rel1": 8,
    "rel2": 8,
@@ -77,7 +126,8 @@
    "claim_stated": 9
   },
   "dsv4/reimplement": {
-   "n": 30,
+   "n": 33,
+   "runs_present": 30,
    "S0_index": 4,
    "rel1": 4,
    "rel2": 4,
@@ -89,6 +139,7 @@
   },
   "qwen3/run": {
    "n": 34,
+   "runs_present": 34,
    "S0_index": 5,
    "rel1": 3,
    "rel2": 3,
@@ -99,7 +150,8 @@
    "claim_stated": 5
   },
   "qwen3/retrain": {
-   "n": 26,
+   "n": 33,
+   "runs_present": 26,
    "S0_index": 6,
    "rel1": 5,
    "rel2": 6,
@@ -110,7 +162,8 @@
    "claim_stated": 6
   },
   "qwen3/reimplement": {
-   "n": 30,
+   "n": 33,
+   "runs_present": 30,
    "S0_index": 2,
    "rel1": 2,
    "rel2": 2,
@@ -121,7 +174,8 @@
    "claim_stated": 2
   },
   "minimax/run": {
-   "n": 33,
+   "n": 34,
+   "runs_present": 33,
    "S0_index": 3,
    "rel1": 2,
    "rel2": 2,
@@ -132,7 +186,8 @@
    "claim_stated": 3
   },
   "minimax/retrain": {
-   "n": 32,
+   "n": 33,
+   "runs_present": 32,
    "S0_index": 5,
    "rel1": 4,
    "rel2": 4,
@@ -144,6 +199,7 @@
   },
   "minimax/reimplement": {
    "n": 33,
+   "runs_present": 33,
    "S0_index": 2,
    "rel1": 2,
    "rel2": 2,
@@ -154,7 +210,8 @@
    "claim_stated": 2
   },
   "muse/run": {
-   "n": 33,
+   "n": 34,
+   "runs_present": 33,
    "S0_index": 9,
    "rel1": 5,
    "rel2": 8,
@@ -165,7 +222,8 @@
    "claim_stated": 9
   },
   "muse/retrain": {
-   "n": 32,
+   "n": 33,
+   "runs_present": 32,
    "S0_index": 9,
    "rel1": 8,
    "rel2": 9,
@@ -176,7 +234,8 @@
    "claim_stated": 9
   },
   "muse/reimplement": {
-   "n": 32,
+   "n": 33,
+   "runs_present": 32,
    "S0_index": 5,
    "rel1": 4,
    "rel2": 5,
@@ -191,29 +250,29 @@
   "S0_index": {
    "dsv4/run": {
     "reproduced": 14,
-    "n": 29,
-    "rate": 0.4828,
+    "n": 34,
+    "rate": 0.4118,
     "wilson95": [
-     0.3139,
-     0.6557
+     0.2637,
+     0.5778
     ]
    },
    "dsv4/retrain": {
     "reproduced": 9,
-    "n": 28,
-    "rate": 0.3214,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1793,
-     0.5066
+     0.1507,
+     0.4422
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -227,41 +286,14 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
-    "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
-    "wilson95": [
-     0.0185,
-     0.2132
-    ]
-   },
-   "minimax/run": {
-    "reproduced": 3,
-    "n": 33,
-    "rate": 0.0909,
-    "wilson95": [
-     0.0314,
-     0.2357
-    ]
-   },
-   "minimax/retrain": {
-    "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
-    "wilson95": [
-     0.0686,
-     0.3175
-    ]
-   },
-   "minimax/reimplement": {
     "reproduced": 2,
     "n": 33,
     "rate": 0.0606,
@@ -270,63 +302,7 @@
      0.1961
     ]
    },
-   "muse/run": {
-    "reproduced": 9,
-    "n": 33,
-    "rate": 0.2727,
-    "wilson95": [
-     0.1507,
-     0.4422
-    ]
-   },
-   "muse/retrain": {
-    "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
-    "wilson95": [
-     0.1556,
-     0.4537
-    ]
-   },
-   "muse/reimplement": {
-    "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
-    "wilson95": [
-     0.0686,
-     0.3175
-    ]
-   }
-  },
-  "rel1": {
-   "dsv4/run": {
-    "reproduced": 9,
-    "n": 29,
-    "rate": 0.3103,
-    "wilson95": [
-     0.1728,
-     0.4923
-    ]
-   },
-   "dsv4/retrain": {
-    "reproduced": 8,
-    "n": 28,
-    "rate": 0.2857,
-    "wilson95": [
-     0.1525,
-     0.4706
-    ]
-   },
-   "dsv4/reimplement": {
-    "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
-    "wilson95": [
-     0.0531,
-     0.2968
-    ]
-   },
-   "qwen3/run": {
+   "minimax/run": {
     "reproduced": 3,
     "n": 34,
     "rate": 0.0882,
@@ -335,52 +311,7 @@
      0.2296
     ]
    },
-   "qwen3/retrain": {
-    "reproduced": 5,
-    "n": 26,
-    "rate": 0.1923,
-    "wilson95": [
-     0.0851,
-     0.3788
-    ]
-   },
-   "qwen3/reimplement": {
-    "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
-    "wilson95": [
-     0.0185,
-     0.2132
-    ]
-   },
-   "minimax/run": {
-    "reproduced": 2,
-    "n": 33,
-    "rate": 0.0606,
-    "wilson95": [
-     0.0168,
-     0.1961
-    ]
-   },
    "minimax/retrain": {
-    "reproduced": 4,
-    "n": 32,
-    "rate": 0.125,
-    "wilson95": [
-     0.0497,
-     0.2807
-    ]
-   },
-   "minimax/reimplement": {
-    "reproduced": 2,
-    "n": 33,
-    "rate": 0.0606,
-    "wilson95": [
-     0.0168,
-     0.1961
-    ]
-   },
-   "muse/run": {
     "reproduced": 5,
     "n": 33,
     "rate": 0.1515,
@@ -389,51 +320,179 @@
      0.3092
     ]
    },
+   "minimax/reimplement": {
+    "reproduced": 2,
+    "n": 33,
+    "rate": 0.0606,
+    "wilson95": [
+     0.0168,
+     0.1961
+    ]
+   },
+   "muse/run": {
+    "reproduced": 9,
+    "n": 34,
+    "rate": 0.2647,
+    "wilson95": [
+     0.146,
+     0.4312
+    ]
+   },
+   "muse/retrain": {
+    "reproduced": 9,
+    "n": 33,
+    "rate": 0.2727,
+    "wilson95": [
+     0.1507,
+     0.4422
+    ]
+   },
+   "muse/reimplement": {
+    "reproduced": 5,
+    "n": 33,
+    "rate": 0.1515,
+    "wilson95": [
+     0.0665,
+     0.3092
+    ]
+   }
+  },
+  "rel1": {
+   "dsv4/run": {
+    "reproduced": 9,
+    "n": 34,
+    "rate": 0.2647,
+    "wilson95": [
+     0.146,
+     0.4312
+    ]
+   },
+   "dsv4/retrain": {
+    "reproduced": 8,
+    "n": 33,
+    "rate": 0.2424,
+    "wilson95": [
+     0.1283,
+     0.4102
+    ]
+   },
+   "dsv4/reimplement": {
+    "reproduced": 4,
+    "n": 33,
+    "rate": 0.1212,
+    "wilson95": [
+     0.0482,
+     0.2733
+    ]
+   },
+   "qwen3/run": {
+    "reproduced": 3,
+    "n": 34,
+    "rate": 0.0882,
+    "wilson95": [
+     0.0305,
+     0.2296
+    ]
+   },
+   "qwen3/retrain": {
+    "reproduced": 5,
+    "n": 33,
+    "rate": 0.1515,
+    "wilson95": [
+     0.0665,
+     0.3092
+    ]
+   },
+   "qwen3/reimplement": {
+    "reproduced": 2,
+    "n": 33,
+    "rate": 0.0606,
+    "wilson95": [
+     0.0168,
+     0.1961
+    ]
+   },
+   "minimax/run": {
+    "reproduced": 2,
+    "n": 34,
+    "rate": 0.0588,
+    "wilson95": [
+     0.0163,
+     0.1909
+    ]
+   },
+   "minimax/retrain": {
+    "reproduced": 4,
+    "n": 33,
+    "rate": 0.1212,
+    "wilson95": [
+     0.0482,
+     0.2733
+    ]
+   },
+   "minimax/reimplement": {
+    "reproduced": 2,
+    "n": 33,
+    "rate": 0.0606,
+    "wilson95": [
+     0.0168,
+     0.1961
+    ]
+   },
+   "muse/run": {
+    "reproduced": 5,
+    "n": 34,
+    "rate": 0.1471,
+    "wilson95": [
+     0.0645,
+     0.3013
+    ]
+   },
    "muse/retrain": {
     "reproduced": 8,
-    "n": 32,
-    "rate": 0.25,
+    "n": 33,
+    "rate": 0.2424,
     "wilson95": [
-     0.1325,
-     0.4211
+     0.1283,
+     0.4102
     ]
    },
    "muse/reimplement": {
     "reproduced": 4,
-    "n": 32,
-    "rate": 0.125,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0497,
-     0.2807
+     0.0482,
+     0.2733
     ]
    }
   },
   "rel2": {
    "dsv4/run": {
     "reproduced": 12,
-    "n": 29,
-    "rate": 0.4138,
+    "n": 34,
+    "rate": 0.3529,
     "wilson95": [
-     0.2551,
-     0.5926
+     0.2149,
+     0.5209
     ]
    },
    "dsv4/retrain": {
     "reproduced": 8,
-    "n": 28,
-    "rate": 0.2857,
+    "n": 33,
+    "rate": 0.2424,
     "wilson95": [
-     0.1525,
-     0.4706
+     0.1283,
+     0.4102
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -447,23 +506,14 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
-    "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
-    "wilson95": [
-     0.0185,
-     0.2132
-    ]
-   },
-   "minimax/run": {
     "reproduced": 2,
     "n": 33,
     "rate": 0.0606,
@@ -472,13 +522,22 @@
      0.1961
     ]
    },
+   "minimax/run": {
+    "reproduced": 2,
+    "n": 34,
+    "rate": 0.0588,
+    "wilson95": [
+     0.0163,
+     0.1909
+    ]
+   },
    "minimax/retrain": {
     "reproduced": 4,
-    "n": 32,
-    "rate": 0.125,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0497,
-     0.2807
+     0.0482,
+     0.2733
     ]
    },
    "minimax/reimplement": {
@@ -492,58 +551,58 @@
    },
    "muse/run": {
     "reproduced": 8,
-    "n": 33,
-    "rate": 0.2424,
+    "n": 34,
+    "rate": 0.2353,
     "wilson95": [
-     0.1283,
-     0.4102
+     0.1244,
+     0.4
     ]
    },
    "muse/retrain": {
     "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1556,
-     0.4537
+     0.1507,
+     0.4422
     ]
    },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   },
   "rel5": {
    "dsv4/run": {
     "reproduced": 14,
-    "n": 29,
-    "rate": 0.4828,
+    "n": 34,
+    "rate": 0.4118,
     "wilson95": [
-     0.3139,
-     0.6557
+     0.2637,
+     0.5778
     ]
    },
    "dsv4/retrain": {
     "reproduced": 9,
-    "n": 28,
-    "rate": 0.3214,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1793,
-     0.5066
+     0.1507,
+     0.4422
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -557,38 +616,38 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
     "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
+    "n": 33,
+    "rate": 0.0606,
     "wilson95": [
-     0.0185,
-     0.2132
+     0.0168,
+     0.1961
     ]
    },
    "minimax/run": {
     "reproduced": 3,
-    "n": 33,
-    "rate": 0.0909,
+    "n": 34,
+    "rate": 0.0882,
     "wilson95": [
-     0.0314,
-     0.2357
+     0.0305,
+     0.2296
     ]
    },
    "minimax/retrain": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    },
    "minimax/reimplement": {
@@ -602,6 +661,15 @@
    },
    "muse/run": {
     "reproduced": 9,
+    "n": 34,
+    "rate": 0.2647,
+    "wilson95": [
+     0.146,
+     0.4312
+    ]
+   },
+   "muse/retrain": {
+    "reproduced": 9,
     "n": 33,
     "rate": 0.2727,
     "wilson95": [
@@ -609,51 +677,42 @@
      0.4422
     ]
    },
-   "muse/retrain": {
-    "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
-    "wilson95": [
-     0.1556,
-     0.4537
-    ]
-   },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   },
   "rel10": {
    "dsv4/run": {
     "reproduced": 14,
-    "n": 29,
-    "rate": 0.4828,
+    "n": 34,
+    "rate": 0.4118,
     "wilson95": [
-     0.3139,
-     0.6557
+     0.2637,
+     0.5778
     ]
    },
    "dsv4/retrain": {
     "reproduced": 10,
-    "n": 28,
-    "rate": 0.3571,
+    "n": 33,
+    "rate": 0.303,
     "wilson95": [
-     0.2071,
-     0.5417
+     0.1738,
+     0.4734
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 5,
-    "n": 30,
-    "rate": 0.1667,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0734,
-     0.3356
+     0.0665,
+     0.3092
     ]
    },
    "qwen3/run": {
@@ -667,38 +726,38 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
     "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
+    "n": 33,
+    "rate": 0.0606,
     "wilson95": [
-     0.0185,
-     0.2132
+     0.0168,
+     0.1961
     ]
    },
    "minimax/run": {
     "reproduced": 4,
-    "n": 33,
-    "rate": 0.1212,
+    "n": 34,
+    "rate": 0.1176,
     "wilson95": [
-     0.0482,
-     0.2733
+     0.0467,
+     0.2662
     ]
    },
    "minimax/retrain": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    },
    "minimax/reimplement": {
@@ -712,58 +771,58 @@
    },
    "muse/run": {
     "reproduced": 10,
-    "n": 33,
-    "rate": 0.303,
+    "n": 34,
+    "rate": 0.2941,
     "wilson95": [
-     0.1738,
-     0.4734
+     0.1683,
+     0.4617
     ]
    },
    "muse/retrain": {
     "reproduced": 12,
-    "n": 32,
-    "rate": 0.375,
+    "n": 33,
+    "rate": 0.3636,
     "wilson95": [
-     0.2293,
-     0.5475
+     0.2219,
+     0.5338
     ]
    },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   },
   "abs1": {
    "dsv4/run": {
     "reproduced": 13,
-    "n": 29,
-    "rate": 0.4483,
+    "n": 34,
+    "rate": 0.3824,
     "wilson95": [
-     0.2841,
-     0.6245
+     0.239,
+     0.5496
     ]
    },
    "dsv4/retrain": {
     "reproduced": 9,
-    "n": 28,
-    "rate": 0.3214,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1793,
-     0.5066
+     0.1507,
+     0.4422
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -777,23 +836,14 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
-    "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
-    "wilson95": [
-     0.0185,
-     0.2132
-    ]
-   },
-   "minimax/run": {
     "reproduced": 2,
     "n": 33,
     "rate": 0.0606,
@@ -802,13 +852,22 @@
      0.1961
     ]
    },
+   "minimax/run": {
+    "reproduced": 2,
+    "n": 34,
+    "rate": 0.0588,
+    "wilson95": [
+     0.0163,
+     0.1909
+    ]
+   },
    "minimax/retrain": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    },
    "minimax/reimplement": {
@@ -822,58 +881,58 @@
    },
    "muse/run": {
     "reproduced": 8,
-    "n": 33,
-    "rate": 0.2424,
+    "n": 34,
+    "rate": 0.2353,
     "wilson95": [
-     0.1283,
-     0.4102
+     0.1244,
+     0.4
     ]
    },
    "muse/retrain": {
     "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1556,
-     0.4537
+     0.1507,
+     0.4422
     ]
    },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   },
   "abs2": {
    "dsv4/run": {
     "reproduced": 14,
-    "n": 29,
-    "rate": 0.4828,
+    "n": 34,
+    "rate": 0.4118,
     "wilson95": [
-     0.3139,
-     0.6557
+     0.2637,
+     0.5778
     ]
    },
    "dsv4/retrain": {
     "reproduced": 9,
-    "n": 28,
-    "rate": 0.3214,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1793,
-     0.5066
+     0.1507,
+     0.4422
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -887,23 +946,14 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
-    "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
-    "wilson95": [
-     0.0185,
-     0.2132
-    ]
-   },
-   "minimax/run": {
     "reproduced": 2,
     "n": 33,
     "rate": 0.0606,
@@ -912,13 +962,22 @@
      0.1961
     ]
    },
+   "minimax/run": {
+    "reproduced": 2,
+    "n": 34,
+    "rate": 0.0588,
+    "wilson95": [
+     0.0163,
+     0.1909
+    ]
+   },
    "minimax/retrain": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    },
    "minimax/reimplement": {
@@ -932,6 +991,15 @@
    },
    "muse/run": {
     "reproduced": 9,
+    "n": 34,
+    "rate": 0.2647,
+    "wilson95": [
+     0.146,
+     0.4312
+    ]
+   },
+   "muse/retrain": {
+    "reproduced": 9,
     "n": 33,
     "rate": 0.2727,
     "wilson95": [
@@ -939,51 +1007,42 @@
      0.4422
     ]
    },
-   "muse/retrain": {
-    "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
-    "wilson95": [
-     0.1556,
-     0.4537
-    ]
-   },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   },
   "claim_stated": {
    "dsv4/run": {
     "reproduced": 14,
-    "n": 29,
-    "rate": 0.4828,
+    "n": 34,
+    "rate": 0.4118,
     "wilson95": [
-     0.3139,
-     0.6557
+     0.2637,
+     0.5778
     ]
    },
    "dsv4/retrain": {
     "reproduced": 9,
-    "n": 28,
-    "rate": 0.3214,
+    "n": 33,
+    "rate": 0.2727,
     "wilson95": [
-     0.1793,
-     0.5066
+     0.1507,
+     0.4422
     ]
    },
    "dsv4/reimplement": {
     "reproduced": 4,
-    "n": 30,
-    "rate": 0.1333,
+    "n": 33,
+    "rate": 0.1212,
     "wilson95": [
-     0.0531,
-     0.2968
+     0.0482,
+     0.2733
     ]
    },
    "qwen3/run": {
@@ -997,38 +1056,38 @@
    },
    "qwen3/retrain": {
     "reproduced": 6,
-    "n": 26,
-    "rate": 0.2308,
+    "n": 33,
+    "rate": 0.1818,
     "wilson95": [
-     0.1103,
-     0.4205
+     0.0861,
+     0.3439
     ]
    },
    "qwen3/reimplement": {
     "reproduced": 2,
-    "n": 30,
-    "rate": 0.0667,
+    "n": 33,
+    "rate": 0.0606,
     "wilson95": [
-     0.0185,
-     0.2132
+     0.0168,
+     0.1961
     ]
    },
    "minimax/run": {
     "reproduced": 3,
-    "n": 33,
-    "rate": 0.0909,
+    "n": 34,
+    "rate": 0.0882,
     "wilson95": [
-     0.0314,
-     0.2357
+     0.0305,
+     0.2296
     ]
    },
    "minimax/retrain": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    },
    "minimax/reimplement": {
@@ -1042,6 +1101,15 @@
    },
    "muse/run": {
     "reproduced": 9,
+    "n": 34,
+    "rate": 0.2647,
+    "wilson95": [
+     0.146,
+     0.4312
+    ]
+   },
+   "muse/retrain": {
+    "reproduced": 9,
     "n": 33,
     "rate": 0.2727,
     "wilson95": [
@@ -1049,71 +1117,117 @@
      0.4422
     ]
    },
-   "muse/retrain": {
-    "reproduced": 9,
-    "n": 32,
-    "rate": 0.2812,
-    "wilson95": [
-     0.1556,
-     0.4537
-    ]
-   },
    "muse/reimplement": {
     "reproduced": 5,
-    "n": 32,
-    "rate": 0.1562,
+    "n": 33,
+    "rate": 0.1515,
     "wilson95": [
-     0.0686,
-     0.3175
+     0.0665,
+     0.3092
     ]
    }
   }
  },
  "best_agent_per_tier": {
+  "rel1/run": {
+   "agents_tied_at_top": [
+    "dsv4"
+   ],
+   "reproduced": 9,
+   "n": 34,
+   "rate": 0.2647
+  },
+  "rel1/retrain": {
+   "agents_tied_at_top": [
+    "dsv4",
+    "muse"
+   ],
+   "reproduced": 8,
+   "n": 33,
+   "rate": 0.2424
+  },
+  "rel1/reimplement": {
+   "agents_tied_at_top": [
+    "dsv4",
+    "muse"
+   ],
+   "reproduced": 4,
+   "n": 33,
+   "rate": 0.1212
+  },
   "rel2/run": {
-   "agent": "dsv4",
+   "agents_tied_at_top": [
+    "dsv4"
+   ],
    "reproduced": 12,
-   "n": 29
+   "n": 34,
+   "rate": 0.3529
   },
   "rel2/retrain": {
-   "agent": "dsv4",
-   "reproduced": 8,
-   "n": 28
+   "agents_tied_at_top": [
+    "muse"
+   ],
+   "reproduced": 9,
+   "n": 33,
+   "rate": 0.2727
   },
   "rel2/reimplement": {
-   "agent": "muse",
+   "agents_tied_at_top": [
+    "muse"
+   ],
    "reproduced": 5,
-   "n": 32
-  },
-  "rel10/run": {
-   "agent": "dsv4",
-   "reproduced": 14,
-   "n": 29
-  },
-  "rel10/retrain": {
-   "agent": "muse",
-   "reproduced": 12,
-   "n": 32
-  },
-  "rel10/reimplement": {
-   "agent": "dsv4",
-   "reproduced": 5,
-   "n": 30
+   "n": 33,
+   "rate": 0.1515
   },
   "rel5/run": {
-   "agent": "dsv4",
+   "agents_tied_at_top": [
+    "dsv4"
+   ],
    "reproduced": 14,
-   "n": 29
+   "n": 34,
+   "rate": 0.4118
   },
   "rel5/retrain": {
-   "agent": "dsv4",
+   "agents_tied_at_top": [
+    "dsv4",
+    "muse"
+   ],
    "reproduced": 9,
-   "n": 28
+   "n": 33,
+   "rate": 0.2727
   },
   "rel5/reimplement": {
-   "agent": "muse",
+   "agents_tied_at_top": [
+    "muse"
+   ],
    "reproduced": 5,
-   "n": 32
+   "n": 33,
+   "rate": 0.1515
+  },
+  "rel10/run": {
+   "agents_tied_at_top": [
+    "dsv4"
+   ],
+   "reproduced": 14,
+   "n": 34,
+   "rate": 0.4118
+  },
+  "rel10/retrain": {
+   "agents_tied_at_top": [
+    "muse"
+   ],
+   "reproduced": 12,
+   "n": 33,
+   "rate": 0.3636
+  },
+  "rel10/reimplement": {
+   "agents_tied_at_top": [
+    "dsv4",
+    "muse"
+   ],
+   "reproduced": 5,
+   "n": 33,
+   "rate": 0.1515
   }
  },
  "moves_by_setting": {

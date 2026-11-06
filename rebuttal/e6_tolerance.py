@@ -79,6 +79,17 @@ def load_final_records() -> dict[str, dict]:
     return recs
 
 
+# Eval papers per tier (lockfile tier: Easy=Run, Medium=Retrain, Hard=Reimplement). Every agent is
+# graded on every paper in a tier; an agent with no run for a paper counts as not reproduced.
+LOCK_TIER = {"Easy": "run", "Medium": "retrain", "Hard": "reimplement"}
+
+
+def tier_sizes() -> dict[str, int]:
+    rows = [json.loads(line) for line in LOCK.read_text(encoding="utf-8").splitlines() if line.strip()]
+    c = Counter(LOCK_TIER[r["tier"]] for r in rows)
+    return {t: c[t] for t in MODELS}
+
+
 def load_lock() -> dict[str, dict]:
     return {r["custom_id"]: r["match_target"] for r in
             (json.loads(line) for line in LOCK.read_text(encoding="utf-8").splitlines() if line.strip())}
@@ -197,11 +208,12 @@ def main() -> None:
         if r["_is_pe"]:
             cons[(r["index_verdict"], "match" if r["_rel"] <= r["_tol_rec"] else "miss")] += 1
     # per-cell counts
+    TIER_N = tier_sizes()
     cells = {}
     for a in AGENTS:
         for t in MODELS:
             sub = [r for r in rows if r["model"] == a and r["tier"] == t]
-            cell = {"n": len(sub)}
+            cell = {"n": TIER_N[t], "runs_present": len(sub)}
             cell["S0_index"] = sum(r["index_verdict"] == "reproduced" for r in sub)
             for name, _, _ in SETTINGS:
                 cell[name] = sum(r["v"][name] == "reproduced" for r in sub)
@@ -217,11 +229,20 @@ def main() -> None:
 
     settings_out = {name: rate_block(name) for name in ["S0_index"] + [s[0] for s in SETTINGS]}
     tier_best = {}
-    for name in ["rel2", "rel10", "rel5"]:
+    for name in ["rel1", "rel2", "rel5", "rel10"]:
         for t in MODELS:
-            best = max(AGENTS, key=lambda a: cells[f"{a}/{t}"][name] / cells[f"{a}/{t}"]["n"])
-            tier_best[f"{name}/{t}"] = {"agent": best, "reproduced": cells[f"{best}/{t}"][name],
-                                        "n": cells[f"{best}/{t}"]["n"]}
+            top = max(cells[f"{a}/{t}"][name] for a in AGENTS)
+            tier_best[f"{name}/{t}"] = {"agents_tied_at_top": [a for a in AGENTS if cells[f"{a}/{t}"][name] == top],
+                                        "reproduced": top, "n": TIER_N[t],
+                                        "rate": round(top / TIER_N[t], 4)}
+    # reproduced runs that are not point estimates (no number test, so they never move)
+    non_pe = Counter(r["bar_kind"] for r in rows if r["index_verdict"] == "reproduced" and not r["_is_pe"])
+    pe_rep = sum(1 for r in rows if r["index_verdict"] == "reproduced" and r["_is_pe"])
+    best5 = {t: [a for a in AGENTS if cells[f"{a}/{t}"]["rel5"] == max(cells[f"{b}/{t}"]["rel5"] for b in AGENTS)]
+             for t in MODELS}
+    falls = {name: [m for m in moves if m["setting"] == name and m["new_verdict"] == "partial"] for name in ["rel1", "rel2", "rel10"]}
+    fall_best = {name: [f"{m['run_id']} (best at 5%)" for m in v if m["model"] in best5[m["tier"]]]
+                 for name, v in falls.items()}
 
     # claims: 100 pinned claims
     claims = Counter(mt.get("match_bar_kind") for mt in lock.values())
@@ -235,6 +256,13 @@ def main() -> None:
         "consistency_at_recorded_tolerance": {f"{k[0]}/{k[1]}": v for k, v in cons.items()},
         "measured_overrides": {k: {"value": v[0], "reason": v[1]} for k, v in MEASURED_OVERRIDE.items()},
         "number_only_partials": NUMBER_ONLY,
+        "tier_sizes": TIER_N,
+        "reproduced_overall_index": sum(c["S0_index"] for c in cells.values()),
+        "reproduced_point_estimate_index": pe_rep,
+        "reproduced_not_point_estimate_index": dict(non_pe),
+        "falls_by_setting": {k: len(v) for k, v in falls.items()},
+        "falls_at_best_agent_at_5pct": fall_best,
+        "best_agent_at_5pct": best5,
         "cells": cells, "settings": settings_out, "best_agent_per_tier": tier_best,
         "moves_by_setting": dict(Counter(m["setting"] for m in moves)),
         "moves_count_total": len(moves),
