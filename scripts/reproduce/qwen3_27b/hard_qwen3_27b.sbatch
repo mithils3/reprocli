@@ -34,7 +34,7 @@
 #SBATCH --cpus-per-task=72
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
-#SBATCH --mem=110G
+#SBATCH --mem=220G
 #SBATCH --time=48:00:00
 #SBATCH -o slurm-repro-hard-qwen3-%j.out
 #SBATCH -e slurm-repro-hard-qwen3-%j.err
@@ -69,7 +69,9 @@ CLAIMS="${CLAIMS:-hf://datasets/${LOCKFILE}/${CLAIMS_FILE}}"
 
 # Keep the agent's heavy I/O (bundles, per-paper uv venvs, run bundles) off $HOME.
 export REPRO_WORK_ROOT="${REPRO_WORK_ROOT:-/work/nvme/bfvr/msalunkhe/reprocli}"
-export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/hf_cache}"
+export HF_HOME="${HF_HOME:-/work/nvme/bfvr/msalunkhe/.cache}"
+export HF_HUB_DISABLE_XET=1
+export REPROCLI_SLURM_ACCOUNT=betw-dtai-gh
 # The reproduction AGENT runs inside the Apptainer sandbox; send ONLY its in-container HF
 # pulls (per-paper models + datasets, the bulk that filled /work) to node-local /tmp, which
 # clears per job. APPTAINERENV_HF_HOME wins inside the wrap (sandbox.forward_env honors a
@@ -130,6 +132,7 @@ ulimit -l unlimited || true
 ulimit -s unlimited || true
 
 module load python/3.11.9
+export CPATH=/sw/spack/v1/apps/python/3.11.9-gcc-13.2.1-ufgfz3k/include/python3.11
 source "${VENV}/bin/activate"
 export PYTHONPATH="${REPROCLI}/src:${PYTHONPATH:-}"
 cd "${REPROCLI}"
