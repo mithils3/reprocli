@@ -11,3 +11,5 @@ job_id,model,purpose,tier,ids,run_tag,submitted_at
 3540633,MiniMax-M2.7,rerun of B-class cells,Medium,2510.20725,rerun-minimax-medium,2026-11-06T11:55:36
 NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Medium,2503.09657 2506.08898 2510.05874 2510.19784 2506.19839 2510.20725,rerun-qwen-medium,gated on Qwen smoke PASS (smoke 3540621 OOM at 220G)
 NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Hard,2506.20024,rerun-qwen-hard,gated on Qwen smoke PASS (smoke 3540621 OOM at 220G)
+3540786,Qwen3.6-27B,rerun of B-class cells (serve with --gdn-prefill-backend triton, e2bda76),Medium,2503.09657 2506.08898 2510.05874 2510.19784 2506.19839 2510.20725,rerun-qwen3-medium,2026-11-06T12:18:50-06:00
+3540787,Qwen3.6-27B,rerun of B-class cells (serve with --gdn-prefill-backend triton, e2bda76),Hard,2506.20024,rerun-qwen3-hard,2026-11-06T12:18:50-06:00
