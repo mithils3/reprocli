@@ -35,7 +35,7 @@ from reprocli_repro.context import Budget, ExecutionContext
 from reprocli_repro.tools.run_gpu import MAX_MINUTES, queue_grace_seconds, run_gpu
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_TIMEOUT
 
-sys.path.insert(0, str(HERE.parent))  # scripts/rebuttal, for task_text
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/rebuttal, for task_text
 from task_text import paper_task_text  # noqa: E402
 
 from miniswe_apptainer import ApptainerExecEnvironment  # noqa: E402
