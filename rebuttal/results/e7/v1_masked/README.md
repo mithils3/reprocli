@@ -1,3 +1,5 @@
+> **Superseded (v1, masked design).** The claim sentence with its numbers masked does not pin which row or metric the frozen target is, so the model guessed: 0/100 agree, 27 blank metrics. Kept for the record; the v2 design is in `../README.md`. Code: `rebuttal/e7_rederive.py` at commit 232fb22.
+
 # E7: blind re-derivation of the 100 eval targets
 
 **What.** gpt-6.1-sol (OpenAI flex, reasoning high) reads each paper's extracted text and returns metric, configuration and value for its claim sentence, with every number masked as [X]. The frozen tuple is never sent.
