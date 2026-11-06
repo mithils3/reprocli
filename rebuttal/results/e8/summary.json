@@ -1,0 +1,129 @@
+{
+  "reproduction_check": {
+    "reproduced_total": 73,
+    "cells": 400,
+    "runs": 372,
+    "per_agent_tier": {
+      "dsv4-run": [
+        14,
+        34
+      ],
+      "dsv4-retrain": [
+        9,
+        33
+      ],
+      "dsv4-reimplement": [
+        4,
+        33
+      ],
+      "minimax-run": [
+        3,
+        34
+      ],
+      "minimax-retrain": [
+        5,
+        33
+      ],
+      "minimax-reimplement": [
+        2,
+        33
+      ],
+      "muse-run": [
+        9,
+        34
+      ],
+      "muse-retrain": [
+        9,
+        33
+      ],
+      "muse-reimplement": [
+        5,
+        33
+      ],
+      "qwen3-run": [
+        5,
+        34
+      ],
+      "qwen3-retrain": [
+        6,
+        33
+      ],
+      "qwen3-reimplement": [
+        2,
+        33
+      ]
+    }
+  },
+  "build_dependency_runs": {
+    "total": 24,
+    "by_agent": {
+      "dsv4": 1,
+      "qwen3": 8,
+      "minimax": 11,
+      "muse": 4
+    },
+    "by_tier": {
+      "reimplement": 5,
+      "run": 13,
+      "retrain": 6
+    },
+    "class_counts": {
+      "A": 16,
+      "O": 5,
+      "E": 3
+    },
+    "explicit_aarch64_minimax_run": 5
+  },
+  "bound_best_per_tier_all_env_removed": {
+    "run": {
+      "agent": "dsv4",
+      "reproduced": 14,
+      "den": 34,
+      "rate": 0.4118,
+      "wilson95": [
+        0.2637,
+        0.5778
+      ]
+    },
+    "retrain": {
+      "agent": "muse",
+      "reproduced": 9,
+      "den": 32,
+      "rate": 0.2812,
+      "wilson95": [
+        0.1556,
+        0.4537
+      ]
+    },
+    "reimplement": {
+      "agent": "muse",
+      "reproduced": 5,
+      "den": 32,
+      "rate": 0.1562,
+      "wilson95": [
+        0.0686,
+        0.3175
+      ]
+    }
+  },
+  "empty_cells": {
+    "total": 28,
+    "by_category": {
+      "context limit reached, no entry in set": 2,
+      "no own run directory; orphan launch errors on paper": 3,
+      "prompt-rendering bug, never started (no run directory)": 4,
+      "no run directory on record": 14,
+      "run finished, no entry in set": 3,
+      "audit never returned (run finished)": 2
+    }
+  },
+  "outside_agent_cells": [
+    "dsv4 2510.20725",
+    "minimax 2510.20725",
+    "muse 2503.23035",
+    "muse 2510.08177",
+    "muse 2510.20725",
+    "qwen3 2510.20725"
+  ],
+  "method": "Wilson 95% (z=1.959964). Numerator = paper reproduced count (env runs are never reproduced). Denominator = paper cell count minus removed runs; empty cells stay in the denominator unless the run is removed."
+}

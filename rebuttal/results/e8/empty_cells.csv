@@ -1,0 +1,29 @@
+model,arxiv_id,tier,category,detail
+dsv4,2505.24864,run,"context limit reached, no entry in set","context_budget 96 rounds, 7751049 tokens"
+dsv4,2504.12397,run,"context limit reached, no entry in set","context_budget 76 rounds, 6128207 tokens"
+dsv4,2505.10475,run,no own run directory; orphan launch errors on paper,3 unattributed directories (agent unknown)
+dsv4,2506.01511,run,no own run directory; orphan launch errors on paper,4 unattributed directories (agent unknown)
+dsv4,2506.18896,run,no own run directory; orphan launch errors on paper,4 unattributed directories (agent unknown)
+dsv4,2510.20725,retrain,"prompt-rendering bug, never started (no run directory)",no DeltaAI directory for this paper
+dsv4,2410.19933,retrain,no run directory on record,no directory for this agent and paper
+dsv4,2506.10943,retrain,no run directory on record,no directory for this agent and paper
+dsv4,2510.19784,retrain,no run directory on record,no directory for this agent and paper
+dsv4,2511.00119,retrain,no run directory on record,no directory for this agent and paper
+dsv4,2505.22596,reimplement,no run directory on record,no directory for this agent and paper
+dsv4,2506.20024,reimplement,no run directory on record,no directory for this agent and paper
+dsv4,2510.15194,reimplement,no run directory on record,no directory for this agent and paper
+minimax,2506.18896,run,"run finished, no entry in set","natural 83 rounds, 4794210 tokens"
+minimax,2510.20725,retrain,"prompt-rendering bug, never started (no run directory)",no DeltaAI directory for this paper
+muse,2503.23035,run,audit never returned (run finished),"natural 64 rounds, 6502401 tokens"
+muse,2510.20725,retrain,"prompt-rendering bug, never started (no run directory)",no DeltaAI directory for this paper
+muse,2510.08177,reimplement,audit never returned (run finished),"natural 114 rounds, 16781258 tokens"
+qwen3,2503.09657,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2510.20725,retrain,"prompt-rendering bug, never started (no run directory)",no DeltaAI directory for this paper
+qwen3,2506.08898,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2510.05874,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2510.19314,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2510.19784,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2506.19839,retrain,no run directory on record,no directory for this agent and paper
+qwen3,2510.25529,reimplement,"run finished, no entry in set","error 49 rounds, 2723281 tokens; natural 97 rounds, 6051426 tokens"
+qwen3,2506.20024,reimplement,no run directory on record,no directory for this agent and paper
+qwen3,2511.19808,reimplement,"run finished, no entry in set","natural 33 rounds, 1450587 tokens"

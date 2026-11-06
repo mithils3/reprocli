@@ -1,0 +1,25 @@
+run_id,model,tier,arxiv_id,audit_verdict,audit_score,class,evidence_kind,evidence,run_dir
+dsv4-reimplement-2511.20906,dsv4,reimplement,2511.20906,partial,6,A,stated,aarch64/Grace node. mujoco_py (free-mujoco-py) is known-absent x86-pinned; prebuilt mujoco binaries are x86,2511.20906/8h/2918306-2511.20906-eaec57
+minimax-reimplement-2512.02339,minimax,reimplement,2512.02339,disqualified,0,E,none,Error: Repo id must be in the form 'repo_name' ... 'datasets/Threshold500/davis2017',2512.02339/8h/2936132-2512.02339-cdc4b0
+minimax-retrain-2508.21046,minimax,retrain,2508.21046,not_reproduced,2,E,none,assert not (cfg.load_in_8bit and cfg.load_in_4bit) in agent config,2508.21046/96h/2690187-2508.21046-461c70
+minimax-retrain-2510.19314,minimax,retrain,2510.19314,not_reproduced,3,O,none,ModuleNotFoundError fixed by installing tqdm in the agent venv; salloc partition error,2510.19314/32h/2690187-2510.19314-906a11
+minimax-run-2502.05795,minimax,run,2502.05795,not_reproduced,4,E,none,TypeError: HfApi.list_models() got an unexpected keyword argument 'direction',2502.05795/8h/2652648-2502.05795-f28004
+minimax-run-2503.18430,minimax,run,2503.18430,not_reproduced,4,O,none,"ImportError mmcv _ext ... undefined symbol (torch ABI mismatch); borderline, agent mentions aarch64 CUDA wheel",2503.18430/8h/2652648-2503.18430-ed85b0
+minimax-run-2504.20571,minimax,run,2504.20571,partial,6,A,explicit,only x86_64 manylinux wheels for the early versions (vllm),2504.20571/8h/2652648-2504.20571-a07594
+minimax-run-2505.10978,minimax,run,2505.10978,not_reproduced,2,A,explicit,The ni compiler binary is compiled for x86_64 but we're on aarch64 (GH200),2505.10978/8h/2652648-2505.10978-713764
+minimax-run-2505.14766,minimax,run,2505.14766,not_reproduced,4,A,stated,torch==2.7.0 likely installed from default PyPI (CPU-only for aarch64),2505.14766/8h/2652648-2505.14766-b8343c
+minimax-run-2505.14827,minimax,run,2505.14827,not_reproduced,2,A,explicit,vllm-0.6.1.post1-cp38-abi3-manylinux1_x86_64.whl won't work on aarch64,2505.14827/8h/2678961-2505.14827-6268f5
+minimax-run-2505.24873,minimax,run,2505.24873,not_reproduced,2,A,explicit,The decord==0.6 has no aarch64 wheel (manylinux2010_x86_64 only),2505.24873/8h/2652648-2505.24873-9b5f5a
+minimax-run-2506.20671,minimax,run,2506.20671,not_reproduced,2,A,explicit,Wheels are available for spconv ... manylinux_2_17_x86_64 only,2506.20671/8h/2652648-2506.20671-3a1f8a
+muse-reimplement-2506.20024,muse,reimplement,2506.20024,not_reproduced,3,O,none,ModuleNotFoundError: No module named 'torch' / 'requests' in the run venv,2506.20024/96h/20260820T205201Z-2506.20024-e91d2a
+muse-retrain-2410.19933,muse,retrain,2410.19933,not_reproduced,2,O,none,dependency pin changes; aarch64 cited only as the numpy pin reason,2410.19933/32h/20260816T133804Z-2410.19933-cb651b
+muse-run-2505.14827,muse,run,2505.14827,not_reproduced,4,A,explicit,ERROR: No matching distribution found for vllm==0.8.5 (sdist metadata build also failed),2505.14827/8h/20260814T135227Z-2505.14827-765d02
+muse-run-2506.20671,muse,run,2506.20671,not_reproduced,3,A,explicit,spconv-cu113 won't have wheel on aarch64; open3d (manylinux_2_39_aarch64 hint),2506.20671/8h/20260814T135227Z-2506.20671-2eb73a
+qwen3-reimplement-2410.15392,qwen3,reimplement,2410.15392,disqualified,0,A,stated,pytorch3d which is KNOWN-ABSENT on aarch64,2410.15392/8h/2666353-2410.15392-d064d4
+qwen3-reimplement-2505.24452,qwen3,reimplement,2505.24452,not_reproduced,2,O,none,"PyTorch 2.13.0 LRScheduler API incompatibility (torch API version, not arch)",2505.24452/8h/2666353-2505.24452-021c34
+qwen3-retrain-2504.13146,qwen3,retrain,2504.13146,not_reproduced,2,A,stated,I need to install ... but flash-attn won't work on aarch64.,2504.13146/8h/2759663-2504.13146-280a3e
+qwen3-retrain-2505.02391,qwen3,retrain,2505.02391,not_reproduced,2,A,explicit,"(e.g., manylinux_2_39_aarch64) and you require tensordict==0.6.2",2505.02391/96h/2759663-2505.02391-74ea05
+qwen3-retrain-2506.20233,qwen3,retrain,2506.20233,not_reproduced,2,A,stated,The jaxlib installed from PyPI is CPU-only for aarch64.,2506.20233/8h/2799428-2506.20233-c66bdf
+qwen3-run-2505.10978,qwen3,run,2505.10978,not_reproduced,2,A,stated,The textworld build fails on aarch64.,2505.10978/8h/2687371-2505.10978-614463
+qwen3-run-2505.24864,qwen3,run,2505.24864,not_reproduced,4,A,explicit,"(e.g., manylinux_2_39_aarch64) and you require torch==2.5.1+cu124 ... aarch64 platform doesn't have cu124 wheels",2505.24864/8h/2687371-2505.24864-185b79
+qwen3-run-2506.20671,qwen3,run,2506.20671,not_reproduced,2,A,explicit,The spconv issue is that there's no aarch64 wheel.,2506.20671/8h/2687371-2506.20671-8438e3
