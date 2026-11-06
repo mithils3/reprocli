@@ -29,6 +29,20 @@ RUN_NAME = re.compile(r"^codex-(?P<model>.+)-(?P<stamp>\d{8}T\d{6}Z)-[0-9a-f]+$"
 KEYS = ("in", "cached", "out")
 
 
+def void_reason(run: Path) -> str:
+    """Why an errored run failed, read from its own logs (never assumed to be a rate limit)."""
+    text = ""
+    for name in ("agent.full.log", "codex_io/codex_stderr_work.log", "codex_io/codex_stderr_final.log"):
+        path = run / name
+        if path.is_file():
+            text += path.read_text(encoding="utf-8", errors="replace")
+    if TRANSIENT.search(text):
+        return "rate-limit"
+    if re.search(r"\bpc\s+0x|fault\s+0x|SIGSEGV", text):
+        return "codex native crash (SIGSEGV register dump)"
+    return "harness error (no provider or crash signature in logs)"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--since", required=True, help="UTC stamp, e.g. 2026-11-06T18:11:00Z")
@@ -74,9 +88,11 @@ def main() -> int:
         if abs(diff["usd"]) > 1e-6 or any(diff[k] for k in KEYS):
             corrections.append((run, m.group("model"), diff))
         if status == "error":
-            voids.append(run)
+            voids.append((run, void_reason(run)))
 
     total = round(sum(d["usd"] for _, _, d in corrections), 6)
+    for run, why in voids:
+        print(f"VOID {run.name}: {why}")
     print(f"runs={len(runs)} corrections={len(corrections)} total_correction_usd={total:+.4f} voids={len(voids)}")
     if not opts.apply:
         return 0
@@ -87,8 +103,8 @@ def main() -> int:
                                      "model": model, "in": diff["in"], "cached": diff["cached"],
                                      "out": diff["out"], "usd": diff["usd"], "run_dir": str(run),
                                      "reason": "rollout recount (includes failed turns)"}) + "\n")
-    for run in voids:
-        (run / "VOID").write_text("reason rate-limit, harness codex-arm (run errored; rerun)\n", encoding="utf-8")
+    for run, why in voids:
+        (run / "VOID").write_text(f"reason: {why}; harness: codex-arm (run errored; rerun)\n", encoding="utf-8")
     print(f"applied: ledger rows={len(corrections)} void_files={len(voids)}")
     return 0
 
