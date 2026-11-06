@@ -4,13 +4,13 @@ GOAL: move YGTR from 2 (weak reject) to at least 3, and move T29u and rqBN from 
 DONE-WHEN: four replies (general, T29u, rqBN, YGTR) are posted, every number in them traces to a file under `rebuttal/results/`, and the revised PDF compiles with the main text inside 10 pages.
 MUST-NOT-CHANGE: the frozen eval-100 split, the frozen rubric and pinned auditor (claude-sonnet-5) for every grade of record, the four-agent roster of the main results, the run directories under `/work/nvme/bfvr/`, and the paused Distillation files and jobs.
 
-Scope: the three official reviews only; the PAT feedback is set aside (Mithil, 2026-11-06). Revision 2 (2026-11-06, his answers to v1): GPU work runs on betw-dtai-gh; OpenAI budget $750 and Meta budget $500; the frontier arms use the GPT-6 series and Muse Wonder (v1 named gpt-5.6-sol because the price lookup matched only names starting with gpt-5 and missed GPT-6); the 6 cells that failed outside the agent are rerun; the human-grader item is parked because the original labels exist.
+Scope: the three official reviews only; the PAT feedback is set aside (Mithil, 2026-11-06). Revision 2 (2026-11-06, his answers to v1): GPU work runs on betw-dtai-gh; OpenAI budget $750 and Meta budget $500; the frontier arms use the GPT-6 series and Muse Wonder (v1 named gpt-5.6-sol because the price lookup matched only names starting with gpt-5 and missed GPT-6); the 6 cells that failed outside the agent are rerun; the human-grader item is parked because the original labels exist. Revision 3 (same day): the OpenAI arms run on OpenAI's flex tier, its low-priority service at half the standard price, which grows the OpenAI subset from 12 to 24 papers.
 
 ## 0. Where we stand and how a score moves
 
 The three reviewers agree that the task design is sound and carefully disclosed. Their objections fall into four groups: the agents are weak and the harness is thin (YGTR), one run per cell gives point estimates (T29u, YGTR), the auditor's validation is a single F1 and the agent can edit the logs the auditor reads (T29u, rqBN), and some failures may come from the environment (YGTR, rqBN). YGTR's rating rests on the first group, and its Informativeness score of 1 says the reviewer does not believe our failure modes describe the agents people actually use.
 
-Recommendation: run current frontier models from two labs in production harnesses on the same stratified papers. OpenAI's GPT-6 series supplies gpt-6.1-sol and gpt-6.1-terra in both our harness and Codex CLI, plus the flagship gpt-6-astra in Codex CLI on 4 papers. Meta's Muse Wonder runs in our harness and in mini-SWE-agent, and since Muse Spark 1.2 is already in the paper, it also gives a same-family comparison on the same papers. Whichever way the results fall they answer YGTR: if frontier agents still fail in the same ways, the taxonomy generalizes; if a production harness lifts the rate, the paper gains a measured harness effect that no other reproduction benchmark reports. T29u and rqBN mostly want the auditor and the logs measured, which existing data and short analyses answer. What would change this: if the first runs show any model costing more than 1.5 times its estimate, gpt-6-astra drops to 2 papers before anything else shrinks.
+Recommendation: run current frontier models from two labs in production harnesses on the same stratified papers. OpenAI's GPT-6 series supplies gpt-6.1-sol and gpt-6.1-terra in both our harness and Codex CLI on 24 papers, plus the flagship gpt-6-astra in Codex CLI on 8, all on the half-price flex tier. Meta's Muse Wonder runs in our harness and in mini-SWE-agent, and since Muse Spark 1.2 is already in the paper, it also gives a same-family comparison on the same papers. Whichever way the results fall they answer YGTR: if frontier agents still fail in the same ways, the taxonomy generalizes; if a production harness lifts the rate, the paper gains a measured harness effect that no other reproduction benchmark reports. T29u and rqBN mostly want the auditor and the logs measured, which existing data and short analyses answer. What would change this: if the first runs show any model costing more than 1.5 times its estimate, or flex refuses so often that runs fall back to standard prices, gpt-6-astra drops to 4 papers before anything else shrinks.
 
 **Simulated reception of v1 (2026-11-06).** Three agents read v1 as the reviewers would. YGTR would move from 2 to 3 (Informativeness 1 to 2) if the frontier and harness arms come with a paired test and human failure-mode labels, and stays below 4 while the headline numbers come from the four weaker models; v2's wider frontier set raises the chance of 3. T29u would move to 4 if the 7/8 boundary table and the repeat runs come back clean. rqBN would move to 4 given a full confusion matrix, inter-human agreement and a real tamper check on the logs. Their requested fixes are folded in below.
 
@@ -75,7 +75,7 @@ Neither reviewer names a passage. The revision states each new measurement where
 
 ### Shared setup
 
-**Stratified subset (12 papers, frozen before any run).** Four papers per tier with band shares matching each tier (Run 27/7/0 papers in the 0-8/8-32/32-96 H100-hour bands, Retrain 16/13/4, Reimplement 16/9/8): Run takes 3 from 0-8 and 1 from 8-32; Retrain and Reimplement each take 2, 1 and 1. Within each tier, two papers at least one agent reproduced and two none did. Drawn by a seeded random choice per cell and listed in priority order in `rebuttal/subset.json`, committed before the first run, so the first k papers always form a smaller stratified set. Granted GPU hours for all 12 are 344 per agent (Run 3x8 + 32 = 56, Retrain 2x8 + 32 + 96 = 144, Reimplement 144), the band ceiling per paper as in the main runs.
+**Stratified subset (24 papers in priority order, frozen before any run; the first 12 are the core set every arm runs).** Four papers per tier with band shares matching each tier (Run 27/7/0 papers in the 0-8/8-32/32-96 H100-hour bands, Retrain 16/13/4, Reimplement 16/9/8): Run takes 3 from 0-8 and 1 from 8-32; Retrain and Reimplement each take 2, 1 and 1. Within each tier, two papers at least one agent reproduced and two none did. Drawn by a seeded random choice per cell and listed in priority order in `rebuttal/subset.json`, committed before the first run, so the first k papers always form a smaller stratified set. Papers 13 to 24 repeat the same per-tier recipe on the next draws, so the full list is two stratified sets of 12. Granted GPU hours are 344 per agent for the core 12 (Run 3x8 + 32 = 56, Retrain 2x8 + 32 + 96 = 144, Reimplement 144) and about 688 for all 24, the band ceiling per paper as in the main runs.
 
 **GPU account: betw-dtai-gh** (Mithil, 2026-11-06: "run it on BETW"; balance 6,168 of 40,000 hours that day). The brain and orchestrator `.sbatch` headers already carry `#SBATCH -A betw-dtai-gh`, so they need no change. The agent's `run_gpu` holds charge the account in `src/reprocli_repro/cluster.py:73`, which is `bfvr-dtai-gh` (168 hours left). The change is one line plus tests: `account=os.environ.get("REPROCLI_SLURM_ACCOUNT", "bfvr-dtai-gh")`, with a case for the override in `tests/repro/test_cluster.py` and `test_slurm.py`, and the rebuttal launch scripts export `REPROCLI_SLURM_ACCOUNT=betw-dtai-gh`. Run directories stay under `/work/nvme/bfvr/msalunkhe/reprocli/agent_runs`, because the storage allocation is independent of the Slurm account. Check: `squeue -u $USER -o "%.10i %.14a %.14q %.10T"` shows betw-dtai-gh in both the account and QOS columns (memory `deltaai-slurm-account-qos`). The cluster checkout `/u/msalunkhe/reprocli` named in that memory no longer exists, so day 1 locates or re-clones it and pulls. Nine queued Distillation jobs also charge betw-dtai-gh; they are left alone, and the plan's ceiling (below) leaves room for them.
 
@@ -94,26 +94,30 @@ Use a project key from platform.openai.com (API keys, under a new project "recla
 
 Muse Spark 1.2, the paper's one API-served agent, used 1,494.6M prompt tokens and 33.53M completion tokens over its 99 started runs, at $724.91 (`appendix/b_models.tex`, tab:cost). Solving its price card (1.25 uncached, 0.15 cached, 4.25 completion, per million) against that total gives 325.7M uncached and 1,168.9M cached prompt tokens, a 78% cache share, in line with memory `agent-token-cost-cache-read-dominated` (80 to 95% in other runs). Per run: 3.29M uncached, 11.81M cached, 0.339M completion tokens.
 
-Worked example, gpt-6.1-sol at its OpenRouter list price on 2026-11-06 ($2.00 input, $0.10 cached, $10.00 output per million): 3.29 x 2.00 = $6.58, plus 11.81 x 0.10 = $1.18, plus 0.339 x 10.00 = $3.39, for **$11.15 per run**. The same profile at the other list prices:
+Worked example, gpt-6.1-sol on the flex tier, which OpenAI's pricing page (developers.openai.com/api/docs/pricing, read 2026-11-06) lists at $1.00 input, $0.05 cached and $5.00 output per million for prompts up to 272k tokens: 3.29 x 1.00 = $3.29, plus 11.81 x 0.05 = $0.59, plus 0.339 x 5.00 = $1.69, for **$5.58 per run**, half the $11.15 standard price. The same profile at the other prices:
 
-| Model | Released | Input / cached / output ($/M) | Per run | Source |
-| :- | :- | :- | :- | :- |
-| gpt-6-astra (OpenAI flagship) | 2026-09-04 | 10.00 / 1.00 / 50.00 | $61.64 | openrouter.ai/api/v1/models |
-| gpt-6.1-sol | 2026-09-29 | 2.00 / 0.10 / 10.00 | $11.15 | same |
-| gpt-6.1-terra | 2026-10-26 | 1.00 / 0.05 / 5.00 | $5.57 | same |
-| muse-wonder-1.0 | not stated | 4.00 / 0.20 / 20.00 | $22.29 | dev.meta.ai/models/muse-wonder |
+| Model | Released | Flex $/M (input / cached / output) | Flex per run | Standard per run | Source |
+| :- | :- | :- | :- | :- | :- |
+| gpt-6-astra (OpenAI flagship) | 2026-09-04 | 5.00 / 0.50 / 25.00 | $30.82 | $61.64 | developers.openai.com/api/docs/pricing |
+| gpt-6.1-sol | 2026-09-29 | 1.00 / 0.05 / 5.00 | $5.58 | $11.15 | same |
+| gpt-6.1-terra | 2026-10-26 | 0.50 / 0.025 / 2.50 | $2.79 | $5.57 | same |
+| muse-wonder-1.0 | not stated | no flex tier listed | | $22.29 (4.00 / 0.20 / 20.00) | dev.meta.ai/models/muse-wonder |
 
-Risks that push cost up: reasoning tokens bill as output, OpenAI may charge a long-context rate above 272k tokens (it did for GPT-5.6, so OpenAI arms cap agent input at 256k), and Codex CLI's and mini-SWE-agent's token use is unmeasured. Smoke runs replace each estimate with a measured cost before the arms are sized. Muse Wonder keeps the window Meta documents (1M tokens), matching how Muse Spark ran, so the two Muse models compare directly.
+Release dates are from openrouter.ai/api/v1/models.
 
-### E1. OpenAI frontier models in two harnesses ($750 OpenAI budget)
+Risks that push cost up: reasoning tokens bill as output; flex prices hold only up to 272k input tokens, so OpenAI arms cap agent input at 256k; a flex request that falls back to standard costs double; and Codex CLI's and mini-SWE-agent's token use is unmeasured. Smoke runs replace each estimate with a measured cost before the arms are sized. Muse Wonder keeps the window Meta documents (1M tokens), matching how Muse Spark ran, so the two Muse models compare directly.
+
+### E1. OpenAI frontier models in two harnesses, flex tier ($750 OpenAI budget)
 
 - **What.** Each model at reasoning effort high. (a) Our thin harness, a config change since it already drives API models. (b) Codex CLI, run non-interactively inside the same Apptainer sandbox with the same task text, the same evidence directory and a `run_gpu` command on its PATH that calls our `tools/run_gpu.py`, so GPU access and budget metering are identical. Codex keeps its stock tools, system prompt and context handling. Its JSON event stream is written outside the sandbox and converted into `commands.log` and `trajectory.jsonl` for the unchanged auditor.
-- **Arms.** gpt-6.1-sol, thin and Codex, all 12 papers (24 runs, $268). gpt-6.1-terra, thin and Codex, all 12 papers (24 runs, $134). gpt-6-astra in Codex on 4 papers, one Run, one Retrain and two Reimplement, since Reimplement is where every agent does worst (4 runs, $247), as the strongest model in the configuration a researcher would actually use. Smoke: the wiring is the same for every OpenAI model, so smoke runs use gpt-6.1-terra once per harness on a development paper (2 runs, $11), and the first real run of each other model measures its cost. Expected total $660, leaving $90.
-- **Sizing rule.** gpt-6-astra launches last. If the measured cost of the first gpt-6.1-sol runs projects the total above $700, gpt-6-astra drops to 2 papers, then gpt-6.1-terra's Codex arm to the first 8 papers. A spend check runs after each finished run and stops launches at $700.
+- **Flex tier.** Every OpenAI request sends `service_tier: "flex"`, which OpenAI bills at Batch API rates, half of standard. Our harness gets it from a new `REPROCLI_SERVICE_TIER` variable that `client.py` adds to the body beside `reasoning_effort` (same pattern as `apply_reasoning_effort`, `src/reprocli_vllm/vllm/client.py:54-63`), with the client timeout raised to 15 minutes as OpenAI's flex guide advises. OpenAI says flex brings slower responses and occasional `429 Resource Unavailable` errors, which are not charged; the client retries those with exponential backoff for up to 10 minutes and then sends that one request at standard, logging each fallback so the bill can be reconciled. Codex CLI's config has a `service_tier` key (learn.chatgpt.com config reference) whose documented values are `fast` or another tier the model advertises; flex is not named, so the Codex smoke run checks the `service_tier` field in the API response, and if Codex cannot send flex, the Codex arms run at standard and shrink to fit (sizing rule below).
+- **Latency cost to the agent.** The harness charges the agent's GPU grant for the whole time an allocation is held, model thinking included (`tools/run_gpu.py:378`), so slower flex replies spend more of the grant while a GPU is held. Agents used 10 to 26% of their grants in the main runs, so the grant rarely binds, but the smoke runs measure mean seconds per model call on flex against a few standard calls, and the appendix reports both.
+- **Arms.** gpt-6.1-sol, thin and Codex, all 24 papers (48 runs, $268). gpt-6.1-terra, thin and Codex, all 24 papers (48 runs, $134). gpt-6-astra in Codex on the first 8 papers, at least two per tier (8 runs, $247), as the strongest model in the configuration a researcher would actually use. Smoke: the wiring is the same for every OpenAI model, so smoke runs use gpt-6.1-terra once per harness on a development paper (2 runs, $6). Expected total $655, leaving $95 for standard-price fallbacks and overruns.
+- **Sizing rule.** The core 12 papers launch first for every arm, papers 13 to 24 next, gpt-6-astra last. If measured cost projects the total above $700, gpt-6-astra drops to 4 papers, then papers 13 to 24 are dropped from gpt-6.1-terra's Codex arm. A spend check runs after each finished run and stops launches at $700.
 - **Log conversion check.** The auditor was validated on thin-loop logs, so the Codex smoke runs are graded twice, once from the raw event stream and once from the converted logs, and must get the same verdict.
 - **Fixed in advance (written into `subset.json` before launch).** The harness effect is the paired difference in reproduced papers per model, tested with an exact McNemar test and read against the flip rate E3 measures; a difference below that flip rate is reported as no measured effect. Haochen and Samridhi label the failure mode of every failing frontier run with the paper's taxonomy, independently and blind to the LLM labels, and "same failure modes" means the share of the paper's top three modes falls inside the 95% interval of the open agents' shares. We report how many runs per arm hit the input cap or Codex's own compaction.
-- **GPU-hours.** Muse Spark used 21.8% of its grant, so expect 0.218 x 344 = 75 per 12-paper arm: four such arms 300, plus astra about 25, about 325 in all. Ceiling about 1,510.
-- **Time.** Codex wrapper and thin-harness configs 1.5 days, smoke half a day, runs up to 48 hours.
+- **GPU-hours.** Muse Spark used 21.8% of its grant, so expect 0.218 x 688 = 150 per 24-paper arm: four such arms 600, plus astra about 50, about 650 in all, more if flex latency lengthens GPU holds. Ceiling about 3,010.
+- **Time.** Codex wrapper, thin-harness configs and the flex field 1.5 days, smoke half a day, runs up to 48 hours plus flex delays. Any run still going at 2026-11-12 18:00 CT is stopped, graded on what it produced, and reported as stopped.
 - **What changes the reply.** If the frontier models land inside or near the open models' range per tier and fail in the same modes by the rule above, the reply says the taxonomy holds for current frontier agents. If Codex beats our harness by more than the flip rate, the reply reports the harness effect with its p-value and which modes it removed. If gpt-6-astra in Codex reproduces most of its papers, the abstract changes to say frontier agents close much of the gap, and the reply leads with that.
 
 ### E2. Muse Wonder in two harnesses ($500 Meta budget)
@@ -180,18 +184,18 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 
 | Item | OpenAI $ | Meta $ | GPU-hours on betw (expected / ceiling) |
 | :- | :- | :- | :- |
-| Smoke runs (4 dev-paper runs) | 11 | 45 | 15 / 40 |
-| E1 gpt-6.1-sol, thin + Codex, 12 papers | 268 | | 150 / 688 |
-| E1 gpt-6.1-terra, thin + Codex, 12 papers | 134 | | 150 / 688 |
-| E1 gpt-6-astra, Codex, 4 papers | 247 | | 25 / 130 |
+| Smoke runs (4 dev-paper runs) | 6 | 45 | 15 / 40 |
+| E1 gpt-6.1-sol, flex, thin + Codex, 24 papers | 268 | | 300 / 1,376 |
+| E1 gpt-6.1-terra, flex, thin + Codex, 24 papers | 134 | | 300 / 1,376 |
+| E1 gpt-6-astra, flex, Codex, 8 papers | 247 | | 50 / 260 |
 | E2 Muse Wonder, thin 12 + mini-SWE-agent 6 | | 401 | 113 / 550 |
 | E3 DeepSeek-V4-Flash repeats, agents + 4 brain jobs | | | 564 / 1,072 |
 | E8 rerun of 2510.20725 (4 agents) + 2 re-audits | | 7 | 45 / 70 |
 | E10 environment check | | | 90 / 180 |
 | E5, E6, E8, E9 analyses | | | CPU, under 50 core-hours on bgnp-delta-cpu |
-| **Total** | **660 of 750** | **453 of 500** | **about 1,152 / 3,418** |
+| **Total** | **655 of 750** | **453 of 500** | **about 1,477 / 4,924** |
 
-Expected GPU use is 19% of betw-dtai-gh's 6,168 hours; the worst case, every run spending its full grant, is 55%. Grading on the Anthropic key is extra and measured at smoke. Claude Code as a harness stays out: it bills to Anthropic, and Codex CLI and mini-SWE-agent already cover the production-harness question.
+Expected GPU use is 24% of betw-dtai-gh's 6,168 hours; the worst case, every run spending its full grant, is 80%, which would crowd the queued Distillation jobs, so a GPU check after the core 12 papers decides whether papers 13 to 24 launch. Grading on the Anthropic key is extra and measured at smoke. Claude Code as a harness stays out: it bills to Anthropic, and Codex CLI and mini-SWE-agent already cover the production-harness question.
 
 ## 3. Paper revisions (from the three reviews)
 
@@ -214,8 +218,8 @@ Owners: **M** Mithil, **H** Haochen, **S** Samridhi. "Agents" means Claude worke
 
 | Day | M | H | S |
 | :- | :- | :- | :- |
-| Sat 11-07 | OpenAI project key in DeltaAI `~/.bashrc` and $750 project budget; Meta limit. Locate DeltaAI checkout, land the account override, confirm the hour unit on a tiny betw job. Copy `~/sweeps/paper-table-2026-09-05/` to `/work/nvme/bfvr/msalunkhe/rebuttal/`. Agents freeze `subset.json`, check the Codex aarch64 binary, start E5, E6, E9 scripts | Read the taxonomy (Appendix G); pick E10 papers | Start E7 (10 papers) |
-| Sun 11-08 | Agents build the OpenAI and Meta thin-harness configs, the Codex wrapper and the mini-SWE-agent wrapper; 4 smoke runs; size arms from measured cost. Review E5, E6, E9 outputs | Extract E10 command sequences | E7 (10 more) |
+| Sat 11-07 | OpenAI and Meta keys are in DeltaAI `~/.bashrc` (confirmed 2026-11-06); set the $750 OpenAI project budget and a Meta limit. Locate DeltaAI checkout, land the account override, confirm the hour unit on a tiny betw job. Copy `~/sweeps/paper-table-2026-09-05/` to `/work/nvme/bfvr/msalunkhe/rebuttal/`. Agents freeze `subset.json`, check the Codex aarch64 binary, start E5, E6, E9 scripts | Read the taxonomy (Appendix G); pick E10 papers | Start E7 (10 papers) |
+| Sun 11-08 | Agents build the OpenAI and Meta thin-harness configs with the flex field, the Codex wrapper and the mini-SWE-agent wrapper; 4 smoke runs; size arms from measured cost. Review E5, E6, E9 outputs | Extract E10 command sequences | E7 (10 more) |
 | Mon 11-09 | Launch E1, E2, E3 brain jobs and E8 rerun. Draft T29u and rqBN replies | Launch E10 runs (via M's account setup) | Finish E7 (30) |
 | Tue 11-10 | Monitor runs and spend; audit finished runs. Supply the E4 label file | Read E10 results | E6 rescore against E7 targets with M |
 | Wed 11-11 | E4 matrix. **Post wave 1: T29u and rqBN replies** with E4, E5, E6, E7 and intervals, saying frontier results follow | Begin blind failure-mode labels on finished frontier runs | Same, independently |
@@ -229,11 +233,11 @@ Two waves give T29u and rqBN three days to respond before the deadline.
 
 1. E2 mini-SWE-agent arm (Codex already covers the production harness).
 2. The second E3 repeat (two runs per paper), saving about 280 GPU-hours.
-3. gpt-6.1-terra's Codex arm down to the first 6 papers.
+3. Papers 13 to 24 for gpt-6.1-terra (both harnesses), then for gpt-6.1-sol's Codex arm.
 4. E10 down to the 6 Run-tier papers.
 5. E7 down to 15 papers.
 
-Never cut: gpt-6.1-sol in both harnesses, gpt-6-astra in Codex, the E8 rerun, E5 and E9. YGTR's score depends on the first two, the rerun is approved, and the last two directly answer soundness questions.
+Never cut: gpt-6.1-sol in both harnesses on the core 12, gpt-6-astra in Codex, the E8 rerun, E5 and E9. YGTR's score depends on the first two, the rerun is approved, and the last two directly answer soundness questions.
 
 ## 5. Reply outlines
 
@@ -242,7 +246,7 @@ Each reply thanks the reviewer in one sentence and names what changed, answers i
 ### General reply (wave 2)
 
 1. All three reviewers found the task design sound; the main requests were frontier agents, production harnesses, repeated runs and a fuller validation of the auditor and its evidence.
-2. Key sentence: "We ran three current OpenAI models and Meta's Muse Wonder on 12 stratified papers, each in our harness and in a production harness (Codex CLI or mini-SWE-agent): gpt-6-astra in Codex reproduced [a/4], gpt-6.1-sol [b/12] in ours and [c/12] in Codex, and Muse Wonder [d/12]; the frontier agents' failures fall into the same modes as the open agents' [or: Codex removes mode X in k runs]."
+2. Key sentence: "We ran three current OpenAI models on up to 24 stratified papers and Meta's Muse Wonder on 12, each in our harness and in a production harness (Codex CLI or mini-SWE-agent): gpt-6-astra in Codex reproduced [a/8], gpt-6.1-sol [b/24] in ours and [c/24] in Codex, and Muse Wonder [d/12]; the frontier agents' failures fall into the same modes as the open agents' [or: Codex removes mode X in k runs]."
 3. "No agent edited its harness logs in any of the 396 runs that started, checked against a host-side transcript the agent cannot reach; new runs write a hash-chained log on the host."
 4. "The six cells that failed for reasons outside the agent have been rerun and re-graded, and every rate now includes them."
 5. Revisions by section.
@@ -262,7 +266,7 @@ Each reply thanks the reviewer in one sentence and names what changed, answers i
 
 ### Reviewer YGTR
 
-- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra, gpt-6.1-sol and gpt-6.1-terra from OpenAI and Muse Wonder from Meta on 12 stratified papers, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled by two annotators blind to our LLM labels." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
+- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra, gpt-6.1-sol and gpt-6.1-terra from OpenAI on up to 24 stratified papers and Muse Wonder from Meta on 12, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled by two annotators blind to our LLM labels." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
 - **Hardware (W2).** "We cannot fully separate the hardware from agent error, and we bound it three ways. Missing aarch64 wheels explain [k] of the 24 build-and-dependency failures; removing all 24 from the denominators moves the best Run-tier rate from 41% to at most [x]%; and re-running the faithful agents' own pipelines with two new seeds, [k2] of [n] still missed on our hardware."
 - **Single run (W2).** The E3 sentence.
 - **Checkpoint fetching (Q2).** "We scanned all [396] transcripts for checkpoint downloads; [n] Retrain or Reimplement runs downloaded a checkpoint, [k] of them a third-party checkpoint of the claimed model, and [none] of those were graded reproduced."
@@ -272,4 +276,4 @@ Each reply thanks the reviewer in one sentence and names what changed, answers i
 ## Open items for Mithil
 
 1. The E4 human-label file by 2026-11-10, so the wave-1 replies carry the confusion matrix.
-2. The OpenAI key and project budget on DeltaAI (Section 2, API keys), and the `~/sweeps/paper-table-2026-09-05/` copy, on 2026-11-07.
+2. The $750 OpenAI project budget (keys are already on DeltaAI), and the `~/sweeps/paper-table-2026-09-05/` copy, on 2026-11-07.
