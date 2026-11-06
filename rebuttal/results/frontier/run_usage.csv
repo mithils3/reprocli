@@ -1,0 +1,12 @@
+arm,model,arxiv_id,tier,budget_h100h,gpu_h100h_used,pct_budget_used,n_gpu_calls,n_gpu_ok,wall_minutes,usd,exit_reason,resumes,agent_assessment,blockers_first_120_chars
+codex,gpt-6-astra,2506.08898,retrain,32.0,0.4183,1.31,14,7,111.2,8.203677,natural,11,partial,No POCCO-W checkpoint was found in the pinned repository or releases. POCCO-C matches its reported table row at paper pr
+codex,gpt-6.1-sol,2505.16927,reimplement,32.0,0.0475,0.15,5,4,17.6,0.490511,natural,0,could_not_run,"Bounded searches found no eligible STaPLe checkpoint, sibling checkpoint, runnable implementation, or mined training tra"
+codex,gpt-6.1-sol,2506.08898,retrain,32.0,0.1582,0.49,13,7,21.5,0.754119,natural,0,partial,No POCCO-W checkpoint was present in the pinned repository or releases. The released C variant matches its own rounded p
+codex,gpt-6.1-terra,2412.11979,run,32.0,0.0,0.0,2,1,43.3,0.462017,natural,0,could_not_run,The Figure 1 data and required training logs were absent from the releases. The GPU request remained queued and was canc
+codex,gpt-6.1-terra,2504.20571,run,8.0,0.3572,4.46,13,8,34.8,0.60707,natural,0,not_reproduced,"The released checkpoint’s training step is unidentified. The paper’s 73.6% Table 8 result corresponds to π₁₃, not π₁."
+codex,gpt-6.1-terra,2505.16927,reimplement,32.0,0.0162,0.05,4,3,15.6,0.227606,natural,0,could_not_run,"No matching trained checkpoint, authors' scoring code, or artifact sufficient to validate a port was found. The target i"
+codex,gpt-6.1-terra,2505.19087,reimplement,8.0,0.0045,0.06,3,1,39.8,0.536397,natural,0,could_not_run,The second GPU allocation remained queued for 30 minutes and was canceled. The paper also omits key training and label-p
+codex,gpt-6.1-terra,2506.08898,retrain,32.0,0.4516,1.41,5,4,42.7,0.666787,natural,0,could_not_run,The POCCO-W checkpoint was not found; projected scratch-training cost exceeded the remaining budget. The stock evaluatio
+codex,gpt-6.1-terra,2508.21046,retrain,96.0,0,0.0,0,0,43.3,0.339389,natural,0,could_not_run,The GPU bootstrap and release requests did not return. The CUDA package installation also stalled on shared storage.
+codex,gpt-6.1-terra,2510.21363,retrain,8.0,0.3534,4.42,18,12,94.2,1.147928,natural,0,partial,The full-test allocation was cancelled after an extended queue and did not start. The paper’s validation grid and exact 
+miniswe,muse-wonder-1.0,toy,,0.05,0.0007,1.4,3,2,1.2,0.048535,submitted,,not_reproduced,No blockers.
