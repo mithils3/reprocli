@@ -1,0 +1,13 @@
+job_id,model,purpose,tier,ids,run_tag,submitted_at
+3540624,DeepSeek-V4-Flash,E3 repeat 1,Easy,2505.10475 2504.20571 2502.05795 2506.20671,e3rep1-easy,2026-11-06T11:55:36
+3540625,DeepSeek-V4-Flash,E3 repeat 1,Medium,2506.08898 2510.21363 2504.12463 2506.06991,e3rep1-medium,2026-11-06T11:55:36
+3540626,DeepSeek-V4-Flash,E3 repeat 1,Hard,2505.16927 2505.19087 2503.02809 2503.14698,e3rep1-hard,2026-11-06T11:55:36
+3540627,DeepSeek-V4-Flash,E3 repeat 2,Easy,2505.10475 2504.20571 2502.05795 2506.20671,e3rep2-easy,2026-11-06T11:55:36
+3540628,DeepSeek-V4-Flash,E3 repeat 2,Medium,2506.08898 2510.21363 2504.12463 2506.06991,e3rep2-medium,2026-11-06T11:55:36
+3540629,DeepSeek-V4-Flash,E3 repeat 2,Hard,2505.16927 2505.19087 2503.02809 2503.14698,e3rep2-hard,2026-11-06T11:55:36
+3540630,DeepSeek-V4-Flash,rerun of B-class cells,Easy,2505.10475 2506.01511 2506.18896,rerun-dsv4-easy,2026-11-06T11:55:36
+3540631,DeepSeek-V4-Flash,rerun of B-class cells,Medium,2410.19933 2506.10943 2510.19784 2511.00119 2510.20725,rerun-dsv4-medium,2026-11-06T11:55:36
+3540632,DeepSeek-V4-Flash,rerun of B-class cells,Hard,2505.22596 2506.20024 2510.15194,rerun-dsv4-hard,2026-11-06T11:55:36
+3540633,MiniMax-M2.7,rerun of B-class cells,Medium,2510.20725,rerun-minimax-medium,2026-11-06T11:55:36
+NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Medium,2503.09657 2506.08898 2510.05874 2510.19784 2506.19839 2510.20725,rerun-qwen-medium,gated on Qwen smoke PASS (smoke 3540621 OOM at 220G)
+NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Hard,2506.20024,rerun-qwen-hard,gated on Qwen smoke PASS (smoke 3540621 OOM at 220G)
