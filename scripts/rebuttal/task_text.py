@@ -41,19 +41,34 @@ REPLACEMENTS = [
     ("(read it from list_partitions)", "(read it with `sinfo -p ghx4`)", 2),
 ]
 
+# Codex has its own shell tool and apply_patch; only the tool names in the shell passage differ.
+CODEX_SHELL_EDIT = (
+    ("- bash — a shell in the sandbox, starting in",
+     "- shell — a shell in the sandbox (edit files with apply_patch), starting in"),
+)
+
 _BLOCK_START = "Tools:\n"
 _BLOCK_END = "=== GPU SESSIONS ==="
 
 
-def adapt(rendered: str, *, workspace_dir: str, evidence_dir: str) -> str:
-    """Swap the tool passages of an already-rendered prompt. Pure text in, text out."""
+def adapt(rendered: str, *, workspace_dir: str, evidence_dir: str, harness: str = "bash") -> str:
+    """Swap the tool passages of an already-rendered prompt. Pure text in, text out.
+
+    ``harness="bash"`` (mini-SWE-agent) is the default; ``harness="codex"`` names Codex's shell and apply_patch.
+    """
+    if harness not in ("bash", "codex"):
+        raise ValueError(f"unknown harness {harness!r}")
     start = rendered.count(_BLOCK_START)
     end = rendered.count(_BLOCK_END)
     if start != 1 or end != 1:
         raise ValueError(f"tool block markers found {start} and {end} times, expected 1 each")
     head, rest = rendered.split(_BLOCK_START, 1)
     _, tail = rest.split(_BLOCK_END, 1)
-    out = head + SHELL_PASSAGE.replace("{WORKSPACE_DIR}", workspace_dir) + "\n\n" + _BLOCK_END + tail
+    shell = SHELL_PASSAGE
+    if harness == "codex":
+        for old, new in CODEX_SHELL_EDIT:
+            shell = shell.replace(old, new)
+    out = head + shell.replace("{WORKSPACE_DIR}", workspace_dir) + "\n\n" + _BLOCK_END + tail
     for old, new, *expected in REPLACEMENTS:
         want = expected[0] if expected else 1
         n = out.count(old)
@@ -64,7 +79,7 @@ def adapt(rendered: str, *, workspace_dir: str, evidence_dir: str) -> str:
 
 
 def paper_task_text(row: dict, *, budget: float, workspace_dir: str = "/repro/workspace",
-                    evidence_dir: str = "/repro/evidence") -> str:
+                    evidence_dir: str = "/repro/evidence", harness: str = "bash") -> str:
     """The reproduce prompt for one lockfile row, rendered as the thin harness renders it, then adapted."""
     rendered = render_reproduce_prompt(PROMPT_TEMPLATE.read_text(encoding="utf-8"), row, budget=budget)
-    return adapt(rendered, workspace_dir=workspace_dir, evidence_dir=evidence_dir).strip()
+    return adapt(rendered, workspace_dir=workspace_dir, evidence_dir=evidence_dir, harness=harness).strip()
