@@ -28,7 +28,7 @@ SHELL_PASSAGE = """Tools:
 
 Batch independent shell commands into one turn where you can."""
 
-# (old, new) pairs: each old text must occur exactly once in the rendered prompt.
+# (old, new[, count]) triples: each old text must occur exactly count times (default once) in the rendered prompt.
 REPLACEMENTS = [
     ("Write durable evidence to disk as you go: your in-context notes are\nperiodically compacted away; only files survive.",
      "Write durable evidence to disk as you go; only files survive."),
@@ -38,6 +38,7 @@ REPLACEMENTS = [
      "verify target provenance; write your plan\n   to {EVIDENCE_DIR}/plan.md."),
     ("Your very last turn returns one structured JSON report (tools are gone):",
      "Your very last turn returns one structured JSON report (no commands run after it):"),
+    ("(read it from list_partitions)", "(read it with `sinfo -p ghx4`)", 2),
 ]
 
 _BLOCK_START = "Tools:\n"
@@ -53,10 +54,11 @@ def adapt(rendered: str, *, workspace_dir: str, evidence_dir: str) -> str:
     head, rest = rendered.split(_BLOCK_START, 1)
     _, tail = rest.split(_BLOCK_END, 1)
     out = head + SHELL_PASSAGE.replace("{WORKSPACE_DIR}", workspace_dir) + "\n\n" + _BLOCK_END + tail
-    for old, new in REPLACEMENTS:
+    for old, new, *expected in REPLACEMENTS:
+        want = expected[0] if expected else 1
         n = out.count(old)
-        if n != 1:
-            raise ValueError(f"passage found {n} times, expected 1: {old[:60]!r}")
+        if n != want:
+            raise ValueError(f"passage found {n} times, expected {want}: {old[:60]!r}")
         out = out.replace(old, new.replace("{EVIDENCE_DIR}", evidence_dir))
     return out
 
