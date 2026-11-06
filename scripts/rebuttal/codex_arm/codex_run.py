@@ -522,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("OPENAI_API_KEY is not set; source it from ~/.bashrc first (value is never printed).")
     os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", "betw-dtai-gh")
     # A run_gpu call waits for its grant without a limit, as the thin harness's call does in practice.
-    os.environ.setdefault("REPRO_QUEUE_GRACE_HOURS", "100000")
+    os.environ.setdefault("REPRO_QUEUE_GRACE_HOURS", "2000")  # 100000 overflows the subprocess timeout
     os.environ.setdefault("APPTAINERENV_OPENAI_API_KEY", os.environ["OPENAI_API_KEY"])
     os.environ.setdefault("APPTAINERENV_CODEX_API_KEY", os.environ["OPENAI_API_KEY"])  # codex exec reads this one
 
