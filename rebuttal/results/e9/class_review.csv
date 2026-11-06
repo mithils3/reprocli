@@ -1,0 +1,37 @@
+run_id,key,match,class,basis
+dsv4-retrain-2506.07673,pytorch/vision:v0.20.0,,b,"torch.hub torchvision backbone (pretrained weights), not the claimed model"
+dsv4-retrain-2510.21363,model,gdown,d,text match in a command that reads library code; no download
+dsv4-retrain-2510.21363,,gdown,d,text match in a command that reads library code; no download
+dsv4-retrain-2510.21363,stabilityai/stable-diffusion-3-medium-diffusers,,b,base Stable Diffusion 3 pipeline that FairImagen post-processes
+dsv4-retrain-2505.24680,,hf_hub_download,d,import statement only
+dsv4-retrain-2505.24680,meta-llama/Llama-2-7b,,b,Llama-2-7b config/tokenizer only; no weights of the claimed LLaMA-3-8B
+qwen3-retrain-2505.24680,,hf_hub_download,d,import statement only
+qwen3-retrain-2505.24680,allenai/c4,,d,"dataset (C4), not a model or result"
+qwen3-retrain-2505.24680,meta-llama/Llama-2-7b,,b,Llama-2-7b tokenizer only; no weights
+qwen3-retrain-2505.24680,meta-llama/Llama-2-7b-hf,,b,Llama-2-7b-hf tokenizer only; no weights
+qwen3-retrain-2506.07673,pytorch/vision:v0.20.0,,b,torch.hub torchvision backbone
+minimax-retrain-2506.07673,pytorch/vision:v0.20.0,,b,torch.hub torchvision backbone
+muse-retrain-2506.07673,pytorch/vision:v0.20.0,,b,torch.hub torchvision backbone
+minimax-retrain-2510.21363,https://raw.githubusercontent.com/fuzihaofzh/FairImagen/main/requirements.txt,,d,"requirements.txt, not a checkpoint or result"
+minimax-retrain-2510.09485,https://raw.githubusercontent.com/hradghoukasian/private_sampling/main/requirements.txt,,d,"requirements.txt, not a checkpoint or result"
+minimax-retrain-2510.23577,,huggingface-cli download,d,dataset download (--repo-type dataset)
+minimax-retrain-2510.23577,https://raw.githubusercontent.com/Alleinx/TAMI_temporal_graph/main/requirements.txt,,d,"requirements.txt, not a checkpoint or result"
+minimax-reimplement-2505.12677,,gdown --help,d,gdown help text; no download
+minimax-reimplement-2505.12677,https://drive.google.com/drive/folders/1HCFa2APFPsJbtq8uBf-dUMge-H-1G2Xn,,c,authors' CURE Google Drive folder; the run downloaded the erased-model .pt files and evaluated them (report what_ran: officially released Kelly McKernan-erased SD-v1.4 UNet checkpoint)
+minimax-reimplement-2505.12677,https://drive.google.com/file/d/1HCFa2APFPsJbtq8uBf-dUMge-H-1G2Xn/view,,c,authors' CURE Google Drive file (erased-model release); same checkpoint as the folder download
+minimax-reimplement-2505.12677,1fdRxzy8bWTD41krjPQwIybR8dEp8ffPD,,c,"Drive file id of erased-kelly mckernan.pt, the CURE released erased model"
+minimax-reimplement-2505.12677,https://raw.githubusercontent.com/ShristiDasBiswas/CURE-Concept-Unlearning-via-Orthogonal-,,d,fetch of a file from the authors' repo; not verified as a result file
+muse-retrain-2508.21046,,hf download liwei2013/cogvla_libero_spatial_60000_chkpt,c,author-released LIBERO-Spatial CogVLA checkpoint (named in the repo README); the trained model the claim evaluates; run_libero_eval used /tmp/cogvla_spatial
+muse-retrain-2508.21046,,redownload,d,"shell text, not a download"
+muse-retrain-2508.21046,,*.lock,d,"shell text, not a download"
+muse-retrain-2508.21046,openvla/openvla-dev,,b,base OpenVLA model that CogVLA builds on
+muse-retrain-2508.21046,TRI-ML/prismatic-vlms,,b,base Prismatic VLM family used by the codebase
+muse-retrain-2511.00119,,hf_hub_download,d,help() text in a python -c call; no download
+muse-retrain-2505.24680,,snapshot_download,d,import statement only
+muse-retrain-2505.24680,config.json,,d,config.json only; no weights
+muse-retrain-2505.24680,meta-llama/Llama-2-7b-hf,,b,Llama-2-7b-hf config/tokenizer only; no weights
+muse-reimplement-2505.22860,meta-llama/Llama-3.1-8B,,b,base model (Llama-3.1-8B) that PermLLM trains LoRA adapters on
+muse-reimplement-2505.22860,meta-llama/Llama-3.2-1B-Instruct,,b,base config only
+muse-reimplement-2505.22860,meta-llama/Meta-Llama-3.1-8B,,b,base model (Llama-3.1-8B) that PermLLM trains LoRA adapters on
+dsv4-reimplement-2505.22860,meta-llama/Llama-3.1-8B,,b,base model (Llama-3.1-8B) that PermLLM trains LoRA adapters on
+dsv4-reimplement-2505.22860,torch,,d,text match inside a python print of torch; no download

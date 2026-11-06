@@ -1,0 +1,117 @@
+{
+ "tiers": {
+  "run": {
+   "runs_in_index": 129,
+   "runs_scanned": 127,
+   "scan_timeouts": [
+    "dsv4-run-2505.19713",
+    "minimax-run-2505.10475"
+   ],
+   "runs_with_primary_hit": 117,
+   "runs_with_weight_file_ge_1MB": 3,
+   "primary_hit_rows": 2203,
+   "class_counts_rows": {},
+   "runs_with_class_c_or_d_hit": 0,
+   "reproduced_runs_with_class_c_or_d_hit": [],
+   "reproduced_runs_with_any_primary_hit": [
+    "dsv4-run-2410.18164",
+    "dsv4-run-2412.11979",
+    "dsv4-run-2502.05795",
+    "dsv4-run-2502.06684",
+    "dsv4-run-2503.23035",
+    "dsv4-run-2504.20571",
+    "dsv4-run-2505.14766",
+    "dsv4-run-2505.18456",
+    "dsv4-run-2505.18809",
+    "dsv4-run-2505.23747",
+    "dsv4-run-2506.02392",
+    "dsv4-run-2506.20990",
+    "dsv4-run-2506.21724",
+    "minimax-run-2505.23747",
+    "minimax-run-2506.02392",
+    "minimax-run-2506.10351",
+    "muse-run-2502.05795",
+    "muse-run-2505.14766",
+    "muse-run-2505.18456",
+    "muse-run-2505.23747",
+    "muse-run-2506.02392",
+    "muse-run-2506.10351",
+    "muse-run-2506.20990",
+    "muse-run-2506.21724",
+    "qwen3-run-2503.23035",
+    "qwen3-run-2504.20571",
+    "qwen3-run-2505.18809",
+    "qwen3-run-2506.01511"
+   ]
+  },
+  "retrain": {
+   "runs_in_index": 118,
+   "runs_scanned": 118,
+   "scan_timeouts": [],
+   "runs_with_primary_hit": 62,
+   "runs_with_weight_file_ge_1MB": 3,
+   "primary_hit_rows": 533,
+   "class_counts_rows": {
+    "b": 213,
+    "c": 12,
+    "d": 308
+   },
+   "runs_with_class_c_or_d_hit": 52,
+   "reproduced_runs_with_class_c_or_d_hit": [
+    "dsv4-retrain-2505.24680",
+    "dsv4-retrain-2510.21363",
+    "minimax-retrain-2510.09485",
+    "minimax-retrain-2510.21363",
+    "minimax-retrain-2510.23577",
+    "muse-retrain-2505.24680",
+    "muse-retrain-2508.21046",
+    "muse-retrain-2511.00119",
+    "qwen3-retrain-2505.24680"
+   ],
+   "reproduced_runs_with_any_primary_hit": [
+    "dsv4-retrain-2505.24680",
+    "dsv4-retrain-2506.07673",
+    "dsv4-retrain-2510.21363",
+    "minimax-retrain-2506.07673",
+    "minimax-retrain-2510.09485",
+    "minimax-retrain-2510.21363",
+    "minimax-retrain-2510.23577",
+    "muse-retrain-2505.24680",
+    "muse-retrain-2506.07673",
+    "muse-retrain-2508.21046",
+    "muse-retrain-2511.00119",
+    "qwen3-retrain-2505.24680",
+    "qwen3-retrain-2506.07673"
+   ]
+  },
+  "reimplement": {
+   "runs_in_index": 125,
+   "runs_scanned": 123,
+   "scan_timeouts": [
+    "dsv4-reimplement-2511.01463",
+    "minimax-reimplement-2511.01463"
+   ],
+   "runs_with_primary_hit": 75,
+   "runs_with_weight_file_ge_1MB": 3,
+   "primary_hit_rows": 1432,
+   "class_counts_rows": {
+    "a": 23,
+    "b": 333,
+    "c": 20,
+    "d": 1056
+   },
+   "runs_with_class_c_or_d_hit": 70,
+   "reproduced_runs_with_class_c_or_d_hit": [
+    "dsv4-reimplement-2505.22860",
+    "minimax-reimplement-2505.12677",
+    "muse-reimplement-2505.22860"
+   ],
+   "reproduced_runs_with_any_primary_hit": [
+    "dsv4-reimplement-2505.22860",
+    "minimax-reimplement-2505.12677",
+    "muse-reimplement-2505.22860"
+   ]
+  }
+ },
+ "note": "primary sources: command, fetch_url, written_file, executed_repo_code, executed_repo_dir"
+}
