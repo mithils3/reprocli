@@ -6,6 +6,8 @@ Before proposing anything, read what we already know. Use all previous memories:
 
 Budget: we can spend up to 600 USD of OpenAI API credits if needed, mainly to answer the frontier-model and harness requests (a frontier model as the agent, or Codex, Claude Code or mini-SWE-agent as the harness, on a stratified subset of papers). Say how many papers and runs that buys, how the cost was estimated, and what GPU-hours it also needs on DeltaAI.
 
+GPU account: all rebuttal GPU work on DeltaAI charges the Slurm account bgnp-dtai-gh (Mithil, 2026-11-06: "let this agent use bgnp-dtai-gh"; its `accounts` row read 1304 and 6367, so check its remaining balance with `accounts` on DeltaAI and budget against that). The repo's run_gpu currently charges bfvr-dtai-gh (memory reprocli-gpu-account-betw, account string in src/reprocli_repro/cluster.py); the plan should say how rebuttal runs get bgnp-dtai-gh without moving the /work/nvme/bfvr/ paths.
+
 The plan should cover, in this order:
 1. Every reviewer concern, grouped across reviewers, each marked as new evidence, existing evidence we only need to surface, or a text fix.
 2. For each piece of new evidence: what we run, on which machine, the cost in dollars and GPU-hours, the time it takes, and what result would change our reply.
