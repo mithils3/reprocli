@@ -1,4 +1,4 @@
-You are running on reprocli-vps, an always-on Hetzner box (4 cores, 8 GB, no GPU) that is a copy of Mithil's laptop setup for this repo. Heavy work goes to DeltaAI (GPU) and Delta (CPU) as CLAUDE.md says; the Duo links from this box may not be open yet, so check with `ssh -o BatchMode=yes delta true` before relying on them.
+You are running on claude-vps, an always-on Hetzner box (4 cores, 8 GB, no GPU) with a copy of Mithil's laptop setup. It ran the distillation project until today; that work is paused until Nov 16 and its files under ~/Alingment/Distillation are not yours to change. Keep memory use modest. Heavy work goes to DeltaAI (GPU) and Delta (CPU) as CLAUDE.md says; the Duo links from this box may not be open yet, so check with `ssh -o BatchMode=yes delta true` before relying on them.
 
 Task: draft a plan for replying to our ICLR 2027 reviews (submission 22528, RECLAIM) on OpenReview by 2026-11-14. The three reviews and the PAT pre-submission feedback are in rebuttal/reviews-2026-11-06.md. Ratings are T29u 3, rqBN 3, YGTR 2, so the plan should aim to move YGTR and firm up the two weak accepts.
 
