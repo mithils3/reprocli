@@ -200,9 +200,13 @@ class OpenAIBodyShapeTests(unittest.TestCase):
             client.post_chat_completion_row(OPENAI, row, 30.0)
             sent = post.call_args.args[1]
         self.assertEqual(sent["service_tier"], "flex")
-        self.assertEqual(sent["max_completion_tokens"], 4096)
+        self.assertEqual(sent["max_output_tokens"], 4096)
+        self.assertEqual(sent["reasoning"], {"effort": "high"})
+        self.assertEqual(sent["store"], False)
         self.assertNotIn("truncate_prompt_tokens", sent)
         self.assertNotIn("max_tokens", sent)
+        self.assertNotIn("max_completion_tokens", sent)
+        self.assertNotIn("top_k", sent)
 
 
 if __name__ == "__main__":

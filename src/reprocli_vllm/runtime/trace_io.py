@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from reprocli_vllm.vllm.responses import REASONING_KEY
+
 
 def trace_output_path(output: Path) -> Path:
     return output.with_name(f"{output.stem}_trace{output.suffix}")
@@ -35,4 +37,6 @@ def assistant_message(message: dict[str, Any], tool_calls: list[dict[str, Any]])
         item["reasoning"] = message["reasoning"]
     if tool_calls:
         item["tool_calls"] = tool_calls
+    if message.get(REASONING_KEY):
+        item[REASONING_KEY] = message[REASONING_KEY]
     return item

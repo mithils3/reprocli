@@ -21,6 +21,12 @@ from reprocli_vllm.vllm.flex import (
     post_flex,
     read_timeout,
 )
+from reprocli_vllm.vllm.responses import (
+    RESPONSES_PATH,
+    request_to_responses,
+    response_to_chat,
+    strip_openai_private,
+)
 from reprocli_vllm.vllm.retry import with_retries
 
 # Universally-supported degrade for a json_schema response_format the routed
@@ -169,7 +175,14 @@ def post_chat_completion_row(
     drop_truncate_prompt_tokens(row["body"])
     prepare_structured_output(row["body"], base_url)
     apply_openai_body_shape(row["body"], base_url)
-    return post_vllm_chat_completion(base_url, row["body"], timeout)
+    if is_openai(base_url):
+        # GPT reasoning models refuse tools with reasoning_effort on chat/completions.
+        payload = request_to_responses(row["body"])
+        return response_to_chat(post_vllm_chat_completion(base_url, payload, timeout))
+    body = dict(row["body"])
+    if isinstance(body.get("messages"), list):
+        body["messages"] = strip_openai_private(body["messages"])
+    return post_vllm_chat_completion(base_url, body, timeout)
 
 
 def response_row(custom_id: str, body: Any) -> dict[str, Any]:
@@ -201,7 +214,7 @@ def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: floa
 def _send_once(base_url: str, body: dict[str, Any], timeout: float) -> Any:
     data = json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
-        f"{base_url}/v1/chat/completions",
+        f"{base_url}{RESPONSES_PATH if is_openai(base_url) else '/v1/chat/completions'}",
         data=data,
         headers={
             "Content-Type": "application/json",
