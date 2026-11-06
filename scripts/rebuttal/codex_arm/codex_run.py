@@ -35,19 +35,22 @@ if str(REPO_SRC) not in sys.path:
     sys.path.insert(0, str(REPO_SRC))
 
 from reprocli_repro import gpu_session, inputs, sandbox, workspace  # noqa: E402
+from reprocli_repro.inputs import new_run_id  # noqa: E402
 from reprocli_repro import report as report_mod  # noqa: E402
 from reprocli_repro.cli_args import parse_args as harness_parse_args  # noqa: E402
 from reprocli_repro.tools import execute_repro_tool_call  # noqa: E402
 from reprocli_repro.context import ExecutionContext  # noqa: E402
 
-from codex_events import Recorder  # noqa: E402
+sys.path.insert(0, str(HERE.parent))
+from codex_events import Recorder, attach_requests  # noqa: E402
+from task_text import paper_task_text  # noqa: E402
 
 CODEX_VENDOR = Path(os.environ.get(
     "CODEX_VENDOR_DIR",
     "/work/nvme/bfvr/msalunkhe/rebuttal/codex/node_modules/@openai/codex-linux-arm64"
     "/vendor/aarch64-unknown-linux-musl",
 ))
-DEFAULT_RUNS_DIR = "/work/nvme/bfvr/msalunkhe/rebuttal/codex/runs"
+DEFAULT_RUNS_DIR = "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs"
 DEFAULT_LEDGER = "/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl"
 DEFAULT_MODEL = "gpt-6.1-terra"
 DEFAULT_WALL_HOURS = 48.0
@@ -61,9 +64,14 @@ CONTAINER_BRIDGE = f"{CONTAINER_IO}/bridge"
 CONTAINER_HOME = f"{CONTAINER_IO}/codex_home"
 CONTAINER_SCHEMA = f"{CONTAINER_IO}/report_schema.json"
 CONTAINER_FINAL = f"{CONTAINER_IO}/final_message.json"
+# Keep every request under the 256k input ceiling of the flex tier: Codex's window is pinned
+# to 256k and it compacts its own history once the prompt passes 200k.
+CONTEXT_WINDOW = 256000
+AUTO_COMPACT_LIMIT = 200000
 EXEC_FLAGS = (
     "--json --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "
-    "-c model_reasoning_effort=high -c service_tier=flex"
+    "-c model_reasoning_effort=high -c service_tier=flex "
+    f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT}"
 )
 
 
@@ -278,8 +286,10 @@ def main(argv: list[str] | None = None) -> int:
 
     harness_argv = ["--paper-id", own.paper_id, "--runs-dir", own.runs_dir, "--model", own.model,
                     "--budget-h100-hours", str(own.budget_h100_hours)]
+    # The arm is in the run id, so a Codex run is never mistaken for a thin-harness run in agent_runs/.
+    run_id = own.run_id or f"codex-{own.model}-{new_run_id()}"
     for flag, value in (("--partition", own.partition), ("--apptainer-image", own.apptainer_image),
-                        ("--lockfile", own.lockfile), ("--run-id", own.run_id)):
+                        ("--lockfile", own.lockfile), ("--run-id", run_id)):
         if value:
             harness_argv += [flag, value]
     args = harness_parse_args(harness_argv)
@@ -287,7 +297,8 @@ def main(argv: list[str] | None = None) -> int:
     sandbox.forward_env()
 
     (ep,) = inputs.prepare_episodes(args)
-    task = own.task_text if own.task_text is not None else ep.prompt
+    task = own.task_text if own.task_text is not None else paper_task_text(ep.row, budget=ep.budget, harness="codex")
+    (ep.run_paths.run_dir / "task.txt").write_text(task + "\n", encoding="utf-8")
     sb = sandbox.from_run_paths(
         ep.run_paths, image=args.cluster_profile.apptainer_image,
         cpus=args.cluster_profile.sandbox_cpus, mem_gb=args.cluster_profile.sandbox_mem_gb,
@@ -310,6 +321,8 @@ def main(argv: list[str] | None = None) -> int:
         "work_command": codex_body(own.model, task, resume=False),
         "final_command": codex_body(own.model, args.final_no_tools_message, resume=True),
         "task_text": task,
+        "context_window": CONTEXT_WINDOW,
+        "auto_compact_token_limit": AUTO_COMPACT_LIMIT,
         "sandbox": sb.status(),
     }, indent=2) + "\n", encoding="utf-8")
 
@@ -324,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
         gpu_session.teardown_all([ctx])
     report_mod.write_episode_report(ctx, content, exit_reason)
     usage = recorder.write_usage()
+    attach_requests(run_dir, io_dir / "codex_home")
     totals = recorder.totals()
     recorder.log_line(f"DONE exit_reason={exit_reason} usd={totals['usd']} turns={totals['turns']}")
     append_ledger(Path(own.ledger), {

@@ -164,3 +164,32 @@ class Recorder:
         target = self.run_dir / "usage.json"
         target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
         return target
+
+
+def request_usage(codex_home: Path) -> dict[str, Any]:
+    """Per model request input tokens, from the rollout files Codex keeps under CODEX_HOME.
+
+    ``turn.completed`` sums a turn's requests, so the per-request maximum (the flex 256k ceiling)
+    has to come from ``token_count`` events in the session rollout.
+    """
+    requests: list[int] = []
+    for rollout in sorted(Path(codex_home).glob("sessions/**/rollout-*.jsonl")):
+        for line in rollout.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            payload = row.get("payload") or {}
+            if row.get("type") == "event_msg" and payload.get("type") == "token_count":
+                last = ((payload.get("info") or {}).get("last_token_usage") or {})
+                if "input_tokens" in last:
+                    requests.append(int(last["input_tokens"]))
+    return {"requests": requests, "max_request_input_tokens": max(requests) if requests else 0}
+
+
+def attach_requests(run_dir: Path, codex_home: Path) -> None:
+    """Add the per-request input counts to usage.json."""
+    target = Path(run_dir) / "usage.json"
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    payload.update(request_usage(codex_home))
+    target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
