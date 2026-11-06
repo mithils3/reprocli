@@ -96,6 +96,41 @@ Answer from the paper and the claim only.
 - value_supported: does the paper report this value for this metric, dataset and split, and configuration?
 Give a verbatim quote from the paper that bears on value_supported. In problem, say in one sentence what is wrong, or leave it empty if nothing is."""
 
+S3 = {
+    "type": "object",
+    "properties": {
+        "a_yes": {"type": "boolean"}, "a_quote": {"type": "string"},
+        "b_yes": {"type": "boolean"}, "b_quote": {"type": "string"},
+        "c_yes": {"type": "boolean"}, "c_quote": {"type": "string"},
+        "d_yes": {"type": "boolean"}, "d_quote": {"type": "string"},
+        "reason": {"type": "string"},
+    },
+    "required": ["a_yes", "a_quote", "b_yes", "b_quote", "c_yes", "c_quote", "d_yes", "d_quote", "reason"],
+    "additionalProperties": False,
+}
+
+STEP3 = """<paper>
+{paper}
+</paper>
+
+A reader wrote this claim about the paper:
+<claim>{claim}</claim>
+
+The claim's target is:
+- metric: {metric}
+- dataset and split: {scope}
+- method or model variant: {config}
+- value: {value}
+
+Out of scope: implementation details that a reproduction takes from the authors' released code, such as checkpoint names, training steps, seeds, hardware, and hyperparameters the paper does not state. Do not count these against any answer below.
+
+Answer four yes or no questions from the paper. Give a verbatim quote for each; if the answer is no, quote the closest passage and explain in reason.
+- a: does the paper report this exact value (within rounding) somewhere?
+- b: is that value reported for this metric?
+- c: is that value reported on this dataset and split?
+- d: is that value reported for the method or model variant the claim is about?
+In reason, give one sentence summarizing the result of the four checks."""
+
 LOCK = threading.Lock()
 
 
@@ -215,6 +250,11 @@ def check(obj, schema):
         want = {"boolean": bool, "string": str}[spec["type"]]
         if not isinstance(obj[k], want):
             return f"type:{k}"
+    if "a_yes" in obj:
+        for k in "abcd":
+            if not obj[k + "_quote"].strip():
+                return f"quote_blank:{k}"
+        return None
     if "found" in obj:
         if obj["found"] and not all(obj[k].strip() for k in ("value", "quote")):
             return "found_but_blank"
@@ -276,6 +316,46 @@ def derive_one(row, key):
         with (RESULTS / "rederived.jsonl").open("a") as f:
             f.write(json.dumps(rec) + "\n")
     return rec
+
+
+def derive3(row, key):
+    aid = row["custom_id"]
+    t = row["match_target"]
+    paper = (PAPERS_DIR / f"{aid}.txt").read_text(errors="replace")[:MAX_PAPER_CHARS]
+    user = STEP3.format(paper=paper, claim=row["central_claim"], metric=t["metric"], scope=t["scope"],
+                        config=t["config"], value=t["value"])
+    obj, tier, err = ask(3, user, S3, key, aid)
+    rec = {"custom_id": aid, "tier": row["tier"], "step3_tier": tier, "step3_error": err}
+    if obj:
+        rec.update(obj)
+    with LOCK:
+        with (RESULTS / "step3.jsonl").open("a") as f:
+            f.write(json.dumps(rec) + "\n")
+    return rec
+
+
+def run3(claims, limit):
+    key = os.environ["OPENAI_API_KEY"]
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    out = RESULTS / "step3.jsonl"
+    done = set()
+    if out.exists():
+        done = {json.loads(l)["custom_id"] for l in out.read_text().splitlines() if l.strip()}
+    if ledger_total(provider="openai") + ITEM_CAP > OPENAI_CAP:
+        raise SystemExit("OpenAI ledger total would pass the $700 cap")
+    todo = [r for r in claims[:limit] if r["custom_id"] not in done]
+    print("step3 todo", len(todo), flush=True)
+    with ThreadPoolExecutor(max_workers=THREADS) as pool:
+        futures = [pool.submit(lambda r=row: None if ledger_total("E7") >= ITEM_CAP else derive3(r, key))
+                   for row in todo]
+        for f in futures:
+            rec = f.result()
+            if rec is None:
+                print("E7 item cap reached, stopping", flush=True)
+                break
+            print(rec["custom_id"], rec.get("a_yes"), rec.get("b_yes"), rec.get("c_yes"), rec.get("d_yes"),
+                  rec.get("step3_error") or "", flush=True)
+    print("E7 ledger total", round(ledger_total("E7"), 4), flush=True)
 
 
 def run(claims, limit):
@@ -377,6 +457,20 @@ def compare(claims):
             "step1_error": d.get("step1_error") or "", "step2_error": d.get("step2_error") or "",
             "disagree": bool(reasons) or not value_agree, "reasons": ";".join(reasons),
         })
+    s3 = {}
+    step3_path = RESULTS / "step3.jsonl"
+    if step3_path.exists():
+        for line in step3_path.read_text().splitlines():
+            if line.strip():
+                d = json.loads(line)
+                s3[d["custom_id"]] = d
+    for r in rows:
+        d = s3.get(r["custom_id"], {})
+        for k in "abcd":
+            r[f"v3_{k}_yes"] = d.get(f"{k}_yes", "")
+            r[f"v3_{k}_quote"] = d.get(f"{k}_quote", "")
+        r["v3_reason"] = d.get("reason", "")
+        r["v3_error"] = d.get("step3_error") or ""
     fields = list(rows[0].keys())
     with (RESULTS / "comparison.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -418,13 +512,38 @@ def compare(claims):
             "tuple_config_ok": tally(sub, "tuple_config_ok")[0],
             "tuple_value_supported": tally(sub, "tuple_value_supported")[0],
         }
+    fail3 = []
+    for r in rows:
+        bad = [k for k in "abcd" if r[f"v3_{k}_yes"] is not True]
+        if bad:
+            fail3.append({"custom_id": r["custom_id"], "tier": r["tier"], "value_frozen": r["value_frozen"],
+                          "scope_frozen": r["scope_frozen"], "config_frozen": r["config_frozen"],
+                          "failed": "".join(bad),
+                          "quotes": " | ".join(f"{k}: {r[f'v3_{k}_quote']}" for k in bad),
+                          "reason": r["v3_reason"], "error": r["v3_error"]})
+    with (RESULTS / "v3_failures.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(fail3[0].keys()) if fail3 else ["custom_id"])
+        w.writeheader()
+        w.writerows(fail3)
+    step3 = {"n": len(rows), "all_four_yes": sum(1 for r in rows if all(r[f"v3_{k}_yes"] is True for k in "abcd")),
+             "all_four_wilson95": None, "by_question": {}, "by_tier": {}}
+    step3["all_four_wilson95"] = wilson(step3["all_four_yes"], len(rows))
+    for k in "abcd":
+        kk = sum(1 for r in rows if r[f"v3_{k}_yes"] is True)
+        step3["by_question"][k] = {"yes": kk, "n": len(rows), "wilson95": wilson(kk, len(rows))}
+    for tier in tiers:
+        sub = [r for r in rows if r["tier"] == tier]
+        step3["by_tier"][tier] = {k: sum(1 for r in sub if r[f"v3_{k}_yes"] is True) for k in "abcd"}
+        step3["by_tier"][tier]["n"] = len(sub)
+    summary["step3"] = step3
+    summary["step3_failures"] = len(fail3)
     (RESULTS / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["fetch", "run", "compare"])
+    ap.add_argument("cmd", choices=["fetch", "run", "run3", "compare"])
     ap.add_argument("--limit", type=int, default=100)
     args = ap.parse_args()
     claims = load_claims()
@@ -432,6 +551,8 @@ def main():
         fetch(claims, args.limit)
     elif args.cmd == "run":
         run(claims, args.limit)
+    elif args.cmd == "run3":
+        run3(claims, args.limit)
     else:
         compare(claims)
 
