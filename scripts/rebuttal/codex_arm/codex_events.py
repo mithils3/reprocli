@@ -24,7 +24,7 @@ from typing import Any
 from reprocli_repro import evidence as evidence_mod
 
 # USD per million tokens at the flex tier (gpt-6.1-terra, rebuttal ops COMMON.md).
-PRICES_PER_M = {  # rebuttal/ops/COMMON.md
+PRICES_PER_M = {  # flex tier, rebuttal/ops/COMMON.md
     "gpt-6.1-terra": {"in": 0.50, "cached": 0.025, "out": 2.50},
     "gpt-6.1-sol": {"in": 1.00, "cached": 0.05, "out": 5.00},
     "gpt-6-astra": {"in": 5.00, "cached": 0.50, "out": 25.00},
@@ -33,11 +33,15 @@ PRICES_PER_M = {  # rebuttal/ops/COMMON.md
 _RUN_GPU_TOKEN = re.compile(r"(^|[\s/;&|])run_gpu(\s|$)")
 
 
-def turn_usd(model: str, input_tokens: int, cached: int, output_tokens: int) -> float:
+STANDARD_MULTIPLIER = 2.0  # standard tier is 2x flex (rebuttal/ops/COMMON.md)
+
+
+def turn_usd(model: str, input_tokens: int, cached: int, output_tokens: int, multiplier: float = 1.0) -> float:
     """Cost of one turn. ``input_tokens`` includes the cached part, output includes reasoning."""
     price = PRICES_PER_M[model]
     uncached = max(0, input_tokens - cached)
-    return (uncached * price["in"] + cached * price["cached"] + output_tokens * price["out"]) / 1e6
+    flex = (uncached * price["in"] + cached * price["cached"] + output_tokens * price["out"]) / 1e6
+    return flex * multiplier
 
 
 class Recorder:
@@ -173,7 +177,7 @@ class Recorder:
         return target
 
 
-def rollout_requests(codex_home: Path, model: str) -> list[dict[str, Any]]:
+def rollout_requests(codex_home: Path, model: str, standard_from: str | None = None) -> list[dict[str, Any]]:
     """Every billed model request under CODEX_HOME, read from the session rollouts.
 
     A failed turn can still bill requests that the event stream never reports as usage, so
@@ -203,22 +207,28 @@ def rollout_requests(codex_home: Path, model: str) -> list[dict[str, Any]]:
             inp = int(last.get("input_tokens") or 0)
             cached = int(last.get("cached_input_tokens") or 0)
             out = int(last.get("output_tokens") or 0)
+            # Requests at or after the tier fallback (ISO UTC, same format as rollout timestamps) bill as standard.
+            stamp = str(row.get("timestamp") or "")
+            tier = "standard" if standard_from and stamp >= standard_from else "flex"
+            multiplier = STANDARD_MULTIPLIER if tier == "standard" else 1.0
             rows.append({
                 "index": len(rows),
+                "tier": tier,
+                "timestamp": stamp,
                 "input_tokens": inp,
                 "cached_input_tokens": cached,
                 "output_tokens": out,
                 "reasoning_output_tokens": int(last.get("reasoning_output_tokens") or 0),
-                "usd": round(turn_usd(model, inp, cached, out), 6),
+                "usd": round(turn_usd(model, inp, cached, out, multiplier), 6),
             })
     return rows
 
 
-def attach_requests(run_dir: Path, codex_home: Path, model: str) -> dict[str, Any]:
+def attach_requests(run_dir: Path, codex_home: Path, model: str, standard_from: str | None = None) -> dict[str, Any]:
     """Write the per-request rows and rollout totals into usage.json; return the totals."""
     target = Path(run_dir) / "usage.json"
     payload = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
-    requests = rollout_requests(codex_home, model)
+    requests = rollout_requests(codex_home, model, standard_from)
     keys = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens")
     totals = {k: sum(r[k] for r in requests) for k in keys}
     totals["usd"] = round(sum(r["usd"] for r in requests), 6)

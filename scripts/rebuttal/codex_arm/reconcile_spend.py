@@ -76,7 +76,11 @@ def main() -> int:
         if not m or m.group("stamp") < since_key:
             continue
         codex_home = run / "codex_io" / "codex_home"
-        rows = rollout_requests(codex_home, m.group("model")) if codex_home.is_dir() else []
+        meta_path = run / "codex_run.json"
+        standard_from = None
+        if meta_path.is_file():
+            standard_from = json.loads(meta_path.read_text(encoding="utf-8")).get("tier_fallback_at")
+        rows = rollout_requests(codex_home, m.group("model"), standard_from) if codex_home.is_dir() else []
         true = {"in": sum(r["input_tokens"] for r in rows), "cached": sum(r["cached_input_tokens"] for r in rows),
                 "out": sum(r["output_tokens"] for r in rows), "usd": round(sum(r["usd"] for r in rows), 6)}
         got = recorded.get(str(run), {"in": 0, "cached": 0, "out": 0, "usd": 0.0})
