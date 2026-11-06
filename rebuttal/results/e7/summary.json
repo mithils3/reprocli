@@ -1,0 +1,57 @@
+{
+  "model": "gpt-6.1-sol",
+  "service_tier": "flex",
+  "tolerance_default": 0.05,
+  "agree": 0,
+  "n": 100,
+  "wilson95": [
+    0.0,
+    0.037
+  ],
+  "interval": "Wilson score 95%",
+  "by_tier": {
+    "Easy": {
+      "agree": 0,
+      "n": 34,
+      "wilson95": [
+        0.0,
+        0.1015
+      ]
+    },
+    "Medium": {
+      "agree": 0,
+      "n": 33,
+      "wilson95": [
+        0.0,
+        0.1043
+      ]
+    },
+    "Hard": {
+      "agree": 0,
+      "n": 33,
+      "wilson95": [
+        0.0,
+        0.1043
+      ]
+    }
+  },
+  "errors": 0,
+  "tier_fallback_standard": 0,
+  "metric_match_counts": {
+    "match": 3,
+    "check": 72,
+    "mismatch": 25
+  },
+  "config_match_counts": {
+    "match": 1,
+    "check": 86,
+    "mismatch": 13
+  },
+  "value_within_tolerance": 18,
+  "value_within_tolerance_wilson95": [
+    0.117,
+    0.2667
+  ],
+  "numeric_value_derived": 64,
+  "total_usd_e7_ledger": 2.908
+}
