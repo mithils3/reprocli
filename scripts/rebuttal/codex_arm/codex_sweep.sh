@@ -7,6 +7,9 @@ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 # RANKS from rebuttal/subset.json (core and extension); SMOKE=1 runs the dev smoke ids. Each paper uses its
 # lockfile split and band budget. Spend guard as in api_sweep.sh: ledger USD for openai plus
 # (in-flight + 1) x EST_RUN_USD must stay under CAP_USD, else dispatch stops.
+# Login-node limit: 1000 processes+threads per user. One Codex run measured ~31 threads in
+# codex exec and ~14 in codex-code-mode-host (plus shim, launcher and apptainer), about 50 per run.
+# Safe MAX_PARALLEL is 4 per login node (gh-login01, gh-login03), leaving room for other workers.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 MODEL="${MODEL:-gpt-6.1-terra}"
