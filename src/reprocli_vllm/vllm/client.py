@@ -9,16 +9,42 @@ from typing import Any
 from reprocli_vllm.vllm.endpoint import (
     auth_headers,
     chat_template_kwargs,
+    is_openai,
     is_openrouter,
     openrouter_provider_routing,
     reasoning_effort,
     truncate_prompt_disabled,
+)
+from reprocli_vllm.vllm.flex import (
+    apply_service_tier,
+    is_flex,
+    post_flex,
+    read_timeout,
 )
 from reprocli_vllm.vllm.retry import with_retries
 
 # Universally-supported degrade for a json_schema response_format the routed
 # provider can't honor.
 JSON_OBJECT_RESPONSE_FORMAT = {"type": "json_object"}
+
+# vLLM and OpenRouter extensions that the OpenAI API rejects as unknown parameters.
+OPENAI_REJECTED_FIELDS = (
+    "truncate_prompt_tokens",
+    "chat_template_kwargs",
+    "top_k",
+    "repetition_penalty",
+    "min_p",
+    "length_penalty",
+    "ignore_eos",
+    "skip_special_tokens",
+    "spaces_between_special_tokens",
+    "include_stop_str_in_output",
+    "add_generation_prompt",
+    "continue_final_message",
+    "add_special_tokens",
+    "prompt_logprobs",
+    "provider",
+)
 
 
 def apply_provider_routing(body: dict[str, Any], base_url: str) -> None:
@@ -78,6 +104,22 @@ def drop_truncate_prompt_tokens(body: dict[str, Any]) -> None:
         body.pop("truncate_prompt_tokens", None)
 
 
+def apply_openai_body_shape(body: dict[str, Any], base_url: str) -> None:
+    """Reshape a body for api.openai.com in-place; no-op on every other host.
+
+    GPT reasoning models reject ``max_tokens`` (they take ``max_completion_tokens``)
+    and reject unknown fields, so the vLLM and OpenRouter extensions are removed.
+    Gated on the host, so a vLLM or OpenRouter body keeps every field it had.
+    """
+    if not is_openai(base_url):
+        return
+    if "max_tokens" in body:
+        body.setdefault("max_completion_tokens", body["max_tokens"])
+        del body["max_tokens"]
+    for key in OPENAI_REJECTED_FIELDS:
+        body.pop(key, None)
+
+
 def prepare_structured_output(body: dict[str, Any], base_url: str) -> None:
     """Make a ``json_schema`` response_format actually enforceable on OpenRouter.
 
@@ -123,8 +165,10 @@ def post_chat_completion_row(
     apply_provider_routing(row["body"], base_url)
     apply_chat_template_kwargs(row["body"])
     apply_reasoning_effort(row["body"])
+    apply_service_tier(row["body"])
     drop_truncate_prompt_tokens(row["body"])
     prepare_structured_output(row["body"], base_url)
+    apply_openai_body_shape(row["body"], base_url)
     return post_vllm_chat_completion(base_url, row["body"], timeout)
 
 
@@ -154,24 +198,34 @@ def post_vllm_chat_completion(base_url: str, body: dict[str, Any], timeout: floa
         return _post_body(base_url, downgraded, timeout)
 
 
-def _post_body(base_url: str, body: dict[str, Any], timeout: float) -> Any:
+def _send_once(base_url: str, body: dict[str, Any], timeout: float) -> Any:
     data = json.dumps(body).encode("utf-8")
+    request = urllib.request.Request(
+        f"{base_url}/v1/chat/completions",
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            **auth_headers(),
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
 
-    def _do() -> Any:
-        request = urllib.request.Request(
-            f"{base_url}/v1/chat/completions",
-            data=data,
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                **auth_headers(),
-            },
-            method="POST",
+
+def _post_body(base_url: str, body: dict[str, Any], timeout: float) -> Any:
+    what = f"chat.completions POST {base_url}"
+    if is_flex(body):
+        return post_flex(
+            lambda payload: _send_once(base_url, payload, read_timeout(timeout, payload)),
+            lambda payload: with_retries(
+                lambda: _send_once(base_url, payload, timeout), what=what
+            ),
+            body,
+            what=what,
         )
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-
-    return with_retries(_do, what=f"chat.completions POST {base_url}")
+    return with_retries(lambda: _send_once(base_url, body, timeout), what=what)
 
 
 def downgrade_response_format_on_reject(

@@ -176,6 +176,18 @@ def is_openrouter(base_url: str) -> bool:
     return host == OPENROUTER_HOST or host.endswith(f".{OPENROUTER_HOST}")
 
 
+OPENAI_HOST = "api.openai.com"
+
+
+def is_openai(base_url: str) -> bool:
+    """Whether ``base_url`` is the OpenAI API, which takes ``max_completion_tokens``.
+
+    GPT reasoning models reject ``max_tokens`` and every vLLM or OpenRouter extension
+    field, so the body is reshaped for this host alone (``client.apply_openai_body_shape``).
+    """
+    return (urllib.parse.urlparse(base_url).hostname or "").lower() == OPENAI_HOST
+
+
 def normalize_server_url(value: str) -> str:
     """Strip a trailing slash and a trailing ``/v1`` so callers can append paths."""
     url = value.strip().rstrip("/")
