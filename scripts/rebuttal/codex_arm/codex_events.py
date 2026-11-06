@@ -24,7 +24,11 @@ from typing import Any
 from reprocli_repro import evidence as evidence_mod
 
 # USD per million tokens at the flex tier (gpt-6.1-terra, rebuttal ops COMMON.md).
-PRICES_PER_M = {"gpt-6.1-terra": {"in": 0.50, "cached": 0.025, "out": 2.50}}
+PRICES_PER_M = {  # rebuttal/ops/COMMON.md
+    "gpt-6.1-terra": {"in": 0.50, "cached": 0.025, "out": 2.50},
+    "gpt-6.1-sol": {"in": 1.00, "cached": 0.05, "out": 5.00},
+    "gpt-6-astra": {"in": 5.00, "cached": 0.50, "out": 25.00},
+}
 
 _RUN_GPU_TOKEN = re.compile(r"(^|[\s/;&|])run_gpu(\s|$)")
 
