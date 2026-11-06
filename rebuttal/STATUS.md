@@ -30,3 +30,8 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
 ## Notes for Mithil
 - Supabase host does not resolve (project likely paused); nothing depends on it.
 - An HF token string appears in raw run files on DeltaAI (muse-reimplement-2505.22860 trajectory.jsonl:19). It is not in the public viewer data. Rotate before releasing run logs.
+
+## Decisions taken while Mithil is away (2026-11-06 evening)
+- Codex runs end when Codex ends its own turn, the same rule as the thin harness (an agent turn with no tool call ends the episode, loop.py). No continuation nudges are added. First finished Codex runs stop early: gpt-6.1-terra on 2505.16927 (Retrain, 32 h budget) ended after 16 minutes and one GPU check, reporting "could not run". This is a measured behavior of the production harness and goes in the reply as such; revisit if Mithil prefers a fixed number of "continue" prompts.
+- Codex launcher fixes: one BLAS thread per process (login-node 1000-pid cap), unlimited API retries plus session resume on rate limits, flex-capacity refusals retried and a run moved to standard price after 3 in a row, children read /dev/null. Runs that failed from harness causes carry a VOID file and are rerun.
+- OpenAI rate limit is 1M tokens per minute per model (cached tokens count); Codex arms run 2 at a time per model.
