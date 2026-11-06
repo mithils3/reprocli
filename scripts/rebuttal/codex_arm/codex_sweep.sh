@@ -92,7 +92,7 @@ while IFS=$'\t' read -r pid split budget; do
   echo ">>> [$(date -u '+%F %T')] start ${pid} split=${split} budget=${budget}"
   "${PY}" "${ROOT}/scripts/rebuttal/codex_arm/codex_run.py" --paper-id "${pid}" --split "${split}" \
     --budget-h100-hours "${budget}" --model "${MODEL}" --runs-dir "${RUNS_DIR}" \
-    > "${SWEEP_DIR}/logs/${pid}.log" 2>&1 &
+    < /dev/null > "${SWEEP_DIR}/logs/${pid}.log" 2>&1 &  # stdin from /dev/null: codex reads stdin and would eat the paper list
   running=$((running + 1))
 done <<< "${PICK_TSV}"
 wait || true
