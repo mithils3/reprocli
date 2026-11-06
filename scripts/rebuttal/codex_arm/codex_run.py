@@ -86,8 +86,12 @@ EXEC_FLAGS = (
     "--json --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "
     "-c model_reasoning_effort=high -c service_tier=flex "
     f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT} "
-    f"-c model_providers.openai.request_max_retries={REQUEST_RETRIES} "
-    f"-c model_providers.openai.stream_max_retries={REQUEST_RETRIES}"
+    # Built-in provider ids cannot be overridden, so the same endpoint is a custom provider
+    # with the retry budget set; the key comes from OPENAI_API_KEY in the environment.
+    "-c 'model_providers.openai-retry={name=\"OpenAI\",base_url=\"https://api.openai.com/v1\","
+    "env_key=\"OPENAI_API_KEY\",wire_api=\"responses\","
+    f"request_max_retries={REQUEST_RETRIES},stream_max_retries={REQUEST_RETRIES}}}' "
+    "-c model_provider=openai-retry"
 )
 
 
