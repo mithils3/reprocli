@@ -272,6 +272,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--partition")
     parser.add_argument("--apptainer-image")
     parser.add_argument("--lockfile")
+    parser.add_argument("--split", help="lockfile split: eval or dev (default: harness default)")
     parser.add_argument("--run-id")
     return parser
 
@@ -289,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
     # The arm is in the run id, so a Codex run is never mistaken for a thin-harness run in agent_runs/.
     run_id = own.run_id or f"codex-{own.model}-{new_run_id()}"
     for flag, value in (("--partition", own.partition), ("--apptainer-image", own.apptainer_image),
-                        ("--lockfile", own.lockfile), ("--run-id", run_id)):
+                        ("--lockfile", own.lockfile), ("--split", own.split), ("--run-id", run_id)):
         if value:
             harness_argv += [flag, value]
     args = harness_parse_args(harness_argv)
