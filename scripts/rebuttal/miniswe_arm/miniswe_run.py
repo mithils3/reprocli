@@ -28,24 +28,27 @@ from minisweagent.exceptions import LimitsExceeded
 from reprocli_repro import evidence as evidence_mod
 from reprocli_repro import gpu_session
 from reprocli_repro import report as report_mod
+from reprocli_repro import supabase_sink
 from reprocli_repro import sandbox as sandbox_mod
 from reprocli_repro.cluster import DEFAULT_APPTAINER_SIF, resolve_cluster
 from reprocli_repro.context import Budget, ExecutionContext
-from reprocli_repro.prompt_render import render_reproduce_prompt
 from reprocli_repro.tools.run_gpu import MAX_MINUTES, queue_grace_seconds, run_gpu
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_TIMEOUT
 
-from miniswe_apptainer import ApptainerExecEnvironment
-from miniswe_model import MuseWonderModel
+sys.path.insert(0, str(HERE.parent))  # scripts/rebuttal, for task_text
+from task_text import paper_task_text  # noqa: E402
+
+from miniswe_apptainer import ApptainerExecEnvironment  # noqa: E402
+from miniswe_model import MuseWonderModel  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[2]
-PROMPT_TEMPLATE = REPO / "prompts" / "prompt_reproduce.txt"
+DEFAULT_RUNS_DIR = "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs"
 SHIM = HERE / "run_gpu_shim.sh"
 ACCOUNT = "betw-dtai-gh"
 DEFAULT_LEDGER = "/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl"
 META_CAP_USD = 480.0
 DEFAULT_COST_CAP = 60.0
+MODEL_LABEL = "muse-wonder-1.0"
 
 # mini 2.4.6's stock mini.yaml text for the system message, the observation and the format error. The task text
 # and the submission line replace its instance template; the task is passed as a variable, so Jinja never parses it.
@@ -144,9 +147,9 @@ class Mailbox:
 class ArmAgent(DefaultAgent):
     """mini's stock loop, with the thin harness's budget guardrail before each model call."""
 
-    def __init__(self, *, model, env, ctx: ExecutionContext, full_log: Path, **kwargs):
+    def __init__(self, *, model, env, ctx: ExecutionContext, full_log: Path, sink=None, **kwargs):
         super().__init__(model, env, **kwargs)
-        self.ctx, self.full_log = ctx, full_log
+        self.ctx, self.full_log, self.sink = ctx, full_log, sink
 
     def query(self) -> dict:
         if self.ctx.session is not None:
@@ -155,10 +158,36 @@ class ArmAgent(DefaultAgent):
             gpu_session.release(self.ctx, "budget_exhausted")
             raise LimitsExceeded({"role": "exit", "content": "budget_exhausted",
                                   "extra": {"exit_status": "budget_exhausted", "submission": ""}})
+        if self.sink is not None:
+            self.sink.on_event("round_open", self.ctx, {"round_index": self.n_calls + 1})
         message = super().query()
+        if self.sink is not None:
+            self.sink.on_event("usage", self.ctx, usage_event(self.n_calls, "step", self.model.calls[-1]))
         calls = "".join(f"tool call: {a['command']}\n" for a in message.get("extra", {}).get("actions", []))
         write_log(self.full_log, f"round {self.n_calls} assistant\n{message.get('content') or ''}\n{calls}")
         return message
+
+
+def usage_event(round_index: int, kind: str, call: dict) -> dict:
+    """One call's tokens in the shape the viewer's sink reads (OpenAI usage fields)."""
+    return {"round_index": round_index, "kind": kind, "usage": {
+        "prompt_tokens": call["prompt_tokens"], "completion_tokens": call["completion_tokens"],
+        "prompt_tokens_details": {"cached_tokens": call["cached_tokens"]}}}
+
+
+def start_sink(ctx: ExecutionContext):
+    """The viewer's Supabase sink, as the thin harness runs it. None when no credentials are set; never raises."""
+    try:
+        cfg = supabase_sink.SinkConfig.from_env()
+        if cfg is None:
+            print("no SUPABASE_URL/SUPABASE_SERVICE_KEY: run is not registered", file=sys.stderr)
+            return None
+        sink = supabase_sink.SupabaseSink(cfg)
+        sink.upsert_run(ctx, model=MODEL_LABEL, status="running")
+        return sink
+    except Exception:
+        print("sink start failed:\n" + traceback.format_exc(), file=sys.stderr)
+        return None
 
 
 def exit_reason(status: str, cost: float, cost_cap: float) -> str:
@@ -177,8 +206,7 @@ def task_text(args: argparse.Namespace) -> str:
     if args.task_file:
         return Path(args.task_file).read_text(encoding="utf-8").strip()
     row = json.loads(Path(args.paper_row).read_text(encoding="utf-8"))
-    template = PROMPT_TEMPLATE.read_text(encoding="utf-8")
-    return render_reproduce_prompt(template, row, budget=args.paper_budget_h100).strip()
+    return paper_task_text(row, budget=args.paper_budget_h100)
 
 
 def close_tool_calls(messages: list[dict]) -> list[dict]:
@@ -214,7 +242,9 @@ def ledger_meta_total(path: Path) -> float:
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--paper-id", required=True)
-    p.add_argument("--run-dir", required=True)
+    p.add_argument("--runs-dir", default=DEFAULT_RUNS_DIR, help="bundle root; the run goes to <paper>/<budget>h/<run-id>")
+    p.add_argument("--run-id", default="")
+    p.add_argument("--batch-id", default="", help="sweep id for the viewer and reprocli_claude --batch")
     p.add_argument("--task-file", help="exact task text (toy runs)")
     p.add_argument("--paper-row", help="lockfile row JSON; the task is prompt_reproduce.txt rendered from it")
     p.add_argument("--paper-budget-h100", type=float, default=0.0)
@@ -232,12 +262,15 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    run_dir = Path(args.run_dir).resolve()
+    run_id = args.run_id or f"miniswe-{args.paper_id}-{time.strftime('%Y%m%dT%H%M%S', time.gmtime())}"
+    run_dir = (Path(args.runs_dir) / args.paper_id / f"{args.gpu_budget_h100:g}h" / run_id).resolve()
     ws, ref, ev = run_dir / "workspace", run_dir / "reference", run_dir / "evidence"
     for d in (ws, ref, ev):
         d.mkdir(parents=True, exist_ok=True)
     evidence_mod.init_evidence(ev)
     full_log = run_dir / "agent.full.log"
+    if args.batch_id:
+        os.environ["REPRO_BATCH_ID"] = args.batch_id
 
     os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", ACCOUNT)
     cluster = resolve_cluster()
@@ -252,6 +285,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"Meta ledger at ${spent:.2f}; a run capped at ${args.cost_cap:.0f} would pass ${META_CAP_USD:.0f}")
 
     task = task_text(args)
+    (run_dir / "task.txt").write_text(task + "\n", encoding="utf-8")
     sandbox_mod.require_apptainer(args.image)
     sandbox_mod.forward_env()
     base_sb = sandbox_mod.from_run_paths(SimpleNamespace(workspace=ws, evidence=ev, reference=ref), image=args.image)
@@ -278,7 +312,8 @@ def main(argv: list[str] | None = None) -> int:
         path_inside=probe_path(args.image), on_result=on_result, service=Mailbox(mail, ctx, full_log),
         gpu_timeout=MAX_MINUTES * 60 + int(queue_grace_seconds()) + 600)
     model = MuseWonderModel(observation_template=OBSERVATION_TEMPLATE, format_error_template=FORMAT_ERROR_TEMPLATE)
-    agent = ArmAgent(model=model, env=env, ctx=ctx, full_log=full_log, system_template=SYSTEM_TEMPLATE,
+    sink = start_sink(ctx)
+    agent = ArmAgent(model=model, env=env, ctx=ctx, full_log=full_log, sink=sink, system_template=SYSTEM_TEMPLATE,
                      instance_template=INSTANCE_TEMPLATE, step_limit=args.tool_rounds, cost_limit=args.cost_cap,
                      output_path=run_dir / "mini_trajectory.json")
 
@@ -294,11 +329,16 @@ def main(argv: list[str] | None = None) -> int:
         messages = close_tool_calls([m for m in agent.messages if m.get("role") != "exit"])
         messages.append({"role": "user", "content": FINAL_PROMPT})
         content = model.final_report(messages, report_mod.REPORT_RESPONSE_FORMAT)
+        if sink is not None:
+            sink.on_event("usage", ctx, usage_event(agent.n_calls, "final", model.calls[-1]))
     except Exception:
         write_log(full_log, "final report call failed\n" + traceback.format_exc())
     if ctx.session is not None:
         gpu_session.release(ctx, "teardown")
     report_mod.write_episode_report(ctx, content, reason)
+    if sink is not None:
+        sink.on_event("final", ctx, {"round_index": agent.n_calls, "exit_reason": reason})
+        sink.close()
 
     totals = model.totals()
     (run_dir / "usage.json").write_text(json.dumps({

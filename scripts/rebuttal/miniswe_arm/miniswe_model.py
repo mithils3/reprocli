@@ -9,9 +9,9 @@ from minisweagent.models.litellm_model import LitellmModel
 
 MODEL_NAME = "openai/muse-wonder-1.0"
 API_BASE = "https://api.meta.ai/v1"
-# Meta documents "max" among the reasoning_effort levels for Muse Wonder (sources: rebuttal notes, 2026-11-06).
+# xhigh, as the thin harness's Muse Wonder arm sets it, so the two arms differ only in harness.
 # drop_params lets litellm omit any field the provider does not take; Meta rejects unknown body fields with a 400.
-MODEL_KWARGS = {"api_base": API_BASE, "reasoning_effort": "max", "drop_params": True}
+MODEL_KWARGS = {"api_base": API_BASE, "reasoning_effort": "xhigh", "drop_params": True}
 # USD per million tokens: input, cached input, output (rebuttal/ops/COMMON.md).
 PRICE = {"in": 4.00, "cached": 0.20, "out": 20.00}
 
