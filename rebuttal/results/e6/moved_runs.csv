@@ -1,0 +1,39 @@
+run_id,model,tier,arxiv_id,setting,index_verdict,new_verdict,rel_gap_pct,abs_gap_points,reason
+dsv4-run-2506.20990,dsv4,run,2506.20990,abs1,reproduced,partial,1.601,1.271,reproduced run whose number misses this bar
+minimax-run-2506.10351,minimax,run,2506.10351,abs1,reproduced,partial,2.191,2.04,reproduced run whose number misses this bar
+muse-run-2506.10351,muse,run,2506.10351,abs1,reproduced,partial,1.82,1.695,reproduced run whose number misses this bar
+minimax-run-2506.10351,minimax,run,2506.10351,abs2,reproduced,partial,2.191,2.04,reproduced run whose number misses this bar
+dsv4-retrain-2510.21363,dsv4,retrain,2510.21363,rel1,reproduced,partial,2.875,,reproduced run whose number misses this bar
+dsv4-run-2502.05795,dsv4,run,2502.05795,rel1,reproduced,partial,3.214,,reproduced run whose number misses this bar
+dsv4-run-2503.23035,dsv4,run,2503.23035,rel1,reproduced,partial,3.189,,reproduced run whose number misses this bar
+dsv4-run-2504.20571,dsv4,run,2504.20571,rel1,reproduced,partial,1.087,0.8,reproduced run whose number misses this bar
+dsv4-run-2505.18809,dsv4,run,2505.18809,rel1,reproduced,partial,1.085,,reproduced run whose number misses this bar
+dsv4-run-2506.20990,dsv4,run,2506.20990,rel1,reproduced,partial,1.601,1.271,reproduced run whose number misses this bar
+minimax-retrain-2510.21363,minimax,retrain,2510.21363,rel1,reproduced,partial,2.205,,reproduced run whose number misses this bar
+minimax-run-2506.10351,minimax,run,2506.10351,rel1,reproduced,partial,2.191,2.04,reproduced run whose number misses this bar
+muse-reimplement-2503.02809,muse,reimplement,2503.02809,rel1,reproduced,partial,1.911,,reproduced run whose number misses this bar
+muse-retrain-2505.24680,muse,retrain,2505.24680,rel1,reproduced,partial,1.884,,reproduced run whose number misses this bar
+muse-run-2502.05795,muse,run,2502.05795,rel1,reproduced,partial,2.963,,reproduced run whose number misses this bar
+muse-run-2505.23747,muse,run,2505.23747,rel1,reproduced,partial,1.261,0.645,reproduced run whose number misses this bar
+muse-run-2506.10351,muse,run,2506.10351,rel1,reproduced,partial,1.82,1.695,reproduced run whose number misses this bar
+muse-run-2506.21724,muse,run,2506.21724,rel1,reproduced,partial,1.027,0.93,reproduced run whose number misses this bar
+qwen3-retrain-2505.24680,qwen3,retrain,2505.24680,rel1,reproduced,partial,1.261,,reproduced run whose number misses this bar
+qwen3-run-2503.23035,qwen3,run,2503.23035,rel1,reproduced,partial,4.207,,reproduced run whose number misses this bar
+qwen3-run-2505.18809,qwen3,run,2505.18809,rel1,reproduced,partial,3.182,,reproduced run whose number misses this bar
+dsv4-reimplement-2511.19808,dsv4,reimplement,2511.19808,rel10,partial,reproduced,6.886,6.7,clearly misses the bar; low flags only
+dsv4-retrain-2510.05874,dsv4,retrain,2510.05874,rel10,partial,reproduced,6.95,,C1 is the only failed criterion; low flags only
+minimax-run-2504.20571,minimax,run,2504.20571,rel10,partial,reproduced,9.239,6.8,real number clearly misses the bar; low flags only
+muse-retrain-2510.19314,muse,retrain,2510.19314,rel10,partial,reproduced,6.172,,band 7 near miss just outside the bar; low flags only
+muse-retrain-2510.21363,muse,retrain,2510.21363,rel10,partial,reproduced,8.036,,point estimate just outside the bar; low flags only
+muse-retrain-2511.02652,muse,retrain,2511.02652,rel10,partial,reproduced,6.159,,clearly misses the bar; low flags only
+muse-run-2505.18809,muse,run,2505.18809,rel10,partial,reproduced,6.28,,narrowly outside the bar (6.28%); low flags only
+qwen3-run-2505.24873,qwen3,run,2505.24873,rel10,partial,reproduced,9.287,,clearly misses the bar on the pinned scope; no flags
+qwen3-run-2511.00090,qwen3,run,2511.00090,rel10,partial,reproduced,7.842,,miss on the measured speedup; low flags only
+dsv4-retrain-2510.21363,dsv4,retrain,2510.21363,rel2,reproduced,partial,2.875,,reproduced run whose number misses this bar
+dsv4-run-2502.05795,dsv4,run,2502.05795,rel2,reproduced,partial,3.214,,reproduced run whose number misses this bar
+dsv4-run-2503.23035,dsv4,run,2503.23035,rel2,reproduced,partial,3.189,,reproduced run whose number misses this bar
+minimax-retrain-2510.21363,minimax,retrain,2510.21363,rel2,reproduced,partial,2.205,,reproduced run whose number misses this bar
+minimax-run-2506.10351,minimax,run,2506.10351,rel2,reproduced,partial,2.191,2.04,reproduced run whose number misses this bar
+muse-run-2502.05795,muse,run,2502.05795,rel2,reproduced,partial,2.963,,reproduced run whose number misses this bar
+qwen3-run-2503.23035,qwen3,run,2503.23035,rel2,reproduced,partial,4.207,,reproduced run whose number misses this bar
+qwen3-run-2505.18809,qwen3,run,2505.18809,rel2,reproduced,partial,3.182,,reproduced run whose number misses this bar
