@@ -14,18 +14,33 @@ from pathlib import Path
 
 RUN_NAME = re.compile(r"^codex-(?P<model>.+)-(?P<stamp>\d{8}T\d{6}Z)-[0-9a-f]+$")
 EXEC = re.compile(r"\] exec rc=[^:]*: (?P<cmd>.*)$")
-CANCEL = re.compile(r"\bkill\b(\s+-\w+)?\s+\d+|\bscancel\b|\bpkill\b")
+
+
+KILL_PID = re.compile(r"\bkill\b(?:\s+-\w+)?\s+(?P<pids>\d+(?:\s+\d+)*)")
 
 
 def matches(run: Path) -> list[str]:
-    hits = []
+    """Kill commands whose target pid was shown as salloc or srun in the agent's own output."""
     log = run / "agent.full.log"
     if not log.is_file():
-        return hits
-    for line in log.read_text(encoding="utf-8", errors="replace").splitlines():
+        return []
+    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    hits: list[str] = []
+    grant_pids: set[str] = set()
+    for line in lines:
+        if re.search(r"\bsalloc\b|\bsrun\b", line):
+            grant_pids.update(re.findall(r"(?<![\w.])(\d{4,9})(?![\w.])", line))
         m = EXEC.search(line)
-        if m and CANCEL.search(m.group("cmd")):
-            hits.append(m.group("cmd")[:160])
+        if not m:
+            continue
+        cmd = m.group("cmd")
+        if re.search(r"\bscancel\b", cmd):
+            hits.append(cmd[:160])
+            continue
+        for kill in KILL_PID.finditer(cmd):
+            if set(kill.group("pids").split()) & grant_pids:
+                hits.append(cmd[:160])
+                break
     return hits
 
 
