@@ -241,7 +241,7 @@ def same(a, b, match_at, check_at):
     jac = len(ta & tb) / len(ta | tb)
     if jac >= match_at:
         return "match"
-    return "check" if jac >= check_at else "mismatch"
+    return "check" if (ta & tb) else "mismatch"
 
 
 def wilson(k, n, z=1.959964):
@@ -317,6 +317,9 @@ def compare(claims):
         "tier_fallback_standard": sum(1 for d in rederived.values() if d.get("tier_used") == "standard_fallback"),
         "metric_match_counts": {v: sum(r["metric_match"] == v for r in rows) for v in ("match", "check", "mismatch")},
         "config_match_counts": {v: sum(r["config_match"] == v for r in rows) for v in ("match", "check", "mismatch")},
+        "value_within_tolerance": sum(1 for r in rows if r["gap_rel"] not in ("", "inf") and float(r["gap_rel"]) <= TOLERANCE),
+        "value_within_tolerance_wilson95": list(wilson(sum(1 for r in rows if r["gap_rel"] not in ("", "inf") and float(r["gap_rel"]) <= TOLERANCE), n)),
+        "numeric_value_derived": sum(1 for r in rows if r["gap_rel"] != ""),
         "total_usd_e7_ledger": round(ledger_total("E7"), 4),
     }
     (RESULTS / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
