@@ -200,7 +200,8 @@ def rollout_requests(codex_home: Path, model: str, standard_from: str | None = N
             last = info.get("last_token_usage") or {}
             if "input_tokens" not in last:
                 continue
-            key = json.dumps(info.get("total_token_usage"), sort_keys=True) or str(last)
+            # Per rollout file: a fresh session after a tier fallback restarts its totals.
+            key = rollout.name + json.dumps(info.get("total_token_usage"), sort_keys=True) or str(last)
             if key in seen:
                 continue
             seen.add(key)

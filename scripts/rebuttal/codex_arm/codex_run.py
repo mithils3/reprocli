@@ -88,6 +88,11 @@ FLEX_CAPACITY = re.compile(r"flex capacity unavailable", re.IGNORECASE)
 FLEX_FAILURES_BEFORE_FALLBACK = 3
 FLEX = "flex"
 STANDARD = "default"  # accepted by codex exec -c service_tier=... (verified: turn completes)
+FRESH_PREFIX = (
+    "The earlier session of this run stopped on a provider capacity error and cannot be resumed. "
+    "Your progress is on disk: read /repro/evidence/plan.md, commands.log and the other evidence "
+    "files, and check /repro/workspace, before you continue. The original task follows.\n\n"
+)
 RESUME_PROMPT = ("Continue the task from where it stopped. The previous request failed on a provider "
                  "error (rate limit or server error), which is not the end of the task.")
 def exec_flags(tier: str) -> str:
@@ -114,7 +119,13 @@ def codex_body(model: str, prompt: str, *, kind: str = "work", tier: str = FLEX)
     ``final`` continues it once more with the report schema and no new work.
     """
     flags = exec_flags(tier)
+    fresh_head = f"exec {CONTAINER_CODEX} exec {flags} -C /repro/workspace -m {shlex.quote(model)}"
+    schema = f"--output-schema {CONTAINER_SCHEMA} -o {CONTAINER_FINAL}"
     head = {
+        # `codex exec resume` keeps the session's stored service tier and ignores -c service_tier
+        # overrides, so a run that falls back to the standard tier starts a fresh session instead.
+        "fresh": fresh_head,
+        "final_fresh": f"{fresh_head} {schema}",
         "work": f"exec {CONTAINER_CODEX} exec {flags} -C /repro/workspace -m {shlex.quote(model)}",
         "resume": f"exec {CONTAINER_CODEX} exec resume --last {flags} -m {shlex.quote(model)}",
         "final": (f"exec {CONTAINER_CODEX} exec resume --last {flags} -m {shlex.quote(model)} "
@@ -248,6 +259,7 @@ class Run:
         self.tier_fallback_at: str | None = None
         self.flex_streak = 0
         self.gave_up = False
+        self.fresh_pending = False  # the next retry starts a fresh session (after a tier fallback)
         self.proc: subprocess.Popen | None = None
 
     def _launch(self, body: str, label: str) -> subprocess.Popen:
@@ -369,8 +381,8 @@ class Run:
                 return
             time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
 
-    def _with_retries(self, first: Callable[[str], str], retry: Callable[[str], str], label: str,
-                      events_path: Path, *, honor_stop: bool) -> int:
+    def _with_retries(self, first: Callable[[str], str], retry: Callable[[str], str],
+                      fresh: Callable[[str], str], label: str, events_path: Path, *, honor_stop: bool) -> int:
         """One phase, resumed after transient provider failures (same session, backoff, MAX_RESUMES).
 
         A rate limit or a flex-capacity 429 is never the agent's own end of work. After
@@ -393,6 +405,7 @@ class Run:
             if self.flex_streak >= FLEX_FAILURES_BEFORE_FALLBACK and self.tier == FLEX:
                 self.tier = STANDARD
                 self.tier_fallback_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                self.fresh_pending = True
                 self.flex_streak = 0
                 self.recorder.log_line(f"TIER FALLBACK flex -> standard at {self.tier_fallback_at} "
                                        f"after {FLEX_FAILURES_BEFORE_FALLBACK} flex-capacity failures")
@@ -401,13 +414,19 @@ class Run:
             self.resumes.append({
                 "n": n, "phase": label, "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "after": failure, "backoff_s": backoff, "tier": self.tier,
+                "session": "fresh" if self.fresh_pending else "resume",
             })
             self.recorder.log_line(f"RESUME {n}/{MAX_RESUMES} ({label}) tier={self.tier} after {backoff}s "
                                    f"backoff; failure: {failure}")
             self._wait(backoff, honor_stop=honor_stop)
             if honor_stop and self.stop_reason is not None:
                 break
-            rc = self._phase(retry(self.tier), f"{label}-resume{n}", events_path)
+            if self.fresh_pending:
+                body = fresh(self.tier)
+                self.fresh_pending = False
+            else:
+                body = retry(self.tier)
+            rc = self._phase(body, f"{label}-resume{n}", events_path)
         if not self._transient_failure():
             self.flex_streak = 0
         return rc
@@ -419,6 +438,7 @@ class Run:
         rc = self._with_retries(
             lambda tier: codex_body(self.model, task, kind="work", tier=tier),
             lambda tier: codex_body(self.model, RESUME_PROMPT, kind="resume", tier=tier),
+            lambda tier: codex_body(self.model, FRESH_PREFIX + task, kind="fresh", tier=tier),
             "work", events_path, honor_stop=True,
         )
         if self.stop_reason is None and rc != 0:
@@ -428,7 +448,8 @@ class Run:
 
         self.bridge.refusing = True
         final_body = lambda tier: codex_body(self.model, final_prompt, kind="final", tier=tier)  # noqa: E731
-        self._with_retries(final_body, final_body, "final", events_path, honor_stop=False)
+        final_fresh = lambda tier: codex_body(self.model, FRESH_PREFIX + final_prompt, kind="final_fresh", tier=tier)  # noqa: E731
+        self._with_retries(final_body, final_body, final_fresh, "final", events_path, honor_stop=False)
         final = self.io_dir / "final_message.json"
         content = final.read_text(encoding="utf-8") if final.exists() else ""
         self.bridge.stop.set()
