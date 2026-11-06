@@ -12,19 +12,17 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
 | E8 bound | 24 build-and-dependency failures, 16 caused by aarch64; best Run rate unchanged at 14/34 with all 24 removed (DSv4 had none at Run) | rebuttal/results/e8 |
 | E8 empty cells | Of 28: 6 named outside-agent (prompt bug x4, audits x2), 16 more killed by the sweep job's 48 h Slurm limit or a cancel (sacct confirms), 2 agent context exhaustion, 4 unknown | rebuttal/results/e8/empty_cells_traced.csv |
 | E8 Muse re-audit | 2503.23035 reproduced (8); 2510.08177 partial (6) | rebuttal/results/e8/regrade_muse.json |
+| E7 targets (v3, gpt-6.1-sol) | Of 100 targets: paper reports the frozen number 92, for the frozen metric 95, dataset/split 76, method variant 69, all four 55. 45 papers for Mithil's Monday read (v3_failures.csv); 2506.18890's 27.443 is the paper's 24-view row while the frozen config says 12 views. $12.70 | rebuttal/results/e7 |
+| E9 checkpoints | 2 of 44 reproduced Retrain/Reimplement runs evaluated a downloaded checkpoint of the claimed trained model: muse-retrain-2508.21046 (CogVLA, hf download liwei2013/cogvla_libero_spatial_60000_chkpt, commands.log:483, verified) and minimax-reimplement-2505.12677 (CURE, gdown of authors' erased SD-v1.4). Neither is a best-agent cell: Retrain best stays DSv4 9/33 if Muse drops to 8/33 | rebuttal/results/e9 |
 
 ## Running or next
 
 | Item | State |
 | :- | :- |
-| E7 target re-derivation (gpt-6.1-sol flex) | running on DeltaAI (tmux rb-e7) |
-| E9 checkpoint scan | running |
 | E10 environment check | 3 clean pipelines (1 Run, 2 Retrain); smoke job queued |
 | OpenAI path | Responses API adapter with flex, tested live (commit 37f186d) |
-| Smokes: gpt-6.1-terra x2, Muse Wonder x1 (dev papers) | stuck downloading paper bundles; being fixed |
-| mini-SWE-agent arm | toy passed; dev smoke next |
-| Codex arm | building |
-| Brain serve smokes (DSv4, Qwen, MiniMax) | running |
+| Smokes: gpt-6.1-terra x2, Muse Wonder x1, mini-SWE x1, Codex x1 (dev papers) | running |
+| Brain jobs on betw | 10 submitted 11:55 (6 DSv4 E3 repeats, 3 DSv4 reruns, 1 MiniMax rerun), pending; Qwen serve OOM being diagnosed, its 2 rerun jobs held |
 | Reruns: 2510.20725 x4 agents + 16 job-killed cells (10 DSv4, 6 Qwen) | after brain smokes |
 | E3 DSv4 repeats x2 on core 12 | after brain smokes |
 | Grading of new runs (Sonnet-5, local run dirs) | after runs |
