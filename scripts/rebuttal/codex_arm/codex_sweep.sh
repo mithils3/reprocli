@@ -4,7 +4,7 @@ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 # Codex-arm sweep: one codex_run.py per paper, on DeltaAI login node.
 #   MODEL=gpt-6.1-terra RANKS=1-12 nohup scripts/rebuttal/codex_arm/codex_sweep.sh > sweep.log 2>&1 &
 #   MODEL=gpt-6.1-terra SMOKE=1 scripts/rebuttal/codex_arm/codex_sweep.sh
-# RANKS from rebuttal/subset.json (core and extension); SMOKE=1 runs the dev smoke ids. Each paper uses its
+# SKIP=id,id drops papers from the selection. RANKS from rebuttal/subset.json (core and extension); SMOKE=1 runs the dev smoke ids. Each paper uses its
 # lockfile split and band budget. Spend guard as in api_sweep.sh: ledger USD for openai plus
 # (in-flight + 1) x EST_RUN_USD must stay under CAP_USD, else dispatch stops.
 # Login-node limit: 1000 processes+threads per user. One Codex run measured ~31 threads in
@@ -31,7 +31,7 @@ elif [[ -n "${RANKS}" ]]; then SEL_MODE=ranks; SEL_SPEC="${RANKS}"
 else echo "set RANKS=1-12 (core), RANKS=13-24 (extension), or SMOKE=1" >&2; exit 1; fi
 
 PICK_TSV="$("${PY}" - "${ROOT}/rebuttal/subset.json" "${LOCKFILE}" "${SEL_MODE}" "${SEL_SPEC}" <<'PY'
-import json, sys
+import json, os, sys
 from reprocli_repro.dataset import band_max_hours, load_lockfile_rows
 
 sub_path, lockfile, mode, spec = sys.argv[1:5]
@@ -42,6 +42,8 @@ else:
     lo, _, hi = spec.partition("-")
     lo, hi = int(lo), int(hi or lo)
     picks = [(r, "eval") for r in sub["core"] + sub["extension"] if lo <= r["rank"] <= hi]
+skip = {x for x in os.environ.get("SKIP", "").split(",") if x}
+picks = [(r, sp) for r, sp in picks if r["paper_id"] not in skip]
 if not picks:
     sys.exit(f"no papers for {mode} {spec!r}")
 rows = {}

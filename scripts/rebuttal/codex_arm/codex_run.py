@@ -543,6 +543,9 @@ def main(argv: list[str] | None = None) -> int:
     run = Run(args, ctx, own.model, own.wall_hours, io_dir, recorder)
     signal.signal(signal.SIGTERM, _interrupt)
     signal.signal(signal.SIGINT, _interrupt)
+    # A hangup (the tmux pane or sweep shell ending) must not kill a run mid-turn: the run then
+    # has no report, no ledger row and no cleanup. Ignored hangups keep it alive.
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
     exit_reason, content = "error", ""
     try:
         exit_reason, content = run.execute(task, args.final_no_tools_message)
