@@ -1,0 +1,218 @@
+{
+  "seed": 22528,
+  "rule": "Eval papers, excluding 2510.20725. Per tier x band x outcome cell (outcome = audit verdict 'reproduced' by at least one of the four agents), candidate ids sorted and drawn with random.Random(22528). Core = papers 1-12: Run 3 at 0-8 and 1 at 8-32; Retrain and Reimplement 2 at 0-8, 1 at 8-32, 1 at 32-96; within each tier 2 reproduced and 2 not. Extension = papers 13-24, same recipe on the remaining papers. Output interleaves tiers (Run, Retrain, Reimplement). smoke_dev = 2 Run-tier 0-8 papers from dev_split.jsonl, drawn with random.Random(22528). Granted budget = band ceiling in H100-h (8, 32, 96).",
+  "core": [
+    {
+      "rank": 1,
+      "paper_id": "2505.10475",
+      "tier": "run",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 2,
+      "paper_id": "2506.08898",
+      "tier": "retrain",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 3,
+      "paper_id": "2505.16927",
+      "tier": "reimplement",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 4,
+      "paper_id": "2504.20571",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 5,
+      "paper_id": "2510.21363",
+      "tier": "retrain",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 6,
+      "paper_id": "2505.19087",
+      "tier": "reimplement",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 7,
+      "paper_id": "2502.05795",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 8,
+      "paper_id": "2504.12463",
+      "tier": "retrain",
+      "band": "32-96",
+      "budget_h100": 96,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 9,
+      "paper_id": "2503.02809",
+      "tier": "reimplement",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 10,
+      "paper_id": "2506.20671",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 11,
+      "paper_id": "2506.06991",
+      "tier": "retrain",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 12,
+      "paper_id": "2503.14698",
+      "tier": "reimplement",
+      "band": "32-96",
+      "budget_h100": 96,
+      "reproduced_by_any": false
+    }
+  ],
+  "extension": [
+    {
+      "rank": 13,
+      "paper_id": "2412.11979",
+      "tier": "run",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 14,
+      "paper_id": "2508.21046",
+      "tier": "retrain",
+      "band": "32-96",
+      "budget_h100": 96,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 15,
+      "paper_id": "2505.12677",
+      "tier": "reimplement",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 16,
+      "paper_id": "2505.19154",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 17,
+      "paper_id": "2510.23577",
+      "tier": "retrain",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 18,
+      "paper_id": "2511.01463",
+      "tier": "reimplement",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 19,
+      "paper_id": "2505.18809",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 20,
+      "paper_id": "2410.19933",
+      "tier": "retrain",
+      "band": "8-32",
+      "budget_h100": 32,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 21,
+      "paper_id": "2602.03066",
+      "tier": "reimplement",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": true
+    },
+    {
+      "rank": 22,
+      "paper_id": "2505.24873",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 23,
+      "paper_id": "2505.21077",
+      "tier": "retrain",
+      "band": "0-8",
+      "budget_h100": 8,
+      "reproduced_by_any": false
+    },
+    {
+      "rank": 24,
+      "paper_id": "2510.15194",
+      "tier": "reimplement",
+      "band": "32-96",
+      "budget_h100": 96,
+      "reproduced_by_any": false
+    }
+  ],
+  "smoke_dev": [
+    {
+      "rank": 1,
+      "paper_id": "2511.07099",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8
+    },
+    {
+      "rank": 2,
+      "paper_id": "2510.21323",
+      "tier": "run",
+      "band": "0-8",
+      "budget_h100": 8
+    }
+  ],
+  "granted_h100_core": 344,
+  "granted_h100_all": 688
+}
