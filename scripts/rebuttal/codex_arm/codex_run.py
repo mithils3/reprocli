@@ -151,6 +151,7 @@ class Bridge:
         self.ctx = ctx
         self.recorder = recorder
         self.lock = threading.Lock()
+        self.queue_wait_s = 0.0
         self.refusing = False
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self._loop, name="codex-bridge", daemon=True)
@@ -174,9 +175,16 @@ class Bridge:
         if self.refusing:
             return {"ok": False, "tool": "run_gpu", "error": "Tools are off: the final report pass is running."}
         with self.lock:
+            acquiring = self.ctx.session is None
+            started = time.monotonic()
             result = execute_repro_tool_call(
                 {"function": {"name": "run_gpu", "arguments": json.dumps(arguments)}}, self.ctx,
             )
+            # Queue time is the wait from the request to the grant. It is not charged (the meter starts
+            # at the grant, gpu_session.ensure_session) and is reported as queue_wait_minutes.
+            session = self.ctx.session
+            if acquiring and session is not None and session.started >= started:
+                self.queue_wait_s += session.started - started
         self.recorder.log_gpu(result)
         return result
 
@@ -282,7 +290,11 @@ class Run:
             sandbox.Bind(str(self.io_dir), CONTAINER_IO),
         )
         bound = dataclasses.replace(sb, binds=sb.binds + extra)
-        return bound.wrap_argv(body)
+        argv = bound.wrap_argv(body)
+        # Own PID namespace: the agent cannot see or signal host processes such as a pending salloc.
+        at = argv.index("apptainer")
+        argv.insert(at + 2, "--pid")
+        return argv
 
     def _stream(self, proc: subprocess.Popen, events_path: Path) -> None:
         with events_path.open("a", encoding="utf-8") as sink:
@@ -456,6 +468,25 @@ class Run:
         return exit_reason, content
 
 
+def cancel_pending_salloc() -> int:
+    """SIGINT the salloc children this launcher still has pending, so teardown leaves no queued job."""
+    me, cancelled = os.getpid(), 0
+    for entry in os.scandir("/proc"):
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat = Path(entry.path, "stat").read_text().rsplit(")", 1)[1].split()
+            if int(stat[1]) != me:
+                continue
+            cmd = Path(entry.path, "cmdline").read_bytes().split(b"\0")
+            if cmd and os.path.basename(cmd[0]) == b"salloc":
+                os.kill(int(entry.name), signal.SIGINT)
+                cancelled += 1
+        except (OSError, ValueError, IndexError):
+            continue
+    return cancelled
+
+
 def codex_version() -> str:
     out = subprocess.run([str(CODEX_VENDOR / "bin" / "codex"), "--version"], capture_output=True, text=True)
     return out.stdout.strip()
@@ -490,6 +521,8 @@ def main(argv: list[str] | None = None) -> int:
     if not os.environ.get("OPENAI_API_KEY"):
         raise SystemExit("OPENAI_API_KEY is not set; source it from ~/.bashrc first (value is never printed).")
     os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", "betw-dtai-gh")
+    # A run_gpu call waits for its grant without a limit, as the thin harness's call does in practice.
+    os.environ.setdefault("REPRO_QUEUE_GRACE_HOURS", "100000")
     os.environ.setdefault("APPTAINERENV_OPENAI_API_KEY", os.environ["OPENAI_API_KEY"])
     os.environ.setdefault("APPTAINERENV_CODEX_API_KEY", os.environ["OPENAI_API_KEY"])  # codex exec reads this one
 
@@ -557,6 +590,7 @@ def main(argv: list[str] | None = None) -> int:
         exit_reason, content = "error", ""
     finally:
         run.terminate()
+        cancel_pending_salloc()
         gpu_session.teardown_all([ctx])
     report_mod.write_episode_report(ctx, content, exit_reason)
     usage = recorder.write_usage()
@@ -564,6 +598,7 @@ def main(argv: list[str] | None = None) -> int:
     run_meta = json.loads((run_dir / "codex_run.json").read_text(encoding="utf-8"))
     run_meta["resumes"] = run.resumes
     run_meta["tier"] = run.tier
+    run_meta["queue_wait_minutes"] = round(run.bridge.queue_wait_s / 60, 2)
     run_meta["tier_fallback_at"] = run.tier_fallback_at
     (run_dir / "codex_run.json").write_text(json.dumps(run_meta, indent=2) + "\n", encoding="utf-8")
     recorder.log_line(f"DONE exit_reason={exit_reason} usd={totals['usd']} requests={totals['requests']} "
