@@ -174,11 +174,13 @@ nvidia-smi topo -m || true
 # qwen3 serve profile.
 # Never inherit an endpoint from a requeue of this same job id.
 rm -f "${ENDPOINT_FILE}"
+# FlashInfer GDN prefill JIT-compiles on first run (vLLM 0.25.1, flashinfer 0.6.13) and the
+# parallel nvcc fleet OOM-kills the host; the triton backend skips that JIT (smoke 3540728).
 python -m reprocli_serve \
   --model "${MODEL}" \
   --served-model-name "${SERVED_NAME}" \
   --port "${PORT}" \
-  --endpoint-file "${ENDPOINT_FILE}" &
+  --endpoint-file "${ENDPOINT_FILE}" -- --gdn-prefill-backend triton &
 SERVER_PID=$!
 trap 'kill "${SERVER_PID}" 2>/dev/null || true' EXIT
 
