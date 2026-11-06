@@ -38,6 +38,8 @@ def void_reason(run: Path) -> str:
             text += path.read_text(encoding="utf-8", errors="replace")
     if TRANSIENT.search(text):
         return "rate-limit"
+    if "can't start new thread" in text:
+        return "thread limit at launch (RuntimeError: can't start new thread)"
     if re.search(r"\bpc\s+0x|fault\s+0x|SIGSEGV", text):
         return "codex native crash (SIGSEGV register dump)"
     return "harness error (no provider or crash signature in logs)"
