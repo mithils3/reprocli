@@ -55,7 +55,7 @@ How the code handles the logs today (checked 2026-11-06): the harness process wr
 
 | Concern | Type | What answers it |
 | :- | :- | :- |
-| Sensitivity of conclusions to the match target and the default 5% relative tolerance | NEW (analysis only) | E6: rescore every graded run at 1%, 2% and 5%, and for percentage metrics at 1 and 2 absolute points; count how many claims use the default |
+| Sensitivity of conclusions to the match target and the default 5% relative tolerance | NEW (analysis only) | E6: rescore every graded run at 1%, 2%, 5% and 10%, and for percentage metrics at 1 and 2 absolute points; rescore 30 papers against independently derived targets; count how many claims use the default |
 | How claims, minimal configurations, target tuples and tolerances were validated, and annotator agreement | NEW | Stage III (`appendix/e_construction.tex:80-92`) audited the availability calls only and never validated targets, so the reply says so; E7: a second annotator independently re-derives 30 targets and we report agreement |
 
 The default is defined at `appendix/f_dataset.tex:116-118` and `rubric_audit.md:50-58` at the repo root (the copy the code loads, `src/reprocli_vllm/config/config.py:33`): a standalone point estimate with no stated tolerance gets 5% relative. Memory `lockfile-is-audited-selection` notes the auditor restates the target tuple at grade time from the frozen claim, so E7 should compare the second annotator against the tuple the auditor actually used.
@@ -221,6 +221,7 @@ Owners: **M** Mithil, **H** Haochen, **S** Samridhi. "Agents" means Claude worke
 Posting in two waves gives T29u and rqBN three days to respond before the deadline, which matters more than holding every answer for one post.
 
 **Cut list if we fall behind** (cut from the top):
+
 1. E8 rerun of 2510.20725 and the two re-audits (state the 6 cells in the reply anyway).
 2. The second E3 repeat (keep one, giving two runs per paper), which saves about 290 GPU-hours.
 3. E10 down to the 6 Run-tier papers.
