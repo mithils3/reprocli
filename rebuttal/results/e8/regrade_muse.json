@@ -1,0 +1,55 @@
+{
+  "item": "E8",
+  "purpose": "Stage-7 grades for the two Muse Spark 1.2 runs whose audit never returned (empty cells in empty_cells.csv)",
+  "grader": {"model": "claude-sonnet-5", "effort": "high", "workers": 2, "command": "PYTHONPATH=src python -m reprocli_claude --paper-ids 2503.23035 2510.08177 --runs-dir <staging dir with symlinks to the two bundles> --split eval --model claude-sonnet-5 --workers 2 --extracted-output audit_muse_20261106T170621Z.jsonl --output audit_muse_raw_20261106T170621Z.jsonl", "host": "DeltaAI login node"},
+  "runs": [
+    {
+      "run_id": "20260814T135227Z-2503.23035-384c55",
+      "arxiv_id": "2503.23035",
+      "tier": "run",
+      "agent": "muse",
+      "score": 8,
+      "verdict": "reproduced",
+      "reproduced": true,
+      "confidence": 0.8,
+      "target_metric": "PSNR (dB)",
+      "reference_value": 27.69,
+      "measured_value": 26.8428499340668,
+      "tolerance_rel": 0.05,
+      "execution_verified": true,
+      "verification_status": "verified",
+      "exit_reason": "natural",
+      "has_high_cheat_flag": false,
+      "cheat_flags": ["wrong_split_scale_dataset (med)", "other_provenance_break (low)", "other_provenance_break (low)"],
+      "cost_usd": 0.8495,
+      "bundle_dir": "2503.23035/8h/20260814T135227Z-2503.23035-384c55"
+    },
+    {
+      "run_id": "20260820T205201Z-2510.08177-a4b9dc",
+      "arxiv_id": "2510.08177",
+      "tier": "reimplement",
+      "agent": "muse",
+      "score": 6,
+      "verdict": "partial",
+      "reproduced": false,
+      "confidence": 0.75,
+      "target_metric": "Top-1 accuracy (%)",
+      "reference_value": 65.9,
+      "measured_value": 64.84,
+      "tolerance_rel": 0.05,
+      "execution_verified": true,
+      "verification_status": "verified",
+      "exit_reason": "natural",
+      "has_high_cheat_flag": false,
+      "cheat_flags": ["other_provenance_break (low)"],
+      "cost_usd": 0.8637,
+      "bundle_dir": "2510.08177/8h/20260820T205201Z-2510.08177-a4b9dc"
+    }
+  ],
+  "notes": [
+    "run_id values are the bundle directory names (bundle_for convention); Supabase was not reachable from DeltaAI (DNS), so no repro_runs row was read or written and --upload was not used.",
+    "2510.08177: measured 64.84 is within the 5% relative tolerance of 65.9 (|64.84 - 65.9| / 65.9 = 1.6%), yet the grader's verdict is partial. The grader's rationale cites the claim scope and the agent's own A' sweep; read the raw output before relying on the verdict.",
+    "2503.23035: |26.84 - 27.69| / 27.69 = 3.1%, within the 5% tolerance; verdict reproduced.",
+    "Extracted verdicts: DeltaAI /work/nvme/bfvr/msalunkhe/rebuttal/regrade/audit_muse_20261106T170621Z.jsonl"
+  ]
+}
