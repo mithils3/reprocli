@@ -23,7 +23,7 @@ SPEND_LEDGER="${SPEND_LEDGER:-/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl}"
 RUNS_DIR="${RUNS_DIR:-/work/nvme/bfvr/msalunkhe/reprocli/agent_runs}"
 SWEEP_DIR="${SWEEP_DIR:-/work/nvme/bfvr/msalunkhe/rebuttal/codex/sweeps/${MODEL}-$(date -u +%Y%m%dT%H%M%SZ)}"
 PY="${PY:-${ROOT}/.venv/bin/python}"
-export PYTHONPATH="${ROOT}/src" REPROCLI_SLURM_ACCOUNT="${REPROCLI_SLURM_ACCOUNT:-betw-dtai-gh}"
+export PYTHONPATH="${ROOT}/src" REPROCLI_SLURM_ACCOUNT="${REPROCLI_SLURM_ACCOUNT:-bfvr-dtai-gh}"
 [[ -n "${OPENAI_API_KEY:-}" ]] || { echo "source OPENAI_API_KEY from ~/.bashrc first" >&2; exit 1; }
 
 if [[ "${SMOKE}" == "1" ]]; then SEL_MODE=smoke; SEL_SPEC=""

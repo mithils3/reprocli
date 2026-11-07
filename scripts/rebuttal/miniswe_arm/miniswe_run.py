@@ -44,7 +44,7 @@ from miniswe_model import MuseWonderModel  # noqa: E402
 HERE = Path(__file__).resolve().parent
 DEFAULT_RUNS_DIR = "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs"
 SHIM = HERE / "run_gpu_shim.sh"
-ACCOUNT = "betw-dtai-gh"
+ACCOUNT = "bfvr-dtai-gh"
 DEFAULT_LEDGER = "/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl"
 META_CAP_USD = 480.0
 DEFAULT_COST_CAP = 60.0
