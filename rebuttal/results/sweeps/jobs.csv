@@ -13,3 +13,8 @@ NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Medium,2503.09657 2506.08898 25
 NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Hard,2506.20024,rerun-qwen-hard,gated on Qwen smoke PASS (smoke 3540621 OOM at 220G)
 3540786,Qwen3.6-27B,rerun of B-class cells (serve with --gdn-prefill-backend triton, e2bda76),Medium,2503.09657 2506.08898 2510.05874 2510.19784 2506.19839 2510.20725,rerun-qwen3-medium,2026-11-06T12:18:50-06:00
 3540787,Qwen3.6-27B,rerun of B-class cells (serve with --gdn-prefill-backend triton, e2bda76),Hard,2506.20024,rerun-qwen3-hard,2026-11-06T12:18:50-06:00
+3544919,pipeline,E10 seed 2,Retrain,2510.07501,e10-2510.07501-s2,2026-11-06T18:24:38
+3544920,pipeline,E10 seed 1,Retrain,2505.17836,e10-2505.17836-s1,2026-11-06T18:24:38
+3544921,pipeline,E10 seed 2,Retrain,2505.17836,e10-2505.17836-s2,2026-11-06T18:24:38
+3544922,pipeline,E10 seed 1,Run,2506.10351,e10-2506.10351-s1,2026-11-06T18:24:38
+3544923,pipeline,E10 seed 2,Run,2506.10351,e10-2506.10351-s2,2026-11-06T18:24:38
