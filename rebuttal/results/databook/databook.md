@@ -1,0 +1,97 @@
+# Rebuttal data book
+
+Generated at 2026-11-07T17:41:26Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 8 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+
+## 1. Frontier arms (replies: General, YGTR W1)
+
+Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best original agent score on the same paper, mean (n); a missing original cell scores 0. spent_h100: thin runs from stats.json, codex and miniswe runs summed from run_gpu lines in agent.full.log. queue_wait_min: codex_run.json, codex runs only.
+
+| arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
+|---|---|---|---|---|---|---|
+| codex-gpt-6.1-sol | 24 | 2 | 0/2 [0.0, 65.8] | 2.50 | -3.50 (n=2) | 1 |
+| codex-gpt-6-astra | 8 | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 1 |
+| codex-gpt-6.1-terra | 24 | 0 | - (n=0) | - | - (n=0) | 0 |
+| thin-gpt-6.1-sol | 12 | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
+| thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
+| thin-gpt-6.1-terra | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
+| miniswe | 6 | 1 | 0/1 [0.0, 79.3] | 6.00 | -2.00 (n=1) | 0 |
+
+Per-run rows (one per grades.jsonl row since 2026-11-07):
+
+| arm | model | paper | budget | run_id | score | verdict | reproduced | orig tier | dsv4 | minimax | muse | qwen3 | orig best | diff | agent_assessment | exit_reason | queue_wait_min | budget_h100 | spent_h100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| codex-gpt-6-astra | gpt-6-astra | 2505.16927 | 32h | codex-gpt-6-astra-20261107T101517Z-62f1c5 | 1 | unverifiable | False | reimplement | 4 | 0 | 4 | 4 | 4 | -3 | could_not_run | natural | 215.51 | 32.0 | 0.039 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2505.16927 | 32h | codex-gpt-6.1-sol-20261107T010540Z-d345e4 | 1 | unverifiable | False | reimplement | 4 | 0 | 4 | 4 | 4 | -3 | could_not_run | natural | 621.12 | 32.0 | 0.0546 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2505.16927 | 32h | core-a-2505.16927-eed0ff | 1 | unverifiable | False | reimplement | 4 | 0 | 4 | 4 | 4 | -3 | could_not_run | natural |  | 32.0 | 0.0669 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2504.20571 | 8h | core-a-2504.20571-f42006 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | not_reproduced | natural |  | 8.0 | 1.2537 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2506.08898 | 32h | core-a-2506.08898-786249 | 4 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -4 | partial | natural |  | 32.0 | 0.1768 |
+| codex-gpt-6-astra | gpt-6-astra | 2506.08898 | 32h | codex-gpt-6-astra-20261107T010540Z-f7afe8 | 2 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -6 | partial | natural | 527.82 | 32.0 | 0.1745 |
+| miniswe | miniswe | 2506.08898 | 32h | miniswe-2506.08898-20261107T014125 | 6 | partial | False | retrain | 7 | 0 | 8 | 0 | 8 | -2 | partial | submitted |  | 32.0 | 0.2864 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2506.08898 | 32h | codex-gpt-6.1-sol-20261107T010540Z-379147 | 4 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -4 | partial | natural | 839.96 | 32.0 | 0.6146 |
+
+## 2. Static results (final)
+
+| item | reply slot | number | source file | status |
+|---|---|---|---|---|
+| E5 agent log entries checked | rqBN | 45,861 of 49,585 | rebuttal/results/e5/summary.json | final |
+| E5 log entries unmatched | rqBN | 3 | rebuttal/results/e5/summary.json | final |
+| E5 log entries explained | rqBN | 185 | rebuttal/results/e5/summary.json | final |
+| E5 runs with a write into evidence/ | rqBN | 360 of 372 | rebuttal/results/e5/summary.json | final |
+| E5 runs with late evidence/ mtime | rqBN | 63 of 372 | rebuttal/results/e5/summary.json | final |
+| E5 run dirs not in index | rqBN | 388 of 760 | rebuttal/results/e5/summary.json | final |
+| E6 reproduced cells at 5% (index) | tolerance | 73 of 400 | rebuttal/results/e6/summary.json | final |
+| E6 reproduced point estimates | tolerance | 51 of 73 | rebuttal/results/e6/summary.json | final |
+| E6 best agent at 5%, run tier | tolerance | dsv4 14/34 = 41.2% [26.4, 57.8] | rebuttal/results/e6/summary.json | final |
+| E6 best agent at 5%, retrain tier | tolerance | dsv4/muse 9/33 = 27.3% [15.1, 44.2] | rebuttal/results/e6/summary.json | final |
+| E6 best agent at 5%, reimplement tier | tolerance | muse 5/33 = 15.2% [6.7, 30.9] | rebuttal/results/e6/summary.json | final |
+| E7 v3: all four step-3 questions yes | rqBN | 55 of 100 [45.2, 64.4] | rebuttal/results/e7/summary.json | final |
+| E7 rescore: reproduced cells, paper targets to corrected targets | rqBN | 73 to 71 of 400 | rebuttal/results/e7/rescore_summary.md | final |
+| E7 rescore: cells that flip reproduced on correction | rqBN | 2 of 40 | rebuttal/results/e7/rescore_summary.md | final |
+| E8 reproduced cells, reproduction check | YGTR Q3 | 73 of 400 | rebuttal/results/e8/summary.json | final |
+| E8 best agent, environment runs removed, run | YGTR Q3 | dsv4 14/34 = 41.2% [26.4, 57.8] | rebuttal/results/e8/summary.json | final |
+| E8 best agent, environment runs removed, retrain | YGTR Q3 | muse 9/32 = 28.1% [15.6, 45.4] | rebuttal/results/e8/summary.json | final |
+| E8 best agent, environment runs removed, reimplement | YGTR Q3 | muse 5/32 = 15.6% [6.9, 31.8] | rebuttal/results/e8/summary.json | final |
+| E8 empty cells | YGTR Q3 | 28 | rebuttal/results/e8/summary.json | final |
+| E8 build-dependency runs | YGTR Q3 | 24 | rebuttal/results/e8/summary.json | final |
+| E8 empty-cell trace, classes A/B/C/D | YGTR Q3 | A 2, B 16, C 0, D 4 (of 22) | rebuttal/results/e8/empty_cells_traced.csv | final |
+| E9 run runs scanned of runs in index | YGTR Q2 | 127 of 129 | rebuttal/results/e9/summary.json | final |
+| E9 run runs with a primary-source hit | YGTR Q2 | 117 of 127 scanned | rebuttal/results/e9/summary.json | final |
+| E9 run reproduced runs with a hit | YGTR Q2 | 28 of 31 (reproduced rows, e6 table) | rebuttal/results/e9/summary.json and rebuttal/results/e6/table.csv | final |
+| E9 retrain runs scanned of runs in index | YGTR Q2 | 118 of 118 | rebuttal/results/e9/summary.json | final |
+| E9 retrain runs with a primary-source hit | YGTR Q2 | 62 of 118 scanned | rebuttal/results/e9/summary.json | final |
+| E9 retrain reproduced runs with a hit | YGTR Q2 | 13 of 29 (reproduced rows, e6 table) | rebuttal/results/e9/summary.json and rebuttal/results/e6/table.csv | final |
+| E9 reimplement runs scanned of runs in index | YGTR Q2 | 123 of 125 | rebuttal/results/e9/summary.json | final |
+| E9 reimplement runs with a primary-source hit | YGTR Q2 | 75 of 123 scanned | rebuttal/results/e9/summary.json | final |
+| E9 reimplement reproduced runs with a hit | YGTR Q2 | 3 of 13 (reproduced rows, e6 table) | rebuttal/results/e9/summary.json and rebuttal/results/e6/table.csv | final |
+
+## 3. E10 re-execution
+
+Source: /work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json job ids; sacct -X -n -P -j <ids> -o JobID,JobName%24,State,Elapsed. Pending until COMPLETED.
+
+| job | name | state | elapsed | status |
+|---|---|---|---|---|
+| 3540342 | e10-2510.07501-s1 | COMPLETED | 00:06:00 | final |
+| 3544919 | e10-2510.07501-s2 | COMPLETED | 00:03:11 | final |
+| 3544920 | e10-2505.17836-s1 | FAILED | 00:02:04 | pending |
+| 3544921 | e10-2505.17836-s2 | FAILED | 00:01:56 | pending |
+| 3544922 | e10-2506.10351-s1 | PENDING | 00:00:00 | pending |
+| 3544923 | e10-2506.10351-s2 | PENDING | 00:00:00 | pending |
+
+## 4. Repeat and rerun jobs (YGTR Q3, W2)
+
+Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not graded here.
+
+| job | name | state | elapsed | start | status |
+|---|---|---|---|---|---|
+| 3540624 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540628 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540629 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540630 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
+| 3540786 | repro_medium_qwen3 | PENDING | 00:00:00 | Unknown | pending |
+| 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
