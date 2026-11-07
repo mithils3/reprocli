@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Start order sol -> astra -> terra, advancing when the previous sweep has DISPATCHED all its papers
-# (not when its longest run ends). Sweeps run under setsid so this script can die without touching them.
+# sol (4 at a time) and astra (2 at a time) start together, sol first; terra starts once both have
+# DISPATCHED all their papers (not when their longest run ends). PHASE=terra skips straight to the terra wait. Sweeps run under setsid so this script can die without touching them.
 set -uo pipefail
 R=~/reprocli; L=/work/nvme/bfvr/msalunkhe/rebuttal/codex; PY=$R/.venv/bin/python
 export PYTHONPATH=$R/src
@@ -26,10 +26,13 @@ PY
   log "launch $model $ranks par=$par skip=${skip:-none} to_dispatch=$N log=$OUT"
   setsid nohup env SKIP="$skip" MODEL="$model" RANKS="$ranks" MAX_PARALLEL="$par" EST_RUN_USD=40 PY="$PY" \
     bash $R/scripts/rebuttal/codex_arm/codex_sweep.sh > "$OUT" 2>&1 < /dev/null &
+  sleep 20  # let the sweep truncate its log before anyone counts start lines
 }
-launch gpt-6.1-sol 1-24 "${SOL_PAR:-4}" adv; S_LOG=$OUT; S_N=$N
-while (( $(starts "$S_LOG") < S_N )); do sleep 120; done; log "sol dispatched $S_N"
-launch gpt-6-astra 1-8 2 adv; A_LOG=$OUT; A_N=$N
-while (( $(starts "$A_LOG") < A_N )); do sleep 120; done; log "astra dispatched $A_N"
+if [[ "${PHASE:-all}" == all ]]; then
+  launch gpt-6.1-sol 1-24 "${SOL_PAR:-4}" adv
+  launch gpt-6-astra 1-8 2 adv
+fi
+S_LOG=$L/sweep-gpt-6.1-sol-adv.log; A_LOG=$L/sweep-gpt-6-astra-adv.log
+while (( $(starts "$S_LOG") < 24 || $(starts "$A_LOG") < 8 )); do sleep 120; done; log "sol and astra dispatched"
 launch gpt-6.1-terra 1-24 2 adv
 log "all launched"
