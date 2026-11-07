@@ -1,0 +1,344 @@
+[
+ {
+  "cell": "dsv4-run-2505.23747",
+  "agent": "dsv4",
+  "tier": "run",
+  "paper": "2505.23747",
+  "old_score": 9,
+  "old_verdict": "reproduced",
+  "run_dir_rel": "2505.23747/8h/2889575-2505.23747-4b967c"
+ },
+ {
+  "cell": "dsv4-run-2506.18890",
+  "agent": "dsv4",
+  "tier": "run",
+  "paper": "2506.18890",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2506.18890/8h/2889575-2506.18890-78eb98"
+ },
+ {
+  "cell": "dsv4-run-2511.00090",
+  "agent": "dsv4",
+  "tier": "run",
+  "paper": "2511.00090",
+  "old_score": 6,
+  "old_verdict": "partial",
+  "run_dir_rel": "2511.00090/8h/2883229-2511.00090-0819ba"
+ },
+ {
+  "cell": "dsv4-retrain-2502.01203",
+  "agent": "dsv4",
+  "tier": "retrain",
+  "paper": "2502.01203",
+  "old_score": 3,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2502.01203/8h/2896059-2502.01203-f4a9f3"
+ },
+ {
+  "cell": "dsv4-retrain-2504.13146",
+  "agent": "dsv4",
+  "tier": "retrain",
+  "paper": "2504.13146",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2504.13146/8h/2896059-2504.13146-ecfec8"
+ },
+ {
+  "cell": "dsv4-retrain-2510.10480",
+  "agent": "dsv4",
+  "tier": "retrain",
+  "paper": "2510.10480",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2510.10480/32h/2896059-2510.10480-8978a6"
+ },
+ {
+  "cell": "dsv4-retrain-2505.02391",
+  "agent": "dsv4",
+  "tier": "retrain",
+  "paper": "2505.02391",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.02391/96h/2896059-2505.02391-aa4ef8"
+ },
+ {
+  "cell": "dsv4-reimplement-2505.16927",
+  "agent": "dsv4",
+  "tier": "reimplement",
+  "paper": "2505.16927",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.16927/32h/2918306-2505.16927-4a2a1a"
+ },
+ {
+  "cell": "dsv4-reimplement-2410.15392",
+  "agent": "dsv4",
+  "tier": "reimplement",
+  "paper": "2410.15392",
+  "old_score": 5,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2410.15392/8h/2918306-2410.15392-565d2a"
+ },
+ {
+  "cell": "qwen3-run-2505.23747",
+  "agent": "qwen3",
+  "tier": "run",
+  "paper": "2505.23747",
+  "old_score": 3,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.23747/8h/2687371-2505.23747-e80a4f"
+ },
+ {
+  "cell": "qwen3-run-2506.18890",
+  "agent": "qwen3",
+  "tier": "run",
+  "paper": "2506.18890",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2506.18890/8h/2687371-2506.18890-63025e"
+ },
+ {
+  "cell": "qwen3-run-2506.18896",
+  "agent": "qwen3",
+  "tier": "run",
+  "paper": "2506.18896",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2506.18896/32h/2687371-2506.18896-820bf9"
+ },
+ {
+  "cell": "qwen3-run-2511.00090",
+  "agent": "qwen3",
+  "tier": "run",
+  "paper": "2511.00090",
+  "old_score": 7,
+  "old_verdict": "partial",
+  "run_dir_rel": "2511.00090/8h/2687371-2511.00090-dbd83d"
+ },
+ {
+  "cell": "qwen3-retrain-2502.01203",
+  "agent": "qwen3",
+  "tier": "retrain",
+  "paper": "2502.01203",
+  "old_score": 3,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2502.01203/8h/2799428-2502.01203-ac5488"
+ },
+ {
+  "cell": "qwen3-retrain-2504.13146",
+  "agent": "qwen3",
+  "tier": "retrain",
+  "paper": "2504.13146",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2504.13146/8h/2759663-2504.13146-280a3e"
+ },
+ {
+  "cell": "qwen3-retrain-2510.10480",
+  "agent": "qwen3",
+  "tier": "retrain",
+  "paper": "2510.10480",
+  "old_score": 1,
+  "old_verdict": "unverifiable",
+  "run_dir_rel": "2510.10480/32h/2759663-2510.10480-32ed4a"
+ },
+ {
+  "cell": "qwen3-retrain-2505.02391",
+  "agent": "qwen3",
+  "tier": "retrain",
+  "paper": "2505.02391",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.02391/96h/2759663-2505.02391-74ea05"
+ },
+ {
+  "cell": "qwen3-reimplement-2410.15392",
+  "agent": "qwen3",
+  "tier": "reimplement",
+  "paper": "2410.15392",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2410.15392/8h/2666353-2410.15392-d064d4"
+ },
+ {
+  "cell": "qwen3-reimplement-2505.16927",
+  "agent": "qwen3",
+  "tier": "reimplement",
+  "paper": "2505.16927",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.16927/32h/2672018-2505.16927-2a3688"
+ },
+ {
+  "cell": "minimax-run-2506.18890",
+  "agent": "minimax",
+  "tier": "run",
+  "paper": "2506.18890",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2506.18890/8h/2652648-2506.18890-2bfd5c"
+ },
+ {
+  "cell": "minimax-run-2511.00090",
+  "agent": "minimax",
+  "tier": "run",
+  "paper": "2511.00090",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2511.00090/8h/2652648-2511.00090-f5ca46"
+ },
+ {
+  "cell": "minimax-run-2505.23747",
+  "agent": "minimax",
+  "tier": "run",
+  "paper": "2505.23747",
+  "old_score": 9,
+  "old_verdict": "reproduced",
+  "run_dir_rel": "2505.23747/8h/2652648-2505.23747-49da98"
+ },
+ {
+  "cell": "minimax-retrain-2502.01203",
+  "agent": "minimax",
+  "tier": "retrain",
+  "paper": "2502.01203",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2502.01203/8h/2690187-2502.01203-0be787"
+ },
+ {
+  "cell": "minimax-retrain-2504.13146",
+  "agent": "minimax",
+  "tier": "retrain",
+  "paper": "2504.13146",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2504.13146/8h/2690187-2504.13146-8ef893"
+ },
+ {
+  "cell": "minimax-retrain-2510.10480",
+  "agent": "minimax",
+  "tier": "retrain",
+  "paper": "2510.10480",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2510.10480/32h/2690187-2510.10480-11fb78"
+ },
+ {
+  "cell": "minimax-retrain-2505.02391",
+  "agent": "minimax",
+  "tier": "retrain",
+  "paper": "2505.02391",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.02391/96h/2690187-2505.02391-8066d1"
+ },
+ {
+  "cell": "minimax-reimplement-2410.15392",
+  "agent": "minimax",
+  "tier": "reimplement",
+  "paper": "2410.15392",
+  "old_score": 2,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2410.15392/8h/2936132-2410.15392-b56375"
+ },
+ {
+  "cell": "minimax-reimplement-2505.16927",
+  "agent": "minimax",
+  "tier": "reimplement",
+  "paper": "2505.16927",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2505.16927/32h/2936132-2505.16927-671b4e"
+ },
+ {
+  "cell": "muse-run-2505.23747",
+  "agent": "muse",
+  "tier": "run",
+  "paper": "2505.23747",
+  "old_score": 9,
+  "old_verdict": "reproduced",
+  "run_dir_rel": "2505.23747/8h/20260814T135227Z-2505.23747-e8deb1"
+ },
+ {
+  "cell": "muse-run-2506.18890",
+  "agent": "muse",
+  "tier": "run",
+  "paper": "2506.18890",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2506.18890/8h/20260814T135227Z-2506.18890-efda78"
+ },
+ {
+  "cell": "muse-run-2506.18896",
+  "agent": "muse",
+  "tier": "run",
+  "paper": "2506.18896",
+  "old_score": 0,
+  "old_verdict": "disqualified",
+  "run_dir_rel": "2506.18896/32h/20260814T135227Z-2506.18896-83f791"
+ },
+ {
+  "cell": "muse-run-2511.00090",
+  "agent": "muse",
+  "tier": "run",
+  "paper": "2511.00090",
+  "old_score": 6,
+  "old_verdict": "partial",
+  "run_dir_rel": "2511.00090/8h/20260814T135227Z-2511.00090-68ee09"
+ },
+ {
+  "cell": "muse-retrain-2502.01203",
+  "agent": "muse",
+  "tier": "retrain",
+  "paper": "2502.01203",
+  "old_score": 3,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2502.01203/8h/20260816T133804Z-2502.01203-9839aa"
+ },
+ {
+  "cell": "muse-retrain-2504.13146",
+  "agent": "muse",
+  "tier": "retrain",
+  "paper": "2504.13146",
+  "old_score": 3,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2504.13146/8h/20260816T133804Z-2504.13146-5b9c8d"
+ },
+ {
+  "cell": "muse-retrain-2510.10480",
+  "agent": "muse",
+  "tier": "retrain",
+  "paper": "2510.10480",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2510.10480/32h/20260816T133804Z-2510.10480-20accc"
+ },
+ {
+  "cell": "muse-retrain-2505.02391",
+  "agent": "muse",
+  "tier": "retrain",
+  "paper": "2505.02391",
+  "old_score": 6,
+  "old_verdict": "partial",
+  "run_dir_rel": "2505.02391/96h/20260816T133804Z-2505.02391-df7f1f"
+ },
+ {
+  "cell": "muse-reimplement-2505.16927",
+  "agent": "muse",
+  "tier": "reimplement",
+  "paper": "2505.16927",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2505.16927/32h/20260820T205201Z-2505.16927-574b21"
+ },
+ {
+  "cell": "muse-reimplement-2410.15392",
+  "agent": "muse",
+  "tier": "reimplement",
+  "paper": "2410.15392",
+  "old_score": 4,
+  "old_verdict": "not_reproduced",
+  "run_dir_rel": "2410.15392/8h/20260820T205201Z-2410.15392-d1cb84"
+ }
+]
