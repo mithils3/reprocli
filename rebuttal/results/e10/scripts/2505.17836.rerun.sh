@@ -13,10 +13,16 @@ if [ ! -d "$R/workspace" ]; then
   (cd "$SRC" && tar -cf - --exclude=./Cached-Supernets --exclude=./.venv .) | (cd "$R/workspace" && tar -xf -)
 fi
 # PATCH (not in transcript): the config sets experiment.seed (line 2); the original used 42
-rg -q '^  seed: 42$' "$R/workspace/repo/configs/exp_target.yaml" && sed -i "s/^  seed: 42$/  seed: $SEED/" "$R/workspace/repo/configs/exp_target.yaml"
+# PATCH: no rg in the container; the old rg guard silently skipped this sed (seed stayed 42)
+sed -i "s/^  seed: 42$/  seed: $SEED/" "$R/workspace/repo/configs/exp_target.yaml"
+grep -q "^  seed: $SEED$" "$R/workspace/repo/configs/exp_target.yaml" || { echo "seed patch failed"; exit 1; }
 # L1 ts 13:40:47 dur 148s gpus 0
 uv venv $R/workspace/.venv --python 3.12 2>&1 | tail -20
 uv pip install --python $R/workspace/.venv/bin/python --index-url https://download.pytorch.org/whl/cu129 torch torchvision torchaudio 2>&1 | tail -20
+# L50 transcript: the original run installed requirements.txt (numpy, networkx, scipy, omegaconf, yaml)
+uv pip install --python $R/workspace/.venv/bin/python -r $R/workspace/repo/requirements.txt 2>&1 | tail -20
+# PATCH: dry import of every module run_experiments.py and src/ use
+$R/workspace/.venv/bin/python -c "import numpy, networkx, scipy.stats, omegaconf, yaml; print('deps ok')"
 ls -la $R/workspace/.venv/bin/python
 ls -la $R/reference/ 2>&1 | head -50
 # L159 ts 13:47:33 dur 98s gpus 1
