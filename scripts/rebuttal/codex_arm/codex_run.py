@@ -102,6 +102,9 @@ def exec_flags(tier: str) -> str:
 EXEC_FLAGS_TEMPLATE = (
     "--json --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "
     "-c model_reasoning_effort=high -c service_tier={tier} "
+    # Code mode and unified exec return to the model at each yield, so a queued run_gpu ends the model's
+    # turn. With both off, the shell call blocks until the command finishes (tested with a 120 s sleep).
+    "-c features.code_mode=false -c features.unified_exec=false "
     f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT} "
     # Built-in provider ids cannot be overridden, so the same endpoint is a custom provider
     # with the retry budget set; the key comes from OPENAI_API_KEY in the environment.
@@ -152,6 +155,7 @@ class Bridge:
         self.recorder = recorder
         self.lock = threading.Lock()
         self.queue_wait_s = 0.0
+        self.pending_since: float | None = None  # monotonic start of an acquire still waiting
         self.refusing = False
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self._loop, name="codex-bridge", daemon=True)
@@ -177,14 +181,22 @@ class Bridge:
         with self.lock:
             acquiring = self.ctx.session is None
             started = time.monotonic()
-            result = execute_repro_tool_call(
-                {"function": {"name": "run_gpu", "arguments": json.dumps(arguments)}}, self.ctx,
-            )
-            # Queue time is the wait from the request to the grant. It is not charged (the meter starts
-            # at the grant, gpu_session.ensure_session) and is reported as queue_wait_minutes.
+            if acquiring:
+                self.pending_since = started
+            try:
+                result = execute_repro_tool_call(
+                    {"function": {"name": "run_gpu", "arguments": json.dumps(arguments)}}, self.ctx,
+                )
+            finally:
+                self.pending_since = None
+            # Queue time is the wait from the request to the grant, or to the end of a request that was
+            # never granted. It is not charged: the meter starts at the grant (gpu_session.ensure_session).
             session = self.ctx.session
-            if acquiring and session is not None and session.started >= started:
-                self.queue_wait_s += session.started - started
+            if acquiring:
+                if session is not None and session.started >= started:
+                    self.queue_wait_s += session.started - started
+                else:
+                    self.queue_wait_s += time.monotonic() - started
         self.recorder.log_gpu(result)
         return result
 
@@ -598,7 +610,8 @@ def main(argv: list[str] | None = None) -> int:
     run_meta = json.loads((run_dir / "codex_run.json").read_text(encoding="utf-8"))
     run_meta["resumes"] = run.resumes
     run_meta["tier"] = run.tier
-    run_meta["queue_wait_minutes"] = round(run.bridge.queue_wait_s / 60, 2)
+    pending = (time.monotonic() - run.bridge.pending_since) if run.bridge.pending_since else 0.0
+    run_meta["queue_wait_minutes"] = round((run.bridge.queue_wait_s + pending) / 60, 2)
     run_meta["tier_fallback_at"] = run.tier_fallback_at
     (run_dir / "codex_run.json").write_text(json.dumps(run_meta, indent=2) + "\n", encoding="utf-8")
     recorder.log_line(f"DONE exit_reason={exit_reason} usd={totals['usd']} requests={totals['requests']} "
