@@ -208,7 +208,9 @@ def handle_request_done(
     # intermediate force-final pass, and the final turn each pass through here once).
     body = row.get("response", {}).get("body")
     usage = body.get("usage") if isinstance(body, dict) else None
-    live_log.log_usage(contexts_by_id[custom_id], usage, round_index=round_index)
+    tier = body.get("service_tier") if isinstance(body, dict) else None
+    live_log.log_usage(contexts_by_id[custom_id], usage, round_index=round_index,
+                       service_tier=tier)
     # Stash the exact prompt-token count so the between-round context guardrails gate on
     # the server's own number instead of a chars-per-token estimate.
     if isinstance(usage, dict) and usage.get("prompt_tokens") is not None:

@@ -254,13 +254,30 @@ def log_usage(
     *,
     round_index: int | None = None,
     kind: str = "round",
+    service_tier: str | None = None,
 ) -> None:
     """Forward one model response's token ``usage`` to the structured sink.
 
-    No file write — the human transcript stays clean; the usage is summed onto the
-    Supabase run row and the uploaded ``stats.json``. Best-effort and a no-op when
-    no sink is registered or ``usage`` is empty, exactly like the writers above.
+    The usage is also appended to ``usage.jsonl`` in the run's bundle root, one line
+    per response, so the spend ledger can be priced without Supabase (see
+    scripts/rebuttal/thin_run_cost.py). The file write is best-effort. The sink
+    path is a no-op when no sink is registered or ``usage`` is empty.
     """
     if not usage:
         return
+    _append_usage_line(ctx, {"round_index": round_index, "kind": kind,
+                             "service_tier": service_tier, "usage": usage})
     _notify("usage", ctx, {"round_index": round_index, "kind": kind, "usage": usage})
+
+
+def _append_usage_line(ctx: ExecutionContext, record: dict[str, Any]) -> None:
+    evidence = getattr(ctx, "evidence", None)
+    if not evidence:
+        return
+    try:
+        path = Path(evidence).parent / "usage.jsonl"
+        row = {"ts": time.time(), **record}
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(row) + "\n")
+    except (OSError, TypeError, ValueError):
+        return

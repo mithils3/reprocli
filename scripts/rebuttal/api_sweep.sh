@@ -18,7 +18,7 @@ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 #
 # Spend guard: before each dispatch, the USD in the ledger for this provider plus
 # (in-flight + 1) x EST_RUN_USD must stay under CAP_USD, else dispatch stops (spend-cap).
-# Each finished run appends one ledger line priced from its stats.json.
+# Each finished run appends one ledger line priced from its recorded per-response usage.
 set -uo pipefail
 
 PROVIDER="${PROVIDER:?set PROVIDER=openai|meta}"
@@ -268,42 +268,31 @@ would_pass() {  # $1 = runs in flight including the one about to start
     'BEGIN { exit !(s + n * e > c) }'
 }
 
-# Append one ledger line for a finished run, priced from its stats.json. The
-# prompt count includes cached tokens (OpenAI usage convention); completion includes
-# reasoning. Flex-fallback calls are billed at standard, which is not counted here, so
-# the flex price is a lower bound when fallback_lines > 0.
+# Append one ledger line for a finished run, priced from the run's recorded usage
+# (thin_run_cost.py: usage.jsonl, else stats.json). Each response is priced at the tier
+# it was served at, so flex-fallback resends bill at standard. A run with no recorded
+# usage gets EST_RUN_USD and "estimated": true.
 ledger_line() {  # pid run_id run_dir log
-  local fb
+  local fb cost
   fb="$(rg -c 'flex-fallback' "$4" 2>/dev/null)"
-  python3 - "$3/stats.json" "${SPEND_LEDGER}" "${PROVIDER}" "${MODEL}" "$1" "$2" "${fb:-0}" \
-            "${ITEM}" "${EST_RUN_USD}" <<'PY'
+  cost="$(python3 "${ROOT}/scripts/rebuttal/thin_run_cost.py" "$3" --model "${MODEL}" 2>/dev/null)" || cost=""
+  python3 - "${SPEND_LEDGER}" "${PROVIDER}" "${MODEL}" "$1" "$2" "${fb:-0}" \
+            "${ITEM}" "${EST_RUN_USD}" "${cost}" <<'PY'
 import json, sys
 from datetime import datetime, timezone
-stats_path, ledger, provider, model, pid, rid, fb, item, est = sys.argv[1:10]
-PRICES = {  # USD per 1M tokens: input, cached input, output
-    "gpt-6.1-sol": (1.00, 0.05, 5.00), "gpt-6.1-terra": (0.50, 0.025, 2.50),
-    "gpt-6-astra": (5.00, 0.50, 25.00), "muse-wonder-1.0": (4.00, 0.20, 20.00),
-    "muse-spark-1.2": (1.25, 0.15, 4.25), "muse-spark-1.2-contributor": (1.25, 0.15, 4.25),
-}
+ledger, provider, model, pid, rid, fb, item, est, cost = sys.argv[1:10]
 rec = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "item": item,
        "provider": provider, "model": model, "paper": pid, "run_id": rid,
        "flex_fallback_lines": int(fb)}
 try:
-    tok = json.load(open(stats_path))["tokens"]
-    pt, ct, cached = int(tok["prompt"]), int(tok["completion"]), int(tok["cached"])
-except (OSError, ValueError, KeyError):
-    pt = ct = cached = 0
-    rec["estimated"] = True
-    usd = float(est)
+    real = json.loads(cost)
+except ValueError:
+    real = None
+if real:
+    rec.update({"in": real["input"], "cached": real["cached"], "out": real["output"],
+                "usd": real["usd"], "usage_source": real["source"], "tiers": real["tiers"]})
 else:
-    price = PRICES.get(model)
-    if price is None:
-        rec["estimated"] = True
-        usd = float(est)
-    else:
-        pin, pcached, pout = price
-        usd = ((pt - cached) * pin + cached * pcached + ct * pout) / 1e6
-rec.update({"in": pt, "cached": cached, "out": ct, "usd": round(usd, 4)})
+    rec.update({"in": 0, "cached": 0, "out": 0, "usd": round(float(est), 4), "estimated": True})
 with open(ledger, "a") as f:
     f.write(json.dumps(rec) + "\n")
 PY
