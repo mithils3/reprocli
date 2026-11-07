@@ -4,6 +4,7 @@
 set -uo pipefail
 R=~/reprocli; L=/work/nvme/bfvr/msalunkhe/rebuttal/codex; PY=$R/.venv/bin/python
 export PYTHONPATH=$R/src
+cd "$R" || exit 1
 source <(rg '^export (OPENAI_API_KEY|HF_TOKEN)=' ~/.bashrc)
 export HF_HOME=/work/nvme/bfvr/msalunkhe/.cache HF_HUB_DISABLE_XET=1 REPROCLI_SLURM_ACCOUNT=bfvr-dtai-gh
 [[ -n "${OPENAI_API_KEY:-}" ]] || { echo "no OPENAI_API_KEY in ~/.bashrc" >&2; exit 1; }
