@@ -190,6 +190,7 @@ class Bridge:
         let the model poll, stop or write a report. Frozen, the model gets no turn until the result exists.
         """
         self.frozen = sorted(codex_pids(self.tag))
+        self.recorder.log_line(f"FREEZE codex pids {self.frozen} for run_gpu")
         for pid in self.frozen:
             try:
                 os.kill(pid, signal.SIGSTOP)
@@ -197,6 +198,7 @@ class Bridge:
                 pass
 
     def _thaw(self) -> None:
+        self.recorder.log_line(f"THAW codex pids {self.frozen}")
         for pid in self.frozen:
             try:
                 os.kill(pid, signal.SIGCONT)
