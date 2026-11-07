@@ -1,0 +1,15 @@
+{
+  "item": "E8-dcells",
+  "purpose": "Stage-7 grades (pinned auditor claude-sonnet-5) for the three finished E8 D-cell runs that were graded only by the sweep's own vLLM model, so export.py dropped them",
+  "grader": {"model": "claude-sonnet-5", "effort": "high", "workers": 1, "command": "PYTHONPATH=src python -m reprocli_claude --paper-ids <arxiv_id> --runs-dir <one-run staging dir of symlinks> --split eval --model claude-sonnet-5 --workers 1 --extracted-output audit_<arxiv_id>_<T>.jsonl --output audit_raw_<arxiv_id>_<T>.jsonl", "host": "DeltaAI login node, script /work/nvme/bfvr/msalunkhe/rebuttal/run_dcells.sh, run stamp 20261107T175141Z", "outputs": "/work/nvme/bfvr/msalunkhe/rebuttal/regrade_dcells/"},
+  "runs": [
+    {"agent": "minimax", "arxiv_id": "2506.18896", "run_dir": "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2506.18896/32h/2678961-2506.18896-2c2b97", "score": 0, "verdict": "disqualified", "cost_usd": 0.746, "note": "grader measured 85.71 against threshold 80 but set has_high_cheat_flag; score 0 by the integrity rule"},
+    {"agent": "qwen3", "arxiv_id": "2511.19808", "run_dir": "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2511.19808/96h/2672018-2511.19808-87ab74", "score": 2, "verdict": "not_reproduced", "cost_usd": 0.4107, "note": "no cheat flag"},
+    {"agent": "qwen3", "arxiv_id": "2510.25529", "run_dir": "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2510.25529/32h/2672018-2510.25529-2f45a5", "score": 0, "verdict": "disqualified", "cost_usd": 0.3101, "note": "high cheat flag; no measured value extracted"}
+  ],
+  "total_cost_usd": 1.4668,
+  "notes": [
+    "Not graded: 2510.19314 (qwen3), no bundle on DeltaAI (see d_cells.md).",
+    "Extracted verdicts: /work/nvme/bfvr/msalunkhe/rebuttal/regrade_dcells/audit_<arxiv_id>_20261107T175141Z.jsonl; ledger lines item E8-dcells in spend.jsonl."
+  ]
+}
