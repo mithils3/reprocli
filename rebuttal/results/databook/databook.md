@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-07T17:41:26Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 8 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-07T18:35:02Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 8 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -73,7 +73,9 @@ Source: /work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json job ids; sacct -X -n -
 | 3540342 | e10-2510.07501-s1 | COMPLETED | 00:06:00 | final |
 | 3544919 | e10-2510.07501-s2 | COMPLETED | 00:03:11 | final |
 | 3544920 | e10-2505.17836-s1 | FAILED | 00:02:04 | pending |
+| 3550322 | e10-2505.17836-s1 | FAILED | 00:00:06 | pending |
 | 3544921 | e10-2505.17836-s2 | FAILED | 00:01:56 | pending |
+| 3550323 | e10-2505.17836-s2 | FAILED | 00:00:05 | pending |
 | 3544922 | e10-2506.10351-s1 | PENDING | 00:00:00 | pending |
 | 3544923 | e10-2506.10351-s2 | PENDING | 00:00:00 | pending |
 
