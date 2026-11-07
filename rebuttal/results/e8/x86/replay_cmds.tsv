@@ -1,0 +1,17 @@
+run_id	arxiv_id	model	command	aarch64_error
+dsv4-reimplement-2511.20906	2511.20906	dsv4	NONE	no failing install in transcript; agent-stated only: free-mujoco-py x86-pinned (log line 6331)
+minimax-run-2504.20571	2504.20571	minimax	uv pip install --python $PY "vllm>=0.5.0,<0.6.0"	no failing line: this install returned rc=0 on aarch64 (log 1479-1480); the aarch64 claim (log 1643) concerns early wheel tags
+minimax-run-2505.10978	2505.10978	minimax	uv pip install --python $PY alfworld	× Failed to build textworld==1.7.0 (log 3385); Inform7 ni compiler x86_64-only (log 3770)
+minimax-run-2505.14766	2505.14766	minimax	uv pip install --python $PY -r toto/requirements.txt	no install error line; agent-stated torch==2.7.0 CPU-only on aarch64 (log 1564); run ended on salloc time limit (log 1451)
+minimax-run-2505.14827	2505.14827	minimax	uv pip install --python $PY vllm==0.8.5	CMake subprocess returned non-zero exit status 1 during vllm source build (log about 400)
+minimax-run-2505.24873	2505.24873	minimax	uv pip install --python $PY -r MiniMax-Remover/requirements.txt	× No solution found; decord==0.6 has only manylinux2010_x86_64 wheels (log 922)
+minimax-run-2506.20671	2506.20671	minimax	uv pip install --python $PY spconv	hint: spconv v2.3.8 wheels only for manylinux_2_17_x86_64 (log 2150); command line not isolated
+muse-run-2505.14827	2505.14827	muse	uv pip install --python $PY "vllm==0.8.5"	fatal error: numa.h: No such file or directory (log 3737); × Failed to build vllm==0.8.5 (log 5878)
+muse-run-2506.20671	2506.20671	muse	uv pip install --python $PY open3d	only open3d==0.8.0.0 listed for this platform (log 4430-4432); command line not isolated, pin unverified
+qwen3-reimplement-2410.15392	2410.15392	qwen3	uv pip install --python $PY --dry-run pytorch3d	× No solution found (log 1636); agent-stated known-absent on aarch64
+qwen3-retrain-2504.13146	2504.13146	qwen3	NONE	no failing install in transcript; flash-attn never attempted; agent-stated only
+qwen3-retrain-2505.02391	2505.02391	qwen3	uv pip install --python $PY vllm==0.8.3 math-verify==0.8.0 datasets==4.0.0 transformers==4.54.0 ray==2.48.0 accelerate==1.9.0 hydra-core==1.3.2 peft==0.16.0 tensordict==0.6.2 wandb==0.21.0 omegaconf==2.3.0	× No solution found; tensordict==0.6.2 has no wheels with a matching platform tag, e.g. manylinux_2_39_aarch64 (log 2102-2104)
+qwen3-retrain-2506.20233	2506.20233	qwen3	uv pip install --python $PY jax==0.4.31 jaxley==0.7.0 optax==0.2.6 tensorflow_probability==0.24.0 sparsejac==0.2.0 tqdm==4.65.0 matplotlib numpy pandas jaxtyping==0.3.3	× No solution found (log 1408); agent-stated jaxlib CPU-only on aarch64
+qwen3-run-2505.10978	2505.10978	qwen3	uv pip install --python $PY textworld	ERROR: No matching distribution found for glpk-utils (log 1639); agent-stated textworld build fails on aarch64
+qwen3-run-2505.24864	2505.24864	qwen3	uv pip install --python $PY "torch==2.5.1+cu124" "torchvision==0.20.1+cu124" "torchaudio==2.5.1+cu124" --index-url https://download.pytorch.org/whl/cu124	× No solution found (log 1232); agent-stated no aarch64 cu124 wheels
+qwen3-run-2506.20671	2506.20671	qwen3	uv pip install --python $PY timm==0.9.12 open3d-python spconv-cu113	× No solution found; no spconv-cu113 wheel for the cp312 ABI tag (log 2593-2595), an ABI error, not an architecture error
