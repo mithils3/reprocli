@@ -38,21 +38,36 @@ ARM_RE = re.compile(
     r"^(?P<arm>codex-gpt-6\.1-sol|codex-gpt-6\.1-terra|codex-gpt-6-astra|miniswe)"
     r"-(?:\d{4}\.\d{4,5}-)?\d{8}T\d{6}Z?"
 )
+# Thin-harness run ids (core-a-<paper>-<hash>) carry no model, so the arm comes from the sweep log that started them.
+THIN_LOGS = {"thin-sol-core.log": "thin-gpt-6.1-sol", "thin-musew-core.log": "thin-muse-wonder-1.0",
+             "thin-terra-core.log": "thin-gpt-6.1-terra"}
 THREADS = {"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+
+
+def thin_arms() -> dict[str, str]:
+    arms = {}
+    for name, arm in THIN_LOGS.items():
+        log = ROOT / name
+        if log.is_file():
+            for rid in re.findall(r"\(run_id=([^)\s]+)\)", log.read_text(errors="replace")):
+                arms[rid] = arm
+    return arms
 
 
 def candidates(match: str | None) -> list[dict]:
     found = []
+    thin = thin_arms()
     for paper_dir in sorted(RUNS.iterdir()):
         if not paper_dir.is_dir() or paper_dir.name in SKIP_PAPERS:
             continue
         for run_dir in sorted(paper_dir.glob("*h/*")):
-            arm = ARM_RE.match(run_dir.name)
+            m = ARM_RE.match(run_dir.name)
+            arm = m["arm"] if m else thin.get(run_dir.name)
             if not arm or not run_dir.is_dir() or (match and match not in run_dir.name):
                 continue
             if not (run_dir / "report.json").is_file() or (run_dir / "VOID").exists():
                 continue
-            found.append({"arm": arm["arm"], "paper": paper_dir.name, "budget": run_dir.parent.name,
+            found.append({"arm": arm, "paper": paper_dir.name, "budget": run_dir.parent.name,
                           "run_id": run_dir.name, "run_dir": run_dir})
     return found
 
@@ -103,7 +118,7 @@ def grade_one(c: dict, stamp: str) -> tuple[dict, dict | None, str | None]:
         return c, None, f"no integer score (score={ext_row.get('score')}), log {log}"
     usage = raw_row.get("usage", {})
     now = datetime.now().isoformat(timespec="seconds")
-    rec = {"arm": c["arm"], "model": c["arm"].removeprefix("codex-"), "paper": c["paper"],
+    rec = {"arm": c["arm"], "model": c["arm"].removeprefix("codex-").removeprefix("thin-"), "paper": c["paper"],
            "budget": c["budget"], "run_id": c["run_id"], "score": ext_row["score"],
            "verdict": ext_row.get("verdict"), "reproduced": ext_row.get("reproduced"),
            "auditor_model": MODEL, "cost_usd": usage.get("cost_usd"), "graded_at": now,
