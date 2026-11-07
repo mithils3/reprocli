@@ -43,4 +43,4 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
 
 - 2026-11-07 06:05Z: GPU account back to betw on Mithil's choice. bfvr's fair share had fallen to 0.04 (priority about 470 to 609, about 1,600th of 2,256 waiting on ghx4); betw is 0.14. All 36 pending rebuttal jobs moved by scripts/rebuttal/move_account.sh (tmux rb-move-acct, SRC=bfvr DST=betw) and now sit at priority 1,580 to 1,720, with about 766 ghx4 jobs above 1,500. Script defaults now name betw (d9f65c1). bfqi and bgnp were offered and not chosen.
 
-- 2026-11-07 ~11:00 CST: Mithil: the human-auditor confusion matrix (E4) is the one weak item and he will get it done. He reports the ICLR discussion period now runs "till 4" (read as December 4). Runs keep going past Monday so the frontier sweeps and the 32 h and 96 h repeat runs can finish instead of being cut.
+- 2026-11-07 ~11:00 CST: Mithil: the human-auditor confusion matrix (E4) is the one weak item and he will get it done. ICLR 2027 scores are on a 4-point scale, so T29u 3, rqBN 3, YGTR 2 sit near the middle of that range. No deadline change: results are still due Monday 2026-11-09.
