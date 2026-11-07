@@ -7,7 +7,9 @@ TSV=${TSV:-/work/nvme/bfvr/msalunkhe/rebuttal/x86/replay_cmds.tsv}
 RUNS=${RUNS:-/work/nvme/bfvr/msalunkhe/reprocli/agent_runs}
 BASE=/work/nvme/bfvr/msalunkhe/rebuttal/x86
 OUT=$BASE/$RUN_ID
-rm -rf "$OUT"; mkdir -p "$OUT/ws"
+# Venv, workspace and uv cache go on node-local disk: the bfvr project sits near its file cap.
+T=${TMPDIR:-/tmp}/x86-$RUN_ID; export UV_CACHE_DIR=$T/uvcache
+rm -rf "$OUT" "$T"; mkdir -p "$OUT" "$T/ws"
 
 ROW=$(awk -F'\t' -v id="$RUN_ID" '$1==id' "$TSV")
 CMD=$(printf '%s' "$ROW" | cut -f4)
@@ -16,16 +18,16 @@ if [ "$CMD" = "NONE" ] || [ -z "$CMD" ]; then
   printf 'NOT_REPLAYABLE\nno install command in transcript\n' > "$OUT/result.txt"; exit 0
 fi
 
-uv venv -q "$OUT/venv" --python 3.12 || { echo "venv failed" > "$OUT/result.txt"; exit 1; }
-export PY=$OUT/venv/bin/python
+uv venv -q "$T/venv" --python 3.12 || { echo "venv failed" > "$OUT/result.txt"; exit 1; }
+export PY=$T/venv/bin/python
 CMD=${CMD//\$PY/$PY}
 
 # Copy only the requirements files the command names, from the run's read-only workspace.
 for f in $(printf '%s' "$CMD" | tr ' ' '\n' | awk 'prev=="-r"{print} {prev=$0}' ); do
-  (cd "$RUNDIR/workspace" 2>/dev/null && cp --parents "$f" "$OUT/ws/" 2>/dev/null)
+  (cd "$RUNDIR/workspace" 2>/dev/null && cp --parents "$f" "$T/ws/" 2>/dev/null)
 done
 
-cd "$OUT/ws"
+cd "$T/ws"
 bash -c "$CMD" > "$OUT/install.log" 2>&1
 RC=$?
 
@@ -40,3 +42,5 @@ fi
 
 { echo "RC=$RC"; echo "CMD=$CMD"; echo "CHECK=$CHECK"; echo "--- last 30 lines"; tail -30 "$OUT/install.log"; } > "$OUT/result.txt"
 exit $RC
+
+rm -rf "$T"
