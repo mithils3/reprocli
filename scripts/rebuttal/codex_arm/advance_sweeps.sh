@@ -23,9 +23,8 @@ PY
   setsid nohup env SKIP="$skip" MODEL="$model" RANKS="$ranks" MAX_PARALLEL="$par" EST_RUN_USD=40 PY="$PY" \
     bash $R/scripts/rebuttal/codex_arm/codex_sweep.sh > "$OUT" 2>&1 < /dev/null &
 }
-SOL_LOG=$(ls -t $L/sweep-gpt-6.1-sol-seq-*.log | head -1); SOL_N=${SOL_N:-19}
-while (( $(starts "$SOL_LOG") < SOL_N )); do sleep 120; done; log "sol main dispatched $SOL_N"
-launch gpt-6.1-sol 13-15 3 rerun2
+launch gpt-6.1-sol 1-24 "${SOL_PAR:-4}" adv; S_LOG=$OUT; S_N=$N
+while (( $(starts "$S_LOG") < S_N )); do sleep 120; done; log "sol dispatched $S_N"
 launch gpt-6-astra 1-8 2 adv; A_LOG=$OUT; A_N=$N
 while (( $(starts "$A_LOG") < A_N )); do sleep 120; done; log "astra dispatched $A_N"
 launch gpt-6.1-terra 1-24 2 adv
