@@ -577,7 +577,7 @@ def main(argv: list[str] | None = None) -> int:
     own = build_parser().parse_args(argv)
     if not os.environ.get("OPENAI_API_KEY"):
         raise SystemExit("OPENAI_API_KEY is not set; source it from ~/.bashrc first (value is never printed).")
-    os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", "bfvr-dtai-gh")
+    os.environ.setdefault("REPROCLI_SLURM_ACCOUNT", "betw-dtai-gh")
     # A run_gpu call waits for its grant without a limit, as the thin harness's call does in practice.
     os.environ.setdefault("REPRO_QUEUE_GRACE_HOURS", "500")  # poll timeouts overflow above ~572 h (int32 ms)
     os.environ.setdefault("APPTAINERENV_OPENAI_API_KEY", os.environ["OPENAI_API_KEY"])

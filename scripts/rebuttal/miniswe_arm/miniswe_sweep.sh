@@ -21,7 +21,7 @@ RUNS_DIR="${RUNS_DIR:-/work/nvme/bfvr/msalunkhe/reprocli/agent_runs}"
 SWEEP_DIR="${SWEEP_DIR:-/work/nvme/bfvr/msalunkhe/rebuttal/miniswe/sweep-core-a}"
 BATCH_ID="${BATCH_ID:-rebuttal-muse-wonder-1.0-miniswe-core}"
 export HF_HOME=/work/nvme/bfvr/msalunkhe/.cache HF_HUB_DISABLE_XET=1
-export REPROCLI_SLURM_ACCOUNT="${REPROCLI_SLURM_ACCOUNT:-bfvr-dtai-gh}"
+export REPROCLI_SLURM_ACCOUNT="${REPROCLI_SLURM_ACCOUNT:-betw-dtai-gh}"
 # shellcheck disable=SC1091
 source "${ROOT}/scripts/rebuttal/miniswe_arm/env.sh"
 SEL_PY="${ROOT}/.venv/bin/python"

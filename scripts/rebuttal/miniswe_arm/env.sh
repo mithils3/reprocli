@@ -5,6 +5,6 @@ export MSWEA_GLOBAL_CONFIG_DIR=$ARM_W/config       # keeps mini away from ~/.con
 export MSWEA_SILENT_STARTUP=1
 export MSWEA_COST_TRACKING=ignore_errors           # litellm has no price for muse-wonder; usage.json prices each call
 export LITELLM_LOCAL_MODEL_COST_MAP=True
-export REPROCLI_SLURM_ACCOUNT=bfvr-dtai-gh         # run_gpu charges this account
+export REPROCLI_SLURM_ACCOUNT=betw-dtai-gh         # run_gpu charges this account
 export PYTHONPYCACHEPREFIX=${TMPDIR:-/tmp}/miniswe-arm-pycache-${USER:-user}
 # Run as: source env.sh; source <(rg '^export META_MODEL_KEY=' ~/.bashrc); PYTHONPATH=$HOME/reprocli/src $ARM_VENV/bin/python miniswe_run.py ...
