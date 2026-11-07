@@ -102,9 +102,7 @@ def exec_flags(tier: str) -> str:
 EXEC_FLAGS_TEMPLATE = (
     "--json --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "
     "-c model_reasoning_effort=high -c service_tier={tier} "
-    # Code mode and unified exec return to the model at each yield, so a queued run_gpu ends the model's
-    # turn. With both off, the shell call blocks until the command finishes (tested with a 120 s sleep).
-    "-c features.code_mode=false -c features.unified_exec=false "
+
     f"-c model_context_window={CONTEXT_WINDOW} -c model_auto_compact_token_limit={AUTO_COMPACT_LIMIT} "
     # Built-in provider ids cannot be overridden, so the same endpoint is a custom provider
     # with the retry budget set; the key comes from OPENAI_API_KEY in the environment.
@@ -156,6 +154,8 @@ class Bridge:
         self.lock = threading.Lock()
         self.queue_wait_s = 0.0
         self.pending_since: float | None = None  # monotonic start of an acquire still waiting
+        self.tag = ""  # run id; set by Run so the bridge can find this run's codex processes
+        self.frozen: list[int] = []
         self.refusing = False
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self._loop, name="codex-bridge", daemon=True)
@@ -172,12 +172,42 @@ class Bridge:
                 except (OSError, ValueError):
                     continue
                 result = self._serve(request.get("arguments") or {})
-                self._reply(str(request.get("id") or path.stem), result)
+                rid = str(request.get("id") or path.stem)
+                self._reply(rid, result)
+                # Thaw once the shim has read its reply and exited, so codex reads the complete output.
+                reply = self.res / f"{rid}.json"
+                deadline = time.monotonic() + 30
+                while reply.exists() and time.monotonic() < deadline:
+                    time.sleep(0.2)
+                time.sleep(0.5)
+                self._thaw()
             self.stop.wait(0.5)
+
+    def _freeze(self) -> None:
+        """SIGSTOP this run's codex processes (not the shim) until the call's result is delivered.
+
+        Codex hands the model a turn whenever a tool call yields, so a queued or running run_gpu would
+        let the model poll, stop or write a report. Frozen, the model gets no turn until the result exists.
+        """
+        self.frozen = sorted(codex_pids(self.tag))
+        for pid in self.frozen:
+            try:
+                os.kill(pid, signal.SIGSTOP)
+            except ProcessLookupError:
+                pass
+
+    def _thaw(self) -> None:
+        for pid in self.frozen:
+            try:
+                os.kill(pid, signal.SIGCONT)
+            except ProcessLookupError:
+                pass
+        self.frozen = []
 
     def _serve(self, arguments: dict[str, Any]) -> dict[str, Any]:
         if self.refusing:
             return {"ok": False, "tool": "run_gpu", "error": "Tools are off: the final report pass is running."}
+        self._freeze()
         with self.lock:
             acquiring = self.ctx.session is None
             started = time.monotonic()
@@ -241,6 +271,18 @@ def group_pids(pgid: int) -> set[int]:
     return {pid for pid, group, state in _proc_rows() if group == pgid and state != "Z"}
 
 
+def codex_pids(tag: str) -> set[int]:
+    """This run's codex binaries (exec and its code-mode host), not the shims or shells they spawn."""
+    found = set()
+    for pid in tagged_pids(tag):
+        try:
+            if b"/opt/codex/" in Path(f"/proc/{pid}/cmdline").read_bytes():
+                found.add(pid)
+        except OSError:
+            continue
+    return found
+
+
 def tagged_pids(tag: str) -> set[int]:
     """Live processes of this user whose environment carries ``CODEX_ARM_RUN=<tag>``."""
     wanted = f"CODEX_ARM_RUN={tag}".encode()
@@ -269,6 +311,7 @@ class Run:
         self.io_dir = io_dir
         self.recorder = recorder
         self.bridge = Bridge(io_dir, ctx, recorder)
+        self.bridge.tag = ctx.run_dir.name
         self.tag = ctx.run_dir.name
         # Apptainer forwards APPTAINERENV_* into the container as the plain name, so codex and
         # its children carry the tag in their environment.
