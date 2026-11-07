@@ -1,0 +1,17 @@
+run_id,arxiv_id,model,class,x86_result,detail,job
+minimax-run-2505.10978,2505.10978,minimax,aarch64,built,alfworld installs and imports,23644935
+minimax-run-2505.14766,2505.14766,minimax,aarch64,built,toto requirements install; torch 2.7.0 sees the GPU,23645135
+minimax-run-2505.14827,2505.14827,minimax,aarch64,built,vllm 0.8.5 installs and imports; torch sees the GPU,23645028
+minimax-run-2505.24873,2505.24873,minimax,aarch64,failed_other,pillow 9.2.0 has no Python 3.12 wheel and fails to build before decord (the aarch64 blocker) is reached,23645135
+muse-run-2505.14827,2505.14827,muse,aarch64,built,vllm 0.8.5 installs and imports,23645028
+muse-run-2506.20671,2506.20671,muse,aarch64,built,open3d installs and imports,23645028
+qwen3-reimplement-2410.15392,2410.15392,qwen3,aarch64,failed_same,pytorch3d has no cp312 wheel on x86 either,23645028
+qwen3-retrain-2505.02391,2505.02391,qwen3,aarch64,built,vllm 0.8.3 stack installs and imports,23645028
+qwen3-retrain-2506.20233,2506.20233,qwen3,aarch64,failed_same,jax/jaxley/optax pins are unsatisfiable on x86 too,23645028
+qwen3-run-2505.10978,2505.10978,qwen3,aarch64,built,textworld installs and imports,23645028
+qwen3-run-2505.24864,2505.24864,qwen3,aarch64,built,torch 2.5.1+cu124 installs; sees the GPU,23645028
+minimax-run-2506.20671,2506.20671,minimax,aarch64,built,spconv installs and imports,23645028
+minimax-run-2504.20571,2504.20571,minimax,not_arch,excluded,install returned 0 on aarch64 too,23644964
+qwen3-run-2506.20671,2506.20671,qwen3,not_arch,excluded,Python ABI tag (cp312) failure on any chip,23645028
+dsv4-reimplement-2511.20906,2511.20906,dsv4,no_command,excluded,no install command in transcript,
+qwen3-retrain-2504.13146,2504.13146,qwen3,no_command,excluded,no install command in transcript,
