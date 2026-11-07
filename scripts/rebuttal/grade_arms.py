@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +34,9 @@ LEDGER = ROOT / "spend.jsonl"
 CHECKOUT = Path.home() / "reprocli"
 PYTHON = CHECKOUT / ".venv" / "bin" / "python"
 MODEL = "claude-sonnet-5"
+# Mithil's cap on all Anthropic spend in the rebuttal ledger (2026-11-07): $200 total.
+ANTHROPIC_CAP_USD = 200.0
+EST_GRADE_USD = 3.0
 SKIP_PAPERS = {"2511.07099", "2510.21323"}
 ARM_RE = re.compile(
     r"^(?P<arm>codex-gpt-6\.1-sol|codex-gpt-6\.1-terra|codex-gpt-6-astra|miniswe)"
@@ -132,6 +136,36 @@ def grade_one(c: dict, stamp: str) -> tuple[dict, dict | None, str | None]:
     return c, {**rec, "_ledger": led}, None
 
 
+def anthropic_spent() -> float:
+    total = 0.0
+    if LEDGER.is_file():
+        for line in LEDGER.read_text(errors="replace").splitlines():
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if d.get("provider") == "anthropic":
+                total += float(d.get("usd") or 0)
+    return total
+
+
+_gate = threading.Lock()
+_inflight = [0]
+
+
+def gated_grade(c: dict, stamp: str):
+    with _gate:
+        spent = anthropic_spent()
+        if spent + (_inflight[0] + 1) * EST_GRADE_USD > ANTHROPIC_CAP_USD:
+            return c, None, f"skipped: Anthropic cap ${ANTHROPIC_CAP_USD:.0f} (spent ${spent:.2f}, {_inflight[0]} in flight)"
+        _inflight[0] += 1
+    try:
+        return grade_one(c, stamp)
+    finally:
+        with _gate:
+            _inflight[0] -= 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--match", help="grade only run ids containing this text")
@@ -157,9 +191,12 @@ def main() -> int:
     stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     failed = 0
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
-        futures = [pool.submit(grade_one, c, stamp) for c in todo]
+        futures = [pool.submit(gated_grade, c, stamp) for c in todo]
         for fut in as_completed(futures):
             c, rec, err = fut.result()
+            if rec is None and err and err.startswith("skipped: Anthropic cap"):
+                print(f"{c['run_id']}: {err}", file=sys.stderr)
+                continue
             if rec is None:
                 failed += 1
                 append(FAILURES, {"run_id": c["run_id"], "arm": c["arm"], "paper": c["paper"], "error": err})
