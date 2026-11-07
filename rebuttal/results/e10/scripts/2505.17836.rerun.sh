@@ -7,7 +7,7 @@ set -euo pipefail
 : "${SEED:?set SEED}"; export SEED
 SRC=/work/nvme/bfvr/msalunkhe/reprocli/agent_runs/2505.17836/8h/20260816T133804Z-2505.17836-5f483b/workspace
 RUN=/work/nvme/bfvr/msalunkhe/rebuttal/e10/work/2505.17836/seed$SEED
-R=${R_OVERRIDE:-$RUN/repro}
+R=${R_OVERRIDE:-$RUN/repro}; export R  # PATCH: the quoted heredoc below reads R from the environment
 if [ ! -d "$R/workspace" ]; then
   mkdir -p "$R/workspace" "$R/evidence"
   (cd "$SRC" && tar -cf - --exclude=./Cached-Supernets --exclude=./.venv .) | (cd "$R/workspace" && tar -xf -)
@@ -45,8 +45,8 @@ for k in mre:
     print("final mean", float(mre[k][-1]), "std", float(sre[k][-1]))
     # also compute histogram?
     # Save full series to evidence
-    np.save(f"$R/evidence/mean_{k.replace(' ','_').replace('(','').replace(')','')}.npy", mre[k])
-    np.save(f"$R/evidence/std_{k.replace(' ','_').replace('(','').replace(')','')}.npy", sre[k])
+    np.save(f"{__import__('os').environ['R']}/evidence/mean_{k.replace(' ','_').replace('(','').replace(')','')}.npy", mre[k])
+    np.save(f"{__import__('os').environ['R']}/evidence/std_{k.replace(' ','_').replace('(','').replace(')','')}.npy", sre[k])
     # also get all_relative_errors distribution? Not saved separately, but we have mean/std
 PY
 echo "=== done ==="
