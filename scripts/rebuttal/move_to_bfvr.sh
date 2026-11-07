@@ -5,7 +5,7 @@ while true; do
   squeue -u "$USER" -h -t PD -A betw-dtai-gh -o "%i %j" | while read -r j name; do
     case "$name" in
       repro_*) ;;
-      no-shell) scontrol show job "$j" | rg -q "WorkDir=/u/msalunkhe/reprocli( |$)" || continue ;;
+      no-shell) scontrol show job "$j" | rg -q "WorkDir=(/u/msalunkhe/reprocli|/work/nvme/bfvr/msalunkhe/(rebuttal|reprocli))" || continue ;;
       *) continue ;;
     esac
     scontrol update JobId="$j" Account=bfvr-dtai-gh QOS=bfvr-dtai-gh && echo "[$(date -u '+%F %T')] moved $j $name"
