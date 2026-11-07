@@ -39,7 +39,7 @@ ANTHROPIC_CAP_USD = 200.0
 EST_GRADE_USD = 3.0
 SKIP_PAPERS = {"2511.07099", "2510.21323"}
 ARM_RE = re.compile(
-    r"^(?P<arm>codex-gpt-6\.1-sol|codex-gpt-6\.1-terra|codex-gpt-6-astra|miniswe)"
+    r"^(?P<arm>codex-gpt-6\.1-sol-nudge|codex-gpt-6\.1-terra-nudge|codex-gpt-6-astra-nudge|codex-gpt-6\.1-sol|codex-gpt-6\.1-terra|codex-gpt-6-astra|miniswe)"
     r"-(?:\d{4}\.\d{4,5}-)?\d{8}T\d{6}Z?"
 )
 # Thin-harness run ids (core-a-<paper>-<hash>) carry no model, so the arm comes from the sweep log that started them.

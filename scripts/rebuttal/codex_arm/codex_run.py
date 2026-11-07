@@ -141,6 +141,22 @@ def codex_body(model: str, prompt: str, *, kind: str = "work", tier: str = FLEX)
     )
 
 
+NUDGE_PROMPT = (
+    "Continue working on this reproduction. You have used {used:.1f} of {budget:.0f} GPU-hours and have "
+    "{wall_left:.0f} hours of wall time left. Use the remaining budget to make further progress toward "
+    "measuring the claimed result; if a path is blocked, try another route (for example a sibling "
+    "checkpoint, a smaller faithful configuration, or reimplementing the missing piece). Stop only when "
+    "the claim is measured or the budget is spent."
+)
+NUDGE_MAX_BUDGET_FRACTION = 0.5
+NUDGE_MIN_WALL_HOURS = 1.0
+
+
+def should_nudge(used: float, budget: float, wall_left_h: float) -> bool:
+    """A nudge is sent only while under half the GPU budget is used and more than 1 hour of wall is left."""
+    return used < NUDGE_MAX_BUDGET_FRACTION * budget and wall_left_h > NUDGE_MIN_WALL_HOURS
+
+
 class Bridge:
     """Serves run_gpu requests written by the in-sandbox shim, one at a time."""
 
@@ -305,8 +321,9 @@ class Run:
     """One Codex run: work phase, then a schema-constrained final report pass."""
 
     def __init__(self, args: argparse.Namespace, ctx: ExecutionContext, model: str, wall_hours: float,
-                 io_dir: Path, recorder: Recorder) -> None:
+                 io_dir: Path, recorder: Recorder, nudges: int = 0) -> None:
         self.args = args
+        self.args_nudges = nudges
         self.ctx = ctx
         self.model = model
         self.deadline = time.monotonic() + wall_hours * 3600
@@ -320,6 +337,7 @@ class Run:
         os.environ["APPTAINERENV_CODEX_ARM_RUN"] = self.tag
         self.stop_reason: str | None = None
         self.resumes: list[dict[str, Any]] = []
+        self.nudges: list[dict[str, Any]] = []
         self.tier = FLEX
         self.tier_fallback_at: str | None = None
         self.flex_streak = 0
@@ -500,6 +518,30 @@ class Run:
             self.flex_streak = 0
         return rc
 
+    def _nudge_loop(self, events_path: Path) -> None:
+        """Continue prompts after an early natural end of the work phase (PaperBench IterativeAgent style)."""
+        for n in range(1, self.args_nudges + 1):
+            with self.bridge.lock:
+                gpu_session.charge_accrued(self.ctx)
+            used = self.ctx.budget.spent_h100_hours
+            budget = self.ctx.budget.total_h100_hours
+            wall_left = (self.deadline - time.monotonic()) / 3600
+            if not should_nudge(used, budget, wall_left):
+                break
+            self.nudges.append({"n": n, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                                "used_h100": round(used, 4), "wall_left_h": round(wall_left, 2)})
+            self.recorder.log_line(f"NUDGE {n}/{self.args_nudges} used={used:.2f} of {budget:.0f} H100h, "
+                                   f"wall_left={wall_left:.1f}h")
+            prompt = NUDGE_PROMPT.format(used=used, budget=budget, wall_left=wall_left)
+            body = lambda tier, p=prompt: codex_body(self.model, p, kind="resume", tier=tier)  # noqa: E731
+            fresh = lambda tier, p=prompt: codex_body(self.model, FRESH_PREFIX + p, kind="fresh", tier=tier)  # noqa: E731
+            rc = self._with_retries(body, body, fresh, f"nudge{n}", events_path, honor_stop=True)
+            if self.stop_reason is not None or self.gave_up:
+                break
+            if rc != 0:
+                self.stop_reason = "error"
+                break
+
     def execute(self, task: str, final_prompt: str) -> tuple[str, str]:
         """Run the work phase, then the final report pass. Returns (exit_reason, final report content)."""
         events_path = self.io_dir.parent / "codex_events.jsonl"
@@ -512,6 +554,8 @@ class Run:
         )
         if self.stop_reason is None and rc != 0:
             self.stop_reason = "error"
+        if self.stop_reason is None and not self.gave_up:
+            self._nudge_loop(events_path)
         exit_reason = self.stop_reason or "natural"
         gpu_session.release(self.ctx, exit_reason)
 
@@ -570,6 +614,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lockfile")
     parser.add_argument("--split", help="lockfile split: eval or dev (default: harness default)")
     parser.add_argument("--run-id")
+    parser.add_argument("--nudges", type=int, default=0,
+                        help="send up to N continue prompts when the model ends its turn early (default 0: off)")
     return parser
 
 
@@ -586,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
     harness_argv = ["--paper-id", own.paper_id, "--runs-dir", own.runs_dir, "--model", own.model,
                     "--budget-h100-hours", str(own.budget_h100_hours)]
     # The arm is in the run id, so a Codex run is never mistaken for a thin-harness run in agent_runs/.
-    run_id = own.run_id or f"codex-{own.model}-{new_run_id()}"
+    run_id = own.run_id or f"codex-{own.model}{'-nudge' if own.nudges > 0 else ''}-{new_run_id()}"
     for flag, value in (("--partition", own.partition), ("--apptainer-image", own.apptainer_image),
                         ("--lockfile", own.lockfile), ("--split", own.split), ("--run-id", run_id)):
         if value:
@@ -627,10 +673,12 @@ def main(argv: list[str] | None = None) -> int:
         "context_window": CONTEXT_WINDOW,
         "auto_compact_token_limit": AUTO_COMPACT_LIMIT,
         "sandbox": sb.status(),
+        "variant": "nudge" if own.nudges > 0 else "base",
+        "max_nudges": own.nudges,
     }, indent=2) + "\n", encoding="utf-8")
 
     recorder = Recorder(run_dir, ep.run_paths.evidence, own.model, ep.run_paths.workspace)
-    run = Run(args, ctx, own.model, own.wall_hours, io_dir, recorder)
+    run = Run(args, ctx, own.model, own.wall_hours, io_dir, recorder, own.nudges)
     signal.signal(signal.SIGTERM, _interrupt)
     signal.signal(signal.SIGINT, _interrupt)
     # A hangup (the tmux pane or sweep shell ending) must not kill a run mid-turn: the run then
@@ -654,6 +702,7 @@ def main(argv: list[str] | None = None) -> int:
     totals = attach_requests(run_dir, io_dir / "codex_home", own.model, run.tier_fallback_at)
     run_meta = json.loads((run_dir / "codex_run.json").read_text(encoding="utf-8"))
     run_meta["resumes"] = run.resumes
+    run_meta["nudges"] = run.nudges
     run_meta["tier"] = run.tier
     pending = (time.monotonic() - run.bridge.pending_since) if run.bridge.pending_since else 0.0
     run_meta["queue_wait_minutes"] = round((run.bridge.queue_wait_s + pending) / 60, 2)

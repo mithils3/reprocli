@@ -16,12 +16,13 @@ MODEL="${MODEL:-gpt-6.1-terra}"
 RANKS="${RANKS:-}"
 SMOKE="${SMOKE:-0}"
 MAX_PARALLEL="${MAX_PARALLEL:-4}"
+NUDGES="${NUDGES:-0}"  # >0: continue-prompt variant, up to N nudges per run
 CAP_USD="${CAP_USD:-700}"
 EST_RUN_USD="${EST_RUN_USD:-25}"
 LOCKFILE="${LOCKFILE:-Mithilss/reclaim}"
 SPEND_LEDGER="${SPEND_LEDGER:-/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl}"
 RUNS_DIR="${RUNS_DIR:-/work/nvme/bfvr/msalunkhe/reprocli/agent_runs}"
-SWEEP_DIR="${SWEEP_DIR:-/work/nvme/bfvr/msalunkhe/rebuttal/codex/sweeps/${MODEL}-$(date -u +%Y%m%dT%H%M%SZ)}"
+SWEEP_DIR="${SWEEP_DIR:-/work/nvme/bfvr/msalunkhe/rebuttal/codex/sweeps/${MODEL}$([[ "${NUDGES}" -gt 0 ]] && echo -nudge || true)-$(date -u +%Y%m%dT%H%M%SZ)}"
 PY="${PY:-${ROOT}/.venv/bin/python}"
 export PYTHONPATH="${ROOT}/src" REPROCLI_SLURM_ACCOUNT="${REPROCLI_SLURM_ACCOUNT:-betw-dtai-gh}"
 [[ -n "${OPENAI_API_KEY:-}" ]] || { echo "source OPENAI_API_KEY from ~/.bashrc first" >&2; exit 1; }
@@ -94,6 +95,7 @@ while IFS=$'\t' read -r pid split budget; do
   echo ">>> [$(date -u '+%F %T')] start ${pid} split=${split} budget=${budget}"
   "${PY}" "${ROOT}/scripts/rebuttal/codex_arm/codex_run.py" --paper-id "${pid}" --split "${split}" \
     --budget-h100-hours "${budget}" --model "${MODEL}" --runs-dir "${RUNS_DIR}" \
+    $([[ "${NUDGES}" -gt 0 ]] && echo "--nudges ${NUDGES}" || true) \
     < /dev/null > "${SWEEP_DIR}/logs/${pid}.log" 2>&1 &  # stdin from /dev/null: codex reads stdin and would eat the paper list
   running=$((running + 1))
 done <<< "${PICK_TSV}"
