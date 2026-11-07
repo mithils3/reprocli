@@ -13,7 +13,7 @@ rm -rf "$OUT" "$T"; mkdir -p "$OUT" "$T/ws"
 
 ROW=$(awk -F'\t' -v id="$RUN_ID" '$1==id' "$TSV")
 CMD=$(printf '%s' "$ROW" | cut -f4)
-RUNDIR=$RUNS/$(awk -F, -v id="$RUN_ID" '$1==id{print $NF}' "$BASE/build_failures.csv")
+RUNDIR=$RUNS/$(awk -F, -v id="$RUN_ID" '$1==id{print $NF}' "$BASE/build_failures.csv" | tr -d "\r")
 if [ "$CMD" = "NONE" ] || [ -z "$CMD" ]; then
   printf 'NOT_REPLAYABLE\nno install command in transcript\n' > "$OUT/result.txt"; exit 0
 fi
