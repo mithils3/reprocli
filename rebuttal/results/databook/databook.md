@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-08T01:46:40Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 9 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-08T02:29:37Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 9 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -10,10 +10,9 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
 | codex-gpt-6-astra | 8 | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 1 |
-| codex-gpt-6.1-terra | 24 | 0 | - (n=0) | - | - (n=0) | 0 |
+| codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
-| thin-gpt-6.1-terra | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 1 | 0/1 [0.0, 79.3] | 6.00 | -2.00 (n=1) | 0 |
 
 Per-run rows (one per grades.jsonl row since 2026-11-07):
