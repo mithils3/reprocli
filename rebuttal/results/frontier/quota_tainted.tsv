@@ -1,7 +1,7 @@
 run_dir	status	note
-agent_runs/2505.19087/8h/codex-gpt-6.1-sol-20261107T155710Z-b3d1f7	running	"Disk quota exceeded" in evidence/full_stdout.log; read report at finish, VOID and rerun if the result traces to it
-agent_runs/2504.20571/8h/codex-gpt-6.1-sol-20261107T010540Z-91bc6a	running	"Disk quota exceeded" in agent.full.log; same rule
-agent_runs/2505.10475/32h/codex-gpt-6.1-sol-20261107T010540Z-2d0491	running	"Disk quota exceeded" in evidence/smoke_capped_P8.log; same rule
-agent_runs/2505.16927/32h/miniswe-2505.16927-20261107T152720	running	"Disk quota exceeded" in agent.full.log; same rule
+agent_runs/2505.19087/8h/codex-gpt-6.1-sol-20261107T155710Z-b3d1f7	VOID	bridge thread died writing the run_gpu reply under the quota error (17:48Z); codex frozen 8 h; redo started 2026-11-08 01:38Z (sweep-gpt-6.1-sol-redo.log)
+agent_runs/2504.20571/8h/codex-gpt-6.1-sol-20261107T010540Z-91bc6a	graded	quota error hit only the post-result self-audit GPU call (17:49Z); the headline measurement (MATH500 72.2 vs 73.6) was complete before it; codex then stayed frozen to budget_exhausted. Result does not trace to the error, kept
+agent_runs/2505.10475/32h/codex-gpt-6.1-sol-20261107T010540Z-2d0491	VOID	same bridge-thread death at 17:49Z; frozen 8 h; redo started 2026-11-08 01:38Z
+agent_runs/2505.16927/32h/miniswe-2505.16927-20261107T152720	running	"Disk quota exceeded" broke its torch install at 17:48Z; agent kept working; waiting in the GPU queue since 18:12Z; read at finish, same rule
 agent_runs/2505.10475/32h/codex-gpt-6.1-sol-nudge-20261107T174731Z-cc43da	VOID	restarted at 18:31Z
 agent_runs/2506.08898/32h/codex-gpt-6.1-sol-nudge-20261107T174731Z-1269d0	VOID	restarted at 18:31Z
