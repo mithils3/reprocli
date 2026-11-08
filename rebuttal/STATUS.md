@@ -62,3 +62,10 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
 - 2026-11-08 02:20 UTC: Mithil dropped both gpt-6.1-terra arms ("it's not a frontier one really sol and Astra are good and also muse wonder"). The advance_sweeps terra launcher (pid 2384356, waiting since 11-07) stopped before launch; no terra runs exist. Data book planned list now: Codex sol 24, Codex astra 8, Codex sol with continue prompts 8, thin sol 12, thin Muse Wonder 12, mini-SWE 6 (70 runs). Reply brackets updated.
 
 - 2026-11-08 02:31 UTC: Codex Sol widened on Mithil's ask. The adv dispatcher (pid 2352525) stopped after rank 9; its in-flight runs continue. Ranks 10-24 run in a new sweep with MAX_PARALLEL=6 in tmux rb-codex-sol-tail on gh-login02 (codex/sweep-gpt-6.1-sol-tail.log, launch_sol_tail.sh). Sol runs in flight: 12 (4 adv, 2 redo, 6 tail), plus 2 with continue prompts.
+
+- 2026-11-08 02:50 UTC: safeguards on DeltaAI so the weekend's errors can't recur.
+  - rb-storage-guard (gh-login03, rebuttal/ops/storage_guard.sh): every 30 min packs workspace/ of graded or VOID runs into a verified tar (zip_cold.sh), logs the bfvr file count, writes ops/storage_alert.log past 16.8M. Each in-flight run holds about 50k files, so packing finished runs keeps the count flat as new runs start.
+  - rb-grade-loop (gh-login03, rebuttal/ops/grade_loop.sh): every 30 min grades finished runs (the $200 Anthropic gate stays in grade_arms.py) and rebuilds the data book, so grading no longer waits on the laptop.
+  - One-off pack of 765 old paper-run workspaces: 615 packed, 312k files; 12 skipped as recent; 0 failures.
+  - Thread cap: about 83 threads per Codex run; gh-login02 660, gh-login03 664 of 1000; the hourly tick checks all three nodes.
+  - Codex bridge fix (thaw in finally) is in every run started after 01:35 UTC; older in-flight runs are safe while the quota stays under the cap.
