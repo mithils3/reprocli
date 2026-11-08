@@ -69,3 +69,5 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
   - One-off pack of 765 old paper-run workspaces: 615 packed, 312k files; 12 skipped as recent; 0 failures.
   - Thread cap: about 83 threads per Codex run; gh-login02 660, gh-login03 664 of 1000; the hourly tick checks all three nodes.
   - Codex bridge fix (thaw in finally) is in every run started after 01:35 UTC; older in-flight runs are safe while the quota stays under the cap.
+
+- 2026-11-08 02:45 UTC: Mithil approved packing Distillation's claude-column-env (6M files) without deleting anything ("clean this up just don't delete it"). tmux rb-pack-cols packs each of the 78 folders under swe-sandboxes/ and the apptainer-cache/ into a verified .tar beside it (zip_cold.sh: tar --compare plus entry count before removal). No process, Slurm job or the hetzner-pull loop (which writes to new-columns/) touches the folder; no file changed in 2 days. Restore notes: claude-column-env/PACKED-README.txt. Log: cleanup-2026-11-08/pack_cols.log.
