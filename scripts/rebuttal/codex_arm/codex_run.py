@@ -187,16 +187,20 @@ class Bridge:
                     path.unlink()
                 except (OSError, ValueError):
                     continue
-                result = self._serve(request.get("arguments") or {})
                 rid = str(request.get("id") or path.stem)
-                self._reply(rid, result)
-                # Thaw once the shim has read its reply and exited, so codex reads the complete output.
-                reply = self.res / f"{rid}.json"
-                deadline = time.monotonic() + 30
-                while reply.exists() and time.monotonic() < deadline:
-                    time.sleep(0.2)
-                time.sleep(0.5)
-                self._thaw()
+                try:
+                    result = self._serve(request.get("arguments") or {})
+                    self._reply(rid, result)
+                    # Thaw once the shim has read its reply and exited, so codex reads the complete output.
+                    reply = self.res / f"{rid}.json"
+                    deadline = time.monotonic() + 30
+                    while reply.exists() and time.monotonic() < deadline:
+                        time.sleep(0.2)
+                    time.sleep(0.5)
+                except Exception as exc:  # a dead bridge thread would leave codex stopped until the wall clock
+                    self.recorder.log_line(f"BRIDGE ERROR {type(exc).__name__}: {exc}")
+                finally:
+                    self._thaw()
             self.stop.wait(0.5)
 
     def _freeze(self) -> None:
