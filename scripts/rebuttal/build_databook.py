@@ -26,9 +26,8 @@ RESULTS = os.path.join(REPO, "rebuttal", "results")
 ORIGINALS = ["dsv4", "minimax", "muse", "qwen3"]
 TIERS = ["run", "retrain", "reimplement"]
 PLANNED = collections.OrderedDict([
-    ("codex-gpt-6.1-sol", 24), ("codex-gpt-6-astra", 8), ("codex-gpt-6.1-terra", 24),
-    ("thin-gpt-6.1-sol", 12), ("thin-muse-wonder-1.0", 12), ("thin-gpt-6.1-terra", 12),
-    ("miniswe", 6)])
+    ("codex-gpt-6.1-sol", 24), ("codex-gpt-6-astra", 8), ("codex-gpt-6.1-sol-nudge", 8),
+    ("thin-gpt-6.1-sol", 12), ("thin-muse-wonder-1.0", 12), ("miniswe", 6)])  # gpt-6.1-terra arms dropped 2026-11-08
 TERMINAL = ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY", "NODE_FAIL",
             "PREEMPTED", "BOOT_FAIL", "DEADLINE")
 RE_RUN_GPU = re.compile(r"run_gpu ok=(True|False) rc=\S+ cost_h100h=(\S+)")
