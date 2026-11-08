@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-08T02:29:37Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 9 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-08T06:12:44Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 10 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -11,7 +11,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | codex-gpt-6.1-sol | 24 | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
 | codex-gpt-6-astra | 8 | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
-| thin-gpt-6.1-sol | 12 | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
+| thin-gpt-6.1-sol | 12 | 4 | 1/4 [4.6, 69.9] | 5.00 | -2.00 (n=4) | 1 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 1 | 0/1 [0.0, 79.3] | 6.00 | -2.00 (n=1) | 0 |
 
@@ -28,6 +28,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | miniswe | miniswe | 2506.08898 | 32h | miniswe-2506.08898-20261107T014125 | 6 | partial | False | retrain | 7 | 0 | 8 | 0 | 8 | -2 | partial | submitted |  | 32.0 | 0.2864 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2506.08898 | 32h | codex-gpt-6.1-sol-20261107T010540Z-379147 | 4 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -4 | partial | natural | 839.96 | 32.0 | 0.6146 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2504.20571 | 8h | codex-gpt-6.1-sol-20261107T010540Z-91bc6a | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | not_reproduced | budget_exhausted | 957.67 | 8.0 | 0.8461 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2510.21363 | 8h | core-a-2510.21363-3603cb | 7 | partial | False | retrain | 8 | 8 | 7 | 4 | 8 | -1 | partial | natural |  | 8.0 | 6.9633 |
 
 ## 2. Static results (final)
 
