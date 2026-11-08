@@ -1,14 +1,22 @@
 # OpenReview replies, ICLR 2027 submission 22528 (RECLAIM)
 
-Draft of 2026-11-06 for Mithil to read. Nothing here has been posted. Square brackets mark numbers from runs or labels that are not frozen yet, and each bracketed sentence is written so that either outcome fits. The ICLR 2027 author guide does not state a per-comment character limit, so every part below is kept under 5,000 characters, and the count of each part (with the slots still unfilled) is given in its heading line. The T29u reply has the least room, about 190 characters, so filling its slots may push it into two parts.
+Draft of 2026-11-06 for Mithil to read. Nothing here has been posted. Square brackets mark numbers from runs or labels that are not frozen yet, and each bracketed sentence is written so that either outcome fits. The ICLR 2027 author guide does not state a per-comment character limit, so every part below is kept under 5,000 characters, and the count of each part (with the slots still unfilled) is given in its heading line. Each reply now opens with one sentence of thanks and a list of the changes with their locations, following the iclr-review skill (~/.claude/skills/iclr-review), and the T29u reply is now two parts.
 
 Order of posting from PLAN.md Section 4: T29u and rqBN on 11-11, then YGTR and the general reply on 11-14.
 
 ## General
 
-### General reply (one part, 3,693 characters)
+### General reply (one part, 3,678 characters)
 
 We thank the three reviewers for their time. They agree that the task and the grading design are sound and well documented, and their requests fall into four groups: stronger agents in production harnesses, repeated runs, a fuller validation of the auditor and of the logs it reads, and a clearer account of failures that the agent did not cause. This is what we added for each, and the replies to each reviewer give the details.
+
+**Revisions by section.**
+- Section 5.1 and a new appendix section: the frontier models and production harnesses, with a table by model, harness and tier.
+- Section 5.2: Wilson intervals on every rate, the repeat-run result, and rates updated for the regraded and rerun cells.
+- Section 4 and Appendix D: the auditor-versus-human confusion matrix and boundary table.
+- Appendix A: the log comparison and its limit, and a corrected sentence on what the auditor prompt says.
+- Appendix E and F: what the final construction stage checked, the target check, and the tolerance table.
+- Section 5.3 and Limitations: the hardware bound, the checkpoint scan and the re-execution check, each where its claim is made.
 
 **Frontier agents and production harnesses.** We ran [gpt-6-astra and gpt-6.1-sol] from OpenAI on [n] papers and Muse Wonder from Meta on [m] papers, drawn with a fixed seed from every tier and frozen before any run. Each model ran in our ReAct-style harness and in a production harness (Codex CLI for the OpenAI models, mini-SWE-agent for Muse Wonder), with the same sandbox, task text, GPU grant and auditor as the main runs. [Result sentence: gpt-6-astra in Codex CLI reproduced a of 8 papers, gpt-6.1-sol b of n in our harness and c of n in Codex CLI, and Muse Wonder d of m.] [Failure-mode sentence: the frontier agents' failures fall into the paper's three most common failure modes at shares inside the 95% intervals of the open agents, or Codex CLI removes mode X in k runs.]
 
@@ -19,14 +27,6 @@ We thank the three reviewers for their time. They agree that the task and the gr
 **Tolerance and targets.** Moving the default tolerance from 5% to 2% or 10% changes the best agent's count by at most 2 papers at Run, 3 at Retrain and 0 at Reimplement, and the ordering of the tiers holds at every setting we tried. A model from a different lab than our auditor checked every frozen target against its paper, and [k] targets the paper does not support were corrected and their runs rescored.
 
 **Failures outside the agent and checkpoint downloads.** We traced all 28 cells that produced no graded run. Six failed for reasons outside the agent, and 16 more stopped when the cluster job running them reached its 48-hour limit or was cancelled. The two missing audits are now graded, and [the 20 other cells were rerun, with r reproduced]. A scan of every transcript for model downloads found 2 reproduced Retrain or Reimplement runs that evaluated a downloaded checkpoint of the claimed model. Neither was the best agent's run, and the revision counts both as not reproduced.
-
-**Revisions by section.**
-- Section 5.1 and a new appendix section: the frontier models and production harnesses, with a table by model, harness and tier.
-- Section 5.2: Wilson intervals on every rate, the repeat-run result, and rates updated for the regraded and rerun cells.
-- Section 4 and Appendix D: the auditor-versus-human confusion matrix and boundary table.
-- Appendix A: the log comparison and its limit, and a corrected sentence on what the auditor prompt says.
-- Appendix E and F: what the final construction stage checked, the target check, and the tolerance table.
-- Section 5.3 and Limitations: the hardware bound, the checkpoint scan and the re-execution check, each where its claim is made.
 
 ### Sources (General)
 
@@ -41,13 +41,20 @@ We thank the three reviewers for their time. They agree that the task and the gr
 
 ## T29u
 
-### Reply to T29u (one part, 4,814 characters)
+### Reply to T29u, part 1 of 2 (2,234 characters)
 
-Thank you for the careful review. We added intervals to every rate, repeated runs of one agent, a tolerance analysis, a check of every frozen target against its paper, [and the confusion matrix of the auditor against human graders].
+Thank you for the careful review. These are the changes, each detailed below:
+- Section 5.2: a 95% Wilson interval on every rate, and DeepSeek-V4-Flash run twice more on 12 papers to measure run-to-run variation.
+- Appendix D: [the five-by-five confusion matrix of auditor against human verdict, with the 7/8 boundary and high-severity flags].
+- Appendix F: every graded run rescored at 1%, 2%, 5% and 10% tolerance.
+- Appendix E: every frozen target checked against its paper by a model from a different lab than our auditor[, with k targets corrected and their runs rescored].
+- Section 5.3: a bound on build failures from the aarch64 hardware, with an x86 replay of the failed installs.
 
 **One run per cell (W1).** We agree that one rollout per cell gives a point estimate, so every rate in the revision carries a 95% Wilson interval. For the best agent per tier these are 14/34 = 41% [26%, 58%] at Run, 9/33 = 27% [15%, 44%] at Retrain and 5/33 = 15% [7%, 31%] at Reimplement, and the overall count is 73/400 = 18% [15%, 22%]. To measure run-to-run variation directly, we ran DeepSeek-V4-Flash, the best agent at Run, twice more on 12 papers drawn with a fixed seed, four per tier, two of which some agent had reproduced and two of which none had. [Its verdict was the same in all three runs on k of 12 papers (95% interval [lo, hi]), and the ordering Run, Retrain, Reimplement held in every run / held in j of 3 runs.] The revision compares two agents only where their intervals, widened by this rate of change, do not overlap, and it says that the measurement covers one agent.
 
 On environment sensitivity, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 16 of them to a package that has no build for the aarch64 CPUs of our GH200 nodes. For the 12 of these with a real aarch64 failure and an install command we could replay, we re-ran the install on x86 nodes, and 9 of 12 build and import (95% Wilson interval 47% to 91%). Removing all 24 from the denominators leaves the best Run-tier rate at 14/34, because DeepSeek-V4-Flash had none of these failures at Run, and moves the best Retrain and Reimplement rates by less than one percentage point (to 9/32 and 5/32).
+
+### Reply to T29u, part 2 of 2 (3,222 characters)
 
 **Auditor disagreements, the 7/8 boundary and high-severity flags (W2, Q1).** Appendix D now gives the five-by-five confusion matrix of auditor verdict against human verdict over the [396] hand-graded runs [counts], with precision [x], recall [y] and F1 0.82 on the reproduced verdict. Scores of 8 and above count as reproduced and 6 or 7 as partial, and on the [n] runs that either the auditor or the human placed at 7 or 8 they agree on [m]. On the [q] runs where either flagged a high-severity integrity problem they agree on [p]. [Disagreement sentence: of the d disagreements, e are auditor reproduced against human partial and f the reverse.]
 
@@ -85,17 +92,26 @@ On the match target itself, a model from a different lab than our auditor (OpenA
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 2 (2,990 characters)
+### Reply to rqBN, part 1 of 2 (3,962 characters)
 
-Thank you for the careful reading. You are right about the logs, and our paper overstated the safeguard. Below are what we measured and what we changed.
+Thank you for checking how the logs and the auditor are validated. These are the changes, each detailed below:
+- Appendix A: the description of the two harness logs now matches the code (old and new wording below), and the appendix reports a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable.
+- Appendix D: [the confusion matrix of auditor against human verdict, with precision, recall, per-tier F1 and flag agreement], and a statement that the study gives one human label per run.
+- Appendix E: what the final construction stage checked, and a check of every frozen target against its paper.
+- Section 5.3 and Limitations: a re-execution of missed runs with new seeds, and the bound on build failures.
 
 **Auditor validation (W1).** Appendix D now gives the five-by-five confusion matrix of auditor verdict against human verdict [counts], precision [x] and recall [y] on the reproduced verdict alongside the F1 of 0.82, F1 by tier [Run r, Retrain t, Reimplement i], and the mean absolute difference between auditor and human on the full 0 to 10 scale [d]. On runs where either the auditor or the human recorded a high-severity integrity flag, they agree on [p of q]. In the original study each of the 396 runs that started received one human label, since three graders divided the runs, each blind to the auditor's score and using the same rubric. That design does not measure agreement between humans, and the revision says so. [If a second grader labels a subset: A second author has now labeled n of these runs blind to both earlier labels, and the two humans agree on k of n.]
 
-**Writable logs (W1).** The harness process writes commands.log and trajectory.jsonl, but the sandbox mounts the evidence directory read-write, so the agent's shell could have rewritten them. The auditor prompt also never told the auditor to treat these files as unverified, so the sentence in Appendix A that implied it did was wrong, and we corrected it.
+**Writable logs (W1).** The harness process writes commands.log and trajectory.jsonl, and the sandbox mounts the evidence directory read-write, so the agent's shell could have rewritten them. Appendix A said we instruct the auditor to read these files as unverified claims; the auditor prompt has no such instruction for these two files. We rewrote the sentence to state what the auditor does and what the log comparison below adds.
+
+| Appendix A | Wording |
+| :- | :- |
+| Before | "We therefore instruct the auditor to read the bundle as unverified claims and to trace every number to the command that produced it." |
+| After | "The auditor traces every number to the command that produced it. Because the agent could edit these two files, we compared every logged entry with the transcript the harness writes on the host, outside the sandbox." |
 
 To find out whether any agent did edit them, we used the transcript the harness writes on the host, which lies outside every directory the sandbox mounts. For all 372 graded runs, we matched each entry that an agent command produced in the two files against that transcript, requiring the same command and return code and, for GPU jobs, the same cost and remaining budget. Of the 45,861 such entries, 45,673 match exactly. Another 185 differ for reasons the harness code explains: 100 are calls the harness refused, which carry no cost line, 60 are remaining-budget values within 0.00015 GPU-hours of the transcript, and 25 are the first attempt of a call that was retried. The last 3 differ in the remaining-budget field by less than 0.0003 GPU-hours, with the cost equal.
 
-We also searched every agent command for writes to the two files. One run of the 372 wrote to commands.log, where MiniMax-M2.7 on 2510.25146 replaced the file with its own notes through a write_file call, and the auditor graded that run 1 of 10 as unverifiable, so the edit gained nothing. No run wrote to trajectory.jsonl. The comparison also found 119 commands in 65 runs that our harness ran but never wrote to commands.log, because two early-return paths in our code skip the log, and the host transcript holds all of them. This check catches any edit made through the agent's own commands, which the transcript records, and that is its limit. [For the runs added in this rebuttal, the harness also writes each step to a hash-chained log on the host, which the agent cannot reach, and the auditor reads a read-only copy.]
+We also searched every agent command for writes to the two files. One run of the 372 wrote to commands.log, where MiniMax-M2.7 on 2510.25146 replaced the file with its own notes through a write_file call, and the auditor graded that run 1 of 10 as unverifiable, so the edit gained nothing. No run wrote to trajectory.jsonl. The comparison also found 119 commands in 65 runs that our harness ran but never wrote to commands.log, because two early-return paths in our code skip the log, and the host transcript holds all of them. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A now states that limit.
 
 ### Reply to rqBN, part 2 of 2 (2,984 characters)
 
@@ -119,13 +135,18 @@ On tolerances, 62 of the 100 claims are point estimates, and 58 of those use the
 | 24 build-and-dependency runs, best Run 14/34 unchanged | rebuttal/results/e8/summary.json; e8/bound.csv |
 | 92, 95, 76, 69, 55 of 100; 45 failures | rebuttal/results/e7/summary.json (step3); e7/README.md |
 | 62 point estimates, 58 default, 4 margins, 38 others; 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
-| confusion matrix, per-tier F1, 0-10 difference, flag agreement, re-execution outcome, target corrections, hash-chained log | pending (E4, E10, E7 settlement, harness change not yet landed) |
+| Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 133-134 (before); the after text is proposed here |
+| confusion matrix, per-tier F1, 0-10 difference, flag agreement, re-execution outcome, target corrections | pending (E4, E10, E7 settlement) |
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (3,564 characters)
+### Reply to YGTR, part 1 of 2 (4,431 characters)
 
-Thank you for the review. Your main concern was whether our findings hold for frontier models in the harnesses people actually use, so we ran that experiment, and we also measured the confounds you named.
+Thank you for the review. Your main concern was whether our findings hold for frontier models in the harnesses people actually use, so we ran that experiment and measured the confounds you named. These are the changes, each detailed below:
+- Section 5.1 and a new appendix section: [gpt-6-astra and gpt-6.1-sol] in Codex CLI and in our harness, and Muse Wonder in mini-SWE-agent and in our harness, on papers frozen before any run.
+- Section 5.3: the bound on build failures with an x86 replay, and a re-execution of missed runs with new seeds.
+- Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent.
+- Section 5.2: the trace of all 28 cells with no graded run, the two missing audits graded, and the two runs that evaluated a downloaded checkpoint counted as not reproduced.
 
 **Frontier models and production harnesses (W1, Q1).** We ran two current OpenAI models, [gpt-6-astra and gpt-6.1-sol], and Meta's Muse Wonder on papers drawn with a fixed seed from every tier and frozen before any run ([n] papers for the OpenAI models, [m] for Muse Wonder). Each model ran in our ReAct-style harness and in a production harness, Codex CLI for the OpenAI models and mini-SWE-agent for Muse Wonder. Codex CLI and mini-SWE-agent keep their own tools, system prompts and context handling, and every run gets the same sandbox, task text, GPU grant, GPU metering and auditor as the main runs, so within one model the harness is the only thing that changes. A Codex run ends when Codex ends its own turn, which is the same stopping rule our harness uses.
 
@@ -168,6 +189,6 @@ We would be glad to hear whether the frontier and harness results address the co
 3. **The confusion matrix and the 7/8 boundary table do not exist yet (T29u Q1, rqBN W1).** Both reviewers' soundness scores rest on them, and the original design has one human label per run, so inter-human agreement cannot be reported. What closes it is the E4 label file by 11-10, and a second blind grader on about 40 runs stratified by verdict if time allows.
 4. **Codex runs stop early, which a reviewer may call a configuration artifact (YGTR W1).** The first ten frontier runs used a median under 2% of their GPU grant and most ended with "could not run" (rebuttal/results/frontier/run_usage_summary.md), and two cite GPU requests left in the queue. What closes it is the per-run grant use and exit reason in the appendix table, the queue wait per GPU request from run_gpu logs, and, if Mithil approves, a small variant with a fixed number of "continue" prompts.
 5. **The two checkpoint downloads came from the authors' own releases, which questions the tier labels of 2508.21046 and 2505.12677 (YGTR Q2).** A Retrain paper with released weights for the claimed model belongs at Run. What closes it is a check of both papers' availability records against the linked checkpoints, and moving the papers if the release covers the claimed configuration.
-6. **The hash-chained host log is promised for new runs but has not landed in evidence.py (rqBN W1).** What closes it is the harness change plus its test, committed before the frontier runs are graded, or removing the bracketed sentence.
+6. **The hash-chained host log was removed from the rqBN reply (rqBN W1).** No such log exists in the code, and the frontier runs were graded without it, so the reply now promises only the Appendix A rewording and the log comparison that already exist.
 7. **The re-execution check covers only 3 papers (rqBN Q1, YGTR W2).** A reviewer can call it too small to bound the environment. What closes it is the two-seed outcome on all 3 (jobs under /work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json) and, if time allows, adding near-miss papers from the 8 to 32 GPU-hour band.
 8. **The log check leaves two loose ends (rqBN W1).** The evidence directory's modification time is more than 60 seconds after run end in 63 of 372 runs with no established cause, and the paper says 396 runs started while the check matched 372 graded runs. What closes it is a trace of what touched those 63 directories (the 40 dated 2026-10-29 likely match a cleanup) and the reconciliation of the 24 started but ungraded runs, which the empty-cell trace already covers.
