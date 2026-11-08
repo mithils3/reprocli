@@ -17,6 +17,11 @@ with open(coded_out, "w") as fh:
         fh.write(json.dumps(t) + "\n")
 
 
+def truth(v):
+    """Coders wrote booleans as JSON true/false or as the strings "true"/"false"."""
+    return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
 def wilson(k, n, z=1.96):
     if n == 0:
         return (0, 0)
@@ -39,7 +44,7 @@ for d in ["polite_with_evidence", "points_to_paper_section", "new_experiment", "
 for e in ["new_experiment", "new_baseline", "ablation", "theory_or_proof", "clarification", "revised_text_pointer", "numbers_table", "citation", "code_or_data_release"]:
     feats[f"evidence: {e}"] = lambda t, e=e: e in t["evidence_added"]
 for b in ["per_point_headings", "quotes_reviewer", "uses_tables", "summary_of_revisions", "reminder_nudge"]:
-    feats[f"structure: {b}"] = lambda t, b=b: bool(t[b])
+    feats[f"structure: {b}"] = lambda t, b=b: truth(t[b])
 feats["has misstep"] = lambda t: bool(t["missteps"])
 
 lines = ["# Raised vs unchanged: coded features", "",
