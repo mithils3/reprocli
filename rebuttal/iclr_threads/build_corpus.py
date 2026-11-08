@@ -12,7 +12,8 @@ from pathlib import Path
 OUT = Path(sys.argv[1])
 PC = Path(sys.argv[2])
 PARQ = Path(sys.argv[3])
-SEED, N_RAISED, N_CTRL = 22528, 250, 50
+SEED, N_RAISED = 22528, 250
+N_CTRL = int(sys.argv[4]) if len(sys.argv) > 4 else 50
 
 
 FORUMS = {}
@@ -84,7 +85,7 @@ def main():
                 ctrl.append((p, rv, pre, post))
     rng = random.Random(SEED)
     rng.shuffle(raised); rng.shuffle(ctrl)
-    ctrl = ctrl[:400]
+    ctrl = ctrl[:max(400, N_CTRL * 8)]
     print(f"candidates raised={len(raised)} unchanged={len(ctrl)}", flush=True)
     manifest, seen = [], set()
 
