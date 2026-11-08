@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-08T12:21:32Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 15 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-08T13:28:07Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 17 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -8,7 +8,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
-| codex-gpt-6.1-sol | 24 | 6 | 1/6 [3.0, 56.4] | 3.83 | -1.83 (n=6) | 3 |
+| codex-gpt-6.1-sol | 24 | 8 | 1/8 [2.2, 47.1] | 4.00 | -2.25 (n=8) | 4 |
 | codex-gpt-6-astra | 8 | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 6 | 2/6 [9.7, 70.0] | 5.00 | -1.67 (n=6) | 2 |
@@ -34,6 +34,8 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2504.12463 | 96h | codex-gpt-6.1-sol-20261108T013715Z-cb1fc6 | 2 | not_reproduced | False | retrain | 4 | 2 | 2 | 4 | 4 | -2 | could_not_run | natural | 606.01 | 96.0 | 0.1981 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2503.14698 | 96h | codex-gpt-6.1-sol-20261108T023042Z-ae78cc | 2 | not_reproduced | False | reimplement | 1 | 2 | 1 | 1 | 2 | 0 | could_not_run | natural | 562.58 | 96.0 | 0.0308 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2505.12677 | 8h | codex-gpt-6.1-sol-20261108T023043Z-5044c1 | 6 | partial | False | reimplement | 6 | 8 | 0 | 4 | 8 | -2 | not_reproduced | natural | 562.85 | 8.0 | 0.2565 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2412.11979 | 32h | codex-gpt-6.1-sol-20261108T023042Z-fb8412 | 2 | not_reproduced | False | run | 8 | 0 | 7 | 4 | 8 | -6 | could_not_run | natural | 563.27 | 32.0 | 0.3779 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2503.02809 | 8h | codex-gpt-6.1-sol-20261108T013715Z-918570 | 7 | partial | False | reimplement | 7 | 0 | 8 | 8 | 8 | -1 | partial | natural | 680.05 | 8.0 | 0.0538 |
 
 ## 2. Static results (final)
 
