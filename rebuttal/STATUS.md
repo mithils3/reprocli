@@ -71,3 +71,5 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
   - Codex bridge fix (thaw in finally) is in every run started after 01:35 UTC; older in-flight runs are safe while the quota stays under the cap.
 
 - 2026-11-08 02:45 UTC: Mithil approved packing Distillation's claude-column-env (6M files) without deleting anything ("clean this up just don't delete it"). tmux rb-pack-cols packs each of the 78 folders under swe-sandboxes/ and the apptainer-cache/ into a verified .tar beside it (zip_cold.sh: tar --compare plus entry count before removal). No process, Slurm job or the hetzner-pull loop (which writes to new-columns/) touches the folder; no file changed in 2 days. Restore notes: claude-column-env/PACKED-README.txt. Log: cleanup-2026-11-08/pack_cols.log.
+
+- 2026-11-08 08:14Z: thin Sol on 2504.12463 (core-a-2504.12463-d67082) scored 2, not reproduced (best original 4). It stopped on its own after 53 tool calls with 0.31 of its 96 GPU-hours spent and never trained the model. This is an early-stopping case for the nudge-arm comparison.
