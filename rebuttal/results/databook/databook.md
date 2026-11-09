@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-09T10:16:10Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 31 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-09T11:20:30Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 32 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -11,7 +11,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | codex-gpt-6.1-sol | 24 | 15 | 2/15 [3.7, 37.9] | 4.53 | -2.00 (n=15) | 6 |
 | codex-gpt-6-astra | 8 | 5 | 1/5 [3.6, 62.4] | 3.60 | -2.60 (n=5) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
-| thin-gpt-6.1-sol | 12 | 9 | 3/9 [12.1, 64.6] | 5.11 | -1.44 (n=9) | 3 |
+| thin-gpt-6.1-sol | 12 | 10 | 4/10 [16.8, 68.7] | 5.40 | -0.90 (n=10) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 2 | 1/2 [9.5, 90.5] | 7.00 | 1.50 (n=2) | 0 |
 
@@ -50,6 +50,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2505.18809 | 8h | codex-gpt-6.1-sol-20261108T134632Z-1f75b8 | 4 | not_reproduced | False | run | 8 | 0 | 7 | 8 | 8 | -4 | not_reproduced | natural | 882.82 | 8.0 | 1.0917 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2510.21363 | 8h | codex-gpt-6.1-sol-20261107T113825Z-cb72b0 | 7 | partial | False | retrain | 8 | 8 | 7 | 4 | 8 | -1 | not_reproduced | natural | 2400.14 | 8.0 | 4.2234 |
 | miniswe | miniswe | 2505.10475 | 32h | miniswe-2505.10475-20261107T014125 | 8 | reproduced | True | run | 0 | 0 | 0 | 3 | 3 | 5 | reproduced | submitted |  | 32.0 | 13.2684 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2506.20671 | 8h | core-a-2506.20671-85c5e2 | 8 | reproduced | True | run | 4 | 2 | 3 | 2 | 4 | 4 | partial | natural |  | 8.0 | 1.1006 |
 
 ## 2. Static results (final)
 
@@ -109,7 +110,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | RUNNING | 07:32:29 | 2026-11-08T20:43:41 | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 08:36:49 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -119,5 +120,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | RUNNING | 07:35:27 | 2026-11-08T20:40:43 | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 08:39:47 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
