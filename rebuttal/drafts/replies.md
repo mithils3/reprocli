@@ -51,7 +51,7 @@ We thank the three reviewers for their time. T29u calls the evaluation design un
 
 ## T29u
 
-### Reply to T29u, part 1 of 2 (3,030 characters)
+### Reply to T29u, part 1 of 2 (3,066 characters)
 
 Thank you for the careful review. These are the changes, each detailed below:
 - Section 5.2: a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers, now queued, to measure run-to-run variation.
@@ -117,7 +117,7 @@ The most common failure is the method or variant question alone (18 papers), whi
 | 14/34, 9/33, 5/33, 73/400 and their Wilson intervals | rebuttal/results/e6/summary.json (settings.S0_index); interval for 73/400 computed with the same Wilson formula |
 | 12 papers, four per tier, two reproduced and two not | rebuttal/subset.json; rebuttal/results/subset/README.md |
 | 24 build-and-dependency runs (13 Run, 6 Retrain, 5 Reimplement), 14 aarch64 (16 labelled less 2 that were not chip failures), bound 14/34, 9/33, 5/32 with Wilson intervals (Muse Retrain 9/32 less the CogVLA checkpoint run is 8/32, so DeepSeek-V4-Flash at 9/33 is the best Retrain agent); x86 replay 9 of 12 | rebuttal/results/e8/summary.json (build_dependency_runs, bound_best_per_tier_all_env_removed); e8/bound.csv (dsv4 retrain bound_all 9/33, 0.1507 to 0.4422); e8/x86/README.md; e8/x86/results.csv (not_arch rows) |
-| 5.13 and 3.03 mean audit score | paper_latex/iclr2027_conference.tex:463-466 |
+| 5.13, 5.00 and 3.03 mean audit score | paper_latex/iclr2027_conference.tex:463-466; Muse Spark 5.00 at paper_latex/appendix/b_models.tex:178 |
 | 1 edited log in 372 runs, graded unverifiable | rebuttal/results/e5/README.md |
 | 2 reproduced runs with a downloaded checkpoint | rebuttal/results/e9/README.md; e9/class_review.csv |
 | 62 point estimates, 58 default, 4 stated margins, 38 without a number test (21 direction, 14 threshold, 1 range, 1 magnitude, 1 no kind) | rebuttal/results/e6/summary.json (claims.lockfile_kinds, point_estimate_default_5pct, point_estimate_stated_margin) |
@@ -172,7 +172,7 @@ To find out whether any agent did edit them, we used the transcript the harness 
 
 We also searched every agent command for writes to the two files. One run of the 372 wrote to commands.log: MiniMax-M2.7 on 2510.25146 replaced the file with its own notes through a write_file call. The auditor scored that run 1 of 10, the rubric's unverifiable grade, so the edit did not raise its score. No run wrote to trajectory.jsonl, which holds the 3 unmatched entries in the table, so those 3 are not agent edits; we have not yet traced why their remaining budget differs. The comparison also found 119 commands in 65 runs that our harness ran but never wrote to commands.log, because two code paths in the harness return before writing the log. The host transcript holds all 119, and Appendix A now reports this gap with its count. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A now states that limit.
 
-### Reply to rqBN, part 2 of 2 (4,219 characters)
+### Reply to rqBN, part 2 of 2 (4,248 characters)
 
 **Human-expert reproduction baseline (Q1).** We did not run a human-expert baseline in any tier, and the Limitations section states this. A human reproduction under the same environment and budgets would need expert time on each paper plus up to 2,552 H100-hours, which does not fit in the discussion period. That is the grant for one agent over the 100 papers, 10,208 H100-hours over four agents divided by 4. What we can measure is how often the environment alone produces a miss. We took papers where an agent followed the released pipeline and still landed outside tolerance, extracted the final command sequence from its transcript, and re-ran it on the same GH200 nodes with two new seeds and no model in the loop. Only 3 papers had a single clean command chain, 1 at Run and 2 at Retrain, all with grants of 8 GPU-hours or less. The other candidates spanned several GPU sessions or depended on code the agent had edited by hand. No Reimplement paper can enter this check, because that tier releases no code to re-run. Two of the 3 have finished, and both miss again on both seeds. On 2505.17836 the metric is GoRank mean relative error at 80k steps, with a target of about 0.05. The original run measured 0.0395 and the new seeds 0.0400 and 0.0393, a spread of 0.0400 - 0.0393 = 0.0007. The same commands thus miss by the same amount without the agent, which places the cause in the environment or the paper. On 2510.07501 the metric is a bias with a target of -0.20, and the original run measured -0.2241. The new seeds gave -0.1308 and +0.0566, so the three values span 0.0566 - (-0.2241) = 0.28, which puts the original near miss inside seed variation. The two seeds for 2506.10351 are queued. Two further measurements bound the environment's share. Of the 372 graded runs, 24 ended in a build or dependency failure. Removing them leaves the best agent at 14 of the 34 Run papers reproduced and moves the best Retrain and Reimplement rates by less than one percentage point. [The frontier agents in the general reply, run in the same environment, reproduce a of n papers.]
 
