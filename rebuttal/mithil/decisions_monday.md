@@ -33,7 +33,7 @@ Decision: count them (Claude, 11-09, recommended): 72 of 400, Muse mean 5.14, me
 Question: Admit that 16 of the 28 cells with no graded run stopped at the 48-hour limit or were cancelled? That reverses the paper's rule that all 28 are model failures. keep / cut
 Change: keep: line 288 stands, and the paper's zero rule (appendix/b_models.tex:128) needs the sentence in replies_check.md item 4. Cut: the paper's count of 28 stands and the clause leaves 17 and 288.
 Recommended: keep. The cluster's job accounting shows it, and a reviewer who finds it later would trust the rest less. State it once, plainly, with the paper's zero rule as the reason the paper counted them.
-Decision: leave it out (Mithil, 11-09: "nothing negative"). The replies make no claim either way about why the 28 cells are empty, and the reruns are described as reruns of cells with no graded run.
+Decision: leave it out (Mithil, 11-09: "nothing negative"). Then "so leave it out", "they're still model failure since it knew the time limit it had". The 28 stay model failures as the paper says, because each agent was told its time limit; the replies drop the 16-stopped clause and do not present reruns of those cells as a correction.
 
 **6. Move CogVLA to Run? (7 lines: 54, 113, 280, 307, 315, 316, 335)**
 Question: Move 2508.21046 from Retrain to Run because its release covers the claimed checkpoint? yes / no (CURE, 2505.12677, is Reimplement, so the rule does not move it)
@@ -121,7 +121,7 @@ Not decisions: Risk 6 is closed. The consistency Flag 1 was settled by the main 
 Question: When a frontier run reaches its 48-hour limit while its GPU request is still in the ghx4 queue, does it count as not reproduced, or is it reported apart as stopped by the queue? count / apart
 Change: rebuttal/results/frontier/stalled_2026-11-09.md finds all 13 runs that looked stalled alive and waiting on a GPU request, pending 12.6 to 21 hours. The two continue-prompt runs reach their limit at 11-09 12:31 and five Codex gpt-6.1-sol runs between 11-09 20:30 and 11-10 10:49. With "count", each becomes a 0 in its arm's rate. With "apart", the frontier table's denominator drops by that number and one sentence gives the count and the cause.
 Recommended: apart. The run never received the GPU it asked for, so the result measures the queue, and the early-stop table already has a "no GPU granted" class for exactly this case.
-Decision: apart (Claude, 11-09, recommended). Mostly moot since 11-09 09:30: the Codex runs now stop at the 11-15 18:00 cutoff, so only a run still waiting then falls here.
+Decision: count (Claude, 11-09, from Mithil's rule on decision 5: a run that knew its time limit and did not finish is a model failure). Mostly moot since 11-09 09:30: the Codex runs now stop at the 11-15 18:00 cutoff, so only a run still waiting then falls here.
 
 **20. Which open-agent baseline the frontier failure-mode sentence uses (YGTR_1 failure-mode slot, results update)**
 Question: Compare the frontier runs' failure modes with the paper's open-agent labels, or with the same blind coder run on open-agent runs? paper / blind
