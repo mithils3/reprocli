@@ -10,7 +10,7 @@ Frozen target: "exact", no usable number (the claim it rests on names a 7B LoRA 
 
 | Cell | Reported number | Old verdict (score) | Verdict under corrected target | Basis |
 |---|---|---|---|---|
-| dsv4 | 28.22% WER, sibling Llama-AVSR checkpoint on LRS3 | partial (6) | not reproduced or partial, never reproduced | |28.22 - 4.3| / 4.3 = 556%, and the dataset and method differ |
+| dsv4 | 28.22% WER, sibling Llama-AVSR checkpoint on LRS3 | partial (6) | not reproduced | (28.22 - 4.3) / 4.3 = 556% relative gap, and the dataset and method differ |
 | muse | 1.9211% WER, Whisper-small.en audio-only on an LRS3 mirror | not_reproduced (2) | not reproduced | A different method on a different split, and 1.92 is 55% below 4.3 |
 | minimax | none | disqualified (0) | disqualified | No measured number; wrote "reproduced" into report.json against its own fields |
 | qwen3 | none | not_reproduced (2) | not reproduced | No forward pass ever ran |
