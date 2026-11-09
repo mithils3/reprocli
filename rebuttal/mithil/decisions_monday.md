@@ -9,48 +9,48 @@ Question: Do the 10 corrections in rebuttal/results/e7/rescore_summary.md stand,
 Change: best Run 14/34 = 41% becomes 13/34 = 38%. All-agent 73 becomes 70 [followups_check_1.md:75]. Brackets k at 47 and 196 take the count.
 Recommended: settle decision 7 first, then keep a correction only where you agree the number itself is wrong. The second pass (e7_merged.md) finds 8 targets with a wrong number and 16 where only a setting or label is off, so the final count may be 8 rather than the 10 in rescore_summary.md.
 Checked 11-08 (rebuttal/mithil/e7_ten_vs_eight.md, rebuttal/results/e7/class_d_rescore.md): the two lists share 5 targets with a wrong number, and only one of those, 2505.23747, changes verdicts (DeepSeek-V4-Flash and MiniMax-M2.7 at Run). The 3 targets the rescore never corrected (2510.04136, 2506.01511, 2505.24864) change no verdict: the one reproduced cell among them, Qwen on 2506.01511, scores 8 under both targets. So the counts are the same under either rule, and the choice only sets whether the reply names 10 corrected targets or 8.
-Decision: ______
+Decision: 8 (Claude, 11-09, on Mithil's "for the others just do the recommended thing"). Name the 8 targets the second pass finds with a wrong number; the counts are the same as under 10.
 
 **2. Base of graded runs: 372 or 377? (12 lines: 14, 17, 36, 74, 85, 123, 126, 141, 153, 206, 217, 290)**
 Question: Keep 372 as the base and say five later grades are separate, or recount over 377? keep 372 / recount 377
 Change: 372 becomes 377 (five grades: 2503.23035 at 8, 2510.08177 at 6, three regraded runs at 0, 2, 0) [consistency_check.md Flag 3]. Line 290 says every rate includes these grades, which holds only for 377.
 Recommended: keep 372 for the auditor-against-human table, since that study is fixed, and report the five later grades in one separate sentence. Line 290 then says the benchmark rates include them while the agreement figures do not.
-Decision: ______
+Decision: keep 372 (Claude, 11-09, recommended).
 
 **3. Widen the re-execution beyond 3 papers? (9 lines: 17, 137, 177, 212, 218, 222, 258, 310, 337)**
 Question: Add near-miss papers from the 8 to 32 GPU-hour band? yes / no
 Change: "3 papers" (177, 212, 258) becomes a count not yet set. Spreads 0.0007 and 0.28 at 178 and 179 get new rows.
 Recommended: no. The ghx4 queue is waiting 200 to 960 minutes per request, so new re-executions are unlikely to finish by 11-16. Say that 3 papers had a single clean command chain and leave it there.
-Decision: ______
+Decision: no (Claude, 11-09, recommended).
 
 **4. Count the two new Muse Spark grades? (8 lines: 14, 33, 60 and 62, 99, 99, 111, 114, 118)**
 Question: Count the 8 on 2503.23035 and the 6 on 2510.08177 [e8/regrade_muse.json]? yes / no
 Change: all-agent 73 of 400 becomes 72 of 400 = 18% [15%, 22%] with yes, or 71 with no (the two checkpoint runs are already not reproduced) [followups_check_1.md; consistency_check.md Flag 2]. Muse mean 5.00 becomes 5.14 with yes (5.00 + 14/100, the empty cells scored 0), above DeepSeek 5.13 [paper iclr2027_conference.tex:463-466]. With no, the mean stays 5.00.
 Recommended: yes. Both are grades by the pinned auditor on runs that finished, and leaving them out scores finished work as 0. This gives 72 of 400 (or 71 if you also drop the two checkpoint runs) and the mean list without a ranking word.
-Decision: ______
+Decision: count them (Claude, 11-09, recommended): 72 of 400, Muse mean 5.14, means listed with no ranking word.
 
 **5. Keep the 16-stopped-cells admission? (8 lines: 17, 29, 232, 288, 292, 317, 319, 332)**
 Question: Admit that 16 of the 28 cells with no graded run stopped at the 48-hour limit or were cancelled? That reverses the paper's rule that all 28 are model failures. keep / cut
 Change: keep: line 288 stands, and the paper's zero rule (appendix/b_models.tex:128) needs the sentence in replies_check.md item 4. Cut: the paper's count of 28 stands and the clause leaves 17 and 288.
 Recommended: keep. The cluster's job accounting shows it, and a reviewer who finds it later would trust the rest less. State it once, plainly, with the paper's zero rule as the reason the paper counted them.
-Decision: ______
+Decision: leave it out (Mithil, 11-09: "nothing negative"). The replies make no claim either way about why the 28 cells are empty, and the reruns are described as reruns of cells with no graded run.
 
 **6. Move CogVLA to Run? (7 lines: 54, 113, 280, 307, 315, 316, 335)**
 Question: Move 2508.21046 from Retrain to Run because its release covers the claimed checkpoint? yes / no (CURE, 2505.12677, is Reimplement, so the rule does not move it)
 Change: Muse Retrain 9 of 33 becomes 8 of 33 at 280 (and 307, 316) [e9/class_review.csv]. With yes, Run goes 34 to 35 and Retrain 33 to 32 [e6/summary.json]; rates are recomputed.
 Recommended: no move. The evaluation split is frozen, so keep the tier and add a footnote that the release covers the claimed checkpoint. Moving a paper between tiers during the rebuttal invites the question of what else moved.
-Decision: ______
+Decision: no move, footnote (Claude, 11-09, recommended).
 
 **7. Settle the nine E7 items? (6 lines: 52, 178, 218, 258, 286, 310)**
 Question: Give keep or change for each item in rebuttal/mithil/e7_merged.md, "Look at these first": 1 2505.15201 variance; 2 2505.17836 GoRank near 0.05; 3 2507.02064 recall near 0 cm; 4 2505.19154 training views; 5 2505.24873 32-frame sentence; 6 2506.18896 which 84.8; 7 2402.04579 Moons dataset; 8 2510.20725 RBF curve; 9 2511.02225 FIOC 0.95.
 Change: item 2 touches the 0.05 target at 178 and 218. Item 8 touches 2510.20725 at 286. Others feed decision 1 (lines 95, 47, 192, 194).
-Decision: ______
+Decision: keep the frozen target on all nine (Claude, 11-09). No author read, as with the 45-paper read cut today; none of the nine changes a count.
 
 **8. Other environment or agent error for the 2 "not chip" build rows? (6 lines: 252, 113, 252, 292, 304, 308)**
 Question: Count them as other environment (14 aarch64, 7 other, 3 agent) or agent error (14, 5, 5)? other / agent
 Change: draft reads 14, 7, 3 [followups_check_2.md item 1]. Agent error gives "6 + 14 + 5 = 25" at 292 and changes the 27.
 Recommended: other environment, as drafted (14, 7, 3). The x86 replay places the cause outside the chip, and nothing in the transcripts places it in the agent's commands.
-Decision: ______
+Decision: other environment, as drafted (Claude, 11-09, recommended).
 
 **9. Cancel 13 orphaned GPU requests? (6 lines, indirect: 17, 127, 222, 286, 327, 332)**
 Question: Cancel the 13 requests with no live launcher (3548889 to 3555340, rebuttal/results/spend/pending_gpu_jobs.md line 64)? yes / no
@@ -59,13 +59,13 @@ Recommended: yes. Each would hold a GPU node with nothing attached and push the 
 Seen 11-09 00:40: four of the 13 (3550917, 3550974, 3552947, 3555265) reached the front of the queue and ended FAILED after 10 to 12 seconds, so an orphan holds a node for seconds and gives it back. The cost of leaving them is small; cancelling the other 9 still removes 9 starts ahead of the reruns.
 
 Decided 11-09 09:08: cancel. By then 8 of the 13 had failed on their own and 3549889 was already cancelled, so the last 5 still pending (3548889, 3549067, 3552546, 3554610, 3555340) were cancelled with scancel.
-Decision: ______
+Decision: cancel (Mithil, 11-09).
 
 **10. Report gpt-6.1-terra? (5 lines: 236, 28, 229, 236, 305)**
 Question: Report gpt-6.1-terra or drop it from the plan? report / drop
 Change: replies.md never names terra, but rebuttal/PLAN.md:115 and :189 include it. Report adds it to 236, 229, 28 and 305 with no number yet. Drop edits PLAN.md only.
 Recommended: drop. No gpt-6.1-terra run exists in frontier_cells.csv, so there is nothing to report by 11-16.
-Decision: ______
+Decision: drop (Claude, 11-09, recommended).
 
 **11. Explain the 3 unmatched log entries? (4 lines: 161, 163, 207, 211)**
 Question: Keep "we have not yet traced why" (old line 173; now line 161), or trace the 3 before posting? keep / trace
@@ -82,7 +82,7 @@ Decision: no (Mithil, 11-08). The second-grader slot (old line 153) and the 20 b
 Question: Run a small variant to test the early stop? yes / no
 Change: the first ten frontier runs used a median under 2% of their GPU grant [rebuttal/results/frontier/run_usage_summary.md]. Yes: 240 takes the new median and 236 gets a row. No: 334 stays an open risk.
 No decision needed: this arm is already running (gpt-6.1-sol, 8 papers, up to 3 continue prompts). Line 240 takes its median when it finishes.
-Decision: ______
+Decision: none needed
 
 **14. Trace the 63 evidence directories? (3 lines: 70, 161, 338)**
 Question: Trace what touched the 63 directories modified over 60 seconds after run end? yes / no
@@ -94,13 +94,13 @@ Decision: none needed
 Question: Keep "our auditor is Claude Sonnet 5", use the billing reason from PLAN.md:200, or write your own? keep / billing / own
 Change: 324 cites the same fact and changes with 244.
 Recommended: billing as the reason, with the same-family grading point as a second sentence. Post the reason that actually drove the choice.
-Decision: ______
+Decision: billing first, same-family grading as the second sentence (Claude, 11-09, recommended).
 
 **16. "Strongest" or "highest mean audit score"? (1 line: 56; paper lines 121, 463, 618-619)**
 Question: Keep "strongest agent" with mean audit score as its basis (A), or write "highest mean audit score" (B)? A / B
 Change: B changes 56. If decision 4 gives Muse 5.14, A is false, so B is the only option that holds [followups_check_3.md:20].
 Settled on 11-08: line 56 now lists each agent's mean (5.13, 5.00, 3.03) with no ranking word, so it holds under either answer to decision 4. The paper's "strongest agent" sentence (line 463) changes to match in the revised PDF.
-Decision: ______
+Decision: none needed (settled 11-08)
 
 **17. Did the author review cover the claim, configuration and target fields? (1 line: 188; paper line 668)**
 Question: Did it? yes / no
@@ -111,7 +111,7 @@ Decision: yes (Mithil, 11-08). Line 188 now says an author reviewed every field 
 Question: Compare the two harnesses on the 12 papers both have run, or launch thin-harness papers 13 to 24 so the arm matches Codex's 24? keep 12 / launch 12 more
 Change: keep 12: the note at line 246 names 12 shared papers and the paired comparison is over 12. Launch: about 12 more OpenAI runs from the $700 budget ($157 spent), finishing only if the ghx4 queue clears before the 11-15 18:00 stop.
 Recommended: keep 12. A paired comparison on the shared 12 answers YGTR's harness question, and the queue makes 12 more unlikely to finish in time.
-Decision: ______
+Decision: keep 12 (Claude, 11-09, recommended).
 
 ---
 
@@ -121,11 +121,11 @@ Not decisions: Risk 6 is closed. The consistency Flag 1 was settled by the main 
 Question: When a frontier run reaches its 48-hour limit while its GPU request is still in the ghx4 queue, does it count as not reproduced, or is it reported apart as stopped by the queue? count / apart
 Change: rebuttal/results/frontier/stalled_2026-11-09.md finds all 13 runs that looked stalled alive and waiting on a GPU request, pending 12.6 to 21 hours. The two continue-prompt runs reach their limit at 11-09 12:31 and five Codex gpt-6.1-sol runs between 11-09 20:30 and 11-10 10:49. With "count", each becomes a 0 in its arm's rate. With "apart", the frontier table's denominator drops by that number and one sentence gives the count and the cause.
 Recommended: apart. The run never received the GPU it asked for, so the result measures the queue, and the early-stop table already has a "no GPU granted" class for exactly this case.
-Decision: ______
+Decision: apart (Claude, 11-09, recommended). Mostly moot since 11-09 09:30: the Codex runs now stop at the 11-15 18:00 cutoff, so only a run still waiting then falls here.
 
 **20. Which open-agent baseline the frontier failure-mode sentence uses (YGTR_1 failure-mode slot, results update)**
 Question: Compare the frontier runs' failure modes with the paper's open-agent labels, or with the same blind coder run on open-agent runs? paper / blind
 Change: rebuttal/results/frontier/failure_modes.md codes 24 frontier failures with a coder that never sees the verdict; "Never launched an experiment" is the main mode in 6 of 24 (25%, 12% to 45%) against 4% under the paper's labels. rebuttal/results/frontier/coder_calibration.md runs that coder on 50 open-agent failures the paper labelled: it agrees with the paper on 28 of 50 (56%, 42% to 69%; kappa 0.48), and its reweighted open-agent "Never launched" rate is 13.8% (7.8% to 19.7%), so the frontier gap shrinks to overlapping intervals.
 Recommended: blind. The sentence compares like with like, and Appendix G states the coder's agreement with the paper's labels (56%, kappa 0.48) beside it, since RECLAIM reports what it measured.
 Added 11-09 06:40 (rebuttal/results/frontier/never_launched_check.md): a read of the six runs finds 5 truly never launched, all on the two Reimplement papers with no released code (2505.16927, 2503.14698), where the open agents attempted the method and failed; on every other paper 0 of 19 frontier failures never launched. Draft for the slot at replies.md:242 under "blind": "On 22 of the 24 failing frontier runs graded so far, the main failure falls in the same Appendix G modes as the open agents'. The exception is the two Reimplement papers that released no code, where the Codex and thin-harness runs reported the missing artifacts and stopped, while the open agents attempted the method; reimplementing from the paper is that tier's task, so the revision counts these runs as failures and names the pattern in Section 5.3 (Failure mechanisms)." The counts update when the remaining runs are coded.
-Decision: ______
+Decision: blind (Claude, 11-09, recommended).
