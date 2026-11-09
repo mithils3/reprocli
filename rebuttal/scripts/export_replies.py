@@ -10,6 +10,7 @@ PART_RE = re.compile(r"^General reply \(one part, ([\d,]+) characters\)")
 REPLY_RE = re.compile(r"^Reply to (\w+), part (\d+) of (\d+) \(([\d,]+) characters\)")
 AUTHOR_RE = re.compile(r"[ ]*\[AUTHOR:[^\]]*\][ ]*")
 SLOT_RE = re.compile(r"\[[^\[\]]*\](?!\()")
+INTERVAL_RE = re.compile(r"^\[\s*[-+]?\d[\d.]*%?\s*(,|to|--)\s*[-+]?\d[\d.]*%?\s*\]$")
 HEADING_RE = re.compile(r"^#{1,3} ")
 
 
@@ -89,7 +90,8 @@ def main():
         slots = []
         for lineno, text in enumerate(body.split("\n"), 1):
             for m in SLOT_RE.finditer(text):
-                slots.append((lineno, m.group(0)))
+                if not INTERVAL_RE.match(m.group(0)):
+                    slots.append((lineno, m.group(0)))
         dashes = body.count("—")
         tables = bad_tables(body)
         ready = not slots and dashes == 0 and chars <= MAX_CHARS
