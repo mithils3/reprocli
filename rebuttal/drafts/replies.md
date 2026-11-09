@@ -39,7 +39,7 @@ We thank the three reviewers for their careful reading. They found the task impo
 
 ## T29u
 
-### Reply to T29u, part 1 of 2 (3,858 characters)
+### Reply to T29u, part 1 of 2 (3,885 characters)
 
 Thank you for the careful review. The revision makes these changes for your points:
 - Section 5.2: a 95% interval on every rate and mean score, and two more runs of DeepSeek-V4-Flash on 12 papers.
@@ -53,7 +53,7 @@ We reran DeepSeek-V4-Flash, the agent with the highest Run rate, two more times 
 
 The audit score is the auditor's 0 to 10 grade of a run from its evidence, and 8 or more counts as reproduced. The Run count uses the corrected target of 2505.23747 (14/34 = 41% in the submission, Q2 below), and the mean scores use the original targets:
 
-| Tier, what it releases | Best agent | Reproduced | Mean score |
+| Tier, what it releases | Agent with the most papers reproduced | Reproduced | Mean score |
 | :- | :- | -: | -: |
 | Run: code, data and weights | DeepSeek-V4-Flash | 13/34 = 38% [24%, 55%] | 5.29 [4.13, 6.46] |
 | Retrain: no weights | DeepSeek-V4-Flash | 9/33 = 27% [15%, 44%] | 5.45 [4.40, 6.51] |
@@ -61,7 +61,7 @@ The audit score is the auditor's 0 to 10 grade of a run from its evidence, and 8
 
 A cell is one agent on one paper, and over all four agents 70/400 = 18% [14%, 22%] of cells are reproduced. That is the submitted 73, plus one new Muse Spark 1.2 reproduction, less the two runs that used a downloaded checkpoint (W2 below) and the two runs on the corrected target of 2505.23747.
 
-Section 5.2 names no strongest agent and gives all four means: 5.13 [4.55, 5.71] for DeepSeek-V4-Flash, 5.14 [4.59, 5.69] for Muse Spark 1.2 with its two new grades, 3.49 [2.95, 4.03] for Qwen3.6-27B and 3.03 [2.48, 3.58] for MiniMax-M2.7.
+Section 5.2 names no strongest agent and gives all four means: 5.13 [4.55, 5.71] for DeepSeek-V4-Flash, 5.14 [4.59, 5.69] for Muse Spark 1.2 with its two new grades, 3.51 [2.98, 4.04] for Qwen3.6-27B and 3.03 [2.48, 3.58] for MiniMax-M2.7.
 
 Removing the 24 runs that ended in a build or dependency failure moves no best-agent rate by more than one percentage point (Section 5.3).
 
@@ -250,7 +250,7 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (3,707 characters)
+### Reply to YGTR, part 1 of 3 (3,709 characters)
 
 Thank you for the review. We ran frontier models in production harnesses and measured the confounds you named. The revision makes these changes:
 - Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
@@ -266,7 +266,7 @@ We ran two current OpenAI models, [gpt-6-astra and gpt-6.1-sol], and Meta's Muse
 
 | Model | Harness | Papers | Reproduced |
 | :- | :- | :- | :- |
-| [gpt-6-astra] | Codex CLI | 8 | [a] |
+| [gpt-6-astra] | Codex CLI | [8] | [a] |
 | gpt-6.1-sol | our loop | 12 | [b] |
 | gpt-6.1-sol | Codex CLI | [n] | [c] |
 | Muse Wonder | our loop | [m] | [d] |
