@@ -24,6 +24,9 @@ from reprocli_repro.context import Budget
 HW_MULTIPLIER: dict[str, float] = {
     "h100": 1.0,
     "gh200": 1.0,
+    # Delta x86 A100 (rebuttal hardware check): an H100 does roughly twice the work of an
+    # A100 per hour on typical training, so an A100 GPU-hour counts as half an H100-hour.
+    "a100": 0.5,
 }
 
 
