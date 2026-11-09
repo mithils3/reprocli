@@ -66,8 +66,8 @@ Decision: ______
 **11. Explain the 3 unmatched log entries? (4 lines: 170, 173, 200, 204)**
 Question: Keep "we have not yet traced why" (line 173), or trace the 3 before posting? keep / trace
 Change: keep: 3 of 45,861 stay unexplained. Trace: 173 gives a cause and 170, 200, 204 may change [followups_check_4.md].
-Being traced tonight by an agent (read-only); this becomes a fact by Monday.
-Decision: ______
+Settled by the 11-08 trace (rebuttal/results/e5/traces_2026-11-08.md): each gap equals the GPU release charge logged after the entry. Line 173 now says so.
+Decision: none needed
 
 **12. Run a second blind grader? (4 lines: 153, 199, 229, 288)**
 Question: Have a second blind grader label about 40 runs stratified by verdict, and an author label 20 frontier runs blind? yes / no
@@ -83,8 +83,8 @@ Decision: ______
 **14. Trace the 63 evidence directories? (3 lines: 88, 162, 293)**
 Question: Trace what touched the 63 directories modified over 60 seconds after run end? yes / no
 Change: yes: 162 can say whether they were a cleanup. No: 293 stays open.
-Being traced tonight by an agent (read-only); this becomes a fact by Monday.
-Decision: ______
+Traced on 11-08: 9 directories hold the auditor's own writes, 49 changed only the directory time (38 on 2026-10-29, the cleanup day), and 5 directories with 6 files have no writer found. The replies never cite the 63, so no reply sentence changes; Risk 8 records this.
+Decision: none needed
 
 **15. Keep the same-family reason for leaving out Claude Code? (2 lines: 231, 279)**
 Question: Keep "our auditor is Claude Sonnet 5", use the billing reason from PLAN.md:200, or write your own? keep / billing / own
