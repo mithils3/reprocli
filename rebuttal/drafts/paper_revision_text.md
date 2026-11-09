@@ -723,7 +723,6 @@ Not promised in current replies. The author reviewed every extracted field (repl
 - replies.md:47: "Appendix E: every frozen target (the value, metric, dataset and configuration fixed for each claim before any agent ran) checked against its paper by a model from a different lab than our auditor[, with k targets corrected and their runs rescored]."
 - replies.md:190: "A model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer."
 - replies.md:194: "The dataset and method questions check the minimal configuration, the value and metric questions check the target, and the choice of claim rests on construction alone, which Appendix E now states. The checking model saw the frozen target when it answered, so we describe this as a check of each target against its paper."
-- replies.md:196: "[An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier.]"
 
 **Location.** New subsection in `paper_latex/appendix/e_construction.tex`, after the Stage III subsection (after line 91) and before `\subsection{The evaluation and development splits}` at line 93.
 
@@ -770,17 +769,9 @@ The most common failure is the method question alone, on 18 papers. On
 2506.18890, for example, the frozen value of 27.443 PSNR appears in the paper
 for 24 input views, while the frozen configuration says 12.
 % src: results/e7/README.md:9-10; results/e7/v3_failures.csv
-\todo{An author read all 45 papers with a failed answer against the paper
-itself. The paper does not support the frozen target on k of them. We
-corrected those k targets, and the pinned auditor graded every run on those
-papers against the corrected target, which changes v reproduced verdicts and
-moves the best Run rate from 14 to 13 of 34 and no other best-agent rate.}
-% candidate values, not frozen (they rest on 10 value_wrong verdicts while rebuttal/mithil/e7_verdicts.csv now has 15 frozen_wrong and 13 unclear):
-% results/e7/rescore_summary.md:13-27: k = 10, v = 2 (dsv4-run-2505.23747, minimax-run-2505.23747), best Run 14 -> 13, total 73 -> 71;
-% the same file also reports that regrading the 38 runs against the unchanged frozen target changed no reproduced verdict and 8 of 38 scores (mean 0.39 points), an optional sentence on auditor repeatability.
 ```
 
-Author decision. Whether the corrected targets replace the frozen ones as the grades of record (so 14/34 becomes 13/34 everywhere, and the abstract's 41% becomes 38%) or are reported as a sensitivity check beside the frozen grades. The replies (lines 47 and 196) are written for the first reading. Section 15 lists every line that changes under it.
+Author decision. Whether the corrected targets replace the frozen ones as the grades of record (so 14/34 becomes 13/34 everywhere, and the abstract's 41% becomes 38%) or are reported as a sensitivity check beside the frozen grades. The replies (line 47) are written for the first reading. Section 15 lists every line that changes under it.
 
 ---
 

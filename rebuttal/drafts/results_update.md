@@ -35,9 +35,6 @@ The tier ordering and the most common failure are what we test on the frontier r
 **Seeds on 2506.10351 (rqBN Q1)**
 On 2506.10351 (Run), the target is 93.12 and the original run measured 94.19, [and the new seeds gave x and y, so the miss repeats without the agent / falls inside seed variation], a range of [lo, hi] across the three values.
 
-**Corrected targets (rqBN Q2)**
-[An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier], with the best Run rate at [rate, lo, hi].
-
 **Reruns of cells outside the agent (YGTR W2 and Q3)**
 [We reran the 4 cells of 2510.20725 and the 16 stopped cells with the same settings, and r of them reproduce] ([rate, lo, hi]). The frontier runs use the same environment, and [their results].
 

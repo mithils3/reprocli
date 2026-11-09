@@ -181,7 +181,7 @@ Only 3 papers had a single clean command chain, 1 at Run and 2 at Retrain, all w
 
 The bound on build failures from our aarch64 hardware is in our reply to Reviewer YGTR (W2).
 
-### Reply to rqBN, part 3 of 3 (2,131 characters)
+### Reply to rqBN, part 3 of 3 (1,839 characters)
 
 **Q2: How claims, configurations, targets and tolerances were validated, and annotator agreement.**
 
@@ -192,8 +192,6 @@ We have now checked every frozen target against its paper. A model from a differ
 The papers support the value for 92 of the 100 claims, the metric for 95, the dataset and split for 76, the method or variant for 69, and all four for 55 (Appendix E). The most common failure is the method or variant question alone (18 papers), as on 2506.18890, whose frozen value of 27.443 PSNR appears in the paper for 24 input views while the frozen configuration says 12.
 
 The dataset and method questions check the minimal configuration, the value and metric questions check the target, and the choice of claim rests on construction alone, which Appendix E now states. The checking model saw the frozen target when it answered, so we describe this as a check of each target against its paper.
-
-[An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier.]
 
 On tolerances, 58 of the 62 point-estimate claims use the default 5% and 4 state their own margin, and the ordering of the tiers holds from 1% to 10% (our reply to Reviewer T29u, Q2, and Appendix F).
 

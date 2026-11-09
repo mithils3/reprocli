@@ -91,11 +91,11 @@ Known gaps: the frontier sweeps are not in the squeue output, so their status co
 | R20 | replies.md:227 | [gpt-6-astra and gpt-6.1-sol] | same as R1 | waiting on an author decision (10) | as R1 |
 | R8 | replies.md:29 | [k] targets corrected | e7 corrected_targets (count of lines) | waiting on an author decision (1, keep the 10 target corrections) | candidate 10 per decisions_monday item 1; not final |
 | R11 | replies.md:60 | [k targets corrected and rescored] | same as R8 | waiting on an author decision (1) | candidate 10 |
-| R16 | replies.md:111 | [45 papers read; k targets; v verdicts; w papers per tier] | e7 v3_failures.csv (45 flagged) and author review | waiting on an author decision (7, settle the nine E7 items) | 45 flagged; k, v, w not final |
-| R18 | replies.md:191 | [each of 45 papers read; k of 45; v verdicts] | same as R16 | waiting on an author decision (7) | k of 45 not final |
+~~R16 | replies.md:111 | [45 papers read; k targets; v verdicts; w papers per tier] | e7 v3_failures.csv (45 flagged) and author review | waiting on an author decision (7, settle the nine E7 items) | 45 flagged; k, v, w not final~~ cut 11-09, author decision: rqBN did not ask for the 45-paper read |
+~~R18 | replies.md:191 | [each of 45 papers read; k of 45; v verdicts] | same as R16 | waiting on an author decision (7) | k of 45 not final~~ cut 11-09, author decision: rqBN did not ask for the 45-paper read |
 | P1 | paper_revision_text.md:49 | \todo{gpt-6-astra and gpt-6.1-sol} model names | same as R1 | waiting on an author decision (10) | as R1 |
 | P30 | paper_revision_text.md:540 | \todo{Optional: second author labeled n, agrees on k} | blind second grader labels | waiting on an author decision (12, run a second blind grader) | not computed |
-| P33 | paper_revision_text.md:765 | \todo{An author read all 45 papers ... k ... v} | same as R16 | waiting on an author decision (7) | k and v not final; candidate Run 14 to 13 |
+~~P33 | paper_revision_text.md:765 | \todo{An author read all 45 papers ... k ... v} | same as R16 | waiting on an author decision (7) | k and v not final; candidate Run 14 to 13~~ cut 11-09, author decision: rqBN did not ask for the 45-paper read |
 | P35 | paper_revision_text.md:934 | ':478' Muse Spark 1.2 on 23 of 33 (CogVLA) | CogVLA run score in e8 regrades | waiting on an author decision (6, move CogVLA to Run) | 23/33 holds unless the CogVLA score falls below 6 |
 | P36 | paper_revision_text.md:935 | ':481-482' z = 2.7 and z = 1.2 | E7 rescore, DSv4 Run 13/34 candidate | waiting on an author decision (7) | z values unchanged if Run stays 14/34 |
 | P39 | paper_revision_text.md:941 | Table 5 Muse Run/Retrain, All, means | Muse counts after regrades (2503.23035, CogVLA) | waiting on an author decision (4, count the two new Muse grades) | Muse Run 10/34 candidate (9 now); Retrain 8/33 candidate (9 now) |
