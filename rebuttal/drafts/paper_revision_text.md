@@ -1,6 +1,6 @@
 # Revised paper text promised by the rebuttal replies
 
-Drafted 2026-11-08 for the revised PDF due Sat 2026-11-14 (PLAN.md Section 4). Nothing under `paper_latex/` was edited. Each section below quotes the reply sentence that makes the promise (with its `rebuttal/drafts/replies.md` line), gives the paper location as file:line, the old text, and the replacement LaTeX, ready to paste. Every quote and line number refers to commit 33a989c, and all 35 quotes were checked against that version. While this was drafted, the working copy of replies.md picked up uncommitted rewording from another pass (for example, rqBN Q2 now says Stage III "checked only which artifacts each paper's authors released"). That rewording moves line numbers but adds or drops no paper promise. Paper line numbers refer to the files before any of these edits, so paste from the bottom of each file upward or search for the old text.
+Drafted 2026-11-08 for the revised PDF due Sat 2026-11-14 (PLAN.md Section 4). Nothing under `paper_latex/` was edited. Each section below quotes the reply sentence that makes the promise (with its `rebuttal/drafts/replies.md` line), gives the paper location as file:line, the old text, and the replacement LaTeX, ready to paste. Every quote and line number was rechecked on 2026-11-08 against `replies.md` at commit 9bcf851, the shortened replies, which replaced the longer version of commit 33a989c. A section whose promise no longer appears in the current replies carries the label "not promised in current replies" at its top and stays in the file. Paper line numbers refer to the files before any of these edits, so paste from the bottom of each file upward or search for the old text.
 
 Conventions used in the LaTeX:
 
@@ -9,19 +9,20 @@ Conventions used in the LaTeX:
 - A comment `% src:` on a line names the file under `rebuttal/results/` that holds its numbers.
 - A comment `% moves with:` names the pending item that can still change a number that is filled in now. The pending items are E8 reruns (the 20 rerun cells), E7 (the author's verdicts on the 45 flagged targets), and the regrade decision (whether the two new Muse Spark grades and the two checkpoint corrections enter the counts, which decides 73 against 72, or 70 if the E7 corrections also enter).
 
-Two findings from drafting change what the author has to decide before the numbers go in, and both are explained where they arise:
+Two findings from drafting were settled by the current replies:
 
-1. **The "highest mean audit score" wording (Section 4 below) may stop being true.** Muse Spark 1.2's overall mean is 5.00 over 100 cells, with its three empty cells scored 0 (Appendix B, `b_models.tex:128` and `:178`). The two new grades on its empty cells, 8 on 2503.23035 and 6 on 2510.08177 (`results/e8/regrade_muse.json`), add (8 + 6) / 100 = 0.14 points, giving 5.14 against DeepSeek-V4-Flash's 5.13. The CogVLA checkpoint correction lowers Muse Spark's mean only if the corrected run's score is lowered too, and the ten DeepSeek-V4-Flash reruns among the 20 can raise DeepSeek-V4-Flash's mean. The T29u reply (line 58) already announces the mean-score wording, so the means have to be recomputed before that reply is posted.
-2. **The Stage III scope differs between the paper and the rqBN reply.** The rqBN reply (line 171) says Stage III "audited only the availability calls", but the paper says the human audit also settled every compute estimate (`iclr2027_conference.tex:326`, figure caption "every availability call and compute estimate manually audited", and `:364-365`, "once the human audit has settled every estimate"). The draft in Section 10 says both, and the reply should say "the availability calls and the compute estimates".
+1. **Section 5.2 gives each agent's mean audit score with no ranking word** (`replies.md:56`: "The scores run from 5.13 for DeepSeek-V4-Flash and 5.00 for Muse Spark 1.2 down to 3.03 for MiniMax-M2.7"). The earlier worry that Muse Spark 1.2 could pass DeepSeek-V4-Flash after the two new grades (5.00 + 14/100 = 5.14 against 5.13) no longer decides any wording, because no sentence ranks the agents by mean score. The means in Table 5 still need recomputing before the paper is final.
+2. **The Stage III scope now agrees between the paper and the replies.** `replies.md:188` says Stage III "checked which artifacts each paper's authors released and settled each compute estimate", which matches the paper (`iclr2027_conference.tex:326`, `:364-365`). The author also reviewed every extracted field (`replies.md:188`, paper_revisions.md:11), so Variant A of Section 10a is the one that goes in and `iclr2027_conference.tex:668` stays as written.
 
 ---
 
 ## 1. Frontier models and production harnesses (Section 5.1, Section 5.2, Appendix B, Limitations)
 
 **Promise.**
-- replies.md:14: "Section 5.1 and a new appendix section: the frontier models and production harnesses, with a table by model, harness and tier."
-- replies.md:210: "Section 5.1 and a new appendix section: gpt-6.1-sol in Codex CLI and in our harness, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our harness, on papers frozen before any run."
-- replies.md:219: "We keep the ReAct-style harness for the main results because it treats every model in the same way, and the new appendix section reports what a production harness changes."
+- replies.md:12: "Frontier agents and production harnesses (Section 5.1 and a new appendix section): gpt-6.1-sol in our loop and in Codex CLI, [gpt-6-astra] in Codex CLI, and Muse Wonder in our loop and in mini-SWE-agent, on papers from every tier frozen before any run."
+- replies.md:229: "Section 5.1 and a new appendix section: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run."
+- replies.md:238: "A Codex run ends when Codex ends its own turn, the same stopping rule as our loop, and the appendix table gives each run's exit reason."
+- replies.md:244: "We keep the thin loop for the main results so that every model runs under one harness, and the new appendix section measures how Codex CLI and mini-SWE-agent change the results."
 
 ### 1a. Section 5.1, Models paragraph
 
@@ -124,6 +125,19 @@ Appendix~\ref{app:taxonomy}, and Reimplemented but did not check the result
 occurs in k of the m failing frontier runs. An author labeled 20 randomly drawn
 frontier runs blind to the model labels and agrees with them on x of 20.}
 
+\begin{longtable}{@{}lllllrl@{}}
+\caption{Every frontier run with its model, harness, paper, tier, graded
+verdict, share of the GPU grant spent, and exit reason.}
+\label{tab:frontier-runs}\\
+\toprule
+Model & Harness & Paper & Tier & Verdict & Grant spent (\%) & Exit reason \\
+\midrule
+\endhead
+\todo{one row per frontier run} & & & & & & \\
+\bottomrule
+\end{longtable}
+% src when frozen: results/frontier/grades.jsonl, results/frontier/early_stop.md (replies.md:238 promises the exit reason of each run)
+
 \todo{Early stopping: the frontier runs spend a median of u\% of their grant,
 and v of them end with the agent reporting that it could not run the
 experiment. Queue wait per GPU request: median w hours.}
@@ -163,9 +177,10 @@ This removes about one typeset line. It drops the sentence that repeated runs an
 ## 2. Wilson intervals on every rate (Section 5.2, Table 5, Figure 3)
 
 **Promise.**
-- replies.md:15: "Section 5.2: Wilson intervals on every rate, the repeat-run result, and rates updated for the regraded and rerun cells."
-- replies.md:58: "We agree that one rollout per cell gives a point estimate, so every rate in the revision carries a 95% Wilson interval."
-- replies.md:231: "Every rate now carries a 95% Wilson interval in Section 5.2, for example 14/34 = 41% [26%, 58%] for the best agent at Run and 5/33 = 15% [7%, 31%] at Reimplement"
+- replies.md:13: "Uncertainty (Section 5.2): a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers to measure run-to-run variation."
+- replies.md:54: "Every rate in the revision carries a 95% Wilson interval."
+- replies.md:231: "Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent."
+- replies.md:264: "Every rate now carries a 95% Wilson interval in Section 5.2."
 
 ### 2a. Section 5.2, opening paragraph (with Sections 3 and 4 below)
 
@@ -186,12 +201,13 @@ from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
 The auditor confirms reproduction on 73 of the 400 agent-paper cells, 18\% with
 a 95\% Wilson interval~\citep{wilson1927probable} of 15\% to 22\%
 (Figure~\ref{fig:main-results}). % src: results/e7/rescore_summary.md:27 (73/400 = 18.2% [14.8, 22.3]); moves with: regrade decision, E7, E8 reruns
-DeepSeek-V4-Flash has the highest mean audit score, and the four agents span a
-factor of 1.7, from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7. % paper :465-466; moves with: regrade decision (Muse Spark 5.00 + 0.14 = 5.14), E8 reruns
-It recovers the pinned number on 14 of 34 Run-tier papers (41\%, interval 26\%
+The mean audit score on the 0 to 10 rubric is 5.13 for DeepSeek-V4-Flash and
+5.00 for Muse Spark 1.2, down to 3.03 for MiniMax-M2.7. % src: replies.md:56; paper :465-466 and b_models.tex:178; moves with: E8 reruns
+DeepSeek-V4-Flash recovers the pinned number on 14 of 34 Run-tier papers (41\%, interval 26\%
 to 58\%), 9 of 33 at Retrain (27\%, 15\% to 44\%), and 4 of 33 at Reimplement
 (12\%, 5\% to 27\%), where Muse Spark 1.2 has the best rate at 5 of 33 (15\%,
-7\% to 31\%). % src: results/e6/summary.json settings.S0_index (dsv4/run, dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E7 (Run 14 -> 13), E8 reruns
+7\% to 31\%). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%) after the
+checkpoint scan below, so DeepSeek-V4-Flash alone has the best Retrain rate. % src: replies.md:54, :280; results/e6/summary.json settings.S0_index (dsv4/run, dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E7 (Run 14 -> 13), E8 reruns
 Table~\ref{tab:results} gives an interval for every agent and tier.
 \todo{Repeat-run sentence, Section 3 below.}
 We compare the reproduction rates of two agents only where their intervals,
@@ -238,14 +254,14 @@ Agent & Tier or measure & Reproduced (95\% interval) & Mean score & 8 h & 32 h &
 | Qwen3.6-27B, All tiers | `13/100 (13\%)` | `13/100 (13\%, 8--21)` | not in results/ |
 | MiniMax-M2.7, Run | `3/34 (9\%)` | `3/34 (9\%, 3--23)` | minimax/run |
 | MiniMax-M2.7, Retrain | `5/33 (15\%)` | `5/33 (15\%, 7--31)` | minimax/retrain |
-| MiniMax-M2.7, Reimplement | `2/33 (6\%)` | `2/33 (6\%, 2--20)` | minimax/reimplement; moves with: regrade decision (CURE, 2 -> 1) |
-| MiniMax-M2.7, All tiers | `10/100 (10\%)` | `10/100 (10\%, \todo{lo--hi})` | not in results/; moves with: regrade decision |
+| MiniMax-M2.7, Reimplement | `2/33 (6\%)` | `1/33 (3\%, 1--15)` | replies.md:280 (CURE download counted as not reproduced, 2 -> 1); Wilson computed with the e6 formula |
+| MiniMax-M2.7, All tiers | `10/100 (10\%)` | `9/100 (9\%, \todo{lo--hi})` | not in results/; 10 - 1 for the CURE run (replies.md:280) |
 | Muse Spark 1.2, Run | `9/34 (26\%)` | `9/34 (26\%, 15--43)` | muse/run; moves with: regrade decision (9 -> 10) |
-| Muse Spark 1.2, Retrain | `9/33 (27\%)` | `9/33 (27\%, 15--44)` | muse/retrain; moves with: regrade decision (CogVLA, 9 -> 8) |
+| Muse Spark 1.2, Retrain | `9/33 (27\%)` | `8/33 (24\%, 13--41)` | replies.md:280 (CogVLA download counted as not reproduced, 9 -> 8); Wilson computed with the e6 formula |
 | Muse Spark 1.2, Reimplement | `5/33 (15\%)` | `5/33 (15\%, 7--31)` | muse/reimplement |
-| Muse Spark 1.2, All tiers | `23/100 (23\%)` | `23/100 (23\%, \todo{lo--hi})` | not in results/ |
-| All agents, Run / Retrain / Reimplement | `31/136`, `29/132`, `13/132` | each with `\todo{lo--hi}` | not in results/ |
-| All agents, All tiers | `73/400 (18\%)` | `73/400 (18\%, 15--22)` | e7/rescore_summary.md:27 |
+| Muse Spark 1.2, All tiers | `23/100 (23\%)` | `\todo{22 or 23}/100` | not in results/; 23 - 1 for the CogVLA run (replies.md:280), plus 1 if the 2503.23035 grade (score 8, replies.md:290) is a Run reproduction |
+| All agents, Run / Retrain / Reimplement | `31/136`, `29/132`, `13/132` | `\todo{31 or 32}/136`, `28/132`, `12/132`, each with `\todo{lo--hi}` | not in results/; Retrain and Reimplement each fall by 1 (replies.md:280) |
+| All agents, All tiers | `73/400 (18\%)` | `73/400 (18\%, 15--22)` as in replies.md:54 and :68, with a `\todo{}` | e7/rescore_summary.md:27. The replies keep 73 while they also count two checkpoint runs as not reproduced and add one reproduced grade, which gives 73 - 2 + 1 = 72 (the AUTHOR note after replies.md:58); settle before the number goes in |
 
 The intervals in percent are rounded from the `wilson95` fields of `results/e6/summary.json`, which agree with `results/e8/bound.csv` (paper_lo, paper_hi).
 
@@ -270,9 +286,9 @@ The figure needs error bars drawn by `figures/build.py`, which this text draft d
 ## 3. Repeated runs and the rule for ranking agents (Section 5.2, Limitations)
 
 **Promise.**
-- replies.md:52: "Section 5.2: a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers, now queued, to measure run-to-run variation."
-- replies.md:58: "The revision compares the reproduction rates of two agents only where their intervals, widened by this rate of change, do not overlap, and it says that the measurement covers one agent."
-- replies.md:212: "Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent."
+- replies.md:44: "Section 5.2: a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers."
+- replies.md:52: "The revision compares the reproduction rates of two agents only where their intervals, widened by the run-to-run change these repeat runs measure, do not overlap, and it says that the measurement covers one agent."
+- replies.md:264: "[...] and the revision widens the comparisons between agents by this rate."
 
 **Location.** The `\todo{Repeat-run sentence ...}` slot in the new Section 5.2 opening paragraph (Section 2a above). The ranking sentence is already in 2a, and the "covers one agent" statement is in the Limitations paragraph of Section 1d.
 
@@ -293,13 +309,13 @@ The footnote answers the follow-up a reviewer is likely to raise (followups.md:1
 
 ---
 
-## 4. "Highest mean audit score" in place of "strongest agent" (Introduction, Section 5.2, Conclusion)
+## 4. Mean audit score in place of "strongest agent" (Introduction, Section 5.2, Conclusion)
 
 **Promise.**
-- replies.md:58: "Section 5.2 now calls DeepSeek-V4-Flash the agent with the highest mean audit score (5.13 of 10, against 3.03 for MiniMax-M2.7), where it had called it the strongest agent."
-- paper_revisions.md:9 (lines 463, 121, 618-619).
+- replies.md:56: "Section 5.2 had called DeepSeek-V4-Flash the strongest agent, and it now gives each agent's mean audit score on the 0 to 10 rubric instead. The scores run from 5.13 for DeepSeek-V4-Flash and 5.00 for Muse Spark 1.2 down to 3.03 for MiniMax-M2.7."
+- paper_revisions.md:9 (lines 463, 121, 618-619). That line asks for "the agent with the highest mean audit score", which the current reply has replaced with no ranking word, so the wording below follows the reply.
 
-Section 5.2 (line 463) is covered by the new paragraph in Section 2a. The other occurrences follow. Before any of them goes in, the means need recomputing (finding 1 at the top of this file).
+Section 5.2 (line 463) is covered by the new paragraph in Section 2a. The other occurrences follow.
 
 ### 4a. Introduction
 
@@ -311,7 +327,7 @@ when no code is available. DeepSeek-V4-Flash, the strongest agent we evaluate, r
 ```
 **New.**
 ```latex
-when no code is available. DeepSeek-V4-Flash, the agent with the highest mean audit score, reproduces
+when no code is available. DeepSeek-V4-Flash reproduces
 ```
 
 **Location.** `paper_latex/iclr2027_conference.tex:133-135`.
@@ -357,10 +373,10 @@ run the authors' code than when it must rebuild the method from the paper. The h
 ## 5. The 28 cells with no graded run, the two new grades, and the reruns (Section 5.2, Appendix B, Appendix C, Section 5.3)
 
 **Promise.**
-- replies.md:15: "rates updated for the regraded and rerun cells."
-- replies.md:213: "Section 5.2: the trace of all 28 cells with no graded run, the two missing audits graded, and the two runs that evaluated a downloaded checkpoint counted as not reproduced."
-- replies.md:237: "The two missing audits now have grades from the same pinned auditor, reproduced (score 8) on 2503.23035 and partial (score 6) on 2510.08177. [We reran the other 20 cells with the same settings, and r of them reproduce.] Every rate in the revision includes these grades."
-- paper_revisions.md:7 (`c_rubric.tex:126`, 25 becomes 28).
+- replies.md:17: "Failures outside the agent (Sections 5.2 and 5.3): the trace of all 28 cells with no graded run, the bound on build failures from our aarch64 hardware with an x86 replay, and a re-execution of missed runs with new seeds."
+- replies.md:232: "Section 5.2: the trace of all 28 cells with no graded run, the missing grades added, and the two runs that evaluated a downloaded checkpoint counted as not reproduced."
+- replies.md:290: "The two missing audits now have grades from the same pinned auditor, reproduced (score 8) on 2503.23035 and partial (score 6) on 2510.08177. [We reran the 4 cells of 2510.20725 and the 16 stopped cells with the same settings, and r of them reproduce.] Every rate in the revision includes these grades."
+- paper_revisions.md:7 (`c_rubric.tex:126`, 25 becomes 28; see 5c).
 
 Author decision first. Risk 2 in replies.md: this paragraph says that 16 empty cells stopped on the cluster job, which reverses the 2026-09-10 and 09-19 instructions to count all 28 as agent failures at score 0 (memory paper-missing-cells-accounting). The draft keeps the scoring rule (a cell with no graded run still scores 0) and adds the trace.
 
@@ -375,17 +391,22 @@ the cluster's job accounting and the harness logs. Six failed outside the
 agent, since the four cells of 2510.20725 never started because of a
 prompt-rendering bug in our harness and two audits of Muse Spark 1.2 never
 returned a verdict. Sixteen stopped before the agent finished, when the
-cluster job running them reached its 48-hour limit or was cancelled, two
+cluster job running them reached its 48-hour limit or was cancelled, and two
 ended when the agent's context filled, which our protocol counts as an agent
-failure, and for four finished runs the logs do not record why they are
-missing from the graded set. The pinned auditor has now graded the two missing
-audits, \todo{and we reran the other 20 cells with the same settings, of which
-r reproduce}. Every rate in this paper includes these grades, and a cell that
+failure. Four finished runs had no grade from the pinned auditor, and it has
+now graded the three whose files survive at 0, 2, and 0, none of them
+reproduced, while the fourth lost its files and stays ungraded. The pinned
+auditor has also graded the two missing audits, reproduced (score 8) on
+2503.23035 and partial (score 6) on 2510.08177. \todo{We reran the 4 cells of
+2510.20725 and the 16 stopped cells with the same settings, and r of them
+reproduce.} Every rate in this paper includes these grades, and a cell that
 still has no graded run counts as a failure at score 0.
-% src: results/e8/summary.json (empty_cells: total 28; outside_agent_cells: 6); results/e8/README.md:19-27 (B 16, A 2, D 4; TIMEOUT at the 2-day limit or CANCELLED); results/e8/regrade_muse.json (2503.23035 score 8, 2510.08177 score 6)
+% src: replies.md:286-290; results/e8/summary.json (empty_cells: total 28; outside_agent_cells: 6); results/e8/d_cells.md and e8/regrade_dcells.json (3 of 4 regraded at 0, 2, 0; 2510.19314 ungraded); results/e8/README.md:19-27 (B 16, A 2, D 4; TIMEOUT at the 2-day limit or CANCELLED); results/e8/regrade_muse.json (2503.23035 score 8, 2510.08177 score 6)
 ```
 
 ### 5b. Appendix B, scoring rule
+
+Not promised in current replies (this clause only matters if the reruns enter).
 
 **Location.** `paper_latex/appendix/b_models.tex:126-130`. No change is needed if the rule stays as written ("a cell without a graded run counts as a failure at score 0"). If the reruns enter, add after "at score 0," the clause:
 ```latex
@@ -393,6 +414,8 @@ after the reruns of Section~\ref{subsec:results},
 ```
 
 ### 5c. Appendix C, histogram text (paper_revisions.md item 1)
+
+Not promised in current replies (the promise is paper_revisions.md item 1 only; the replies promise the trace in Section 5.2, not Appendix C).
 
 **Location.** `paper_latex/appendix/c_rubric.tex:125-126`.
 
@@ -404,18 +427,22 @@ the 25 cells that have no graded run counted at 0. Among graded runs the
 **New.**
 ```latex
 Figure~\ref{fig:score-dist} shows how the 400 cells fall across the scale, with
-the \todo{28} cells that have no graded run counted at 0. Among graded runs the
-% src: results/e8/summary.json empty_cells.total 28; becomes 26 once the two Muse Spark grades enter, and fewer after the reruns
+the \todo{23} cells that have no graded run counted at 0. Among graded runs the
+% src: results/e8/summary.json empty_cells.total 28; replies.md:288-290 give grades to 5 of them (2 Muse Spark audits, 3 regraded runs), so 28 - 5 = 23 before the reruns, and fewer after
 ```
 Check the figure source before changing the number: if `figures/score_distribution` was built with 25 empty cells, the figure and the text have to change together.
 
 ### 5d. Section 5.3, unlabeled cells
+
+Not promised in current replies (a consequence of the grades in 5a, listed in Section 15).
 
 **Location.** `paper_latex/iclr2027_conference.tex:507-508` ("where 28 cells carry no label") and `appendix/g_taxonomy.tex:48` (No label row 13, 10, 2, 3, 28). The two newly graded runs and every rerun need dissection labels, after which the count is `\todo{28 - labeled}`, and Figures 2 and 6 need rebuilding.
 
 ---
 
 ## 6. Appendix C, runs at score 0 (paper_revisions.md item 2)
+
+Not promised in current replies (the promise is paper_revisions.md:8 only).
 
 **Promise.** paper_revisions.md:8: "the 55 runs the auditor zeroed" becomes "the 53 runs the auditor zeroed".
 
@@ -439,8 +466,11 @@ The mode counts at 4 (72) and 6 (60) at line 127-129 match the same field. If th
 ## 7. Scan for downloaded checkpoints (Section 5.2)
 
 **Promise.**
-- replies.md:21: "Section 5.2: the scan for downloaded checkpoints, with two runs counted as not reproduced."
-- replies.md:235: "The revision counts both as not reproduced in Section 5.2, so Muse Spark's Retrain count goes from 9/33 to 8/33 and MiniMax-M2.7's Reimplement count from 2/33 to 1/33, while the best-agent rates stay at 9/33 at Retrain (DeepSeek-V4-Flash) and 5/33 at Reimplement (Muse Spark). The scan cannot see a download made inside an imported library, and the revision states that limit."
+- replies.md:18: "Checkpoint downloads (Section 5.2): a scan of every transcript, after which the 2 runs that evaluated a downloaded checkpoint of the claimed model count as not reproduced."
+- replies.md:272: "Yes, we checked, and two reproduced runs evaluated a downloaded checkpoint of the claimed model, which the revision counts as not reproduced."
+- replies.md:274: "The scan cannot see a download made inside an imported library, and Section 5.2 states this limit."
+- replies.md:280: "Muse Spark 1.2's reproduced Retrain papers fall from 9 of 33 to 8 of 33 (33 is the number of Retrain papers, one cell per paper), and MiniMax-M2.7's reproduced Reimplement papers fall from 2 of 33 to 1 of 33 (Section 5.2). The best-agent rates stay at 9 of 33 at Retrain (DeepSeek-V4-Flash) and 5 of 33 at Reimplement (Muse Spark 1.2)."
+- replies.md:70: "the revision counts both as not reproduced, so DeepSeek-V4-Flash alone is best at Retrain with 9 of 33"
 
 **Location.** New paragraph after the empty-cell paragraph of Section 5a, in Section 5.2.
 
@@ -455,22 +485,23 @@ downloaded checkpoint of the model the claim is about, Muse Spark 1.2 on
 2508.21046 at Retrain and MiniMax-M2.7 on 2505.12677 at Reimplement. Because
 these tiers ask the agent to train or rebuild that model, we count both runs
 as not reproduced, which lowers Muse Spark 1.2 to 8 of 33 at Retrain and
-MiniMax-M2.7 to 1 of 33 at Reimplement and leaves every best-agent rate
-unchanged. The scan does not detect a download made inside an imported library.
+MiniMax-M2.7 to 1 of 33 at Reimplement, so DeepSeek-V4-Flash alone has the best
+Retrain rate, 9 of 33, and the best Reimplement rate stays 5 of 33. The scan does not detect a download made inside an imported library.
 % src: results/e9/README.md:12-19 (368/372 scanned; 4 timeouts; Retrain 13 of 29 and Reimplement 3 of 13 reproduced runs with a hit, 16 in all; class c 2); results/e9/class_review.csv rows 20-24; results/e8/bound.csv (muse retrain 9/33, minimax reimplement 2/33 before the correction)
 ```
 
-Note. The 4 unscanned runs were not reproduced according to the viewer index (replies.md:254); that file sits outside `rebuttal/results/`, so check it before the clause goes in. Risk 5 (whether 2508.21046 and 2505.12677 belong at Run if the authors released the claimed weights) is not addressed here. If the papers move tier, this paragraph changes.
+Note. The 4 unscanned runs were not reproduced according to the viewer index (replies.md:274); that file sits outside `rebuttal/results/`, so check it before the clause goes in. Risk 5 (whether 2508.21046 and 2505.12677 belong at Run if the authors released the claimed weights) is not addressed here. If the papers move tier, this paragraph changes.
 
 ---
 
 ## 8. Auditor against human grades (Section 4, Appendix D)
 
 **Promise.**
-- replies.md:16: "Section 4 and Appendix D: the auditor-versus-human confusion matrix and boundary table."
-- replies.md:53: "Appendix D: the five-by-five confusion matrix of auditor against human verdict, with the 7/8 boundary and high-severity flags."
-- replies.md:133: "Appendix D: the confusion matrix of auditor against human verdict, with precision, recall, the 7/8 boundary and flag agreement, and a statement that the study gives one human label per run."
-- replies.md:145: "That design does not measure agreement between humans, and Appendix D now states this beside the F1."
+- replies.md:14: "Auditor validation (Appendix D): the confusion matrix of auditor against human verdict over the 372 runs with both grades, with per-tier precision and recall, the 7/8 boundary and agreement on integrity flags."
+- replies.md:45: "Appendix D: the five-by-five confusion matrix of auditor against human verdict, with the 7/8 boundary and high-severity flags."
+- replies.md:135: "Appendix D: the confusion matrix of auditor against human verdict, with precision, recall, the 7/8 boundary and flag agreement, and a statement that the study gives one human label per run."
+- replies.md:141: "our reply to Reviewer T29u (Q1) shows the full confusion matrix that Appendix D now gives."
+- replies.md:153: "That design does not measure agreement between humans, and Appendix D now states this beside the F1."
 
 ### 8a. Section 4
 
@@ -537,8 +568,6 @@ agreement by tier. Recall is lowest at Reimplement, where it rests on 16 human
 reproductions and its interval of 44\% to 86\% overlaps those of the other
 tiers.
 % src: results/e4/summary.json (boundary_7_8 100 and 75; disqualified_score0_as_high_severity either 57, both 42; per_tier_reproduced reimplement recall_wilson95 [44.4, 85.8])
-\todo{Optional, if a second grader labels a subset: A second author labeled n
-of these runs blind to both earlier labels, and the two humans agree on k of n.}
 
 \begin{table}[ht]
 \centering
@@ -588,9 +617,11 @@ Note. Risk 3 in replies.md: the matrix comes from the aggregate 0 to 10 table th
 ## 9. Appendix A, the writable logs and the log comparison
 
 **Promise.**
-- replies.md:132: "Appendix A: the description of the two harness logs now matches the code (old and new wording below), and the appendix reports a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable."
-- replies.md:152 (After): "The auditor traces every number to the command that produced it. Because the agent could edit these two files, we compared every logged entry with the transcript the harness writes on the host, outside the sandbox."
-- replies.md:165: "the host transcript holds all of them, and Appendix A now reports this gap with its count. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A now states that limit."
+- replies.md:15: "Log integrity (Appendix A): a corrected description of the two logs the agent can write, and a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable."
+- replies.md:134: "Appendix A: the description of the two harness logs now matches the code, and a comparison of all 45,861 logged entries with the host transcript found one overwritten log, on a run the auditor had graded unverifiable."
+- replies.md:159 (After): "The auditor traces every number to the command that produced it. Because the agent could edit these two files, we compared every logged entry with the transcript the harness writes on the host, outside the sandbox."
+- replies.md:165: "The comparison also found 119 commands in 65 runs that the harness ran but never wrote to commands.log, because two code paths return before writing the log. The host transcript holds all 119, and Appendix A reports the gap."
+- replies.md:167: "This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A states that limit."
 
 **Location.** `paper_latex/appendix/a_harness.tex:130-134`, plus a new paragraph and table after line 134.
 
@@ -624,8 +655,11 @@ graded that run 1 of 10 as unverifiable. No run wrote to
 \texttt{trajectory.jsonl}. The comparison also found 119 commands in 65 runs
 that the harness ran and did not write to \texttt{commands.log}, because two
 early-return paths in the harness skip the log, and the host transcript holds
-all of them. The comparison detects edits made through the agent's own
-commands, which the transcript records.
+all of them. The host transcript is not hash-chained, so it is not
+tamper-evident by construction, and its protection is that it lies outside
+every directory the sandbox mounts. The comparison detects edits made through
+the agent's own commands, which the transcript records, and it detects no
+other kind of edit.
 % src: results/e5/README.md:9-17 (372/372 matched; 45,861 of 49,585 entries checked, 3,724 host-written; 45,673 passed; 185 explained; 3 unmatched; 1 write into commands.log, run 2510.25146; 65 runs missing 119 headers, workspace_bash.py:76-77 and run_gpu.py:145); results/e5/summary.json
 
 \begin{table}[ht]
@@ -658,17 +692,15 @@ Notes. The replies give the budget in "GPU-hours"; the paper's unit is H100-hour
 ## 10. Appendix E, what Stage III checked, and the AI-use statement
 
 **Promise.**
-- replies.md:134: "Appendix E: what the final construction stage checked, and a check of every frozen target against its paper."
-- replies.md:171: "The final construction stage (Stage III, Appendix E) audited only the availability calls, meaning which artifacts each paper's authors released, so the claims, minimal configurations and targets had no independent check and there was no annotator agreement to report. The revision states this in Appendix E."
-- paper_revisions.md:10 (`iclr2027_conference.tex:668`).
+- replies.md:136: "Appendix E: what the final construction stage checked, and a check of every frozen target (the target tuple and minimal configuration fixed before any agent ran) against its paper."
+- replies.md:188: "One author reviewed every extracted field before the dataset was frozen and no second person did, so there is no annotator agreement to report. Appendix E now states this."
+- paper_revisions.md:11 (`iclr2027_conference.tex:668` stays as written).
 
 ### 10a. Appendix E, Stage III subsection
 
 **Location.** `paper_latex/appendix/e_construction.tex:91`, appended to the end of the Stage III paragraph (after "papers stayed eligible because one agent found one.").
 
-**New**, in two variants that wait on the author's answer to followups_check_1.md item 1 (did the author review of extracted fields cover the claim, configuration, and target?).
-
-Variant A (the review covered those fields):
+**New.** The author reviewed every extracted field (replies.md:188), so this is the text that goes in.
 ```latex
 Stage III checked the availability calls and the compute estimates. The
 claim, the minimal configuration, and the match target of each paper come from
@@ -676,46 +708,22 @@ the Stage I classifier, and an author reviewed each of these fields before the
 freeze with no second reviewer, so we report no annotator agreement for them.
 Appendix~\ref{app:target-check} checks each frozen target against its paper.
 ```
-Variant B (the review did not cover them):
-```latex
-Stage III checked the availability calls and the compute estimates. The
-claim, the minimal configuration, and the match target of each paper come from
-the Stage I classifier and had no human check before the freeze, so we report
-no annotator agreement for them, and Appendix~\ref{app:target-check} checks
-each frozen target against its paper.
-```
-The "and the compute estimates" clause follows the paper (`iclr2027_conference.tex:326`, `:364-365`) and differs from the reply's "only the availability calls" (finding 2 at the top of this file). The last sentence is a cross-reference sentence. If the author prefers the footnote form, it becomes `\footnote{Appendix~\ref{app:target-check} checks each frozen target against its paper.}` on the sentence before.
+The "and the compute estimates" clause follows the paper (`iclr2027_conference.tex:326`, `:364-365`) and matches replies.md:188 ("settled each compute estimate"). The last sentence is a cross-reference sentence. If the author prefers the footnote form, it becomes `\footnote{Appendix~\ref{app:target-check} checks each frozen target against its paper.}` on the sentence before.
 
 ### 10b. AI-use statement
 
-**Location.** `paper_latex/iclr2027_conference.tex:666-669`.
-
-**Old.**
-```latex
-\item \textbf{Dataset.} We used them to extract and normalize the per-paper
-metadata that forms the released dataset, including the artifact-availability
-signals and the pinned match targets. Every extracted field was reviewed by an
-author before the dataset was frozen.
-```
-Variant A: no change.
-
-Variant B:
-```latex
-\item \textbf{Dataset.} We used them to extract and normalize the per-paper
-metadata that forms the released dataset, including the artifact-availability
-signals and the pinned match targets. An author reviewed the availability
-signals and compute estimates before the dataset was frozen, and
-Appendix~\ref{app:target-check} checks the match targets against each paper.
-```
+Not promised in current replies. The author reviewed every extracted field (replies.md:188), so `paper_latex/iclr2027_conference.tex:666-669` stays as written, and the Variant B rewording that was drafted here is dropped.
 
 ---
 
 ## 11. Appendix E, the check of every frozen target against its paper
 
 **Promise.**
-- replies.md:55: "Appendix E: every frozen target checked against its paper by a model from a different lab than our auditor[, with k targets corrected and their runs rescored]."
-- replies.md:96: "a model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer. The papers supported each part of the frozen target as follows (Appendix E):"
-- replies.md:183: "The dataset-and-split and method-or-variant questions check the minimal configuration, the value and metric questions check the target, and the choice of claim rests on construction alone, which Appendix E now states. [...] Because the checking model saw the frozen tuple, this is a check of each target against its paper, and we describe it that way."
+- replies.md:16: "Targets and tolerances (Appendices E and F): every frozen target checked against its paper by a model from a different lab than our auditor, and every graded run rescored at 1%, 2%, 5% and 10% relative tolerance."
+- replies.md:47: "Appendix E: every frozen target (the value, metric, dataset and configuration fixed for each claim before any agent ran) checked against its paper by a model from a different lab than our auditor[, with k targets corrected and their runs rescored]."
+- replies.md:190: "A model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer."
+- replies.md:194: "The dataset and method questions check the minimal configuration, the value and metric questions check the target, and the choice of claim rests on construction alone, which Appendix E now states. The checking model saw the frozen target when it answered, so we describe this as a check of each target against its paper."
+- replies.md:196: "[An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier.]"
 
 **Location.** New subsection in `paper_latex/appendix/e_construction.tex`, after the Stage III subsection (after line 91) and before `\subsection{The evaluation and development splits}` at line 93.
 
@@ -772,16 +780,17 @@ moves the best Run rate from 14 to 13 of 34 and no other best-agent rate.}
 % the same file also reports that regrading the 38 runs against the unchanged frozen target changed no reproduced verdict and 8 of 38 scores (mean 0.39 points), an optional sentence on auditor repeatability.
 ```
 
-Author decision. Whether the corrected targets replace the frozen ones as the grades of record (so 14/34 becomes 13/34 everywhere, and the abstract's 41% becomes 38%) or are reported as a sensitivity check beside the frozen grades. The replies (lines 58, 106, 183) are written for the first reading. Section 15 lists every line that changes under it.
+Author decision. Whether the corrected targets replace the frozen ones as the grades of record (so 14/34 becomes 13/34 everywhere, and the abstract's 41% becomes 38%) or are reported as a sensitivity check beside the frozen grades. The replies (lines 47 and 196) are written for the first reading. Section 15 lists every line that changes under it.
 
 ---
 
 ## 12. Appendix F, tolerance table
 
 **Promise.**
-- replies.md:54: "Appendix F: every graded run rescored at 1%, 2%, 5% and 10% tolerance."
-- replies.md:85: "the best agent's count moves by at most 5 papers at Run (14 at 5% against 9 at 1%), 3 at Retrain and 1 at Reimplement (Appendix F and the table below)."
-- replies.md:185: "the ordering of the tiers holds at every setting (full table in the reply to T29u and in Appendix F)."
+- replies.md:46: "Appendix F: every graded run rescored at 1%, 2%, 5% and 10% tolerance."
+- replies.md:95: "The best agent's count of reproduced papers moves by at most 5 of the 34 Run papers (14 at 5% against 9 at 1%), 3 at Retrain and 1 at Reimplement."
+- replies.md:99: "All agents together reproduce 56, 65, 73 and 82 of the 400 cells, with 70 or 72 at an absolute tolerance of 1 or 2 points on percentage metrics (Appendix F)."
+- replies.md:198: "the ordering of the tiers holds from 1% to 10% (our reply to Reviewer T29u, Q2, and Appendix F)."
 
 **Location.** `paper_latex/appendix/f_dataset.tex:113-119`, the "Match targets and tolerance" paragraph, extended in place, with a table after it (before the `\newpage` at line 121).
 
@@ -844,8 +853,10 @@ Note. The table is at the frozen targets and the submission's graded runs. If th
 ## 13. Section 5.3, the bound on build failures from the aarch64 hardware
 
 **Promise.**
-- replies.md:19: "Section 5.3: the bound on build failures from the aarch64 hardware, with an x86 replay."
-- replies.md:60: "On environment sensitivity, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 14 of them to a package that has no build for the aarch64 CPUs of our GH200 nodes. [...] Removing all 24 from the denominators moves no best-agent rate by more than one percentage point, because DeepSeek-V4-Flash had none of these failures at Run (Section 5.3)"
+- replies.md:17: "the bound on build failures from our aarch64 hardware with an x86 replay"
+- replies.md:48: "Section 5.3: how much build failures on the aarch64 hardware move the best-agent rates."
+- replies.md:230: "Section 5.3: the bound on build failures with an x86 replay, and a re-execution of missed runs with new seeds."
+- replies.md:256: "Removing all 24 from the denominators leaves DeepSeek-V4-Flash, the best agent at Run and Retrain, at 14/34 = 41% [26%, 58%] and 9/33 = 27% [15%, 44%], since it had none of these failures there, and moves Muse Spark 1.2, the best at Reimplement, from 5/33 = 15% [7%, 31%] to 5/32 = 16% [7%, 32%] (Section 5.3)."
 
 **Location.** `paper_latex/iclr2027_conference.tex:538-541`.
 
@@ -876,9 +887,9 @@ DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
 ## 14. Section 5.3 and Limitations, the re-execution of missed runs with new seeds
 
 **Promise.**
-- replies.md:20: "Section 5.3 and Limitations: the re-execution of missed runs with new seeds."
-- replies.md:169: "We took papers where an agent followed the released pipeline and still landed outside tolerance, extracted the final command sequence from its transcript, and re-ran it on the same GH200 nodes with two new seeds and no model in the loop."
-- replies.md:229: "Two have finished and miss again on both seeds, with the measured value repeating within 0.0007 on 2505.17836 and spreading by 0.28 on 2510.07501, and the third is queued."
+- replies.md:137: "Section 5.3 and Limitations: a re-execution of missed runs with new seeds, and the bound on build failures."
+- replies.md:175: "For papers where an agent followed the released pipeline and still landed outside tolerance, we extracted the final command sequence from its transcript and re-ran it on the same GH200 nodes with two new seeds and no model in the loop."
+- replies.md:258: "Our reply to Reviewer rqBN (Q1) re-runs the last commands of missed runs on the same nodes with new seeds and no agent, and both Retrain papers miss again on both seeds."
 
 ### 14a. Section 5.3, end of "Where the failures occur"
 
@@ -924,7 +935,9 @@ The rest of the paragraph stays, which already answers rqBN Q1 ("the Limitations
 
 ## 15. Counts that change if the corrections enter (propagation list)
 
-No reply promises these lines by name, but replies.md:15 and :237 ("Every rate in the revision includes these grades") commit the revision to them once the regrade decision is made. Arithmetic, from the files cited in Sections 5, 7, and 11: the regrade decision gives 73 + 1 (Muse Spark, 2503.23035, Run) - 1 (Muse Spark, 2508.21046, Retrain) - 1 (MiniMax-M2.7, 2505.12677, Reimplement) = 72. The E7 corrections then remove 2 more Run cells (DeepSeek-V4-Flash and MiniMax-M2.7 on 2505.23747), giving 70, and the reruns can add r.
+Not promised in current replies by line. The replies promise the grades (replies.md:290, "Every rate in the revision includes these grades") and the two checkpoint corrections (replies.md:280), and this list follows from them. The checkpoint corrections now count as promised, so the Muse Spark Retrain (8/33) and MiniMax-M2.7 Reimplement (1/33) entries are no longer conditional.
+
+No reply promises these lines by name, but replies.md:54 and :290 ("Every rate in the revision includes these grades") commit the revision to them once the regrade decision is made. Arithmetic, from the files cited in Sections 5, 7, and 11: the regrade decision gives 73 + 1 (Muse Spark, 2503.23035, Run) - 1 (Muse Spark, 2508.21046, Retrain) - 1 (MiniMax-M2.7, 2505.12677, Reimplement) = 72. The E7 corrections then remove 2 more Run cells (DeepSeek-V4-Flash and MiniMax-M2.7 on 2505.23747), giving 70, and the reruns can add r.
 
 | Location | Current text | After the regrade decision | After E7 as well |
 | :- | :- | :- | :- |
@@ -947,12 +960,32 @@ The DeepSeek-V4-Flash Run count after E7 (13/34) is from `results/e7/rescore_sum
 
 ---
 
+## 16. Limitations, scope of the claims
+
+**Promise.**
+- replies.md:268: "Section 5 and the Limitations section state the scope, and the revision adds that the claims hold for these papers and agents and that other venues, years and models remain untested."
+
+**Location.** `paper_latex/iclr2027_conference.tex:592` (the Scope paragraph of Limitations).
+
+**Old.**
+```latex
+\paragraph{Scope.} The 100 papers come from one venue and year, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}).
+```
+
+**New.**
+```latex
+\paragraph{Scope.} The 100 papers come from one venue and year, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}). Our claims hold for these papers and the agents we tested, and other venues, years, and models remain untested.
+```
+This adds about one typeset line. The Section 5 half of the promise is met by the frontier paragraph of Section 1b.
+
+---
+
 ## Promises not drafted, and why
 
 1. **Error bars on Figure 3** (Section 2c). The figure is built by `figures/build.py` from HTML, so it needs a figure build, a DOM audit, and a render check, none of which a text draft covers. Only the caption is drafted.
 2. **Every number of the frontier arms** (Section 1b, 1c). The runs are still going and only 15 to 24 runs are graded (`results/frontier/README.md`, `results/databook/frontier_cells.csv`). The paragraph and table structure are drafted with slots.
 3. **Repeat-run result, E10 on 2506.10351, the 20 reruns, E7 author verdicts and rescore, and the 73 or 72 count.** These are drafted as `\todo{}` slots, as the brief asks.
-4. **Recomputed mean scores, Wilson intervals for the All-tiers rows of Table 5, and the dissection counts after the regrades** (Section 15). These are derived from per-cell data that is not summarized under `rebuttal/results/`, so they stay slots. The mean scores matter most, because they decide whether "highest mean audit score" holds (finding 1).
+4. **Recomputed mean scores, Wilson intervals for the All-tiers rows of Table 5, and the dissection counts after the regrades** (Section 15). These are derived from per-cell data that is not summarized under `rebuttal/results/`, so they stay slots. The mean scores matter for Table 5 and the Section 5.2 sentence that gives them (finding 1).
 5. **Bib entries for gpt-6.1-sol, gpt-6-astra, Muse Wonder, and Codex CLI.** They need the vendors' own cite-as text, which is not in the repo. The Wilson entry is drafted from its DOI.
 6. **Hash-chained host log** (PLAN.md Section 3 item 4). Not promised any more (Risk 6), since no such log exists in the code.
 7. **The 27 cells traced outside the agent** (replies.md:237 cites "Section 5.2 and Section 5.3"). The parts are in Sections 5a (6 cells) and 13 (14 aarch64 and 7 other environment runs), and no separate sentence sums them, to save main-body lines. If the author wants the sum, it fits as one clause at the end of Section 13: "so we traced 27 of the 400 cells to causes outside the agent".
