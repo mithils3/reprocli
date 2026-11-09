@@ -1,6 +1,6 @@
 # Rebuttal plan: ICLR 2027 submission 22528 (RECLAIM)
 
-GOAL: move YGTR from 2 (weak reject) to at least 3, and move T29u and rqBN from 3 to 4, with replies posted on OpenReview by 2026-11-14.
+GOAL: move YGTR from 2 (weak reject) to at least 3, and move T29u and rqBN from 3 to 4, with replies posted on OpenReview in two waves, 2026-11-12 and 2026-11-14, a final results update by 2026-11-16, and the author-reviewer discussion closing 2026-11-18 (iclr.cc/Conferences/2027/Dates).
 DONE-WHEN: four replies (general, T29u, rqBN, YGTR) are posted, every number in them traces to a file under `rebuttal/results/`, and the revised PDF compiles with the main text inside 10 pages.
 MUST-NOT-CHANGE: the frozen eval-100 split, the frozen rubric and pinned auditor (claude-sonnet-5) for every grade of record, the four-agent roster of the main results, the run directories under `/work/nvme/bfvr/`, and the paused Distillation files and jobs.
 
@@ -117,7 +117,7 @@ Risks that push cost up: reasoning tokens bill as output; flex prices hold only 
 - **Log conversion check.** The auditor was validated on thin-loop logs, so the Codex smoke runs are graded twice, once from the raw event stream and once from the converted logs, and must get the same verdict.
 - **Fixed in advance (written into `subset.json` before launch).** The harness effect is the paired difference in reproduced papers per model, tested with an exact McNemar test and read against the flip rate E3 measures; a difference below that flip rate is reported as no measured effect. Every failing frontier run gets its failure mode from the same labeling pass that produced the paper's labels, so the comparison with the open agents is like for like, and Mithil labels a random 20 of those runs himself, blind to the pass's labels, to report how often he agrees with it. "Same failure modes" means the share of the paper's top three modes falls inside the 95% interval of the open agents' shares. We report how many runs per arm hit the input cap or Codex's own compaction.
 - **GPU-hours.** Muse Spark used 21.8% of its grant, so expect 0.218 x 688 = 150 per 24-paper arm: four such arms 600, plus astra about 50, about 650 in all, more if flex latency lengthens GPU holds. Ceiling about 3,010.
-- **Time.** Codex wrapper, thin-harness configs and the flex field 1.5 days, smoke half a day, runs up to 48 hours plus flex delays. Any run still going at 2026-11-12 18:00 CT is stopped, graded on what it produced, and reported as stopped.
+- **Time.** Codex wrapper, thin-harness configs and the flex field 1.5 days, smoke half a day, runs up to 48 hours plus flex delays. Any run still going at 2026-11-15 18:00 CT is stopped, graded on what it produced, and reported as stopped (moved from 11-12 on 2026-11-08, when Mithil set the last posting day to Monday 11-16).
 - **What changes the reply.** If the frontier models land inside or near the open models' range per tier and fail in the same modes by the rule above, the reply says the taxonomy holds for current frontier agents. If Codex beats our harness by more than the flip rate, the reply reports the harness effect with its p-value and which modes it removed. If gpt-6-astra in Codex reproduces most of its papers, the abstract changes to say frontier agents close much of the gap, and the reply leads with that.
 
 ### E2. Muse Wonder in two harnesses ($500 Meta budget)
@@ -214,7 +214,27 @@ Load `m-paper` before any edit under `paper_latex/`. Main text may grow to 10 pa
 
 Compile, then read every rendered page for split floats, early page ends and uneven spacing. Upload the revised PDF only if the OpenReview revision button is open for this venue.
 
-## 4. Schedule, 2026-11-07 to 2026-11-14
+## 4. Schedule, 2026-11-08 to 2026-11-18 (revised 2026-11-08)
+
+ICLR 2027 closes the author-reviewer discussion on 2026-11-18 (official dates page; no timezone given, so the plan treats the end of 11-17 Central as the last safe moment for a post). Mithil wants every reply posted by Monday 11-16. Replies go out in two waves before that, because a reviewer needs days to read, answer and change a score, and the corpus behind the iclr-review skill ties raised scores to threads with follow-up posts (more than one author post 92% against 86%).
+
+| Day | What finishes | Mithil | Claude |
+| :- | :- | :- | :- |
+| Sun 11-08 | Repeat-run job 3540624 and E8 rerun 3540786 running; E4 matrix in | | Relaunch the Codex nudge arm (gpt-6.1-sol, ranks 1-8) |
+| Mon 11-09 | The other 9 repeat-run jobs start (Slurm estimate by 05:51); E10 seeds for 2506.10351 start about 20:48 | Read the 45 flagged targets in `results/e7/v3_failures.csv` | Hourly results loop; grade new frontier runs |
+| Tue 11-10 | E8 rerun 3540786 ends by 20:40 at the latest | Read the T29u and rqBN drafts; decide Risk 2 (16 cluster-stopped cells) and Risk 5 (73 or 71) | Apply the replies_check edits; E6 rescore on the corrected targets |
+| Wed 11-11 | Repeat runs finish (2-day limit) and are graded | Approve wave 1 | Fill the repeat-run slots; one no-context reader agent per reply checks every number |
+| Thu 11-12 | | **Post wave 1: T29u and rqBN** | Frontier tables and appendix; paper revisions under `m-paper` |
+| Fri 11-13 | Most nudge-arm runs graded | Read the YGTR and general drafts and the revised PDF | Compile; one agent per page reads spacing |
+| Sat 11-14 | | **Post wave 2: YGTR, general reply, revised PDF**; answer wave-1 follow-ups | Label failure modes on finished frontier runs; draw Mithil's 20 |
+| Sun 11-15 | Frontier runs still going at 18:00 CT are stopped and graded | Label the 20 frontier runs blind | McNemar tests; final frontier numbers |
+| Mon 11-16 | | **Post the results update** under the general reply (final frontier, nudge and repeat-run numbers) | |
+| Tue 11-17 | | Answer follow-ups; one civil reminder line to any reviewer who has not replied | |
+| Wed 11-18 | Discussion closes | | |
+
+Two waves give T29u and rqBN six days, and YGTR four, to respond before the discussion closes.
+
+### Earlier schedule (2026-11-07, superseded)
 
 Mithil is the only person working on the rebuttal; Haochen and Samridhi take no tasks (Mithil, 2026-11-06). "Agents" means Claude workers launched from Mithil's session, and Mithil checks each result. His own hands-on time is the key setup, the E4 label file, E7 disagreements, the 20 blind failure-mode labels, checking E10 command sequences, and approving each reply.
 
@@ -229,7 +249,7 @@ Mithil is the only person working on the rebuttal; Haochen and Samridhi take no 
 | Fri 11-13 | Read the revised PDF and the YGTR and general drafts | Frontier tables and appendix; compile; one agent per page reads spacing; one reader agent per reply with no context checks every number against `rebuttal/results/` |
 | Sat 11-14 | **Post wave 2: YGTR reply, general reply, revised PDF.** Answer wave-1 follow-ups | |
 
-Two waves give T29u and rqBN three days to respond before the deadline.
+That version planned both waves for 11-11 and 11-14 with runs stopped on 11-12.
 
 **Cut list if we fall behind** (cut from the top):
 
