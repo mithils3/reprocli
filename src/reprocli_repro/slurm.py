@@ -40,7 +40,7 @@ from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
-from typing import TYPE_CHECKING, IO
+from typing import TYPE_CHECKING, Callable, IO
 
 from reprocli_repro import env
 from reprocli_repro.cluster import Cluster
@@ -69,6 +69,15 @@ STREAM_KEEP_BYTES = 256 * 1024
 
 # salloc prints "... allocation <jobid>" (Pending then Granted share the number).
 _JOBID_RE = re.compile(r"allocation (\d+)")
+# salloc refusals a retry can outlast: submit/QOS limits and a controller down for
+# maintenance. Any other failure (bad account, bad partition) returns at once.
+_SALLOC_REFUSED_RES = (
+    re.compile(r"violates accounting/QOS policy", re.IGNORECASE),
+    re.compile(r"job submit limit", re.IGNORECASE),
+    re.compile(r"Unable to contact slurm controller", re.IGNORECASE),
+    re.compile(r"Socket timed out", re.IGNORECASE),
+    re.compile(r"Slurm temporarily unable to accept job", re.IGNORECASE),
+)
 # srun into a dead/expired allocation fails with one of these — the held session is
 # gone (hit --time or was cancelled), so the caller should drop it and re-acquire.
 # The first three are the scancel/revoke path; the last three are the --time-expiry
@@ -202,6 +211,47 @@ def decode(blob: bytes | str | None) -> str:
     return blob.decode("utf-8", errors="replace")
 
 
+def _salloc_with_retry(
+    argv: list[str],
+    *,
+    timeout: float | None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> subprocess.CompletedProcess:
+    """Run salloc again while the cluster refuses the request; return the first other result.
+
+    A refusal exits non-zero, prints no "allocation <jobid>", and matches one of
+    ``_SALLOC_REFUSED_RES``. The same argv is resubmitted every
+    ``REPROCLI_SALLOC_RETRY_SECONDS`` until ``REPROCLI_SALLOC_RETRY_MAX_SECONDS`` (capped
+    by the caller's ``timeout``) is spent, then the last result comes back with a note.
+    """
+    interval = max(float(os.environ.get("REPROCLI_SALLOC_RETRY_SECONDS", 120)), 1.0)
+    window = float(os.environ.get("REPROCLI_SALLOC_RETRY_MAX_SECONDS", 21600))
+    if timeout is not None:
+        window = min(window, timeout)
+    refusals, waited = 0, 0.0
+    while True:
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+        text = decode(proc.stdout) + "\n" + decode(proc.stderr)
+        refused = (
+            proc.returncode != 0
+            and not _JOBID_RE.search(text)
+            and any(pattern.search(text) for pattern in _SALLOC_REFUSED_RES)
+        )
+        if not refused:
+            return proc
+        refusals += 1
+        if waited + interval > window:
+            note = (
+                f"[salloc was refused {refusals} times over {waited / 60:.0f} minutes; "
+                "the cluster did not accept the request]"
+            )
+            return subprocess.CompletedProcess(
+                proc.args, proc.returncode, proc.stdout, f"{decode(proc.stderr)}\n{note}"
+            )
+        sleep(interval)
+        waited += interval
+
+
 def acquire_session(
     cluster: Cluster,
     *,
@@ -213,7 +263,7 @@ def acquire_session(
     """Hold a GPU allocation; block through the queue wait, return once it is granted."""
     argv = build_acquire(cluster, gpus=gpus, minutes=minutes, partition=partition)
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+        proc = _salloc_with_retry(argv, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         # Keep whatever salloc printed before we gave up: the "Pending job allocation
         # <id>" line and the QOS/reservation reason are the only signal the agent gets

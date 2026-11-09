@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shlex
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from reprocli_repro.slurm import (
     build_acquire,
     build_srun,
     release_session,
+    _salloc_with_retry,
     run_in_session,
     session_lost,
 )
@@ -300,6 +302,76 @@ class ReleaseAndLostTests(unittest.TestCase):
         ):
             step = StepResult(ok=False, returncode=1, stdout="", stderr=stderr, elapsed_s=0.1, command=["srun"])
             self.assertTrue(session_lost(step), stderr)
+
+
+class SallocRetryTests(unittest.TestCase):
+    ARGV = ["salloc", "--no-shell", "-A", "bfvr-dtai-gh", "-p", "ghx4"]
+    REFUSED = subprocess.CompletedProcess(
+        args=[], returncode=1, stdout="",
+        stderr="salloc: error: Job submit/allocate failed: Job violates accounting/QOS policy "
+               "(job submit limit, user's size and/or time limits)\n",
+    )
+    GRANTED = subprocess.CompletedProcess(
+        args=[], returncode=0, stdout="", stderr="salloc: Granted job allocation 2542640\n",
+    )
+
+    def setUp(self):
+        # 60 s between tries, 180 s window: refusals are cheap to count in the assertions.
+        env = mock.patch.dict(os.environ, {
+            "REPROCLI_SALLOC_RETRY_SECONDS": "60",
+            "REPROCLI_SALLOC_RETRY_MAX_SECONDS": "180",
+        })
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_refused_twice_then_granted_returns_the_granted_result(self):
+        sleep = mock.Mock()
+        with mock.patch(
+            "reprocli_repro.slurm.subprocess.run",
+            side_effect=[self.REFUSED, self.REFUSED, self.GRANTED],
+        ) as run:
+            proc = _salloc_with_retry(self.ARGV, timeout=None, sleep=sleep)
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("Granted job allocation 2542640", proc.stderr)
+        self.assertEqual(run.call_count, 3)
+        for call in run.call_args_list:
+            self.assertEqual(call.args[0], self.ARGV)
+        self.assertEqual(sleep.call_count, 2)
+
+    def test_refused_for_the_whole_window_returns_last_result_with_note(self):
+        sleep = mock.Mock()
+        with mock.patch(
+            "reprocli_repro.slurm.subprocess.run", side_effect=[self.REFUSED] * 4,
+        ) as run:
+            proc = _salloc_with_retry(self.ARGV, timeout=None, sleep=sleep)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("Job violates accounting/QOS policy", proc.stderr)
+        self.assertTrue(proc.stderr.endswith(
+            "[salloc was refused 4 times over 3 minutes; "
+            "the cluster did not accept the request]"
+        ), proc.stderr)
+        self.assertEqual(run.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+
+    def test_other_failure_returns_at_once(self):
+        invalid = subprocess.CompletedProcess(
+            args=[], returncode=1, stdout="",
+            stderr="salloc: error: Invalid partition name specified\n",
+        )
+        sleep = mock.Mock()
+        with mock.patch("reprocli_repro.slurm.subprocess.run", return_value=invalid) as run:
+            proc = _salloc_with_retry(self.ARGV, timeout=None, sleep=sleep)
+        self.assertEqual(proc, invalid)
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
+
+    def test_granted_first_time_makes_one_submission_and_no_sleep(self):
+        sleep = mock.Mock()
+        with mock.patch("reprocli_repro.slurm.subprocess.run", return_value=self.GRANTED) as run:
+            proc = _salloc_with_retry(self.ARGV, timeout=None, sleep=sleep)
+        self.assertEqual(proc, self.GRANTED)
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
 
 
 if __name__ == "__main__":
