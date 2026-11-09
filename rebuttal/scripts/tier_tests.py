@@ -6,6 +6,7 @@
 import collections
 import json
 import math
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -94,3 +95,25 @@ for t in N:
     allx += xs
     cells.append(mean_ci(xs))
 print("| all agents (cells) | " + " | ".join(cells) + f" | {mean_ci(allx)} |")
+
+
+BANDS = {8: 59, 32: 29, 96: 12}
+EVAL_ROWS = [c for c in (l.split("&") for l in open(REPO / "paper_latex/tables/eval100.tex").read().split("\n")[:121]) if re.match(r"\d{4}\.\d{4,5}$", c[0].strip())]
+BAND_TEX = {"0--8": 8, "8--32": 32, "32--96": 96}
+band = {r["arxiv_id"]: int(r["budget_h100"]) for r in RUNS}
+for c in EVAL_ROWS:
+    band.setdefault(c[0].strip(), BAND_TEX[c[2].strip()])
+assert len(band) == 100 and {b: sum(v == b for v in band.values()) for b in BANDS} == BANDS, collections.Counter(band.values())
+run_score = {(r["model"], r["arxiv_id"]): r["audit"].get("score") or 0 for r in RUNS}
+for (m, _, p), v in NEW_SCORES.items():
+    run_score[m, p] = v
+print("\n## Mean audit score by compute band\n")
+print("| agent | 8 h | 32 h | 96 h |")
+print("|---|---|---|---|")
+for a in AGENTS + ["all agents"]:
+    ags = AGENTS if a == "all agents" else [a]
+    cells = []
+    for b in BANDS:
+        xs = [run_score.get((ag, p), 0) for ag in ags for p, pb in band.items() if pb == b]
+        cells.append(f"{sum(xs) / len(xs):.2f}")
+    print(f"| {a} | " + " | ".join(cells) + " |")

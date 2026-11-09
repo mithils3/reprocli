@@ -306,7 +306,7 @@ The papers come from every tier, drawn with a fixed seed so that half had been r
 
 Of the harnesses you name, we ran Codex CLI and mini-SWE-agent. We left out Claude Code because our auditor is Claude Sonnet 5, so a Claude agent would be graded by a model of its own family, and because our API budget for the new runs covered OpenAI and Meta models. We keep our loop for the main results so that every model runs under one harness, and Section 5.1 now reports the production-harness arms beside it, with each run's exit reason and each count's 95% interval in Appendix B.
 
-### Reply to YGTR, part 2 of 3 (3,989 characters)
+### Reply to YGTR, part 2 of 3 (3,987 characters)
 
 **W1, continued: Whether the failure modes and findings change.**
 
@@ -323,7 +323,7 @@ The failure modes shift toward stopping early, and the reproduction rate does no
 | Never launched an experiment | 13 (4%) | [5] |
 | Echoed a shipped number | 9 (3%) | [0] |
 
-The failures that report a number without a valid measurement (rows 2, 4 and 8) are rarer in the frontier runs: [3 of 27 = 11%, 95% interval 4% to 28%], against 110 of 300 = 37% [31%, 42%] for the open agents. Applied to 50 open-agent runs, the same blind coder puts that share at 46%, so the difference does not come from the coder (Appendix G). In their place more frontier runs end without a number (rows 5 and 7): [11 of 27], against 15% for the open agents under the paper's labels and 23% (14% to 33%) under the same blind coder. The [5] that never launched are all on the two Reimplement papers that released no code (2505.16927 and 2503.14698), where the open agents also failed, and on every other paper [0 of 22] failing frontier runs never launched.
+The failures that report a number without a valid measurement (rows 2, 4 and 8) are rarer in the frontier runs: [3 of 27 = 11%, 95% interval 4% to 28%], against 110 of 300 = 37% [31%, 42%] for the open agents. Applied to 50 open-agent runs, the same blind coder puts that share at 46%, so the coder does not explain the difference (Appendix G). In their place more frontier runs end without a number (rows 5 and 7): [11 of 27], against 15% for the open agents under the paper's labels and 23% (14% to 33%) under the same blind coder. The [5] that never launched are all on the two Reimplement papers that released no code (2505.16927 and 2503.14698), where the open agents also failed, and on every other paper [0 of 22] failing frontier runs never launched.
 
 The early stops are the models' own judgment. The task prompt, identical for every agent and printed in the appendix, allows a run to stop early only when a trained artifact is neither released nor retrainable within the grant. On 2506.08898 (Retrain, 32 H100-hour grant), all [5] frontier runs stopped after less than one H100-hour because no matching checkpoint is released, while under the same prompt Muse Spark 1.2 retrained the model with 27 H100-hours and reproduced the claim. Section 5.3 names this pattern.
 
