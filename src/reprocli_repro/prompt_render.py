@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 
 from reprocli_repro import sandbox
+from reprocli_repro.cluster import Cluster, resolve_cluster
 from reprocli_repro.dataset import arxiv_id_of, band_of, format_hours
 
 # Every uppercase {TOKEN} the template carries. Literal JSON shown to the agent is
@@ -19,8 +20,10 @@ from reprocli_repro.dataset import arxiv_id_of, band_of, format_hours
 _PLACEHOLDER_RE = re.compile(r"\{[A-Z][A-Z0-9_]*\}")
 
 
-def render_reproduce_prompt(template: str, row: dict, *, budget: float) -> str:
-    replacements = _replacements(row, budget)
+def render_reproduce_prompt(
+    template: str, row: dict, *, budget: float, cluster: Cluster | None = None
+) -> str:
+    replacements = _replacements(row, budget, cluster or resolve_cluster())
     # Check the template, never the rendered text: a row's own prose can carry a
     # brace token that is not a placeholder (2510.20725 quotes "O(tilde{O})"),
     # and it must reach the agent verbatim.
@@ -33,8 +36,11 @@ def render_reproduce_prompt(template: str, row: dict, *, budget: float) -> str:
     return rendered
 
 
-def _replacements(row: dict, budget: float) -> dict[str, str]:
+def _replacements(row: dict, budget: float, cluster: Cluster) -> dict[str, str]:
     return {
+        # Node facts come from the cluster profile (cluster.py), not hardcoded here.
+        "{NODE_ARCH}": cluster.arch,
+        "{TORCH_RULE}": cluster.torch_rule,
         "{ARXIV_ID}": arxiv_id_of(row) or "(unknown)",
         "{PAPER_KIND}": _text_or(row.get("paper_kind"), "empirical"),
         "{TIER}": _text_or(row.get("tier"), "(untiered)"),

@@ -43,28 +43,34 @@ from reprocli_repro.tools.plan import UPDATE_PLAN_HANDLERS, UPDATE_PLAN_TOOLS
 from reprocli_repro.tools.run_gpu import RUN_GPU_HANDLERS, run_gpu_tool
 from reprocli_repro.tools.workspace_bash import WORKSPACE_BASH_HANDLERS, WORKSPACE_BASH_TOOL
 
-_FETCH_TOOL = function_tool(
+def _fetch_tool(arch: str) -> dict:
+    return function_tool(
     "fetch_url",
     "Fetch a direct public http(s) URL and return its status, final URL, and "
     "text (HTML is reduced to text). There is no general web-search tool — you "
     "fetch URLs you already know or can construct (e.g. the PyTorch install page "
-    "or wheel index to find the right aarch64/CUDA torch build, a raw README or "
+    "or wheel index to find the right " + arch + "/CUDA torch build, a raw README or "
     "requirements file, a docs/release page).",
     {
         "url": {"type": "string", "description": "HTTP or HTTPS URL."},
         "max_chars": {"type": "integer", "default": TOOL_MAX_CHARS},
     },
     ["url"],
-)
+    )
 
 
-def build_repro_tools(gpus_per_node: int) -> list[dict]:
+_FETCH_TOOL = _fetch_tool("aarch64")
+
+
+
+
+def build_repro_tools(gpus_per_node: int, arch: str = "aarch64") -> list[dict]:
     """The tool schemas advertised to the model, with run_gpu's GPU cap = node size."""
     return [
         WORKSPACE_BASH_TOOL,
         *FILE_TOOLS,
         *UPDATE_PLAN_TOOLS,
-        _FETCH_TOOL,
+        _fetch_tool(arch),
         *LIST_PARTITIONS_TOOLS,
         run_gpu_tool(gpus_per_node),
     ]

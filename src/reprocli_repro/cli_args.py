@@ -22,7 +22,7 @@ from reprocli_vllm.config.config import DEFAULT_MODEL
 from reprocli_vllm.runtime.trace_io import trace_output_path
 
 from reprocli_repro.cleanup import DEFAULT_PRUNE_THRESHOLD_MB
-from reprocli_repro.cluster import resolve_cluster
+from reprocli_repro.cluster import resolve_cluster, selected_cluster_name
 from reprocli_repro.dataset import DEFAULT_LOCKFILE_DATASET, DEFAULT_LOCKFILE_SPLIT
 from reprocli_repro.inputs import DEFAULT_UNBANDED_BUDGET_H100_HOURS
 from reprocli_repro.report import REPORT_RESPONSE_FORMAT
@@ -151,16 +151,16 @@ def _add_workspace(parser: argparse.ArgumentParser) -> None:
 
 
 def _add_cluster(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_argument_group("cluster / JIT GPU substrate (deltaai)")
+    group = parser.add_argument_group(f"cluster / JIT GPU substrate ({selected_cluster_name()})")
     group.add_argument(
         "--partition",
-        help="SLURM partition (salloc -p); overrides the deltaai profile's default (ghx4).",
+        help="SLURM partition (salloc -p); overrides the selected cluster profile's default partition.",
     )
     group.add_argument(
         "--apptainer-image",
         default=os.environ.get("REPRO_APPTAINER_SIF"),
         help="Base .sif that backs the MANDATORY Apptainer sandbox — every agent step "
-        "runs inside this read-only image. Defaults to the deltaai profile's pinned "
+        "runs inside this read-only image. Defaults to the selected cluster profile's pinned "
         "raw CUDA image (the agent installs torch itself); overrides it / $REPRO_APPTAINER_SIF.",
     )
 
@@ -279,5 +279,5 @@ def apply_defaults(args: argparse.Namespace) -> None:
     # Phase 4: advertise the execution toolset (workspace_bash, file ops, the
     # metered run_gpu) to the model. run_gpu's GPU cap is the resolved cluster's
     # per-node size, so the model picks a valid GPU count for this substrate.
-    args.tools = build_repro_tools(args.cluster_profile.gpus_per_node)
+    args.tools = build_repro_tools(args.cluster_profile.gpus_per_node, args.cluster_profile.arch)
     args.trace_output = trace_output_path(args.output)

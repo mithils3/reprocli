@@ -93,7 +93,8 @@ fi
 # --- Paths and batch ids ----------------------------------------------------
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}" || exit 1
-VENV="${VENV:-${ROOT}/.venv}"
+PROFILE_ENV="$(PYTHONPATH="${ROOT}/src" python3 -c 'from reprocli_repro.cluster import resolve_cluster as r; print(r().host_env or "")' 2>/dev/null)"
+VENV="${VENV:-${PROFILE_ENV:-${ROOT}/.venv}}"
 # shellcheck disable=SC1091
 [[ -f "${VENV}/bin/activate" ]] && source "${VENV}/bin/activate"
 export PYTHONPATH="${ROOT}/src:${PYTHONPATH:-}"

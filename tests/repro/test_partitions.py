@@ -50,7 +50,7 @@ class ListPartitionsTests(unittest.TestCase):
         self.assertEqual(res["active_cluster"], "deltaai")
         self.assertEqual(res["active_default_partition"], "ghx4")
         self.assertEqual(res["known_cluster_defaults"]["deltaai"]["default_partition"], "ghx4")
-        self.assertEqual(set(res["known_cluster_defaults"]), {"deltaai"})
+        self.assertTrue({"deltaai", "delta"} <= set(res["known_cluster_defaults"]))
 
     def test_sinfo_absent_degrades_to_defaults_with_a_note(self):
         with mock.patch(

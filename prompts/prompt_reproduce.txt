@@ -110,7 +110,7 @@ Commands run in a read-only Apptainer container (NVIDIA CUDA image):
   ffmpeg/libsndfile/espeak-ng. CUDA, cuDNN, nvcc come from the image — never `module load` or
   install CUDA yourself.
 - NOT installed: torch — your first job (below).
-- KNOWN-ABSENT with no aarch64 wheel: conda/micromamba, X11/OpenGL headers, flash-attn,
+- KNOWN-ABSENT with no {NODE_ARCH} wheel: conda/micromamba, X11/OpenGL headers, flash-attn,
   pytorch3d, mujoco<3 and similar x86-pinned stacks. Do NOT build these from source (a
   flash-attn build eats an hour and still fails). Substitute (SDPA for flash-attn), stub
   imports off the scoring path, or record a platform-availability finding — not a 100-round
@@ -216,10 +216,7 @@ Run Python through the venv; install with uv only (the venv ships no pip, and sy
 installs into the wrong site-packages):
   uv venv {WORKSPACE_DIR}/.venv --python 3.12
   uv pip install --python {WORKSPACE_DIR}/.venv/bin/python --index-url https://download.pytorch.org/whl/cu129 torch torchvision torchaudio
-The one rule that matters on this aarch64/Grace node: torch from that CUDA index, never
-default PyPI (its aarch64 torch is CPU-only). Install the three together (mismatches give
-`undefined symbol`). The paper's exact pin rarely has an aarch64 CUDA wheel — take the nearest
-and note the substitution. The venv is on shared disk and survives releases.
+{TORCH_RULE}
 
 YOUR VERY FIRST ACTION — before reading the paper: build the venv, install torch as above, and
 in a small run_gpu allocation confirm:

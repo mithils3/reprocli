@@ -22,6 +22,12 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 DEFAULT_CLUSTER = "deltaai"
+# Selects the profile when a caller names none: RECLAIM_CLUSTER=delta runs the x86 A100 profile.
+CLUSTER_ENV = "RECLAIM_CLUSTER"
+
+
+def selected_cluster_name() -> str:
+    return os.environ.get(CLUSTER_ENV) or DEFAULT_CLUSTER
 
 # Env override for the Slurm account, read per call (not at import) so runs can charge
 # another allocation (e.g. betw-dtai-gh) without editing the profile.
@@ -57,6 +63,9 @@ class Cluster:
     apptainer_image: str | None = None   # MANDATORY sandbox .sif every step runs inside (sandbox.py)
     sandbox_cpus: int | None = None      # cores per agent CPU step on the shared orchestrator node; None = uncapped
     sandbox_mem_gb: int | None = None    # per-process address-space cap (GiB) for agent CPU steps; None = uncapped
+    arch: str = "aarch64"                # node CPU arch, rendered into agent-facing text
+    torch_rule: str = ""                 # agent-facing paragraph on installing the CUDA torch build
+    host_env: str | None = None          # host venv the sweep orchestrator activates (api_sweep.sh)
 
 
 # The single built-in profile. DeltaAI strings are the exact ones the live scripts pass.
@@ -92,6 +101,28 @@ _PROFILES: dict[str, Cluster] = {
         # (job 2666353; enforcement in sandbox.py, build fan-out capped there).
         sandbox_cpus=12,
         sandbox_mem_gb=16,
+        torch_rule=(
+            "The one rule that matters on this aarch64/Grace node: torch from that CUDA index, never\n"
+            "default PyPI (its aarch64 torch is CPU-only). Install the three together (mismatches give\n"
+            "`undefined symbol`). The paper's exact pin rarely has an aarch64 CUDA wheel — take the nearest\n"
+            "and note the substitution. The venv is on shared disk and survives releases."
+        ),
+    ),
+    "delta": Cluster(
+        name="delta",
+        hw="a100",
+        gpus_per_node=4,
+        account="bfvr-delta-gpu",
+        partition="gpuA100x4",
+        apptainer_image="/work/nvme/bfvr/msalunkhe/cuda1290-agent-x86.sif",
+        arch="x86_64",
+        torch_rule=(
+            "The one rule that matters on this x86_64/A100 node: install torch from the CUDA index\n"
+            "(standard x86_64 CUDA wheels), never a CPU-only build. Install the three together\n"
+            "(mismatches give `undefined symbol`). Take the nearest wheel to the paper's pin and note\n"
+            "the substitution. The venv is on shared disk and survives releases."
+        ),
+        host_env="/work/nvme/bfvr/msalunkhe/envs/delta-x86",
     ),
 }
 
@@ -115,12 +146,13 @@ def cluster_defaults() -> dict[str, dict[str, Any]]:
 
 
 def resolve_cluster(
-    name: str = DEFAULT_CLUSTER,
+    name: str | None = None,
     *,
     partition: str | None = None,
     apptainer_image: str | None = None,
 ) -> Cluster:
-    """The deltaai profile with the two per-run overrides (partition / image) applied."""
+    """The selected profile (RECLAIM_CLUSTER, default deltaai) with the per-run overrides applied."""
+    name = name or selected_cluster_name()
     try:
         base = _PROFILES[name]
     except KeyError:

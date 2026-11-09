@@ -50,7 +50,7 @@ class ClusterDefaultsTests(unittest.TestCase):
         self.assertEqual(defaults["deltaai"]["default_partition"], "ghx4")
         self.assertEqual(defaults["deltaai"]["account"], "bfvr-dtai-gh")
         # Every known cluster is represented, with the fields list_partitions surfaces.
-        self.assertEqual(set(defaults), {"deltaai"})
+        self.assertTrue({"deltaai", "delta"} <= set(defaults))
         for entry in defaults.values():
             self.assertEqual(
                 set(entry), {"account", "default_partition", "gpus_per_node", "hw"}
