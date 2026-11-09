@@ -1,6 +1,6 @@
 # Revised paper text promised by the rebuttal replies
 
-Drafted 2026-11-08 for the revised PDF due Sat 2026-11-14 (PLAN.md Section 4). Nothing under `paper_latex/` was edited. Each section below quotes the reply sentence that makes the promise (with its `rebuttal/drafts/replies.md` line), gives the paper location as file:line, the old text, and the replacement LaTeX, ready to paste. Every quote and line number was rechecked on 2026-11-08 against `replies.md` at commit 9bcf851, the shortened replies, which replaced the longer version of commit 33a989c. A section whose promise no longer appears in the current replies carries the label "not promised in current replies" at its top and stays in the file. Paper line numbers refer to the files before any of these edits, so paste from the bottom of each file upward or search for the old text.
+Drafted 2026-11-08 for the revised PDF due Sat 2026-11-14 (PLAN.md Section 4). Nothing under `paper_latex/` was edited. Each section below quotes the reply sentence that makes the promise (with its `rebuttal/drafts/replies.md` line), gives the paper location as file:line, the old text, and the replacement LaTeX, ready to paste. Every quote and line number was rechecked on 2026-11-08 against `replies.md` at commit 9bcf851, the shortened replies, which replaced the longer version of commit 33a989c. A section whose promise no longer appears in the current replies carries the label "not promised in current replies" at its top and stays in the file. Updated 2026-11-09 against the rewritten replies at commit dc01a5b: Sections 1b, 1c, 2a, 8b and 11 were revised in place, Section 17 adds the entries the new replies need, and the last section maps every reply promise to its entry. Paper line numbers refer to the files before any of these edits, so paste from the bottom of each file upward or search for the old text.
 
 Conventions used in the LaTeX:
 
@@ -67,13 +67,17 @@ Notes. The arm list follows the replies. `results/frontier/run_usage_summary.md`
 
 **New.**
 ```latex
-\todo{In the frontier arms, gpt-6-astra in Codex CLI reproduces a of n papers,
-gpt-6.1-sol b of n in our harness and c of n in Codex CLI, and Muse Wonder d of m
-in our harness and g of m in mini-SWE-agent (Table~\ref{tab:frontier}). Within
-gpt-6.1-sol the two harnesses differ by k papers (exact McNemar $p = x$), which
-is within / larger than the run-to-run change of DeepSeek-V4-Flash, and the
-frontier runs spend a median of u\% of their GPU grant.}
-% src when frozen: results/frontier/grades.jsonl, results/databook/frontier_cells.csv, results/frontier/run_usage_summary.md
+In the frontier arms, gpt-6-astra in Codex CLI reproduces \todo{a} of
+\todo{8} papers, gpt-6.1-sol \todo{b} of 12 in our harness and \todo{c} of
+\todo{n} in Codex CLI, and Muse Wonder \todo{d} of \todo{m} in our harness
+and \todo{g} of \todo{h} in mini-SWE-agent (Table~\ref{tab:frontier}). The two
+gpt-6.1-sol arms share 12 papers, and 9 of them are graded under both harnesses
+so far. On those 9, our harness reproduced 3 and Codex CLI 2, and they agree
+on 6. On all 12 the paired difference is \todo{q} papers (exact McNemar
+$p = $ \todo{x}), which is \todo{within / larger than} the change between
+repeated runs of DeepSeek-V4-Flash on the same 12 papers, and the frontier runs
+spend a median of \todo{u}\% of their GPU grant.
+% src: results/databook/frontier_cells.csv (arms thin-gpt-6.1-sol and codex-gpt-6.1-sol; 12 shared papers, 9 graded under both; reproduced 3 (2503.02809, 2504.20571, 2506.20671) and 2 (2504.20571, 2505.19087)); the rest when frozen: results/frontier/grades.jsonl, results/frontier/run_usage_summary.md
 ```
 
 ### 1c. Appendix B, new subsection
@@ -101,29 +105,34 @@ two models from one family. % src: results/subset/README.md (counts per tier and
 \begin{table}[ht]
 \centering
 \small
-\begin{tabular}{@{}llrrrrr@{}}
+\begin{tabular}{@{}llrl@{}}
 \toprule
-Model & Harness & Run & Retrain & Reimplement & Mean score & Grant spent (\%) \\
+Model & Harness & Papers & Reproduced (95\% interval) \\
 \midrule
-gpt-6-astra & Codex CLI & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-gpt-6.1-sol & ours & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-gpt-6.1-sol & Codex CLI & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-Muse Wonder & ours & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-Muse Wonder & mini-SWE-agent & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-\midrule
-DeepSeek-V4-Flash & ours & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-Muse Spark 1.2 & ours & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
+gpt-6-astra & Codex CLI & \todo{8} & \todo{a} \\
+gpt-6.1-sol & ours & 12 & \todo{b} \\
+gpt-6.1-sol & Codex CLI & \todo{n} & \todo{c} \\
+Muse Wonder & ours & \todo{m} & \todo{d} \\
+Muse Wonder & mini-SWE-agent & \todo{h} & \todo{g} \\
+Muse Spark 1.2 & ours & \todo{m} & \todo{e} \\
 \bottomrule
 \end{tabular}
-\caption{Reproduced papers by tier, mean audit score, and median share of the
-GPU grant spent for each frontier arm and for two main agents on the same papers.}
+\caption{Papers reproduced by each frontier arm. The last row gives Muse Spark
+1.2, the Meta model of the main runs, on the papers of the Muse Wonder arm.}
 \label{tab:frontier}
 \end{table}
+% src when frozen: results/frontier/grades.jsonl, results/databook/frontier_cells.csv; rows and slot letters follow YGTR part 1 of replies.md at dc01a5b
 
-\todo{Failure modes: we labeled the frontier runs with the procedure of
-Appendix~\ref{app:taxonomy}, and Reimplemented but did not check the result
-occurs in k of the m failing frontier runs. An author labeled 20 randomly drawn
-frontier runs blind to the model labels and agrees with them on x of 20.}
+To compare failures, Claude Sonnet 5 labeled the main failure of each of the 27
+failing frontier runs from its transcript, without seeing the verdict or the
+harness. Every label is one of the failure modes of
+Appendix~\ref{app:taxonomy} that the open agents also show. Reimplemented but
+did not check the result, the most common failure in the main results, is the
+main failure in 3 of the 27. In 5, the main failure was never launching an
+experiment, all on the two Reimplement papers with no released code (2505.16927
+and 2503.14698), where the run reported the missing artifacts and stopped with
+almost all of its GPU grant unused.
+% src: results/frontier/failure_modes.csv (27 rows, coder claude-sonnet-5, blind to verdict and arm; reimplement-without-validating primary 3); results/frontier/never_launched_check.md (6 coded never launched, 6cef06 relabeled failed before any number, so 5); partial read, 27 of 58 planned runs: moves with: the remaining frontier runs
 
 \begin{longtable}{@{}lllllrl@{}}
 \caption{Every frontier run with its model, harness, paper, tier, graded
@@ -201,12 +210,15 @@ from 5.13 for DeepSeek-V4-Flash to 3.03 for MiniMax-M2.7.
 The auditor confirms reproduction on 70 of the 400 agent-paper cells, 18\% with
 a 95\% Wilson interval~\citep{wilson1927probable} of 14\% to 22\%
 (Figure~\ref{fig:main-results}). % src: 73 + 1 (results/e8/regrade_muse.json, 2503.23035) - 2 (results/e9/class_review.csv) - 2 (results/e7/rescore_summary.md, 2505.23747) = 70; Wilson 14.1 to 21.5; moves with: E8 reruns of 2510.20725
-On the frozen targets, the mean audit score on the 0 to 10 rubric is 5.13 for
-DeepSeek-V4-Flash, 5.14 for Muse Spark 1.2 and 3.03 for MiniMax-M2.7. % src: replies.md T29u part 1; paper :465-466; b_models.tex:178 (5.00) + (8 + 6)/100 from results/e8/regrade_muse.json; \todo{} if Table 5 means are recomputed after the corrections; moves with: E8 reruns
+On the frozen targets, the mean audit score on the 0 to 10 rubric, with a 95\%
+interval over papers, is 5.13 (4.55 to 5.71) for DeepSeek-V4-Flash, 5.14 (4.59
+to 5.69) for Muse Spark 1.2, 3.51 (2.98 to 4.04) for Qwen3.6-27B, and 3.03
+(2.48 to 3.58) for MiniMax-M2.7. % src: replies.md T29u part 1 (W1); b_models.tex:178 (5.00) + (8 + 6)/100 from results/e8/regrade_muse.json; Qwen3.6-27B 3.51 includes the regrade of 2511.19808 (score 2, results/e8/regrade_dcells.json); the Sources table of the T29u reply still reads 3.49 [2.95, 4.03] for Qwen3.6-27B, which is the value before that regrade; moves with: E8 reruns
 DeepSeek-V4-Flash recovers the pinned number on 13 of 34 Run-tier papers (38\%, interval 24\%
-to 55\%), 9 of 33 at Retrain (27\%, 15\% to 44\%), and 4 of 33 at Reimplement
+to 55\%, mean score 5.29, 4.13 to 6.46), 9 of 33 at Retrain (27\%, 15\% to 44\%,
+mean score 5.45, 4.40 to 6.51), and 4 of 33 at Reimplement
 (12\%, 5\% to 27\%), where Muse Spark 1.2 has the best rate at 5 of 33 (15\%,
-7\% to 31\%). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%) after the
+7\% to 31\%, mean score 3.85, 2.86 to 4.84). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%) after the
 checkpoint scan below, so DeepSeek-V4-Flash alone has the best Retrain rate. % src: replies.md T29u part 1 and YGTR part 2; results/e7/rescore_summary.md (dsv4 Run 13/34, 23.9 to 55.0); results/e6/summary.json settings.S0_index (dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E8 reruns
 Table~\ref{tab:results} gives an interval for every agent and tier.
 \todo{Repeat-run sentence, Section 3 below.}
@@ -378,7 +390,7 @@ run the authors' code than when it must rebuild the method from the paper. The h
 - replies.md:290: "The two missing audits now have grades from the same pinned auditor, reproduced (score 8) on 2503.23035 and partial (score 6) on 2510.08177. [We reran the 4 cells of 2510.20725 with the same settings, and r of them reproduce.] Every benchmark rate in the revision includes these five new grades, while the figures for the auditor against the human grade stay on the 372 runs graded at submission."
 - paper_revisions.md:7 (`c_rubric.tex:126`, 25 becomes 28; see 5c).
 
-Settled 11-09 (decision 5, Mithil: "nothing negative", "they're still model failure since it knew the time limit it had"): the 22 empty cells outside the six traced to our side stay agent failures as the paper says, and no sentence gives a reason for them. The draft keeps the scoring rule (a cell with no graded run still scores 0) and adds the trace.
+Settled 11-09 (decision 5, Mithil: "nothing negative"): the 22 empty cells outside the six traced to our side stay agent failures as the paper says, and no sentence gives a reason for them. The draft keeps the scoring rule (a cell with no graded run still scores 0) and adds the trace.
 
 ### 5a. Section 5.2, new paragraph
 
@@ -770,7 +782,7 @@ for 24 input views, while the frozen configuration says 12.
 % src: results/e7/README.md:9-10; results/e7/v3_failures.csv
 ```
 
-Settled 11-09 (decisions 1 and 7): the corrected targets of the 8 targets with a wrong number replace the frozen ones as the grades of record, so 14/34 becomes 13/34 everywhere and the abstract's 41% becomes 38%; the nine look-first items of rebuttal/mithil/e7_merged.md keep their frozen targets. Section 15 lists every line that changes.
+The split of the 45 failing targets and the rescored runs are drafted in Section 17d. Settled 11-09 (decisions 1 and 7): the corrected targets of the 8 targets with a wrong number replace the frozen ones as the grades of record, so 14/34 becomes 13/34 everywhere and the abstract's 41% becomes 38%; the nine look-first items of rebuttal/mithil/e7_merged.md keep their frozen targets. Section 15 lists every line that changes.
 
 ---
 
@@ -872,6 +884,8 @@ DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
 % src: results/e8/summary.json build_dependency_runs (total 24; class_counts A 16, O 5, E 3; explicit_aarch64_minimax_run 5); results/e8/x86/README.md:3-4 (2 of the 16 not chip failures, so 14 aarch64 and 5 + 2 = 7 other; 12 replayed, 9 build, Wilson 0.47 to 0.91); results/e8/bound.csv (dsv4 env_runs 0, 0, 1; best Run 14/34 unchanged; Reimplement 5/33 -> 5/32 = 15.2% -> 15.6%; Retrain best stays dsv4 9/33 after the CogVLA correction, Muse 8/32)
 ```
 
+The Muse Spark 1.2 and MiniMax-M2.7 rates under the same removal, and the sum of 27 cells traced outside the agent, are drafted in Section 17f.
+
 ---
 
 ## 14. Section 5.3 and Limitations, the re-execution of missed runs with new seeds
@@ -970,6 +984,137 @@ This adds about one typeset line. The Section 5 half of the promise is met by th
 
 ---
 
+## 17. Entries added for the replies at dc01a5b
+
+Each entry quotes the reply sentence it serves, gives the location, and uses the existing format. Every number was checked against the file named in its `% src:` line, and the Wilson intervals were recomputed with the formula of `results/e6/summary.json`.
+
+### 17a. Section 5.2 and Table 5, mean audit score with a 95% interval
+
+**Promise.** replies.md T29u part 1 (W1): "Section 5.2 names no strongest agent and gives all four means: 5.13 [4.55, 5.71] for DeepSeek-V4-Flash, 5.14 [4.59, 5.69] for Muse Spark 1.2 with its two new grades, 3.51 [2.98, 4.04] for Qwen3.6-27B and 3.03 [2.48, 3.58] for MiniMax-M2.7."
+
+The Section 5.2 sentence and the per-tier means beside the best rates are in Section 2a above. Table 5 takes the same cells.
+
+**Location.** `paper_latex/appendix/b_models.tex:154-185`, Mean score column, the rows below. The interval is a t-interval over the papers of the tier, with cells without a graded run at 0.
+
+| Row | Old cell | New cell | Source |
+| :- | :- | :- | :- |
+| DeepSeek-V4-Flash, Run | `5.29` | `5.29 (4.13--6.46)` | recomputed from tools/anon_viewer/public/data/index.json, 34 papers |
+| DeepSeek-V4-Flash, Retrain | `5.45` | `5.45 (4.40--6.51)` | same, 33 papers |
+| Muse Spark 1.2, Reimplement | `3.67` | `3.85 (2.86--4.84)` | index.json plus the two new grades (results/e8/regrade_muse.json); 3.85 is the reply's value on the frozen targets |
+| DeepSeek-V4-Flash, All tiers | `5.13` | `5.13 (4.55--5.71)` | index.json, 100 papers |
+| Muse Spark 1.2, All tiers | `5.00` | `5.14 (4.59--5.69)` | 5.00 + (8 + 6)/100 |
+| Qwen3.6-27B, All tiers | `3.51` | `3.51 (2.98--4.04)` | reply value |
+| MiniMax-M2.7, All tiers | `3.03` | `3.03 (2.48--3.58)` | index.json plus results/e8/regrade_dcells.json |
+
+The Muse Spark 1.2 Reimplement cell: 3.67 + 6/33 = 3.85, since the new grade on 2510.08177 (partial, score 6) falls at Reimplement and the empty cell was at 0 (`results/e8/regrade_muse.json`). The new grade on 2503.23035 (score 8) falls at Run and moves that mean too, from 5.47 to 5.70 by the same arithmetic, which the reply does not state, so that cell stays `\todo{}`. The other All agents means in Table 5 stay slots (Section 15).
+
+### 17b. Section 5.2, papers reproduced by at least one agent
+
+**Promise.** replies.md rqBN part 3 (Q1): "By the auditor's grades, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run (47%, 31% to 63%), 11 of 33 at Retrain (33%, 20% to 50%) and 5 of 33 at Reimplement (15%, 7% to 31%), and the tiers keep their order."
+
+**Location.** `paper_latex/iclr2027_conference.tex:461-466`, one sentence after the opening paragraph of Section 2a above.
+
+**New.**
+```latex
+At least one of the four agents reproduces 32 of the 100 papers (32\%, interval
+24\% to 42\%): 16 of 34 at Run (47\%, 31\% to 63\%), 11 of 33 at Retrain (33\%,
+20\% to 50\%), and 5 of 33 at Reimplement (15\%, 7\% to 31\%).
+% src: tools/anon_viewer/public/data/index.json minus the two checkpoint runs and the two 2505.23747 Run runs, plus the new Muse Spark 1.2 grade on 2503.23035 (computed 2026-11-09, Sources table of the rqBN reply); Wilson recomputed; moves with: E8 reruns of 2510.20725
+```
+
+### 17c. Appendix D, reproduced rates under the auditor and the human grade
+
+**Promise.** replies.md T29u part 1 (W2): "The human grade finds slightly more reproductions than the auditor in every tier, so the auditor errs toward not reproduced, and the tier ordering is the same under both grades." and "Of the 28 runs where only one grader called the result reproduced, the human did in 19 and the auditor in 9, or 7 against 3 at Run, 7 against 4 at Retrain and 5 against 2 at Reimplement."
+
+**Location.** `paper_latex/appendix/d_auditor_validation.tex`, after the by-tier table of Section 8b above.
+
+**New.**
+```latex
+Table~\ref{tab:auditor-rates} gives the reproduced rate under each grade over
+all cells of a tier, with a cell without an auditor grade counted as not
+reproduced. The human grade finds more reproductions in every tier and the
+tiers keep their order under both. Of the 28 runs that only one grader called
+reproduced, the human did in 19 and the auditor in 9, which is 7 against 3 at
+Run, 7 against 4 at Retrain, and 5 against 2 at Reimplement.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Tier & Auditor & Human \\
+\midrule
+Run         & 31/136 = 23\% (17--31) & 35/136 = 26\% (19--34) \\
+Retrain     & 29/132 = 22\% (16--30) & 32/132 = 24\% (18--32) \\
+Reimplement & 13/132 = 10\% (6--16)  & 16/132 = 12\% (8--19) \\
+\midrule
+All tiers   & 73/400 = 18\% (15--22) & 83/400 = 21\% (17--25) \\
+\bottomrule
+\end{tabular}
+\caption{Reproduced cells under the auditor's and the human grade as submitted,
+with 95\% Wilson intervals.}
+\label{tab:auditor-rates}
+\end{table}
+% src: results/e4/summary.json per_tier_reproduced (auditor = both + auditor_only, human = both + human_only; run 28 + 3, 28 + 7; retrain 25 + 4, 25 + 7; reimplement 11 + 2, 11 + 5); Wilson recomputed
+```
+
+### 17d. Appendix E, the split of the 45 failing targets and the corrected targets
+
+**Promise.** replies.md T29u part 1 (bullet): "Appendix E: every frozen target ... checked against its paper, with 8 corrected and their runs rescored." and part 2 (Q2): "A second check, flagging a target only where the paper contradicts it, sorted the other 45: the frozen number itself is wrong on 8, the number is right but a setting or label is off on 16, and 21 are correct or ambiguous. We corrected the 8 to the paper's value and rescored their runs." rqBN part 3 (Q2) repeats the split.
+
+**Location.** `paper_latex/appendix/e_construction.tex`, end of the Target check subsection of Section 11 above, after "...while the frozen configuration says 12."
+
+**New.**
+```latex
+Of the 100 targets, 55 pass all four questions. A second check flags a target
+only where the paper contradicts it, and it sorted the other 45 as follows: the
+frozen number is wrong on 8, the number is right but a setting or label is off
+on 16, and the target is correct or the paper is ambiguous on 21. We corrected
+the 8 numbers to the paper's value and rescored their runs, which changes two
+verdicts, both on 2505.23747. Its frozen value of 51.13 comes from the
+authors' README, while the paper, which defines the claim, reports 48.4, and
+DeepSeek-V4-Flash (51.44 measured) and MiniMax-M2.7 move from reproduced to
+partial. DeepSeek-V4-Flash then reproduces 13 of 34 Run papers where the
+submission reported 14.
+% src: rebuttal/mithil/e7_merged.md (Kind of error column: number 8, setting or label 15 + 1, none 21); results/e7/rescore_summary.md and class_d_rescore.md (two verdicts, 14 to 13); results/e7/summary.json step3 (all_four_yes 55)
+```
+
+### 17e. Section 5.3, runs that never launched an experiment
+
+**Promise.** replies.md YGTR part 1 (W1): "In 5, the main failure was never launching an experiment, all on the two Reimplement papers with no released code (2505.16927 and 2503.14698), where the runs reported the missing artifacts and stopped with almost all of their GPU grant unused. Section 5.3 names this pattern."
+
+**Location.** `paper_latex/iclr2027_conference.tex:531-532`, after "Never launched an experiment occurs ten times at Reimplement against once at Run."
+
+**New.**
+```latex
+The frontier runs show the same pattern: five of their 27 failures never
+launched an experiment, all on the two Reimplement papers with no released
+code, where the run reported the missing artifacts and stopped with almost all
+of its GPU grant unused.
+% src: results/frontier/failure_modes.csv, results/frontier/never_launched_check.md (GPU use 0.0027 to 0.0669 H100-hours of a grant of 32 or 96); moves with: the remaining frontier runs
+```
+
+### 17f. Section 5.3, build-failure bound for the other agents, and the 27 cells traced outside the agent
+
+**Promise.** replies.md YGTR part 2 (W2): "Muse Spark 1.2, the best at Reimplement, goes from 5/33 = 15% [7%, 31%] to 5/32 = 16% [7%, 32%]. The agent most affected is MiniMax-M2.7 at Run, which goes from 2/34 to 2/26 and is best at no tier." and part 3 (Q3): "We traced 27 of the 400 cells to causes outside the agent: 6 cells with no graded run and 21 graded runs that failed on the environment, the 14 aarch64 builds and 7 other problems of W2, so 6 + 14 + 7 = 27."
+
+**Location.** `paper_latex/iclr2027_conference.tex:538-541`, the end of the new text of Section 13 above, after "...since DeepSeek-V4-Flash has none of them at Run."
+
+**New.**
+```latex
+It also has none at Retrain, so its Retrain rate stays at 9 of 33 (27\%, 15\%
+to 44\%). Muse Spark 1.2, the best agent at Reimplement, goes from 5 of 33
+(15\%, 7\% to 31\%) to 5 of 32 (16\%, 7\% to 32\%), and MiniMax-M2.7 at Run,
+the agent most affected, goes from 2 of 34 to 2 of 26. Together with the 6
+cells that had no graded run and failed outside the agent
+(Section~\ref{subsec:results}), 6 + 14 + 7 = 27 of the 400 cells trace to
+causes outside the agent.
+% src: results/e8/bound.csv (muse reimplement 5/33 to 5/32; minimax run 3/26 less minimax-run-2505.23747, results/e7/rescore_summary.md, = 2/26); results/e8/summary.json (outside_agent_cells 6; build_dependency_runs class_counts); Wilson 95% as in the YGTR reply
+```
+The sentence about the frontier runs sharing this environment is `\todo{their results}` in the reply, so it stays out until the frontier grades are final.
+
+---
+
 ## Promises not drafted, and why
 
 1. **Error bars on Figure 4** (Section 2c). The figure is built by `figures/build.py` from HTML, so it needs a figure build, a DOM audit, and a render check, none of which a text draft covers. Only the caption is drafted.
@@ -1000,3 +1145,73 @@ At about 95 characters per typeset line in the ICLR column, the main-body edits 
 | **Total** | **about +46 lines** |
 
 That is about 0.8 of a page at roughly 55 lines per page. The main body now ends at the bottom of page 9 (checked with pdftotext on the current PDF), and the rebuttal limit is 10 pages (PLAN.md:204, `iclr_threads/lit.md:35`), so the edits fit with about 10 lines to spare before floats move. If it runs over, the cheapest cuts are to move Section 5a to Appendix B with a one-sentence pointer (about -5 lines) and to move the selection footnote of Section 14a into Appendix G beside the definition of Ran, outside tolerance (about -2 lines).
+
+## Promise map (replies at dc01a5b)
+
+Status: drafted = text existed and matches the reply; added now = drafted in this pass (Section 17 or an in-place revision); slot = drafted with `\todo{}` for a number that is not frozen. "Section 14a" and similar mean the Section of this file.
+
+| reply part | promise (short quote) | revision section | status |
+| :- | :- | :- | :- |
+| General | "gpt-6.1-sol in our agent loop and in Codex CLI, [gpt-6-astra] in Codex CLI, and Muse Wonder ..." (Section 5.1, Appendix B) | 1a, 1c | slot (model counts, bib entries) |
+| General | "Every rate has a 95% Wilson interval" (Section 5.2) | 2a, 2b, 2c | drafted |
+| General | "two more runs of DeepSeek-V4-Flash on 12 papers measure run-to-run variation" (Section 5.2) | 3 | slot (k, lo, hi, j) |
+| General | "A confusion matrix ... precision and recall per tier, agreement at the boundary ..., and agreement on anti-cheat flags" (Appendix D) | 8b | drafted |
+| General | "Checking all 45,861 log entries against it found one overwritten log" (Appendix A) | 9 | drafted |
+| General | "A model from a different lab ... checked each frozen target" (Appendix E) | 11 | drafted |
+| General | "every graded run is rescored at 1%, 2%, 5% and 10% relative tolerance" (Appendix F) | 12 | drafted |
+| General | "We traced all 28 cells ... with no graded run" (Section 5.2) | 5a | drafted (rerun slot) |
+| General | "replayed failed builds ... on x86 to bound their effect" (Section 5.3) | 13 | drafted |
+| General | "reran missed runs' last commands with new seeds" (Section 5.3) | 14a | slot (2506.10351) |
+| General | "Scanning every transcript found 2 runs evaluating a downloaded checkpoint ... both now count as not reproduced" (Section 5.2) | 7 | drafted |
+| T29u 1 | "Section 5.2: a 95% interval on every rate and mean score" | 2a, 17a | added now (mean score intervals) |
+| T29u 1 | "two more runs of DeepSeek-V4-Flash on 12 papers" (Section 5.2) | 3 | slot |
+| T29u 1 | "Appendix D: the five-by-five confusion matrix ... 7/8 boundary and high-severity flags" | 8b | drafted |
+| T29u 1 | "Appendix F: every graded run rescored at 1%, 2%, 5% and 10% tolerance" | 12 | drafted |
+| T29u 1 | "Appendix E: every frozen target ... checked against its paper, with 8 corrected and their runs rescored" | 11, 17d | added now (the 8 corrected) |
+| T29u 1 (W1) | "revision ranks two agents only when their 95% intervals stay apart after each is widened by [j] papers" | 2a | slot (j) |
+| T29u 1 (W1) | table of best agent per tier with rate and mean score and its interval | 2a, 17a | added now |
+| T29u 1 (W1) | "70/400 = 18% [14%, 22%] of cells are reproduced" | 2a | drafted |
+| T29u 1 (W1) | "Section 5.2 names no strongest agent and gives all four means" (Qwen3.6-27B 3.51 [2.98, 4.04]) | 2a, 4, 17a | added now |
+| T29u 1 (W1) | "Removing the 24 runs ... moves no best-agent rate by more than one percentage point (Section 5.3)" | 13 | drafted |
+| T29u 1 (W2) | auditor against human reproduced rates per tier, 28 one-sided calls (19 against 9) | 8b, 17c | added now |
+| T29u 1 (W2) | "found one edited log in 372 runs" and "counts both as not reproduced" | 9, 7 | drafted |
+| T29u 2 (Q1) | confusion matrix, 64/73, 64/83, F1 0.82, 306 of 372, 75 of 100 at 7 or 8, 42 of 57 at 0 (Appendix D) | 8b | drafted |
+| T29u 2 (Q2) | tolerance table 56, 65, 73, 82 and the 2511.19808 example (Appendix F) | 12 | drafted |
+| T29u 2 (Q2) | "The paper supports the value for 92 ... all four for 55 (Appendix E)" | 11 | drafted |
+| T29u 2 (Q2) | "the frozen number itself is wrong on 8 ... 16 ... 21" | 17d | added now |
+| T29u 2 (Q2) | "Correcting ... changes two verdicts ... best Run count falls from 14 to 13 of 34" | 17d, 2a | added now |
+| rqBN 1 | "Appendix D (W1): confusion matrix, precision, recall, agreement at the pass threshold of 8, and flag agreement" | 8b | drafted |
+| rqBN 1 | "Appendix D now states this beside the F1" (one human label per run, no human-human agreement) | 8b | drafted |
+| rqBN 1 | "Appendix A (W2): a description of the two logs that matches the code, and their comparison with a second transcript" | 9 | drafted |
+| rqBN 1 | "Section 5.3 and Limitations (Q1): a re-execution of missed runs with new seeds, and the bound on build failures" | 14a, 14b, 13 | drafted (2506.10351 slot) |
+| rqBN 1 | "Appendix E (Q2): a check of each paper's frozen target" | 11 | drafted |
+| rqBN 2 | Appendix A "After" text, the 188-entry table, 119 commands in 65 runs, "Appendix A states that limit" | 9 | drafted |
+| rqBN 3 (Q1) | "at least one of the four agents reproduced 32 of the 100 papers" | 17b | added now |
+| rqBN 3 (Q1) | "We did not run a human-expert baseline, and the Limitations section states this" | 14b (existing Limitations paragraph, `iclr2027_conference.tex:583-589`) | drafted |
+| rqBN 3 (Q1) | three re-executed papers with seeds (Section 5.3) | 14a | slot (2506.10351) |
+| rqBN 3 (Q2) | "One author reviewed every extracted field ... Appendix E now states" and "the human audit ... settled each compute estimate" | 10a | drafted |
+| rqBN 3 (Q2) | "The choice of claim itself rests on construction alone, which Appendix E now states" | 11 | drafted |
+| rqBN 3 (Q2) | 2506.18890 example, 27.443 PSNR for 24 views against 12 | 11 | drafted |
+| YGTR 1 | "Section 5.1 and a new subsection of Appendix B" frontier arms | 1a, 1c | slot |
+| YGTR 1 | "Section 5.3: the bound on build failures ... and a re-execution of missed runs" | 13, 14a | drafted |
+| YGTR 1 | "Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent" | 2a, 3 | drafted (slot) |
+| YGTR 1 | "Section 5.2: the trace of all 28 cells ..., the missing grades added, and the two runs ... downloaded checkpoint" | 5a, 7 | drafted |
+| YGTR 1 (W1) | frontier table: model, harness, papers, reproduced | 1c | added now (slot counts) |
+| YGTR 1 (W1) | "the appendix table gives each run's exit reason and each count's 95% interval" | 1c | slot |
+| YGTR 1 (W1) | paired harness counts: 9 graded under both, 3 against 2, agree on 6, McNemar | 1b | added now (McNemar slot) |
+| YGTR 1 (W1) | 27 failing frontier runs coded; 3 reimplement-without-validating; 5 never launched | 1c | added now |
+| YGTR 1 (W1) | "Section 5.3 names this pattern" (never launched, Reimplement, no released code) | 17e | added now |
+| YGTR 2 (W1) | "the revision adds that the claims hold for these papers and agents" | 16 | drafted |
+| YGTR 2 (W2) | build failures: 24 runs, 14 aarch64, 9 of 12 build on x86, best-agent rates (Section 5.3) | 13 | drafted |
+| YGTR 2 (W2) | Muse Spark 1.2 5/33 to 5/32, MiniMax-M2.7 2/34 to 2/26 | 17f | added now |
+| YGTR 2 (W2) | "The frontier runs above use the same environment, and [their results]" | 17f | slot (left out until graded) |
+| YGTR 2 (W3) | "the revision ranks two agents only when their 95% Wilson intervals stay apart after each count is shifted [j] papers" | 2a, 3 | slot (j) |
+| YGTR 3 (Q2) | scan of 372 transcripts, 368 finished, 16 matches, 10 / 4 / 2; "Section 5.2 states this limit" | 7 | drafted |
+| YGTR 3 (Q2) | "Muse Spark 1.2 now falls from 9 of 33 to 8 of 33 ... MiniMax-M2.7 from 2 of 33 to 1 of 33 (Section 5.2)" | 7, 2b | drafted |
+| YGTR 3 (Q2) | "a footnote in Section 5.2 says that its release includes the claimed checkpoint" (CogVLA) | 7 (footnote on 2508.21046) | drafted |
+| YGTR 3 (Q3) | "27 = 6 + 14 + 7" cells traced outside the agent | 17f | added now |
+| YGTR 3 (Q3) | the 28-cell trace, 2503.23035 reproduced (8), 2510.08177 partial (6), 3 regraded at 0, 2, 0 | 5a | drafted |
+| YGTR 3 (Q3) | "[We reran the 4 cells of 2510.20725 ... r of them reproduce]" | 5a | slot (r) |
+| YGTR 3 (Q3) | "Every rate in the revision includes these five new grades" | 5a, 15 | drafted |
+| YGTR 3 (Q3) | "The Limitations section states that ... agent error cannot be separated from seed and hardware variance" | 14b | drafted |
+| YGTR 3 (Q3) | "[Run paper 2506.10351: outcome on both seeds]" | 14a | slot |
