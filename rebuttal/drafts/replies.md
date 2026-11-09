@@ -257,7 +257,7 @@ Removing all 24 from the denominators leaves DeepSeek-V4-Flash, the best agent a
 
 Our reply to Reviewer rqBN (Q1) re-runs the last commands of missed runs on the same nodes with new seeds and no agent, and both Retrain papers miss again on both seeds. The frontier runs above use the same environment, and [their results].
 
-### Reply to YGTR, part 2 of 3 (2,977 characters)
+### Reply to YGTR, part 2 of 3 (2,970 characters)
 
 **W3: Agents are only run once.**
 
