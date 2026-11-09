@@ -57,6 +57,8 @@ Question: Cancel the 13 requests with no live launcher (3548889 to 3555340, rebu
 Change: no sentence changes. The requests are older than every live job, so they would start first and delay the reruns. Cancelling needs your approval.
 Recommended: yes. Each would hold a GPU node with nothing attached and push the reruns back.
 Seen 11-09 00:40: four of the 13 (3550917, 3550974, 3552947, 3555265) reached the front of the queue and ended FAILED after 10 to 12 seconds, so an orphan holds a node for seconds and gives it back. The cost of leaving them is small; cancelling the other 9 still removes 9 starts ahead of the reruns.
+
+Decided 11-09 09:08: cancel. By then 8 of the 13 had failed on their own and 3549889 was already cancelled, so the last 5 still pending (3548889, 3549067, 3552546, 3554610, 3555340) were cancelled with scancel.
 Decision: ______
 
 **10. Report gpt-6.1-terra? (5 lines: 236, 28, 229, 236, 305)**
