@@ -66,8 +66,13 @@ The ghx4 GPU queue is the limit on every arm: 41 GPU requests were pending on 11
 3. E10 seeds on 2506.10351 and the E8 reruns of 2510.20725. Each fills one sentence.
 4. Muse Wonder in mini-SWE-agent (2 graded, 2 waiting on GPUs) and in our loop (0 graded, 4 started on 11-06). The reply reads complete without these rows; they are added if graded.
 5. gpt-6.1-sol in Codex CLI on the 12 extension papers. Our loop did not run these papers, so they add to one count and to no comparison.
-6. The continue-prompt Codex variant: no valid run yet (6 attempts VOID, 2 waiting). A hostile read of the Reviewer 3 reply names this variant as the result most likely to move the score, because it tests whether the early stops survive being told to continue. The remaining papers are launched in parallel on 11-09; its two sentences are cut if nothing is graded by the posting day.
-7. The x86 arms on Delta. Many of their GPU requests are refused ("job submit limit") or never granted, so several runs ended without a GPU. Only runs with every GPU request granted can enter the reply. The allocation expires Fri 11-13.
+6. The continue-prompt Codex variant. The two runs started on 11-07 still wait on GPUs, and the other six core papers were started in parallel on 11-09 13:41 (tmux `rb-codex-nudge-c` on gh-login04). The old dispatcher on gh-login01 is paused with SIGSTOP (pid 15878) so it cannot start those six a second time. A hostile read of the Reviewer 3 reply names this variant as the result most likely to move the score, because it tests whether the early stops survive being told to continue.
+7. The two gpt-6-astra cells in Codex CLI that ended at the old 48-hour wall (2505.10475, 2504.20571) were restarted on 11-09 13:41 under the current rule (tmux `rb-codex-astra-rerun` on gh-login03). When a rerun is graded, the old run gets a VOID file and the rerun is the row of record.
+8. The x86 arms on Delta. In the first pass 15 of 21 runs had a GPU request refused at submit ("job submit limit"), so the pass was stopped on 11-09 13:54 and every bundle except astra-x86-2505.16927-8dbd30 (no refusal, finished) carries a VOID file. Commit f7ca417 makes `run_gpu` resubmit a refused request every 2 minutes for up to 6 hours. Both arms were relaunched under the same tags at lower concurrency (7 and 6). The allocation expires Fri 11-13.
+
+## Paper revision
+
+First pass committed 11-09 (348e89b) and pushed to the Overleaf repo. It applies the drafted text of `paper_revision_text.md` and adds the tier tests at the corrected counts, the frontier baselines, the frontier failure-mode subsection (Appendix G.4), mean-score intervals in Table 5 and the rebuilt Figure 4 with intervals. The conclusion ends on page 10. Open: every red `\todo` slot (frontier arms, repeat runs, 2506.10351 seeds, 2510.20725 reruns, x86 arm), Figures 2, 5 and 6 and the dissection counts in Section 5.3, which are still at the submission counts, bib entries for the frontier models and Codex CLI, and the fixes from the page read and the adversarial review. `rebuttal/scripts/frontier_tex.py` regenerates the two frontier tables from the databook.
 
 ## Cut from the plan
 
