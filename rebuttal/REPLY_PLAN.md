@@ -6,8 +6,8 @@ Reviews: Reviewer 1 (T29u) 3, Reviewer 2 (rqBN) 3, Reviewer 3 (YGTR) 2 (4-point 
 
 | Day | What goes up |
 | :- | :- |
-| Thu 11-12 | Wave 1: Reviewer 1 (2 parts) and Reviewer 2 (3 parts) |
-| Sat 11-14 | Wave 2: Reviewer 3 (3 parts), the general reply, and the revised PDF |
+| Thu 11-12 | Wave 1: Reviewer 1 (1 post) and Reviewer 2 (1 post) |
+| Sat 11-14 | Wave 2: Reviewer 3 (2 posts), the general reply, and the revised PDF |
 | Mon 11-16 | Results update with the runs that finished after the waves |
 | Wed 11-18 | Discussion closes. Runs stop at Sun 11-15 18:00. |
 
