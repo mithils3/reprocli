@@ -110,11 +110,7 @@ Commands run in a read-only Apptainer container (NVIDIA CUDA image):
   ffmpeg/libsndfile/espeak-ng. CUDA, cuDNN, nvcc come from the image — never `module load` or
   install CUDA yourself.
 - NOT installed: torch — your first job (below).
-- KNOWN-ABSENT with no {NODE_ARCH} wheel: conda/micromamba, X11/OpenGL headers, flash-attn,
-  pytorch3d, mujoco<3 and similar x86-pinned stacks. Do NOT build these from source (a
-  flash-attn build eats an hour and still fails). Substitute (SDPA for flash-attn), stub
-  imports off the scoring path, or record a platform-availability finding — not a 100-round
-  build fight.
+{KNOWN_ABSENT}
 - Writable: {WORKSPACE_DIR}, {EVIDENCE_DIR}, /tmp, ~/.cache. Everything else is read-only.
 - Network + HF_TOKEN work (gated repos you have access to download fine).
 

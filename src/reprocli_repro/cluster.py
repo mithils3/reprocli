@@ -66,6 +66,7 @@ class Cluster:
     arch: str = "aarch64"                # node CPU arch, rendered into agent-facing text
     torch_rule: str = ""                 # agent-facing paragraph on installing the CUDA torch build
     host_env: str | None = None          # host venv the sweep orchestrator activates (api_sweep.sh)
+    known_absent: str = ""               # agent-facing bullet on packages with no wheel for this arch
 
 
 # The single built-in profile. DeltaAI strings are the exact ones the live scripts pass.
@@ -101,6 +102,7 @@ _PROFILES: dict[str, Cluster] = {
         # (job 2666353; enforcement in sandbox.py, build fan-out capped there).
         sandbox_cpus=12,
         sandbox_mem_gb=16,
+        known_absent='- KNOWN-ABSENT with no aarch64 wheel: conda/micromamba, X11/OpenGL headers, flash-attn,\n  pytorch3d, mujoco<3 and similar x86-pinned stacks. Do NOT build these from source (a\n  flash-attn build eats an hour and still fails). Substitute (SDPA for flash-attn), stub\n  imports off the scoring path, or record a platform-availability finding — not a 100-round\n  build fight.',
         torch_rule=(
             "The one rule that matters on this aarch64/Grace node: torch from that CUDA index, never\n"
             "default PyPI (its aarch64 torch is CPU-only). Install the three together (mismatches give\n"
@@ -123,6 +125,7 @@ _PROFILES: dict[str, Cluster] = {
             "the substitution. The venv is on shared disk and survives releases."
         ),
         host_env="/work/nvme/bfvr/msalunkhe/envs/delta-x86",
+        known_absent="- KNOWN-ABSENT in the image: conda/micromamba and X11/OpenGL headers.",
     ),
 }
 

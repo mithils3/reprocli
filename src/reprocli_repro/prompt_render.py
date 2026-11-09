@@ -41,6 +41,7 @@ def _replacements(row: dict, budget: float, cluster: Cluster) -> dict[str, str]:
         # Node facts come from the cluster profile (cluster.py), not hardcoded here.
         "{NODE_ARCH}": cluster.arch,
         "{TORCH_RULE}": cluster.torch_rule,
+        "{KNOWN_ABSENT}": cluster.known_absent,
         "{ARXIV_ID}": arxiv_id_of(row) or "(unknown)",
         "{PAPER_KIND}": _text_or(row.get("paper_kind"), "empirical"),
         "{TIER}": _text_or(row.get("tier"), "(untiered)"),
