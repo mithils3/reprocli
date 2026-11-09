@@ -105,7 +105,7 @@ On the match target itself, a model from a different lab than our auditor (OpenA
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 2 (4,130 characters)
+### Reply to rqBN, part 1 of 2 (4,355 characters)
 
 Thank you for checking how the logs and the auditor are validated. These are the changes, each detailed below:
 - Appendix A: the description of the two harness logs now matches the code (old and new wording below), and the appendix reports a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable.
