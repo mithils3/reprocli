@@ -116,7 +116,7 @@ _PROFILES: dict[str, Cluster] = {
         gpus_per_node=4,
         account="bfvr-delta-gpu",
         partition="gpuA100x4",
-        apptainer_image="/work/nvme/bfvr/msalunkhe/cuda1290-agent-x86.sif",
+        apptainer_image="/work/nvme/bfvr/msalunkhe/images/cuda1290-agent-x86.sif",
         arch="x86_64",
         torch_rule=(
             "The one rule that matters on this x86_64/A100 node: install torch from the CUDA index\n"
