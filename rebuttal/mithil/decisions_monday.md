@@ -13,7 +13,7 @@ Decision: ______
 **2. Base of graded runs: 372 or 377? (12 lines: 14, 17, 36, 74, 85, 123, 126, 141, 153, 206, 217, 290)**
 Question: Keep 372 as the base and say five later grades are separate, or recount over 377? keep 372 / recount 377
 Change: 372 becomes 377 (five grades: 2503.23035 at 8, 2510.08177 at 6, three regraded runs at 0, 2, 0) [consistency_check.md Flag 3]. Line 290 says every rate includes these grades, which holds only for 377.
-Recommended: keep 372 for the auditor-against-human table, since that study is fixed, and report the five later grades in one separate sentence. Line 249 then says the benchmark rates include them while the agreement figures do not.
+Recommended: keep 372 for the auditor-against-human table, since that study is fixed, and report the five later grades in one separate sentence. Line 290 then says the benchmark rates include them while the agreement figures do not.
 Decision: ______
 
 **3. Widen the re-execution beyond 3 papers? (9 lines: 17, 137, 177, 212, 218, 222, 258, 310, 337)**
@@ -64,7 +64,7 @@ Recommended: drop. No gpt-6.1-terra run exists in frontier_cells.csv, so there i
 Decision: ______
 
 **11. Explain the 3 unmatched log entries? (4 lines: 161, 163, 207, 211)**
-Question: Keep "we have not yet traced why" (line 173), or trace the 3 before posting? keep / trace
+Question: Keep "we have not yet traced why" (old line 173; now line 161), or trace the 3 before posting? keep / trace
 Change: keep: 3 of 45,861 stay unexplained. Trace: 161 gives a cause and 163, 207, 211 may change [followups_check_4.md].
 Settled by the 11-08 trace (rebuttal/results/e5/traces_2026-11-08.md): each gap equals the GPU release charge logged after the entry. Lines 161 and 211 now say so.
 Decision: none needed
@@ -72,7 +72,7 @@ Decision: none needed
 **12. Run a second blind grader? (3 lines: 153, 206, (cut in the 11-08 rewrite), 333)**
 Question: Have a second blind grader label about 40 runs stratified by verdict, and an author label 20 frontier runs blind? yes / no
 Change: yes fills the bracket at 153 and the [x] of 20 (cut in the 11-08 rewrite). No: "one label per run" at 206 stays and no agreement figure can be reported.
-Decision: no (Mithil, 11-08). The second-grader slot (line 153) and the 20 blind frontier labels (line 229) are removed; one label per run stays.
+Decision: no (Mithil, 11-08). The second-grader slot (old line 153) and the 20 blind frontier labels (old line 229) are removed; one label per run stays.
 
 **13. Approve a Codex variant with fixed "continue" prompts? (3 lines: 236, 240, 334)**
 Question: Run a small variant to test the early stop? yes / no
@@ -101,7 +101,7 @@ Decision: ______
 **17. Did the author review cover the claim, configuration and target fields? (1 line: 188; paper line 668)**
 Question: Did it? yes / no
 Change: yes: 188 becomes "had only an author review of each extracted field, with no second check and no annotator agreement" [followups_check_1.md:15]. No: paper iclr2027_conference.tex:668 changes instead.
-Decision: yes (Mithil, 11-08). Line 179 now says an author reviewed every field and no second person did; paper line 668 stands.
+Decision: yes (Mithil, 11-08). Line 188 now says an author reviewed every field and no second person did; paper line 668 stands.
 
 **18. Thin-harness gpt-6.1-sol arm: 12 papers or 24? (2 lines, one note: 246, 246)**
 Question: Compare the two harnesses on the 12 papers both have run, or launch thin-harness papers 13 to 24 so the arm matches Codex's 24? keep 12 / launch 12 more
