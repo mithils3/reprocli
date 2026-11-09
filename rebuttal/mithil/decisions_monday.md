@@ -8,6 +8,7 @@ replies.md has 5 [AUTHOR: ...] notes. Line 3 only mentions the marker. Line 60 h
 Question: Do the 10 corrections in rebuttal/results/e7/rescore_summary.md stand, out of the 45 targets with a failed question? yes / no
 Change: best Run 14/34 = 41% becomes 13/34 = 38%. All-agent 73 becomes 70 [followups_check_1.md:75]. Brackets k at 47 and 196 take the count.
 Recommended: settle decision 7 first, then keep a correction only where you agree the number itself is wrong. The second pass (e7_merged.md) finds 8 targets with a wrong number and 16 where only a setting or label is off, so the final count may be 8 rather than the 10 in rescore_summary.md.
+Checked 11-08 (rebuttal/mithil/e7_ten_vs_eight.md, rebuttal/results/e7/class_d_rescore.md): the two lists share 5 targets with a wrong number, and only one of those, 2505.23747, changes verdicts (DeepSeek-V4-Flash and MiniMax-M2.7 at Run). The 3 targets the rescore never corrected (2510.04136, 2506.01511, 2505.24864) change no verdict: the one reproduced cell among them, Qwen on 2506.01511, scores 8 under both targets. So the counts are the same under either rule, and the choice only sets whether the reply names 10 corrected targets or 8.
 Decision: ______
 
 **2. Base of graded runs: 372 or 377? (12 lines: 14, 17, 36, 74, 85, 123, 126, 141, 153, 206, 217, 290)**
