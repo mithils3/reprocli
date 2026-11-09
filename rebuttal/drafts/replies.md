@@ -250,7 +250,7 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (3,626 characters)
+### Reply to YGTR, part 1 of 3 (3,640 characters)
 
 Thank you for the review. We ran frontier models in production harnesses and measured the confounds you named. The revision makes these changes:
 - Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, gpt-6-astra in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
@@ -275,7 +275,7 @@ We ran two current OpenAI models, gpt-6-astra and gpt-6.1-sol, and Meta's Muse W
 
 A harness is the program around the model that supplies its tools, system prompt and context handling. We ran gpt-6.1-sol and Muse Wonder both in our harness and in a production coding harness: Codex CLI for gpt-6.1-sol and mini-SWE-agent for Muse Wonder. Between the two harnesses of one model the tools, prompt and context handling change, while the sandbox, task text, GPU grant, GPU metering and auditor stay those of the main runs. A Codex run ends when Codex ends its own turn, as in our loop, and the appendix table gives each run's exit reason and each count's 95% interval.
 
-The two gpt-6.1-sol arms share 12 papers, and 9 of them are graded under both harnesses so far. On those 9, our loop reproduced 3 and Codex CLI 2, and they agreed on 6. On all 12, the paired difference is [q] papers (exact McNemar p = [x]), which is [within / larger than] the change between repeated runs of DeepSeek-V4-Flash on the same 12 papers (W3 below). The frontier runs used a median of [u]% of their GPU grant.
+Our gpt-6.1-sol runs in the two harnesses use the same 12 papers, and 9 of them are graded under both so far. On those 9, our loop reproduced 3 and Codex CLI 2, and they agreed on 6. On all 12, the paired difference is [q] papers (exact McNemar p = [x]), which is [within / larger than] the change between repeated runs of DeepSeek-V4-Flash on the same 12 papers (W3 below). The frontier runs used a median of [u]% of their GPU grant.
 
 To compare failures, Claude Sonnet 5 labelled the main failure of each of the 27 failing frontier runs from its transcript, without seeing the verdict or the harness. Every label is one of the Appendix G failure modes that the open agents also show. The paper's most common failure, writing the method without checking its output against the paper's numbers, is the main failure in 3 of the 27. In 5, the main failure was never launching an experiment, all on the two Reimplement papers with no released code (2505.16927 and 2503.14698), where the runs reported the missing artifacts and stopped with almost all of their GPU grant unused. Section 5.3 names this pattern.
 
