@@ -151,7 +151,7 @@ Thank you again for the review.
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 3 (2,344 characters)
+### Reply to rqBN, part 1 of 3 (2,319 characters)
 
 Thank you for checking how runs are graded and how their logs are protected. The revision makes these changes for your points:
 - Appendix D (W1): the confusion matrix of the auditor, the LLM that grades every run, against the human verdict, with precision, recall, agreement at the pass threshold of 8, and flag agreement.
@@ -171,7 +171,7 @@ Tiers group papers by what their authors released: Run papers release code, data
 | Retrain | 25/29 = 86% | 25/32 = 78% | 0.82 |
 | Reimplement | 11/13 = 85% | 11/16 = 69% | 0.76 |
 
-We did not measure agreement per flag type. Every high-severity integrity flag, such as a number copied from the paper, forces a score of 0, so we compared that outcome. The human placed 46 runs at 0 and the auditor 53, and they agree on 42 of the 57 runs that either placed there.
+Every high-severity integrity flag, such as a number copied from the paper, forces a score of 0, so we compared the two graders on that outcome. The human placed 46 runs at 0 and the auditor 53, and they agree on 42 of the 57 runs that either placed there.
 
 Three graders divided the 396 runs that started, so each run received one human label, given under the same rubric and blind to the auditor's score. That design does not measure agreement between humans, and Appendix D now states this beside the F1.
 
@@ -250,7 +250,7 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (3,703 characters)
+### Reply to YGTR, part 1 of 3 (3,611 characters)
 
 Thank you for the review. We ran frontier models in production harnesses and measured the confounds you named. The revision makes these changes:
 - Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, gpt-6-astra in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
@@ -279,7 +279,7 @@ The two gpt-6.1-sol arms share 12 papers, and 9 of them are graded under both ha
 
 To compare failures, Claude Sonnet 5 labelled the main failure of each of the 27 failing frontier runs from its transcript, without seeing the verdict or the harness. Every label is one of the Appendix G failure modes that the open agents also show. The paper's most common failure, writing the method without checking its output against the paper's numbers, is the main failure in 3 of the 27. In 5, the main failure was never launching an experiment, all on the two Reimplement papers with no released code (2505.16927 and 2503.14698), where the runs reported the missing artifacts and stopped with almost all of their GPU grant unused. Section 5.3 names this pattern.
 
-We keep the thin loop for the main results so that every model runs under one harness. We did not run Claude Code because it bills to Anthropic, and our budget for new runs covered OpenAI and Meta models. Our auditor is itself a Claude model.
+Of the harnesses you name, we ran Codex CLI and mini-SWE-agent. We keep the thin loop for the main results so that every model runs under one harness.
 
 ### Reply to YGTR, part 2 of 3 (2,429 characters)
 
