@@ -174,15 +174,22 @@ def frontier_row(g, e6):
     }
 
 
+def is_void(run_dir):
+    return bool(run_dir) and os.path.isfile(os.path.join(run_dir, "VOID"))
+
+
 def frontier_rows(e6):
-    rows = []
+    rows, dropped = [], 0
     for line in read_text(GRADES).splitlines():
         if not line.strip():
             continue
         g = json.loads(line)
         if str(g.get("graded_at", "")) >= CUTOFF:
+            if is_void(g.get("run_dir", "")):
+                dropped += 1
+                continue
             rows.append(frontier_row(g, e6))
-    return rows
+    return rows, dropped
 
 
 def arm_table(rows):
@@ -359,7 +366,7 @@ def main():
 
     e6_path = os.path.join(RESULTS, "e6", "table.csv")
     e6 = load_e6(e6_path)
-    rows = frontier_rows(e6)
+    rows, void_dropped = frontier_rows(e6)
 
     with io.open(os.path.join(args.out_dir, "frontier_cells.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FRONT_COLS, extrasaction="ignore")
@@ -378,7 +385,7 @@ def main():
     lines += repeat_md() + [""]
     with io.open(os.path.join(args.out_dir, "databook.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print("frontier_rows=%d" % len(rows))
+    print("frontier_rows=%d void_rows_dropped=%d" % (len(rows), void_dropped))
 
 
 if __name__ == "__main__":
