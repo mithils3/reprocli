@@ -270,7 +270,12 @@ def run_in_session(
             ok=False, returncode=127, stdout="", stderr=f"{type(exc).__name__}: {exc}",
             elapsed_s=time.monotonic() - start, command=argv,
         )
-    log = open(log_path, "ab", buffering=0) if log_path else None
+    try:
+        log = open(log_path, "ab", buffering=0) if log_path else None
+    except OSError:
+        # Disk quota or a missing dir must not escape with srun still running and
+        # the GPU session held; the in-memory capture still returns the output.
+        log = None
     try:
         out_buf = _StreamCapture()
         err_buf = _StreamCapture()
