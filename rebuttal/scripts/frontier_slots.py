@@ -49,10 +49,19 @@ def mcnemar_exact(b, c):
     return min(1.0, 2 * tail)
 
 
-def exclusion(reason):
-    if "void" in reason:
+QUEUE_STOPS = CSV_PATH.parents[1] / "frontier" / "queue_stops.txt"
+
+
+def queue_stop_ids():
+    if not QUEUE_STOPS.exists():
+        return set()
+    return {l.split("#")[0].strip() for l in QUEUE_STOPS.read_text().splitlines()} - {""}
+
+
+def exclusion(row, stops):
+    if "void" in row["exit_reason"].lower():
         return "void"
-    if "no_gpu" in reason or "queue" in reason:
+    if row["run_id"] in stops:
         return "no_gpu"
     return None
 
@@ -65,9 +74,10 @@ def main():
 
     rows = list(csv.DictReader(CSV_PATH.open(newline="")))
     excluded = Counter()
+    stops = queue_stop_ids()
     kept = []
     for r in rows:
-        why = exclusion(r["exit_reason"])
+        why = exclusion(r, stops)
         if why == "void" or (why == "no_gpu" and not args.keep_queue_stops):
             excluded[(why, r["exit_reason"])] += 1
             continue
