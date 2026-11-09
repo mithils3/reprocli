@@ -250,7 +250,7 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (3,611 characters)
+### Reply to YGTR, part 1 of 3 (3,626 characters)
 
 Thank you for the review. We ran frontier models in production harnesses and measured the confounds you named. The revision makes these changes:
 - Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, gpt-6-astra in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
@@ -273,7 +273,7 @@ We ran two current OpenAI models, gpt-6-astra and gpt-6.1-sol, and Meta's Muse W
 | Muse Wonder | mini-SWE-agent | [h] | [g] |
 | Muse Spark 1.2 | our loop | [m] | [e] |
 
-A harness is the program around the model that supplies its tools, system prompt and context handling. gpt-6.1-sol and Muse Wonder each ran in our thin ReAct-style loop and in a production harness, Codex CLI and mini-SWE-agent respectively. Between the two harnesses of one model the tools, prompt and context handling change, while the sandbox, task text, GPU grant, GPU metering and auditor stay those of the main runs. A Codex run ends when Codex ends its own turn, as in our loop, and the appendix table gives each run's exit reason and each count's 95% interval.
+A harness is the program around the model that supplies its tools, system prompt and context handling. We ran gpt-6.1-sol and Muse Wonder both in our harness and in a production coding harness: Codex CLI for gpt-6.1-sol and mini-SWE-agent for Muse Wonder. Between the two harnesses of one model the tools, prompt and context handling change, while the sandbox, task text, GPU grant, GPU metering and auditor stay those of the main runs. A Codex run ends when Codex ends its own turn, as in our loop, and the appendix table gives each run's exit reason and each count's 95% interval.
 
 The two gpt-6.1-sol arms share 12 papers, and 9 of them are graded under both harnesses so far. On those 9, our loop reproduced 3 and Codex CLI 2, and they agreed on 6. On all 12, the paired difference is [q] papers (exact McNemar p = [x]), which is [within / larger than] the change between repeated runs of DeepSeek-V4-Flash on the same 12 papers (W3 below). The frontier runs used a median of [u]% of their GPU grant.
 
