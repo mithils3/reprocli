@@ -72,8 +72,7 @@ Decision: ______
 **12. Run a second blind grader? (4 lines: 153, 199, 229, 288)**
 Question: Have a second blind grader label about 40 runs stratified by verdict, and an author label 20 frontier runs blind? yes / no
 Change: yes fills the bracket at 153 and the [x] of 20 at 229. No: "one label per run" at 199 stays and no agreement figure can be reported.
-Recommended: no. No second grader is available this week, and the replies already state one label per run.
-Decision: ______
+Decision: no (Mithil, 11-08). The second-grader slot (line 153) and the 20 blind frontier labels (line 229) are removed; one label per run stays.
 
 **13. Approve a Codex variant with fixed "continue" prompts? (3 lines: 227, 229, 289)**
 Question: Run a small variant to test the early stop? yes / no
@@ -102,8 +101,7 @@ Decision: ______
 **17. Did the author review cover the claim, configuration and target fields? (1 line: 179; paper line 668)**
 Question: Did it? yes / no
 Change: yes: 179 becomes "had only an author review of each extracted field, with no second check and no annotator agreement" [followups_check_1.md:15]. No: paper iclr2027_conference.tex:668 changes instead.
-Only you know this one. If an author did review every field, say so in line 179; the paper sentence then stands.
-Decision: ______
+Decision: yes (Mithil, 11-08). Line 179 now says an author reviewed every field and no second person did; paper line 668 stands.
 
 ---
 
