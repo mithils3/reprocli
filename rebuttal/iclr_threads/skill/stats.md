@@ -306,3 +306,55 @@ Threads with author text under the review: raised n=244, unchanged n=197. Share 
 | link_per_k | 0.0 | 0.0 | +0.0 [+0.0, +0.0] |
 | number_per_k | 46.7 | 37.0 | +9.8 [+2.6, +15.7] |
 | point_label_per_k | 2.3 | 0.0 | +2.3 [+0.0, +2.7] |
+
+## Part 3. Format study: raised vs unchanged
+
+Threads: 240 ICLR 2025 reviewer threads from rebuttal/iclr_threads/format_sample.jsonl (raised 120, unchanged 120), a subsample of the 441 above, joined on thread_id. Features are regex counts over the author posts, which never see the group (rebuttal/iclr_threads/format_study/groups.py; printout in format_study/output.txt). Each cell: count/threads = share [Wilson 95%]; diff = raised minus unchanged in points [Newcombe 95%]; * marks a difference whose interval excludes 0. Medians use a bootstrap interval (2,000 resamples). With 13 share features, about one chance gap is expected at the 5% level, and every gap is a correlation. The table and label gaps re-measure threads already in Part 1 (uses_tables, per_point_headings) and are not independent of it. "Near the cap" means a post body above 4,800 characters, since no post runs past about 5,000.
+
+| feature | raised | unchanged | diff |
+|---|---|---|---|
+| Posts labelled as parts, such as (1/3) or Part 1 | 39/120 = 32% [25, 41] | 31/120 = 26% [19, 34] | +7 [-5, +18] |
+| Any markdown table | 53/120 = 44% [36, 53] | 35/120 = 29% [22, 38] | +15 [+3, +27] * |
+| A general response on the forum | 85/120 = 71% [62, 78] | 68/120 = 57% [48, 65] | +14 [+2, +26] * |
+| Numbered point labels at line start (W1, Q2, Weakness 3) | 70/120 = 58% [49, 67] | 50/120 = 42% [33, 51] | +17 [+4, +29] * |
+| Reviewer text quoted in a blockquote | 52/120 = 43% [35, 52] | 43/120 = 36% [28, 45] | +8 [-5, +20] |
+| Markdown headings (#, ##, ###) | 25/120 = 21% [15, 29] | 25/120 = 21% [15, 29] | +0 [-10, +10] |
+| Phrase naming the revised document ("in the revised manuscript") | 62/120 = 52% [43, 60] | 60/120 = 50% [41, 59] | +2 [-11, +14] |
+| Colour marking named (in blue, highlighted) | 32/120 = 27% [20, 35] | 19/120 = 16% [10, 23] | +11 [+0, +21] * |
+| Line numbers given (Line 139, L460) | 34/120 = 28% [21, 37] | 32/120 = 27% [20, 35] | +2 [-10, +13] |
+| First sentence thanks the reviewer | 99/120 = 82% [75, 88] | 96/120 = 80% [72, 86] | +2 [-7, +12] |
+| Last post ends with an invitation to ask more | 26/120 = 22% [15, 30] | 23/120 = 19% [13, 27] | +2 [-8, +13] |
+| Opens with a "Dear Reviewer" line | 18/120 = 15% [10, 22] | 9/120 = 8% [4, 14] | +8 [-1, +16] |
+| A post within 200 characters of the 5,000 cap | 46/120 = 38% [30, 47] | 28/120 = 23% [17, 32] | +15 [+3, +26] * |
+
+| quantity | raised | unchanged | diff of medians [95%] |
+|---|---|---|---|
+| Author characters per thread | 8,252.0 (n=120) | 7,502.0 (n=120) | +750.0 [-1,428.5, +2,469.0] |
+| Author posts per thread | 3.5 (n=120) | 3.0 (n=120) | +0.5 [+0.0, +1.0] |
+| Characters per post (thread median) | 2,704.8 (n=120) | 2,757.5 (n=120) | -52.8 [-444.0, +329.0] |
+| Tables per thread | 0.0 (n=120) | 0.0 (n=120) | +0.0 [+0.0, +1.0] |
+| Words per numbered point (threads with labels) | 239.7 (n=70) | 218.8 (n=50) | +20.8 [-61.9, +69.9] |
+
+Point level (643 numbered points in 120 threads; points cluster within threads, so these intervals are too narrow): a location named 52% against 42%, +9 [+1, +17]; a table in the answer 17% against 9%, +9 [+3, +14]; a number 65% against 59%, +6 [-1, +14]; a stated change 28% against 29%, -2 [-9, +5]; thanks in the first two sentences 24% against 20%, +4 [-3, +10].
+
+### 2025 against 2026 in the search corpus
+
+Matched comments (text contains "we thank" or "thank the reviewer", the only two 2026 queries) from rebuttal/results/style/author_comments.jsonl; corpus.py block of format_study/output.txt. Shares with Newcombe 95% intervals, medians with a 400-resample bootstrap.
+
+| quantity | 2025 | 2026 | 2026 minus 2025 |
+|---|---|---|---|
+| reviewer-thread comments | 6,711 | 3,299 | |
+| median characters per comment | 3,332 | 3,181 | -151 [-270, -43] |
+| table | 15.7% | 21.3% | +5.6 [+4.0, +7.3] |
+| part label | 22.7% | 23.5% | +0.8 [-1.0, +2.6] |
+| numbered point label | 32.1% | 43.3% | +11.3 [+9.2, +13.3] |
+| blockquote | 33.2% | 29.1% | -4.1 [-6.0, -2.2] |
+| markdown heading | 15.5% | 23.7% | +8.2 [+6.5, +9.9] |
+| bold lead-in line | 43.3% | 50.7% | +7.4 [+5.3, +9.5] |
+| line numbers | 21.8% | 14.8% | -7.0 [-8.5, -5.4] |
+| revised-document phrase | 38.6% | 36.3% | -2.3 [-4.3, -0.3] |
+| colour or highlight named | 10.6% | 8.9% | -1.7 [-2.9, -0.4] |
+| general responses | 909 | 170 | |
+| median characters per general response | 1,856 | 2,017 | +161 [-292, +583] |
+| general response opens "Dear" | 12.4% | 28.2% | +15.8 [+9.2, +23.3] |
+| general response names the revised document | 54.6% | 32.4% | -22.2 [-29.5, -14.2] |

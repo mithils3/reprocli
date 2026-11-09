@@ -115,3 +115,99 @@ No closing form separates the groups. Reminders to a silent reviewer and direct 
 ## 9. Things that show no difference
 
 These markers appear at similar rates in both groups, so a writer can stop tuning them. Thanking the reviewer is near universal (style_stats.md, thanks: raised 94%, unchanged 93%, +1, no interval on the difference; thanks_per_k: raised 4.2, unchanged 3.4, +0.8 [+0.0, +1.6]). Hedges such as "may" and "we believe" are equally common (style_stats.md, hedge: raised 88%, unchanged 87%, +1, no interval on the difference; hedge_per_k: raised 3.1, unchanged 2.8, +0.3 [-0.2, +0.7]), and so are boosters such as "clearly" (style_stats.md, booster_per_k: raised 1.0, unchanged 1.0, -0.0 [-0.3, +0.3]). Saying "we agree" or "you are right" makes no clear difference (style_stats.md, we_agree: raised 34%, unchanged 33%, +1, no interval on the difference; you_are_right: raised 7%, unchanged 6%, +1, no interval on the difference). Apologies are slightly rarer in raised threads, though the file reports no interval and the median rate is zero in both (style_stats.md, apology: raised 15%, unchanged 21%, -6, no interval on the difference; apology_per_k: raised 0.0, unchanged 0.0, +0.0 [+0.0, +0.0]). Median sentence length is 22 words in both groups (style_stats.md, sent_len_median: raised 22.0, unchanged 22.0, +0.0 [-0.5, +1.0]). The opening move (Section 3) and the style of a concession (Section 4) also belong on this list.
+
+## 10. Format and length
+
+This section describes how ICLR authors lay out a reply, so a draft can match them. It draws on three sources, and each number names its file.
+
+- Full threads: rebuttal/iclr_threads/format_sample.jsonl in the reprocli repo, 240 ICLR 2025 reviewer threads (120 raised, 120 unchanged, a subsample of the 441 threads above). Scripts in rebuttal/iclr_threads/format_study/ measured them, and their printout is format_study/output.txt, cited below as output.txt.
+- Six blind readers' notes, format_notes_1.md to format_notes_6.md with per-thread rows in format_notes_1.jsonl to format_notes_6.jsonl, 40 threads each, outcome hidden. The readers worked from structure and scripts (headings, first and last sentences, table and pointer scans, targeted reads) and did not read every line, so their point counts and words per point are estimates.
+- Search corpus: rebuttal/results/style/author_comments.jsonl, 34,137 author comments returned by OpenReview search (26,612 from 2025, 7,525 from 2026), with its method in iclr_author_responses.md. Search returns only comments that match a query, so its per-thread totals undercount. The 2026 part came from two queries only ("we thank" and "thank the reviewer"), so the year comparison uses the comments in both years whose text contains one of those phrases, called matched below.
+
+Everything here describes common practice. The raised against unchanged comparison of these format features is in stats.md, Part 3, and Section 10.10 summarises it.
+
+### 10.1 Length per reviewer
+
+- Total author text in a reviewer thread has a median of 8,050 characters, about 1,150 words, with quartiles of 5,285 and 12,694 characters (784 and 1,821 words) (output.txt). The six reader samples gave medians from 6,918 to 9,522 characters (format_notes_1.md to format_notes_6.md). The search corpus gives 2,526 characters per thread, which undercounts because search drops the comments that do not match (iclr_author_responses.md).
+- A thread holds a median of 3 author posts, with quartiles of 2 and 5, and 25 of 240 threads hold a single post (output.txt).
+- A post holds a median of 2,739 characters, with quartiles of 899 and 4,097 over 893 posts. The first post is the long one, with a median of 3,994 and quartiles of 2,967 and 4,642, and the later posts are short notices and follow-ups (output.txt). No post body in the sample runs past 5,009 characters and 85 of 893 sit above 4,800, so treat 5,000 characters as the limit of one OpenReview comment (output.txt). The search corpus gives a median of 2,264 characters per comment, with quartiles of 693 and 3,896 (iclr_author_responses.md).
+
+### 10.2 Parts
+
+- 70 of 240 threads (29%) label their posts as parts (output.txt). A count such as "(1/3)", "[1/2]" or "Part 1/2" appears in 35, "Part 1" or "Part I" in 27, and "(cont.)" or "Continued" in 8. The readers counted 13, 16, 13, 17, 13 and 6 of 40 split threads in their samples (format_notes_1.md to format_notes_6.md).
+- The label sits in the post title, as in "Authors' Responses to Reviewer gqu4 (1/5)" (https://openreview.net/forum?id=bhK7U37VW8), and "Response to Reviewer X" is the most common title, on 105 of the 489 titled posts (output.txt). A part ends where the 5,000-character limit falls, often between two points.
+
+### 10.3 Point headings
+
+Half the threads number their points with the reviewer's own labels, and the rest quote the reviewer or use a short bold topic (output.txt, 240 threads, first labelled point per thread).
+
+| form | threads | verbatim example |
+|---|---|---|
+| Bold numbered label on its own line | 57 | "**W1: OwLore may lead to increased time cost.**" (https://openreview.net/forum?id=AEwtGiJVPi) |
+| Blockquoted reviewer sentence, no number | 46 | "> The work appears to be a direct extension ... it would be beneficial to further emphasize how the authors handle these complexities." (https://openreview.net/forum?id=gYNBQygmXG) |
+| Bold topic lead-in, no number | 38 | "**Multiple Seeds / Standard Deviation:**" (https://openreview.net/forum?id=uN2kkAvarI) |
+| Numbered label inside a blockquote | 34 | "> **Q3.** The minimal performance gains may not justify the added memory and computational overheads." then "**A3.**" (https://openreview.net/forum?id=CuupjjjT3U) |
+| No headings | 21 | |
+| Markdown heading with a topic | 15 | "## **KV Cache Memory Reduction Compared to Pruning Methods**" (https://openreview.net/forum?id=HyPofygOCT) |
+| Markdown heading with a numbered label | 14 | "### W1. Experiments on varying forecasting, observation and spatial range." (https://openreview.net/forum?id=ts1F3BVaDI) |
+| Plain numbered label | 13 | "Q1: The reliability of the scorer LLM (e.g., Gemma-7B-it) is uncertain." then "A1:" (https://openreview.net/forum?id=bhK7U37VW8) |
+
+- Numbered labels appear in 120 of 240 threads. Among them 45 use Q labels only, 43 use W and Q labels, 23 use W only, and 9 use C for comment or concern (output.txt). A separate answer label such as "A1:", "R1:" or "**Response:**" appears in 70 threads (output.txt).
+- The label carries a short paraphrase or the reviewer's sentence, and a long reviewer point goes in a blockquote above the answer.
+
+### 10.4 Answer shape
+
+- Over 643 numbered points in 120 threads, an answer runs a median of 140 words, with quartiles of 78 and 255. 110 answers (17%) run under 60 words and 296 (46%) reach 150 words (output.txt). The readers estimated a median of 260 words per point, with quartiles of 162 and 374, by dividing total words by the points they counted, which also counts quoted review text (format_notes_1.jsonl to format_notes_6.jsonl).
+- 62% of these answers carry a number (400 of 643), 48% name a location such as a Table, Figure, Section, Appendix, line or page (307), 28% state a change in words like "we have added" or "revised" (182), 14% hold a table (88), and 22% thank the reviewer in their first two sentences (143) (output.txt).
+- The shape the readers describe most often is a label, a direct answer in the first sentence, the number or line range, then the pointer to the revision (format_notes_5.md). A minor point such as wording, notation or a missing reference gets one to three sentences.
+
+### 10.5 Tables
+
+- 88 of 240 threads (37%) hold at least one markdown table, and those threads hold a median of 2 tables, with quartiles of 1 and 4 (output.txt).
+- In the readers' descriptions, the tables hold new results set against baselines or benchmarks (49 descriptions), ablation grids or hyperparameter sweeps (10), and cost or runtime (4) (format_notes_1.jsonl to format_notes_6.jsonl, the tables.holds field). A typical table has methods as rows, metrics as columns, and the best value in bold (format_notes_1.jsonl, t075).
+- In the search corpus 15.7% of matched 2025 comments and 21.3% of matched 2026 comments hold a table (output.txt).
+
+### 10.6 Pointing to the revised PDF
+
+- Over 240 threads, a reply names a Table or Figure number in 72%, a Section in 48%, an Appendix in 46%, the revised document by name in 51%, line numbers in 28%, a colour or highlight in 21%, and a page in 9% (output.txt).
+- The revised document is named as "in the revised manuscript" (52 uses), "in the revised paper" (28), "in the revised version" (27) and "in the updated manuscript" (14). Colour is named as "highlighted in red" (6), "marked in blue" (3) or "highlighted in blue" (3). Lines are given as "Line N" or "lines N-N" (312 line references) (output.txt).
+- Verbatim forms: "We already include other Triplane-based 3D generation methods in the revised paper (Line 139-144)." (https://openreview.net/forum?id=nhAyhTxrXu); "The updated theoretical results and corresponding proofs have been added to **Appendix B of the updated manuscript**, highlighted in blue for clarity." (https://openreview.net/forum?id=v4PnwdA056); "We also try with different teacher LLMs: GPT-4o (Table 2, L378-393) and GPT-4o-mini (Table 5, L972-986 in the revised PDF)." (https://openreview.net/forum?id=00SnKBGTsz)
+
+### 10.7 General response
+
+- 153 of the 240 threads (64%) sit on a forum with a general response (output.txt). The search corpus finds one on 28.2% of forums, which undercounts for the same reason as above (iclr_author_responses.md).
+- A general response runs a median of 1,919 characters, about 284 words, with quartiles of 1,127 and 3,506 characters (171 and 474 words) (output.txt). The search corpus gives a median of 1,717 characters, with quartiles of 894 and 2,792 (iclr_author_responses.md).
+- Of the 153, 94% thank the reviewers, 74% name a location, 73% use words such as summary, revision or changes, 55% hold a bullet list (a median of 6 bullets), 46% combine bullets with locations, 50% name a colour or highlight, 32% use bold lead-ins, 18% recap what reviewers praised, 13% use markdown headings, and 12% hold a table (output.txt).
+- Its title is most often "General Response", then "Global Response", "Common Response" and "Revision Summary" (output.txt). The usual order is one line of thanks, a sentence on what reviewers valued, a bulleted list of changes with their locations, and results that answer several reviewers at once.
+
+### 10.8 Openings and closings
+
+- The first sentence of the first post thanks the reviewer in 195 of 240 threads (81%), 31 (13%) open directly on a point label or quote, and 27 (11%) open with a "Dear Reviewer" line (output.txt). The most common first words are "Thank you for" (68) and "We thank the" (31).
+- The first post ends on its last answer in 178 threads (74%), on thanks in 37 (15%), and on an invitation to ask more in 25 (10%). The last post ends on thanks in 97 (40%), on an answer in 93 (39%), on an invitation in 49 (20%), and on a score request in 1 (output.txt). The most common closing words are "Thank you again for".
+
+### 10.9 2025 against 2026
+
+The matched search comments give 6,711 reviewer-thread comments from 2025 and 3,299 from 2026 (output.txt, corpus.py block). Shares are compared with Newcombe intervals and medians with a bootstrap.
+
+- Length is about the same: a median of 3,332 characters in 2025 and 3,181 in 2026, a difference of −151 [−270, −43], under 5%. Per-thread totals are 3,453 and 3,246, both undercounted.
+- 2026 replies use more structure: numbered point labels 32.1% to 43.3% (+11.3 [+9.2, +13.3]), markdown headings 15.5% to 23.7% (+8.2 [+6.5, +9.9]), bold lead-ins 43.3% to 50.7% (+7.4 [+5.3, +9.5]), and tables 15.7% to 21.3% (+5.6 [+4.0, +7.3]).
+- 2026 replies quote the reviewer a little less (blockquotes 33.2% to 29.1%, −4.1 [−6.0, −2.2]) and give line numbers less often (21.8% to 14.8%, −7.0 [−8.5, −5.4]). Parts are unchanged (22.7% and 23.5%, +0.8 [−1.0, +2.6]).
+- General responses (909 in 2025, 170 in 2026) are about as long (1,856 and 2,017 characters, +161 [−292, +583]), open with "Dear" more often (12.4% to 28.2%), and name the revised document less often (54.6% to 32.4%, −22.2 [−29.5, −14.2]). These data do not show why that phrase fell.
+- Verbatim 2026 point answers are among the examples below.
+
+### 10.10 Format and the outcome
+
+Over 13 format features in the 240 threads, five gaps have intervals that exclude zero: a table (44% against 29%), numbered point labels (58% against 42%), a general response on the forum (71% against 57%), a post near the 5,000-character limit (38% against 23%), and named colour marking (27% against 16%, with the lower bound at zero) (stats.md, Part 3). With 13 features about one chance gap is expected. Each gap is a correlation, these features travel together with effort and with fixable reviews, and the 240 threads are a subsample of the 441, so the table and heading gaps come from the same threads as the earlier findings and add no independent test. Total length, posts, characters per post, parts, quotes, markdown headings, the revised-document phrase, line numbers, opening thanks and closing invitations show no gap.
+
+### 10.11 Efficient point answers (verbatim)
+
+Chosen for shape alone, each with a label, a direct first sentence, a number or a change, and a location.
+
+- 2025: "**W1: OwLore may lead to increased time cost.** ... We would like to clarify that the outlier scores are computed only once before the fine-tuning process begins, not with each update. ... For example, in our experiments with the LLaMA2-7B model, the computation of outlier scores takes approximately 73 secs. In contrast, the total fine-tuning time is about 1.6 hours, making the outlier score computation a negligible portion (approximately 1.2%) of the overall training time." (https://openreview.net/forum?id=AEwtGiJVPi)
+- 2025: "**A7**: Thanks for your suggestion! The new results on the VisA dataset are given in the ***General Response.*** Our method outperforms others across all the segmentation models, with an **11.71%** average improvement on IoU." (https://openreview.net/forum?id=VzZTHukfCB)
+- 2025: "A1: Thank you for your valuable suggestion. We have added detailed evaluations of the alignment of the scorer LLM in Appendix F. These evaluations demonstrate that Gemma-7B-it exhibits strong and aligned performance in scoring." (https://openreview.net/forum?id=bhK7U37VW8)
+- 2025: "**Response:** This is a good suggestion. We created and included an overview figure, which is now Figure 2." (https://openreview.net/forum?id=STBPaproaB)
+- 2026: "**Q7 – Cross-family generalization** We have evaluated this cross-architecture generalization and reported it in (Table 4): training on three families and testing on the fourth yields 24–28% MAPE, while IrEne’s error is 49–58% in the same setting." (https://openreview.net/forum?id=aPJeT2Ii3u)
+- 2026: "> Q2. Another concern is evaluation cost and practicality. We have added a cost analysis for a single evaluation to the **Appendix D.1**. On average, the evaluator processes 424 input tokens and produces 127 output tokens per evaluation. The estimated cost per evaluation is approximately USD 0.72." (https://openreview.net/forum?id=aKyBCsPOHB)
+- 2026: "> Q4/W7: Could you add a small slice evaluating non-temporal questions to demonstrate breadth beyond time-centric tasks? Our evaluation on LoCoMo and REALTALK already includes both temporal and non-temporal questions. In Appendix C.7, we further introduce this evaluation perspective and report that the performance of REMem-I on LoCoMo non-temporal questions (75.0 LLM-J) is comparable to its performance on temporal ones (77.7 LLM-J), indicating that REMem is not limited to time-centric tasks." (https://openreview.net/forum?id=fugnQxbvMm)
+- 2026: "> **W3: Clarification of performance gain** We thank the reviewer for the careful observation. The "up to 20.3%" improvement refers to the gain over SubgraphRAG + Llama3.1-8B. ... We have clarified this distinction in Section 5.2 of the revised manuscript." (https://openreview.net/forum?id=9EPlA1Wt4s)

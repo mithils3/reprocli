@@ -1,0 +1,153 @@
+# Run from this folder: python3 -I fmt_study.py out.json, then report.py, groups.py and corpus.py (ex26.py finds 2026 example answers).
+
+## report.py
+chars/thread 5285 / 8050 / 12694
+words/thread 784 / 1148 / 1821
+posts/thread 2 / 3 / 5
+chars/post 899 / 2739 / 4097 893
+first post chars 2967 / 3994 / 4642
+posts dist [(1, 25), (2, 55), (3, 52), (4, 39), (5, 28), (6, 18), (7, 5), (8, 6), (9, 8), (10, 1), (11, 3)]
+parts 70 Counter({'n/m': 35, 'part': 27, 'cont': 8})
+titled posts 162 title has Response/Reviewer 133
+[('', 404), ('Response to Reviewer X', 105), ('Rebuttal by AutReviewer X', 11), ('Official Comment by Authors', 8), ('Official Comment by AutReviewer X', 7), ('Reply to Reviewer X', 6), ('Response to questions and weakness.', 6), ("Authors' Responses to Reviewer X", 5), ('Author Response to Reviewer X', 5), ('Response to reviewer D3fb', 5), ('Response RemiReviewer X', 4), ('Thanks for the review - justification fo', 4)]
+scheme Counter({'numbered:bold': 57, 'quote, no number': 46, 'bold topic': 38, 'numbered:blockquote': 34, 'none': 21, 'md heading, topic': 15, 'numbered:md_heading': 14, 'numbered:plain': 13, 'numbered:italic': 2})
+quote anywhere 95 answer labels 70
+ids Counter({'Q': 45, 'QW': 43, 'W': 23, 'C': 5, 'CW': 2, 'CQW': 2})
+q per thread 4 / 5 / 7
+words/seg 78 / 140 / 255 words per q thread 169 / 231 / 384
+notes words/pt 162 / 260 / 374 notes n_points 3 / 4 / 6
+thanks_any 143 643
+has_num 400 643
+has_ptr 307 643
+has_rev 182 643
+has_table 88 643
+quoted 47 643
+short<60 110 of 643 ge150 296
+tables 88 count/thread among 1 / 2 / 4
+holds Counter({'results/benchmark': 49, 'baseline': 10, 'ablation/sweep': 10, 'cost/runtime': 4}) 240
+ptr revised_or_updated_doc 122
+ptr colour_mark 51
+ptr line_numbers 66
+ptr appendix 111
+ptr section 116
+ptr table_or_figure 173
+ptr page 22
+[('in the revised manuscript', 52), ('in the revised paper', 28), ('in the revised version', 27), ('in the updated manuscript', 14), ('of the revised version', 11), ('of the revised manuscript', 10), ('in the revised version of the paper', 9), ('to the revised manuscript', 9), ('in our revised manuscript', 9), ('of the revised paper', 7)]
+[('highlighted in red', 6), ('marked in blue', 3), ('highlighted in blue', 3), ('in red', 3), ('highlighted in orange', 1), ('in purple text', 1), ('marked in purple', 1), ('marked in orange', 1)]
+312 [('Line N', 76), ('line N', 63), ('lines N-N', 56), ('Line N-N', 31), ('line N-N', 19), ('Lines N-N', 18)]
+GR 153 1127 / 1919 / 3506 words 171 / 284 / 474
+GR bullets 84
+GR table 18
+GR md_heading 20
+GR bold_lead 49
+GR location 113
+GR colour 76
+GR summary_word 112
+GR thanks 144
+GR strengths_recap 27
+[('', 33), ('General Response', 13), ('Global Response', 5), ('Common Response', 3), ('Rebuttal by Authors', 2), ('General response', 2), ('Revision Summary', 2), ('Response to all Reviewers', 2), ("Authors' Appreciation for All the Reviewers", 1), ('General Response to all reviewers', 1), ('General Response to All Reviewers and Request', 1), ('Summary of the Discussion', 1)]
+open Counter({'thanks': 195, 'label/quote': 31, 'other': 14}) dear 27
+[('Thank you for', 68), ('We thank the', 31), ('Thanks for your', 9), ('We would like', 7), ('We appreciate the', 7), ('We sincerely appreciate', 6), ('We sincerely thank', 5), ('1.', 5), ('Thanks for the', 5), ('We thank you', 4)]
+close last post tail Counter({'thanks': 97, 'answer': 93, 'invite': 49, 'score': 1})
+close first post tail Counter({'answer': 178, 'thanks': 37, 'invite': 25})
+[('Thank you again for', 10), ('Best regards, The Authors', 5), ('Thank you very much', 4), ('We are happy to', 3), ('Best regards, Authors of', 3), ('Please let us know', 3), ('Thank you for your', 3), ('Thank you!', 3), ('We greatly appreciate your', 3), ('Thanks!', 2)]
+
+## groups.py
+| feature | raised | unchanged | diff |
+|---|---|---|---|
+| Posts labelled as parts, such as (1/3) or Part 1 | 39/120 = 32% [25, 41] | 31/120 = 26% [19, 34] | +7 [-5, +18] |
+| Any markdown table | 53/120 = 44% [36, 53] | 35/120 = 29% [22, 38] | +15 [+3, +27] * |
+| A general response on the forum | 85/120 = 71% [62, 78] | 68/120 = 57% [48, 65] | +14 [+2, +26] * |
+| Numbered point labels at line start (W1, Q2, Weakness 3) | 70/120 = 58% [49, 67] | 50/120 = 42% [33, 51] | +17 [+4, +29] * |
+| Reviewer text quoted in a blockquote | 52/120 = 43% [35, 52] | 43/120 = 36% [28, 45] | +8 [-5, +20] |
+| Markdown headings (#, ##, ###) | 25/120 = 21% [15, 29] | 25/120 = 21% [15, 29] | +0 [-10, +10] |
+| Phrase naming the revised document ("in the revised manuscript") | 62/120 = 52% [43, 60] | 60/120 = 50% [41, 59] | +2 [-11, +14] |
+| Colour marking named (in blue, highlighted) | 32/120 = 27% [20, 35] | 19/120 = 16% [10, 23] | +11 [+0, +21] * |
+| Line numbers given (Line 139, L460) | 34/120 = 28% [21, 37] | 32/120 = 27% [20, 35] | +2 [-10, +13] |
+| First sentence thanks the reviewer | 99/120 = 82% [75, 88] | 96/120 = 80% [72, 86] | +2 [-7, +12] |
+| Last post ends with an invitation to ask more | 26/120 = 22% [15, 30] | 23/120 = 19% [13, 27] | +2 [-8, +13] |
+| Opens with a "Dear Reviewer" line | 18/120 = 15% [10, 22] | 9/120 = 8% [4, 14] | +8 [-1, +16] |
+| A post within 200 characters of the 5,000 cap | 46/120 = 38% [30, 47] | 28/120 = 23% [17, 32] | +15 [+3, +26] * |
+
+| quantity | raised | unchanged | diff of medians [95%] |
+|---|---|---|---|
+| Author characters per thread | 8,252.0 (n=120) | 7,502.0 (n=120) | +750.0 [-1,428.5, +2,469.0] |
+| Author posts per thread | 3.5 (n=120) | 3.0 (n=120) | +0.5 [+0.0, +1.0] |
+| Characters per post (thread median) | 2,704.8 (n=120) | 2,757.5 (n=120) | -52.8 [-444.0, +329.0] |
+| Tables per thread | 0.0 (n=120) | 0.0 (n=120) | +0.0 [+0.0, +1.0] |
+| Words per numbered point (threads with labels) | 239.7 (n=70) | 218.8 (n=50) | +20.8 [-61.9, +69.9] |
+
+point level (not independent):
+has_num 240 370 160 273 +6 [-1,+14]
+has_ptr 191 370 116 273 +9 [+1,+17]
+has_rev 102 370 80 273 -2 [-9,+5]
+has_table 64 370 24 273 +9 [+3,+14]
+thanks_any 88 370 55 273 +4 [-3,+10]
+
+## corpus.py
+== all
+  reviewer replies {2025: 24087, 2026: 7074}
+    2025 chars 712 / 2,387 / 3,970 words 111 / 349 / 578
+    2026 chars 545 / 2,271 / 3,963 words 85 / 322 / 553
+    2026-2025 median chars -116 [-230, -36]
+    tab: 2025 14.7%  2026 17.4%  diff +2.7 [+1.7, +3.7]
+    part: 2025 19.0%  2026 20.2%  diff +1.2 [+0.1, +2.3]
+    numq: 2025 28.1%  2026 31.4%  diff +3.3 [+2.1, +4.5]
+    bq: 2025 25.2%  2026 20.3%  diff -4.9 [-6.0, -3.8]
+    mdh: 2025 12.8%  2026 19.3%  diff +6.5 [+5.5, +7.5]
+    bold: 2025 35.5%  2026 41.4%  diff +5.9 [+4.6, +7.2]
+    dear: 2025 23.1%  2026 21.4%  diff -1.6 [-2.7, -0.5]
+    cap: 2025 7.7%  2026 8.4%  diff +0.7 [+0.0, +1.5]
+    blue: 2025 8.9%  2026 6.9%  diff -2.0 [-2.7, -1.3]
+    rev: 2025 38.8%  2026 27.8%  diff -11.0 [-12.2, -9.8]
+    line: 2025 17.8%  2026 10.6%  diff -7.3 [-8.1, -6.4]
+  general responses {2025: 2525, 2026: 451}
+    2025 chars 898 / 1,694 / 2,659 words 137 / 247 / 380
+    2026 chars 817 / 2,060 / 3,700 words 122 / 285 / 516
+    2026-2025 median chars +366 [+18, +681]
+    tab: 2025 3.3%  2026 3.5%  diff +0.2 [-1.3, +2.4]
+    part: 2025 2.4%  2026 3.3%  diff +0.9 [-0.5, +3.1]
+    numq: 2025 0.6%  2026 2.0%  diff +1.4 [+0.4, +3.2]
+    bq: 2025 2.6%  2026 6.0%  diff +3.4 [+1.4, +6.1]
+    mdh: 2025 12.5%  2026 17.3%  diff +4.8 [+1.3, +8.7]
+    bold: 2025 28.5%  2026 42.4%  diff +13.8 [+9.0, +18.8]
+    dear: 2025 30.9%  2026 44.6%  diff +13.6 [+8.8, +18.6]
+    cap: 2025 3.4%  2026 10.0%  diff +6.6 [+4.1, +9.8]
+    blue: 2025 38.4%  2026 29.3%  diff -9.1 [-13.6, -4.4]
+    rev: 2025 50.1%  2026 29.3%  diff -20.8 [-25.3, -16.1]
+    line: 2025 9.7%  2026 3.3%  diff -6.3 [-8.1, -4.0]
+  thread totals 2025 19954 788 / 2,630 / 4,321
+  thread totals 2026 6155 502 / 2,157 / 4,110
+== matched (text has "we thank" or "thank the reviewer")
+  reviewer replies {2025: 6711, 2026: 3299}
+    2025 chars 1,976 / 3,332 / 4,358 words 298 / 490 / 643
+    2026 chars 1,700 / 3,181 / 4,273 words 244 / 449 / 601
+    2026-2025 median chars -151 [-270, -43]
+    tab: 2025 15.7%  2026 21.3%  diff +5.6 [+4.0, +7.3]
+    part: 2025 22.7%  2026 23.5%  diff +0.8 [-1.0, +2.6]
+    numq: 2025 32.1%  2026 43.3%  diff +11.3 [+9.2, +13.3]
+    bq: 2025 33.2%  2026 29.1%  diff -4.1 [-6.0, -2.2]
+    mdh: 2025 15.5%  2026 23.7%  diff +8.2 [+6.5, +9.9]
+    bold: 2025 43.3%  2026 50.7%  diff +7.4 [+5.3, +9.5]
+    dear: 2025 5.0%  2026 4.4%  diff -0.6 [-1.4, +0.4]
+    cap: 2025 10.8%  2026 10.9%  diff +0.1 [-1.1, +1.5]
+    blue: 2025 10.6%  2026 8.9%  diff -1.7 [-2.9, -0.4]
+    rev: 2025 38.6%  2026 36.3%  diff -2.3 [-4.3, -0.3]
+    line: 2025 21.8%  2026 14.8%  diff -7.0 [-8.5, -5.4]
+  general responses {2025: 909, 2026: 170}
+    2025 chars 1,181 / 1,856 / 2,834 words 175 / 278 / 409
+    2026 chars 835 / 2,017 / 3,634 words 124 / 291 / 512
+    2026-2025 median chars +161 [-292, +583]
+    tab: 2025 2.9%  2026 2.4%  diff -0.5 [-2.4, +3.1]
+    part: 2025 3.1%  2026 1.8%  diff -1.3 [-3.1, +2.1]
+    numq: 2025 0.3%  2026 1.8%  diff +1.4 [+0.1, +4.7]
+    bq: 2025 2.5%  2026 3.5%  diff +1.0 [-1.3, +5.0]
+    mdh: 2025 12.7%  2026 17.1%  diff +4.4 [-1.0, +11.1]
+    bold: 2025 31.0%  2026 37.1%  diff +6.0 [-1.5, +14.1]
+    dear: 2025 12.4%  2026 28.2%  diff +15.8 [+9.2, +23.3]
+    cap: 2025 4.4%  2026 11.8%  diff +7.4 [+3.1, +13.2]
+    blue: 2025 42.4%  2026 36.5%  diff -5.9 [-13.5, +2.2]
+    rev: 2025 54.6%  2026 32.4%  diff -22.2 [-29.5, -14.2]
+    line: 2025 10.5%  2026 2.4%  diff -8.1 [-10.7, -4.1]
+  thread totals 2025 6194 2,060 / 3,453 / 4,486
+  thread totals 2026 3103 1,725 / 3,246 / 4,349
