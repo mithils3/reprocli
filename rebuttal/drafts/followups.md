@@ -145,3 +145,21 @@ Best answer from the repo. The prompt text the reviewer would quote is in prompt
 - **YGTR Q1, repeating the analysis.** The failure-mode analysis of the frontier runs, the blind check on 20 runs and the Muse Wonder comparison are all brackets, and thin Muse Wonder has no graded run.
 - **YGTR W2, hardware beyond builds.** The replies bound build failures and re-run 3 papers. They do not address numeric differences between the GH200 nodes and the authors' hardware for runs that built and ran, which is the larger part of the reviewer's concern. No evidence on disk.
 - **Unasked but exposed, attempts per cell.** e5/summary.json finds 760 run directories against 372 indexed runs (388 not in the index), and e8/README.md notes two Qwen3.6 Retrain cells with a completed attempt whose run directory is absent. If a reviewer asks how the graded attempt was chosen for each cell, nothing on disk reconciles the 388 directories with the 396 runs the paper says started.
+
+## Fixes applied 2026-11-08
+
+Applied to replies.md from followups_check_1.md to followups_check_4.md, with paper-side fixes listed in paper_revisions.md.
+
+1. Target review (rqBN part 2): left for author, with an [AUTHOR] note at the sentence, because whether the author review at iclr2027_conference.tex:668 covered the claim, configuration and target fields is Mithil's call.
+2. "At most 27" (YGTR part 2): applied. The 27 is now a traced count, the reply says it does not bound failures outside the agent, and the 76 faithful misses are named as unattributed as in the Limitations.
+3. Muse Retrain 9/32 in the bound table (T29u part 1, YGTR part 1): applied, because YGTR part 2 already announces the checkpoint correction to Muse. The removed-runs Retrain cell is now DeepSeek-V4-Flash at 9/33 = 27% [15%, 44%] from e8/bound.csv.
+4. Headline 73/400 and best Run 14/34 (T29u part 1): left for author, with an [AUTHOR] note, until the Risk 5 decision and the E7 verdicts.
+5. "No auditor grade" for the 24 started runs (T29u part 2): applied as reply wording only; the Appendix C counts are in paper_revisions.md.
+6. aarch64 count (T29u part 1, YGTR part 1 and 2): applied. The count is 14 aarch64 and 7 other environment, the YGTR Q3 sum reads 6 + 14 + 7 = 27, and 14 + 7 + 3 = 24 still matches the build-failure total.
+7. "They agree the design is sound" (General): applied, with each reviewer's own words.
+8. Agent ranking rule (T29u part 1): applied. The non-overlap rule now covers reproduction rates, and the reply says Section 5.2 names DeepSeek-V4-Flash the agent with the highest mean audit score; the replies never called an agent strongest, and the paper sentence is in paper_revisions.md.
+9. Tolerance range (General): applied, 1% to 10% in both replies.
+10. Harness arms (General, YGTR part 1): applied, gpt-6.1-sol in both harnesses and gpt-6-astra in Codex CLI only.
+11. Repeat-run tense (General, T29u part 1, YGTR part 1): applied, "queued" in every sentence, with job 3540624 running and 3540625 to 3540633 pending recorded in the source tables.
+12. Three unmatched log entries (rqBN part 1): applied, the row is labelled unmatched with its 0.0003 GPU-hour gap.
+13. Claim kinds (T29u part 2, rqBN part 2): applied, 38 = 21 direction + 14 threshold + 3 other.
