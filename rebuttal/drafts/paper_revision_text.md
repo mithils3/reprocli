@@ -86,7 +86,7 @@ frontier runs spend a median of u\% of their GPU grant.}
 
 The frontier arms use the 12 core papers of a sample drawn with seed 22528,
 four per tier, two of which some main agent had reproduced and two of which
-none had, \todo{and the 12 extension papers drawn the same way}. We froze the
+none had, and the 12 extension papers drawn the same way. We froze the
 sample before any frontier run and excluded 2510.20725, whose main-roster
 cells never started. Each run gets the paper's band ceiling as its GPU grant,
 the task text of the main runs, the same sandbox and \texttt{run\_gpu} tool, and
@@ -231,11 +231,11 @@ Agent & Tier or measure & Reproduced (95\% interval) & Mean score & 8 h & 32 h &
 | DeepSeek-V4-Flash, Run | `14/34 (41\%)` | `14/34 (41\%, 26--58)` | e6/summary.json S0_index dsv4/run |
 | DeepSeek-V4-Flash, Retrain | `9/33 (27\%)` | `9/33 (27\%, 15--44)` | dsv4/retrain |
 | DeepSeek-V4-Flash, Reimplement | `4/33 (12\%)` | `4/33 (12\%, 5--27)` | dsv4/reimplement |
-| DeepSeek-V4-Flash, All tiers | `27/100 (27\%)` | `27/100 (27\%, \todo{lo--hi})` | not in results/ |
+| DeepSeek-V4-Flash, All tiers | `27/100 (27\%)` | `27/100 (27\%, 19--36)` | not in results/ |
 | Qwen3.6-27B, Run | `5/34 (15\%)` | `5/34 (15\%, 6--30)` | qwen3/run |
 | Qwen3.6-27B, Retrain | `6/33 (18\%)` | `6/33 (18\%, 9--34)` | qwen3/retrain |
 | Qwen3.6-27B, Reimplement | `2/33 (6\%)` | `2/33 (6\%, 2--20)` | qwen3/reimplement |
-| Qwen3.6-27B, All tiers | `13/100 (13\%)` | `13/100 (13\%, \todo{lo--hi})` | not in results/ |
+| Qwen3.6-27B, All tiers | `13/100 (13\%)` | `13/100 (13\%, 8--21)` | not in results/ |
 | MiniMax-M2.7, Run | `3/34 (9\%)` | `3/34 (9\%, 3--23)` | minimax/run |
 | MiniMax-M2.7, Retrain | `5/33 (15\%)` | `5/33 (15\%, 7--31)` | minimax/retrain |
 | MiniMax-M2.7, Reimplement | `2/33 (6\%)` | `2/33 (6\%, 2--20)` | minimax/reimplement; moves with: regrade decision (CURE, 2 -> 1) |

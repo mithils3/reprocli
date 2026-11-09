@@ -12,30 +12,30 @@ Known gaps: the frontier sweeps are not in the squeue output, so their status co
 | :- | :- | :- | :- | :- | :- |
 | R2 | replies.md:23 | [n] papers, OpenAI | databook/frontier_cells.csv planned count; subset/README.md (core 12 + extension 12) | fillable now | 24 (gpt-6.1-sol planned 24; gpt-6-astra planned 8, a subset) |
 | R3 | replies.md:23 | [m] papers, Muse Wonder | databook/frontier_cells.csv, thin-muse-wonder-1.0 planned | fillable now | 12 |
-| R6 | replies.md:25 | [26%, 58%] (DSv4 Run) | e6/README.md 5% row; databook sec. 2 | fillable now | 14/34 = 41.2%, Wilson 26.4 to 57.8, shown [26%, 58%] |
+| R6 | replies.md:25 | [26%, 58%] (DSv4 Run) | e6/README.md 5% row; databook sec. 2 | filled 11-08 | 14/34 = 41.2%, Wilson 26.4 to 57.8, shown [26%, 58%] |
 | R12 | replies.md:63 | [26%, 58%], [15%, 44%], [7%, 31%], [15%, 22%] | e6/README.md 5% table; 73/400 from databook sec. 2 | fillable now | 14/34 = 41.2% [26.4, 57.8]; 9/33 = 27.3% [15.1, 44.2]; 5/33 = 15.2% [6.7, 30.9]; 73/400 = 18.25% [14.8, 22.3] |
-| R10 | replies.md:37 | [26%, 58%] (Run table row) | same as R6 | fillable now | 14/34 = 41.2% [26.4, 57.8] |
-| R13 | replies.md:69 | [26%, 58%] x2 (Run, as graded and env removed) | e6/README; databook sec. 2 (E8 Run) | fillable now | 14/34 = 41.2% [26.4, 57.8] in both columns (env removal leaves DSv4 Run unchanged) |
-| R14 | replies.md:70 | [15%, 44%] x2 (Retrain) | e6/README; databook sec. 2 (E8 Retrain) | fillable now | as graded 9/33 = 27.3% [15.1, 44.2]; env removed: databook says Muse 9/32 = 28.1% [15.6, 45.4], not 9/33. CONFLICT, see notes |
-| R15 | replies.md:71 | [7%, 31%] and [7%, 32%] (Reimplement) | e6/README; databook sec. 2 (E8 Reimplement) | fillable now | as graded 5/33 = 15.2% [6.7, 30.9]; env removed 5/32 = 15.6% [6.9, 31.8] |
+| R10 | replies.md:37 | [26%, 58%] (Run table row) | same as R6 | filled 11-08 | 14/34 = 41.2% [26.4, 57.8] |
+| R13 | replies.md:69 | [26%, 58%] x2 (Run, as graded and env removed) | e6/README; databook sec. 2 (E8 Run) | filled 11-08 | 14/34 = 41.2% [26.4, 57.8] in both columns (env removal leaves DSv4 Run unchanged) |
+| R14 | replies.md:70 | [15%, 44%] x2 (Retrain) | e6/README; databook sec. 2 (E8 Retrain) | filled 11-08 | as graded 9/33 = 27.3% [15.1, 44.2]; env removed: databook says Muse 9/32 = 28.1% [15.6, 45.4], not 9/33. CONFLICT, see notes |
+| R15 | replies.md:71 | [7%, 31%] and [7%, 32%] (Reimplement) | e6/README; databook sec. 2 (E8 Reimplement) | filled 11-08 | as graded 5/33 = 15.2% [6.7, 30.9]; env removed 5/32 = 15.6% [6.9, 31.8] |
 | R21 | replies.md:227 | [n] papers, OpenAI (sec. 5.1 copy) | same as R2 | fillable now | 24 |
 | R22 | replies.md:227 | [m] papers, Muse Wonder (sec. 5.1 copy) | same as R3 | fillable now | 12 |
-| R28 | replies.md:237 | [26%, 58%] x2 (Run row) | same as R6 | fillable now | 14/34 = 41.2% [26.4, 57.8] |
-| R29 | replies.md:238 | [15%, 44%] x2 (Retrain row) | same as R14 | fillable now | 9/33 = 27.3% [15.1, 44.2] (as graded); env column conflict, see notes |
-| R30 | replies.md:239 | [7%, 31%], [7%, 32%] (Reimplement row) | same as R15 | fillable now | 5/33 = 15.2% [6.7, 30.9]; 5/32 = 15.6% [6.9, 31.8] |
-| R34 | replies.md:262 | [26%, 58%] (sources table) | same as R6 | fillable now | 14/34 = 41.2% [26.4, 57.8] |
-| R35 | replies.md:262 | [7%, 31%] (sources table) | same as R15 | fillable now | 5/33 = 15.2% [6.7, 30.9] |
+| R28 | replies.md:237 | [26%, 58%] x2 (Run row) | same as R6 | filled 11-08 | 14/34 = 41.2% [26.4, 57.8] |
+| R29 | replies.md:238 | [15%, 44%] x2 (Retrain row) | same as R14 | filled 11-08 | 9/33 = 27.3% [15.1, 44.2] (as graded); env column conflict, see notes |
+| R30 | replies.md:239 | [7%, 31%], [7%, 32%] (Reimplement row) | same as R15 | filled 11-08 | 5/33 = 15.2% [6.7, 30.9]; 5/32 = 15.6% [6.9, 31.8] |
+| R34 | replies.md:262 | [26%, 58%] (sources table) | same as R6 | filled 11-08 | 14/34 = 41.2% [26.4, 57.8] |
+| R35 | replies.md:262 | [7%, 31%] (sources table) | same as R15 | filled 11-08 | 5/33 = 15.2% [6.7, 30.9] |
 | P2 | paper_revision_text.md:49 | \todo{cite} after the OpenAI model names | bib key for OpenAI models | fillable now | not a number: bib key lookup |
 | P3 | paper_revision_text.md:49 | \todo{n} papers | same as R2 | fillable now | 24 |
 | P4 | paper_revision_text.md:50 | \todo{cite} Muse Wonder | bib key | fillable now | not a number: bib key lookup |
 | P5 | paper_revision_text.md:50 | \todo{m} papers | same as R3 | fillable now | 12 |
 | P6 | paper_revision_text.md:52 | \todo{cite} Codex CLI | bib key | fillable now | not a number: bib key lookup |
-| P9 | paper_revision_text.md:89 | \todo{and the 12 extension papers drawn the same way} | subset/README.md extension column | fillable now | 12 = extension R 6 + N 6 (1+1+0+1+0+1+2+0+0 = 6 reproduced; 2+0+0+1+1+0+0+1+1 = 6 not) |
+| P9 | paper_revision_text.md:89 | \todo{and the 12 extension papers drawn the same way} | subset/README.md extension column | filled 11-08 | 12 = extension R 6 + N 6 (1+1+0+1+0+1+2+0+0 = 6 reproduced; 2+0+0+1+1+0+0+1+1 = 6 not) |
 | P15 | paper_revision_text.md:113 | frontier table, DeepSeek-V4-Flash ours, five cells | e6/table.csv, restricted to the 24 subset papers (file not opened) | fillable now | not computed; needs the per-run file |
 | P16 | paper_revision_text.md:114 | frontier table, Muse Spark 1.2 ours, five cells | same as P15 for Muse | fillable now | not computed; needs the per-run file |
 | P19 | paper_revision_text.md:156 | \todo{n} papers in the frontier sentence | same as R2 | fillable now | 24 |
-| P21 | paper_revision_text.md:234 | DSv4 All tiers lo--hi | counts sum of per-tier rows 14+9+4 of 34+33+33 (e6 per tier) | fillable now | 27/100 = 27.0%, Wilson 19.3 to 36.4 |
-| P22 | paper_revision_text.md:238 | Qwen3.6-27B All tiers lo--hi | 5+6+2 of 100 | fillable now | 13/100 = 13.0%, Wilson 7.8 to 21.0 |
+| P21 | paper_revision_text.md:234 | DSv4 All tiers lo--hi | counts sum of per-tier rows 14+9+4 of 34+33+33 (e6 per tier) | filled 11-08 | 27/100 = 27.0%, Wilson 19.3 to 36.4 |
+| P22 | paper_revision_text.md:238 | Qwen3.6-27B All tiers lo--hi | 5+6+2 of 100 | filled 11-08 | 13/100 = 13.0%, Wilson 7.8 to 21.0 |
 | P23 | paper_revision_text.md:242 | MiniMax-M2.7 All tiers lo--hi | 3+5+2 of 100 | fillable now | 10/100 = 10.0%, Wilson 5.5 to 17.4 |
 | P24 | paper_revision_text.md:246 | Muse Spark 1.2 All tiers lo--hi | 9+9+5 of 100 | fillable now | 23/100 = 23.0%, Wilson 15.8 to 32.2 |
 | P25 | paper_revision_text.md:247 | All agents Run / Retrain / Reimplement lo--hi (3 slots) | per-tier sums: 14+5+3+9 of 136; 9+6+5+9 of 132; 4+2+2+5 of 132 | fillable now | 31/136 = 22.8%, Wilson 16.5 to 30.5; 29/132 = 22.0%, 15.8 to 29.8; 13/132 = 9.8%, 5.8 to 16.1 |
@@ -121,3 +121,6 @@ Counts are rows, and table rows with several cells count as one row each. Citati
 4. Frontier jobs. The squeue query shows no codex, thin or miniswe jobs. Frontier status here comes from frontier_cells.csv (24 rows, dated through 2026-11-08 19:52 UTC).
 5. Nudge arm. codex-gpt-6.1-sol-nudge has 0 of 8 graded and no slot in the drafts. Decision 13 decides whether it gets one.
 6. Sample counts. gpt-6-astra is on 8 papers while the sentence reads "from OpenAI on n papers"; n = 24 is the gpt-6.1-sol count. A reader could take n as 8 for both.
+
+
+7. Resolved 11-08. Conflict 1: n is per arm (thin sol 12 planned, Codex sol 24, astra 8), AUTHOR note added at replies.md:23 and :227. Conflict 2: no change; DeepSeek-V4-Flash 9/33 is the best Retrain agent in e8/bound.csv and Muse 9/32 is a separate claim. Conflict 3: 0.0400 and 0.0393 are in e10/results.md and STATUS.md (jobs 3550825 and 3550826 finished the experiment; Slurm FAILED only at the save step); no change. Filled slots needed no text change except P9, P21, P22 and the n notes; the interval brackets in R6 to R35 were already printed and match the Wilson recomputation. Left: R2, R3, R21, R22, P3, P5, P19 (frontier counts), R12 (73/400 depends on decisions 1 and 4), P23, P24, P25, P28 (regrade decisions), P2, P4, P6, P31 (bib keys), P15, P16, P32 (not computed).
