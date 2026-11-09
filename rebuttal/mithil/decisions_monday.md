@@ -120,3 +120,9 @@ Question: When a frontier run reaches its 48-hour limit while its GPU request is
 Change: rebuttal/results/frontier/stalled_2026-11-09.md finds all 13 runs that looked stalled alive and waiting on a GPU request, pending 12.6 to 21 hours. The two continue-prompt runs reach their limit at 11-09 12:31 and five Codex gpt-6.1-sol runs between 11-09 20:30 and 11-10 10:49. With "count", each becomes a 0 in its arm's rate. With "apart", the frontier table's denominator drops by that number and one sentence gives the count and the cause.
 Recommended: apart. The run never received the GPU it asked for, so the result measures the queue, and the early-stop table already has a "no GPU granted" class for exactly this case.
 Decision: ______
+
+**20. Which open-agent baseline the frontier failure-mode sentence uses (YGTR_1 failure-mode slot, results update)**
+Question: Compare the frontier runs' failure modes with the paper's open-agent labels, or with the same blind coder run on open-agent runs? paper / blind
+Change: rebuttal/results/frontier/failure_modes.md codes 24 frontier failures with a coder that never sees the verdict; "Never launched an experiment" is the main mode in 6 of 24 (25%, 12% to 45%) against 4% under the paper's labels. rebuttal/results/frontier/coder_calibration.md runs that coder on 50 open-agent failures the paper labelled: it agrees with the paper on 28 of 50 (56%, 42% to 69%; kappa 0.48), and its reweighted open-agent "Never launched" rate is 13.8% (7.8% to 19.7%), so the frontier gap shrinks to overlapping intervals.
+Recommended: blind. The sentence compares like with like, and Appendix G states the coder's agreement with the paper's labels (56%, kappa 0.48) beside it, since RECLAIM reports what it measured.
+Decision: ______
