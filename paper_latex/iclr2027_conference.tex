@@ -414,7 +414,7 @@ Three human graders scored all 396 runs that started, one grader per run,
 under the same rubric and blind to the auditor's score. On the 372 of these
 runs that the auditor also graded, its reproduced verdicts reach a precision of
 88\%, a recall of 77\%, and an F1 of 0.82 against the human labels, and it
-calls 73 runs reproduced where the humans call 83, so the auditor is the
+calls 73 of the submitted runs reproduced where the humans call 83, so the auditor is the
 stricter grader (Appendix~\ref{app:auditor-validation}). For comparison,
 PaperBench reports an F1 of 0.83 for its LLM judge against human labels on
 individual rubric items~\citep{starace2025paperbench}.
@@ -451,8 +451,8 @@ Model API. All use the same harness, prompts, and budgets. To test whether the
 results hold for frontier models in the harnesses they ship with, we also ran
 \todo{gpt-6-astra and gpt-6.1-sol}\todo{cite} from OpenAI on \todo{n} papers and
 Muse Wonder\todo{cite} from Meta on \todo{m} papers, drawn with a fixed seed from
-every tier and frozen before any run. gpt-6.1-sol ran in our harness and in
-Codex CLI\todo{cite}, gpt-6-astra in Codex CLI only, and Muse Wonder in our
+every tier and frozen before any run. gpt-6.1-sol and gpt-6-astra ran in our
+harness and in Codex CLI\todo{cite}, and Muse Wonder in our
 harness and in mini-SWE-agent~\citep{yang2024sweagent}. The production
 harnesses keep their own tools, system prompts, and context handling, and every
 run gets the same sandbox, task text, GPU grant, and auditor as the main runs,
@@ -485,8 +485,8 @@ DeepSeek-V4-Flash recovers the pinned number on 13 of 34 Run-tier papers (38\%, 
 to 55\%, mean score 5.29, 4.13 to 6.46), 9 of 33 at Retrain (27\%, 15\% to 44\%,
 mean score 5.45, 4.40 to 6.51), and 4 of 33 at Reimplement
 (12\%, 5\% to 27\%), where Muse Spark 1.2 has the best rate at 5 of 33 (15\%,
-7\% to 31\%, mean score 3.85, 2.86 to 4.84). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%) after the
-checkpoint scan below, so DeepSeek-V4-Flash alone has the best Retrain rate. % src: replies.md T29u part 1 and YGTR part 2; results/e7/rescore_summary.md (dsv4 Run 13/34, 23.9 to 55.0); results/e6/summary.json settings.S0_index (dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E8 reruns
+7\% to 31\%, mean score 3.85, 2.86 to 4.84). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%).
+% src: replies.md T29u part 1 and YGTR part 2; results/e7/rescore_summary.md (dsv4 Run 13/34, 23.9 to 55.0); results/e6/summary.json settings.S0_index (dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E8 reruns
 Table~\ref{tab:results} gives an interval for every agent and tier.
 To measure run-to-run variation, we ran DeepSeek-V4-Flash twice more on 12
 papers drawn with a fixed seed, four per tier, two of which some agent had
@@ -497,7 +497,7 @@ each run it reproduced more of the four Run papers than of the four
 Reimplement papers.}
 % src when frozen: repeat-run grades (jobs 3540624 to 3540633, results/sweeps/jobs.csv)
 We compare the reproduction rates of two agents only where their intervals,
-widened by this rate of change, do not overlap, so at Run we do not rank
+widened by the run-to-run change above, do not overlap, so at Run we do not rank
 DeepSeek-V4-Flash above Muse Spark 1.2, which reproduces 10 of 34 (29\%, 17\% to
 46\%). % src: results/e6/summary.json settings.S0_index muse/run (9) + 1 (results/e8/regrade_muse.json, 2503.23035); Wilson computed with the e6 formula
 
@@ -523,7 +523,7 @@ every tier, and a two-proportion test on DeepSeek-V4-Flash separates Run from
 Reimplement ($z = 2.46$) but not Run from Retrain ($z = 0.96$), as it does for
 the papers reproduced by at least one agent ($z = 2.81$ and $1.15$), so we
 claim only that reproduction falls where no code is released. % src: results/tiers/tier_tests.md (rebuttal/scripts/tier_tests.py)
-For every agent the Run and Retrain rates sit within nine points of each other, and mean score rises from Run to Retrain for three
+For the other three agents the Run and Retrain rates sit within ten points of each other, and mean score rises from Run to Retrain for three
 of the four agents before falling at Reimplement, while Qwen3.6-27B's mean score falls at
 each tier. Figure~\ref{fig:failure-modes}
 shows where the tiers differ. Retrain has more runs that execute a faithful pipeline
@@ -535,15 +535,15 @@ Reimplement, where no code is released, and 12 of 132 cells reproduce there.
 Spending stays far below the grant for every agent and every tier. The mean
 non-reproduced cell uses 29\% of its allocation, and pooled over all 400 cells
 the agents spend 1{,}888 of the 10{,}208 H100-hours we granted. The 396 runs that started cost \$4{,}835, which is
-\$12.21 per run and \$66 per confirmed reproduction, and GPU time is 78\% of
+\$12.21 per run and \$69 per confirmed reproduction, and GPU time is 78\% of
 that total. We report the agents' own verdicts as background data. Agents
 return a parsable self-assessment on 359 runs and claim reproduction on 128,
 against 70 audited reproductions, and the disagreement runs in both
 directions. MiniMax-M2.7 claims 43 reproductions and the auditor confirms 8
 of its runs, and DeepSeek-V4-Flash claims 19 and the auditor confirms 26.
 
-On the same papers, the frontier models do not reproduce more than the open
-agents. gpt-6.1-sol reproduces \todo{4 of 11} papers in our harness and
+On the same papers, neither OpenAI model reproduces more papers than
+DeepSeek-V4-Flash. gpt-6.1-sol reproduces \todo{4 of 11} papers in our harness and
 \todo{2 of 15} in Codex CLI, and gpt-6-astra \todo{1 of 7} in Codex CLI, where
 DeepSeek-V4-Flash reproduces \todo{4 of 11}, \todo{6 of 15}, and \todo{3 of 7}
 (Table~\ref{tab:frontier}). On the \todo{9} papers graded under both harnesses,
@@ -558,7 +558,7 @@ failed outside the agent, and the pinned auditor has since graded five of the
 model weights found two reproduced runs that evaluated a downloaded checkpoint
 of the model the claim is about, Muse Spark 1.2 on 2508.21046 at Retrain and
 MiniMax-M2.7 on 2505.12677 at Reimplement, and we count both as not
-reproduced. Every rate in this paper includes these grades, and a cell that
+reproduced. Every rate in Section~\ref{subsec:results} and Table~\ref{tab:results} includes these grades, and a cell that
 still has no graded run counts as a failure at score 0
 (Appendix~\ref{app:outside-agent}).
 % src: results/e8/summary.json (28 empty cells, 6 outside the agent); results/e8/regrade_dcells.json (3 graded: 0, 2, 0) and e8/regrade_muse.json (2 graded: 8, 6); results/e9/class_review.csv
@@ -613,7 +613,7 @@ DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
 % src: results/e8/summary.json build_dependency_runs (total 24; class_counts A 16, O 5, E 3; explicit_aarch64_minimax_run 5); results/e8/x86/README.md:3-4 (2 of the 16 not chip failures, so 14 aarch64 and 5 + 2 = 7 other; 12 replayed, 9 build, Wilson 0.47 to 0.91); results/e8/bound.csv (dsv4 env_runs 0, 0, 1; best Run 14/34 unchanged; Reimplement 5/33 -> 5/32 = 15.2% -> 15.6%; Retrain best stays dsv4 9/33 after the CogVLA correction, Muse 8/32)
 one paper it rebuilt the failing package from source and, when the authors' scorer hit the job memory cap, rewrote and checked it against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
 it replaced the package with an unvalidated port the auditor disqualified.
-To test whether a run outside tolerance misses because of the environment, we
+To test whether a miss outside tolerance recurs without the agent, we
 re-ran the final command sequence of three such runs on the same nodes with
 two new seeds and no model in the loop. On 2505.17836 both seeds miss again
 and the measured value repeats within 0.0007, so that miss recurs without the
@@ -623,11 +623,10 @@ $-0.20$, which puts the original near miss inside seed variation.
 % src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351 pending); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)
 
 \paragraph{Failures of the frontier runs.}
-A coder blind to verdict and arm labeled the \todo{27} failing frontier runs
+Claude Sonnet 5, blind to verdict and arm, labeled the \todo{27} failing frontier runs
 with the same modes (Appendix~\ref{app:frontier-modes}). Failures that report a
 number without a valid measurement are rarer than for the open agents,
-\todo{3 of 27} against 110 of 300, and failures that end without a number are
-more common, \todo{11 of 27} against 44 of 300. On 2506.08898, a Retrain paper,
+\todo{3 of 27} against 110 of 300. On 2506.08898, a Retrain paper,
 all \todo{5} frontier runs stopped under one H100-hour of a 32-hour grant
 because no matching checkpoint is released, while Muse Spark 1.2 retrained the
 model and reproduced the claim.
@@ -684,7 +683,7 @@ difficulty of confirming the intended practice with every paper's authors.
 \paragraph{Contamination.} Every agent postdates the papers and may have
 trained on their code, and a memorized fix would count as reproduced under our grading, inflating the released-code tiers.
 
-\paragraph{Scope.} The 100 papers come from NeurIPS 2025, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}). Our claims hold for these papers and the agents we tested, and other venues, years, and models remain untested.
+\paragraph{Scope.} The 100 papers come from NeurIPS 2025, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}). Our claims hold for these papers and the agents we tested.
 
 \paragraph{Agents.} Each cell of the main roster holds one run, and the repeat
 runs cover one agent on 12 papers, so we leave pairs of agents whose intervals

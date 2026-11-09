@@ -119,17 +119,18 @@ All agents & & & & 3{,}635.4 & 57.50 & 1{,}059.08 & 3{,}776.22 & 4{,}835.30 & 12
 \label{tab:cost}
 \end{table}
 
-\FloatBarrier  % Table~\ref{tab:cost} prints before the Table 5 longtable starts
+% No \FloatBarrier here: its \clearpage pushed B.1 onto a fresh page, leaving the rest of that page blank.
 \subsection{Results by agent, tier, and compute band}
 \label{app:results-table}
 
 Table~\ref{tab:results} lists the values behind Figures~\ref{fig:main-results}
 and~\ref{fig:band-compute}, where Reproduced counts a cell whose audit score is
-8 or higher, a cell without a graded run counts as a failure at score 0,
+8 or higher, a cell without a graded run counts as a failure at score 0, mean scores use the grades on the frozen targets,
 grant spent is H100-hours used over hours
 granted, and the band is the paper's H100-hour grant.
 
 {\footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{longtable}{@{}llrrrrr@{}}
 \toprule
 & & \multicolumn{2}{c}{By tier} & \multicolumn{3}{c}{By band} \\
@@ -176,14 +177,14 @@ Muse Spark 1.2 & Run & 10/34 (29\%, 17--46) & 5.71 (4.81--6.60) & & & \\*
 & Retrain & 8/33 (24\%, 13--41) & 5.85 (4.94--6.76) & & & \\*
 & Reimplement & 5/33 (15\%, 7--31) & 3.85 (2.86--4.84) & & & \\*
 & All tiers & 23/100 (23\%, 16--32) & 5.14 (4.59--5.69) & & & \\*
-& Mean score & & & 5.61 & 4.55 & 3.08 \\*
+& Mean score & & & 5.85 & 4.55 & 3.08 \\*
 & Grant spent (\%) & \multicolumn{2}{r}{21.8 overall} & 38.9 & 32.6 & 6.1 \\
 \midrule
 All agents & Run & 30/136 (22\%, 16--30) & 4.50 (3.98--5.02) & & & \\*
 & Retrain & 28/132 (21\%, 15--29) & 4.55 (4.02--5.07) & & & \\*
 & Reimplement & 12/132 (9\%, 5--15) & 3.55 (3.10--4.00) & & & \\*
 & All tiers & 70/400 (18\%, 14--22) & 4.20 (3.91--4.49) & & & \\*
-& Mean score & & & 4.80 & 3.55 & 2.54 \\*
+& Mean score & & & 4.86 & 3.55 & 2.54 \\*
 & Grant spent (\%) & \multicolumn{2}{r}{18.5 overall} & 34.7 & 25.5 & 6.2 \\
 \midrule
 At least one agent & Run & 16/34 (47\%, 31--63) & & & & \\*
@@ -201,13 +202,13 @@ Of the 400 cells, 28 produced no graded run, and we traced each one through
 the cluster's job accounting and the harness logs. Six failed outside the
 agent, since the four cells of 2510.20725 never started because of a
 prompt-rendering bug in our harness and two audits of Muse Spark 1.2 never
-returned a verdict. The other 22 remain agent failures. Four of them were
-finished runs with no grade from the pinned auditor, and it has
+returned a verdict. Four of the other 22 were finished runs the pinned
+auditor had not graded, and it has
 now graded the three whose files survive at 0, 2, and 0, none of them
 reproduced, while the fourth lost its files and stays ungraded. The pinned
 auditor has also graded the two missing audits, reproduced (score 8) on
 2503.23035 and partial (score 6) on 2510.08177. \todo{We reran the 4 cells of
-2510.20725 with the same settings, and r of them reproduce.} Every rate in this paper includes these grades, and a cell that
+2510.20725 with the same settings, and r of them reproduce.} Every rate in Section~\ref{subsec:results} and Table~\ref{tab:results} includes these grades, and a cell that
 still has no graded run counts as a failure at score 0.
 % src: replies.md:286-290; results/e8/summary.json (empty_cells: total 28; outside_agent_cells: 6); results/e8/d_cells.md and e8/regrade_dcells.json (3 of 4 regraded at 0, 2, 0; 2510.19314 ungraded); results/e8/README.md:19-27 (22 cells outside the first six, D 4); results/e8/regrade_muse.json (2503.23035 score 8, 2510.08177 score 6)
 
@@ -217,13 +218,10 @@ model weights. The scan finished on 368 of the 372 graded runs, none of the
 four it could not finish was reproduced, and it covered all 42 reproduced
 Retrain and Reimplement runs. Of the 16 of these with a match, two evaluated a
 downloaded checkpoint of the model the claim is about, Muse Spark 1.2 on
-2508.21046 at Retrain\footnote{The authors' release of 2508.21046 includes the
-checkpoint the claim evaluates; the paper stays in the Retrain tier, which was
-fixed before any agent ran.} and MiniMax-M2.7 on 2505.12677 at Reimplement. Because
+2508.21046 at Retrain and MiniMax-M2.7 on 2505.12677 at Reimplement. Because
 these tiers ask the agent to train or rebuild that model, we count both runs
 as not reproduced, which lowers Muse Spark 1.2 to 8 of 33 at Retrain and
-MiniMax-M2.7 to 1 of 33 at Reimplement, so DeepSeek-V4-Flash alone has the best
-Retrain rate, 9 of 33, and the best Reimplement rate stays 5 of 33. The scan does not detect a download made inside an imported library.
+MiniMax-M2.7 to 1 of 33 at Reimplement, and the best Reimplement rate stays 5 of 33. The scan does not detect a download made inside an imported library.
 % src: results/e9/README.md:12-19 (368/372 scanned; 4 timeouts; Retrain 13 of 29 and Reimplement 3 of 13 reproduced runs with a hit, 16 in all; class c 2); results/e9/class_review.csv rows 20-24; results/e8/bound.csv (muse retrain 9/33, minimax reimplement 2/33 before the correction)
 
 Removing the 24 Build and dependency runs from the denominators
@@ -231,10 +229,7 @@ Removing the 24 Build and dependency runs from the denominators
 and 9 of 33 at Retrain (27\%, 15\% to 44\%), since it has none of them at
 either tier. Muse Spark 1.2, the best agent at Reimplement, goes from 5 of 33
 (15\%, 7\% to 31\%) to 5 of 32 (16\%, 7\% to 32\%), and MiniMax-M2.7 at Run,
-the agent most affected, goes from 2 of 34 to 2 of 26. Together with the 6
-cells that had no graded run and failed outside the agent, 6 + 14 + 7 = 27 of
-the 400 cells trace to causes outside the agent.
-% src: results/e8/bound.csv; results/e8/summary.json; results/e7/rescore_summary.md
+the agent most affected, goes from 2 of 34 to 2 of 26.% src: results/e8/bound.csv; results/e8/summary.json; results/e7/rescore_summary.md
 
 For the re-execution of Section~\ref{subsec:mechanisms}, we took runs labeled Ran, outside tolerance at the Run and Retrain tiers in the 0--8 H100-hour band, and only three had a single command chain that ran without code the agent had edited by hand or several GPU sessions.
 
@@ -257,7 +252,7 @@ two models from one family. % src: results/subset/README.md (counts per tier and
 \begin{table}[ht]
 \centering
 \small
-\input{tables/frontier_summary}
+{\footnotesize\setlength{\tabcolsep}{4pt}\input{tables/frontier_summary}}
 \caption{Papers reproduced by each frontier arm, beside the two best open
 agents on the papers that arm has graded.}
 \label{tab:frontier}
@@ -268,14 +263,14 @@ graded by 11-09 and are regenerated before upload.}
 
 The open-agent columns use the submitted grade of that agent on the same
 papers. Because half of the sampled papers are ones some open agent had
-reproduced, those columns favor the open agents, so we also reran
+reproduced under the submitted grades, those columns favor the open agents, so we also reran
 DeepSeek-V4-Flash twice on the 12 core papers, where it reproduces \todo{r2}
 and \todo{r3}. \todo{With up to three prompts to continue after the agent ends
 its turn, gpt-6.1-sol in Codex CLI reproduces f of 8 papers.} The frontier runs
 spend a median of \todo{2.1}\% of their GPU grant, against \todo{17.5}\% for
 the open agents on the same papers, and Table~\ref{tab:frontier-runs} lists
 every run with its exit reason. We did not run Claude Code, since the auditor
-is a Claude model. Some agent reproduced 34 of the 99 papers the sample was drawn from, so the sample holds a larger share of reproduced papers than the benchmark.
+is a Claude model. Under the submitted grades some agent reproduced 34 of the 99 papers the sample was drawn from, so the sample holds a larger share of reproduced papers than the benchmark.
 % src: results/frontier/same_paper_baselines.md; repeat runs jobs 3540624 to 3540633; continue-prompt variant: results/databook/frontier_cells.csv arm codex-gpt-6.1-sol-nudge when graded
 
 \input{tables/frontier_runs}
