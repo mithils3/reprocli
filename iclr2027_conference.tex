@@ -449,10 +449,10 @@ Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 run on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
 Model API. All use the same harness, prompts, and budgets. To test whether the
 results hold for frontier models in the harnesses they ship with, we also ran
-\todo{gpt-6-astra and gpt-6.1-sol}\todo{cite} from OpenAI on \todo{n} papers and
-Muse Wonder\todo{cite} from Meta on \todo{m} papers, drawn with a fixed seed from
+\todo{gpt-6-astra and gpt-6.1-sol}~\citep{openai2026gpt6astra,openai2026gpt61sol} from OpenAI on \todo{n} papers and
+Muse Wonder~\citep{meta2026musewonder} from Meta on \todo{m} papers, drawn with a fixed seed from
 every tier and frozen before any run. gpt-6.1-sol and gpt-6-astra ran in our
-harness and in Codex CLI\todo{cite}, and Muse Wonder in our
+harness and in Codex CLI~\citep{openai2026codexcli}, and Muse Wonder in our
 harness and in mini-SWE-agent~\citep{yang2024sweagent}. The production
 harnesses keep their own tools, system prompts, and context handling, and every
 run gets the same sandbox, task text, GPU grant, and auditor as the main runs,
@@ -509,8 +509,8 @@ At least one of the four agents reproduces 32 of the 100 papers (32\%, interval
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/results_by_tier}
-\caption{Reproduction rate and mean audit score by agent and tier, and the share
-of the granted H100-hours each agent spent.}
+\caption{Reproduction rate with 95\% Wilson interval whiskers and mean audit score by
+agent and tier, plus an All agents row, and the share of granted H100-hours each agent spent.}
 \label{fig:main-results}
 \end{figure}
 
