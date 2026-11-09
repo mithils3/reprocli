@@ -306,15 +306,17 @@ def fig_modes():
 
 
 # ============================================ fig: score and spending by cap
-# numbers of record (2026-09-10): all 400 cells, the 28 without a graded run at
-# score 0; band = the paper's cap; spent = sum(spent_h100) / sum(budget_h100).
+# numbers of record (2026-11-09): mean audit scores from
+# rebuttal/results/tiers/tier_tests.md, "Mean audit score by compute band".
+# Earlier: all 400 cells, the 28 without a graded run at score 0 (2026-09-10).
+# band = the paper's cap; spent = sum(spent_h100) / sum(budget_h100).
 BANDS, BANDRUNS = [8, 32, 96], [236, 116, 48]
 COMPUTE = [
     ("DeepSeek-V4-Flash", [6.00, 4.10, 3.33], [42.0, 34.0, 13.5]),
     ("Qwen3.6-27B", [4.03, 3.14, 1.83], [31.0, 23.4, 3.1]),
     ("MiniMax-M2.7", [3.56, 2.41, 1.92], [26.8, 12.0, 2.3]),
-    ("Muse Spark 1.2", [5.61, 4.55, 3.08], [38.9, 32.6, 6.1]),
-    ("All agents", [4.80, 3.55, 2.54], [34.7, 25.5, 6.2]),
+    ("Muse Spark 1.2", [5.85, 4.55, 3.08], [38.9, 32.6, 6.1]),
+    ("All agents", [4.86, 3.55, 2.54], [34.7, 25.5, 6.2]),
 ]
 
 
