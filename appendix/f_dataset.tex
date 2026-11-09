@@ -117,11 +117,11 @@ and for 1 a reported range it must fall inside. A run matches a
 point estimate when its measured value lies within the authors' stated
 tolerance, or within 5\% relative when the paper states none
 (Figure~\ref{lst:rubric-text}), and 58 of the 62 point estimates use the 5\%
-default. To measure how much the default decides, we rescored every graded run
+default. The table uses the grades as submitted, before the corrections of Appendix~\ref{app:outside-agent} and Appendix~\ref{app:target-check}. To measure how much the default decides, we rescored every graded run
 at relative tolerances of 1\%, 2\%, and 10\% (Table~\ref{tab:tolerance}). The
-ordering of the tiers holds at every setting, and the best agent's count moves
+Reimplement tier has the lowest best-agent count at every setting, and the best agent's count moves
 by at most 5 papers at Run, 3 at Retrain, and 1 at Reimplement. Tightening to
-1\% moves 17 of the 73 reproduced runs to partial, and loosening to 10\% moves
+1\% moves 17 of the 73 runs reproduced as submitted to partial, and loosening to 10\% moves
 up 9 partial runs whose only failed criterion was the number. For example,
 DeepSeek-V4-Flash measured 90.6 on 2511.19808 against a frozen target of 97.3,
 a gap of $6.7 / 97.3 = 6.9\%$, so that run is partial at 5\% and reproduced at
@@ -149,7 +149,6 @@ each tier and over all agents.}
 % src: results/e6/README.md:19-24 (best agent per tier); results/e6/summary.json cells summed per setting (56, 65, 73, 82)
 % moves with: E7 and the regrade decision (the 5% row becomes the post-correction counts); rerun rel1/rel2/rel10 if the counts of record change
 
-\newpage  % this paragraph opens a page, so both paper tables print within a page of it
 \paragraph{The evaluation and development papers.} Tables~\ref{tab:eval100}
 and~\ref{tab:dev14} list the 100 evaluation and 14 development papers with the
 match target each is graded against, where Band is the compute band in
