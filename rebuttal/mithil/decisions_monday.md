@@ -103,6 +103,12 @@ Question: Did it? yes / no
 Change: yes: 179 becomes "had only an author review of each extracted field, with no second check and no annotator agreement" [followups_check_1.md:15]. No: paper iclr2027_conference.tex:668 changes instead.
 Decision: yes (Mithil, 11-08). Line 179 now says an author reviewed every field and no second person did; paper line 668 stands.
 
+**18. Thin-harness gpt-6.1-sol arm: 12 papers or 24? (2 lines: 23, 227)**
+Question: Compare the two harnesses on the 12 papers both have run, or launch thin-harness papers 13 to 24 so the arm matches Codex's 24? keep 12 / launch 12 more
+Change: keep 12: lines 23 and 227 name 12 shared papers and the paired comparison is over 12. Launch: about 12 more OpenAI runs from the $700 budget ($157 spent), finishing only if the ghx4 queue clears before the 11-15 18:00 stop.
+Recommended: keep 12. A paired comparison on the shared 12 answers YGTR's harness question, and the queue makes 12 more unlikely to finish in time.
+Decision: ______
+
 ---
 
 Not decisions: Risk 6 is closed. The consistency Flag 1 was settled by the main session. Bracketed result slots that wait on runs are not decisions.
