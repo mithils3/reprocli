@@ -34,8 +34,8 @@ LEDGER = ROOT / "spend.jsonl"
 CHECKOUT = Path.home() / "reprocli"
 PYTHON = CHECKOUT / ".venv" / "bin" / "python"
 MODEL = "claude-sonnet-5"
-# Mithil's cap on all Anthropic spend in the rebuttal ledger (2026-11-07): $200 total.
-ANTHROPIC_CAP_USD = 200.0
+# Mithil's cap on all Anthropic spend in the rebuttal ledger: $200 (2026-11-07), raised to $230 (2026-11-09) for the x86 arms.
+ANTHROPIC_CAP_USD = 230.0
 EST_GRADE_USD = 3.0
 SKIP_PAPERS = {"2511.07099", "2510.21323"}
 ARM_RE = re.compile(
