@@ -263,7 +263,7 @@ Our reply to Reviewer rqBN (Q1) re-runs the last commands of missed runs on the 
 
 One run per agent is a real limit, and we measured its size by running DeepSeek-V4-Flash twice more on 12 papers drawn with a fixed seed, four per tier (details in our reply to Reviewer T29u, W1). [Its verdict was the same in all three runs on k of 12 papers, so most single-run failures are consistent / a share of failures are transient, and the revision widens the comparisons between agents by this rate.] Every rate now carries a 95% Wilson interval in Section 5.2.
 
-**W1 (generalization): Do the findings generalize beyond the tested models?**
+**W1, continued: Whether the findings generalize to stronger models.**
 
 The findings are scoped to the 100 NeurIPS 2025 papers and the agents we tested, and we do not claim more. The benchmark covers 100 papers from one venue and year in three tiers (Run, Retrain and Reimplement), each with a pinned experiment under a 96 H100-hour cap, and it excludes papers that need a paid or closed API. The main results come from four agents run once per paper, and the frontier runs above add [gpt-6-astra, gpt-6.1-sol and Muse Wonder] in production harnesses on a frozen subset. The tier ordering and the most common failure are what we test on those runs [outcome]. Section 5 and the Limitations section state the scope, and the revision adds that the claims hold for these papers and agents and that other venues, years and models remain untested.
 
