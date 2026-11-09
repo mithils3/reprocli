@@ -24,6 +24,7 @@ import os
 import random
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -123,7 +124,8 @@ def digest(r: dict) -> str:
     if p.is_file() and p.stat().st_size:
         return p.read_text()
     cmd = f"python3 -c {shlex.quote(REMOTE)} {shlex.quote(r['run_dir'])}"
-    out = subprocess.run(["delta", cmd], capture_output=True, text=True, timeout=300).stdout
+    argv = ["delta", cmd] if shutil.which("delta") else ["bash", "-c", cmd]  # on DeltaAI itself, run locally
+    out = subprocess.run(argv, capture_output=True, text=True, timeout=300).stdout
     if "TRANSCRIPT DIGEST" not in out:
         raise RuntimeError(f"digest failed for {r['run_id']}")
     p.write_text(out)
