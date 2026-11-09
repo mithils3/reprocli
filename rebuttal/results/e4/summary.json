@@ -1,0 +1,213 @@
+{
+ "source": "0-10 matrix supplied by Mithil 2026-11-08 (aggregate table; per-run human label file not on disk); auditor column totals checked equal to the 372 graded runs in tools/anon_viewer/public/data/index.json",
+ "n_runs": 372,
+ "human_row_totals": [
+  46,
+  9,
+  45,
+  18,
+  65,
+  18,
+  56,
+  32,
+  53,
+  24,
+  6
+ ],
+ "auditor_col_totals": [
+  53,
+  10,
+  47,
+  17,
+  72,
+  14,
+  60,
+  26,
+  52,
+  16,
+  5
+ ],
+ "reproduced_ge8": {
+  "tp": 64,
+  "human_pos": 83,
+  "auditor_pos": 73,
+  "precision": 0.877,
+  "precision_wilson95": [
+   78.2,
+   93.4
+  ],
+  "recall": 0.771,
+  "recall_wilson95": [
+   67.0,
+   84.8
+  ],
+  "f1": 0.821,
+  "auditor_yes_human_no": 9,
+  "human_yes_auditor_no": 19
+ },
+ "exact_agreement": [
+  253,
+  372,
+  68.0,
+  [
+   63.1,
+   72.5
+  ]
+ ],
+ "within_one": [
+  324,
+  372,
+  87.1
+ ],
+ "mae_0_10": 0.59,
+ "mean_auditor_minus_human": -0.26,
+ "quadratic_weighted_kappa": 0.888,
+ "verdict_matrix_human_rows": {
+  "reproduced": {
+   "reproduced": 64,
+   "partial": 15,
+   "not_reproduced": 2,
+   "unverifiable": 0,
+   "disqualified": 2
+  },
+  "partial": {
+   "reproduced": 7,
+   "partial": 64,
+   "not_reproduced": 15,
+   "unverifiable": 0,
+   "disqualified": 2
+  },
+  "not_reproduced": {
+   "reproduced": 2,
+   "partial": 6,
+   "not_reproduced": 130,
+   "unverifiable": 3,
+   "disqualified": 5
+  },
+  "unverifiable": {
+   "reproduced": 0,
+   "partial": 0,
+   "not_reproduced": 1,
+   "unverifiable": 6,
+   "disqualified": 2
+  },
+  "disqualified": {
+   "reproduced": 0,
+   "partial": 1,
+   "not_reproduced": 2,
+   "unverifiable": 1,
+   "disqualified": 42
+  }
+ },
+ "verdict_agreement": [
+  306,
+  372
+ ],
+ "boundary_7_8": {
+  "runs_either_at_7_or_8": 100,
+  "agree_on_reproduced_side": 75,
+  "cells": [
+   [
+    5,
+    7,
+    1
+   ],
+   [
+    5,
+    8,
+    2
+   ],
+   [
+    6,
+    7,
+    3
+   ],
+   [
+    7,
+    0,
+    1
+   ],
+   [
+    7,
+    2,
+    1
+   ],
+   [
+    7,
+    4,
+    3
+   ],
+   [
+    7,
+    5,
+    1
+   ],
+   [
+    7,
+    6,
+    9
+   ],
+   [
+    7,
+    7,
+    10
+   ],
+   [
+    7,
+    8,
+    7
+   ],
+   [
+    8,
+    0,
+    1
+   ],
+   [
+    8,
+    4,
+    1
+   ],
+   [
+    8,
+    6,
+    2
+   ],
+   [
+    8,
+    7,
+    11
+   ],
+   [
+    8,
+    8,
+    35
+   ],
+   [
+    8,
+    9,
+    3
+   ],
+   [
+    9,
+    7,
+    1
+   ],
+   [
+    9,
+    8,
+    7
+   ],
+   [
+    10,
+    8,
+    1
+   ]
+  ]
+ },
+ "disqualified_score0_as_high_severity": {
+  "human_0": 46,
+  "auditor_0": 53,
+  "both": 42,
+  "either": 57
+ }
+}
