@@ -6,7 +6,7 @@ Order of posting from PLAN.md Section 4: T29u and rqBN on 11-11, then YGTR and t
 
 ## General
 
-### General reply (one part, 3,824 characters)
+### General reply (one part, 3,957 characters)
 
 We thank the three reviewers for their time. They agree that the task and the grading design are sound and well documented, and their requests fall into four groups: stronger agents in production harnesses, repeated runs, a fuller validation of the auditor and of the logs it reads, and a clearer account of failures that the agent did not cause. This is what we added for each, and the replies to each reviewer give the details.
 
@@ -16,7 +16,9 @@ We thank the three reviewers for their time. They agree that the task and the gr
 - Section 4 and Appendix D: the auditor-versus-human confusion matrix and boundary table.
 - Appendix A: the log comparison and its limit, and a corrected sentence on what the auditor prompt says.
 - Appendix E and F: what the final construction stage checked, the target check, and the tolerance table.
-- Section 5.3 and Limitations: the hardware bound, the checkpoint scan and the re-execution check, each where its claim is made.
+- Section 5.3: the bound on build failures from the aarch64 hardware, with an x86 replay.
+- Section 5.3 and Limitations: the re-execution of missed runs with new seeds.
+- Section 5.2: the scan for downloaded checkpoints, with two runs counted as not reproduced.
 
 **Frontier agents and production harnesses.** We ran [gpt-6-astra and gpt-6.1-sol] from OpenAI on [n] papers and Muse Wonder from Meta on [m] papers, drawn with a fixed seed from every tier and frozen before any run. Each model ran in our ReAct-style harness and in a production harness (Codex CLI for the OpenAI models, mini-SWE-agent for Muse Wonder), with the same sandbox, task text, GPU grant and auditor as the main runs. [Result sentence: gpt-6-astra in Codex CLI reproduced a of 8 papers, gpt-6.1-sol b of n in our harness and c of n in Codex CLI, and Muse Wonder d of m.] [Failure-mode sentence: the frontier agents' failures fall into the paper's three most common failure modes at shares inside the 95% intervals of the open agents, or Codex CLI removes mode X in k runs.]
 
@@ -42,7 +44,7 @@ We thank the three reviewers for their time. They agree that the task and the gr
 
 ## T29u
 
-### Reply to T29u, part 1 of 2 (2,232 characters)
+### Reply to T29u, part 1 of 2 (2,505 characters)
 
 Thank you for the careful review. These are the changes, each detailed below:
 - Section 5.2: a 95% Wilson interval on every rate, and DeepSeek-V4-Flash run twice more on 12 papers to measure run-to-run variation.
@@ -53,9 +55,15 @@ Thank you for the careful review. These are the changes, each detailed below:
 
 **One run per cell (W1).** We agree that one rollout per cell gives a point estimate, so every rate in the revision carries a 95% Wilson interval. For the best agent per tier these are 14/34 = 41% [26%, 58%] at Run, 9/33 = 27% [15%, 44%] at Retrain and 5/33 = 15% [7%, 31%] at Reimplement, and the overall count is 73/400 = 18% [15%, 22%]. To measure run-to-run variation directly, we ran DeepSeek-V4-Flash, the best agent at Run, twice more on 12 papers drawn with a fixed seed, four per tier, two of which some agent had reproduced and two of which none had. [Its verdict was the same in all three runs on k of 12 papers (95% interval [lo, hi]), and the ordering Run, Retrain, Reimplement held in every run / held in j of 3 runs.] The revision compares two agents only where their intervals, widened by this rate of change, do not overlap, and it says that the measurement covers one agent.
 
-On environment sensitivity, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 16 of them to a package that has no build for the aarch64 CPUs of our GH200 nodes. For the 12 of these with a real aarch64 failure and an install command we could replay, we re-ran the install on x86 nodes, and 9 of 12 build and import (95% Wilson interval 47% to 91%). Removing all 24 from the denominators leaves the best Run-tier rate at 14/34, because DeepSeek-V4-Flash had none of these failures at Run, and moves the best Retrain and Reimplement rates by less than one percentage point (to 9/32 and 5/32).
+On environment sensitivity, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 16 of them to a package that has no build for the aarch64 CPUs of our GH200 nodes. For the 12 of these with a real aarch64 failure and an install command we could replay, we re-ran the install on x86 nodes, and 9 of 12 build and import (95% Wilson interval 47% to 91%). Removing all 24 from the denominators moves no best-agent rate by more than one percentage point, because DeepSeek-V4-Flash had none of these failures at Run (Section 5.3):
 
-### Reply to T29u, part 2 of 2 (3,993 characters)
+| Tier | Build or dependency failures | Best agent as graded (95% interval) | Best agent with the 24 removed (95% interval) |
+| :- | :- | :- | :- |
+| Run | 13 | 14/34 = 41% [26%, 58%] | 14/34 = 41% [26%, 58%] |
+| Retrain | 6 | 9/33 = 27% [15%, 44%] | 9/32 = 28% [16%, 45%] |
+| Reimplement | 5 | 5/33 = 15% [7%, 31%] | 5/32 = 16% [7%, 32%] |
+
+### Reply to T29u, part 2 of 2 (4,210 characters)
 
 **Auditor disagreements, the 7/8 boundary and high-severity flags (W2, Q1).** The confusion matrix of auditor verdict against human verdict over the 372 runs that have both grades is below and in Appendix D (the other 24 runs that started have no auditor grade). On the reproduced verdict the auditor has precision 64/73 = 88% (95% Wilson interval 78% to 93%), recall 64/83 = 77% (67% to 85%) and F1 0.82, and the two agree on the five-way verdict for 306 of 372 runs.
 
@@ -72,7 +80,7 @@ On the 100 runs that either the auditor or the human placed at 7 or 8, they agre
 
 Two checks that do not depend on the auditor also bear on high-severity problems. A comparison of the agent's logs with the host transcript found one edited log in 372 runs, on a run the auditor had already graded unverifiable, and a scan of every transcript for model downloads found two reproduced runs that evaluated a downloaded checkpoint of the claimed model. Neither was the best agent's run, and the revision counts both as not reproduced. The reply to rqBN gives both checks in full.
 
-**Choice of match target and the default 5% tolerance (Q2).** Of the 100 claims, 62 are point estimates and 38 are tested by direction or by a threshold (for example "beats the strongest baseline"), which a tolerance does not affect. Of the 62 point estimates, 58 use the default 5% relative tolerance and 4 state their own margin. We rescored every graded run at four relative tolerances.
+**Choice of match target and the default 5% tolerance (Q2).** The ordering of the tiers holds at every tolerance we tried, from 1% to 10%, and the best agent's count moves by at most 5 papers at Run (14 at 5% against 9 at 1%), 3 at Retrain and 1 at Reimplement (Appendix F and the table below). Of the 100 claims, 62 are point estimates and 38 are tested by direction or by a threshold (for example "beats the strongest baseline"), which a tolerance does not affect. Of the 62 point estimates, 58 use the default 5% relative tolerance and 4 state their own margin. We rescored every graded run at four relative tolerances.
 
 | Relative tolerance | Run, best of 34 | Retrain, best of 33 | Reimplement, best of 33 | All agents, of 400 cells |
 | :- | :- | :- | :- | :- |
@@ -81,9 +89,19 @@ Two checks that do not depend on the auditor also bear on high-severity problems
 | 5% (default) | 14 | 9 | 5 | 73 |
 | 10% | 14 | 12 | 5 | 82 |
 
-The ordering of the tiers holds at every setting, and with an absolute tolerance of 1 or 2 points on percentage metrics the total is 70 or 72 of 400. Tightening to 1% moves 17 of the 73 reproduced runs to partial, and loosening to 10% moves 9 partial runs, whose only failed criterion was the number, up to reproduced. For example, DeepSeek-V4-Flash measured 90.6 on 2511.19808 against a frozen target of 97.3, a gap of 6.7 / 97.3 = 6.9%, so that run is partial at 5% and reproduced at 10%.
+With an absolute tolerance of 1 or 2 points on percentage metrics the total is 70 or 72 of 400. Tightening to 1% moves 17 of the 73 reproduced runs to partial, and loosening to 10% moves 9 partial runs, whose only failed criterion was the number, up to reproduced. For example, DeepSeek-V4-Flash measured 90.6 on 2511.19808 against a frozen target of 97.3, a gap of 6.7 / 97.3 = 6.9%, so that run is partial at 5% and reproduced at 10%.
 
-On the match target itself, a model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer. The paper reports the frozen value for 92 of 100 targets, for the frozen metric for 95, on the frozen dataset and split for 76, and for the frozen method or variant for 69, and all four hold for 55 of 100. The most common failure is the method or variant question alone (18 papers), which flags cases like 2506.18890, whose frozen value of 27.443 PSNR appears in the paper for 24 input views while the frozen configuration says 12. [An author read all 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of them, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier.]
+On the match target itself, a model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer. The papers supported each part of the frozen target as follows (Appendix E):
+
+| Part of the frozen target | Supported, of 100 |
+| :- | -: |
+| Value | 92 |
+| Metric | 95 |
+| Dataset and split | 76 |
+| Method or variant | 69 |
+| All four | 55 |
+
+The most common failure is the method or variant question alone (18 papers), which flags cases like 2506.18890, whose frozen value of 27.443 PSNR appears in the paper for 24 input views while the frozen configuration says 12. [An author read all 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of them, and we corrected those targets and rescored their runs, which changes v verdicts and moves the best-agent rates by at most w papers per tier.]
 
 ### Sources (T29u)
 
@@ -91,12 +109,12 @@ On the match target itself, a model from a different lab than our auditor (OpenA
 | :- | :- |
 | 14/34, 9/33, 5/33, 73/400 and their Wilson intervals | rebuttal/results/e6/summary.json (settings.S0_index); interval for 73/400 computed with the same Wilson formula |
 | 12 papers, four per tier, two reproduced and two not | rebuttal/subset.json; rebuttal/results/subset/README.md |
-| 24 build-and-dependency runs, 16 aarch64, bound 14/34, 9/32, 5/32; x86 replay 9 of 12 | rebuttal/results/e8/summary.json (build_dependency_runs, bound_best_per_tier_all_env_removed); e8/bound.csv; e8/x86/README.md |
+| 24 build-and-dependency runs (13 Run, 6 Retrain, 5 Reimplement), 16 aarch64, bound 14/34, 9/32, 5/32 with Wilson intervals; x86 replay 9 of 12 | rebuttal/results/e8/summary.json (build_dependency_runs, bound_best_per_tier_all_env_removed); e8/bound.csv; e8/x86/README.md |
 | 1 edited log in 372 runs, graded unverifiable | rebuttal/results/e5/README.md |
 | 2 reproduced runs with a downloaded checkpoint | rebuttal/results/e9/README.md; e9/class_review.csv |
 | 62 point estimates, 58 default, 4 stated margins, 38 without a number test | rebuttal/results/e6/summary.json (claims.lockfile_kinds, point_estimate_default_5pct, point_estimate_stated_margin) |
 | tolerance table, 56/65/73/82 of 400, 70 and 72 at 1 and 2 points | rebuttal/results/e6/README.md; e6/summary.json (cells, summed per setting) |
-| 17 falls at 1%, 9 rises at 10% | rebuttal/results/e6/summary.json (falls_by_setting, moves_by_setting, number_only_partials) |
+| 17 falls at 1%, 9 rises at 10%; at most 5, 3 and 1 papers of movement (from the tolerance table) | rebuttal/results/e6/summary.json (falls_by_setting, moves_by_setting, number_only_partials) |
 | 2511.19808 example, 90.6 vs 97.3, 6.9% | rebuttal/results/e6/README.md (worked run) |
 | 92, 95, 76, 69, 55 of 100; 45 failures; 18 method-only | rebuttal/results/e7/summary.json (step3); e7/README.md |
 | 2506.18890, 27.443 PSNR, 24 vs 12 views | rebuttal/results/e7/v3_failures.csv; e7/README.md |
@@ -105,7 +123,7 @@ On the match target itself, a model from a different lab than our auditor (OpenA
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 2 (4,579 characters)
+### Reply to rqBN, part 1 of 2 (4,615 characters)
 
 Thank you for checking how the logs and the auditor are validated. These are the changes, each detailed below:
 - Appendix A: the description of the two harness logs now matches the code (old and new wording below), and the appendix reports a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable.
@@ -113,7 +131,7 @@ Thank you for checking how the logs and the auditor are validated. These are the
 - Appendix E: what the final construction stage checked, and a check of every frozen target against its paper.
 - Section 5.3 and Limitations: a re-execution of missed runs with new seeds, and the bound on build failures.
 
-**Auditor validation (W1).** Appendix D now gives the confusion matrix of auditor verdict against human verdict over the 372 runs that have both grades, and the reply to T29u shows it in full. On the reproduced verdict the auditor has precision 64/73 = 88% and recall 64/83 = 77% alongside the F1 of 0.82. On the full 0 to 10 scale the two give the same score to 253 of 372 runs and scores within one point to 324, and the mean absolute difference is 0.59 points. By tier, the errors on the reproduced verdict are as follows:
+**Auditor validation (W1a).** Appendix D now gives the confusion matrix of auditor verdict against human verdict over the 372 runs that have both grades, and the reply to T29u shows it in full. On the reproduced verdict the auditor has precision 64/73 = 88% and recall 64/83 = 77% alongside the F1 of 0.82. On the full 0 to 10 scale the two give the same score to 253 of 372 runs and scores within one point to 324, and the mean absolute difference is 0.59 points. By tier, the errors on the reproduced verdict are as follows:
 
 | Tier | Precision | Recall | F1 |
 | :- | -: | -: | -: |
@@ -121,26 +139,45 @@ Thank you for checking how the logs and the auditor are validated. These are the
 | Retrain | 25/29 = 86% | 25/32 = 78% | 0.82 |
 | Reimplement | 11/13 = 85% | 11/16 = 69% | 0.76 |
 
-Recall is lowest at Reimplement, but it rests on 16 human reproductions and its 95% interval (44% to 86%) overlaps those of the other tiers, so the errors do not concentrate in one tier. The rubric gives a score of 0 to any run with a high-severity integrity flag, and of the 57 runs that either the auditor or the human placed at 0 they agree on 42. In the original study each of the 396 runs that started received one human label, since three graders divided the runs, each blind to the auditor's score and using the same rubric. That design does not measure agreement between humans, and the revision says so. [If a second grader labels a subset: A second author has now labeled n of these runs blind to both earlier labels, and the two humans agree on k of n.]
+Recall is lowest at Reimplement, but it rests on 16 human reproductions and its 95% interval (44% to 86%) overlaps those of the other tiers, so the errors do not concentrate in one tier. The rubric gives a score of 0 to any run with a high-severity integrity flag, and of the 57 runs that either the auditor or the human placed at 0 they agree on 42. In the original study each of the 396 runs that started received one human label, since three graders divided the runs, each blind to the auditor's score and using the same rubric. That design does not measure agreement between humans, and Appendix D now states this beside the F1. [If a second grader labels a subset: A second author has now labeled n of these runs blind to both earlier labels, and the two humans agree on k of n.]
 
-**Writable logs (W1).** The harness process writes commands.log and trajectory.jsonl, and the sandbox mounts the evidence directory read-write, so the agent's shell could have rewritten them. Appendix A said we instruct the auditor to read these files as unverified claims; the auditor prompt has no such instruction for these two files. We rewrote the sentence to state what the auditor does and what the log comparison below adds.
+**Writable logs (W1b).** The harness process writes commands.log and trajectory.jsonl, and the sandbox mounts the evidence directory read-write, so the agent's shell could have rewritten them. Appendix A said we instruct the auditor to read these files as unverified claims; the auditor prompt has no such instruction for these two files. We rewrote the sentence to state what the auditor does and what the log comparison below adds.
 
 | Appendix A | Wording |
 | :- | :- |
 | Before | "We therefore instruct the auditor to read the bundle as unverified claims and to trace every number to the command that produced it." |
 | After | "The auditor traces every number to the command that produced it. Because the agent could edit these two files, we compared every logged entry with the transcript the harness writes on the host, outside the sandbox." |
 
-To find out whether any agent did edit them, we used the transcript the harness writes on the host, which lies outside every directory the sandbox mounts. For all 372 graded runs, we matched each entry that an agent command produced in the two files against that transcript, requiring the same command and return code and, for GPU jobs, the same cost and remaining budget. Of the 45,861 such entries, 45,673 match exactly. Another 185 differ for reasons the harness code explains: 100 are calls the harness refused, which carry no cost line, 60 are remaining-budget values within 0.00015 GPU-hours of the transcript, and 25 are the first attempt of a call that was retried. The last 3 differ in the remaining-budget field by less than 0.0003 GPU-hours, with the cost equal.
+To find out whether any agent did edit them, we used the transcript the harness writes on the host, which lies outside every directory the sandbox mounts. For all 372 graded runs, we matched each entry that an agent command produced in the two files against that transcript, requiring the same command and return code and, for GPU jobs, the same cost and remaining budget. The 45,861 such entries compare with the host transcript as follows (Appendix A):
 
-We also searched every agent command for writes to the two files. One run of the 372 wrote to commands.log, where MiniMax-M2.7 on 2510.25146 replaced the file with its own notes through a write_file call, and the auditor graded that run 1 of 10 as unverifiable, so the edit gained nothing. No run wrote to trajectory.jsonl. The comparison also found 119 commands in 65 runs that our harness ran but never wrote to commands.log, because two early-return paths in our code skip the log, and the host transcript holds all of them. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A now states that limit.
+| Entry | Count |
+| :- | -: |
+| Match exactly | 45,673 |
+| Call refused by the harness, so no cost line | 100 |
+| Remaining budget within 0.00015 GPU-hours | 60 |
+| First attempt of a retried call | 25 |
+| Remaining budget within 0.0003 GPU-hours, cost equal | 3 |
+| Total | 45,861 |
 
-### Reply to rqBN, part 2 of 2 (2,984 characters)
+We also searched every agent command for writes to the two files. One run of the 372 wrote to commands.log, where MiniMax-M2.7 on 2510.25146 replaced the file with its own notes through a write_file call, and the auditor graded that run 1 of 10 as unverifiable, so the edit gained nothing. No run wrote to trajectory.jsonl. The comparison also found 119 commands in 65 runs that our harness ran but never wrote to commands.log, because two early-return paths in our code skip the log; the host transcript holds all of them, and Appendix A now reports this gap with its count. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A now states that limit.
 
-**Human-expert reproduction baseline (Q1).** A stratified human reproduction across the three tiers, under the same environment and budgets, is beyond what we can run, and the Limitations section says so. What we can measure is how often the environment alone produces a miss. We took papers where an agent followed the released pipeline and still landed outside tolerance, extracted the final command sequence from its transcript, and re-ran it on the same GH200 nodes with two new seeds and no model in the loop. Only 3 papers (1 Run, 2 Retrain, all with grants of 8 GPU-hours or less) had a single clean command chain, because the other candidates spanned several GPU sessions or depended on code the agent had edited by hand. [On k of the 3 the re-run misses again on both seeds, which places those misses with the environment or the paper, and on the other 3 minus k it reaches the target, which points to seed variation or agent error.] Two further measurements bound the environment's share. Of the 372 graded runs, 24 ended in a build or dependency failure, and removing all of them leaves the best Run-tier rate at 14/34 and moves the best Retrain and Reimplement rates by less than one percentage point. [The frontier agents in the general reply, run in the same environment, reproduce a of n papers.]
+### Reply to rqBN, part 2 of 2 (3,716 characters)
 
-**How claims, configurations, targets and tolerances were validated (Q2).** The claim, minimal configuration and target tuple of each paper were extracted during dataset construction and frozen before any agent ran. The final construction stage (Stage III, Appendix E) audited only the availability calls, meaning which artifacts each paper's authors released, so the targets had no independent check and there was no annotator agreement to report. The revision states this in Appendix E.
+**Human-expert reproduction baseline (Q1).** A human reproduction across the three tiers under the same environment and budgets would need expert time on each paper plus up to the 2,552 H100-hours we grant one agent over the 100 papers (the 10,208 H100-hours granted over four agents divided by 4), which we cannot run within the discussion period, and the Limitations section says so. What we can measure is how often the environment alone produces a miss. We took papers where an agent followed the released pipeline and still landed outside tolerance, extracted the final command sequence from its transcript, and re-ran it on the same GH200 nodes with two new seeds and no model in the loop. Only 3 papers (1 Run, 2 Retrain, all with grants of 8 GPU-hours or less) had a single clean command chain, because the other candidates spanned several GPU sessions or depended on code the agent had edited by hand. Two of the 3 have finished, and both miss again on both seeds. On 2505.17836 the measured value is 0.0395 in the original run and 0.0400 and 0.0393 with the new seeds, a spread of 0.0400 - 0.0393 = 0.0007, which places that miss with the environment or the paper. On 2510.07501 it moves from -0.2241 to -0.1308 and +0.0566, a spread of 0.28 against a target of -0.20, which puts the original near miss inside seed variation. The two seeds for 2506.10351 are queued. Two further measurements bound the environment's share. Of the 372 graded runs, 24 ended in a build or dependency failure, and removing all of them leaves the best Run-tier rate at 14/34 and moves the best Retrain and Reimplement rates by less than one percentage point. [The frontier agents in the general reply, run in the same environment, reproduce a of n papers.]
 
-We have now checked them. A model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer. The paper reports the frozen value for 92 of 100 targets, for the frozen metric for 95, on the frozen dataset and split for 76, and for the frozen method or variant for 69, and all four hold for 55. [An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts.] Because the checking model saw the frozen tuple, this is a check of each target against its paper, and we describe it that way.
+**How claims, configurations, targets and tolerances were validated (Q2).** The claim, minimal configuration and target tuple of each paper were extracted during dataset construction and frozen before any agent ran. The final construction stage (Stage III, Appendix E) audited only the availability calls, meaning which artifacts each paper's authors released, so the claims, minimal configurations and targets had no independent check and there was no annotator agreement to report. The revision states this in Appendix E.
+
+We have now checked them. A model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer. The papers supported each part of the frozen target as follows (Appendix E):
+
+| Part of the frozen target | Supported, of 100 |
+| :- | -: |
+| Value | 92 |
+| Metric | 95 |
+| Dataset and split | 76 |
+| Method or variant | 69 |
+| All four | 55 |
+
+The dataset-and-split and method-or-variant questions check the minimal configuration, the value and metric questions check the target, and the choice of claim rests on construction alone, which Appendix E now states. [An author read each of the 45 papers with a failed question against the paper itself. The paper does not support the frozen target in k of the 45, and we corrected those targets and rescored their runs, which changes v verdicts.] Because the checking model saw the frozen tuple, this is a check of each target against its paper, and we describe it that way.
 
 On tolerances, 62 of the 100 claims are point estimates, and 58 of those use the default 5% relative tolerance while 4 state their own margin. The other 38 are tested by direction or threshold. Rescoring at 1%, 2% and 10% gives the best agent 9, 12 and 14 of 34 Run papers against 14 at 5%, and the ordering of the tiers holds at every setting (full table in the reply to T29u and in Appendix F).
 
@@ -149,20 +186,22 @@ On tolerances, 62 of the 100 claims are point estimates, and 58 of those use the
 | Number | File |
 | :- | :- |
 | F1 0.82, 396 runs, three graders, one label per run | paper Section 4 and Appendix D (protocol of record, memory human-grader-study-lost) |
-| 45,861 checked, 45,673 exact, 185 explained (100, 60, 25), 3 unmatched under 0.0003 h | rebuttal/results/e5/summary.json; e5/README.md |
+| 45,861 checked: 45,673 exact, 100, 60, 25, 3 (log table) | rebuttal/results/e5/summary.json; e5/README.md |
 | 1 of 372 wrote to commands.log, 2510.25146, write_file, graded 1 unverifiable | rebuttal/results/e5/README.md; viewer index tools/anon_viewer/public/data/index.json |
 | 119 commands missing in 65 runs, two early-return paths | rebuttal/results/e5/README.md (log completeness) |
 | 3 papers re-executed (1 Run, 2 Retrain), exclusions | rebuttal/results/e10/README.md; e10/selection.csv |
 | 24 build-and-dependency runs, best Run 14/34 unchanged | rebuttal/results/e8/summary.json; e8/bound.csv |
-| 92, 95, 76, 69, 55 of 100; 45 failures | rebuttal/results/e7/summary.json (step3); e7/README.md |
+| 92, 95, 76, 69, 55 of 100 (target table); 45 failures | rebuttal/results/e7/summary.json (step3); e7/README.md |
 | 62 point estimates, 58 default, 4 margins, 38 others; 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
 | Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 133-134 (before); the after text is proposed here |
 | 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0; per tier 28/31, 28/35, 25/29, 25/32, 11/13, 11/16, recall interval 44% to 86% | rebuttal/results/e4/summary.json (per_tier_reproduced from e4/per_tier.csv) |
-| re-execution outcome, target corrections | pending (E10, E7 settlement) |
+| re-execution: 2505.17836 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 -0.2241, -0.1308, +0.0566, spread 0.28, target -0.20; 2506.10351 queued | rebuttal/results/e10/results.md |
+| 2,552 = 10,208 / 4 H100-hours | paper Section 5.2 (paper_latex/iclr2027_conference.tex line 494, "1,888 of the 10,208 H100-hours we granted") |
+| 2506.10351 re-execution, target corrections | pending (E10, E7 settlement) |
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (4,431 characters)
+### Reply to YGTR, part 1 of 2 (4,924 characters)
 
 Thank you for the review. Your main concern was whether our findings hold for frontier models in the harnesses people actually use, so we ran that experiment and measured the confounds you named. These are the changes, each detailed below:
 - Section 5.1 and a new appendix section: [gpt-6-astra and gpt-6.1-sol] in Codex CLI and in our harness, and Muse Wonder in mini-SWE-agent and in our harness, on papers frozen before any run.
@@ -176,15 +215,23 @@ Thank you for the review. Your main concern was whether our findings hold for fr
 
 We keep the ReAct-style harness for the main results because it treats every model in the same way, and the new appendix section reports what a production harness changes.
 
-**Hardware and other confounds (W2).** We cannot fully separate the hardware from agent error, but we can bound its effect in three ways. First, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 16 of them to a package with no build for the aarch64 CPUs of our GH200 nodes, 5 to other environment problems and 3 to agent error. For the 12 of the 16 with a real aarch64 failure and a replayable install command, we re-ran the install on x86 nodes, and 9 of 12 build and import (95% Wilson interval 47% to 91%). Removing all 24 from the denominators leaves the best Run-tier rate at 14/34 = 41%, because DeepSeek-V4-Flash had none of these failures at Run, and moves the best Retrain and Reimplement rates by less than one percentage point. The agent most affected is MiniMax-M2.7 at Run, which goes from 3/34 to 3/26. Second, we re-ran the final command sequence of runs that followed the released pipeline and still missed, on the same nodes with two new seeds and no model in the loop. Only 3 papers had a single clean command chain, and [2 of the 3 have finished, and both still miss on both seeds; on one the measured value repeats within 0.0007, on the other it moves by 0.28 across seeds; third pending]. Third, the frontier runs above use the same environment, and [their results].
+**Hardware and other confounds (W2a).** We cannot fully separate the hardware from agent error, but we can bound its effect in three ways. First, 24 of the 372 graded runs ended in a build or dependency failure, and our reading of their transcripts traces 16 of them to a package with no build for the aarch64 CPUs of our GH200 nodes, 5 to other environment problems and 3 to agent error. For the 12 of the 16 with a real aarch64 failure and a replayable install command, we re-ran the install on x86 nodes, and 9 of 12 build and import (95% Wilson interval 47% to 91%). Removing all 24 from the denominators moves no best-agent rate by more than one percentage point, because DeepSeek-V4-Flash had none of these failures at Run (Section 5.3):
 
-**One run per cell (W2).** Every rate now carries a 95% Wilson interval, and we ran DeepSeek-V4-Flash twice more on 12 papers, four per tier. [Its verdict was the same in all three runs on k of 12 papers (95% interval [lo, hi]), so most single-run failures are consistent / a share of failures are transient, and the revision widens the comparisons between agents by this rate.]
+| Tier | Build or dependency failures | Best agent as graded (95% interval) | Best agent with the 24 removed (95% interval) |
+| :- | :- | :- | :- |
+| Run | 13 | 14/34 = 41% [26%, 58%] | 14/34 = 41% [26%, 58%] |
+| Retrain | 6 | 9/33 = 27% [15%, 44%] | 9/32 = 28% [16%, 45%] |
+| Reimplement | 5 | 5/33 = 15% [7%, 31%] | 5/32 = 16% [7%, 32%] |
 
-### Reply to YGTR, part 2 of 2 (2,726 characters)
+The agent most affected is MiniMax-M2.7 at Run, which goes from 3/34 to 3/26. Second, we re-ran the final command sequence of runs that followed the released pipeline and still missed, on the same nodes with two new seeds and no model in the loop. Only 3 papers had a single clean command chain. Two have finished and miss again on both seeds, with the measured value repeating within 0.0007 on 2505.17836 and spreading by 0.28 on 2510.07501, and the third is queued. Third, the frontier runs above use the same environment, and [their results].
 
-**Fetching checkpoints over the network (Q2).** Yes, we checked. The harness keeps no network log, so we scanned every transcript, including the commands, fetched URLs and code the agent wrote, for model downloads (hf_hub_download, snapshot_download, huggingface-cli, from_pretrained with a repository id, torch.hub, gdown, and wget or curl of weight files). The scan finished on 368 of the 372 graded runs, and none of the 4 it could not finish was reproduced. All 42 reproduced Retrain and Reimplement runs were scanned, and 16 of them matched a pattern. Reading those 16 by hand, 10 matched text that is not a download, such as an import line, a requirements.txt or a dataset, and 4 downloaded only a base model that the method starts from, such as the OpenVLA model that CogVLA builds on. The other 2 evaluated a downloaded checkpoint of the model the claim is about. Muse Spark 1.2 on CogVLA (2508.21046, Retrain) downloaded a LIBERO-Spatial checkpoint linked from the authors' repository, and MiniMax-M2.7 on CURE (2505.12677, Reimplement) downloaded the authors' erased Stable Diffusion v1.4 weights from their Google Drive folder. Neither was the best agent's run. The revision counts both as not reproduced, so Muse Spark's Retrain count goes from 9/33 to 8/33 and MiniMax-M2.7's Reimplement count from 2/33 to 1/33, while the best-agent rates stay at 9/33 at Retrain (DeepSeek-V4-Flash) and 5/33 at Reimplement (Muse Spark). The scan cannot see a download made inside an imported library, and the revision states that limit.
+**One run per cell (W2b).** Every rate now carries a 95% Wilson interval in Section 5.2, for example 14/34 = 41% [26%, 58%] for the best agent at Run and 5/33 = 15% [7%, 31%] at Reimplement, and we ran DeepSeek-V4-Flash twice more on 12 papers drawn with a fixed seed, four per tier, two of which some agent had reproduced and two of which none had. [Its verdict was the same in all three runs on k of 12 papers (95% interval [lo, hi]), so most single-run failures are consistent / a share of failures are transient, and the revision widens the comparisons between agents by this rate.]
 
-**Failures that were not the agent's fault (Q3).** We traced all 28 cells that produced no graded run, using the cluster's job accounting and the harness logs. Six failed for reasons outside the agent: the four cells of paper 2510.20725 never started because of a bug in our prompt rendering, since fixed, and two audits of Muse Spark 1.2 never returned a verdict. Sixteen more stopped before the agent finished, when the cluster job running them reached its 48-hour limit or was cancelled. Two ended when the agent's context filled, which the protocol counts as an agent failure, and for 4 finished runs the logs do not record why they are missing from the graded set. The two missing audits now have grades from the same pinned auditor, reproduced (score 8) on 2503.23035 and partial (score 6) on 2510.08177. [We reran the other 20 cells with the same settings, and r of them reproduce.] Every rate in the revision includes these grades. Among the 372 graded runs, the build and dependency bound above covers the failures the environment caused.
+### Reply to YGTR, part 2 of 2 (3,050 characters)
+
+**Fetching checkpoints over the network (Q2).** Yes, we checked. The harness keeps no network log, so we scanned every transcript, including the commands, fetched URLs and code the agent wrote, for model downloads (hf_hub_download, snapshot_download, huggingface-cli, from_pretrained with a repository id, torch.hub, gdown, and wget or curl of weight files). The scan finished on 368 of the 372 graded runs, and none of the 4 it could not finish was reproduced. All 42 reproduced Retrain and Reimplement runs were scanned, and 16 of them matched a pattern. Reading those 16 by hand, 10 matched text that is not a download, such as an import line, a requirements.txt or a dataset, and 4 downloaded only a base model that the method starts from, such as the OpenVLA model that CogVLA builds on. The other 2 evaluated a downloaded checkpoint of the model the claim is about. Muse Spark 1.2 on CogVLA (2508.21046, Retrain) downloaded a LIBERO-Spatial checkpoint linked from the authors' repository, and MiniMax-M2.7 on CURE (2505.12677, Reimplement) downloaded the authors' erased Stable Diffusion v1.4 weights from their Google Drive folder. Neither was the best agent's run. The revision counts both as not reproduced in Section 5.2, so Muse Spark's Retrain count goes from 9/33 to 8/33 and MiniMax-M2.7's Reimplement count from 2/33 to 1/33, while the best-agent rates stay at 9/33 at Retrain (DeepSeek-V4-Flash) and 5/33 at Reimplement (Muse Spark). The scan cannot see a download made inside an imported library, and the revision states that limit.
+
+**Failures that were not the agent's fault (Q3).** Yes, and at most 27 of the 400 cells failed for reasons outside the agent: 6 of the 28 cells with no graded run and 21 graded runs that failed on the environment (16 aarch64 builds and 5 other environment problems), so 6 + 16 + 5 = 27, while 16 further cells were stopped by the cluster job (Section 5.2 and Section 5.3). The count is an upper bound because 3 of the 12 aarch64 installs we replayed also fail on x86. We traced all 28 cells that produced no graded run, using the cluster's job accounting and the harness logs. Six failed for reasons outside the agent: the four cells of paper 2510.20725 never started because of a bug in our prompt rendering, since fixed, and two audits of Muse Spark 1.2 never returned a verdict. Sixteen more stopped before the agent finished, when the cluster job running them reached its 48-hour limit or was cancelled. Two ended when the agent's context filled, which the protocol counts as an agent failure, and for 4 finished runs the logs do not record why they are missing from the graded set. The two missing audits now have grades from the same pinned auditor, reproduced (score 8) on 2503.23035 and partial (score 6) on 2510.08177. [We reran the other 20 cells with the same settings, and r of them reproduce.] Every rate in the revision includes these grades.
 
 We would be glad to hear whether the frontier and harness results address the concern about generalization behind your informativeness score.
 
@@ -193,16 +240,19 @@ We would be glad to hear whether the frontier and harness results address the co
 | Number | File |
 | :- | :- |
 | 24 build-and-dependency runs; 16 aarch64, 5 other environment, 3 agent error; x86 replay 9 of 12 | rebuttal/results/e8/summary.json (build_dependency_runs.class_counts); e8/README.md; e8/x86/README.md |
-| best Run 14/34 unchanged, Retrain 9/32, Reimplement 5/32, MiniMax Run 3/26 | rebuttal/results/e8/bound.csv |
+| best Run 14/34 unchanged, Retrain 9/32, Reimplement 5/32, MiniMax Run 3/26; table by tier with intervals | rebuttal/results/e8/bound.csv; e8/summary.json (build_dependency_runs.by_tier, bound_best_per_tier_all_env_removed.wilson95); e6/summary.json (settings.S0_index) |
+| 14/34 = 41% [26%, 58%], 5/33 = 15% [7%, 31%] | rebuttal/results/e6/summary.json (settings.S0_index) |
+| at most 27 = 6 + 16 + 5; 3 of 12 replayed installs fail on x86 | rebuttal/results/e8/summary.json (outside_agent_cells, build_dependency_runs.class_counts A 16, O 5); e8/x86/README.md |
+| 0.0007 on 2505.17836, 0.28 on 2510.07501, 2506.10351 queued | rebuttal/results/e10/results.md |
 | 3 papers re-executed | rebuttal/results/e10/README.md; e10/selection.csv |
-| 12 repeat papers, four per tier | rebuttal/subset.json; rebuttal/results/sweeps/jobs.csv |
+| 12 repeat papers, four per tier, two reproduced and two not | rebuttal/subset.json; rebuttal/results/subset/README.md; rebuttal/results/sweeps/jobs.csv |
 | 368 of 372 scanned, 4 timeouts not reproduced | rebuttal/results/e9/summary.json (scan_timeouts); viewer index verdicts (partial, not_reproduced, disqualified x2) |
 | 42 reproduced Retrain and Reimplement runs, 16 with a hit, 10 / 4 / 2 | rebuttal/results/e9/README.md (13 of 29 plus 3 of 13); e9/class_review.csv |
 | 2508.21046 CogVLA and 2505.12677 CURE downloads | rebuttal/results/e9/class_review.csv; rebuttal/STATUS.md (commands.log:483) |
 | Muse Retrain 9 to 8, MiniMax Reimplement 2 to 1, best 9/33 and 5/33 | rebuttal/results/e8/summary.json (per_agent_tier) minus the two E9 runs |
 | 28 empty cells: 6 outside agent, 16 job limit or cancel, 2 context, 4 unknown | rebuttal/results/e8/summary.json; e8/empty_cells_traced.csv; e8/README.md |
 | 2503.23035 reproduced (8), 2510.08177 partial (6) | rebuttal/results/e8/regrade_muse.json |
-| frontier results, McNemar, budget use, failure-mode shares, blind labels, repeat flips, re-execution outcome, 20 reruns | pending (E1, E2, E3, E10, E8 reruns) |
+| frontier results, McNemar, budget use, failure-mode shares, blind labels, repeat flips, 2506.10351 re-execution, 20 reruns | pending (E1, E2, E3, E10, E8 reruns) |
 
 ## Risks: where a reviewer could push back
 

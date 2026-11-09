@@ -58,3 +58,23 @@
 15. **rqBN W1 and YGTR W2 (shared labels).** Current: "**Writable logs (W1).**" (after "**Auditor validation (W1).**") and "**One run per cell (W2).**" (after "**Hardware and other confounds (W2).**"). Rule 5: two answers carry one label each time. Replacement: "**Auditor validation (W1a).**", "**Writable logs (W1b).**", "**Hardware and other confounds (W2a).**" and "**One run per cell (W2b).**".
 
 The draft already does well on the core rules: T29u and rqBN open with one sentence of thanks and a located change list, every point has a label, the Appendix A before-and-after wording follows the rule 6 frame and rule 7 exactly, the tolerance result is a table, YGTR Q2 opens with its answer and carries its numbers and examples, and no answer disagrees dismissively or without a reason.
+
+## Applied 2026-11-08
+
+1. Applied to YGTR Q3, with the upper-bound reason (3 of the 12 replayed aarch64 installs also fail on x86) written out as its own sentence and the closing sentence cut.
+2. Applied to YGTR W2b.
+3. Applied to YGTR W2a and to the T29u environment paragraph, where the table replaces "(to 9/32 and 5/32)".
+4. Skipped: it depends on Mithil's decision on Risk 2.
+5. Skipped: already done, since the T29u reply carries the five-way table.
+6. Applied; the second-grader sentence stays a bracketed slot until it has numbers.
+7. Adapted: the E10 numbers were confirmed in rebuttal/results/e10/results.md, the reply gives the three measured values for 2505.17836 and shows 0.0400 - 0.0393 = 0.0007, the 0.28 for 2510.07501 is stated as the spread from the original -0.2241 to the seed value +0.0566 (the two new seeds alone differ by less), and 2506.10351 is "queued" because its seeds were resubmitted tonight after the first attempt lacked data. The YGTR W2a bracket on the same check now says the same thing.
+8. Applied, with the paper Section 5.2 source in the rqBN Sources table.
+9. Applied to the General list (three bullets) and to YGTR Q2.
+10. Adapted: the sentence leads the T29u Q2 paragraph with the Run arithmetic (14 at 5% against 9 at 1%), and the repeated "ordering of the tiers holds" clause after the tolerance table was cut.
+11. Applied to rqBN Q2 and T29u Q2.
+12. Applied to rqBN W1b.
+13. Applied.
+14. Applied; the added sentence sits right after the target table.
+15. Applied.
+
+Character counts after these edits: General 3,957; T29u 2,505 and 4,210; rqBN 4,615 and 3,716; YGTR 4,924 and 3,050. YGTR part 1 has 76 characters left before 5,000, so filling its frontier slots will need tighter wording there.
