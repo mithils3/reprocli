@@ -43,7 +43,7 @@ ARM_RE = re.compile(
     r"-(?:\d{4}\.\d{4,5}-)?\d{8}T\d{6}Z?"
 )
 # Thin-harness run ids (core-a-<paper>-<hash>) carry no model, so the arm comes from the sweep log that started them.
-THIN_LOGS = {"thin-sol-x86.log": "thin-gpt-6.1-sol-x86", "thin-astra-core.log": "thin-gpt-6-astra", "thin-sol-core.log": "thin-gpt-6.1-sol", "thin-musew-core.log": "thin-muse-wonder-1.0",
+THIN_LOGS = {"thin-astra-x86.log": "thin-gpt-6-astra-x86", "thin-sol-x86.log": "thin-gpt-6.1-sol-x86", "thin-astra-core.log": "thin-gpt-6-astra", "thin-sol-core.log": "thin-gpt-6.1-sol", "thin-musew-core.log": "thin-muse-wonder-1.0",
              "thin-terra-core.log": "thin-gpt-6.1-terra"}
 THREADS = {"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
 
