@@ -174,7 +174,7 @@ This removes about one typeset line. It drops the sentence that repeated runs an
 
 ---
 
-## 2. Wilson intervals on every rate (Section 5.2, Table 5, Figure 3)
+## 2. Wilson intervals on every rate (Section 5.2, Table 5, Figure 4)
 
 **Promise.**
 - replies.md:13: "Uncertainty (Section 5.2): a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers to measure run-to-run variation."
@@ -265,7 +265,7 @@ Agent & Tier or measure & Reproduced (95\% interval) & Mean score & 8 h & 32 h &
 
 The intervals in percent are rounded from the `wilson95` fields of `results/e6/summary.json`, which agree with `results/e8/bound.csv` (paper_lo, paper_hi).
 
-### 2c. Figure 3 caption
+### 2c. Figure 4 caption
 
 **Location.** `paper_latex/iclr2027_conference.tex:471-472`.
 
@@ -436,7 +436,7 @@ Check the figure source before changing the number: if `figures/score_distributi
 
 Not promised in current replies (a consequence of the grades in 5a, listed in Section 15).
 
-**Location.** `paper_latex/iclr2027_conference.tex:507-508` ("where 28 cells carry no label") and `appendix/g_taxonomy.tex:48` (No label row 13, 10, 2, 3, 28). The two newly graded runs and every rerun need dissection labels, after which the count is `\todo{28 - labeled}`, and Figures 2 and 6 need rebuilding.
+**Location.** `paper_latex/iclr2027_conference.tex:507-508` ("where 28 cells carry no label") and `appendix/g_taxonomy.tex:48` (No label row 13, 10, 2, 3, 28). The two newly graded runs and every rerun need dissection labels, after which the count is `\todo{28 - labeled}`, and Figures 2 and 5 need rebuilding.
 
 ---
 
@@ -982,7 +982,7 @@ This adds about one typeset line. The Section 5 half of the promise is met by th
 
 ## Promises not drafted, and why
 
-1. **Error bars on Figure 3** (Section 2c). The figure is built by `figures/build.py` from HTML, so it needs a figure build, a DOM audit, and a render check, none of which a text draft covers. Only the caption is drafted.
+1. **Error bars on Figure 4** (Section 2c). The figure is built by `figures/build.py` from HTML, so it needs a figure build, a DOM audit, and a render check, none of which a text draft covers. Only the caption is drafted.
 2. **Every number of the frontier arms** (Section 1b, 1c). The runs are still going and only 15 to 24 runs are graded (`results/frontier/README.md`, `results/databook/frontier_cells.csv`). The paragraph and table structure are drafted with slots.
 3. **Repeat-run result, E10 on 2506.10351, the 20 reruns, E7 author verdicts and rescore, and the 73 or 72 count.** These are drafted as `\todo{}` slots, as the brief asks.
 4. **Recomputed mean scores, Wilson intervals for the All-tiers rows of Table 5, and the dissection counts after the regrades** (Section 15). These are derived from per-cell data that is not summarized under `rebuttal/results/`, so they stay slots. The mean scores matter for Table 5 and the Section 5.2 sentence that gives them (finding 1).

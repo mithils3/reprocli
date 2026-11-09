@@ -6,10 +6,10 @@ Order of posting from PLAN.md Section 4: T29u and rqBN on 11-11, then YGTR and t
 
 ## General
 
-### General reply (one part, 1,812 characters)
+### General reply (one part, 1,820 characters)
 
 We thank the three reviewers for their careful reading. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). The revision makes the following changes, and each reviewer reply gives the numbers.
-- **Frontier agents and production harnesses** (Section 5.1 and a new appendix section): gpt-6.1-sol in our loop and in Codex CLI, [gpt-6-astra] in Codex CLI, and Muse Wonder in our loop and in mini-SWE-agent, on papers from every tier frozen before any run.
+- **Frontier agents and production harnesses** (Section 5.1 and a new subsection of Appendix B): gpt-6.1-sol in our loop and in Codex CLI, [gpt-6-astra] in Codex CLI, and Muse Wonder in our loop and in mini-SWE-agent, on papers from every tier frozen before any run.
 - **Uncertainty** (Section 5.2): a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers to measure run-to-run variation.
 - **Auditor validation** (Appendix D): the confusion matrix of auditor against human verdict over the 372 runs with both grades, with per-tier precision and recall, the 7/8 boundary and agreement on integrity flags.
 - **Log integrity** (Appendix A): a corrected description of the two logs the agent can write, and a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable.
@@ -181,11 +181,11 @@ Only 3 papers had a single clean command chain, 1 at Run and 2 at Retrain, all w
 
 The bound on build failures from our aarch64 hardware is in our reply to Reviewer YGTR (W2).
 
-### Reply to rqBN, part 3 of 3 (2,094 characters)
+### Reply to rqBN, part 3 of 3 (2,131 characters)
 
 **Q2: How claims, configurations, targets and tolerances were validated, and annotator agreement.**
 
-One author reviewed every extracted field before the dataset was frozen and no second person did, so there is no annotator agreement to report. Appendix E now states this. The claim, minimal configuration and target tuple of each paper (together, below, the frozen target) were extracted during dataset construction and frozen before any agent ran, and the last of the three construction stages (Stage III, Appendix E) checked which artifacts each paper's authors released and settled each compute estimate.
+One author reviewed every extracted field before the dataset was frozen and no second person did, so there is no annotator agreement to report. Appendix E now states this. The claim, minimal configuration and target tuple of each paper (together, below, the frozen target) were extracted during dataset construction and frozen before any agent ran, and the last of the three construction stages (Stage III, Appendix E) checked which artifacts each paper's authors released. Appendix E now says that Stage III also settled each compute estimate.
 
 We have now checked every frozen target against its paper. A model from a different lab than our auditor (OpenAI's gpt-6.1-sol) read each of the 100 papers and answered four yes-or-no questions about the frozen target, quoting the passage behind each answer.
 
@@ -213,7 +213,7 @@ Thank you again for the review.
 | 24 build-and-dependency runs, best Run 14/34 unchanged | rebuttal/results/e8/summary.json; e8/bound.csv |
 | 92, 95, 76, 69, 55 of 100 (target table); 45 failures | rebuttal/results/e7/summary.json (step3); e7/README.md |
 | 62 point estimates, 58 default, 4 margins, 38 others (21 direction, 14 threshold, 3 other); 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
-| Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 133-134 (before); the after text is proposed here |
+| Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 130-134 (before); the after text is proposed here |
 | 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0; per tier 28/31, 28/35, 25/29, 25/32, 11/13, 11/16, recall interval 44% to 86% | rebuttal/results/e4/summary.json (per_tier_reproduced from e4/per_tier.csv) |
 | re-execution: 2505.17836 GoRank mean relative error at 80k steps, target about 0.05, 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 bias, target -0.20, -0.2241, -0.1308, +0.0566, span 0.0566 - (-0.2241) = 0.28; 2506.10351 queued | rebuttal/results/e10/results.md (table and Metrics line) |
 | no Reimplement paper in the re-execution (selection from Run and Retrain only) | rebuttal/results/e10/README.md (Selection) |
@@ -223,10 +223,10 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (4,345 characters)
+### Reply to YGTR, part 1 of 3 (4,353 characters)
 
 Thank you for the review. We ran frontier models in production harnesses, as you asked, and measured the confounds you named. The revision makes these changes:
-- Section 5.1 and a new appendix section: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
+- Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
 - Section 5.3: the bound on build failures with an x86 replay, and a re-execution of missed runs with new seeds.
 - Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent.
 - Section 5.2: the trace of all 28 cells with no graded run, the missing grades added, and the two runs that evaluated a downloaded checkpoint counted as not reproduced.
