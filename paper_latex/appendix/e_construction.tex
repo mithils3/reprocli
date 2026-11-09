@@ -89,6 +89,65 @@ whether an alternate route to the pinned metric exists inside the paper's
 compute band and one re-checking whether the missing-artifact signal still
 held. We upheld a wall only when both agents failed to find a route, and two
 papers stayed eligible because one agent found one.
+Stage III checked the availability calls and the compute estimates. The
+claim, the minimal configuration, and the match target of each paper come from
+the Stage I classifier, and an author reviewed each of these fields before the
+freeze with no second reviewer, so we report no annotator agreement for them.
+Appendix~\ref{app:target-check} checks each frozen target against its paper.
+
+\subsection{Target check}
+\label{app:target-check}
+
+We checked every frozen target against its paper with gpt-6.1-sol\todo{cite},
+a model from a different lab than the auditor. Given the paper text, the
+claim sentence, and the frozen metric, dataset and split, configuration, and
+value, it answered four yes-or-no questions with a supporting quotation each,
+whether the paper reports this value within rounding, for this metric, on this
+dataset and split, and for this method or variant. Implementation details of
+the released code, such as checkpoint names, step counts, seeds, and hardware,
+were out of scope. Because the model saw the frozen target, this checks each
+target against its paper and does not re-derive it. The value and metric
+questions check the target, the dataset and method questions check the
+minimal configuration, and the choice of claim rests on the author review alone.
+Table~\ref{tab:target-check} gives the counts.
+% src: results/e7/README.md:3-5 (gpt-6.1-sol, reasoning high, pdftotext of the arXiv PDF; four questions; out-of-scope details)
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+The paper supports the frozen & Of 100 & 95\% interval & Run & Retrain & Reimplement \\
+\midrule
+Value          & 92 & 85--96 & 32/34 & 29/33 & 31/33 \\
+Metric         & 95 & 89--98 & 32/34 & 30/33 & 33/33 \\
+Dataset and split & 76 & 67--83 & 24/34 & 25/33 & 27/33 \\
+Method or variant & 69 & 59--77 & 22/34 & 18/33 & 29/33 \\
+\midrule
+All four       & 55 & 45--64 & \todo{} & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\caption{Frozen targets whose paper supports each part, by tier.}
+\label{tab:target-check}
+\end{table}
+% src: results/e7/summary.json step3 (by_question yes and wilson95; by_tier Easy/Medium/Hard a-d; all_four_yes 55, wilson95 [0.4524, 0.6439]); all-four by tier is not in summary.json
+
+The most common failure is the method question alone, on 18 papers. On
+2506.18890, for example, the frozen value of 27.443 PSNR appears in the paper
+for 24 input views, while the frozen configuration says 12.
+% src: results/e7/README.md:9-10; results/e7/v3_failures.csv
+
+Of the 100 targets, 55 pass all four questions. A second check flags a target
+only where the paper contradicts it, and it sorted the other 45 as follows: the
+frozen number is wrong on 8, the number is right but a setting or label is off
+on 16, and the target is correct or the paper is ambiguous on 21. We corrected
+the 8 numbers to the paper's value and rescored their runs, which changes two
+verdicts, both on 2505.23747. Its frozen value of 51.13 comes from the
+authors' README, while the paper, which defines the claim, reports 48.4, and
+DeepSeek-V4-Flash (51.44 measured) and MiniMax-M2.7 move from reproduced to
+partial. DeepSeek-V4-Flash then reproduces 13 of 34 Run papers where the
+submission reported 14.
+% src: rebuttal/mithil/e7_merged.md (Kind of error column: number 8, setting or label 15 + 1, none 21); results/e7/rescore_summary.md and class_d_rescore.md (two verdicts, 14 to 13); results/e7/summary.json step3 (all_four_yes 55)
 
 \subsection{The evaluation and development splits}
 \label{app:splits}

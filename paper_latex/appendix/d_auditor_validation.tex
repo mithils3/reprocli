@@ -12,7 +12,97 @@ Appendix~\ref{app:models}.
 
 Three human graders scored all 396 runs that started, one grader per run, from
 the run bundle, its pinned claim, and the rubric text of
-Appendix~\ref{app:rubric}, blind to the auditor's score and verdict. Taking the
-human label as the reference, the auditor's reproduced verdicts reach an F1 of
-0.82.
+Appendix~\ref{app:rubric}, blind to the auditor's score and verdict. Each run
+has one human label, so the study measures the auditor against a human grader
+and does not measure agreement between humans. The auditor graded 372 of the
+396 runs, and Table~\ref{tab:auditor-confusion} compares the two verdicts on
+those runs. Taking the human label as the reference, the auditor's reproduced
+verdicts reach a precision of 64/73 = 88\% (95\% Wilson interval 78\% to
+93\%), a recall of 64/83 = 77\% (67\% to 85\%), and an F1 of 0.82, and the two
+agree on the five-way verdict for 306 of the 372 runs. On the 0 to 10 scale
+they give the same score to 253 runs and scores within one point to 324, with
+a mean absolute difference of 0.59 points and a quadratic weighted kappa of
+0.89. The disagreements lean one way. Of
+the 28 runs that only one of them called reproduced, the human did in 19 and
+the auditor in 9, so the auditor is the stricter grader.
+% src: results/e4/summary.json (reproduced_ge8, verdict_agreement 306/372, exact_agreement 253, within_one 324, mae_0_10 0.59, auditor_yes_human_no 9, human_yes_auditor_no 19)
+
+On the 100 runs that either grader placed at 7 or 8, the two agree on 75 about
+which side of the reproduced line the run falls, and 18 of the other 25 are
+one point apart, with the human at 8 and the auditor at 7 on 11. A score of 0 covers a
+high-severity integrity flag and three related conditions
+(Table~\ref{tab:rubric}), and of the 57 runs that either grader placed at 0
+they agree on 42, with the auditor alone placing 11 there and the human
+alone 4. Table~\ref{tab:auditor-tier} gives the reproduced-verdict
+agreement by tier. Recall is lowest at Reimplement, where it rests on 16 human
+reproductions and its interval of 44\% to 86\% overlaps those of the other
+tiers.
+% src: results/e4/summary.json (boundary_7_8 100 and 75; disqualified_score0_as_high_severity either 57, both 42; per_tier_reproduced reimplement recall_wilson95 [44.4, 85.8])
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{5}{c}{Auditor} & \\
+\cmidrule(lr){2-6}
+Human & Reproduced & Partial & Not reproduced & Unverifiable & Disqualified & Total \\
+\midrule
+Reproduced     & 64 & 15 &   2 & 0 &  2 &  83 \\
+Partial        &  7 & 64 &  15 & 0 &  2 &  88 \\
+Not reproduced &  2 &  6 & 130 & 3 &  5 & 146 \\
+Unverifiable   &  0 &  0 &   1 & 6 &  2 &   9 \\
+Disqualified   &  0 &  1 &   2 & 1 & 42 &  46 \\
+\midrule
+Total          & 73 & 86 & 150 & 10 & 53 & 372 \\
+\bottomrule
+\end{tabular}
+\caption{Human verdict against auditor verdict on the 372 runs with both grades.}
+\label{tab:auditor-confusion}
+\end{table}
+% src: results/e4/summary.json verdict_matrix_human_rows; column totals equal auditor_col_totals grouped by band (8-10: 52+16+5 = 73; 6-7: 60+26 = 86; 2-5: 47+17+72+14 = 150; 1: 10; 0: 53)
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Tier & Precision & Recall & F1 \\
+\midrule
+Run         & 28/31 = 90\% & 28/35 = 80\% & 0.85 \\
+Retrain     & 25/29 = 86\% & 25/32 = 78\% & 0.82 \\
+Reimplement & 11/13 = 85\% & 11/16 = 69\% & 0.76 \\
+\bottomrule
+\end{tabular}
+\caption{Agreement of auditor and human on the reproduced verdict, by tier.}
+\label{tab:auditor-tier}
+\end{table}
+% src: results/e4/per_tier.csv (both, auditor_only, human_only); results/e4/summary.json per_tier_reproduced (f1 0.848, 0.82, 0.759)
+
+Table~\ref{tab:auditor-rates} gives the reproduced rate under each grade over
+all cells of a tier, with a cell without an auditor grade counted as not
+reproduced. The human grade finds more reproductions in every tier and the
+tiers keep their order under both. Of the 28 runs that only one grader called
+reproduced, the human did in 19 and the auditor in 9, which is 7 against 3 at
+Run, 7 against 4 at Retrain, and 5 against 2 at Reimplement.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Tier & Auditor & Human \\
+\midrule
+Run         & 31/136 = 23\% (17--31) & 35/136 = 26\% (19--34) \\
+Retrain     & 29/132 = 22\% (16--30) & 32/132 = 24\% (18--32) \\
+Reimplement & 13/132 = 10\% (6--16)  & 16/132 = 12\% (8--19) \\
+\midrule
+All tiers   & 73/400 = 18\% (15--22) & 83/400 = 21\% (17--25) \\
+\bottomrule
+\end{tabular}
+\caption{Reproduced cells under the auditor's and the human grade as submitted,
+with 95\% Wilson intervals.}
+\label{tab:auditor-rates}
+\end{table}
+% src: results/e4/summary.json per_tier_reproduced (auditor = both + auditor_only, human = both + human_only; run 28 + 3, 28 + 7; retrain 25 + 4, 25 + 7; reimplement 11 + 2, 11 + 5); Wilson recomputed
 

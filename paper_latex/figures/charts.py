@@ -7,6 +7,7 @@ in which sage green always means reproduced. The canvas is 680px wide and is
 printed at the 5.5in text width, so one px is 0.58pt and the smallest label
 (11.5px) prints at 6.7pt. Regenerate with build.py, then check with audit.py.
 Usage: charts.py [name ...]"""
+import math
 import pathlib
 import sys
 
@@ -147,13 +148,24 @@ text.n { font-variant-numeric: tabular-nums; }
 # 2026-09-10: all 400 agent-paper cells; the 28 cells without a graded run count
 # as failures at score 0 (three at their pinned grade), see tab:missing-cells.
 # grant spent = 100 * sum(spent_h100) / sum(budget_h100) over the agent's cells.
+# 2026-11-09: reproduced counts and mean scores re-derived after the corrected
+# grading. All agents = column sums of the counts and unweighted means of the scores.
 RESULTS = [
-    ("DeepSeek-V4-Flash", [(14, 34), (9, 33), (4, 33)], [5.29, 5.45, 4.64], 26.2),
+    ("DeepSeek-V4-Flash", [(13, 34), (9, 33), (4, 33)], [5.29, 5.45, 4.64], 26.2),
     ("Qwen3.6-27B", [(5, 34), (6, 33), (2, 33)], [3.91, 3.58, 3.03], 15.6),
-    ("MiniMax-M2.7", [(3, 34), (5, 33), (2, 33)], [3.09, 3.30, 2.70], 10.4),
-    ("Muse Spark 1.2", [(9, 34), (9, 33), (5, 33)], [5.47, 5.85, 3.67], 21.8),
-    ("All agents", [(31, 136), (29, 132), (13, 132)], [4.44, 4.55, 3.51], 18.5),
+    ("MiniMax-M2.7", [(2, 34), (5, 33), (1, 33)], [3.09, 3.30, 2.70], 10.4),
+    ("Muse Spark 1.2", [(10, 34), (8, 33), (5, 33)], [5.71, 5.85, 3.85], 21.8),
+    ("All agents", [(30, 136), (28, 132), (12, 132)], [4.50, 4.55, 3.56], 18.5),
 ]
+
+
+def wilson(k, n, z=1.96):
+    """95% Wilson score interval for k of n, in percent."""
+    p = k / n
+    d = 1 + z * z / n
+    c = p + z * z / (2 * n)
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return 100 * (c - h) / d, 100 * (c + h) / d
 TIERS = ["Run", "Retrain", "Reimplement"]
 
 
@@ -163,10 +175,11 @@ TIER_COLOR = [GREEN, AMBER, ROSE]   # Run, Retrain, Reimplement: the viewer's ti
 BAR_H, BAR_GAP = 6.5, 1.5    # one bar per tier, three per agent row
 
 
-def bar_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
+def bar_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit, ci=None):
     """One grouped-bar panel: a row per agent, one bar per tier in legend
     order against a gridded axis. Height never encodes anything, so a row
-    reads left to right only; the exact values are in the appendix table."""
+    reads left to right only; the exact values are in the appendix table.
+    ci, if given, holds a (lo, hi) pair per bar: a thin whisker with end caps."""
     def X(v):
         return px + pw * v / vmax
     bottom = rows[-1][0] + pitch - 6
@@ -174,11 +187,17 @@ def bar_panel(b, px, pw, rows, vmax, ticks, top, pitch, unit):
         b.append(line(X(t), top - 4, X(t), bottom, TRACK))
         b.append(text(X(t), bottom + 14, f"{t}{unit}", 11.5, FAINT, SANS, 400, "middle"))
     group = 3 * BAR_H + 2 * BAR_GAP
-    for y, vals in rows:
+    for ri, (y, vals) in enumerate(rows):
         y0 = y + (pitch - group) / 2 - 3
         for k, (v, c) in enumerate(zip(vals, TIER_COLOR)):
             by = y0 + k * (BAR_H + BAR_GAP)
+            mid = by + BAR_H / 2
             b.append(rect(px, by, X(v) - px, BAR_H, c, 1))
+            if ci:
+                lo, hi = ci[ri][k]
+                b.append(line(X(lo), mid, X(hi), mid, INK, 1))
+                for e in (lo, hi):
+                    b.append(line(X(e), mid - 3, X(e), mid + 3, INK, 1))
 
 
 def fig_results():
@@ -211,7 +230,8 @@ def fig_results():
         b.append(rect(gx, cy - 2, 40 * spent / 100, 4, SLATE, 1))
         b.append(text(X1, cy + 4.5, f"{spent:.1f}%", 11.5, ink, SANS, 600, "end", tnum=True))
     bar_panel(b, p1, pw, [(y, [100 * n / d for n, d in r]) for y, _, r, _, _ in rows],
-              50, [0, 10, 20, 30, 40, 50], top, pitch, "%")
+              60, [0, 10, 20, 30, 40, 50, 60], top, pitch, "%",
+              ci=[[wilson(n, d) for n, d in r] for _, _, r, _, _ in rows])
     bar_panel(b, p2, pw, [(y, sc) for y, _, _, sc, _ in rows],
               8, [0, 2, 4, 6, 8], top, pitch, "")
     b.append(line(X0, rows[-1][0] - 6, X1, rows[-1][0] - 6, LINE_STRONG))
