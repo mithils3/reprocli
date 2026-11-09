@@ -180,17 +180,17 @@ Figure~\ref{fig:failure-modes}.}
 \label{app:frontier-modes}
 
 To compare failures across the two sets of runs, Claude Sonnet 5 labeled the
-main failure of each of the \todo{27} failing frontier runs
+main failure of each of the \todo{29} failing frontier runs
 (Appendix~\ref{app:frontier}) from its transcript and the mode definitions of
 Table~\ref{tab:taxonomy}, without seeing the verdict, the score, or the arm.
 Table~\ref{tab:frontier-modes} sets the labels beside those of the 300 labeled
 failing cells of the open agents. The three modes that report a number without
 a valid measurement (Reimplemented but did not check the result, Wrong
-artifact measured, and Echoed a shipped number) hold \todo{3 of 27} frontier
-failures (11\%, 95\% interval 4\% to 28\%) against 110 of 300 (37\%, 31\% to
+artifact measured, and Echoed a shipped number) hold \todo{4 of 29} frontier
+failures (14\%, 95\% interval 6\% to 31\%) against 110 of 300 (37\%, 31\% to
 42\%) for the open agents, and the two modes that end without a number (Never
 launched an experiment and Failed before any number was produced) hold
-\todo{11 of 27} against 44 of 300 (15\%, 11\% to 19\%). The \todo{5} frontier
+\todo{12 of 29} against 44 of 300 (15\%, 11\% to 19\%). The \todo{6} frontier
 runs that never launched an experiment are all on 2505.16927 and 2503.14698,
 two Reimplement papers on which the open agents also failed.
 % src: results/frontier/failure_modes.csv; results/frontier/coder_calibration_groups.md; results/frontier/never_launched_check.md; moves with: the remaining frontier runs
@@ -209,15 +209,15 @@ group in the frontier runs.
 \small
 \begin{tabular}{@{}lrr@{}}
 \toprule
-Mode & Open agents (of 300) & Frontier runs (of \todo{27}) \\
+Mode & Open agents (of 300) & Frontier runs (of \todo{29}) \\
 \midrule
 Ran, outside tolerance & 76 & \todo{5} \\
 Reimplemented but did not check the result & 63 & \todo{3} \\
 Wrong experiment & 46 & \todo{4} \\
-Wrong artifact measured & 38 & \todo{0} \\
+Wrong artifact measured & 38 & \todo{1} \\
 Failed before any number was produced & 31 & \todo{6} \\
 Build and dependency failures & 24 & \todo{4} \\
-Never launched an experiment & 13 & \todo{5} \\
+Never launched an experiment & 13 & \todo{6} \\
 Echoed a shipped number & 9 & \todo{0} \\
 \bottomrule
 \end{tabular}
