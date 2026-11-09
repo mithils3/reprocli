@@ -23,5 +23,16 @@ uv venv $R/workspace/.venv --python 3.12 2>&1 | tail -3
 uv pip install --python $R/workspace/.venv/bin/python --index-url https://download.pytorch.org/whl/cu129 torch torchvision torchaudio 2>&1 | tail -5
 # L21 ts 05:22:57 dur 22s gpus 0
 uv pip install --python $R/workspace/.venv/bin/python -r $R/workspace/repo/requirements.txt gdown 2>&1 | tail -8
+# PATCH (not in transcript): the 2026-10-29 cleanup deleted data/ (zip, JSON, .h5), so L54, L57 and L60 rebuild it; the zip is removed after unzip to save space
+if [ ! -f "$R/workspace/data/EPN612_processed/epn612_test_set.h5" ]; then
+# L54 ts 05:49:34 dur 1341s gpus 0
+mkdir -p $R/workspace/data && cd $R/workspace/data && wget -q "https://zenodo.org/api/records/4421500/files/EMG-EPN612%20Dataset.zip/content" -O EPN612.zip
+# L57 ts 05:50:50 dur 53s gpus 0
+cd $R/workspace/data && mkdir -p EPN612 && cd EPN612 && unzip -o -q ../EPN612.zip '*.json' && rm -f ../EPN612.zip
+# L60 ts 05:54:14 dur 185s gpus 0
+cd $R/workspace && PYTHONUNBUFFERED=1 TQDM_DISABLE=1 $R/workspace/.venv/bin/python repo/EMG/epn_finetune_local.py 2>&1 | tail -25
+ls -la $R/workspace/data/EPN612_processed/
+fi
+cd $R/workspace
 # L285 ts 06:48:26 dur 1270s gpus 1
 bash $R/evidence/run_expC_fromscratch.sh
