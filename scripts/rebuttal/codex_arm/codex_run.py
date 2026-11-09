@@ -55,7 +55,10 @@ CODEX_VENDOR = Path(os.environ.get(
 DEFAULT_RUNS_DIR = "/work/nvme/bfvr/msalunkhe/reprocli/agent_runs"
 DEFAULT_LEDGER = "/work/nvme/bfvr/msalunkhe/rebuttal/spend.jsonl"
 DEFAULT_MODEL = "gpt-6.1-terra"
-DEFAULT_WALL_HOURS = 48.0
+# No fixed wall: queue waits on DeltaAI ran past a day, so a run stops only at the rebuttal run cutoff
+# (2026-11-15 18:00 CST = 2026-11-16 00:00 UTC), matching the open-agent sweeps, which have no wall clock.
+RUN_CUTOFF_EPOCH = 1794787200
+DEFAULT_WALL_HOURS = max(1.0, (RUN_CUTOFF_EPOCH - time.time()) / 3600)
 WATCHDOG_SECONDS = 30
 KILL_GRACE_SECONDS = 10
 
