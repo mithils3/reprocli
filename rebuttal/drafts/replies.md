@@ -38,7 +38,7 @@ We thank the three reviewers for their careful reading. They found the task impo
 
 ## T29u
 
-### Reply to T29u, part 1 of 2 (4,610 characters)
+### Reply to T29u, part 1 of 2 (4,755 characters)
 
 Thank you for the careful review. The revision makes these changes for your points:
 - Section 5.2: a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers.
@@ -67,7 +67,7 @@ The disagreements lean toward a strict auditor. Of the 28 runs where only one gr
 
 Over the 372 runs with both grades the auditor marks 73 reproduced and the human 83. These 73 are the reproductions that Section 5.2 reports as 73 of the 400 cells, so the paper's reproduction counts are, if anything, low.
 
-Two checks that do not depend on the auditor also bear on high-severity problems. A comparison of the agent's logs with the host transcript, which the harness writes outside the agent's sandbox, found one edited log in 372 runs, on a run the auditor had already graded unverifiable (our reply to Reviewer rqBN, W2). A scan of every transcript for model downloads found two reproduced runs that evaluated a downloaded checkpoint of the claimed model. Neither was the best agent's run, and the revision counts both as not reproduced (our reply to Reviewer YGTR, Q2).
+Two checks that do not depend on the auditor also bear on high-severity problems. A comparison of the agent's logs with the host transcript, which the harness writes outside the agent's sandbox, found one edited log in 372 runs, on a run the auditor had already graded unverifiable (our reply to Reviewer rqBN, W2). A scan of every transcript for model downloads found two reproduced runs that evaluated a downloaded checkpoint of the claimed model. They were MiniMax-M2.7 at Reimplement and Muse Spark 1.2 at Retrain, where Muse Spark had tied DeepSeek-V4-Flash for best; the revision counts both as not reproduced, so DeepSeek-V4-Flash alone is best at Retrain with 9 of 33 (our reply to Reviewer YGTR, Q2).
 
 **Q1: Confusion matrix, the 7/8 boundary and high-severity flags.**
 
