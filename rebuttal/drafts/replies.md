@@ -6,10 +6,10 @@ Order of posting from PLAN.md Section 4: T29u and rqBN on 11-11, then YGTR and t
 
 ## General
 
-### General reply (one part, 1,998 characters)
+### General reply (one part, 1,996 characters)
 
 We thank the three reviewers for their careful reading. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). In RECLAIM a language model, the auditor, grades each run from its logs and outputs. The revision makes these changes, and each reviewer reply gives the numbers.
-- **Frontier models in production harnesses** (Section 5.1 and Appendix B). We ran gpt-6.1-sol in our agent loop and in Codex CLI, [gpt-6-astra] in Codex CLI, and Muse Wonder in our loop and in mini-SWE-agent, on papers from all three release tiers chosen in advance.
+- **Frontier models in production harnesses** (Section 5.1 and Appendix B). We ran gpt-6.1-sol in our agent loop and in Codex CLI, gpt-6-astra in Codex CLI, and Muse Wonder in our loop and in mini-SWE-agent, on papers from all three release tiers chosen in advance.
 - **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and two more runs of DeepSeek-V4-Flash on 12 papers measure run-to-run variation.
 - **Auditor validation** (Appendix D). A confusion matrix compares auditor and human grades on the 372 runs both graded, with precision and recall per tier, agreement at the boundary between 7 (partial) and 8 (reproduced), and agreement on anti-cheat flags.
 - **Log integrity** (Appendix A). Besides the agent's logs, the harness copies every command to a host transcript the agent cannot reach. Checking all 45,861 log entries against it found one overwritten log, on a run already graded unverifiable.
@@ -250,10 +250,10 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (3,709 characters)
+### Reply to YGTR, part 1 of 3 (3,703 characters)
 
 Thank you for the review. We ran frontier models in production harnesses and measured the confounds you named. The revision makes these changes:
-- Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
+- Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, gpt-6-astra in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
 - Section 5.3: the bound on build failures with an x86 replay, and a re-execution of missed runs with new seeds.
 - Section 5.2: a 95% Wilson interval on every rate, and repeated runs of one agent.
 - Section 5.2: the trace of all 28 cells with no graded run, the missing grades added, and the two runs that evaluated a downloaded checkpoint counted as not reproduced.
@@ -262,11 +262,11 @@ Each paper sits in one tier by what its authors released: Run (code, data and we
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We ran two current OpenAI models, [gpt-6-astra and gpt-6.1-sol], and Meta's Muse Wonder on papers from every tier, drawn with a fixed seed and frozen before any run. The last row gives Muse Spark 1.2, the Meta model of our main runs, on Muse Wonder's papers, for a comparison within one model family.
+We ran two current OpenAI models, gpt-6-astra and gpt-6.1-sol, and Meta's Muse Wonder on papers from every tier, drawn with a fixed seed and frozen before any run. The last row gives Muse Spark 1.2, the Meta model of our main runs, on Muse Wonder's papers, for a comparison within one model family.
 
 | Model | Harness | Papers | Reproduced |
 | :- | :- | :- | :- |
-| [gpt-6-astra] | Codex CLI | [8] | [a] |
+| gpt-6-astra | Codex CLI | [8] | [a] |
 | gpt-6.1-sol | our loop | 12 | [b] |
 | gpt-6.1-sol | Codex CLI | [n] | [c] |
 | Muse Wonder | our loop | [m] | [d] |
@@ -281,11 +281,11 @@ To compare failures, Claude Sonnet 5 labelled the main failure of each of the 27
 
 We keep the thin loop for the main results so that every model runs under one harness. We did not run Claude Code because it bills to Anthropic, and our budget for new runs covered OpenAI and Meta models. Our auditor is itself a Claude model.
 
-### Reply to YGTR, part 2 of 3 (2,431 characters)
+### Reply to YGTR, part 2 of 3 (2,429 characters)
 
 **W1, continued: Whether the findings generalize to stronger models.**
 
-The frontier runs cover a frozen subset of papers from every tier, so they test whether the two main findings, the tier ordering and the most common failure, recur for [gpt-6-astra, gpt-6.1-sol and Muse Wonder] on those papers. [outcome] The main results come from four agents run once per paper on 100 NeurIPS 2025 papers. Each paper has a pinned experiment, the one reported result the agent must reproduce, under a 96 H100-hour cap, and the benchmark excludes papers that need a paid or closed API. Section 5 and the Limitations section state this scope, and the revision adds that the claims hold for these papers and agents.
+The frontier runs cover a frozen subset of papers from every tier, so they test whether the two main findings, the tier ordering and the most common failure, recur for gpt-6-astra, gpt-6.1-sol and Muse Wonder on those papers. [outcome] The main results come from four agents run once per paper on 100 NeurIPS 2025 papers. Each paper has a pinned experiment, the one reported result the agent must reproduce, under a 96 H100-hour cap, and the benchmark excludes papers that need a paid or closed API. Section 5 and the Limitations section state this scope, and the revision adds that the claims hold for these papers and agents.
 
 **W2: Failures due to hardware differences.**
 
