@@ -1,6 +1,6 @@
 # Reply plan, ICLR 2027 submission 22528 (RECLAIM)
 
-Reviews: T29u 3, rqBN 3, YGTR 2 (4-point scale). Replies are in `rebuttal/drafts/replies.md`, the paper text for each change is in `rebuttal/drafts/paper_revision_text.md`, and the open choices are in `rebuttal/mithil/decisions_monday.md`.
+Reviews: Reviewer 1 (T29u) 3, Reviewer 2 (rqBN) 3, Reviewer 3 (YGTR) 2 (4-point scale). The posted replies keep the OpenReview IDs, since that is how reviewers see each other. Replies are in `rebuttal/drafts/replies.md`, the paper text for each change is in `rebuttal/drafts/paper_revision_text.md`, and the open choices are in `rebuttal/mithil/decisions_monday.md`.
 
 ## When we post
 
