@@ -129,9 +129,52 @@ one numbered log per GPU step, \texttt{plan.md}, and the \texttt{REPORT.md}
 the task prompt requires. Per-run token counts and GPU-utilization samples are
 recorded alongside. We bind \texttt{evidence/} read-write, so the agent
 can rewrite the harness-written \texttt{commands.log} and
-\texttt{trajectory.jsonl}, and we add no integrity check that would detect such
-an edit. We therefore instruct the auditor to read the bundle as unverified
-claims and to trace every number to the command that produced it.
+\texttt{trajectory.jsonl}, and the harness checks neither file while the run
+is live. The auditor traces every number to the command that produced it.
+Because the agent could edit these two files, we compared every logged entry
+with the transcript the harness writes on the host, outside the sandbox.
+
+\paragraph{Log comparison.} For each of the 372 graded runs we matched every
+entry that an agent command produced in the two files against the host
+transcript, requiring the same command and return code and, for
+\texttt{run\_gpu} entries, the same cost and remaining budget.
+Table~\ref{tab:log-check} gives the outcome for the 45,861 such entries, and
+the other 3,724 rows of the two files are written by the harness itself. We
+also searched every agent command for writes to the two files. One run wrote
+to \texttt{commands.log}, where MiniMax-M2.7 on 2510.25146 replaced the file
+with its own notes through a \texttt{write\_file} call, and the auditor had
+graded that run 1 of 10 as unverifiable. No run wrote to
+\texttt{trajectory.jsonl}. The comparison also found 119 commands in 65 runs
+that the harness ran and did not write to \texttt{commands.log}, because two
+early-return paths in the harness skip the log, and the host transcript holds
+all of them. The host transcript is not hash-chained, so it is not
+tamper-evident by construction, and its protection is that it lies outside
+every directory the sandbox mounts. The comparison detects edits made through
+the agent's own commands, which the transcript records, and it detects no
+other kind of edit.
+% src: results/e5/README.md:9-17 (372/372 matched; 45,861 of 49,585 entries checked, 3,724 host-written; 45,673 passed; 185 explained; 3 unmatched; 1 write into commands.log, run 2510.25146; 65 runs missing 119 headers, workspace_bash.py:76-77 and run_gpu.py:145); results/e5/summary.json
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Entry & Count \\
+\midrule
+Matches exactly & 45,673 \\
+Call refused by the harness, so no cost line & 100 \\
+Remaining budget within 0.00015 H100-hours & 60 \\
+First attempt of a retried call & 25 \\
+Remaining budget differs by up to 0.0003 H100-hours, cost equal & 3 \\
+\midrule
+Total & 45,861 \\
+\bottomrule
+\end{tabular}
+\caption{Agent-issued entries of \texttt{commands.log} and \texttt{trajectory.jsonl}
+compared with the host transcript over the 372 graded runs.}
+\label{tab:log-check}
+\end{table}
+% src: results/e5/README.md:11 and :18 (100, 60, 25 explained; 3 unmatched at 0.0002 to 0.0003 h with cost equal)
 
 On the final, tool-free turn the model's output is constrained to a JSON
 schema and saved as \texttt{report.json} beside \texttt{evidence/}, with the
