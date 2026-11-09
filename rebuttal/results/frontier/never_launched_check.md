@@ -16,3 +16,25 @@ Definitions (paper_latex/appendix/g_taxonomy.tex, lines 138 to 149): "Never laun
 None of the six stopped because of a budget or wall limit, an API or harness error, or waiting on a GPU (the GPU waits of several hours before the first CUDA check are queue time, not the stop cause). Five of the six stopped because the paper ships no code or checkpoint for a reimplement-tier claim, so the stop is an artifact gap followed by a voluntary report. That is still the Appendix G description of the label, since the pinned pipeline was never run and almost all compute was left unused.
 
 Five of the six are truly never launched; the sixth (6cef06) ran the authors' own entrypoint on a single prompt and belongs under "Failed before any number was produced". The corrected frontier count is 5 of 24 (20.8 percent, Wilson 95 percent interval 9.2 to 40.5 percent), down from 6 of 24 (25.0 percent, 12.0 to 44.9 percent).
+
+## Same papers, open agents
+
+Open-agent labels come from resolved_modes.json (`~/sweeps/paper-table-2026-09-05/resolved_modes.json`, local; `mode` field) and the score and verdict columns of rebuttal/results/databook/frontier_cells.csv. Frontier rows are the "my mode" labels above; failure_modes.csv still lists all five as procrastination/wall-kill and should be corrected. Scores are on the 0 to 4 scale.
+
+| paper | agent | tier | verdict (score) | failure mode label |
+|---|---|---|---|---|
+| 2505.16927 (STaPLe) | DeepSeek-V4-Flash | reimplement | not_reproduced (4) | reimplement-without-validating |
+| 2505.16927 | MiniMax-M2.7 | reimplement | disqualified (0) | artifact-provenance-mismatch |
+| 2505.16927 | Muse Spark 1.2 | reimplement | not_reproduced (4) | scope-substitution |
+| 2505.16927 | Qwen3.6-27B | reimplement | not_reproduced (4) | reimplement-without-validating |
+| 2505.16927 | frontier gpt-6-astra | reimplement | unverifiable (1) | Never launched an experiment |
+| 2505.16927 | frontier gpt-6.1-sol | reimplement | unverifiable (1) | Never launched an experiment |
+| 2505.16927 | frontier thin-gpt-6.1-sol | reimplement | unverifiable (1) | Never launched an experiment |
+| 2503.14698 | DeepSeek-V4-Flash | reimplement | unverifiable (1) | killed-before-the-number |
+| 2503.14698 | MiniMax-M2.7 | reimplement | not_reproduced (2) | reimplement-without-validating |
+| 2503.14698 | Muse Spark 1.2 | reimplement | unverifiable (1) | procrastination/wall-kill (relabeled from unavailability-concluded-from-prose) |
+| 2503.14698 | Qwen3.6-27B | reimplement | unverifiable (1) | killed-before-the-number |
+| 2503.14698 | frontier gpt-6.1-sol | reimplement | not_reproduced (2) | Never launched an experiment |
+| 2503.14698 | frontier thin-gpt-6.1-sol | reimplement | unverifiable (1) | Never launched an experiment |
+
+None of the eight open-agent runs on these papers carries the never-launched label, but on 2503.14698 they stopped early under other labels, spending 0.02 to 1.3 H100 hours of a 96 hour budget, while on 2505.16927 they spent 7.3 to 31.5 of 32 hours. Excluding these two papers, 0 of 19 failing frontier runs are never-launched (0.0%, Wilson 95% interval 0.0 to 16.8%), so the overall frontier share of 5 of 24 (20.8%, 9.2 to 40.5%) comes entirely from these two papers.
