@@ -10,7 +10,7 @@ Scope: the three official reviews only; the PAT feedback is set aside (Mithil, 2
 
 The three reviewers agree that the task design is sound and carefully disclosed. Their objections fall into four groups: the agents are weak and the harness is thin (YGTR), one run per cell gives point estimates (T29u, YGTR), the auditor's validation is a single F1 and the agent can edit the logs the auditor reads (T29u, rqBN), and some failures may come from the environment (YGTR, rqBN). YGTR's rating rests on the first group, and its Informativeness score of 1 says the reviewer does not believe our failure modes describe the agents people actually use.
 
-Recommendation: run current frontier models from two labs in production harnesses on the same stratified papers. OpenAI's GPT-6 series supplies gpt-6.1-sol and gpt-6.1-terra in both our harness and Codex CLI on 24 papers, plus the flagship gpt-6-astra in Codex CLI on 8, all on the half-price flex tier. Meta's Muse Wonder runs in our harness and in mini-SWE-agent, and since Muse Spark 1.2 is already in the paper, it also gives a same-family comparison on the same papers. Whichever way the results fall they answer YGTR: if frontier agents still fail in the same ways, the taxonomy generalizes; if a production harness lifts the rate, the paper gains a measured harness effect that no other reproduction benchmark reports. T29u and rqBN mostly want the auditor and the logs measured, which existing data and short analyses answer. What would change this: if the first runs show any model costing more than 1.5 times its estimate, or flex refuses so often that runs fall back to standard prices, gpt-6-astra drops to 4 papers before anything else shrinks.
+Recommendation: run current frontier models from two labs in production harnesses on the same stratified papers. OpenAI's GPT-6 series supplies gpt-6.1-sol in both our harness and Codex CLI on 24 papers, plus the flagship gpt-6-astra in Codex CLI on 8, all on the half-price flex tier. Meta's Muse Wonder runs in our harness and in mini-SWE-agent, and since Muse Spark 1.2 is already in the paper, it also gives a same-family comparison on the same papers. Whichever way the results fall they answer YGTR: if frontier agents still fail in the same ways, the taxonomy generalizes; if a production harness lifts the rate, the paper gains a measured harness effect that no other reproduction benchmark reports. T29u and rqBN mostly want the auditor and the logs measured, which existing data and short analyses answer. What would change this: if the first runs show any model costing more than 1.5 times its estimate, or flex refuses so often that runs fall back to standard prices, gpt-6-astra drops to 4 papers before anything else shrinks.
 
 **Simulated reception of v1 (2026-11-06).** Three agents read v1 as the reviewers would. YGTR would move from 2 to 3 (Informativeness 1 to 2) if the frontier and harness arms come with a paired test and a human check of the failure-mode labels, and stays below 4 while the headline numbers come from the four weaker models; v2's wider frontier set raises the chance of 3. T29u would move to 4 if the 7/8 boundary table and the repeat runs come back clean. rqBN would move to 4 given a full confusion matrix, inter-human agreement and a real tamper check on the logs. Their requested fixes are folded in below.
 
@@ -22,7 +22,7 @@ Legend: **NEW** needs new evidence (Section 2), **SURFACE** existing evidence we
 
 | Concern | Type | What answers it |
 | :- | :- | :- |
-| No frontier model; tested models are weak, so findings may not generalize | NEW | E1 (gpt-6.1-sol, gpt-6.1-terra, gpt-6-astra) and E2 (Muse Wonder) on a stratified subset |
+| No frontier model; tested models are weak, so findings may not generalize | NEW | E1 (gpt-6.1-sol, gpt-6-astra) and E2 (Muse Wonder) on a stratified subset |
 | The ReAct harness is too minimal; a researcher would use Claude Code, Codex or mini-SWE-agent | NEW | E1 Codex CLI arms paired with our harness on the same papers; E2 mini-SWE-agent arm |
 | Why a thin harness at all | TEXT | Section 5.1 already argues fairness across models; add that the thin loop is the fixed baseline and the appendix measures two production harnesses against it |
 
@@ -100,7 +100,6 @@ Worked example, gpt-6.1-sol on the flex tier, which OpenAI's pricing page (devel
 | :- | :- | :- | :- | :- | :- |
 | gpt-6-astra (OpenAI flagship) | 2026-09-04 | 5.00 / 0.50 / 25.00 | $30.82 | $61.64 | developers.openai.com/api/docs/pricing |
 | gpt-6.1-sol | 2026-09-29 | 1.00 / 0.05 / 5.00 | $5.58 | $11.15 | same |
-| gpt-6.1-terra | 2026-10-26 | 0.50 / 0.025 / 2.50 | $2.79 | $5.57 | same |
 | muse-wonder-1.0 | not stated | no flex tier listed | | $22.29 (4.00 / 0.20 / 20.00) | dev.meta.ai/models/muse-wonder |
 
 Release dates are from openrouter.ai/api/v1/models.
@@ -112,8 +111,8 @@ Risks that push cost up: reasoning tokens bill as output; flex prices hold only 
 - **What.** Each model at reasoning effort high. (a) Our thin harness, a config change since it already drives API models. (b) Codex CLI, run non-interactively inside the same Apptainer sandbox with the same task text, the same evidence directory and a `run_gpu` command on its PATH that calls our `tools/run_gpu.py`, so GPU access and budget metering are identical. Codex keeps its stock tools, system prompt and context handling. Its JSON event stream is written outside the sandbox and converted into `commands.log` and `trajectory.jsonl` for the unchanged auditor.
 - **Flex tier.** Every OpenAI request sends `service_tier: "flex"`, which OpenAI bills at Batch API rates, half of standard. Our harness gets it from a new `REPROCLI_SERVICE_TIER` variable that `client.py` adds to the body beside `reasoning_effort` (same pattern as `apply_reasoning_effort`, `src/reprocli_vllm/vllm/client.py:54-63`), with the client timeout raised to 15 minutes as OpenAI's flex guide advises. OpenAI says flex brings slower responses and occasional `429 Resource Unavailable` errors, which are not charged; the client retries those with exponential backoff for up to 10 minutes and then sends that one request at standard, logging each fallback so the bill can be reconciled. Codex CLI's config has a `service_tier` key (learn.chatgpt.com config reference) whose documented values are `fast` or another tier the model advertises; flex is not named, so the Codex smoke run checks the `service_tier` field in the API response, and if Codex cannot send flex, the Codex arms run at standard and shrink to fit (sizing rule below).
 - **Latency cost to the agent.** The harness charges the agent's GPU grant for the whole time an allocation is held, model thinking included (`tools/run_gpu.py:378`), so slower flex replies spend more of the grant while a GPU is held. Agents used 10 to 26% of their grants in the main runs, so the grant rarely binds, but the smoke runs measure mean seconds per model call on flex against a few standard calls, and the appendix reports both.
-- **Arms.** gpt-6.1-sol, thin and Codex, all 24 papers (48 runs, $268). gpt-6.1-terra, thin and Codex, all 24 papers (48 runs, $134). gpt-6-astra in Codex on the first 8 papers, at least two per tier (8 runs, $247), as the strongest model in the configuration a researcher would actually use. Smoke: the wiring is the same for every OpenAI model, so smoke runs use gpt-6.1-terra once per harness on a development paper (2 runs, $6). Expected total $655, leaving $95 for standard-price fallbacks and overruns.
-- **Sizing rule.** The core 12 papers launch first for every arm, papers 13 to 24 next, gpt-6-astra last. If measured cost projects the total above $700, gpt-6-astra drops to 4 papers, then papers 13 to 24 are dropped from gpt-6.1-terra's Codex arm. A spend check runs after each finished run and stops launches at $700.
+- **Arms.** gpt-6.1-sol, thin and Codex, all 24 papers (48 runs, $268). gpt-6-astra in Codex on the first 8 papers, at least two per tier (8 runs, $247), as the strongest model in the configuration a researcher would actually use. Smoke: the wiring is the same for every OpenAI model, so smoke runs used gpt-6.1-terra once per harness on a development paper (2 runs, $6). Expected total $521 after gpt-6.1-terra was dropped on 11-09 (decision 10: no terra run exists, so nothing to report by 11-16), leaving $229 for standard-price fallbacks and overruns.
+- **Sizing rule.** The core 12 papers launch first for every arm, papers 13 to 24 next, gpt-6-astra last. If measured cost projects the total above $700, gpt-6-astra drops to 4 papers, then papers 13 to 24 are dropped from gpt-6.1-sol's Codex arm. A spend check runs after each finished run and stops launches at $700.
 - **Log conversion check.** The auditor was validated on thin-loop logs, so the Codex smoke runs are graded twice, once from the raw event stream and once from the converted logs, and must get the same verdict.
 - **Fixed in advance (written into `subset.json` before launch).** The harness effect is the paired difference in reproduced papers per model, tested with an exact McNemar test and read against the flip rate E3 measures; a difference below that flip rate is reported as no measured effect. Every failing frontier run gets its failure mode from the same labeling pass that produced the paper's labels, so the comparison with the open agents is like for like, and Mithil labels a random 20 of those runs himself, blind to the pass's labels, to report how often he agrees with it. "Same failure modes" means the share of the paper's top three modes falls inside the 95% interval of the open agents' shares. We report how many runs per arm hit the input cap or Codex's own compaction.
 - **GPU-hours.** Muse Spark used 21.8% of its grant, so expect 0.218 x 688 = 150 per 24-paper arm: four such arms 600, plus astra about 50, about 650 in all, more if flex latency lengthens GPU holds. Ceiling about 3,010.
@@ -187,7 +186,6 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 | :- | :- | :- | :- |
 | Smoke runs (4 dev-paper runs) | 6 | 45 | 15 / 40 |
 | E1 gpt-6.1-sol, flex, thin + Codex, 24 papers | 268 | | 300 / 1,376 |
-| E1 gpt-6.1-terra, flex, thin + Codex, 24 papers | 134 | | 300 / 1,376 |
 | E1 gpt-6-astra, flex, Codex, 8 papers | 247 | | 50 / 260 |
 | E2 Muse Wonder, thin 12 + mini-SWE-agent 6 | | 401 | 113 / 550 |
 | E3 DeepSeek-V4-Flash repeats, agents + 4 brain jobs | | | 564 / 1,072 |
@@ -195,9 +193,9 @@ Mithil confirmed on 2026-11-06 that the per-run human labels behind the F1 of 0.
 | E8 rerun of 2510.20725 (4 agents) + 2 re-audits | | 7 | 45 / 70 |
 | E10 environment check | | | 90 / 180 |
 | E5, E6, E8, E9 analyses | | | CPU, under 50 core-hours on bgnp-delta-cpu |
-| **Total** | **660 of 750** | **453 of 500** | **about 1,477 / 4,924** |
+| **Total** | **526 of 750** | **453 of 500** | **about 1,177 / 3,548** |
 
-Expected GPU use is 24% of betw-dtai-gh's 6,168 hours; the worst case, every run spending its full grant, is 80%, which would crowd the queued Distillation jobs, so a GPU check after the core 12 papers decides whether papers 13 to 24 launch. Grading on the Anthropic key is extra and measured at smoke. Claude Code as a harness stays out: it bills to Anthropic, and Codex CLI and mini-SWE-agent already cover the production-harness question.
+Expected GPU use is 19% of betw-dtai-gh's 6,168 hours; the worst case, every run spending its full grant, is 58%, which would crowd the queued Distillation jobs, so a GPU check after the core 12 papers decides whether papers 13 to 24 launch. Grading on the Anthropic key is extra and measured at smoke. Claude Code as a harness stays out: it bills to Anthropic, and Codex CLI and mini-SWE-agent already cover the production-harness question.
 
 ## 3. Paper revisions (from the three reviews)
 
@@ -255,7 +253,7 @@ That version planned both waves for 11-11 and 11-14 with runs stopped on 11-12.
 
 1. E2 mini-SWE-agent arm (Codex already covers the production harness).
 2. The second E3 repeat (two runs per paper), saving about 280 GPU-hours.
-3. Papers 13 to 24 for gpt-6.1-terra (both harnesses), then for gpt-6.1-sol's Codex arm.
+3. Papers 13 to 24 for gpt-6.1-sol's Codex arm.
 4. E10 down to the 6 Run-tier papers.
 5. Mithil's blind check of the frontier labels down to 10 runs.
 
@@ -288,7 +286,7 @@ Each reply thanks the reviewer in one sentence and names what changed, answers i
 
 ### Reviewer YGTR
 
-- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra, gpt-6.1-sol and gpt-6.1-terra from OpenAI on up to 24 stratified papers and Muse Wonder from Meta on 12, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled with the same procedure as the paper's runs; an author's blind labels agree with it on [x] of 20." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
+- **Frontier models and harness (W1, Q1).** "We ran gpt-6-astra and gpt-6.1-sol from OpenAI on up to 24 stratified papers and Muse Wonder from Meta on 12, each in our harness and in Codex CLI or mini-SWE-agent. [Result sentence.] The most common failure in the paper, writing the method without checking it against the paper's numbers, occurs in [k] of the frontier agents' [m] failing runs, labeled with the same procedure as the paper's runs; an author's blind labels agree with it on [x] of 20." The thin loop stays the main baseline because it treats all models alike, and the new appendix measures what a production harness adds.
 - **Hardware (W2).** "We cannot fully separate the hardware from agent error, and we bound it three ways. Missing aarch64 wheels explain [k] of the 24 build-and-dependency failures; removing all 24 from the denominators moves the best Run-tier rate from 41% to at most [x]%; and re-running the faithful agents' own pipelines with two new seeds, [k2] of [n] still missed on our hardware."
 - **Single run (W2).** The E3 sentence.
 - **Checkpoint fetching (Q2).** "We scanned all [396] transcripts for checkpoint downloads; [n] Retrain or Reimplement runs downloaded a checkpoint, [k] of them a third-party checkpoint of the claimed model, and [none] of those were graded reproduced."
