@@ -223,7 +223,7 @@ Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (4,353 characters)
+### Reply to YGTR, part 1 of 3 (4,361 characters)
 
 Thank you for the review. We ran frontier models in production harnesses, as you asked, and measured the confounds you named. The revision makes these changes:
 - Section 5.1 and a new subsection of Appendix B: gpt-6.1-sol in Codex CLI and in our loop, [gpt-6-astra] in Codex CLI, and Muse Wonder in mini-SWE-agent and in our loop, on papers frozen before any run.
@@ -241,7 +241,7 @@ Codex CLI and mini-SWE-agent keep their own tools, system prompts and context ha
 
 [Failure-mode sentence: the frontier agents' failures fall into the paper's three most common failure modes at shares inside the 95% intervals of the open agents, or Codex CLI removes mode X in k runs.] The paper's most common failure, writing the method without checking its output against the paper's numbers, appears in [k] of the [f] failing frontier runs. Muse Spark 1.2, the Meta model in our main runs, gives a comparison within one model family: [Muse Wonder d of m against Muse Spark 1.2 e of m].
 
-We keep the thin loop for the main results so that every model runs under one harness, and the new appendix section measures how Codex CLI and mini-SWE-agent change the results. Claude Code is the one harness you name that we did not run, because our auditor is Claude Sonnet 5; a Claude agent graded by its own family would be a self-grade, so we ran the other two named harnesses.
+We keep the thin loop for the main results so that every model runs under one harness, and the new subsection of Appendix B measures how Codex CLI and mini-SWE-agent change the results. Claude Code is the one harness you name that we did not run, because our auditor is Claude Sonnet 5; a Claude agent graded by its own family would be a self-grade, so we ran the other two named harnesses.
 
 [AUTHOR: n is not one number. The thin gpt-6.1-sol arm is planned at 12 papers (databook/frontier_cells.csv), Codex gpt-6.1-sol at 24 and gpt-6-astra at 8; PLAN.md:115 sets 24 for thin only if papers 13 to 24 launch after the GPU check. Fill n per arm once the sweeps end.]
 

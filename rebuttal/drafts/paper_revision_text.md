@@ -954,7 +954,7 @@ No reply promises these lines by name, but replies.md:54 and :290 ("Every rate i
 | `appendix/b_models.tex:154-185` | Table 5 counts and means | Muse Spark Run 10/34, Retrain 8/33, All `\todo{}`; MiniMax-M2.7 Reimplement 1/33, All 9/100; all agents 32/136, 28/132, 12/132, 72/400; every mean `\todo{}` | DeepSeek-V4-Flash Run 13/34, All 26/100; MiniMax-M2.7 Run 2/34, All 8/100; all agents Run 30/136, 70/400 |
 | `appendix/c_rubric.tex:126-131` | 28 (Section 5c), 53 at 0, 60 at 6, 52 at 8 | 26; 53; 61; 53 | `\todo{}` from the E7 regrades |
 | `appendix/g_taxonomy.tex:38`, `:48` | Reproduced 72, No label 28 | `\todo{}` after labeling | same |
-| Figures 2, 3, 5, 6, score distribution | built at the submission counts | rebuild | rebuild |
+| Figures 2, 4, 5, 6, score distribution | built at the submission counts | rebuild | rebuild |
 
 The DeepSeek-V4-Flash Run count after E7 (13/34) is from `results/e7/rescore_summary.md:23`. The Muse Spark and MiniMax-M2.7 changes are from `results/e8/regrade_muse.json` and `results/e9/class_review.csv`. The Muse Spark Run interval at 10/34 and every changed interval are not in `rebuttal/results/` and stay slots.
 
