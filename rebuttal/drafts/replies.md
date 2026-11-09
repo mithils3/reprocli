@@ -66,7 +66,7 @@ Reproduced papers per agent and tier, with 95% Wilson intervals and the correcti
 | MiniMax-M2.7 | 2 = 6% [2%, 19%] | 5 = 15% [7%, 31%] | 1 = 3% [1%, 15%] |
 | At least one agent | 16 = 47% [31%, 63%] | 11 = 33% [20%, 50%] | 5 = 15% [7%, 31%] |
 
-*Tiers.* The comparison the data separate is Run against Reimplement. A two-proportion test gives z = 2.46 for DeepSeek-V4-Flash and z = 2.81 for papers reproduced by at least one agent, and every agent has its lowest rate at Reimplement. Run and Retrain are not separated (z = 0.96 and 1.15), as Section 5.2 of the submission reported, so the revision claims only that reproduction falls when no code is released. Mean audit score (the auditor's 0 to 10 grade, where 8 or more counts as reproduced) agrees: DeepSeek-V4-Flash scores 5.29 [4.13, 6.46] at Run, 5.45 [4.40, 6.51] at Retrain and 4.64 [3.79, 5.49] at Reimplement, and Muse Spark 1.2 scores 5.71 [4.81, 6.61], 5.85 [4.93, 6.76] and 3.85 [2.86, 4.84].
+*Tiers.* The comparison the data separate is Run against Reimplement. A two-proportion test gives z = 2.46 for DeepSeek-V4-Flash and z = 2.81 for papers reproduced by at least one agent, and every agent has its lowest rate at Reimplement. Run and Retrain are not separated (z = 0.96 and 1.15), as Section 5.2 of the submission reported, so the revision claims only that reproduction falls when no code is released. Mean audit score (the auditor's 0 to 10 grade, where 8 or more counts as reproduced) agrees: DeepSeek-V4-Flash scores 5.29 [4.13, 6.46] at Run, 5.45 [4.40, 6.51] at Retrain and 4.64 [3.79, 5.49] at Reimplement, and Muse Spark 1.2 scores 5.71 [4.81, 6.60], 5.85 [4.94, 6.76] and 3.85 [2.86, 4.84].
 
 *Agents.* Section 5.2 no longer names a strongest agent. Over all 100 papers the mean audit scores are 5.13 [4.55, 5.71] for DeepSeek-V4-Flash, 5.14 [4.59, 5.69] for Muse Spark 1.2, 3.51 [2.98, 4.04] for Qwen3.6-27B and 3.03 [2.48, 3.58] for MiniMax-M2.7. The intervals separate the first two agents from the last two and order neither pair. For reproduction counts, the revision ranks two agents only when their intervals stay apart after each count is shifted by [j] papers, the movement seen across the repeated runs.
 
@@ -159,17 +159,17 @@ Thank you again for the review.
 | 25 runs on opposite sides of the 7/8 boundary: 18 one point apart (human 8 and auditor 7 on 11, human 7 and auditor 8 on 7) | rebuttal/results/e4/summary.json (boundary_7_8.cells, human score first) |
 | across the partial/reproduced line: human reproduced and auditor partial 15, the reverse 7 | rebuttal/results/e4/summary.json (matrix cells) |
 | at score 0: agree on 42, auditor alone 53 - 42 = 11, human alone 46 - 42 = 4 | rebuttal/results/e4/summary.json (disqualified_score0_as_high_severity) |
-| mean audit score per agent and tier with 95% t-intervals (DeepSeek-V4-Flash 5.29, 5.45, 4.64; Muse Spark 1.2 5.71, 5.85, 3.85); Qwen3.6-27B over 100 papers is 3.51 in the paper (appendix/b_models.tex:164) and 3.49 [2.95, 4.03] when recomputed from the index, so the reply keeps the paper's 3.51 | rebuttal/results/tiers/tier_tests.md (mean-score table) |
+| mean audit score per agent and tier with 95% t-intervals (DeepSeek-V4-Flash 5.29, 5.45, 4.64; Muse Spark 1.2 5.71, 5.85, 3.85); Qwen3.6-27B 3.51 [2.98, 4.04] includes the regrade of 2511.19808 at score 2 (e8/regrade_dcells.json) | rebuttal/results/tiers/tier_tests.md (mean-score table) |
 | value supported for 92 of 100, so 8 wrong values | rebuttal/results/e7/summary.json (step3); rebuttal/mithil/e7_merged.md |
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 3 (2,490 characters)
+### Reply to rqBN, part 1 of 3 (2,483 characters)
 
 Thank you for checking how runs are graded and how their logs are protected. For your points the revision adds:
 - Appendix D (W1): the confusion matrix of the auditor against the human verdict, precision and recall overall and per tier, agreement on the full 0 to 10 scale, and agreement on integrity flags.
 - Appendix A (W2): a description of the logs that matches the code, and a comparison of every agent-writable log entry with a transcript kept on the host.
-- Section 5.3 and Limitations (Q1): the papers reproduced by at least one agent per tier, and a re-execution of missed runs with new seeds.
+- Sections 5.2 and 5.3 (Q1): the papers reproduced by at least one agent per tier, and a re-execution of missed runs with new seeds.
 - Appendix E (Q2): a check of each paper's frozen target against the paper by a model from another lab.
 
 **W1: Validation of the auditor.**

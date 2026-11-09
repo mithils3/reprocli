@@ -1,7 +1,7 @@
 Thank you for checking how runs are graded and how their logs are protected. For your points the revision adds:
 - Appendix D (W1): the confusion matrix of the auditor against the human verdict, precision and recall overall and per tier, agreement on the full 0 to 10 scale, and agreement on integrity flags.
 - Appendix A (W2): a description of the logs that matches the code, and a comparison of every agent-writable log entry with a transcript kept on the host.
-- Section 5.3 and Limitations (Q1): the papers reproduced by at least one agent per tier, and a re-execution of missed runs with new seeds.
+- Sections 5.2 and 5.3 (Q1): the papers reproduced by at least one agent per tier, and a re-execution of missed runs with new seeds.
 - Appendix E (Q2): a check of each paper's frozen target against the paper by a model from another lab.
 
 **W1: Validation of the auditor.**

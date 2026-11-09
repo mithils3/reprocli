@@ -57,8 +57,9 @@ line("all four agents pooled (cells; not independent within a paper)",
 
 
 # Mean audit score per agent and tier on the original targets, empty cells at 0, with the two new Muse Spark grades.
-T975 = {33: 2.0369, 32: 2.0395, 99: 1.9842}  # t quantiles for df = n - 1
-NEW_SCORES = {("muse", "run", "2503.23035"): 8, ("muse", "reimplement", "2510.08177"): 6}
+T975 = {33: 2.0345, 32: 2.0369, 99: 1.9842, 135: 1.9777, 131: 1.9782, 399: 1.9659}  # t quantiles for df = n - 1
+# two Muse Spark 1.2 audits (e8/regrade_muse.json) and the one nonzero D-cell regrade (e8/regrade_dcells.json)
+NEW_SCORES = {("muse", "run", "2503.23035"): 8, ("muse", "reimplement", "2510.08177"): 6, ("qwen3", "reimplement", "2511.19808"): 2}
 
 
 def mean_ci(xs):
@@ -85,3 +86,11 @@ for a in AGENTS:
         allx += xs
         cells.append(mean_ci(xs))
     print(f"| {a} | " + " | ".join(cells) + f" | {mean_ci(allx)} |")
+cells, allx = [], []
+for t in N:
+    xs = []
+    for a in AGENTS:
+        xs += scores[a, t] + [0] * (N[t] - len(scores[a, t]))
+    allx += xs
+    cells.append(mean_ci(xs))
+print("| all agents (cells) | " + " | ".join(cells) + f" | {mean_ci(allx)} |")
