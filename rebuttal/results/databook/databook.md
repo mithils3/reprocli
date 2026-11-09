@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-08T17:11:56Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 22 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-09T01:19:09Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 23 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -9,7 +9,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 12 | 1/12 [1.5, 35.4] | 4.08 | -2.08 (n=12) | 6 |
-| codex-gpt-6-astra | 8 | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 1 |
+| codex-gpt-6-astra | 8 | 3 | 0/3 [0.0, 56.1] | 2.00 | -3.00 (n=3) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 7 | 2/7 [8.2, 64.1] | 5.29 | -1.57 (n=7) | 2 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
@@ -41,6 +41,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2506.20671 | 8h | codex-gpt-6.1-sol-20261108T023042Z-c4eacf | 2 | not_reproduced | False | run | 4 | 2 | 3 | 2 | 4 | -2 | could_not_run | natural | 660.3 | 8.0 | 0.1694 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2505.19154 | 8h | codex-gpt-6.1-sol-20261108T120002Z-8d0463 | 6 | partial | False | run | 6 | 2 | 6 | 0 | 6 | 0 | not_reproduced | natural | 98.68 | 8.0 | 0.5736 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2602.03066 | 8h | codex-gpt-6.1-sol-20261108T152418Z-d3ac33 | 7 | partial | False | reimplement | 8 | 6 | 9 | 7 | 9 | -2 | partial | natural | 66.76 | 8.0 | 0.119 |
+| codex-gpt-6-astra | gpt-6-astra | 2505.10475 | 32h | codex-gpt-6-astra-20261107T010540Z-a54ff7 | 3 | not_reproduced | False | run | 0 | 0 | 0 | 3 | 3 | 0 | partial | wall_clock | 536.8 | 32.0 | 0.943 |
 
 ## 2. Static results (final)
 
@@ -89,8 +90,8 @@ Source: /work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json job ids; sacct -X -n -
 | 3550322 | e10-2505.17836-s1 | FAILED | 00:00:06 | pending |
 | 3544921 | e10-2505.17836-s2 | FAILED | 00:01:56 | pending |
 | 3550323 | e10-2505.17836-s2 | FAILED | 00:00:05 | pending |
-| 3544922 | e10-2506.10351-s1 | PENDING | 00:00:00 | pending |
-| 3544923 | e10-2506.10351-s2 | PENDING | 00:00:00 | pending |
+| 3544922 | e10-2506.10351-s1 | FAILED | 00:02:14 | pending |
+| 3544923 | e10-2506.10351-s2 | RUNNING | 00:02:02 | pending |
 
 ## 4. Repeat and rerun jobs (YGTR Q3, W2)
 
