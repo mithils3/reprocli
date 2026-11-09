@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-09T13:24:34Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 33 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-09T14:30:11Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 34 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -9,7 +9,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 15 | 2/15 [3.7, 37.9] | 4.53 | -2.00 (n=15) | 6 |
-| codex-gpt-6-astra | 8 | 5 | 1/5 [3.6, 62.4] | 3.60 | -2.60 (n=5) | 1 |
+| codex-gpt-6-astra | 8 | 6 | 1/6 [3.0, 56.4] | 3.33 | -3.17 (n=6) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
@@ -52,6 +52,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | miniswe | miniswe | 2505.10475 | 32h | miniswe-2505.10475-20261107T014125 | 8 | reproduced | True | run | 0 | 0 | 0 | 3 | 3 | 5 | reproduced | submitted |  | 32.0 | 13.2684 |
 | thin-gpt-6.1-sol | gpt-6.1-sol | 2506.20671 | 8h | core-a-2506.20671-85c5e2 | 8 | reproduced | True | run | 4 | 2 | 3 | 2 | 4 | 4 | partial | natural |  | 8.0 | 1.1006 |
 | thin-gpt-6.1-sol | gpt-6.1-sol | 2506.06991 | 8h | core-a-2506.06991-4ace48 | 6 | partial | False | retrain | 6 | 4 | 6 | 0 | 6 | 0 | not_reproduced | natural |  | 8.0 | 1.1026 |
+| codex-gpt-6-astra | gpt-6-astra | 2504.20571 | 8h | codex-gpt-6-astra-20261107T140243Z-9f613b | 2 | not_reproduced | False | run | 8 | 6 | 7 | 8 | 8 | -6 | partial | wall_clock | 2850.4 | 8.0 | 0.4061 |
 
 ## 2. Static results (final)
 
@@ -111,7 +112,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | RUNNING | 10:40:53 | 2026-11-08T20:43:41 | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 11:46:30 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -121,5 +122,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | RUNNING | 10:43:51 | 2026-11-08T20:40:43 | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 11:49:28 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
