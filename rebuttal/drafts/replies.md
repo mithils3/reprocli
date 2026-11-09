@@ -134,7 +134,7 @@ The most common failure is the method or variant question alone (18 papers), whi
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 2 (4,823 characters)
+### Reply to rqBN, part 1 of 2 (4,934 characters)
 
 Thank you for checking how the logs and the auditor are validated. These are the changes, each detailed below:
 - Appendix A: the description of the two harness logs now matches the code (wording below), and a comparison of all 45,861 logged entries with the host transcript found one overwritten log, on a run the auditor had graded unverifiable.
