@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-09T02:22:30Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 24 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-09T08:41:35Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 30 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -8,10 +8,10 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
-| codex-gpt-6.1-sol | 24 | 12 | 1/12 [1.5, 35.4] | 4.08 | -2.08 (n=12) | 6 |
-| codex-gpt-6-astra | 8 | 4 | 0/4 [0.0, 49.0] | 2.50 | -3.25 (n=4) | 1 |
+| codex-gpt-6.1-sol | 24 | 15 | 2/15 [3.7, 37.9] | 4.53 | -2.00 (n=15) | 6 |
+| codex-gpt-6-astra | 8 | 5 | 1/5 [3.6, 62.4] | 3.60 | -2.60 (n=5) | 1 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
-| thin-gpt-6.1-sol | 12 | 7 | 2/7 [8.2, 64.1] | 5.29 | -1.57 (n=7) | 2 |
+| thin-gpt-6.1-sol | 12 | 9 | 3/9 [12.1, 64.6] | 5.11 | -1.44 (n=9) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 1 | 0/1 [0.0, 79.3] | 6.00 | -2.00 (n=1) | 0 |
 
@@ -43,6 +43,12 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2602.03066 | 8h | codex-gpt-6.1-sol-20261108T152418Z-d3ac33 | 7 | partial | False | reimplement | 8 | 6 | 9 | 7 | 9 | -2 | partial | natural | 66.76 | 8.0 | 0.119 |
 | codex-gpt-6-astra | gpt-6-astra | 2505.10475 | 32h | codex-gpt-6-astra-20261107T010540Z-a54ff7 | 3 | not_reproduced | False | run | 0 | 0 | 0 | 3 | 3 | 0 | partial | wall_clock | 536.8 | 32.0 | 0.943 |
 | codex-gpt-6-astra | gpt-6-astra | 2510.21363 | 8h | codex-gpt-6-astra-20261109T010623Z-6cef06 | 4 | not_reproduced | False | retrain | 8 | 8 | 7 | 4 | 8 | -4 | not_reproduced | natural | 3.88 | 8.0 | 0.3946 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2502.05795 | 8h | core-a-2502.05795-3948fe | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | not_reproduced | natural |  | 8.0 | 6.6985 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2505.19087 | 8h | codex-gpt-6.1-sol-20261108T013802Z-809986 | 8 | reproduced | True | reimplement | 8 | 8 | 8 | 8 | 8 | 0 | partial | natural | 1471.58 | 8.0 | 0.1675 |
+| codex-gpt-6-astra | gpt-6-astra | 2505.19087 | 8h | codex-gpt-6-astra-20261109T014602Z-6d6831 | 8 | reproduced | True | reimplement | 8 | 8 | 8 | 8 | 8 | 0 | partial | natural | 42.38 | 8.0 | 0.2117 |
+| thin-gpt-6.1-sol | gpt-6.1-sol | 2503.14698 | 96h | core-a-2503.14698-a56492 | 1 | unverifiable | False | reimplement | 1 | 2 | 1 | 1 | 2 | -1 | could_not_run | natural |  | 96.0 | 0.0027 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2505.18809 | 8h | codex-gpt-6.1-sol-20261108T134632Z-1f75b8 | 4 | not_reproduced | False | run | 8 | 0 | 7 | 8 | 8 | -4 | not_reproduced | natural | 882.82 | 8.0 | 1.0917 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2510.21363 | 8h | codex-gpt-6.1-sol-20261107T113825Z-cb72b0 | 7 | partial | False | retrain | 8 | 8 | 7 | 4 | 8 | -1 | not_reproduced | natural | 2400.14 | 8.0 | 4.2234 |
 
 ## 2. Static results (final)
 
@@ -102,7 +108,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 05:57:55 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -112,5 +118,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | PENDING | 00:00:00 | Unknown | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 06:00:53 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
