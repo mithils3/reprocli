@@ -111,7 +111,9 @@ print("CLAIM: "+claim[:1500]); print("\nTRANSCRIPT DIGEST:\n"+txt); print("\nAGE
 
 def rows() -> list[dict]:
     with CELLS.open() as f:
-        return [r for r in csv.DictReader(f) if r["verdict"] in FAIL and r["run_dir_found"] == "yes"]
+        # the x86 arms are a separate check of the host and stay out of the paper tables
+        return [r for r in csv.DictReader(f) if r["verdict"] in FAIL and r["run_dir_found"] == "yes"
+                and not r["arm"].endswith("-x86")]
 
 
 def oid(run_id: str) -> str:
