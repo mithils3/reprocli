@@ -209,5 +209,55 @@
   "auditor_0": 53,
   "both": 42,
   "either": 57
+ },
+ "per_tier_reproduced": {
+  "run": {
+   "both": 28,
+   "auditor_only": 3,
+   "human_only": 7,
+   "precision": 0.903,
+   "precision_wilson95": [
+    75.1,
+    96.7
+   ],
+   "recall": 0.8,
+   "recall_wilson95": [
+    64.1,
+    90.0
+   ],
+   "f1": 0.848
+  },
+  "retrain": {
+   "both": 25,
+   "auditor_only": 4,
+   "human_only": 7,
+   "precision": 0.862,
+   "precision_wilson95": [
+    69.4,
+    94.5
+   ],
+   "recall": 0.781,
+   "recall_wilson95": [
+    61.2,
+    89.0
+   ],
+   "f1": 0.82
+  },
+  "reimplement": {
+   "both": 11,
+   "auditor_only": 2,
+   "human_only": 5,
+   "precision": 0.846,
+   "precision_wilson95": [
+    57.8,
+    95.7
+   ],
+   "recall": 0.688,
+   "recall_wilson95": [
+    44.4,
+    85.8
+   ],
+   "f1": 0.759
+  }
  }
 }

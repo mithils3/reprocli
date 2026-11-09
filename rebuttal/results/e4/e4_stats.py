@@ -34,3 +34,19 @@ out = {
  "disqualified_score0_as_high_severity": {"human_0": q0, "auditor_0": a0, "both": b0, "either": q0+a0-b0},
 }
 json.dump(out, open(sys.argv[3], "w"), indent=1); print(json.dumps({k: v for k, v in out.items() if k not in ("verdict_matrix_human_rows",)}, indent=0)[:2500]); print(json.dumps(five))
+
+# Per-tier reproduced table (per_tier.csv, supplied 2026-11-08): auditor positives per tier must match the graded runs.
+import os
+pt = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "per_tier.csv")
+if os.path.exists(pt):
+    rows_t = list(csv.DictReader(open(pt)))
+    rec_t = collections.Counter(r["tier"] for r in idx if r["audit"]["score"] >= 8)
+    tiers = {}
+    for r in rows_t:
+        b, a, h = int(r["both"]), int(r["auditor_only"]), int(r["human_only"])
+        assert b + a == rec_t[r["tier"]], (r, rec_t)
+        tiers[r["tier"]] = {"both": b, "auditor_only": a, "human_only": h, "precision": round(b/(b+a), 3), "precision_wilson95": wil(b, b+a),
+                            "recall": round(b/(b+h), 3), "recall_wilson95": wil(b, b+h), "f1": round(2*b/(2*b+a+h), 3)}
+    assert sum(t["both"] for t in tiers.values()) == tp and sum(t["auditor_only"] for t in tiers.values()) == pa - tp and sum(t["human_only"] for t in tiers.values()) == ph - tp
+    out["per_tier_reproduced"] = tiers
+    json.dump(out, open(sys.argv[3], "w"), indent=1); print(json.dumps(tiers, indent=1))

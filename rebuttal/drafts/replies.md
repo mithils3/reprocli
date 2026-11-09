@@ -105,7 +105,7 @@ On the match target itself, a model from a different lab than our auditor (OpenA
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 2 (4,355 characters)
+### Reply to rqBN, part 1 of 2 (4,579 characters)
 
 Thank you for checking how the logs and the auditor are validated. These are the changes, each detailed below:
 - Appendix A: the description of the two harness logs now matches the code (old and new wording below), and the appendix reports a comparison of all 45,861 logged entries with the host transcript, which found one overwritten log, on a run the auditor had graded unverifiable.
@@ -113,7 +113,15 @@ Thank you for checking how the logs and the auditor are validated. These are the
 - Appendix E: what the final construction stage checked, and a check of every frozen target against its paper.
 - Section 5.3 and Limitations: a re-execution of missed runs with new seeds, and the bound on build failures.
 
-**Auditor validation (W1).** Appendix D now gives the confusion matrix of auditor verdict against human verdict over the 372 runs that have both grades, and the reply to T29u shows it in full. On the reproduced verdict the auditor has precision 64/73 = 88% and recall 64/83 = 77% alongside the F1 of 0.82. On the full 0 to 10 scale the two give the same score to 253 of 372 runs and scores within one point to 324, and the mean absolute difference is 0.59 points. [Tier sentence: by tier, the auditor's precision and recall on the reproduced verdict are p1 and r1 at Run, p2 and r2 at Retrain and p3 and r3 at Reimplement, so its errors do not concentrate in one tier / concentrate at T.] The rubric gives a score of 0 to any run with a high-severity integrity flag, and of the 57 runs that either the auditor or the human placed at 0 they agree on 42. In the original study each of the 396 runs that started received one human label, since three graders divided the runs, each blind to the auditor's score and using the same rubric. That design does not measure agreement between humans, and the revision says so. [If a second grader labels a subset: A second author has now labeled n of these runs blind to both earlier labels, and the two humans agree on k of n.]
+**Auditor validation (W1).** Appendix D now gives the confusion matrix of auditor verdict against human verdict over the 372 runs that have both grades, and the reply to T29u shows it in full. On the reproduced verdict the auditor has precision 64/73 = 88% and recall 64/83 = 77% alongside the F1 of 0.82. On the full 0 to 10 scale the two give the same score to 253 of 372 runs and scores within one point to 324, and the mean absolute difference is 0.59 points. By tier, the errors on the reproduced verdict are as follows:
+
+| Tier | Precision | Recall | F1 |
+| :- | -: | -: | -: |
+| Run | 28/31 = 90% | 28/35 = 80% | 0.85 |
+| Retrain | 25/29 = 86% | 25/32 = 78% | 0.82 |
+| Reimplement | 11/13 = 85% | 11/16 = 69% | 0.76 |
+
+Recall is lowest at Reimplement, but it rests on 16 human reproductions and its 95% interval (44% to 86%) overlaps those of the other tiers, so the errors do not concentrate in one tier. The rubric gives a score of 0 to any run with a high-severity integrity flag, and of the 57 runs that either the auditor or the human placed at 0 they agree on 42. In the original study each of the 396 runs that started received one human label, since three graders divided the runs, each blind to the auditor's score and using the same rubric. That design does not measure agreement between humans, and the revision says so. [If a second grader labels a subset: A second author has now labeled n of these runs blind to both earlier labels, and the two humans agree on k of n.]
 
 **Writable logs (W1).** The harness process writes commands.log and trajectory.jsonl, and the sandbox mounts the evidence directory read-write, so the agent's shell could have rewritten them. Appendix A said we instruct the auditor to read these files as unverified claims; the auditor prompt has no such instruction for these two files. We rewrote the sentence to state what the auditor does and what the log comparison below adds.
 
@@ -149,7 +157,7 @@ On tolerances, 62 of the 100 claims are point estimates, and 58 of those use the
 | 92, 95, 76, 69, 55 of 100; 45 failures | rebuttal/results/e7/summary.json (step3); e7/README.md |
 | 62 point estimates, 58 default, 4 margins, 38 others; 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
 | Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 133-134 (before); the after text is proposed here |
-| 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0 | rebuttal/results/e4/summary.json |
+| 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0; per tier 28/31, 28/35, 25/29, 25/32, 11/13, 11/16, recall interval 44% to 86% | rebuttal/results/e4/summary.json (per_tier_reproduced from e4/per_tier.csv) |
 | re-execution outcome, target corrections | pending (E10, E7 settlement) |
 
 ## YGTR
@@ -200,7 +208,7 @@ We would be glad to hear whether the frontier and harness results address the co
 
 1. **The target check shows 45 of 100 targets failing at least one question (rqBN Q2, T29u Q2).** A reviewer can read 55/100 as evidence that the targets are unreliable. What closes it is Mithil's read of the 45 (rebuttal/results/e7/v3_failures.csv), giving the count the paper actually contradicts, and the rescore of those runs at the corrected targets with the change in best-agent rates. If k is large, the replies should lead with the rescored rates.
 2. **The reply admits that 16 empty cells were stopped by the cluster job, which contradicts the paper's sentence that all 28 are model failures (YGTR Q3).** This also reverses the 2026-09-10 and 09-19 instructions in memory paper-missing-cells-accounting, so Mithil should decide it before posting. What closes it is the rerun grades of the 20 cells (jobs 3540630 to 3540633, 3540786, 3540787, plus Muse on 2510.20725) and a Section 5.2 sentence that matches the reply.
-3. **The confusion matrix comes from an aggregate table, and the paper says 396 hand-graded runs (T29u Q1, rqBN W1).** The matrix Mithil supplied on 11-08 covers the 372 runs with an auditor grade, and its auditor columns match the graded runs exactly, but no per-run label file is on disk. rqBN listed "tier-conditioned errors" among the omissions, and the reply holds a slot for them; what closes it is the same 2 × 2 reproduced table (both, auditor only, human only) split by tier, nine counts in all, which Mithil can produce from the source of the matrix. Appendix D should say the matrix is over the 372 runs with both grades. The original design has one human label per run, so inter-human agreement cannot be reported; a second blind grader on about 40 runs stratified by verdict would close it if time allows.
+3. **The confusion matrix comes from an aggregate table, and the paper says 396 hand-graded runs (T29u Q1, rqBN W1).** The matrix Mithil supplied on 11-08 covers the 372 runs with an auditor grade, and its auditor columns match the graded runs exactly, but no per-run label file is on disk. The per-tier reproduced table (e4/per_tier.csv) sums to the matrix totals and its auditor counts match the graded runs per tier (31, 29, 13). Appendix D should say the matrix is over the 372 runs with both grades. The original design has one human label per run, so inter-human agreement cannot be reported; a second blind grader on about 40 runs stratified by verdict would close it if time allows.
 4. **Codex runs stop early, which a reviewer may call a configuration artifact (YGTR W1).** The first ten frontier runs used a median under 2% of their GPU grant and most ended with "could not run" (rebuttal/results/frontier/run_usage_summary.md), and two cite GPU requests left in the queue. What closes it is the per-run grant use and exit reason in the appendix table, the queue wait per GPU request from run_gpu logs, and, if Mithil approves, a small variant with a fixed number of "continue" prompts.
 5. **The two checkpoint downloads came from the authors' own releases, which questions the tier labels of 2508.21046 and 2505.12677 (YGTR Q2).** A Retrain paper with released weights for the claimed model belongs at Run. What closes it is a check of both papers' availability records against the linked checkpoints, and moving the papers if the release covers the claimed configuration.
 6. **The hash-chained host log was removed from the rqBN reply (rqBN W1).** No such log exists in the code, and the frontier runs were graded without it, so the reply now promises only the Appendix A rewording and the log comparison that already exist.

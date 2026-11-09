@@ -1,0 +1,4 @@
+tier,both,auditor_only,human_only
+run,28,3,7
+retrain,25,4,7
+reimplement,11,2,5
