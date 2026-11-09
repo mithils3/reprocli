@@ -38,7 +38,7 @@ We thank the three reviewers for their careful reading. They found the task impo
 
 ## T29u
 
-### Reply to T29u, part 1 of 2 (4,755 characters)
+### Reply to T29u, part 1 of 2 (3,443 characters)
 
 Thank you for the careful review. The revision makes these changes for your points:
 - Section 5.2: a 95% Wilson interval on every rate, and two more runs of DeepSeek-V4-Flash on 12 papers.
@@ -69,6 +69,8 @@ Over the 372 runs with both grades the auditor marks 73 reproduced and the human
 
 Two checks that do not depend on the auditor also bear on high-severity problems. A comparison of the agent's logs with the host transcript, which the harness writes outside the agent's sandbox, found one edited log in 372 runs, on a run the auditor had already graded unverifiable (our reply to Reviewer rqBN, W2). A scan of every transcript for model downloads found two reproduced runs that evaluated a downloaded checkpoint of the claimed model. They were MiniMax-M2.7 at Reimplement and Muse Spark 1.2 at Retrain, where Muse Spark had tied DeepSeek-V4-Flash for best; the revision counts both as not reproduced, so DeepSeek-V4-Flash alone is best at Retrain with 9 of 33 (our reply to Reviewer YGTR, Q2).
 
+### Reply to T29u, part 2 of 2 (3,477 characters)
+
 **Q1: Confusion matrix, the 7/8 boundary and high-severity flags.**
 
 Against the human grade the auditor's reproduced verdict has precision 64/73 = 88% and recall 64/83 = 77%, and the full confusion matrix is below and in Appendix D. The matrix covers the 372 runs that have both grades. Of the 400 agent-paper cells, 396 started a run and 4 never did, and 24 of the 396 have a human label but no auditor grade, which leaves 372 (these 24 are separate from the 24 build failures above).
@@ -87,8 +89,6 @@ Of the 73 runs the auditor called reproduced, the human agreed on 64, a precisio
 On the 100 runs that either the auditor or the human placed at 7 or 8, they agree on 75 about which side of the reproduced line the run falls.
 
 The rubric gives a score of 0 to any run with a high-severity integrity flag, and of the 57 runs that either of them placed at 0 they agree on 42.
-
-### Reply to T29u, part 2 of 2 (1,789 characters)
 
 **Q2: Sensitivity to the match target and the default 5% tolerance.**
 
@@ -128,7 +128,7 @@ Thank you again for the review.
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 3 (4,520 characters)
+### Reply to rqBN, part 1 of 3 (4,694 characters)
 
 Thank you for checking how the logs and the auditor are validated. The revision makes these changes for your points:
 - Appendix A: the description of the two harness logs now matches the code, and a comparison of all 45,861 logged entries with the host transcript found one overwritten log, on a run the auditor had graded unverifiable.
@@ -166,7 +166,7 @@ The comparison also found 119 commands in 65 runs that the harness ran but never
 
 The host transcript is not hash-chained, so it is not tamper-evident by construction; its protection is that it lies outside every directory the sandbox mounts. This check catches any edit made through the agent's own commands, which the transcript records, and Appendix A states that limit.
 
-### Reply to rqBN, part 2 of 3 (1,909 characters)
+### Reply to rqBN, part 2 of 3 (1,985 characters)
 
 **Q1: A stratified human-expert reproduction baseline.**
 
@@ -181,7 +181,7 @@ Only 3 papers had a single clean command chain, 1 at Run and 2 at Retrain, all w
 
 The bound on build failures from our aarch64 hardware is in our reply to Reviewer YGTR (W2).
 
-### Reply to rqBN, part 3 of 3 (2,081 characters)
+### Reply to rqBN, part 3 of 3 (2,094 characters)
 
 **Q2: How claims, configurations, targets and tolerances were validated, and annotator agreement.**
 
