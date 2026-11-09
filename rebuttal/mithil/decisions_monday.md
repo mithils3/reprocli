@@ -114,3 +114,9 @@ Decision: ______
 ---
 
 Not decisions: Risk 6 is closed. The consistency Flag 1 was settled by the main session. Bracketed result slots that wait on runs are not decisions.
+
+**19. Frontier runs whose 48-hour limit ends while they wait for a GPU (results update, YGTR_1 frontier table)**
+Question: When a frontier run reaches its 48-hour limit while its GPU request is still in the ghx4 queue, does it count as not reproduced, or is it reported apart as stopped by the queue? count / apart
+Change: rebuttal/results/frontier/stalled_2026-11-09.md finds all 13 runs that looked stalled alive and waiting on a GPU request, pending 12.6 to 21 hours. The two continue-prompt runs reach their limit at 11-09 12:31 and five Codex gpt-6.1-sol runs between 11-09 20:30 and 11-10 10:49. With "count", each becomes a 0 in its arm's rate. With "apart", the frontier table's denominator drops by that number and one sentence gives the count and the cause.
+Recommended: apart. The run never received the GPU it asked for, so the result measures the queue, and the early-stop table already has a "no GPU granted" class for exactly this case.
+Decision: ______
