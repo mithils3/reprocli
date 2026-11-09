@@ -1,6 +1,6 @@
 # Open agents on each frontier arm's own papers
 
-Source: rebuttal/results/databook/frontier_cells.csv (40 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
+Source: rebuttal/results/databook/frontier_cells.csv (38 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
 
 | arm | graded | reproduced | mean score | DeepSeek-V4-Flash reproduced | DeepSeek-V4-Flash mean | Muse Spark 1.2 reproduced | Muse Spark 1.2 mean | Qwen3.6-27B reproduced | Qwen3.6-27B mean | MiniMax-M2.7 reproduced | MiniMax-M2.7 mean |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -9,8 +9,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (40 graded rows). Reproduce
 | thin-gpt-6.1-sol | 11 | 4/11 [15%, 65%] | 5.45 | 4/11 | 5.91 | 4/11 | 5.73 | 3/11 | 3.91 | 2/11 | 3.27 |
 | miniswe | 2 | 1/2 [9%, 91%] | 7.00 | 0/2 | 3.50 | 1/2 | 4.00 | 0/2 | 1.50 | 0/2 | 0.00 |
 | thin-gpt-6-astra | 2 | 0/2 [0%, 66%] | 2.50 | 0/2 | 5.50 | 1/2 | 6.00 | 0/2 | 2.00 | 0/2 | 0.00 |
-| thin-gpt-6.1-sol-x86 | 2 | 0/2 [0%, 66%] | 1.50 | 1/2 | 6.00 | 1/2 | 6.00 | 1/2 | 6.00 | 1/2 | 4.00 |
-| thin-gpt-6-astra-x86 | 1 | 0/1 [0%, 79%] | 2.00 | 1/1 | 8.00 | 0/1 | 7.00 | 1/1 | 8.00 | 0/1 | 6.00 |
+| thin-gpt-6-astra-x86 | 1 | 0/1 [0%, 79%] | 2.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 0.00 |
 
 ## Frontier runs by tier
 
@@ -21,8 +20,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (40 graded rows). Reproduce
 | thin-gpt-6.1-sol | 3/3 | 0/4 | 1/4 |
 | miniswe | 1/1 | 0/1 | 0/0 |
 | thin-gpt-6-astra | 0/0 | 0/1 | 0/1 |
-| thin-gpt-6.1-sol-x86 | 0/0 | 0/0 | 0/2 |
-| thin-gpt-6-astra-x86 | 0/1 | 0/0 | 0/0 |
+| thin-gpt-6-astra-x86 | 0/0 | 0/0 | 0/1 |
 | all arms on GH200 nodes | 5/11 [21%, 72%] | 0/12 [0%, 24%] | 3/14 [8%, 48%] |
 
 ## gpt-6.1-sol, our loop against Codex CLI, papers graded in both

@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-09T19:59:24Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 42 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-09T20:01:10Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 38 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -15,8 +15,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 2 | 1/2 [9.5, 90.5] | 7.00 | 1.50 (n=2) | 0 |
 | thin-gpt-6-astra | not planned | 2 | 0/2 [0.0, 65.8] | 2.50 | -3.50 (n=2) | 1 |
-| thin-gpt-6-astra-x86 | not planned | 3 | 0/3 [0.0, 56.1] | 2.00 | -3.00 (n=3) | 1 |
-| thin-gpt-6.1-sol-x86 | not planned | 2 | 0/2 [0.0, 65.8] | 1.50 | -4.50 (n=2) | 0 |
+| thin-gpt-6-astra-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 2.00 | -2.00 (n=1) | 1 |
 
 Per-run rows (one per grades.jsonl row since 2026-11-07):
 
@@ -59,11 +58,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6-astra | gpt-6-astra | 2504.12463 | 96h | codex-gpt-6-astra-20261109T140330Z-235c24 | 2 | not_reproduced | False | retrain | 4 | 2 | 2 | 4 | 4 | -2 | could_not_run | natural | 11.73 | 96.0 | 0.1663 |
 | thin-gpt-6-astra | gpt-6-astra | 2505.16927 | 32h | astra-a-2505.16927-50c745 | 1 | unverifiable | False | reimplement | 4 | 0 | 4 | 4 | 4 | -3 | could_not_run | natural |  | 32.0 | 0 |
 | thin-gpt-6-astra | gpt-6-astra | 2506.08898 | 32h | astra-a-2506.08898-d3db7c | 4 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -4 | partial | natural |  | 32.0 | 0 |
-| thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2505.19087 | 8h | x86-a-2505.19087-8e4506 | 1 | unverifiable | False | reimplement | 8 | 8 | 8 | 8 | 8 | -7 |  |  |  | 8.0 | 0 |
-| thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2505.16927 | 32h | x86-a-2505.16927-7c87aa | 2 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -2 |  |  |  | 32.0 | 0 |
-| thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2504.20571 | 8h | astra-x86-2504.20571-e45477 | 2 | not_reproduced | False | run | 8 | 6 | 7 | 8 | 8 | -6 |  |  |  | 8.0 | 0 |
 | thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2505.16927 | 32h | astra-x86-2505.16927-8dbd30 | 2 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -2 | could_not_run | natural |  | 32.0 | 0 |
-| thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2505.10475 | 32h | astra-x86-2505.10475-4d106f | 2 | not_reproduced | False | run | 0 | 0 | 0 | 3 | 3 | -1 |  |  |  | 32.0 | 0 |
 
 ## 2. Static results (final)
 
@@ -123,7 +118,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | RUNNING | 17:15:43 | 2026-11-08T20:43:41 | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 17:17:29 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -133,5 +128,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | RUNNING | 17:18:41 | 2026-11-08T20:40:43 | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 17:20:27 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
