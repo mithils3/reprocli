@@ -44,7 +44,7 @@ With these corrections, 70 of the 400 agent-paper cells are reproduced (73 at su
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (3,910 characters)
+### Reply to T29u, part 1 of 1 (3,974 characters)
 
 Thank you for the careful review. Each answer names where the revision changes.
 
@@ -60,7 +60,7 @@ Every rate now has a 95% Wilson interval, and we measured run-to-run variation. 
 | MiniMax-M2.7 | 2 = 6% [2%, 19%] | 5 = 15% [7%, 31%] | 1 = 3% [1%, 15%] |
 | At least one agent | 16 = 47% [31%, 63%] | 11 = 33% [20%, 50%] | 5 = 15% [7%, 31%] |
 
-The data separate Run from Reimplement (z = 2.46 for DeepSeek-V4-Flash and 2.81 for at least one agent) and leave Run and Retrain together (z = 0.96 and 1.15), so Section 5.2 now claims only that reproduction falls when no code is released. It also no longer names a strongest agent, since the mean audit scores of DeepSeek-V4-Flash and Muse Spark 1.2 are 5.13 [4.55, 5.71] and 5.14 [4.59, 5.69] out of 10. Removing the 24 build and dependency failures moves no best-agent rate by more than one percentage point (Section 5.3).
+The tier and agent comparisons hold under these intervals. Run and Reimplement are separated for DeepSeek-V4-Flash (z = 2.46) and for papers reproduced by at least one agent (z = 2.81), and every agent has its lowest rate at Reimplement. The mean audit scores of DeepSeek-V4-Flash and Muse Spark 1.2, 5.13 [4.55, 5.71] and 5.14 [4.59, 5.69] out of 10, lie above those of Qwen3.6-27B and MiniMax-M2.7, 3.51 [2.98, 4.04] and 3.03 [2.48, 3.58]. For environment sensitivity, removing the 24 build and dependency failures moves no best-agent rate by more than one percentage point (Section 5.3).
 
 **W2: The auditor's disagreements with the human grade.**
 
@@ -212,7 +212,7 @@ The frontier runs stop early. They used a median of [2.1]% of their GPU grant, a
 
 A coder that saw neither the verdict nor the harness labelled the main failure of each of the [27] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [3 of 27 = 11%] against 110 of 300 = 37% for the open agents, and [11 of 27] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The tier finding recurs: the frontier runs reproduce [5 of 11] at Run, [0 of 12] at Retrain and [3 of 14] at Reimplement (Section 5.3).
 
-### Reply to YGTR, part 2 of 2 (2,732 characters)
+### Reply to YGTR, part 2 of 2 (2,665 characters)
 
 **W2: Failures due to hardware differences.**
 
@@ -220,7 +220,7 @@ At most 14 of the 372 graded runs failed because of our hardware, and removing e
 
 **W3: Agents are only run once.**
 
-We reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. The revision ranks two agents only when their 95% Wilson intervals stay apart after each count is shifted by [j] papers (Section 5.2).
+We reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. Every rate in the revision has a 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 

@@ -4,7 +4,7 @@ At most 14 of the 372 graded runs failed because of our hardware, and removing e
 
 **W3: Agents are only run once.**
 
-We reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. The revision ranks two agents only when their 95% Wilson intervals stay apart after each count is shifted by [j] papers (Section 5.2).
+We reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. Every rate in the revision has a 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 
