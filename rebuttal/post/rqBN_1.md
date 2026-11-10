@@ -2,7 +2,7 @@ Thank you for checking how runs are graded and how their logs are protected.
 
 **W1: Validation of the auditor.**
 
-Appendix D now reports each measure you list on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human grader who was blind to the auditor's score. On the reproduced verdict, precision is 64/73 = 88% and recall is 64/83 = 77% (F1 0.82), and the appendix gives the confusion matrix and the values per tier. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89), and they agree on 42 of the 57 runs that either placed at 0 for a high-severity anti-cheat flag.
+Appendix D now reports each measure you list on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human grader who was blind to the auditor's score. On the reproduced verdict, precision is 64/73 = 88% and recall is 64/83 = 77% (F1 0.82), and the appendix gives the confusion matrix and the values per tier. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates slightly. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89), and they agree on 42 of the 57 runs that either placed at 0 for a high-severity anti-cheat flag.
 
 **W2: Agent-writable logs without an integrity check.**
 

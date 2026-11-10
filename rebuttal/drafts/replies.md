@@ -129,13 +129,13 @@ For the targets, a check by a model from another lab than the auditor supports t
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (3,109 characters)
+### Reply to rqBN, part 1 of 1 (3,118 characters)
 
 Thank you for checking how runs are graded and how their logs are protected.
 
 **W1: Validation of the auditor.**
 
-Appendix D now reports each measure you list on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human grader who was blind to the auditor's score. On the reproduced verdict, precision is 64/73 = 88% and recall is 64/83 = 77% (F1 0.82), and the appendix gives the confusion matrix and the values per tier. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89), and they agree on 42 of the 57 runs that either placed at 0 for a high-severity anti-cheat flag.
+Appendix D now reports each measure you list on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human grader who was blind to the auditor's score. On the reproduced verdict, precision is 64/73 = 88% and recall is 64/83 = 77% (F1 0.82), and the appendix gives the confusion matrix and the values per tier. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates slightly. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89), and they agree on 42 of the 57 runs that either placed at 0 for a high-severity anti-cheat flag.
 
 **W2: Agent-writable logs without an integrity check.**
 
@@ -182,13 +182,13 @@ The revision adds an independent check of every target. gpt-6.1-sol, from a diff
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (2,669 characters)
+### Reply to YGTR, part 1 of 2 (2,723 characters)
 
 Thank you for the review. We ran the frontier models and production harnesses you asked for and measured each confound you named.
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-[On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 15 and 1 of 7, where DeepSeek-V4-Flash reproduces 6 of 15 and 3 of 7.] The last two columns give our two best agents on exactly the papers of each row, under the same auditor (Section 5.1, Appendix B).
+[On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 15 and 1 of 7, where DeepSeek-V4-Flash reproduces 6 of 15 and 3 of 7.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
@@ -199,7 +199,7 @@ Thank you for the review. We ran the frontier models and production harnesses yo
 | Muse Wonder | mini-SWE-agent | [n] | [a] | [d] | [m] |
 | Muse Wonder | our loop | [n] | [a] | [d] | [m] |
 
-The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, so we also ran DeepSeek-V4-Flash twice more on the 12 core papers, where it reproduces [r2] and [r3]. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [9] papers that gpt-6.1-sol finished in both harnesses, our loop reproduces [3] and Codex CLI [2].
+The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, so we also ran DeepSeek-V4-Flash twice more on the 12 core papers, where it reproduces [r2] and [r3]. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [9] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
 
 The frontier runs stop early. They used a median of [2.1]% of their GPU grant, against [17.5]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
 
