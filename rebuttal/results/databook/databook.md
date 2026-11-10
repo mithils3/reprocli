@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-10T17:34:37Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 42 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-10T18:33:43Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 44 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -8,13 +8,13 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
-| codex-gpt-6.1-sol | 24 | 16 | 2/16 [3.5, 36.0] | 4.62 | -1.88 (n=16) | 6 |
+| codex-gpt-6.1-sol | 24 | 17 | 2/17 [3.3, 34.3] | 4.41 | -1.94 (n=17) | 7 |
 | codex-gpt-6-astra | 8 | 7 | 1/7 [2.6, 51.3] | 3.14 | -3.00 (n=7) | 2 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
 | miniswe | 6 | 3 | 1/3 [6.1, 79.2] | 5.67 | 0.67 (n=3) | 0 |
-| thin-gpt-6-astra | not planned | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
+| thin-gpt-6-astra | not planned | 4 | 1/4 [4.6, 69.9] | 5.00 | -2.00 (n=4) | 1 |
 | thin-gpt-6-astra-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 2.00 | -2.00 (n=1) | 1 |
 | thin-gpt-6.1-sol-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 7.00 | -1.00 (n=1) | 0 |
 
@@ -64,6 +64,8 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2505.19087 | 8h | x86-a-2505.19087-ec4293 | 7 | partial | False | reimplement | 8 | 8 | 8 | 8 | 8 | -1 | partial | natural |  | 8.0 | 0 |
 | miniswe | miniswe | 2505.16927 | 32h | miniswe-2505.16927-20261107T152720 | 3 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -1 | not_reproduced | submitted |  | 32.0 | 1.8036 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2506.06991 | 8h | codex-gpt-6.1-sol-20261108T023042Z-f46891 | 6 | partial | False | retrain | 6 | 4 | 6 | 0 | 6 | 0 | not_reproduced | natural | 3676.89 | 8.0 | 0.9764 |
+| thin-gpt-6-astra | gpt-6-astra | 2505.19087 | 8h | astra-a-2505.19087-bff068 | 7 | partial | False | reimplement | 8 | 8 | 8 | 8 | 8 | -1 | partial | natural |  | 8.0 | 0 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2510.15194 | 96h | codex-gpt-6.1-sol-20261110T165658Z-ab434c | 1 | unverifiable | False | reimplement | 0 | 4 | 2 | 2 | 4 | -3 | could_not_run | natural | 16.86 | 96.0 | 0.0707 |
 
 ## 2. Static results (final)
 
@@ -123,7 +125,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | RUNNING | 1-14:50:56 | 2026-11-08T20:43:41 | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 1-15:50:02 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -133,5 +135,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | RUNNING | 1-14:53:54 | 2026-11-08T20:40:43 | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 1-15:53:00 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
