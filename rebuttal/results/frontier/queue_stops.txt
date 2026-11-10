@@ -1,2 +1,5 @@
 # run_id of each frontier run that reached its 48-hour limit while its GPU request was still pending (decision 19).
-# One run_id per line, as in frontier_cells.csv. Empty on 2026-11-09: no graded run has this exit yet.
+# One run_id per line, as in frontier_cells.csv. Each is rerun with no fixed wall; the rerun becomes the row of record once graded.
+codex-gpt-6.1-sol-20261108T005328Z-9d3d35
+codex-gpt-6-astra-20261107T010540Z-a54ff7
+codex-gpt-6-astra-20261107T140243Z-9f613b

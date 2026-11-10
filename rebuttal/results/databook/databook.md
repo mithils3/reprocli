@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-10T00:16:24Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 40 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-10T01:16:18Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 42 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -8,12 +8,12 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
-| codex-gpt-6.1-sol | 24 | 15 | 2/15 [3.7, 37.9] | 4.53 | -2.00 (n=15) | 6 |
+| codex-gpt-6.1-sol | 24 | 16 | 2/16 [3.5, 36.0] | 4.44 | -2.25 (n=16) | 6 |
 | codex-gpt-6-astra | 8 | 7 | 1/7 [2.6, 51.3] | 3.14 | -3.00 (n=7) | 2 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
-| miniswe | 6 | 2 | 1/2 [9.5, 90.5] | 7.00 | 1.50 (n=2) | 0 |
+| miniswe | 6 | 3 | 1/3 [6.1, 79.2] | 5.67 | 0.67 (n=3) | 0 |
 | thin-gpt-6-astra | not planned | 3 | 1/3 [6.1, 79.2] | 4.33 | -2.33 (n=3) | 1 |
 | thin-gpt-6-astra-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 2.00 | -2.00 (n=1) | 1 |
 | thin-gpt-6.1-sol-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 7.00 | -1.00 (n=1) | 0 |
@@ -62,6 +62,8 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2505.16927 | 32h | astra-x86-2505.16927-8dbd30 | 2 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -2 | could_not_run | natural |  | 32.0 | 0 |
 | thin-gpt-6-astra | gpt-6-astra | 2504.20571 | 8h | astra-a-2504.20571-9686ac | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0 |
 | thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2505.19087 | 8h | x86-a-2505.19087-ec4293 | 7 | partial | False | reimplement | 8 | 8 | 8 | 8 | 8 | -1 | partial | natural |  | 8.0 | 0 |
+| miniswe | miniswe | 2505.16927 | 32h | miniswe-2505.16927-20261107T152720 | 3 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -1 | not_reproduced | submitted |  | 32.0 | 1.8036 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2502.05795 | 8h | codex-gpt-6.1-sol-20261108T005328Z-9d3d35 | 3 | not_reproduced | False | run | 8 | 4 | 9 | 4 | 9 | -6 | partial | wall_clock | 2863.72 | 8.0 | 0.2002 |
 
 ## 2. Static results (final)
 
@@ -121,7 +123,7 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
-| 3540624 | repro_easy_dsv4 | RUNNING | 21:32:43 | 2026-11-08T20:43:41 | pending |
+| 3540624 | repro_easy_dsv4 | RUNNING | 22:32:37 | 2026-11-08T20:43:41 | pending |
 | 3540625 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540626 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540627 | repro_easy_dsv4 | PENDING | 00:00:00 | Unknown | pending |
@@ -131,5 +133,5 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
-| 3540786 | repro_medium_qwen3 | RUNNING | 21:35:41 | 2026-11-08T20:40:43 | pending |
+| 3540786 | repro_medium_qwen3 | RUNNING | 22:35:35 | 2026-11-08T20:40:43 | pending |
 | 3540787 | repro_hard_qwen3 | PENDING | 00:00:00 | Unknown | pending |
