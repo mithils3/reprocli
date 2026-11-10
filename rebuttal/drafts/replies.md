@@ -44,9 +44,9 @@ With every new grade applied, 70 of the 400 agent-paper cells are reproduced (73
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (3,670 characters)
+### Reply to T29u, part 1 of 1 (3,518 characters)
 
-Thank you for the careful review. Each answer names where the revision changes.
+Thank you for the careful review.
 
 **W1: One run per agent-paper cell.**
 
@@ -60,11 +60,11 @@ Every rate now has a 95% Wilson interval, and we measured run-to-run variation. 
 | MiniMax-M2.7 | 2 = 6% [2%, 19%] | 5 = 15% [7%, 31%] | 1 = 3% [1%, 15%] |
 | At least one agent | 16 = 47% [31%, 63%] | 11 = 33% [20%, 50%] | 5 = 15% [7%, 31%] |
 
-The tier and agent comparisons hold under these intervals. Run and Reimplement are separated for DeepSeek-V4-Flash (z = 2.46) and for papers reproduced by at least one agent (z = 2.81), and every agent has its lowest rate at Reimplement. The mean audit scores of DeepSeek-V4-Flash and Muse Spark 1.2, 5.13 [4.55, 5.71] and 5.14 [4.59, 5.69] out of 10, lie above those of Qwen3.6-27B and MiniMax-M2.7, 3.51 [2.98, 4.04] and 3.03 [2.48, 3.58]. For environment sensitivity, removing the 24 build and dependency failures moves no best-agent rate by more than one percentage point (Section 5.3).
+The tier and agent comparisons hold under these intervals. Run and Reimplement are separated for DeepSeek-V4-Flash (z = 2.46) and for papers reproduced by at least one agent (z = 2.81), and every agent has its lowest rate at Reimplement. The mean audit scores of DeepSeek-V4-Flash and Muse Spark 1.2 (5.13 and 5.14 of 10) lie above those of Qwen3.6-27B and MiniMax-M2.7 (3.51 and 3.03), and their 95% intervals do not overlap. For environment sensitivity, removing the 24 build and dependency failures moves no best-agent rate by more than one percentage point (Section 5.3).
 
 **W2: The auditor's disagreements with the human grade.**
 
-Where the two graders disagree, the auditor is the stricter one. Of the 28 runs that only one grader called reproduced, the human did in 19 and the auditor in 9, and the human count is the higher one in every tier (7 against 3 at Run, 7 against 4 at Retrain, 5 against 2 at Reimplement). Auditor-graded rates therefore sit slightly below human-graded rates, 73 against 83 of 400 at submission, and Reimplement is the lowest tier under both graders. Appendix D gives the disagreements by tier, and Q1 below gives the boundary and the flags.
+Where the two graders disagree, the auditor is the stricter one. Of the 28 runs that only one grader called reproduced, the human did in 19 and the auditor in 9, and the human count is the higher one in every tier (7 against 3 at Run, 7 against 4 at Retrain, 5 against 2 at Reimplement). Auditor-graded rates therefore sit slightly below human-graded rates, 73 against 83 of 400 at submission, and Reimplement is the lowest tier under both graders. Appendix D gives the disagreements by tier.
 
 **Q1: Confusion matrix, the 7/8 boundary and high-severity flags.**
 
@@ -77,7 +77,7 @@ The auditor's reproduced verdict has precision 64/73 = 88% [78%, 93%] and recall
 | Lower (0 to 5) | 2 | 7 | **192** | 201 |
 | Total | 73 | 86 | 213 | 372 |
 
-Of the 100 runs that either grader placed at 7 or 8, the two agree on the side of the boundary for 75, and 18 of the other 25 are one point apart. A high-severity flag forces the score to 0. Of the 57 runs that either grader placed there, they agree on 42, and the auditor graded no run reproduced that the human placed at 0.
+Of the 100 runs that either grader placed at 7 or 8, the two agree on the side of the boundary for 75. A high-severity flag forces the score to 0. Of the 57 runs that either grader placed there, they agree on 42, and the auditor graded no run reproduced that the human placed at 0.
 
 **Q2: Sensitivity to the match target and the default 5% tolerance.**
 
@@ -129,30 +129,25 @@ For the targets, a check by a model from another lab than the auditor supports t
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (3,810 characters)
+### Reply to rqBN, part 1 of 1 (3,109 characters)
 
 Thank you for checking how runs are graded and how their logs are protected.
 
 **W1: Validation of the auditor.**
 
-Appendix D now reports each measure you list, on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human.
-- *Precision and recall.* On the reproduced verdict they are 64/73 = 88% and 64/83 = 77% (F1 0.82), and the appendix gives the full confusion matrix.
-- *By tier.* Precision and recall are 90% and 80% at Run, 86% and 78% at Retrain, and 85% and 69% at Reimplement. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates.
-- *Full 0 to 10 scale.* The two give the same score to 253 of the 372 runs and differ by at most one point on 324 (quadratic weighted kappa 0.89).
-- *Anti-cheat flags.* A high-severity flag forces a score of 0. The two agree on 42 of the 57 runs that either placed there, the auditor alone flagged 11 and the human alone 4.
-- *Human labels.* Each run was labelled by one of three human graders, under the same rubric and blind to the auditor's score.
+Appendix D now reports each measure you list on the 372 runs graded by both the auditor (Claude Sonnet 5) and a human grader who was blind to the auditor's score. On the reproduced verdict, precision is 64/73 = 88% and recall is 64/83 = 77% (F1 0.82), and the appendix gives the confusion matrix and the values per tier. In every tier the auditor's misses outnumber its false positives, so its errors lower the reported rates. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89), and they agree on 42 of the 57 runs that either placed at 0 for a high-severity anti-cheat flag.
 
 **W2: Agent-writable logs without an integrity check.**
 
-The concern is sound. The harness writes commands.log and trajectory.jsonl into the folder the auditor reads, and the sandbox mounts that folder read-write, so we ran an analysis to find out whether any agent used this. The harness also writes every command to a transcript on the host, outside the sandbox, and we compared the two files with it over all 372 graded runs. Of the 45,861 entries that agent commands produced, 45,673 match exactly on the command, the return code and, for GPU jobs, the cost and remaining budget. The other 188 are bookkeeping differences that Appendix A lists by group. A search of every agent command for writes to the two files found one, on a run the auditor had already scored 1 of 10 as unverifiable. The current agents therefore left the logs alone in 371 of 372 runs, and making the logs tamper-proof is future work.
+The concern is sound. The harness writes commands.log and trajectory.jsonl into the folder the auditor reads, and the sandbox mounts that folder read-write, so we ran an analysis to find out whether any agent used this. We compared both files with the harness's own transcript on the host, outside the sandbox, over all 372 graded runs. Of the 45,861 entries that agent commands produced, 45,673 match exactly, and the other 188 are bookkeeping differences that Appendix A lists. A search of every agent command for writes to the two files found one, on a run the auditor had already scored 1 of 10. The current agents therefore left the logs alone in 371 of 372 runs, and making the logs tamper-proof is future work.
 
 **Q1: A stratified human-expert reproduction baseline.**
 
-The revision gives a lower bound on that baseline per tier. At least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement. These papers are reproducible in the same environment and budgets, and the best single agent reaches 13, 9 and 5 of them. To test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run (0.0400 and 0.0393 against 0.0395, target 0.05), and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.] Each task is also anchored to the authors' own reported result, which is an expert result on the same artifacts, and a separate expert pass over the 100 papers would need up to 2,552 H100-hours.
+The revision gives a lower bound on that baseline per tier. At least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so these papers are reproducible in the same environment and budgets. To test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.] Each task is also anchored to the authors' own reported result, an expert result on the same artifacts, and a separate expert pass over the 100 papers would need up to 2,552 H100-hours.
 
 **Q2: How claims, targets and tolerances were validated, and annotator agreement.**
 
-The revision adds an independent check of every target. OpenAI's gpt-6.1-sol, from a different lab than our auditor, compared each frozen target with its paper and quoted the passage behind each answer. The paper supports the value for 92 of the 100 claims, the metric for 95, the dataset and split for 76, and the method or variant for 69 (Appendix E). Correcting the other 8 values and rescoring their runs changes two verdicts, both on 2505.23747. Before the freeze, one author reviewed every extracted field. For tolerances, 58 of the 62 point-estimate claims use the default 5% and 4 use the margin their paper states. Rescoring every run at 1%, 2%, 5% and 10% gives the best agent 9, 12, 14 and 14 of the 34 Run papers, and Reimplement stays the lowest tier at each (Appendix F).
+The revision adds an independent check of every target. gpt-6.1-sol, from a different lab than our auditor, compared each frozen target with its paper and quoted the passage behind each answer. The paper supports the value for 92 of the 100 claims (Appendix E), and correcting the other 8 and rescoring their runs changes two verdicts, both on 2505.23747. Before the freeze, one author reviewed every extracted field. For tolerances, 58 of the 62 point-estimate claims use the default 5% and 4 use the margin their paper states, and Reimplement stays the lowest tier when every run is rescored at 1%, 2%, 5% and 10% (Appendix F).
 
 ### Sources (rqBN)
 
