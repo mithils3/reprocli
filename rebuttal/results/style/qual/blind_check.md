@@ -58,3 +58,16 @@ Whether a point the reviewer raised a second time received new content. The blin
 - Reviewer YGTR, part 1: "the counts are comparable, [3] in our loop and [2] in Codex CLI".
 - Reviewer rqBN, W1: "so its errors lower the reported rates slightly" (73 against 83 of 400).
 - Unchanged on purpose: the wording of the rqBN W2 answer, and every pointer to an appendix.
+
+## Second pass on the replies (2026-11-09, late)
+
+Each summary sentence was checked against the numbers printed beside it, by the main session and by one independent reader.
+
+- General reply: "adds the analyses the reviews asked for" became "adds these analyses", and "the findings of the submission stand" became "the ordering of the tiers is unchanged".
+- Reviewer T29u, W1: "The tier and agent comparisons hold under these intervals" became "Two comparisons are separated at the 5% level", and the mean-score interval bounds are printed (4.55 and 4.59 above 4.04 and 3.58).
+- Reviewer rqBN, W1: "each measure you list" became a sentence naming one human grader, and "lower the reported rates slightly" became "it counts 73 reproduced runs where the human counts 83".
+- Reviewer rqBN, Q2: the 92 of 100 is now named as the agreement between the frozen targets and the independent reader.
+- Reviewer YGTR, part 1: "The tier finding recurs" became "Run is again the easiest tier" (6 of 12, 0 of 12, 3 of 15), and the mini-SWE-agent row is filled from the databook (3 papers, 1 reproduced).
+- Reviewer YGTR, part 2, Q3: "as in the paper" became a pointer to Section 5.2.
+- Prepared second-round answers rewritten in rebuttal/drafts/followups_v3.md.
+- Left as they are: no reply mentions multi-human adjudication (rqBN W1) or the single venue and year (T29u W1).

@@ -10,7 +10,7 @@ Thank you for the review. We ran the frontier models and production harnesses yo
 | gpt-6.1-sol | Codex CLI | [15] | [2] | [6] | [4] |
 | gpt-6-astra | Codex CLI | [7] | [1] | [3] | [2] |
 | gpt-6-astra | our loop | [3] | [1] | [1] | [1] |
-| Muse Wonder | mini-SWE-agent | [n] | [a] | [d] | [m] |
+| Muse Wonder | mini-SWE-agent | [3] | [1] | [0] | [1] |
 | Muse Wonder | our loop | [n] | [a] | [d] | [m] |
 
 The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, so we also ran DeepSeek-V4-Flash twice more on the 12 core papers, where it reproduces [r2] and [r3]. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [9] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
@@ -19,4 +19,4 @@ The frontier runs stop early. They used a median of [2.1]% of their GPU grant, a
 
 **Whether the failure modes and findings change.**
 
-A coder that saw neither the verdict nor the harness labelled the main failure of each of the [30] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [4 of 30 = 13%] against 110 of 300 = 37% for the open agents, and [13 of 30] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The tier finding recurs: the frontier runs reproduce [6 of 12] at Run, [0 of 12] at Retrain and [3 of 15] at Reimplement (Section 5.3).
+A coder that saw neither the verdict nor the harness labelled the main failure of each of the [30] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [4 of 30 = 13%] against 110 of 300 = 37% for the open agents, and [13 of 30] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. Run is again the easiest tier: the frontier runs reproduce [6 of 12] at Run, [0 of 12] at Retrain and [3 of 15] at Reimplement (Section 5.3).
