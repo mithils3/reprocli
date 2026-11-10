@@ -9,7 +9,7 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 ### General reply (one part, 1,594 characters)
 
 We thank the three reviewers for their careful reading. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). The revision adds these analyses:
-- **Frontier models in production harnesses** (Section 5.1, Appendix B). gpt-6.1-sol reproduces [4 of 11] papers in our loop and [2 of 17] in Codex CLI, where the submitted runs of DeepSeek-V4-Flash reproduce [4 of 11] and [6 of 17] of the same papers.
+- **Frontier models in production harnesses** (Section 5.1, Appendix B). gpt-6.1-sol reproduces [4 of 11] papers in our loop and [2 of 18] in Codex CLI, where the submitted runs of DeepSeek-V4-Flash reproduce [4 of 11] and [6 of 18] of the same papers.
 - **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and three runs of DeepSeek-V4-Flash on 12 papers give the same verdict on [k] of the 12.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
 - **Log integrity** (Appendix A). Of the 45,861 entries in the agent-writable logs, 45,673 match a transcript kept on the host exactly, and the other 188 differ only in bookkeeping.
@@ -188,12 +188,12 @@ Thank you for the review. We ran the frontier models and production harnesses yo
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-[On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 17 and 1 of 7, where DeepSeek-V4-Flash reproduces 6 of 17 and 3 of 7.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
+[On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 18 and 1 of 7, where DeepSeek-V4-Flash reproduces 6 of 18 and 3 of 7.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
 | gpt-6.1-sol | our loop | [11] | [4] | [4] | [4] |
-| gpt-6.1-sol | Codex CLI | [17] | [2] | [6] | [4] |
+| gpt-6.1-sol | Codex CLI | [18] | [2] | [6] | [4] |
 | gpt-6-astra | Codex CLI | [7] | [1] | [3] | [2] |
 | gpt-6-astra | our loop | [4] | [1] | [2] | [2] |
 | Muse Wonder | mini-SWE-agent | [3] | [1] | [0] | [1] |
@@ -205,7 +205,7 @@ The frontier runs stop early. They used a median of [2.1]% of their GPU grant, a
 
 **Whether the failure modes and findings change.**
 
-A coder that saw neither the verdict nor the harness labelled the main failure of each of the [33] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [5 of 33 = 15%] against 110 of 300 = 37% for the open agents, and [14 of 33] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. Run is again the easiest tier: the frontier runs reproduce [6 of 12] at Run, [0 of 13] at Retrain and [3 of 17] at Reimplement (Section 5.3).
+A coder that saw neither the verdict nor the harness labelled the main failure of each of the [34] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [6 of 34 = 18%] against 110 of 300 = 37% for the open agents, and [14 of 34] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. Run is again the easiest tier: the frontier runs reproduce [6 of 13] at Run, [0 of 13] at Retrain and [3 of 17] at Reimplement (Section 5.3).
 
 ### Reply to YGTR, part 2 of 2 (2,710 characters)
 
