@@ -34,7 +34,7 @@ Source: rebuttal/results/e7/rescore_summary.md (correction effect); rebuttal/res
 
 ### If asked: Codex stops early, so a user would simply tell it to continue
 
-We measured that case. A Codex run ends when the model ends its own turn, which is also how a run ends in our loop. In a second set of runs we prompted Codex to continue, up to three times, whenever it stopped with under half of its GPU grant used, and it reproduces [c] of [n] papers against [c0] of the same papers without the prompt (Appendix B). On the [9] papers that gpt-6.1-sol finished in both harnesses the counts are [3] in our loop and [2] in Codex CLI.
+We measured that case. A Codex run ends when the model ends its own turn, which is also how a run ends in our loop. In a second set of runs we prompted Codex to continue, up to three times, whenever it stopped with under half of its GPU grant used, and it reproduces [c] of [n] papers against [c0] of the same papers without the prompt (Appendix B). On the [10] papers that gpt-6.1-sol finished in both harnesses the counts are [3] in our loop and [2] in Codex CLI.
 
 Source: rebuttal/results/frontier/same_paper_baselines.md; arm codex-gpt-6.1-sol-nudge (slots).
 
