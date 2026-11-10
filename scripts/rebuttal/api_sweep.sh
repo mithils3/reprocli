@@ -83,6 +83,9 @@ unset REPROCLI_OPENROUTER_PROVIDER
 export REPROCLI_REASONING_EFFORT="${REASONING}"
 export REPROCLI_CONTEXT_LENGTH="${CONTEXT_LENGTH}"
 export REPROCLI_NO_TRUNCATE_PROMPT=1
+# A GPU request waits as long as the Codex arm's (codex_run.py): the default gives up at --time + 8 h,
+# and since 11-08 the queue wait has been longer than that for most requests.
+export REPRO_QUEUE_GRACE_HOURS="${REPRO_QUEUE_GRACE_HOURS:-500}"
 if [[ "${RECLAIM_CLUSTER:-deltaai}" == "delta" ]]; then export REPROCLI_SLURM_ACCOUNT=bfvr-delta-gpu; else export REPROCLI_SLURM_ACCOUNT=betw-dtai-gh; fi
 if [[ "${PROVIDER}" == "openai" ]]; then
   export REPROCLI_SERVICE_TIER=flex

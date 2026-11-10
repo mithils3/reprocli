@@ -162,6 +162,20 @@ class AcquireSessionTests(unittest.TestCase):
         self.assertIn("job queued and waiting for resources", handle.stderr)
         self.assertIn("Pending job allocation 2759663", handle.stderr)
 
+    def test_queue_timeout_cancels_the_request_it_leaves_pending(self):
+        """Killing salloc leaves its job queued with no client; it must be cancelled."""
+        timed_out = subprocess.TimeoutExpired(
+            cmd=["salloc"], timeout=36000.0,
+            output=b"", stderr=b"salloc: Pending job allocation 3566337\n",
+        )
+        with mock.patch("reprocli_repro.slurm.subprocess.run", side_effect=timed_out), \
+                mock.patch("reprocli_repro.slurm.release_session") as release:
+            handle = acquire_session(
+                resolve_cluster("deltaai"), gpus=1, minutes=120, timeout=36000.0
+            )
+        self.assertFalse(handle.ok)
+        release.assert_called_once_with("3566337")
+
     def test_queue_timeout_accepts_str_output_too(self):
         """Same path when the platform hands back already-decoded text."""
         timed_out = subprocess.TimeoutExpired(

@@ -272,6 +272,11 @@ def acquire_session(
             part for part in (decode(exc.stdout), decode(exc.stderr)) if part.strip()
         )
         waited = f" after {exc.timeout:.0f}s" if exc.timeout else ""
+        # The timeout killed salloc, not its request: the job stays pending with no
+        # client, and Slurm fails it ~10 s after it starts (38 such starts, 11-08..11-10).
+        # Cancel it so it does not hold one of the user's backfill slots.
+        for stale in set(_JOBID_RE.findall(printed)):
+            release_session(stale)
         return SessionHandle(
             ok=False,
             jobid=None,
