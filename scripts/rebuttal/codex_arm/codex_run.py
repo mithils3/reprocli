@@ -96,6 +96,15 @@ FRESH_PREFIX = (
     "Your progress is on disk: read /repro/evidence/plan.md, commands.log and the other evidence "
     "files, and check /repro/workspace, before you continue. The original task follows.\n\n"
 )
+# Sent first when --continue-run-id reopens a run that the old 48-hour wall stopped while its GPU
+# request was still waiting in the queue. The session, workspace and evidence are the stopped run's.
+CONTINUE_PROMPT = (
+    "This run was stopped by a time limit of the launcher while a run_gpu request of yours was still "
+    "waiting in the queue, and that limit no longer applies. Continue the task from where it stopped. "
+    "/repro/workspace and /repro/evidence are unchanged. The waiting run_gpu request was cancelled, so "
+    "issue it again if you still need it. The report you wrote at the stop will be replaced by the "
+    "report you write when you finish."
+)
 RESUME_PROMPT = ("Continue the task from where it stopped. The previous request failed on a provider "
                  "error (rate limit or server error), which is not the end of the task.")
 def exec_flags(tier: str) -> str:
@@ -549,12 +558,19 @@ class Run:
                 self.stop_reason = "error"
                 break
 
-    def execute(self, task: str, final_prompt: str) -> tuple[str, str]:
-        """Run the work phase, then the final report pass. Returns (exit_reason, final report content)."""
+    def execute(self, task: str, final_prompt: str, continue_prompt: str | None = None) -> tuple[str, str]:
+        """Run the work phase, then the final report pass. Returns (exit_reason, final report content).
+
+        With ``continue_prompt`` the work phase reopens the run's stored session instead of starting one.
+        """
         events_path = self.io_dir.parent / "codex_events.jsonl"
         self.bridge.start()
+        if continue_prompt is None:
+            first = lambda tier: codex_body(self.model, task, kind="work", tier=tier)  # noqa: E731
+        else:
+            first = lambda tier: codex_body(self.model, continue_prompt, kind="resume", tier=tier)  # noqa: E731
         rc = self._with_retries(
-            lambda tier: codex_body(self.model, task, kind="work", tier=tier),
+            first,
             lambda tier: codex_body(self.model, RESUME_PROMPT, kind="resume", tier=tier),
             lambda tier: codex_body(self.model, FRESH_PREFIX + task, kind="fresh", tier=tier),
             "work", events_path, honor_stop=True,
@@ -621,6 +637,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lockfile")
     parser.add_argument("--split", help="lockfile split: eval or dev (default: harness default)")
     parser.add_argument("--run-id")
+    parser.add_argument("--continue-run-id",
+                        help="reopen this stopped run in its own run dir (same session, workspace and GPU "
+                             "spend) instead of starting a new run")
     parser.add_argument("--nudges", type=int, default=0,
                         help="send up to N continue prompts when the model ends its turn early (default 0: off)")
     return parser
@@ -639,7 +658,7 @@ def main(argv: list[str] | None = None) -> int:
     harness_argv = ["--paper-id", own.paper_id, "--runs-dir", own.runs_dir, "--model", own.model,
                     "--budget-h100-hours", str(own.budget_h100_hours)]
     # The arm is in the run id, so a Codex run is never mistaken for a thin-harness run in agent_runs/.
-    run_id = own.run_id or f"codex-{own.model}{'-nudge' if own.nudges > 0 else ''}-{new_run_id()}"
+    run_id = own.continue_run_id or own.run_id or f"codex-{own.model}{'-nudge' if own.nudges > 0 else ''}-{new_run_id()}"
     for flag, value in (("--partition", own.partition), ("--apptainer-image", own.apptainer_image),
                         ("--lockfile", own.lockfile), ("--split", own.split), ("--run-id", run_id)):
         if value:
@@ -649,6 +668,9 @@ def main(argv: list[str] | None = None) -> int:
     sandbox.forward_env()
 
     (ep,) = inputs.prepare_episodes(args)
+    continuing = own.continue_run_id is not None
+    if continuing and not (ep.run_paths.run_dir / "codex_io" / "codex_home").is_dir():
+        raise SystemExit(f"--continue-run-id: no stored codex session under {ep.run_paths.run_dir}")
     task = own.task_text if own.task_text is not None else paper_task_text(ep.row, budget=ep.budget, harness="codex")
     sb = sandbox.from_run_paths(
         ep.run_paths, image=args.cluster_profile.apptainer_image,
@@ -664,28 +686,51 @@ def main(argv: list[str] | None = None) -> int:
     io_dir = run_dir / "codex_io"
     (io_dir / "codex_home").mkdir(parents=True, exist_ok=True)
     (io_dir / "report_schema.json").write_text(json.dumps(report_mod.REPORT_JSON_SCHEMA), encoding="utf-8")
-    (run_dir / "codex_run.json").write_text(json.dumps({
-        "codex_version": codex_version(),
-        "codex_binary": str(CODEX_VENDOR / "bin" / "codex"),
-        "model": own.model,
-        "budget_h100_hours": own.budget_h100_hours,
-        "wall_hours": own.wall_hours,
-        "work_command": codex_body(own.model, task, kind="work"),
-        "resume_command": codex_body(own.model, RESUME_PROMPT, kind="resume"),
-        "final_command": codex_body(own.model, args.final_no_tools_message, kind="final"),
-        "standard_tier_value": STANDARD,
-        "request_retries": REQUEST_RETRIES,
-        "max_resumes": MAX_RESUMES,
-        "task_text": task,
-        "context_window": CONTEXT_WINDOW,
-        "auto_compact_token_limit": AUTO_COMPACT_LIMIT,
-        "sandbox": sb.status(),
-        "variant": "nudge" if own.nudges > 0 else "base",
-        "max_nudges": own.nudges,
+    prior_spent = 0.0
+    if continuing:
+        # GPU spend so far, from the last metered run_gpu line of the stopped run.
+        left = re.findall(r"remaining_h100h=([0-9.]+)",
+                          (run_dir / "agent.full.log").read_text(encoding="utf-8", errors="replace"))
+        prior_spent = max(0.0, own.budget_h100_hours - float(left[-1])) if left else 0.0
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+        for old in (run_dir / "report.json", io_dir / "final_message.json"):
+            if old.exists():  # the stopped run's report stays on disk and is not read as the new one
+                old.rename(old.with_name(f"{old.stem}.stopped-{stamp}{old.suffix}"))
+        for stale in list((io_dir / "bridge" / "req").glob("*.json")) + list((io_dir / "bridge" / "res").glob("*.json")):
+            stale.unlink()
+        meta = json.loads((run_dir / "codex_run.json").read_text(encoding="utf-8"))
+        meta.setdefault("continuations", []).append({
+            "at": stamp, "prior_spent_h100_hours": round(prior_spent, 4), "wall_hours": own.wall_hours,
+            "continue_command": codex_body(own.model, CONTINUE_PROMPT, kind="resume"),
+        })
+        (run_dir / "codex_run.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    else:
+        (run_dir / "codex_run.json").write_text(json.dumps({
+            "codex_version": codex_version(),
+            "codex_binary": str(CODEX_VENDOR / "bin" / "codex"),
+            "model": own.model,
+            "budget_h100_hours": own.budget_h100_hours,
+            "wall_hours": own.wall_hours,
+            "work_command": codex_body(own.model, task, kind="work"),
+            "resume_command": codex_body(own.model, RESUME_PROMPT, kind="resume"),
+            "final_command": codex_body(own.model, args.final_no_tools_message, kind="final"),
+            "standard_tier_value": STANDARD,
+            "request_retries": REQUEST_RETRIES,
+            "max_resumes": MAX_RESUMES,
+            "task_text": task,
+            "context_window": CONTEXT_WINDOW,
+            "auto_compact_token_limit": AUTO_COMPACT_LIMIT,
+            "sandbox": sb.status(),
+            "variant": "nudge" if own.nudges > 0 else "base",
+            "max_nudges": own.nudges,
     }, indent=2) + "\n", encoding="utf-8")
 
     recorder = Recorder(run_dir, ep.run_paths.evidence, own.model, ep.run_paths.workspace)
     run = Run(args, ctx, own.model, own.wall_hours, io_dir, recorder, own.nudges)
+    if continuing:
+        ctx.budget.spent_h100_hours = prior_spent
+        recorder.log_line(f"CONTINUE codex run {run_id}: stored session reopened, "
+                          f"prior_spent_h100h={prior_spent:.4f}")
     signal.signal(signal.SIGTERM, _interrupt)
     signal.signal(signal.SIGINT, _interrupt)
     # A hangup (the tmux pane or sweep shell ending) must not kill a run mid-turn: the run then
@@ -693,7 +738,8 @@ def main(argv: list[str] | None = None) -> int:
     signal.signal(signal.SIGHUP, signal.SIG_IGN)
     exit_reason, content = "error", ""
     try:
-        exit_reason, content = run.execute(task, args.final_no_tools_message)
+        exit_reason, content = run.execute(task, args.final_no_tools_message,
+                                           CONTINUE_PROMPT if continuing else None)
     except Interrupted as exc:
         recorder.log_line(f"STOP signal {exc}: codex run {run.tag} terminated")
         exit_reason, content = "interrupted", ""
