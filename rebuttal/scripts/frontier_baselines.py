@@ -29,7 +29,7 @@ def wilson(k, n, z=1.959964):
     den = 1 + z * z / n
     c = (p + z * z / (2 * n)) / den
     h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
-    return f"{k}/{n} [{100 * (c - h):.0f}%, {100 * (c + h):.0f}%]"
+    return f"{k}/{n} [{max(0.0, 100 * (c - h)):.0f}%, {min(100.0, 100 * (c + h)):.0f}%]"
 
 
 arms = collections.defaultdict(list)
