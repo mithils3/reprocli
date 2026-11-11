@@ -127,12 +127,13 @@ supplement, a file manifest, and an \texttt{info.json} of IDs. The
 \texttt{trajectory.jsonl}, \texttt{env.lock}, and \texttt{patches/}), plus
 one numbered log per GPU step, \texttt{plan.md}, and the \texttt{REPORT.md}
 the task prompt requires. Per-run token counts and GPU-utilization samples are
-recorded alongside. We bind \texttt{evidence/} read-write, so the agent
-can rewrite the harness-written \texttt{commands.log} and
-\texttt{trajectory.jsonl}, and the harness checks neither file while the run
-is live. The auditor traces every number to the command that produced it.
-Because the agent could edit these two files, we compared every logged entry
-with the transcript the harness writes on the host, outside the sandbox.
+recorded alongside. For the runs in this paper we bound \texttt{evidence/}
+read-write, so the agent could rewrite the harness-written
+\texttt{commands.log} and \texttt{trajectory.jsonl}, and the harness checked
+neither file while a run was live. The auditor traces every number to the
+command that produced it. Because the agent could edit these two files, we
+compared every logged entry with the transcript the harness writes on the
+host, outside the sandbox.
 
 \paragraph{Log comparison.} For each of the 372 graded runs we matched every
 entry that an agent command produced in the two files against the host
@@ -152,6 +153,15 @@ tamper-evident by construction, and its protection is that it lies outside
 every directory the sandbox mounts. The comparison detects edits made through
 the agent's own commands, which the transcript records, and it detects no
 other kind of edit.
+
+\paragraph{Read-only logs.} After this comparison we changed the harness so
+that the agent can no longer edit the two files. The sandbox mounts
+\texttt{commands.log} and \texttt{trajectory.jsonl} read-only on top of the
+read-write \texttt{evidence/} directory, and the \texttt{write\_file} and
+\texttt{edit\_file} tools refuse both paths. In a test inside the sandbox,
+appending to, overwriting, deleting, renaming and replacing either file all
+fail, while the harness still appends to both from the host. The 372 graded
+runs predate this change, and the comparison above is their check.
 % src: results/e5/README.md:9-17 (372/372 matched; 45,861 of 49,585 entries checked, 3,724 host-written; 45,673 passed; 185 explained; 3 unmatched; 1 write into commands.log, run 2510.25146; 65 runs missing 119 headers, workspace_bash.py:76-77 and run_gpu.py:145); results/e5/summary.json
 
 \begin{table}[ht]

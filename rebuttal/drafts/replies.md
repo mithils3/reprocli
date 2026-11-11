@@ -6,13 +6,13 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 
 ## General
 
-### General reply (one part, 1,593 characters)
+### General reply (one part, 1,656 characters)
 
 We thank the three reviewers for their careful reading. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). The revision adds these analyses:
 - **Frontier models in production harnesses** (Section 5.1, Appendix B). gpt-6.1-sol reproduces [4 of 11] papers in our loop and [2 of 18] in Codex CLI, where the submitted runs of DeepSeek-V4-Flash reproduce [4 of 11] and [6 of 18] of the same papers.
 - **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and three runs of DeepSeek-V4-Flash on 12 papers give the same verdict on [k] of the 12.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
-- **Log integrity** (Appendix A). Of the 45,861 entries in the agent-writable logs, 45,673 match a transcript kept on the host exactly, and the other 188 differ only in bookkeeping.
+- **Log integrity** (Appendix A). Of the 45,861 entries in the agent-writable logs, 45,673 match a transcript kept on the host exactly, and the other 188 differ only in bookkeeping. The harness now mounts both logs read-only inside the sandbox.
 - **Targets and tolerance** (Appendices E and F). A check by a model from another lab supports 92 of the 100 target values, the other 8 are corrected, and Reimplement stays the lowest tier at every tolerance from 1% to 10%.
 - **Failures outside the agent** (Sections 5.2 and 5.3). Removing every build failure moves no best-agent rate by more than one percentage point.
 
@@ -129,7 +129,7 @@ For the targets, a check by a model from another lab than the auditor supports o
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (3,654 characters)
+### Reply to rqBN, part 1 of 1 (3,884 characters)
 
 Thank you for checking how runs are graded and how their logs are protected.
 
@@ -139,11 +139,11 @@ We compared the auditor (Claude Sonnet 5) with one human grader on 372 runs, and
 
 **W2: Agent-writable logs without an integrity check.**
 
-The concern is sound. The harness writes commands.log and trajectory.jsonl into the folder the auditor reads, and the sandbox mounts that folder read-write, so we checked whether any agent used this. We compared both files with the harness's own transcript, kept on the host outside the sandbox, for all 372 graded runs. Of the 45,861 entries that agent commands produced, 45,673 match exactly. The other 188 differ only in bookkeeping: 100 calls the harness refused before they ran, 25 first attempts of retried calls, and 63 GPU-time values that differ by about one second or less (Appendix A). A search of every agent command for writes to the two files found one, on a run the auditor had already scored 1 of 10, so the agents left the logs alone in 371 of 372 runs. Making the logs tamper-proof is future work.
+The concern is sound. The harness writes commands.log and trajectory.jsonl into the folder the auditor reads, and the sandbox mounts that folder read-write, so we checked whether any agent used this. We compared both files with the harness's own transcript, kept on the host outside the sandbox, for all 372 graded runs. Of the 45,861 entries that agent commands produced, 45,673 match exactly. The other 188 differ only in bookkeeping: 100 calls the harness refused before they ran, 25 first attempts of retried calls, and 63 GPU-time values that differ by about one second or less (Appendix A). A search of every agent command for writes to the two files found one, on a run the auditor had already scored 1 of 10, so the agents left the logs alone in 371 of 372 runs. We have also closed the gap. The harness now mounts both files read-only inside the sandbox and its file tools refuse to write them, and in a test inside the sandbox every attempt to append to, overwrite, delete or rename either file fails.
 
 **Q1: A stratified human-expert reproduction baseline.**
 
-A human-expert baseline would be the best reference for these rates, and we were not able to run one. One expert pass over the 100 papers needs expert time on every paper and up to 2,552 H100-hours, the full GPU grant of one agent, and Limitations says so. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.]
+We agree that a human-expert reproduction would be the gold-standard baseline. We are not able to provide one within our resources, because one expert pass over the 100 papers needs expert time on every paper and up to 2,552 H100-hours, the full GPU grant of one agent. Limitations says so. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.]
 
 **Q2: How claims, targets and tolerances were validated, and annotator agreement.**
 
