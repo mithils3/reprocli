@@ -1,4 +1,4 @@
-Thank you for the detailed review, and for recognising the benchmark design as sound and reusable. We took your main concern seriously: we ran the frontier models and production harnesses you asked for and measured each confound you named.
+Thank you for the detailed review and for recognising the benchmark design as sound and reusable. We ran the frontier models and production harnesses you asked for and measured each confound you named.
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
@@ -19,4 +19,4 @@ The frontier runs stop early. They used a median of [2.4]% of their GPU grant, a
 
 **Whether the failure modes and findings change.**
 
-This is the question we most wanted to answer as well. A coder that saw neither the verdict nor the harness labelled the main failure of each of the [34] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [6 of 34 = 18%] against 110 of 300 = 37% for the open agents, and [14 of 34] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. Run is again the easiest tier: the frontier runs reproduce [7 of 14] at Run, [0 of 13] at Retrain and [3 of 17] at Reimplement (Section 5.3).
+A coder that saw neither the verdict nor the harness labelled the main failure of each of the [34] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [6 of 34 = 18%] against 110 of 300 = 37% for the open agents, and [14 of 34] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. Run is again the easiest tier: the frontier runs reproduce [7 of 14] at Run, [0 of 13] at Retrain and [3 of 17] at Reimplement (Section 5.3).
