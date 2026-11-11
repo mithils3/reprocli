@@ -46,13 +46,13 @@ We would be glad to answer further questions.
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (3,838 characters)
+### Reply to T29u, part 1 of 1 (3,879 characters)
 
 Thank you for your review. We are glad that you found the task important and the evaluation design careful.
 
 **W1: One run per agent-paper cell.**
 
-We agree that one run per cell leaves the comparisons open to noise. Every rate now has a 95% Wilson interval, and we measured run-to-run variation. DeepSeek-V4-Flash ran two more times on 12 papers (four per tier, fixed seed), and its verdict is the same in all three runs on [k] of the 12, with its reproduced count moving by at most [j].
+We agree that one run per cell leaves the comparisons open to noise. Every rate now has a 95% Wilson interval, given in the table below. To measure run-to-run variation directly, we are running DeepSeek-V4-Flash two more times on 12 papers (four per tier, fixed seed), and we will post the agreement of its verdict across the three runs in this thread as soon as those runs finish.
 
 | Agent | Run (34 papers) | Retrain (33) | Reimplement (33) |
 | :- | -: | -: | -: |
