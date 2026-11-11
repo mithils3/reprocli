@@ -129,7 +129,7 @@ For the targets, a check by a model from another lab than the auditor supports o
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (3,862 characters)
+### Reply to rqBN, part 1 of 1 (3,841 characters)
 
 Thank you for checking how runs are graded and how their logs are protected.
 
@@ -143,7 +143,7 @@ The concern is sound. The harness writes commands.log and trajectory.jsonl into 
 
 **Q1: A stratified human-expert reproduction baseline.**
 
-We agree that a human-expert reproduction would be the gold-standard baseline. We are not able to provide one within our resources, because one expert pass over the 100 papers needs expert time on every paper and up to 2,552 H100-hours, the full GPU grant of one agent. Limitations says so. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.]
+We agree that a human-expert reproduction would be the gold-standard baseline. We are not able to provide one within our resources, because one expert pass over the 100 papers needs expert time on every paper and up to 2,552 H100-hours, the full GPU grant of one agent. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.]
 
 **Q2: How claims, targets and tolerances were validated, and annotator agreement.**
 
