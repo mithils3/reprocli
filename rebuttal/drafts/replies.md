@@ -46,13 +46,13 @@ We would be glad to answer further questions.
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (4,263 characters)
+### Reply to T29u, part 1 of 1 (4,386 characters)
 
-Thank you for your review. We are glad that you found the task important and the evaluation design careful.
+Thank you for your review, and for noting that the task is important and the evaluation design careful.
 
 **W1: One run per agent-paper cell.**
 
-We agree that one run per cell leaves our results susceptible to noise. To account for this, every rate now carries a 95% interval, given in the table below. To measure the variation between runs, we are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, chosen with a fixed seed. As soon as these runs finish, we will post here how often the three runs of the same paper reach the same verdict.
+We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, chosen with a fixed seed. As soon as these runs finish, we will post here how often the three runs of the same paper reach the same verdict.
 
 | Agent | Run (34 papers) | Retrain (33) | Reimplement (33) |
 | :- | -: | -: | -: |
@@ -62,15 +62,15 @@ We agree that one run per cell leaves our results susceptible to noise. To accou
 | MiniMax-M2.7 | 2 = 6% [2%, 19%] | 5 = 15% [7%, 31%] | 1 = 3% [1%, 15%] |
 | At least one agent | 16 = 47% [31%, 63%] | 11 = 33% [20%, 50%] | 5 = 15% [7%, 31%] |
 
-The reproduction rate of Run papers is above that of Reimplement papers for DeepSeek-V4-Flash (38% against 12%, z = 2.46) and for papers reproduced by at least one agent (47% against 15%, z = 2.81). Both differences are statistically significant, and every agent has its lowest reproduction rate at Reimplement. DeepSeek-V4-Flash and Muse Spark 1.2 have mean audit scores of 5.13 and 5.14 of 10, and Qwen3.6-27B and MiniMax-M2.7 have 3.51 and 3.03. The rates also do not depend on environment failures. When we remove the 24 runs that failed on a build or dependency error, no best-agent reproduction rate moves by more than one percentage point (Section 5.3).
+For the tier-level comparison, the reproduction rate at Run is higher than at Reimplement for DeepSeek-V4-Flash (38% against 12%, z = 2.46) and for papers reproduced by at least one agent (47% against 15%, z = 2.81), and both differences are statistically significant. Every agent also has its lowest reproduction rate at Reimplement. For the agent ranking, DeepSeek-V4-Flash and Muse Spark 1.2 have mean audit scores of 5.13 and 5.14 of 10, and Qwen3.6-27B and MiniMax-M2.7 have 3.51 and 3.03. On environment sensitivity, when we remove the 24 runs that failed on a build or dependency error, no best-agent reproduction rate moves by more than one percentage point (Section 5.3).
 
 **W2: The auditor's disagreements with the human grade.**
 
-When the human grader and the LLM auditor disagree, the auditor tends to be the stricter of the two. In 28 runs only one of them marked the run as reproduced, the human in 19 and the auditor in 9. The same holds in every tier, with 7 against 3 at Run, 7 against 4 at Retrain and 5 against 2 at Reimplement. The auditor's reproduction rate is therefore slightly below the human's (73 against 83 of 400 runs at submission), and Reimplement has the lowest reproduction rate under both graders (Appendix D).
+When the human grader and the LLM auditor disagree, the auditor tends to be the stricter of the two. In 28 runs only one of the two marked the run as reproduced: the human grader in 19 and the auditor in 9. The same direction holds in every tier, with 7 against 3 at Run, 7 against 4 at Retrain and 5 against 2 at Reimplement. The auditor's reproduction rate is therefore slightly below the human's (73 reproduced runs against 83 at submission), and Reimplement has the lowest reproduction rate under both graders (Appendix D).
 
 **Q1: Confusion matrix, the 7/8 boundary and high-severity flags.**
 
-Against the human grade, the auditor's reproduced verdict has precision $\frac{64}{73}$ = 88% [78%, 93%] and recall $\frac{64}{83}$ = 77% [67%, 85%]. The table below condenses the five-way matrix of Appendix D.
+Against the human grade, the auditor's reproduced verdict has precision $\frac{64}{73}$ = 88% [78%, 93%] and recall $\frac{64}{83}$ = 77% [67%, 85%]. The confusion matrix below condenses the five-way matrix of Appendix D.
 
 | Human ↓ / Auditor → | Reproduced | Partial | Lower | Total |
 | :- | -: | -: | -: | -: |
@@ -79,11 +79,11 @@ Against the human grade, the auditor's reproduced verdict has precision $\frac{6
 | Lower (0 to 5) | 2 | 7 | **192** | 201 |
 | Total | 73 | 86 | 213 | 372 |
 
-At the 7/8 boundary, 100 runs received a 7 or an 8 from at least one grader, and the two graders put 75 of them on the same side of it. A high-severity flag sets a run's score to 0. In total 57 runs received a 0 from at least one grader, and both graders gave a 0 to 42 of them. The auditor marked no run as reproduced that the human had scored 0.
+At the 7/8 boundary, 100 runs received a 7 or an 8 from at least one grader, and the two graders put 75 of them on the same side of it. For high-severity flags, which set a run's score to 0, 57 runs received a 0 from at least one grader and both graders gave a 0 to 42 of them. None of the runs that the human scored 0 was marked as reproduced by the auditor.
 
 **Q2: Sensitivity to the match target and the default 5% tolerance.**
 
-A run matches its target when its result is within a relative tolerance of the value the paper reports, which is 5% by default. We rescored every run at tolerances of 1%, 2%, 5% and 10%, and Reimplement has the lowest reproduction rate at each of them. Counts at submission (Appendix F):
+We rescored every run at tolerances of 1%, 2%, 5% and 10%, and Reimplement has the lowest reproduction rate at each of them. A run matches its target when its result is within a relative tolerance of the value the paper reports, which is 5% by default. The counts at submission are in the table below (Appendix F).
 
 | Relative tolerance | 1% | 2% | 5% | 10% |
 | :- | -: | -: | -: | -: |
@@ -92,7 +92,7 @@ A run matches its target when its result is within a relative tolerance of the v
 | Best agent, Reimplement (of 33) | 4 | 5 | 5 | 5 |
 | All agents (of 400) | 56 | 65 | 73 | 82 |
 
-For the targets, we asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper. It confirmed our value for 92 of the 100 claims (Appendix E). When we correct the other 8 targets and rescore their runs, only two verdicts change. Both are on one paper (2505.23747), and the best-agent count at Run goes from 14 to 13 of 34.
+For the match targets, we asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper. It confirmed our value for 92 of the 100 claims (Appendix E). When we correct the other 8 targets and rescore their runs, only two verdicts change. Both are on one paper (2505.23747), and the best-agent count at Run goes from 14 to 13 of 34.
 
 Please let us know if anything here needs more detail, and thank you again for your time.
 
@@ -133,25 +133,25 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,283 characters)
+### Reply to rqBN, part 1 of 1 (4,337 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
 **W1: Validation of the auditor.**
 
-We compared the auditor (Claude Sonnet 5) with one human grader on 372 runs, and the grader did not see the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In 28 runs only one of them marked the run as reproduced, the human in 19 and the auditor in 9, and the same holds in every tier. On the full 0 to 10 scale the two differ by at most one point on 324 of the 372 runs, with a quadratic weighted kappa of 0.89. A high-severity anti-cheat flag sets a run's score to 0, and both gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
+We compared the auditor (Claude Sonnet 5) with one human grader on 372 runs, and the grader did not see the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In 28 runs only one of the two marked the run as reproduced (the human grader in 19, the auditor in 9), and the same direction holds in every tier. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
 
 **W2: Agent-writable logs without an integrity check.**
 
-Our harness wrote commands.log and trajectory.jsonl into a folder that the auditor reads, and our sandbox mounted that folder read-write. Given this, we checked whether any agent had modified the two files during a run. For all of our graded runs we compared them with the harness's own transcript, which is written to a folder the agent has no access to. Of the 45,861 entries from agent commands, 45,673 match exactly, and the other 188 differ only in bookkeeping, such as refused or retried calls and GPU-time values that differ by about a second (Appendix A). A search of every agent command for writes to the two files found one, in a run the auditor had already scored 1 of 10. Following your comment, the harness now mounts both files read-only inside the sandbox, so an agent can no longer change them (Appendix A).
+Our harness wrote commands.log and trajectory.jsonl into a folder that the auditor reads, and our sandbox mounted that folder read-write. We therefore checked whether any agent had modified the two files during a run. For every graded run, we compared both files with the harness's own transcript, an external log written to a folder the agent has no access to. Of the 45,861 entries from agent commands, 45,673 match exactly, and the other 188 differ only in bookkeeping, such as refused or retried calls and GPU-time values that differ by about a second (Appendix A). We also searched every agent command for writes to the two files and found one, in a run the auditor had already scored 1 of 10. Following your comment, the harness now mounts both files read-only inside the sandbox, so an agent can no longer change them (Appendix A).
 
 **Q1: A stratified human-expert reproduction baseline.**
 
-We agree that a human-expert reproduction would be the gold-standard baseline. However, the cost of one would be very high. For example, in PaperBench, ML PhDs reached 41.4% of the replication rubric after 48 hours of work on a paper. At that allowance, one pass over our 100 papers would take about 4,800 expert-hours (100 × 48), or 120 working weeks, which is more than we are able to provide. To still address this point, our revision reports what we can measure in its place. First, at least one of our four agents reproduced 32 of the 100 papers (95% interval 24% to 42%), with 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement. These papers are therefore known to be reproducible in the same environment and budget. Second, each target is technically an expert result already, since it is the number that the paper's own authors reported from the same code and data. Third, to test whether a miss comes from the agent or from the environment, we took 3 runs that were graded partial and ran their final commands again ourselves, with two new seeds and without the agent (Section 5.3). On 2505.17836 both seeds miss the target by the same amount as the agent's run. On 2510.07501 the two seeds differ from each other by more than the original miss. On 2506.10351 the new seeds give 93.65% and 94.15% against a target of 93.12%, within 0.54 points of the agent's 94.19%, so the agent's measurement repeats without the agent.
+We agree that a human-expert reproduction would be the gold-standard baseline. However, the cost of one would be very high. For example, in PaperBench, ML PhDs reached 41.4% of the replication rubric after 48 hours of work on a paper. At that allowance, one pass over our 100 papers would take about 4,800 expert-hours (100 × 48), or 120 working weeks, which is more than we are able to provide. To still address this point, our revision reports what we can measure in its place. First, at least one of our four agents reproduced 32 of the 100 papers (95% interval 24% to 42%), with 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement. These papers are therefore known to be reproducible in the same environment and budget. Second, each target is technically an expert result already, since it is the number that the paper's own authors reported from the same code and data. Third, to check the agents' results independently of the agents, we took 3 runs that were graded partial and ran their final commands again ourselves, with two new seeds and without the agent (Section 5.3). On 2505.17836 both seeds miss the target by the same amount as the agent's run. On 2510.07501 the two seeds differ from each other by more than the original miss. On 2506.10351 the new seeds give 93.65% and 94.15% against a target of 93.12%, within 0.54 points of the agent's 94.19%, so the agent's result repeats when the commands are run without the agent.
 
 **Q2: How claims, targets and tolerances were validated, and annotator agreement.**
 
-The revision adds an independent check of every target. We asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper and to quote the passage behind each answer. It confirmed our value for 92 of the 100 claims (Appendix E), which is the agreement between our targets and an independent reader. When we correct the other 8 targets and rescore their runs, only two verdicts change, both on 2505.23747. Before the dataset was frozen, one author also reviewed every extracted field. For tolerances, 58 of the 62 point-estimate claims use the default of 5%, and the other 4 use the margin stated in their paper. Reimplement keeps the lowest reproduction rate when every run is rescored at 1%, 2%, 5% and 10%, where the best agent reproduces 4, 5, 5 and 5 of its 33 papers against 9, 12, 14 and 14 of 34 at Run (Appendix F).
+The revision adds an independent check of every target. We asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper and to quote the passage behind each answer. It confirmed our value for 92 of the 100 claims (Appendix E), which is the agreement between our targets and an independent reader. When we correct the other 8 targets and rescore their runs, only two verdicts change, both on 2505.23747. Before the dataset was frozen, one author also reviewed every extracted field. For tolerances, 58 of the 62 point-estimate claims use the default of 5%, and the other 4 use the margin stated in their paper. When every run is rescored at 1%, 2%, 5% and 10%, Reimplement keeps the lowest reproduction rate: the best agent reproduces 4, 5, 5 and 5 of its 33 papers, against 9, 12, 14 and 14 of 34 at Run (Appendix F).
 
 We are happy to answer any follow-up questions. Thank you again for the review.
 
