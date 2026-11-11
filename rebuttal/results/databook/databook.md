@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-11T15:02:35Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 50 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-11T17:04:44Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 51 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -16,7 +16,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | miniswe | 6 | 5 | 3/5 [23.1, 88.2] | 6.60 | 0.40 (n=5) | 0 |
 | thin-gpt-6-astra | not planned | 5 | 1/5 [3.6, 62.4] | 5.40 | -1.80 (n=5) | 1 |
 | thin-gpt-6-astra-x86 | not planned | 2 | 1/2 [9.5, 90.5] | 5.00 | -1.00 (n=2) | 1 |
-| thin-gpt-6.1-sol-x86 | not planned | 1 | 0/1 [0.0, 79.3] | 7.00 | -1.00 (n=1) | 0 |
+| thin-gpt-6.1-sol-x86 | not planned | 2 | 1/2 [9.5, 90.5] | 7.50 | -0.50 (n=2) | 0 |
 
 Per-run rows (one per grades.jsonl row since 2026-11-07):
 
@@ -72,6 +72,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6-astra | gpt-6-astra | 2510.21363 | 8h | astra-a-2510.21363-f8d61a | 7 | partial | False | retrain | 8 | 8 | 7 | 4 | 8 | -1 | partial | natural |  | 8.0 | 6.6664 |
 | thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2504.20571 | 8h | astra-x86-2504.20571-9cbb59 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.2498 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2505.21077 | 8h | codex-gpt-6.1-sol-20261109T054344Z-6bf9fb | 6 | partial | False | retrain | 7 | 0 | 6 | 3 | 7 | -1 | partial | natural | 3310.58 | 8.0 | 1.5996 |
+| thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2504.20571 | 8h | x86-a-2504.20571-9239b5 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.2637 |
 
 ## 2. Static results (final)
 
@@ -121,9 +122,9 @@ Source: /work/nvme/bfvr/msalunkhe/rebuttal/e10/state.json job ids; sacct -X -n -
 | 3544921 | e10-2505.17836-s2 | FAILED | 00:01:56 | pending |
 | 3550323 | e10-2505.17836-s2 | FAILED | 00:00:05 | pending |
 | 3544922 | e10-2506.10351-s1 | FAILED | 00:02:14 | pending |
-| 3558022 | e10-2506.10351-s1 | PENDING | 00:00:00 | pending |
+| 3558022 | e10-2506.10351-s1 | COMPLETED | 00:51:37 | final |
 | 3544923 | e10-2506.10351-s2 | FAILED | 00:03:07 | pending |
-| 3558023 | e10-2506.10351-s2 | PENDING | 00:00:00 | pending |
+| 3558023 | e10-2506.10351-s2 | COMPLETED | 00:52:23 | final |
 
 ## 4. Repeat and rerun jobs (YGTR Q3, W2)
 

@@ -1,6 +1,6 @@
 # Open agents on each frontier arm's own papers
 
-Source: rebuttal/results/databook/frontier_cells.csv (50 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
+Source: rebuttal/results/databook/frontier_cells.csv (51 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
 
 | arm | graded | reproduced | mean score | DeepSeek-V4-Flash reproduced | DeepSeek-V4-Flash mean | Muse Spark 1.2 reproduced | Muse Spark 1.2 mean | Qwen3.6-27B reproduced | Qwen3.6-27B mean | MiniMax-M2.7 reproduced | MiniMax-M2.7 mean |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -10,7 +10,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (50 graded rows). Reproduce
 | miniswe | 5 | 3/5 [23%, 88%] | 6.60 | 2/5 | 5.40 | 2/5 | 5.40 | 2/5 | 4.60 | 1/5 | 2.80 |
 | thin-gpt-6-astra | 5 | 1/5 [4%, 62%] | 5.40 | 3/5 | 7.00 | 2/5 | 6.80 | 2/5 | 4.80 | 2/5 | 4.40 |
 | thin-gpt-6-astra-x86 | 2 | 1/2 [9%, 91%] | 5.00 | 1/2 | 6.00 | 0/2 | 5.50 | 1/2 | 6.00 | 0/2 | 3.00 |
-| thin-gpt-6.1-sol-x86 | 1 | 0/1 [0%, 79%] | 7.00 | 1/1 | 8.00 | 1/1 | 8.00 | 1/1 | 8.00 | 1/1 | 8.00 |
+| thin-gpt-6.1-sol-x86 | 2 | 1/2 [9%, 91%] | 7.50 | 2/2 | 8.00 | 1/2 | 7.50 | 2/2 | 8.00 | 1/2 | 7.00 |
 
 ## Frontier runs by tier
 
@@ -22,7 +22,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (50 graded rows). Reproduce
 | miniswe | 2/2 | 0/1 | 1/2 |
 | thin-gpt-6-astra | 1/1 | 0/2 | 0/2 |
 | thin-gpt-6-astra-x86 | 1/1 | 0/0 | 0/1 |
-| thin-gpt-6.1-sol-x86 | 0/0 | 0/0 | 0/1 |
+| thin-gpt-6.1-sol-x86 | 1/1 | 0/0 | 0/1 |
 | all arms on GH200 nodes | 7/14 [27%, 73%] | 0/15 [0%, 20%] | 4/18 [9%, 45%] |
 
 ## gpt-6.1-sol, our loop against Codex CLI, papers graded in both

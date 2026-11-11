@@ -133,7 +133,7 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,010 characters)
+### Reply to rqBN, part 1 of 1 (4,141 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
@@ -147,7 +147,7 @@ The harness wrote commands.log and trajectory.jsonl into the folder the auditor 
 
 **Q1: A stratified human-expert reproduction baseline.**
 
-We agree that a human-expert reproduction would be the gold-standard baseline. In PaperBench, ML PhDs reached 41.4% of the replication rubric after 48 hours of work on a paper. At that allowance one pass over our 100 papers is about 4,800 expert-hours (100 × 48), or 120 working weeks, which is more than we are able to provide. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. [On 2506.10351 the new seeds gave x and y.]
+We agree that a human-expert reproduction would be the gold-standard baseline. In PaperBench, ML PhDs reached 41.4% of the replication rubric after 48 hours of work on a paper. At that allowance one pass over our 100 papers is about 4,800 expert-hours (100 × 48), or 120 working weeks, which is more than we are able to provide. The revision reports what we can measure in its place. First, at least one of the four agents reproduced 32 of the 100 papers (95% Wilson interval 24% to 42%): 16 of 34 at Run, 11 of 33 at Retrain and 5 of 33 at Reimplement, so at least these papers are reproducible in the same environment and budgets. Second, each target is the authors' own reported result, which is an expert result on the same artifacts. Third, to test whether misses come from the environment, we re-ran the final commands of 3 partial runs with two new seeds and no agent (Section 5.3). On 2505.17836 both seeds miss by the same amount as the agent's run, and on 2510.07501 the seeds differ by more than the original miss. On 2506.10351 the new seeds give 93.65% and 94.15% against a target of 93.12%, within 0.54 points of the agent's 94.19%, so the agent's measurement repeats without the agent.
 
 **Q2: How claims, targets and tolerances were validated, and annotator agreement.**
 
@@ -213,7 +213,7 @@ We also noticed that the frontier runs stop early. They used a median of [2.6]% 
 
 The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [36] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 36 = 19%] against 110 of 300 = 37% for the open agents, and [14 of 36] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [7 of 14] at Run, [0 of 15] at Retrain and [4 of 18] at Reimplement (Section 5.3).
 
-### Reply to YGTR, part 2 of 2 (2,863 characters)
+### Reply to YGTR, part 2 of 2 (2,924 characters)
 
 **W2: Failures due to hardware differences.**
 
@@ -229,7 +229,7 @@ Thank you for suggesting this check, which changed two grades. We scanned the ru
 
 **Q3: Failures that were not the agent's fault.**
 
-We traced 27 of the 400 cells to causes outside the agent: 6 cells with no graded run, and the 21 of W2's 24 build and dependency failures that came from the environment. Of the 28 cells with no graded run, 4 belong to paper 2510.20725, whose runs did not start because of a harness error that is now fixed, and 2 were Muse Spark 1.2 audits that never returned a verdict. The same auditor has now graded those 2, one reproduced and one partial. [We reran the 4 cells of 2510.20725, and r of them reproduce.] The other 22 are agent failures, and Section 5.2 now accounts for each of the 28. For runs that followed the released pipeline and missed, we re-ran the final commands of 3 with new seeds and no agent, and the 2 Retrain papers miss again on both seeds. [Run paper 2506.10351: outcome on both seeds.]
+We traced 27 of the 400 cells to causes outside the agent: 6 cells with no graded run, and the 21 of W2's 24 build and dependency failures that came from the environment. Of the 28 cells with no graded run, 4 belong to paper 2510.20725, whose runs did not start because of a harness error that is now fixed, and 2 were Muse Spark 1.2 audits that never returned a verdict. The same auditor has now graded those 2, one reproduced and one partial. [We reran the 4 cells of 2510.20725, and r of them reproduce.] The other 22 are agent failures, and Section 5.2 now accounts for each of the 28. For runs that followed the released pipeline and missed, we re-ran the final commands of 3 with new seeds and no agent, and the 2 Retrain papers miss again on both seeds. On the Run paper, 2506.10351, both seeds land within 0.54 points of the agent's 94.19% (93.65% and 94.15%).
 
 We would be glad to discuss any of these results further. Thank you again.
 

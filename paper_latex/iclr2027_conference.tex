@@ -613,14 +613,14 @@ DeepSeek-V4-Flash met the same packaging gaps and adapted in two ways. On
 % src: results/e8/summary.json build_dependency_runs (total 24; class_counts A 16, O 5, E 3; explicit_aarch64_minimax_run 5); results/e8/x86/README.md:3-4 (2 of the 16 not chip failures, so 14 aarch64 and 5 + 2 = 7 other; 12 replayed, 9 build, Wilson 0.47 to 0.91); results/e8/bound.csv (dsv4 env_runs 0, 0, 1; best Run 13/34 unchanged; Reimplement 5/33 -> 5/32 = 15.2% -> 15.6%; Retrain best stays dsv4 9/33 after the CogVLA correction, Muse 8/32)
 one paper it rebuilt the failing package from source and, when the authors' scorer hit the job memory cap, rewrote and checked it against the original (Appendix~\ref{vig:dsv4-run-2503.18430}), and on another
 it replaced the package with an unvalidated port the auditor disqualified.
-To test whether a miss outside tolerance recurs without the agent, we
+To test whether a partial result recurs without the agent, we
 re-ran the final command sequence of three such runs on the same nodes with
 two new seeds and no model in the loop. On 2505.17836 both seeds miss again
 and the measured value repeats within 0.0007, so that miss recurs without the
 agent. On 2510.07501 the value moves by 0.28 across seeds against a target of
 $-0.20$, which puts the original near miss inside seed variation.
-\todo{On 2506.10351 both seeds ... .}
-% src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351 pending); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)
+On 2506.10351, a Run paper, the two seeds give 93.65\% and 94.15\% against a target of 93.12\%, within 0.54 points of the agent's 94.19\%, so the agent's measurement repeats without the agent.
+% src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351: 93.65, 94.15, original 94.19, target 93.12, 94.19 - 93.65 = 0.54, jobs 3558022 and 3558023); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)
 
 \paragraph{Failures of the frontier runs.}
 Claude Sonnet 5, blind to verdict and arm, labeled the \todo{36} failing frontier runs
