@@ -18,6 +18,8 @@ import collections
 import csv
 import glob
 import gzip
+import shutil
+import tempfile
 import json
 import multiprocessing
 import os
@@ -348,7 +350,14 @@ def main(argv):
     }
     export.write_json(FRONT_INDEX, front)
 
-    hits, n_files, _bytes, _allowed = scrub.gate_tree(export.OUT)
+    # gate the frontier files alone: the 372 indexed runs are unchanged and
+    # were gated when they were exported, and a pass over all of them is slow
+    with tempfile.TemporaryDirectory(dir=os.path.dirname(export.OUT)) as tmp:
+        os.makedirs(os.path.join(tmp, "data", "frontier"))
+        for name in os.listdir(FRONT_DIR):
+            os.link(os.path.join(FRONT_DIR, name), os.path.join(tmp, "data", "frontier", name))
+        shutil.copy(FRONT_INDEX, os.path.join(tmp, "data", "frontier.json"))
+        hits, n_files, _bytes, _allowed = scrub.gate_tree(tmp)
     total = sum(len(v) for v in hits.values()) if isinstance(hits, dict) else len(hits)
     print("%d frontier runs beside %d indexed runs; leak gate over %d files: %d hits"
           % (len(entries), len(index["runs"]), n_files, total))
