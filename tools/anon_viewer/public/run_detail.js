@@ -29,7 +29,8 @@
       const list = window.Runs.ordered();
       const i = list.findIndex((r) => r.id === this.id);
       if (i >= 0) return { list, i };
-      const all = window.Data.runs;
+      const fr = window.Data.byId[this.id];
+      const all = fr && fr.frontier ? window.Data.frontierRuns : window.Data.runs;
       return { list: all, i: all.findIndex((r) => r.id === this.id) };
     },
 
@@ -37,11 +38,12 @@
       const { list, i } = this.order();
       const prev = i > 0 ? list[i - 1] : null;
       const next = i >= 0 && i < list.length - 1 ? list[i + 1] : null;
+      const fr = window.Data.byId[this.id] && window.Data.byId[this.id].frontier;
       const btn = (r, label, cls) => r
         ? `<button class="filt ${cls}" data-goto="${esc(r.id)}" title="${esc(r.claim || r.arxiv_id)}">${label}</button>`
         : `<button class="filt ${cls}" disabled>${label}</button>`;
       const pos = i >= 0 ? `<span class="rd-pos tnum">${i + 1} of ${list.length}</span>` : "";
-      return `<div class="rd-nav"><button class="crumb" id="rd-back">‹ all runs</button>
+      return `<div class="rd-nav"><button class="crumb" id="rd-back">${fr ? "‹ frontier" : "‹ all runs"}</button>
         <span class="rd-nav-r">${pos}${btn(prev, "‹ previous", "rd-prev")}${btn(next, "next ›", "rd-next")}</span></div>`;
     },
 
@@ -148,7 +150,8 @@
     wireNav() {
       const host = this.root();
       const back = host.querySelector("#rd-back");
-      if (back) back.onclick = () => window.go(window.runsHash());
+      const fr = window.Data.byId[this.id] && window.Data.byId[this.id].frontier;
+      if (back) back.onclick = () => window.go(fr ? "#/frontier" : window.runsHash());
       host.querySelectorAll("[data-goto]").forEach((b) => {
         b.onclick = () => window.go("#/run/" + encodeURIComponent(b.dataset.goto));
       });

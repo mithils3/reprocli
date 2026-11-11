@@ -13,7 +13,7 @@ const State = {
 };
 window.State = State;
 
-const VIEWS = ["overview", "runs", "run", "papers", "about"];
+const VIEWS = ["overview", "runs", "run", "papers", "frontier", "about"];
 const FILTERED_VIEWS = { overview: 1, runs: 1, papers: 1 };
 
 // ---- hash routing ----------------------------------------------------------
@@ -36,14 +36,15 @@ function go(hash) { if (location.hash === hash) route(); else location.hash = ha
 window.go = go;
 window.runsHash = runsHash;
 
-function showView(v) {
+// tab is the nav tab to light up; a frontier run lights Frontier, others Runs
+function showView(v, tab) {
   State.view = v;
   VIEWS.forEach((name) => {
     const elx = $("#view-" + name);
     if (elx) elx.classList.toggle("hidden", name !== v);
   });
   document.querySelectorAll(".tab").forEach((t) => {
-    const on = t.dataset.view === v || (v === "run" && t.dataset.view === "runs") || (v === "paper" && t.dataset.view === "papers");
+    const on = t.dataset.view === (tab || v) || (v === "paper" && t.dataset.view === "papers");
     t.classList.toggle("active", on);
   });
   // About has nothing to filter, but taking the bar out of the page dropped the
@@ -67,7 +68,8 @@ function route() {
     window.Runs.render();
   } else if (head === "run" && parts[1]) {
     State.runId = decodeURIComponent(parts[1]);
-    showView("run");
+    const fr = !!(window.Data.byId[State.runId] || {}).frontier;
+    showView("run", fr ? "frontier" : "runs");
     window.RunDetail.open(State.runId);
   } else if (head === "papers") {
     showView("papers");
@@ -76,6 +78,9 @@ function route() {
     State.arxiv = decodeURIComponent(parts[1]);
     showView("papers");
     window.PapersView.renderPaper(State.arxiv);
+  } else if (head === "frontier") {
+    showView("frontier");
+    window.Frontier.render();
   } else if (head === "about") {
     showView("about");
   } else {

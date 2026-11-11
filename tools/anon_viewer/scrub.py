@@ -576,6 +576,11 @@ def _rule_sources():
         # 42. the retired difficulty vocabulary joined to the word it labels by
         # a hyphen or an underscore, which rule 23 reads as two separate words
         (r"\b(?:easy|medium|hard)[-_](?=difficulty)", "", re.I),
+        # 44. the API account's organization id, which a rate-limit message
+        # of the model provider prints in full
+        (r"\borg-[A-Za-z0-9]{8,}", "[org]", 0),
+        # 45. the working folder the later runs were launched from
+        (r"\brebuttal\b", "runs", re.I),
         # 43. the job window once more, after every other rule has run, so a
         # [job] an earlier rule wrote is the job word for the ids beside it.
         (_JOBNUM, _job_repl, 0),
@@ -648,6 +653,8 @@ GATE_LITERALS = [
 # parenthesis, and the private-address patterns stay inside the RFC1918 and
 # campus prefixes so that a version string like 0.10.x is not an address.
 GATE_SHAPES = [
+    ("api-org-id", r"\borg-[A-Za-z0-9]{16,}"),
+    ("working-folder", r"\brebuttal\b"),
     ("posix-group", r"\bgrp_\d"),
     ("posix-id", r"\b(?:uid|gid)=\d|\bgroups=\d+\("),
     ("blade-node", r"\bx\d{3,5}c\d+[rs]\d+b\d+\b"),
@@ -883,6 +890,9 @@ def gate_tree(root, per_pattern=20):
 # selftest
 # --------------------------------------------------------------------------
 CASES = [
+    ("Rate limit reached in organization org-AbCdEfGh1234567890XyZw on tokens",
+     "Rate limit reached in organization [org] on tokens"),
+    ("cd /srv/rebuttal/codex && ls", "cd /srv/runs/codex && ls"),
     # 1 secrets
     ("export HF_TOKEN=hf_QWERTYuiopASDFGHjklZXCVB1234",
      "export HF_TOKEN=[redacted]"),

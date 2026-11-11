@@ -45,6 +45,7 @@
         <button class="tab active" data-view="overview">Overview</button>
         <button class="tab" data-view="runs">Runs</button>
         <button class="tab" data-view="papers">Papers</button>
+        <button class="tab" data-view="frontier">Frontier</button>
         <button class="tab" data-view="about">About</button>
       </nav>
       <div class="who">
@@ -72,6 +73,11 @@
     <!-- PAPERS: every target paper by claim, one cell per agent -->
     <main id="view-papers" class="view hidden">
       <section class="detail"><div id="papers-root"></div></section>
+    </main>
+
+    <!-- FRONTIER: the runs of the frontier agents, kept out of the views above -->
+    <main id="view-frontier" class="view hidden">
+      <section class="detail"><div id="frontier-root"></div></section>
     </main>
 
     <!-- ABOUT: the methods note, in the paper's own terms -->
@@ -146,6 +152,7 @@
   <script src="data.js"></script>
   <script src="overview.js"></script>
   <script src="runs.js"></script>
+  <script src="frontier.js"></script>
   <script src="run_detail.js"></script>
   <script src="papers.js"></script>
   <script src="app.js"></script>

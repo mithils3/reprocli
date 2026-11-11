@@ -93,6 +93,7 @@
 
   const Data = {
     index: null, benchmark: {}, models: [], tiers: [], sweeps: [], papers: [], runs: [],
+    allModels: [], frontierModels: [], frontierSweeps: [], frontierRuns: [],
     byId: {}, byModel: {}, byPaper: {}, tierByKey: {}, modelName: {}, base: BASE,
     _runCache: new Map(), _loading: null,
 
@@ -103,6 +104,17 @@
         const res = await fetch(BASE + "index.json", { cache: "no-cache" });
         if (!res.ok) throw new Error("index not available (" + res.status + ")");
         const ix = await res.json();
+        // the later runs live in their own file and folder, so index.json and
+        // runs/ stay the 372 runs of the four agents
+        try {
+          const fres = await fetch(BASE + "frontier.json", { cache: "no-cache" });
+          if (fres.ok) {
+            const fx = await fres.json();
+            ix.models = (ix.models || []).concat(fx.models || []);
+            ix.sweeps = (ix.sweeps || []).concat(fx.sweeps || []);
+            ix.runs = (ix.runs || []).concat(fx.runs || []);
+          }
+        } catch (e) { /* the page works without the later runs */ }
         this.hydrate(ix);
         return ix;
       })();
@@ -112,27 +124,35 @@
     hydrate(ix) {
       this.index = ix;
       this.benchmark = ix.benchmark || {};
-      this.models = ix.models || [];
+      // frontier entries are kept out of models, sweeps and runs so the four
+      // existing views count the same rows as before; allModels resolves names
+      this.allModels = ix.models || [];
+      this.models = this.allModels.filter((m) => !m.frontier);
+      this.frontierModels = this.allModels.filter((m) => m.frontier);
       this.tiers = ix.tiers || [];
-      this.sweeps = ix.sweeps || [];
+      const allSweeps = ix.sweeps || [];
+      this.sweeps = allSweeps.filter((s) => !s.frontier);
+      this.frontierSweeps = allSweeps.filter((s) => s.frontier);
       this.papers = ix.papers || [];
       this.auditor = ix.auditor || { id: "auditor", name: "Auditor" };
       Modes.hydrate(ix.modes);
       this.tierByKey = {};
       this.tiers.forEach((t) => { this.tierByKey[t.key] = t; });
       this.modelName = {};
-      this.models.forEach((m) => { this.modelName[m.key] = m.name; });
+      this.allModels.forEach((m) => { this.modelName[m.key] = m.name; });
       this.byPaper = {};
       this.papers.forEach((p) => { this.byPaper[p.arxiv_id] = p; });
-      this.runs = (ix.runs || []).map((r) => this.decorate(r));
-      this.runs.sort((a, b) =>
+      const byOrder = (a, b) =>
         this.tierRank(a.tier) - this.tierRank(b.tier) ||
         String(a.model).localeCompare(String(b.model)) ||
-        String(a.arxiv_id).localeCompare(String(b.arxiv_id)));
+        String(a.arxiv_id).localeCompare(String(b.arxiv_id));
+      const all = (ix.runs || []).map((r) => this.decorate(r));
+      this.runs = all.filter((r) => !r.frontier).sort(byOrder);
+      this.frontierRuns = all.filter((r) => r.frontier).sort(byOrder);
       this.byId = {};
-      this.runs.forEach((r) => { this.byId[r.id] = r; });
+      all.forEach((r) => { this.byId[r.id] = r; });
       this.byModel = {};
-      this.runs.forEach((r) => { (this.byModel[r.model] || (this.byModel[r.model] = [])).push(r); });
+      all.forEach((r) => { (this.byModel[r.model] || (this.byModel[r.model] = [])).push(r); });
       return this;
     },
 
@@ -145,7 +165,7 @@
     decorate(r) {
       const a = r.audit || {};
       const p = this.byPaper[r.arxiv_id] || null;
-      const m = this.models.find((x) => x.key === r.model) || null;
+      const m = this.allModels.find((x) => x.key === r.model) || null;
       return Object.assign({}, r, {
         paper: p,
         predicted_h100: p && p.predicted_h100 != null ? p.predicted_h100 : null,
@@ -166,7 +186,8 @@
     async run(id) {
       if (this._runCache.has(id)) return this._runCache.get(id);
       const promise = (async () => {
-        const res = await fetch(BASE + "runs/" + encodeURIComponent(id) + ".json.gz", { cache: "no-cache" });
+        const dir = (this.byId[id] && this.byId[id].frontier) ? "frontier/" : "runs/";
+        const res = await fetch(BASE + dir + encodeURIComponent(id) + ".json.gz", { cache: "no-cache" });
         if (!res.ok) throw new Error("run bundle not available (" + res.status + ")");
         const buf = new Uint8Array(await res.arrayBuffer());
         let text;
