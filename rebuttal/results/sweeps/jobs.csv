@@ -18,3 +18,5 @@ NOT_SUBMITTED,Qwen3.6-27B,rerun of B-class cells,Hard,2506.20024,rerun-qwen-hard
 3544921,pipeline,E10 seed 2,Retrain,2505.17836,e10-2505.17836-s2,2026-11-06T18:24:38
 3544922,pipeline,E10 seed 1,Run,2506.10351,e10-2506.10351-s1,2026-11-06T18:24:38
 3544923,pipeline,E10 seed 2,Run,2506.10351,e10-2506.10351-s2,2026-11-06T18:24:38
+3575864,DeepSeek-V4-Flash,E3 repeat 1 (resubmit of 3540624 after its 48 h limit; same sweep dir),Easy,2505.10475 2504.20571 2502.05795,e3rep1-easy,2026-11-10T21:10:00-06:00
+3575865,Qwen3.6-27B,rerun of B-class cells (resubmit of 3540786 after its 48 h limit; same sweep dir),Medium,2506.08898 2510.05874 2510.19784 2506.19839 2510.20725,rerun-qwen3-medium,2026-11-10T21:10:00-06:00
