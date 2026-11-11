@@ -194,24 +194,24 @@ Thank you for the detailed review and for recognising the benchmark design as so
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We agree that stronger models and production harnesses make the benchmark more informative. [On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 19 and 1 of 7, where DeepSeek-V4-Flash reproduces 6 of 19 and 3 of 7.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
+We agree that stronger models and production harnesses make the benchmark more informative. [On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 2 of 19 and 2 of 8, where DeepSeek-V4-Flash reproduces 6 of 19 and 4 of 8.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
 | gpt-6.1-sol | our loop | [11] | [4] | [4] | [4] |
 | gpt-6.1-sol | Codex CLI | [19] | [2] | [6] | [4] |
-| gpt-6-astra | Codex CLI | [7] | [1] | [3] | [2] |
+| gpt-6-astra | Codex CLI | [8] | [2] | [4] | [3] |
 | gpt-6-astra | our loop | [5] | [1] | [3] | [2] |
 | Muse Wonder | mini-SWE-agent | [5] | [3] | [2] | [2] |
 | Muse Wonder | our loop | [n] | [a] | [d] | [m] |
 
 The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, so we also ran DeepSeek-V4-Flash twice more on the 12 core papers, where it reproduces [r2] and [r3]. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [10] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
 
-We also noticed that the frontier runs stop early. They used a median of [2.6]% of their GPU grant, against [14.7]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
+We also noticed that the frontier runs stop early. They used a median of [2.8]% of their GPU grant, against [14.7]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
 
 **Whether the failure modes and findings change.**
 
-The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [36] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 36 = 19%] against 110 of 300 = 37% for the open agents, and [14 of 36] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [7 of 14] at Run, [0 of 15] at Retrain and [4 of 18] at Reimplement (Section 5.3).
+The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [36] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 36 = 19%] against 110 of 300 = 37% for the open agents, and [14 of 36] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [8 of 15] at Run, [0 of 15] at Retrain and [4 of 18] at Reimplement (Section 5.3).
 
 ### Reply to YGTR, part 2 of 2 (2,924 characters)
 
@@ -269,7 +269,7 @@ We would be glad to discuss any of these results further. Thank you again.
 | failure-mode table: open agents 76, 63, 46, 38, 31, 24, 13, 9 of 300; frontier [5, 3, 4, 0, 6, 4, 5, 0] of [27] | rebuttal/results/frontier/failure_modes.md; failure_modes.csv with run 6cef06 relabelled per never_launched_check.md |
 | number without a valid measurement: frontier [3 of 27 = 11%, 4% to 28%]; open agents 110 of 300 = 37% [31%, 42%] under the paper's labels and 46% (35% to 58%) under the blind coder; ended without a number: frontier [11 of 27], open agents 44 of 300 = 15% (23%, 14% to 33%, under the blind coder, so no significance is claimed) | rebuttal/results/frontier/coder_calibration_groups.md (rebuttal/scripts/coder_calibration_groups.py) |
 | frontier runs by tier [5 of 11], [0 of 12], [3 of 14], arms on GH200 nodes | rebuttal/results/frontier/same_paper_baselines.md (by-tier section) |
-| median share of the GPU grant used: frontier [2.6]% (47 runs with a recorded spend), open agents [14.7]% on the same papers (81 runs); 2506.08898: [5] frontier runs at 0.61 H100-hours or less, Muse Spark 1.2 score 8 with 27.1 H100-hours of 32 | rebuttal/results/frontier/same_paper_baselines.md (last two sections) |
+| median share of the GPU grant used: frontier [2.8]% (48 runs with a recorded spend), open agents [14.7]% on the same papers (81 runs); 2506.08898: [5] frontier runs at 0.61 H100-hours or less, Muse Spark 1.2 score 8 with 27.1 H100-hours of 32 | rebuttal/results/frontier/same_paper_baselines.md (last two sections) |
 | task prompt allows an early stop only when a trained artifact is neither released nor retrainable in budget | prompts/prompt_reproduce.txt:90-93 |
 | [0 of 22] failing frontier runs never launched outside 2505.16927 and 2503.14698 (27 coded, 5 on those two papers) | rebuttal/results/frontier/failure_modes.csv; never_launched_check.md |
 | rates after the corrections in the hardware paragraph (13/34 and MiniMax 2/34 to 2/26) | rebuttal/results/e7/rescore_summary.md applied to e8/bound.csv |

@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-11T17:04:44Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 51 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-11T19:04:44Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 52 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -9,7 +9,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 19 | 2/19 [2.9, 31.4] | 4.53 | -1.84 (n=19) | 7 |
-| codex-gpt-6-astra | 8 | 7 | 1/7 [2.6, 51.3] | 3.14 | -3.00 (n=7) | 2 |
+| codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 3.75 | -2.75 (n=8) | 2 |
 | codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
 | thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
@@ -73,6 +73,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2504.20571 | 8h | astra-x86-2504.20571-9cbb59 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.2498 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2505.21077 | 8h | codex-gpt-6.1-sol-20261109T054344Z-6bf9fb | 6 | partial | False | retrain | 7 | 0 | 6 | 3 | 7 | -1 | partial | natural | 3310.58 | 8.0 | 1.5996 |
 | thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2504.20571 | 8h | x86-a-2504.20571-9239b5 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.2637 |
+| codex-gpt-6-astra | gpt-6-astra | 2502.05795 | 8h | codex-gpt-6-astra-20261109T024706Z-5280d9 | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | partial | natural | 3576.19 | 8.0 | 3.8094 |
 
 ## 2. Static results (final)
 
