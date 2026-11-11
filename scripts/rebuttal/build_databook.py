@@ -150,7 +150,7 @@ def frontier_row(g, e6):
     run_id = g.get("run_id", "")
     rep = load_json(os.path.join(run_dir, "report.json")) if found else {}
     budget = to_float(str(g.get("budget", "")).rstrip("h"))
-    if run_id.startswith("core-a-"):
+    if g.get("arm", "").startswith("thin-"):  # every run of our own loop writes stats.json
         st = load_json(os.path.join(run_dir, "stats.json")) if found else {}
         spent = to_float(st.get("spent_h100"))
         budget = to_float(st.get("budget_h100"), budget)
