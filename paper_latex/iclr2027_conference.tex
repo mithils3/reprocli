@@ -548,7 +548,7 @@ DeepSeek-V4-Flash. gpt-6.1-sol reproduces \todo{4 of 11} papers in our harness a
 DeepSeek-V4-Flash reproduces \todo{4 of 11}, \todo{6 of 19}, and \todo{4 of 8}
 (Table~\ref{tab:frontier}). On the \todo{10} papers graded under both harnesses,
 gpt-6.1-sol reproduces \todo{3} in ours and \todo{2} in Codex CLI, with the
-same verdict on \todo{7}. The frontier runs spend a median of \todo{2.8}\% of
+same verdict on \todo{7}. The frontier runs spend a median of \todo{2.9}\% of
 their GPU grant, against \todo{14.7}\% for the open agents on the same papers.
 % src: results/frontier/same_paper_baselines.md (rebuttal/scripts/frontier_baselines.py over results/databook/frontier_cells.csv, 37 GH200 rows on 11-09); moves with: the remaining frontier runs
 
@@ -623,10 +623,10 @@ On 2506.10351, a Run paper, the two seeds give 93.65\% and 94.15\% against a tar
 % src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351: 93.65, 94.15, original 94.19, target 93.12, 94.19 - 93.65 = 0.54, jobs 3558022 and 3558023); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)
 
 \paragraph{Failures of the frontier runs.}
-Claude Sonnet 5, blind to verdict and arm, labeled the \todo{36} failing frontier runs
+Claude Sonnet 5, blind to verdict and arm, labeled the \todo{37} failing frontier runs
 with the same modes (Appendix~\ref{app:frontier-modes}). Failures that report a
 number without a valid measurement are rarer than for the open agents,
-\todo{7 of 36} against 110 of 300. On 2506.08898, a Retrain paper,
+\todo{7 of 37} against 110 of 300. On 2506.08898, a Retrain paper,
 all \todo{5} frontier runs stopped under one H100-hour of a 32-hour grant
 because no matching checkpoint is released, while Muse Spark 1.2 retrained the
 model and reproduced the claim.
