@@ -67,6 +67,8 @@ class Cluster:
     torch_rule: str = ""                 # agent-facing paragraph on installing the CUDA torch build
     host_env: str | None = None          # host venv the sweep orchestrator activates (api_sweep.sh)
     known_absent: str = ""               # agent-facing bullet on packages with no wheel for this arch
+    cpus_per_gpu: int = 60               # salloc --cpus-per-gpu; must fit gpus_per_node GPUs on one node
+    mem_gb_per_gpu: int = 100            # salloc --mem per GPU (GB); same node-fit rule
 
 
 # The single built-in profile. DeltaAI strings are the exact ones the live scripts pass.
@@ -124,6 +126,12 @@ _PROFILES: dict[str, Cluster] = {
             "(mismatches give `undefined symbol`). Take the nearest wheel to the paper's pin and note\n"
             "the substitution. The venv is on shared disk and survives releases."
         ),
+        # A Delta A100x4/A40x4 node has 64 cores and 257 GB for 4 GPUs, so the DeltaAI
+        # sizing (60 cores, 100 GB per GPU) makes every request for 2+ GPUs fail with
+        # "Requested node configuration is not available". 16 cores and 60 GB per GPU
+        # fit 4 GPUs on one node and bill as the GPU count (CPU=62.5, Mem=16/GB, GPU=1000).
+        cpus_per_gpu=16,
+        mem_gb_per_gpu=60,
         host_env="/work/nvme/bfvr/msalunkhe/envs/delta-x86",
         known_absent="- KNOWN-ABSENT in the image: conda/micromamba and X11/OpenGL headers.",
     ),

@@ -45,6 +45,13 @@ class BuildAcquireTests(unittest.TestCase):
         # Acquire holds the node only; the command is spliced in later by build_srun.
         self.assertNotIn("srun", argv)
 
+    def test_delta_sizing_fits_four_gpus_on_one_node(self):
+        # A Delta A100x4 node has 64 cores and 257 GB; 60 cores per GPU made every
+        # request for 2+ GPUs fail with "Requested node configuration is not available".
+        argv = build_acquire(resolve_cluster("delta"), gpus=4, minutes=30)
+        self.assertIn("--cpus-per-gpu=16", argv)
+        self.assertIn("--mem=240G", argv)
+
     def test_account_env_override_reaches_the_salloc_line(self):
         import os
         old = os.environ.get("REPROCLI_SLURM_ACCOUNT")

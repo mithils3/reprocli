@@ -48,7 +48,9 @@ from reprocli_repro.cluster import Cluster
 if TYPE_CHECKING:
     from reprocli_repro.sandbox import Sandbox
 
-# Host RAM (GB) and CPU cores requested per GPU on the salloc. Sized to sit under a
+# Default host RAM (GB) and CPU cores requested per GPU on the salloc; a cluster
+# profile carries its own values (``Cluster.mem_gb_per_gpu`` / ``cpus_per_gpu``) and
+# ``build_salloc`` reads those. Sized to sit under a
 # DeltaAI GH200 node's ~440 GB / 288 cores at the 4-GPU cap so a full-node request
 # still fits, while giving each GPU enough host memory/cores for dataloading and
 # preprocessing that the partition's 1000 MB/core default would otherwise starve.
@@ -159,8 +161,8 @@ def build_acquire(
         "-p", part,
         "--nodes=1",
         f"--gpus={int(gpus)}",
-        f"--mem={MEM_GB_PER_GPU * int(gpus)}G",
-        f"--cpus-per-gpu={CPUS_PER_GPU}",
+        f"--mem={cluster.mem_gb_per_gpu * int(gpus)}G",
+        f"--cpus-per-gpu={cluster.cpus_per_gpu}",
         f"--time={int(minutes)}",
     ]
 
