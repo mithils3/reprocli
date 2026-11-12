@@ -46,13 +46,13 @@ We would be glad to answer further questions.
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (4,377 characters)
+### Reply to T29u, part 1 of 1 (4,621 characters)
 
 Thank you for your review, and for noting that the task is important and the evaluation design careful.
 
 **W1: One run per agent-paper cell.**
 
-We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every reproduction rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, chosen with a fixed seed. As soon as these runs finish, we will post here how often the three runs of the same paper reach the same verdict.
+We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every reproduction rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both runs and 5 in neither; 95% interval 60% to 98%), and the tenth pair scored 8 and 7. We are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, and will post the agreement across its three runs here as soon as they finish.
 
 | Agent | Run (34 papers) | Retrain (33) | Reimplement (33) |
 | :- | -: | -: | -: |
@@ -130,6 +130,7 @@ Please let us know if anything here needs more detail, and thank you again for y
 | at score 0: agree on 42, auditor alone 53 - 42 = 11, human alone 46 - 42 = 4 | rebuttal/results/e4/summary.json (disqualified_score0_as_high_severity) |
 | mean audit score per agent and tier with 95% t-intervals (DeepSeek-V4-Flash 5.29, 5.45, 4.64; Muse Spark 1.2 5.71, 5.85, 3.85); Qwen3.6-27B 3.51 [2.98, 4.04] includes the regrade of 2511.19808 at score 2 (e8/regrade_dcells.json) | rebuttal/results/tiers/tier_tests.md (mean-score table) |
 | value supported for 92 of 100, so 8 wrong values | rebuttal/results/e7/summary.json (step3); rebuttal/mithil/e7_merged.md |
+| second run of Muse Spark 1.2 on 10 Reimplement papers, same 8 H100-hour budget, pinned auditor on both: same reproduced verdict in 9 of 10 (4 both, 5 neither, 1 split at 8 and 7); Wilson 95% 60% to 98% | rebuttal/results/e12/README.md; e12_grades.csv |
 
 ## rqBN
 
