@@ -259,15 +259,12 @@ agents on the papers that arm has graded.}
 \end{table}
 % src: results/databook/frontier_cells.csv through rebuttal/scripts/frontier_tex.py; moves with: the remaining frontier runs
 \todo{Tables~\ref{tab:frontier} and~\ref{tab:frontier-runs} hold the runs
-graded by 11-09 and are regenerated before upload.}
+graded by November 11.}
 
 The open-agent columns use the submitted grade of that agent on the same
 papers. Because half of the sampled papers are ones some open agent had
-reproduced under the submitted grades, those columns favor the open agents, so we also reran
-DeepSeek-V4-Flash twice on the 12 core papers, where it reproduces \todo{r2}
-and \todo{r3}. \todo{With up to three prompts to continue after the agent ends
-its turn, gpt-6.1-sol in Codex CLI reproduces f of 8 papers.} The frontier runs
-spend a median of \todo{2.8}\% of their GPU grant, against \todo{14.7}\% for
+reproduced under the submitted grades, those columns favor the open agents. The frontier runs
+spend a median of \todo{2.9}\% of their GPU grant, against \todo{14.7}\% for
 the open agents on the same papers, and Table~\ref{tab:frontier-runs} lists
 every run with its exit reason. We did not run Claude Code, since the auditor
 is a Claude model. Under the submitted grades some agent reproduced 34 of the 99 papers the sample was drawn from, so the sample holds a larger share of reproduced papers than the benchmark.

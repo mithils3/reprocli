@@ -13,7 +13,7 @@
 \def\UrlOrds{\do\*\do\-\do\~\do\'\do\"\do\.\do\@\do\\\do\!\do\|\do\;\do\>\do\]\do\)\do\,\do\+\do\#\do\<\do\[\do\(}
 \mathchardef\UrlBigBreakPenalty=10000
 \renewcommand{\UrlFont}{\small\ttfamily}  % 9pt Courier sits level with 10pt Times and lets long URLs fit a line
-\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\newcommand{\todo}[1]{#1}% slots that move with new runs; red brackets: \textcolor{red}{[#1]}
 \usepackage{graphicx}
 \usepackage{rotating}
 \usepackage{booktabs}
@@ -355,7 +355,7 @@ since we manually audited only the selected pool. Among the 687 verified papers,
 Reimplement, while 5\% are blocked and 5\% are non-empirical.
 Paper2Code reports that 19.5\% of the papers accepted to three 2024 venues link
 a GitHub repository in their arXiv abstract~\citep{seo2025paper2code}, a count
-that misses code linked only in the paper body or the supplement, which our
+that misses code linked only in the body or supplement, which our
 classifier reads.
 
 \paragraph{Stage II: Compute capping and stratified selection.} We estimated the
@@ -378,8 +378,8 @@ were replaced from the audited pool. We
 exclude paid APIs so that reproduction cost stays bounded and
 GPU-denominated. Only 20 of
 the 100 shipped compute estimates could be taken directly from the paper. We
-estimated the rest. The need to reconstruct these
-estimates is one instance of the broader documentation gaps that impede
+estimated the rest. Reconstructing these
+estimates is one instance of the documentation gaps that impede
 reproduction in AI research~\citep{gundersen2018state,dodge2019show,henderson2020towards}.
 \section{Auditing}
 \label{sec:auditing}
@@ -449,11 +449,11 @@ Muse Spark 1.2~\citep{meta2026musespark}. The first three are open-weight and
 run on our cluster with vLLM~\citep{kwon2023vllm}, and we reach Muse Spark 1.2 through the Meta
 Model API. All use the same harness, prompts, and budgets. To test whether the
 results hold for frontier models in the harnesses they ship with, we also ran
-\todo{gpt-6-astra and gpt-6.1-sol}~\citep{openai2026gpt6astra,openai2026gpt61sol} from OpenAI on \todo{n} papers and
-Muse Wonder~\citep{meta2026musewonder} from Meta on \todo{m} papers, drawn with a fixed seed from
+\todo{gpt-6-astra and gpt-6.1-sol}~\citep{openai2026gpt6astra,openai2026gpt61sol} from OpenAI on \todo{21} papers and
+Muse Wonder~\citep{meta2026musewonder} from Meta on \todo{5} of them, drawn with a fixed seed from
 every tier and frozen before any run. gpt-6.1-sol and gpt-6-astra ran in our
-harness and in Codex CLI~\citep{openai2026codexcli}, and Muse Wonder in our
-harness and in mini-SWE-agent~\citep{yang2024sweagent}. The production
+harness and in Codex CLI~\citep{openai2026codexcli}, and Muse Wonder in
+mini-SWE-agent~\citep{yang2024sweagent}. The production
 harnesses keep their own tools, system prompts, and context handling, and every
 run gets the same sandbox, task text, GPU grant, and auditor as the main runs,
 so within one model only the harness changes.\footnote{Appendix~\ref{app:frontier}
@@ -488,16 +488,14 @@ mean score 5.45, 4.40 to 6.51), and 4 of 33 at Reimplement
 7\% to 31\%, mean score 3.85, 2.86 to 4.84). Muse Spark 1.2 reproduces 8 of 33 at Retrain (24\%, 13\% to 41\%).
 % src: replies.md T29u part 1 and YGTR part 2; results/e7/rescore_summary.md (dsv4 Run 13/34, 23.9 to 55.0); results/e6/summary.json settings.S0_index (dsv4/retrain, dsv4/reimplement, muse/reimplement); moves with: E8 reruns
 Table~\ref{tab:results} gives an interval for every agent and tier.
-To measure run-to-run variation, we ran DeepSeek-V4-Flash twice more on 12
-papers drawn with a fixed seed, four per tier, two of which some agent had
-reproduced and two of which none had. % src: results/subset/README.md (core R/N per tier 2/2; candidates R sum 13+3+0+6+5+1+6+0+0 = 34, N sum 65, of 99)
-\todo{Its verdict was the same in all three runs on k of 12 papers (95\%
-interval lo to hi), its count of reproduced papers moved by at most j, and in
-each run it reproduced more of the four Run papers than of the four
-Reimplement papers.}
-% src when frozen: repeat-run grades (jobs 3540624 to 3540633, results/sweeps/jobs.csv)
-We compare the reproduction rates of two agents only where their intervals,
-widened by the run-to-run change above, do not overlap, so at Run we do not rank
+To measure run-to-run variation, we graded a second, independent run of
+Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run
+in Table~\ref{tab:results}. The two runs reach the same reproduced verdict on 9
+of the 10 papers (95\% interval 60\% to 98\%), with 4 reproduced in both runs
+and 5 in neither, and the tenth pair scored 8 and 7.
+% src: rebuttal/results/e12/README.md, e12_grades.csv (pinned auditor on both runs; Wilson 9/10)
+We compare the reproduction rates of two agents only where their intervals
+do not overlap, so at Run we do not rank
 DeepSeek-V4-Flash above Muse Spark 1.2, which reproduces 10 of 34 (29\%, 17\% to
 46\%). % src: results/e6/summary.json settings.S0_index muse/run (9) + 1 (results/e8/regrade_muse.json, 2503.23035); Wilson computed with the e6 formula
 
@@ -619,7 +617,7 @@ two new seeds and no model in the loop. On 2505.17836 both seeds miss again
 and the measured value repeats within 0.0007, so that miss recurs without the
 agent. On 2510.07501 the value moves by 0.28 across seeds against a target of
 $-0.20$, which puts the original near miss inside seed variation.
-On 2506.10351, a Run paper, the two seeds give 93.65\% and 94.15\% against a target of 93.12\%, within 0.54 points of the agent's 94.19\%, so the agent's measurement repeats without the agent.
+On 2506.10351 the two seeds give 93.65\% and 94.15\% against a target of 93.12\%, within 0.54 points of the agent's 94.19\%, so its measurement repeats without the agent.
 % src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351: 93.65, 94.15, original 94.19, target 93.12, 94.19 - 93.65 = 0.54, jobs 3558022 and 3558023); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)
 
 \paragraph{Failures of the frontier runs.}
@@ -686,10 +684,10 @@ trained on their code, and a memorized fix would count as reproduced under our g
 
 \paragraph{Scope.} The 100 papers come from NeurIPS 2025, have a pinned experiment under a 96 H100-hour cap, and exclude papers that need a paid or closed API (15 in the audit pool, Figure~\ref{fig:funnel}). Our claims hold for these papers and the agents we tested.
 
-\paragraph{Agents.} Each cell of the main roster holds one run, and the repeat
-runs cover one agent on 12 papers, so we leave pairs of agents whose intervals
+\paragraph{Agents.} Each cell of the main roster holds one run, and the second
+runs cover one agent on 10 papers of one tier, so we leave pairs of agents whose intervals
 overlap unranked~\citep{bjarnason2026randomness}. The frontier arms cover
-\todo{n} papers, and the roster omits Claude, whose family supplies the auditor, and Gemini because of cost.
+\todo{21} papers, and the roster omits Claude, whose family supplies the auditor, and Gemini because of cost.
 
 \section{Conclusion}
 \label{sec:conclusion}

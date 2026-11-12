@@ -124,13 +124,13 @@ Metric         & 95 & 89--98 & 32/34 & 30/33 & 33/33 \\
 Dataset and split & 76 & 67--83 & 24/34 & 25/33 & 27/33 \\
 Method or variant & 69 & 59--77 & 22/34 & 18/33 & 29/33 \\
 \midrule
-All four       & 55 & 45--64 & \todo{} & \todo{} & \todo{} \\
+All four       & 55 & 45--64 & 19/34 & 13/33 & 23/33 \\
 \bottomrule
 \end{tabular}
 \caption{Frozen targets whose paper supports each part, by tier.}
 \label{tab:target-check}
 \end{table}
-% src: results/e7/summary.json step3 (by_question yes and wilson95; by_tier Easy/Medium/Hard a-d; all_four_yes 55, wilson95 [0.4524, 0.6439]); all-four by tier is not in summary.json
+% src: results/e7/summary.json step3 (by_question yes and wilson95; by_tier Easy/Medium/Hard a-d; all_four_yes 55, wilson95 [0.4524, 0.6439]); all-four by tier counted from results/e7/step3.jsonl (a to d all yes: Easy 19, Medium 13, Hard 23)
 
 The most common failure is the method question alone, on 18 papers. On
 2506.18890, for example, the frozen value of 27.443 PSNR appears in the paper
