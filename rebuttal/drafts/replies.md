@@ -6,13 +6,13 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 
 ## General
 
-### General reply (one part, 1,743 characters)
+### General reply (one part, 1,834 characters)
 
 We thank the three reviewers for their careful and constructive reviews. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). Following the reviews, the revision adds these analyses:
 - **Frontier models in production harnesses** (Section 5.1, Appendix B). gpt-6.1-sol reproduces [4 of 11] papers in our loop and [2 of 19] in Codex CLI, where the submitted runs of DeepSeek-V4-Flash reproduce [4 of 11] and [6 of 19] of the same papers.
 - **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and three runs of DeepSeek-V4-Flash on 12 papers give the same verdict on [k] of the 12.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
-- **Log integrity** (Appendix A). Of the 45,861 entries in the agent-writable logs, 45,673 match a transcript kept on the host exactly, and the other 188 differ only in bookkeeping. The harness now mounts both logs read-only inside the sandbox.
+- **Log integrity** (Appendix A). During each run the harness sends every tool call to a database outside the cluster, which the sandbox cannot reach. The 30,790 commands present in both that record and the agent-writable logs have the same text, and no exit code differs. The harness now mounts both logs read-only inside the sandbox.
 - **Targets and tolerance** (Appendices E and F). A check by a model from another lab supports 92 of the 100 target values, the other 8 are corrected, and Reimplement stays the lowest tier at every tolerance from 1% to 10%.
 - **Failures outside the agent** (Sections 5.2 and 5.3). Removing every build failure moves no best-agent rate by more than one percentage point.
 
@@ -40,7 +40,7 @@ We would be glad to answer further questions.
 | 372 runs, precision 88%, recall 77%, 73 against 83 reproductions | rebuttal/results/e4/summary.json |
 | frontier, repeat runs, reruns of 2510.20725 | pending (E1, E2, E3, E8 reruns of 2510.20725); repeat runs queued, job 3540624 running and 3540625 to 3540633 pending (sacct, followups_check_4.md item 11) |
 | gpt-6.1-sol [4 of 11] in our loop and [2 of 15] in Codex CLI; DeepSeek-V4-Flash [4 of 11] and [6 of 15] on the same papers | rebuttal/results/frontier/same_paper_baselines.md (rebuttal/scripts/frontier_baselines.py over databook/frontier_cells.csv) |
-| 188 bookkeeping differences = 100 + 60 + 25 + 3; 45,673 exact | rebuttal/results/e5/summary.json; e5/README.md |
+| database check: 30,790 = 30,739 (command and rc) + 51 (command, result row not in the database); 0 rc differences | rebuttal/results/e5/db_check/db_summary.json; e5/README.md (second check) |
 | Reimplement lowest at every tolerance (best agent 4, 5, 5, 5 against 9/12/14/14 and 8/9/9/12) | rebuttal/results/e6/README.md table |
 | best agent 38%, 27%, 15% after corrections | rebuttal/results/tiers/tier_tests.md |
 
@@ -133,7 +133,7 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,397 characters)
+### Reply to rqBN, part 1 of 1 (4,832 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
@@ -143,7 +143,7 @@ We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three h
 
 **W2: Agent-writable logs without an integrity check.**
 
-Our harness wrote commands.log and trajectory.jsonl into a folder that the auditor reads, and our sandbox mounted that folder read-write. We therefore checked whether any agent had modified the two files during a run. For every graded run, we compared both files with the harness's own transcript, an external log written to a folder the agent has no access to. Of the 45,861 entries from agent commands, 45,673 match exactly, and the other 188 differ only in bookkeeping, such as refused or retried calls and GPU-time values that differ by about a second (Appendix A). We also searched every agent command for writes to the two files and found one, in a run the auditor had already scored 1 of 10. Following your comment, the harness now mounts both files read-only inside the sandbox, so an agent can no longer change them (Appendix A).
+Our harness wrote commands.log and trajectory.jsonl into a folder that the auditor reads, and our sandbox mounted that folder read-write. We therefore checked whether any agent had modified the two files during a run. While a run is going, the harness also sends every tool call and its result to a database outside the cluster. The sandbox holds no credentials for this database, and the database stamps each row with its own clock. For all 372 graded runs, we compared the two files with this record. The 30,790 commands present in both have the same text, no exit code differs, and the time logged for each command is within 9 seconds of the database's time. The remaining entries are bookkeeping: 221 calls that ended without an exit code, mostly because no GPU could be allocated, are in the database only, and 79 timed-out attempts are in the log only. The GPU cost agrees for 12,706 of 12,709 GPU calls, and the other 3 differ by about a second of GPU time. In one run, 11 commands are in the database and missing from commands.log because the agent overwrote the file, and the auditor had already scored that run 1 out of 10. Following your comment, the harness now mounts both files read-only inside the sandbox, so an agent can no longer change them (Appendix A).
 
 **Q1: A stratified human-expert reproduction baseline.**
 
@@ -184,7 +184,11 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 | quadratic weighted kappa 0.89 on the 0 to 10 scale | rebuttal/results/e4/summary.json (quadratic_weighted_kappa 0.888); e4/README.md:14 |
 | at score 0: auditor alone 11, human alone 4 | rebuttal/results/e4/summary.json (53 - 42, 46 - 42) |
 | best single agent 13, 9 and 5 against 16, 11 and 5 for at least one agent | rebuttal/results/tiers/tier_tests.md |
-| 2,552 H100-hours is one agent's grant (10,208 / 4) | paper_latex/iclr2027_conference.tex:494 |
+| database check over 372 runs: 31,022 database calls = 30,739 + 51 + 221 + 11; 30,790 in both with the same text; 0 rc differences; lag at most 8.1 s; 221 without rc (156 no GPU allocation, 44 empty release calls, 21 errors) database only; 79 timed-out attempts (rc=?) log only; GPU cost 12,663 + 43 release = 12,706 of 12,709, other 3 off by 0.0002 to 0.0003 h; 11 database-only commands in minimax-reimplement-2510.25146 (auditor score 1) | rebuttal/results/e5/db_check/db_summary.json, db_flags.tsv; rebuttal/results/e5/README.md (second check); script rebuttal/e5_db_integrity.py |
+| sandbox has no database key: --cleanenv --no-home with an allowlist of forwarded variables | src/reprocli_repro/sandbox.py:56-61, 240 |
+| three human graders, one grader per run, 396 runs, 372 with an auditor grade | paper_latex/appendix/d_auditor_validation.tex:13-18 |
+| PaperBench human baseline: ML PhDs, best of 3 attempts, 41.4% after 48 hours of effort on a 3-paper subset | arXiv 2504.01848 (Starace et al.), read from arxiv.org/html/2504.01848 on 2026-11-11 |
+| 2506.10351 accuracy: target 93.12, agent 94.19, new seeds 93.65 and 94.15; 94.19 - 93.65 = 0.54 | rebuttal/results/e10/results.md:7 |
 
 ## YGTR
 

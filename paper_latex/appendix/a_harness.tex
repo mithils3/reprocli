@@ -154,6 +154,27 @@ every directory the sandbox mounts. The comparison detects edits made through
 the agent's own commands, which the transcript records, and it detects no
 other kind of edit.
 
+\paragraph{Database comparison.} The harness also posts each tool call and
+its result to a database outside the cluster while a run is live. The sandbox
+starts with a cleared environment that holds no database credentials, and the
+database server sets the time of each row. We compared \texttt{commands.log}
+and \texttt{trajectory.jsonl} of the 372 graded runs with this record. The
+database holds 31,022 \texttt{workspace\_bash} and \texttt{run\_gpu} calls. Of
+these, 30,739 match a \texttt{commands.log} entry on command and return code,
+and another 51 match on command while their result row did not reach the
+database, since the harness posts rows on a best-effort basis. A further 221
+ended without a return code, 156 of them because no GPU could be allocated,
+and the harness does not log such calls. The last 11 are the opening commands
+of the run on 2510.25146 whose log the agent replaced. No return code differs.
+In the other direction, 79 log entries are timed-out attempts of a command
+that the database holds once, and no other log entry is absent from the
+database. The time in each matched log line lies within 8.1 seconds of the
+server time of the database row, with a median of 0.6 seconds. For
+\texttt{run\_gpu}, cost and remaining budget agree for 12,706 of 12,709 calls,
+and the other three are the rows of Table~\ref{tab:log-check} whose remaining
+budget differs by up to 0.0003 H100-hours.
+% src: rebuttal/results/e5/README.md (second check); rebuttal/results/e5/db_check/db_summary.json; script rebuttal/e5_db_integrity.py
+
 \paragraph{Read-only logs.} After this comparison we changed the harness so
 that the agent can no longer edit the two files. The sandbox mounts
 \texttt{commands.log} and \texttt{trajectory.jsonl} read-only on top of the
@@ -161,7 +182,7 @@ read-write \texttt{evidence/} directory, and the \texttt{write\_file} and
 \texttt{edit\_file} tools refuse both paths. In a test inside the sandbox,
 appending to, overwriting, deleting, renaming and replacing either file all
 fail, while the harness still appends to both from the host. The 372 graded
-runs predate this change, and the comparison above is their check.
+runs predate this change, and the two comparisons above are their check.
 % src: results/e5/README.md:9-17 (372/372 matched; 45,861 of 49,585 entries checked, 3,724 host-written; 45,673 passed; 185 explained; 3 unmatched; 1 write into commands.log, run 2510.25146; 65 runs missing 119 headers, workspace_bash.py:76-77 and run_gpu.py:145); results/e5/summary.json
 
 \begin{table}[ht]
