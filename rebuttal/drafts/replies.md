@@ -6,11 +6,11 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 
 ## General
 
-### General reply (one part, 1,834 characters)
+### General reply (one part, 1,870 characters)
 
 We thank the three reviewers for their careful and constructive reviews. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). Following the reviews, the revision adds these analyses:
 - **Frontier models in production harnesses** (Section 5.1, Appendix B). gpt-6.1-sol reproduces [4 of 11] papers in our loop and [2 of 19] in Codex CLI, where the submitted runs of DeepSeek-V4-Flash reproduce [4 of 11] and [6 of 19] of the same papers.
-- **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and three runs of DeepSeek-V4-Flash on 12 papers give the same verdict on [k] of the 12.
+- **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and a second, independent run of Muse Spark 1.2 on 10 Reimplement papers reaches the same reproduced verdict on 9 of the 10.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
 - **Log integrity** (Appendix A). During each run the harness sends every tool call to a database outside the cluster, which the sandbox cannot reach. The 30,790 commands present in both that record and the agent-writable logs have the same text, and no exit code differs. The harness now mounts both logs read-only inside the sandbox.
 - **Targets and tolerance** (Appendices E and F). A check by a model from another lab supports 92 of the 100 target values, the other 8 are corrected, and Reimplement stays the lowest tier at every tolerance from 1% to 10%.
@@ -216,11 +216,11 @@ We agree that stronger models and production harnesses make the benchmark more i
 
 The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, which favours the open-agent columns. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [10] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
 
-We also noticed that the frontier runs stop early. They used a median of [2.9]% of their GPU grant, against [14.7]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
+We also noticed that the frontier runs stop early. They used a median of [3.2]% of their GPU grant, against [14.7]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
 
 **Whether the failure modes and findings change.**
 
-The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [37] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 37 = 19%] against 110 of 300 = 37% for the open agents, and [15 of 37] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [8 of 16] at Run, [0 of 15] at Retrain and [4 of 18] at Reimplement (Section 5.3).
+The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [38] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 38 = 18%] against 110 of 300 = 37% for the open agents, and [16 of 38] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [9 of 17] at Run, [0 of 15] at Retrain and [4 of 19] at Reimplement (Section 5.3).
 
 ### Reply to YGTR, part 2 of 2 (3,088 characters)
 
