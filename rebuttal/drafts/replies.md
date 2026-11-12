@@ -197,13 +197,13 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (2,959 characters)
+### Reply to YGTR, part 1 of 2 (3,033 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. We ran the frontier models and production harnesses you asked for and measured each confound you named.
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We agree that stronger models and production harnesses make the benchmark more informative. [On the same papers, gpt-6.1-sol in our loop reproduces 4 of 11, as many as DeepSeek-V4-Flash and Muse Spark 1.2. In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 3 of 20 and 2 of 8, where DeepSeek-V4-Flash reproduces 7 of 20 and 4 of 8.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
+We agree that stronger models and production harnesses make the benchmark more informative. [The benchmark remains challenging for them: gpt-6.1-sol reproduces 4 of 11 papers in our loop, as many as DeepSeek-V4-Flash and Muse Spark 1.2 on the same papers, and no frontier run reproduces a paper at the Retrain tier (0 of 16 runs). In Codex CLI, gpt-6.1-sol and gpt-6-astra reproduce 3 of 20 and 2 of 8, where DeepSeek-V4-Flash reproduces 7 of 20 and 4 of 8.] Each row covers a small set of papers, so the last two columns give our two best agents on exactly those papers, under the same auditor (Section 5.1, Appendix B).
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
@@ -212,7 +212,6 @@ We agree that stronger models and production harnesses make the benchmark more i
 | gpt-6-astra | Codex CLI | [8] | [2] | [4] | [3] |
 | gpt-6-astra | our loop | [6] | [1] | [4] | [3] |
 | Muse Wonder | mini-SWE-agent | [5] | [3] | [2] | [2] |
-| Muse Wonder | our loop | [1] | [0] | [0] | [0] |
 
 The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, which favours the open-agent columns. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [11] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [4] in our loop and [3] in Codex CLI.
 
