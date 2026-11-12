@@ -46,13 +46,13 @@ We would be glad to answer further questions.
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (4,386 characters)
+### Reply to T29u, part 1 of 1 (4,377 characters)
 
 Thank you for your review, and for noting that the task is important and the evaluation design careful.
 
 **W1: One run per agent-paper cell.**
 
-We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, chosen with a fixed seed. As soon as these runs finish, we will post here how often the three runs of the same paper reach the same verdict.
+We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every reproduction rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, chosen with a fixed seed. As soon as these runs finish, we will post here how often the three runs of the same paper reach the same verdict.
 
 | Agent | Run (34 papers) | Retrain (33) | Reimplement (33) |
 | :- | -: | -: | -: |
@@ -62,11 +62,11 @@ We agree that one run per cell leaves our results susceptible to noise. To accou
 | MiniMax-M2.7 | 2 = 6% [2%, 19%] | 5 = 15% [7%, 31%] | 1 = 3% [1%, 15%] |
 | At least one agent | 16 = 47% [31%, 63%] | 11 = 33% [20%, 50%] | 5 = 15% [7%, 31%] |
 
-For the tier-level comparison, the reproduction rate at Run is higher than at Reimplement for DeepSeek-V4-Flash (38% against 12%, z = 2.46) and for papers reproduced by at least one agent (47% against 15%, z = 2.81), and both differences are statistically significant. Every agent also has its lowest reproduction rate at Reimplement. For the agent ranking, DeepSeek-V4-Flash and Muse Spark 1.2 have mean audit scores of 5.13 and 5.14 of 10, and Qwen3.6-27B and MiniMax-M2.7 have 3.51 and 3.03. On environment sensitivity, when we remove the 24 runs that failed on a build or dependency error, no best-agent reproduction rate moves by more than one percentage point (Section 5.3).
+Comparing the tiers, we find that the reproduction rate at the Run tier is higher than at the Reimplement tier for DeepSeek-V4-Flash (38% against 12%, z = 2.46) and for papers reproduced by at least one agent (47% against 15%, z = 2.81). Every agent also has its lowest reproduction rate at the Reimplement tier. For the agent ranking, DeepSeek-V4-Flash and Muse Spark 1.2 have mean audit scores of 5.13 and 5.14 out of 10, and Qwen3.6-27B and MiniMax-M2.7 have 3.51 and 3.03. To investigate environment sensitivity, we removed the 24 runs that failed on a build or dependency error, and no best-agent reproduction rate moved by more than one percentage point (Section 5.3).
 
 **W2: The auditor's disagreements with the human grade.**
 
-When the human grader and the LLM auditor disagree, the auditor tends to be the stricter of the two. In 28 runs only one of the two marked the run as reproduced: the human grader in 19 and the auditor in 9. The same direction holds in every tier, with 7 against 3 at Run, 7 against 4 at Retrain and 5 against 2 at Reimplement. The auditor's reproduction rate is therefore slightly below the human's (73 reproduced runs against 83 at submission), and Reimplement has the lowest reproduction rate under both graders (Appendix D).
+We observe that when the human grader and the LLM auditor disagree, the auditor tends to be the stricter of the two. In the 28 runs where only one of the two marked the run as reproduced, it was the human grader in 19 and the auditor in 9, and the same direction holds in every tier. The auditor's reproduction rate is therefore slightly below the human's (73 reproduced runs against 83 at submission), and Reimplement has the lowest reproduction rate under both graders (Appendix D).
 
 **Q1: Confusion matrix, the 7/8 boundary and high-severity flags.**
 
@@ -81,7 +81,7 @@ Against the human grade, the auditor's reproduced verdict has precision $\frac{6
 
 At the 7/8 boundary, 100 runs received a 7 or an 8 from at least one grader, and the two graders put 75 of them on the same side of it. For high-severity flags, which set a run's score to 0, 57 runs received a 0 from at least one grader and both graders gave a 0 to 42 of them. None of the runs that the human scored 0 was marked as reproduced by the auditor.
 
-**Q2: Sensitivity to the match target and the default 5% tolerance.**
+**Q2: How sensitive the results are to the match targets and the default 5% tolerance.**
 
 We rescored every run at tolerances of 1%, 2%, 5% and 10%, and Reimplement has the lowest reproduction rate at each of them. A run matches its target when its result is within a relative tolerance of the value the paper reports, which is 5% by default. The counts at submission are in the table below (Appendix F).
 
@@ -92,7 +92,7 @@ We rescored every run at tolerances of 1%, 2%, 5% and 10%, and Reimplement has t
 | Best agent, Reimplement (of 33) | 4 | 5 | 5 | 5 |
 | All agents (of 400) | 56 | 65 | 73 | 82 |
 
-For the match targets, we asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper. It confirmed our value for 92 of the 100 claims (Appendix E). When we correct the other 8 targets and rescore their runs, only two verdicts change. Both are on one paper (2505.23747), and the best-agent count at Run goes from 14 to 13 of 34.
+To validate our match targets, we asked gpt-6.1-sol, a model from a different lab than our auditor, to compare each target value with its paper. It confirmed our value for 92 of the 100 claims (Appendix E). When we correct the other 8 targets and rescore their runs, only two verdicts change. Both are on one paper (2505.23747), and the best-agent count at Run goes from 14 to 13 of 34.
 
 Please let us know if anything here needs more detail, and thank you again for your time.
 
@@ -133,13 +133,13 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,378 characters)
+### Reply to rqBN, part 1 of 1 (4,397 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
 **W1: Validation of the auditor.**
 
-We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three human graders scored the runs, one grader per run, without seeing the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In 28 runs only one of the two marked the run as reproduced (the human grader in 19, the auditor in 9), and the same direction holds in every tier. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
+We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three human graders scored the runs, one grader per run, without seeing the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In the 28 runs where only one of the two marked the run as reproduced, it was the human grader in 19 and the auditor in 9, and the same direction holds in every tier. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
 
 **W2: Agent-writable logs without an integrity check.**
 
@@ -171,12 +171,12 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 | 62 point estimates, 58 default, 4 margins, 38 others (21 direction, 14 threshold, 3 other); 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
 | Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 130-134 (before); the after text is proposed here |
 | 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0; per tier 28/31, 28/35, 25/29, 25/32, 11/13, 11/16, recall interval 44% to 86% | rebuttal/results/e4/summary.json (per_tier_reproduced from e4/per_tier.csv) |
-| re-execution: 2505.17836 GoRank mean relative error at 80k steps, target about 0.05, 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 bias, target -0.20, -0.2241, -0.1308, +0.0566, span 0.0566 - (-0.2241) = 0.28; 2506.10351 accuracy, target 93.12, agent 94.19, new seeds 93.65 and 94.15, 94.19 - 93.65 = 0.54 | rebuttal/results/e10/results.md (table and Metrics line) |
+| re-execution: 2505.17836 GoRank mean relative error at 80k steps, target about 0.05, 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 bias, target -0.20, -0.2241, -0.1308, +0.0566, span 0.0566 - (-0.2241) = 0.28; 2506.10351 queued | rebuttal/results/e10/results.md (table and Metrics line) |
 | no Reimplement paper in the re-execution (selection from Run and Retrain only) | rebuttal/results/e10/README.md (Selection) |
 | no human reproduction, stated in Limitations | paper_latex/iclr2027_conference.tex:583-589 |
 | 2,552 = 10,208 / 4 H100-hours | paper Section 5.2 (paper_latex/iclr2027_conference.tex line 494, "1,888 of the 10,208 H100-hours we granted") |
 | 8 corrected targets change two verdicts | rebuttal/results/e7/rescore_summary.md; e7/class_d_rescore.md |
-| PaperBench human baseline: ML PhDs, best of 3 attempts, 41.4% after 48 hours of effort on a 3-paper subset (o1 26.6% on the same subset) | arXiv 2504.01848 (Starace et al.), abstract-level summary in its introduction; read from arxiv.org/html/2504.01848 on 2026-11-11 |
+| 2506.10351 re-execution | pending (E10) |
 | best of four agents: 32 of 100 papers [24%, 42%]; Run 16/34 (47%, [31%, 63%]), Retrain 11/33 (33%, [20%, 50%]), Reimplement 5/33 (15%, [7%, 31%]); 70 reproduced cells | tools/anon_viewer/public/data/index.json minus the two checkpoint runs and the two 2505.23747 Run runs, plus the new Muse grade on 2503.23035 (computed by the main session, 2026-11-09) |
 | other 45 targets: frozen number wrong 8, number right and a setting or label off 16, correct or unclear 21; human at 0 on 46 runs, auditor on 53 | rebuttal/mithil/e7_merged.md (Kind of error column: number 8, setting or label 15 + 1, none 21); rebuttal/results/e4/summary.json (disqualified_score0_as_high_severity) |
 | Run recall interval 64% to 90%; 25 retried first attempts absent from the host transcript; 2510.07501 seeds also miss | rebuttal/results/e4/summary.json (per_tier_reproduced.run.recall_wilson95); e5/README.md (Headline); e10/results.md (outcome column) |
