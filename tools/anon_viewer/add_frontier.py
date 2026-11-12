@@ -44,6 +44,10 @@ ARMS = collections.OrderedDict([
     ("codex-gpt-6-astra", ("astra-codex", "gpt-6-astra (Codex CLI)", "gpt-6-astra", "Codex CLI", codex_log)),
     ("thin-gpt-6-astra", ("astra-loop", "gpt-6-astra (our loop)", "gpt-6-astra", "our loop", thin_log)),
     ("miniswe", ("wonder-miniswe", "Muse Wonder (mini-SWE-agent)", "Muse Wonder", "mini-SWE-agent", miniswe_log)),
+    ("thin-muse-wonder-1.0", ("wonder-loop", "Muse Wonder (our loop)", "Muse Wonder", "our loop", thin_log)),
+    ("codex-gpt-6.1-sol-nudge", ("sol-codex-prompts", "gpt-6.1-sol (Codex CLI + prompts)", "gpt-6.1-sol", "Codex CLI + prompts", codex_log)),
+    ("thin-gpt-6.1-sol-x86", ("sol-loop-x86", "gpt-6.1-sol (our loop, x86 nodes)", "gpt-6.1-sol", "our loop, x86 nodes", thin_log)),
+    ("thin-gpt-6-astra-x86", ("astra-loop-x86", "gpt-6-astra (our loop, x86 nodes)", "gpt-6-astra", "our loop, x86 nodes", thin_log)),
 ])
 REUSE = False
 FRONT_DIR = os.path.join(export.DATA, "frontier")
@@ -300,10 +304,18 @@ def main(argv):
     job_ids = set()
     for path in glob.glob(os.path.join(src, "jobids_*.txt")):
         job_ids.update(l.strip().split("_")[0].split(".")[0] for l in open(path) if l.strip())
+    in_logs = set()
     for path in glob.glob(os.path.join(src, "runs", "*", "*", "*", "*")):
         if os.path.isfile(path) and not path.endswith(".tar"):
             with open(path, encoding="utf-8", errors="replace") as fh:
-                job_ids.update(JOB_RANGE.findall(fh.read()))
+                in_logs.update(JOB_RANGE.findall(fh.read()))
+    # a run's token totals are published in its entry; one that falls in the job
+    # range is a job number only when the scheduler's own list has it
+    totals = set()
+    for row in rows:
+        run_dir = os.path.join(src, "runs", row["paper"], row["budget"], row["run_id"])
+        totals.update(str(v) for v in (tokens_of(run_dir) or {}).values())
+    job_ids |= in_logs - (totals - job_ids)
     scrub.add_job_ids(job_ids)
     export.GATE_PATS = scrub.gate_patterns()
     print("id map %d raw ids, %d job numbers" % (len(id_map), len(job_ids)))

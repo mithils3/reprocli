@@ -307,6 +307,9 @@ def _rule_sources():
         # the GH200 negative lookahead keeps rule 10's [GPU] from being eaten
         # here; no node is named gh200.
         (r"\bgh(?!200)\d{3}(?:\.hsn\.cm)?\b", "[node]", re.I),
+        # the x86 nodes and their login hosts
+        (r"\bgpu[a-d]\d{3}\b|\bcn\d{3}\b", "[node]", 0),
+        (r"\bdt-login0?\d\b", "[login-node]", re.I),
         (r"\bcm\.delta\b", "[host]", re.I),
         # an /etc/hosts dump of the management network, and the driver banner
         (r"\bx\d{3,5}c\d+[rs]\d+b\d+\b", "[node]", 0),
@@ -342,7 +345,8 @@ def _rule_sources():
         # 7. cluster software / partitions
         (r"/sw/spack/\S+", "/sw/[redacted]", re.I),
         (r"\bdeltas?\d{2}[\w-]*", "[cluster-sw]", re.I),
-        (r"\bghx4(?:-interactive)?\b|\bgpu[AH]100x[48](?:-interactive)?\b",
+        (r"\bghx4(?:-interactive)?\b"
+         r"|\bgpu(?:A40|A100|H200|MI100)x\d(?:-interactive|-preempt)?\b",
          "[partition]", re.I),
         (r"\bhsn[0-3]\b", "[iface]", re.I),
         # 8. institution
@@ -658,6 +662,7 @@ GATE_SHAPES = [
     ("posix-group", r"\bgrp_\d"),
     ("posix-id", r"\b(?:uid|gid)=\d|\bgroups=\d+\("),
     ("blade-node", r"\bx\d{3,5}c\d+[rs]\d+b\d+\b"),
+    ("x86-partition", r"\bgpu(?:A40|A100|H200|MI100)x\d"),
     ("grace-hopper", r"grace[\s_-]?hopper|\bgrace[\s_-]+(?:cpu|superchip|cores?)"
                      r"|aarch64[\s/(]*grace"),
     ("gh200-spaced", r"\bgh[\s_-]200\b"),
@@ -720,6 +725,7 @@ GATE_SHAPES = [
 # Case-sensitive, because a training log writes "Step   100000 | TAR=" and the
 # slurm banner writes "*** STEP 2919367.3 ON".
 GATE_SHAPES_CASED = [
+    ("x86-node", r"\bgpu[a-d]\d{3}\b"),
     ("job-step", r"StepId=\d{6,8}|\bSTEP\s+\d{6,8}"),
     # Case-sensitive for the same reason rule 17 is: hf_xet and
     # hf_models_lrm.json are filenames, and a key carries mixed case.
@@ -934,6 +940,9 @@ CASES = [
     ("stack deltas11-2023-03 loaded", "stack [cluster-sw] loaded"),
     ("#SBATCH --partition=ghx4-interactive", "#SBATCH --partition=[partition]"),
     ("#SBATCH --partition=gpuA100x4", "#SBATCH --partition=[partition]"),
+    ('"partition": "gpuA40x4-interactive"', '"partition": "[partition]"'),
+    ("srun: error: gpua065: task 0: Exited with exit code 1",
+     "srun: error: [node]: task 0: Exited with exit code 1"),
     ("bound to hsn2 interface", "bound to [iface] interface"),
     # 8 institution
     ("DeltaAI is an NCSA system at the University of Illinois",
