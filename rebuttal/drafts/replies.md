@@ -197,7 +197,7 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (2,973 characters)
+### Reply to YGTR, part 1 of 2 (2,909 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. We ran the frontier models and production harnesses you asked for and measured each confound you named.
 
@@ -214,7 +214,7 @@ We agree that stronger models and production harnesses make the benchmark more i
 | Muse Wonder | mini-SWE-agent | [5] | [3] | [2] | [2] |
 | Muse Wonder | our loop | [n] | [a] | [d] | [m] |
 
-The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, so we also ran DeepSeek-V4-Flash twice more on the 12 core papers, where it reproduces [r2] and [r3]. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [10] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
+The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, which favours the open-agent columns. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [10] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [3] in our loop and [2] in Codex CLI.
 
 We also noticed that the frontier runs stop early. They used a median of [2.9]% of their GPU grant, against [14.7]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [c] of [n] papers. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
 
@@ -222,7 +222,7 @@ We also noticed that the frontier runs stop early. They used a median of [2.9]% 
 
 The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [37] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 37 = 19%] against 110 of 300 = 37% for the open agents, and [15 of 37] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [8 of 16] at Run, [0 of 15] at Retrain and [4 of 18] at Reimplement (Section 5.3).
 
-### Reply to YGTR, part 2 of 2 (2,924 characters)
+### Reply to YGTR, part 2 of 2 (3,088 characters)
 
 **W2: Failures due to hardware differences.**
 
@@ -230,7 +230,7 @@ At most 14 of the 372 graded runs failed because of our hardware, and removing e
 
 **W3: Agents are only run once.**
 
-We agree, and we reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. Every rate in the revision has a 95% Wilson interval (Section 5.2).
+We agree that one run per cell leaves the results open to noise. To measure the variation between runs, we graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both runs and 5 in neither), and the tenth pair scored 8 and 7. Every rate in the revision also has a 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 

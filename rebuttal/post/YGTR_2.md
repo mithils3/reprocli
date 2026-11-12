@@ -4,7 +4,7 @@ At most 14 of the 372 graded runs failed because of our hardware, and removing e
 
 **W3: Agents are only run once.**
 
-We agree, and we reran DeepSeek-V4-Flash two more times on 12 papers drawn with a fixed seed, four per tier. Its verdict is the same in all three runs on [k] of the 12, and its count of reproduced papers moves by at most [j]. Every rate in the revision has a 95% Wilson interval (Section 5.2).
+We agree that one run per cell leaves the results open to noise. To measure the variation between runs, we graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both runs and 5 in neither), and the tenth pair scored 8 and 7. Every rate in the revision also has a 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 
