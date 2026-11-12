@@ -133,13 +133,13 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,337 characters)
+### Reply to rqBN, part 1 of 1 (4,378 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
 **W1: Validation of the auditor.**
 
-We compared the auditor (Claude Sonnet 5) with one human grader on 372 runs, and the grader did not see the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In 28 runs only one of the two marked the run as reproduced (the human grader in 19, the auditor in 9), and the same direction holds in every tier. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
+We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three human graders scored the runs, one grader per run, without seeing the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the auditor tends to be the stricter one. In 28 runs only one of the two marked the run as reproduced (the human grader in 19, the auditor in 9), and the same direction holds in every tier. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted kappa 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
 
 **W2: Agent-writable logs without an integrity check.**
 
@@ -171,12 +171,12 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 | 62 point estimates, 58 default, 4 margins, 38 others (21 direction, 14 threshold, 3 other); 9/12/14 of 34 | rebuttal/results/e6/summary.json; e6/README.md |
 | Appendix A wording, before and after | paper_latex/appendix/a_harness.tex lines 130-134 (before); the after text is proposed here |
 | 372 runs, 64/73, 64/83, 253 and 324 of 372, 0.59 points, 42 of 57 at 0; per tier 28/31, 28/35, 25/29, 25/32, 11/13, 11/16, recall interval 44% to 86% | rebuttal/results/e4/summary.json (per_tier_reproduced from e4/per_tier.csv) |
-| re-execution: 2505.17836 GoRank mean relative error at 80k steps, target about 0.05, 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 bias, target -0.20, -0.2241, -0.1308, +0.0566, span 0.0566 - (-0.2241) = 0.28; 2506.10351 queued | rebuttal/results/e10/results.md (table and Metrics line) |
+| re-execution: 2505.17836 GoRank mean relative error at 80k steps, target about 0.05, 0.0395, 0.0400, 0.0393, spread 0.0007; 2510.07501 bias, target -0.20, -0.2241, -0.1308, +0.0566, span 0.0566 - (-0.2241) = 0.28; 2506.10351 accuracy, target 93.12, agent 94.19, new seeds 93.65 and 94.15, 94.19 - 93.65 = 0.54 | rebuttal/results/e10/results.md (table and Metrics line) |
 | no Reimplement paper in the re-execution (selection from Run and Retrain only) | rebuttal/results/e10/README.md (Selection) |
 | no human reproduction, stated in Limitations | paper_latex/iclr2027_conference.tex:583-589 |
 | 2,552 = 10,208 / 4 H100-hours | paper Section 5.2 (paper_latex/iclr2027_conference.tex line 494, "1,888 of the 10,208 H100-hours we granted") |
 | 8 corrected targets change two verdicts | rebuttal/results/e7/rescore_summary.md; e7/class_d_rescore.md |
-| 2506.10351 re-execution | pending (E10) |
+| PaperBench human baseline: ML PhDs, best of 3 attempts, 41.4% after 48 hours of effort on a 3-paper subset (o1 26.6% on the same subset) | arXiv 2504.01848 (Starace et al.), abstract-level summary in its introduction; read from arxiv.org/html/2504.01848 on 2026-11-11 |
 | best of four agents: 32 of 100 papers [24%, 42%]; Run 16/34 (47%, [31%, 63%]), Retrain 11/33 (33%, [20%, 50%]), Reimplement 5/33 (15%, [7%, 31%]); 70 reproduced cells | tools/anon_viewer/public/data/index.json minus the two checkpoint runs and the two 2505.23747 Run runs, plus the new Muse grade on 2503.23035 (computed by the main session, 2026-11-09) |
 | other 45 targets: frozen number wrong 8, number right and a setting or label off 16, correct or unclear 21; human at 0 on 46 runs, auditor on 53 | rebuttal/mithil/e7_merged.md (Kind of error column: number 8, setting or label 15 + 1, none 21); rebuttal/results/e4/summary.json (disqualified_score0_as_high_severity) |
 | Run recall interval 64% to 90%; 25 retried first attempts absent from the host transcript; 2510.07501 seeds also miss | rebuttal/results/e4/summary.json (per_tier_reproduced.run.recall_wilson95); e5/README.md (Headline); e10/results.md (outcome column) |
