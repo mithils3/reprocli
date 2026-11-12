@@ -134,13 +134,13 @@ Please let us know if anything here needs more detail, and thank you again for y
 
 ## rqBN
 
-### Reply to rqBN, part 1 of 1 (4,247 characters)
+### Reply to rqBN, part 1 of 1 (4,264 characters)
 
 Thank you for the thoughtful review and for your kind words about the methodological disclosure.
 
 **W1: Validation of the auditor.**
 
-We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three human graders scored the runs, one grader per run, without seeing the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the LLM auditor tends to be the stricter one. Of the 28 runs that only one of them marked as reproduced, 19 were from the human grader and 9 from the LLM auditor. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted $\kappa$ = 0.89). For the anti-cheat flags, a high-severity flag sets a run's score to 0, and both graders gave a 0 to 42 of the 57 runs that either of them scored 0 (full matrix in Appendix D).
+We compared the auditor (Claude Sonnet 5) with human grades on 372 runs. Three human graders scored the runs, one grader per run, without seeing the auditor's score. On the reproduced verdict, the auditor's precision is $\frac{64}{73}$ = 88% and its recall is $\frac{64}{83}$ = 77% (F1 0.82). When the two disagree, the LLM auditor tends to be the stricter one. Of the 28 runs that only one of them marked as reproduced, 19 were from the human grader and 9 from the LLM auditor. On the full 0 to 10 scale, the two differ by at most one point on 324 of the 372 runs (quadratic weighted $\kappa$ = 0.89). For the anti-cheat flags, where a high-severity flag sets a run's score to 0, 57 runs received a 0 from at least one grader, and both graders gave a 0 to 42 of them (full matrix in Appendix D).
 
 **W2: Agent-writable logs without an integrity check.**
 
