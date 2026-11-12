@@ -1,0 +1,30 @@
+{
+ "runs": 372,
+ "db_calls": 31022,
+ "matched": 30739,
+ "disk_entries": 30869,
+ "gpu_db": 12709,
+ "gpu_match": 12663,
+ "seq_missing": 51,
+ "disk_retry_attempt": 79,
+ "db_only_no_rc": 221,
+ "db_result_row_missing": 51,
+ "matched_command_only": 51,
+ "gpu_release_match": 43,
+ "gpu_differs": 3,
+ "db_only": 11,
+ "runs_all_db_calls_matched": 236,
+ "runs_with_rc_differs": 0,
+ "runs_with_disk_only": 0,
+ "lag_s": {
+  "n": 30739,
+  "p01": 0.07,
+  "median": 0.59,
+  "p99": 1.13,
+  "min": -8.097028017044067,
+  "max": 7.897058963775635,
+  "within_10s": 30739,
+  "within_60s": 30739,
+  "over_300s": 0
+ }
+}
