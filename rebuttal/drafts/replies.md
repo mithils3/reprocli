@@ -222,11 +222,11 @@ We also noticed that the frontier runs stop early. They used a median of [3.2]% 
 
 The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [38] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [7 of 38 = 18%] against 110 of 300 = 37% for the open agents, and [16 of 38] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim. The frontier runs reproduce [9 of 17] at Run, [0 of 15] at Retrain and [4 of 19] at Reimplement (Section 5.3).
 
-### Reply to YGTR, part 2 of 2 (3,088 characters)
+### Reply to YGTR, part 2 of 2 (3,177 characters)
 
 **W2: Failures due to hardware differences.**
 
-At most 14 of the 372 graded runs failed because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts. We replayed the 12 on x86 nodes, and 9 build there (95% Wilson interval 47% to 91%). With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3). [x86 frontier arm: gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes reproduce a of n, against b of n for the same models and papers on GH200 nodes.]
+At most 14 of the 372 graded runs failed because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts. We replayed the 12 on x86 nodes, and 9 build there (95% Wilson interval 47% to 91%). With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3). We also ran gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes. They reproduce [4 of 6] model and paper pairs there, against [3 of 6] for the same models and papers on our GH200 nodes, and the two scores of every pair are within one point.
 
 **W3: Agents are only run once.**
 
@@ -286,6 +286,7 @@ We would be glad to discuss any of these results further. Thank you again.
 | continue-prompt variant: up to 3 prompts when a run stops with under half its grant used | rebuttal/STATUS.md:48; arm codex-gpt-6.1-sol-nudge, 0 graded on 11-09 |
 | Claude Code left out: same-family auditor and the API budget of the new runs | rebuttal/mithil/decisions_monday.md decision 15; rebuttal/PLAN.md:198 |
 | at most 14 hardware failures (14 aarch64 package failures, 3 of the 12 replayed also fail on x86) | rebuttal/results/e8/summary.json; e8/x86/README.md |
+| x86 frontier runs: [4 of 6] reproduced against [3 of 6] for the same model and paper on GH200 (scores 2/1, 7/7, 8/8, 8/8, 9/8, 8/7) | rebuttal/results/databook/frontier_cells.csv, arms ending in -x86 against the same arm without the suffix |
 
 ## Risks: where a reviewer could push back
 
