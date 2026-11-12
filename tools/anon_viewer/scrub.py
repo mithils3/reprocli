@@ -431,6 +431,11 @@ def _rule_sources():
         (r"\b[A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+"
          r"(?:[AP]M\s+)?(?:CDT|CST|EDT|EST|MDT|MST|PDT|PST|UTC|GMT)\s+\d{4}\b",
          "[timestamp]", 0),
+        # 13b. compact stamps: a raw run id cut short by a truncated line
+        # misses the id map, and agents stamp their own file names
+        (r"\b[A-Za-z][\w.]*(?:-[\w.]+)*-20\d{6}T\d{6}Z?(?:-[0-9a-f]{1,6})?\b",
+         "[run]", 0),
+        (r"(?<!\d)20\d{6}T\d{6}Z?(?!\d)", "[timestamp]", 0),
         # 14. the retired difficulty vocabulary, where it is bound to the word
         # it labels. A bare "hard" belongs to the agent and stays.
         (r"(?:\bdifficulty\s+)?\btier\s*[:=]\s*(?:easy|medium|hard)\b",
@@ -983,7 +988,7 @@ CASES = [
     ("graded by zai-org/GLM-5.2 earlier", "graded by [model] earlier"),
     # shapes the Muse Spark sweeps added on 2026-09-03
     ("--output /work/nvme/bfvr/msalunkhe/harness/muse_spark_sweeps/medium/20260816T133804Z/reproduce_2506.08898.jsonl",
-     "--output /work/[user]/harness/sweeps/medium/20260816T133804Z/reproduce_2506.08898.jsonl"),
+     "--output /work/[user]/harness/sweeps/medium/[timestamp]/reproduce_2506.08898.jsonl"),
     ("3190:803230 /nvme/bfvr/msalunkhe/harness/agent_runs/2505.14827/8h/muse-run-2505.14827/workspace",
      "3190:803230 /work/[user]/harness/agent_runs/2505.14827/8h/muse-run-2505.14827/workspace"),
     ("0:00:30  114Mmsalunk+ 2775316  0.0", "0:00:30  114M[user] 2775316  0.0"),
@@ -1073,6 +1078,8 @@ CASES = [
     ("cd /work/msalunkiwl 2>/dev/null", "cd /work/[user] 2>/dev/null"),
     # wall clock and timezone
     ("=== START bio Thu Aug  6 02:06:17 CDT 2026 ===", "=== START bio [timestamp] ==="),
+    ("agent_runs/2510.21363/8h/codex-gpt-6.1-sol-nudge-20261109T194118", "agent_runs/2510.21363/8h/[run]"),
+    ("executed_20261109T105213Z.ipynb", "executed_[timestamp].ipynb"),
     ("Release Build Mon Jun  1 03:57:01 PM CDT 2026 gcc",
      "Release Build [timestamp] gcc"),
     ("[2026-08-10T01:15:35.005] error: job step aborted",
