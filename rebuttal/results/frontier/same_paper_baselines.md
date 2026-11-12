@@ -1,6 +1,6 @@
 # Open agents on each frontier arm's own papers
 
-Source: rebuttal/results/databook/frontier_cells.csv (54 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
+Source: rebuttal/results/databook/frontier_cells.csv (57 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
 
 | arm | graded | reproduced | mean score | DeepSeek-V4-Flash reproduced | DeepSeek-V4-Flash mean | Muse Spark 1.2 reproduced | Muse Spark 1.2 mean | Qwen3.6-27B reproduced | Qwen3.6-27B mean | MiniMax-M2.7 reproduced | MiniMax-M2.7 mean |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -9,8 +9,10 @@ Source: rebuttal/results/databook/frontier_cells.csv (54 graded rows). Reproduce
 | thin-gpt-6.1-sol | 11 | 4/11 [15%, 65%] | 5.45 | 4/11 | 5.91 | 4/11 | 5.73 | 3/11 | 3.91 | 2/11 | 3.27 |
 | miniswe | 5 | 3/5 [23%, 88%] | 6.60 | 2/5 | 5.40 | 2/5 | 5.40 | 2/5 | 4.60 | 1/5 | 2.80 |
 | thin-gpt-6-astra | 6 | 1/6 [3%, 56%] | 4.83 | 4/6 | 7.17 | 3/6 | 7.17 | 2/6 | 4.67 | 2/6 | 4.33 |
-| thin-gpt-6-astra-x86 | 2 | 1/2 [9%, 91%] | 5.00 | 1/2 | 6.00 | 0/2 | 5.50 | 1/2 | 6.00 | 0/2 | 3.00 |
+| thin-gpt-6-astra-x86 | 3 | 2/3 [21%, 94%] | 6.00 | 2/3 | 6.67 | 1/3 | 6.33 | 2/3 | 6.67 | 1/3 | 4.67 |
 | thin-gpt-6.1-sol-x86 | 3 | 2/3 [21%, 94%] | 8.00 | 2/3 | 6.67 | 1/3 | 6.00 | 2/3 | 6.00 | 1/3 | 5.33 |
+| thin-muse-wonder-1.0 | 1 | 0/1 [0%, 79%] | 3.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 0.00 |
+| codex-gpt-6.1-sol-nudge | 1 | 1/1 [21%, 100%] | 8.00 | 1/1 | 8.00 | 1/1 | 9.00 | 0/1 | 4.00 | 0/1 | 4.00 |
 
 ## Frontier runs by tier
 
@@ -21,9 +23,11 @@ Source: rebuttal/results/databook/frontier_cells.csv (54 graded rows). Reproduce
 | thin-gpt-6.1-sol | 3/3 | 0/4 | 1/4 |
 | miniswe | 2/2 | 0/1 | 1/2 |
 | thin-gpt-6-astra | 1/2 | 0/2 | 0/2 |
-| thin-gpt-6-astra-x86 | 1/1 | 0/0 | 0/1 |
+| thin-gpt-6-astra-x86 | 1/1 | 0/0 | 1/2 |
 | thin-gpt-6.1-sol-x86 | 2/2 | 0/0 | 0/1 |
-| all arms on GH200 nodes | 8/16 [28%, 72%] | 0/15 [0%, 20%] | 4/18 [9%, 45%] |
+| thin-muse-wonder-1.0 | 0/0 | 0/0 | 0/1 |
+| codex-gpt-6.1-sol-nudge | 1/1 | 0/0 | 0/0 |
+| all arms on GH200 nodes | 9/17 [31%, 74%] | 0/15 [0%, 20%] | 4/19 [9%, 43%] |
 
 ## gpt-6.1-sol, our loop against Codex CLI, papers graded in both
 
@@ -44,7 +48,7 @@ Papers in both: 10. Reproduced: our loop 3, Codex CLI 2. Same verdict on 7; repr
 
 ## Share of the GPU grant used
 
-Frontier runs on GH200 nodes with a recorded spend: 49 of 49; median 2.9% of the grant, 28 of 49 under 5%. Open agents, submitted runs on the same 21 papers: 81 runs, median 14.7% of the grant.
+Frontier runs on GH200 nodes with a recorded spend: 51 of 51; median 3.2% of the grant, 28 of 51 under 5%. Open agents, submitted runs on the same 21 papers: 81 runs, median 14.7% of the grant.
 
 ## Paper 2506.08898 (Retrain, 32 H100-hour grant)
 

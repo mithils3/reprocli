@@ -13,7 +13,7 @@ ARMS = {  # arm -> (model, harness), in table order
     "codex-gpt-6.1-sol-nudge": ("gpt-6.1-sol", "Codex CLI + prompts"),
     "thin-gpt-6-astra": ("gpt-6-astra", "ours"),
     "codex-gpt-6-astra": ("gpt-6-astra", "Codex CLI"),
-    "thin-muse-wonder": ("Muse Wonder", "ours"),
+    "thin-muse-wonder-1.0": ("Muse Wonder", "ours"),
     "miniswe": ("Muse Wonder", "mini-SWE-agent"),
 }
 TIER = {"run": "Run", "retrain": "Retrain", "reimplement": "Reimplement"}

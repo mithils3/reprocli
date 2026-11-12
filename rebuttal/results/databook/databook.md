@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-11T23:05:48Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 54 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-12T04:07:20Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 57 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -10,12 +10,12 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 19 | 2/19 [2.9, 31.4] | 4.53 | -1.84 (n=19) | 7 |
 | codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 3.75 | -2.75 (n=8) | 2 |
-| codex-gpt-6.1-sol-nudge | 8 | 0 | - (n=0) | - | - (n=0) | 0 |
+| codex-gpt-6.1-sol-nudge | 8 | 1 | 1/1 [20.7, 100.0] | 8.00 | -1.00 (n=1) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
-| thin-muse-wonder-1.0 | 12 | 0 | - (n=0) | - | - (n=0) | 0 |
+| thin-muse-wonder-1.0 | 12 | 1 | 0/1 [0.0, 79.3] | 3.00 | -1.00 (n=1) | 0 |
 | miniswe | 6 | 5 | 3/5 [23.1, 88.2] | 6.60 | 0.40 (n=5) | 0 |
 | thin-gpt-6-astra | not planned | 6 | 1/6 [3.0, 56.4] | 4.83 | -2.67 (n=6) | 2 |
-| thin-gpt-6-astra-x86 | not planned | 2 | 1/2 [9.5, 90.5] | 5.00 | -1.00 (n=2) | 1 |
+| thin-gpt-6-astra-x86 | not planned | 3 | 2/3 [20.8, 93.9] | 6.00 | -0.67 (n=3) | 1 |
 | thin-gpt-6.1-sol-x86 | not planned | 3 | 2/3 [20.8, 93.9] | 8.00 | 1.33 (n=3) | 0 |
 
 Per-run rows (one per grades.jsonl row since 2026-11-07):
@@ -76,6 +76,9 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6-astra | gpt-6-astra | 2502.05795 | 8h | codex-gpt-6-astra-20261109T024706Z-5280d9 | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | partial | natural | 3576.19 | 8.0 | 3.8094 |
 | thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2506.20671 | 8h | x86-a-2506.20671-ff300c | 9 | reproduced | True | run | 4 | 2 | 3 | 2 | 4 | 5 | partial | natural |  | 8.0 | 1.0971 |
 | thin-gpt-6-astra | gpt-6-astra | 2502.05795 | 8h | astra-a-2502.05795-9fe88f | 2 | not_reproduced | False | run | 8 | 4 | 9 | 4 | 9 | -7 | could_not_run | natural |  | 8.0 | 0.5237 |
+| thin-muse-wonder-1.0 | muse-wonder-1.0 | 2505.16927 | 32h | core-a-2505.16927-f60e76 | 3 | not_reproduced | False | reimplement | 4 | 0 | 4 | 4 | 4 | -1 | not_reproduced | natural |  | 32.0 | 11.3447 |
+| thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2505.19087 | 8h | astra-x86-2505.19087-a165ea | 8 | reproduced | True | reimplement | 8 | 8 | 8 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.3241 |
+| codex-gpt-6.1-sol-nudge | gpt-6.1-sol-nudge | 2502.05795 | 8h | codex-gpt-6.1-sol-nudge-20261109T194118Z-a67ffd | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | partial | natural | 3017.63 | 8.0 | 5.6985 |
 
 ## 2. Static results (final)
 
