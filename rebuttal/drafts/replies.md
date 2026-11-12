@@ -46,13 +46,13 @@ We would be glad to answer further questions.
 
 ## T29u
 
-### Reply to T29u, part 1 of 1 (4,621 characters)
+### Reply to T29u, part 1 of 1 (4,454 characters)
 
 Thank you for your review, and for noting that the task is important and the evaluation design careful.
 
 **W1: One run per agent-paper cell.**
 
-We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every reproduction rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both runs and 5 in neither; 95% interval 60% to 98%), and the tenth pair scored 8 and 7. We are also running DeepSeek-V4-Flash two more times on 12 papers, four from each tier, and will post the agreement across its three runs here as soon as they finish.
+We agree that one run per cell leaves our results susceptible to noise. To account for this, we now report every reproduction rate in the revised paper with its 95% interval, as in the table below. To measure the variation between runs, we graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both runs and 5 in neither; 95% interval 60% to 98%), and the tenth pair scored 8 and 7.
 
 | Agent | Run (34 papers) | Retrain (33) | Reimplement (33) |
 | :- | -: | -: | -: |
