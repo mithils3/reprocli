@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-12T21:36:40Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 62 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-12T22:16:50Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 63 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -8,7 +8,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
-| codex-gpt-6.1-sol | 24 | 22 | 3/22 [4.7, 33.3] | 4.86 | -1.59 (n=22) | 7 |
+| codex-gpt-6.1-sol | 24 | 23 | 4/23 [7.0, 37.1] | 5.00 | -1.61 (n=23) | 7 |
 | codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 3.75 | -2.75 (n=8) | 2 |
 | codex-gpt-6.1-sol-nudge | 8 | 2 | 1/2 [9.5, 90.5] | 7.50 | -1.00 (n=2) | 0 |
 | thin-gpt-6.1-sol | 12 | 12 | 5/12 [19.3, 68.0] | 5.67 | -0.33 (n=12) | 3 |
@@ -84,6 +84,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6.1-sol | gpt-6.1-sol | 2505.10475 | 32h | core-a-2505.10475-deace2 | 8 | reproduced | True | run | 0 | 0 | 0 | 3 | 3 | 5 | partial | natural |  | 32.0 | 6.3578 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2410.19933 | 32h | codex-gpt-6.1-sol-20261108T134913Z-1b86b5 | 6 | partial | False | retrain | 0 | 0 | 2 | 3 | 3 | 3 | not_reproduced | natural | 5624.59 | 32.0 | 19.8935 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2508.21046 | 96h | codex-gpt-6.1-sol-20261108T023042Z-8025fb | 7 | partial | False | retrain | 6 | 2 | 9 | 2 | 9 | -2 | not_reproduced | natural | 6706.14 | 96.0 | 4.7638 |
+| codex-gpt-6.1-sol | gpt-6.1-sol | 2510.23577 | 8h | codex-gpt-6.1-sol-20261108T121541Z-0e726f | 8 | reproduced | True | retrain | 8 | 8 | 10 | 8 | 10 | -2 | partial | natural | 6075.89 | 8.0 | 4.0978 |
 
 ## 2. Static results (final)
 
