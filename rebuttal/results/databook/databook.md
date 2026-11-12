@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-12T13:21:38Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 58 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-12T14:23:30Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 59 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -10,7 +10,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 20 | 3/20 [5.2, 36.0] | 4.70 | -1.80 (n=20) | 7 |
 | codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 3.75 | -2.75 (n=8) | 2 |
-| codex-gpt-6.1-sol-nudge | 8 | 1 | 1/1 [20.7, 100.0] | 8.00 | -1.00 (n=1) | 0 |
+| codex-gpt-6.1-sol-nudge | 8 | 2 | 1/2 [9.5, 90.5] | 7.50 | -1.00 (n=2) | 0 |
 | thin-gpt-6.1-sol | 12 | 11 | 4/11 [15.2, 64.6] | 5.45 | -0.82 (n=11) | 3 |
 | thin-muse-wonder-1.0 | 12 | 1 | 0/1 [0.0, 79.3] | 3.00 | -1.00 (n=1) | 0 |
 | miniswe | 6 | 5 | 3/5 [23.1, 88.2] | 6.60 | 0.40 (n=5) | 0 |
@@ -80,6 +80,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | thin-gpt-6-astra-x86 | gpt-6-astra-x86 | 2505.19087 | 8h | astra-x86-2505.19087-a165ea | 8 | reproduced | True | reimplement | 8 | 8 | 8 | 8 | 8 | 0 | partial | natural |  | 8.0 | 0.3241 |
 | codex-gpt-6.1-sol-nudge | gpt-6.1-sol-nudge | 2502.05795 | 8h | codex-gpt-6.1-sol-nudge-20261109T194118Z-a67ffd | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | partial | natural | 3017.63 | 8.0 | 5.6985 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2502.05795 | 8h | codex-gpt-6.1-sol-20261108T005328Z-9d3d35 | 8 | reproduced | True | run | 8 | 4 | 9 | 4 | 9 | -1 | partial | natural | 3336.27 | 8.0 | 3.9338 |
+| codex-gpt-6.1-sol-nudge | gpt-6.1-sol-nudge | 2510.21363 | 8h | codex-gpt-6.1-sol-nudge-20261109T194118Z-637345 | 7 | partial | False | retrain | 8 | 8 | 7 | 4 | 8 | -1 | not_reproduced | natural | 2677.29 | 8.0 | 5.3664 |
 
 ## 2. Static results (final)
 
