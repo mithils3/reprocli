@@ -8,14 +8,14 @@ Open-agent share is the primary-mode count over the 300 labeled open-agent cells
 
 | Mode | Open agents | Open share (95% interval) | codex-gpt-6-astra (N=6) | codex-gpt-6.1-sol (N=19) | codex-gpt-6.1-sol-nudge (N=1) | miniswe (N=2) | thin-gpt-6-astra (N=5) | thin-gpt-6.1-sol (N=7) | thin-muse-wonder-1.0 (N=1) | All frontier |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Ran, outside tolerance | 76 | 25% (21% to 31%) | 0 | 5 | 1 | 0 | 1 | 2 | 0 | 9 of 41 (22%, 12% to 37%) |
+| Ran, outside tolerance | 76 | 25% (21% to 31%) | 1 | 5 | 1 | 0 | 1 | 2 | 0 | 10 of 41 (24%, 14% to 39%) |
 | Reimplemented but did not check the result | 63 | 21% (17% to 26%) | 0 | 3 | 0 | 0 | 1 | 1 | 0 | 5 of 41 (12%, 5% to 26%) |
 | Build and dependency failures | 24 | 8% (5% to 12%) | 1 | 2 | 0 | 0 | 0 | 1 | 0 | 4 of 41 (10%, 4% to 23%) |
 | Wrong artifact measured | 38 | 13% (9% to 17%) | 0 | 2 | 0 | 0 | 1 | 0 | 0 | 3 of 41 (7%, 3% to 19%) |
 | Wrong experiment | 46 | 15% (12% to 20%) | 1 | 1 | 0 | 1 | 0 | 1 | 0 | 4 of 41 (10%, 4% to 23%) |
 | Echoed a shipped number | 9 | 3% (2% to 6%) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 of 41 (0%, 0% to 9%) |
 | Never launched an experiment | 13 | 4% (3% to 7%) | 2 | 3 | 0 | 0 | 2 | 2 | 0 | 9 of 41 (22%, 12% to 37%) |
-| Failed before any number was produced | 31 | 10% (7% to 14%) | 2 | 3 | 0 | 1 | 0 | 0 | 1 | 7 of 41 (17%, 9% to 31%) |
+| Failed before any number was produced | 31 | 10% (7% to 14%) | 1 | 3 | 0 | 1 | 0 | 0 | 1 | 6 of 41 (15%, 7% to 28%) |
 
 The open agents' three most common non-reproduced modes are Ran, outside tolerance, Reimplemented but did not check the result, Wrong experiment.
 
@@ -24,14 +24,14 @@ The open agents' three most common non-reproduced modes are Ran, outside toleran
 | Mode | codex-gpt-6-astra | codex-gpt-6.1-sol | codex-gpt-6.1-sol-nudge | miniswe | thin-gpt-6-astra | thin-gpt-6.1-sol | thin-muse-wonder-1.0 | All frontier |
 |---|---|---|---|---|---|---|---|---|
 | Reproduced | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 of 41 |
-| Ran, outside tolerance | 0 | 9 | 1 | 0 | 2 | 3 | 0 | 15 of 41 |
+| Ran, outside tolerance | 1 | 9 | 1 | 0 | 2 | 3 | 0 | 16 of 41 |
 | Reimplemented but did not check the result | 0 | 3 | 0 | 1 | 1 | 1 | 1 | 7 of 41 |
 | Build and dependency failures | 2 | 7 | 1 | 0 | 2 | 1 | 1 | 14 of 41 |
-| Wrong artifact measured | 0 | 4 | 0 | 1 | 1 | 2 | 0 | 8 of 41 |
+| Wrong artifact measured | 1 | 4 | 0 | 1 | 1 | 2 | 0 | 9 of 41 |
 | Wrong experiment | 2 | 1 | 0 | 1 | 1 | 1 | 0 | 6 of 41 |
 | Echoed a shipped number | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 of 41 |
 | Never launched an experiment | 2 | 3 | 0 | 0 | 2 | 3 | 0 | 10 of 41 |
-| Failed before any number was produced | 2 | 5 | 0 | 1 | 0 | 0 | 1 | 9 of 41 |
+| Failed before any number was produced | 1 | 5 | 0 | 1 | 0 | 0 | 1 | 8 of 41 |
 
 ## Method notes
 

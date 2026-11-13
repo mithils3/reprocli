@@ -4,7 +4,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (65 graded rows). Reproduce
 
 | arm | graded | reproduced | mean score | DeepSeek-V4-Flash reproduced | DeepSeek-V4-Flash mean | Muse Spark 1.2 reproduced | Muse Spark 1.2 mean | Qwen3.6-27B reproduced | Qwen3.6-27B mean | MiniMax-M2.7 reproduced | MiniMax-M2.7 mean |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| codex-gpt-6-astra | 8 | 2/8 [7%, 59%] | 3.75 | 4/8 | 5.88 | 3/8 | 5.62 | 2/8 | 4.38 | 2/8 | 3.50 |
+| codex-gpt-6-astra | 8 | 2/8 [7%, 59%] | 4.38 | 4/8 | 5.88 | 3/8 | 5.62 | 2/8 | 4.38 | 2/8 | 3.50 |
 | codex-gpt-6.1-sol | 23 | 4/23 [7%, 37%] | 5.00 | 8/23 | 5.74 | 7/23 | 5.57 | 5/23 | 4.00 | 4/23 | 2.96 |
 | thin-gpt-6.1-sol | 12 | 5/12 [19%, 68%] | 5.67 | 4/12 | 5.42 | 4/12 | 5.25 | 3/12 | 3.83 | 2/12 | 3.00 |
 | miniswe | 6 | 4/6 [30%, 90%] | 6.83 | 3/6 | 5.83 | 2/6 | 5.67 | 2/6 | 4.50 | 2/6 | 3.67 |
@@ -49,7 +49,7 @@ Papers in both: 11. Reproduced: our loop 4, Codex CLI 3. Same verdict on 8; repr
 
 ## Share of the GPU grant used
 
-Frontier runs on GH200 nodes with a recorded spend: 59 of 59; median 5.1% of the grant, 29 of 59 under 5%. Open agents, submitted runs on the same 24 papers: 92 runs, median 14.3% of the grant.
+Frontier runs on GH200 nodes with a recorded spend: 59 of 59; median 5.6% of the grant, 29 of 59 under 5%. Open agents, submitted runs on the same 24 papers: 92 runs, median 14.3% of the grant.
 
 ## Paper 2506.08898 (Retrain, 32 H100-hour grant)
 

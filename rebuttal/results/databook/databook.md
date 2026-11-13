@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-13T08:38:59Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 65 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-13T10:03:02Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 65 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -9,7 +9,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | arm | planned | graded | reproduced rate | mean score | paired diff (n) | could_not_run |
 |---|---|---|---|---|---|---|
 | codex-gpt-6.1-sol | 24 | 23 | 4/23 [7.0, 37.1] | 5.00 | -1.61 (n=23) | 7 |
-| codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 3.75 | -2.75 (n=8) | 2 |
+| codex-gpt-6-astra | 8 | 8 | 2/8 [7.1, 59.1] | 4.38 | -2.12 (n=8) | 2 |
 | codex-gpt-6.1-sol-nudge | 8 | 3 | 2/3 [20.8, 93.9] | 7.67 | -0.67 (n=3) | 0 |
 | thin-gpt-6.1-sol | 12 | 12 | 5/12 [19.3, 68.0] | 5.67 | -0.33 (n=12) | 3 |
 | thin-muse-wonder-1.0 | 12 | 1 | 0/1 [0.0, 79.3] | 3.00 | -1.00 (n=1) | 0 |
@@ -55,7 +55,6 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | miniswe | miniswe | 2505.10475 | 32h | miniswe-2505.10475-20261107T014125 | 8 | reproduced | True | run | 0 | 0 | 0 | 3 | 3 | 5 | reproduced | submitted |  | 32.0 | 13.2684 |
 | thin-gpt-6.1-sol | gpt-6.1-sol | 2506.20671 | 8h | core-a-2506.20671-85c5e2 | 8 | reproduced | True | run | 4 | 2 | 3 | 2 | 4 | 4 | partial | natural |  | 8.0 | 1.1006 |
 | thin-gpt-6.1-sol | gpt-6.1-sol | 2506.06991 | 8h | core-a-2506.06991-4ace48 | 6 | partial | False | retrain | 6 | 4 | 6 | 0 | 6 | 0 | not_reproduced | natural |  | 8.0 | 1.1026 |
-| codex-gpt-6-astra | gpt-6-astra | 2504.20571 | 8h | codex-gpt-6-astra-20261107T140243Z-9f613b | 2 | not_reproduced | False | run | 8 | 6 | 7 | 8 | 8 | -6 | partial | wall_clock | 2850.4 | 8.0 | 0.4061 |
 | codex-gpt-6-astra | gpt-6-astra | 2504.12463 | 96h | codex-gpt-6-astra-20261109T140330Z-235c24 | 2 | not_reproduced | False | retrain | 4 | 2 | 2 | 4 | 4 | -2 | could_not_run | natural | 11.73 | 96.0 | 0.1663 |
 | thin-gpt-6-astra | gpt-6-astra | 2505.16927 | 32h | astra-a-2505.16927-50c745 | 1 | unverifiable | False | reimplement | 4 | 0 | 4 | 4 | 4 | -3 | could_not_run | natural |  | 32.0 | 0.0689 |
 | thin-gpt-6-astra | gpt-6-astra | 2506.08898 | 32h | astra-a-2506.08898-d3db7c | 4 | not_reproduced | False | retrain | 7 | 0 | 8 | 0 | 8 | -4 | partial | natural |  | 32.0 | 0.4636 |
@@ -87,6 +86,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2510.23577 | 8h | codex-gpt-6.1-sol-20261108T121541Z-0e726f | 8 | reproduced | True | retrain | 8 | 8 | 10 | 8 | 10 | -2 | partial | natural | 6075.89 | 8.0 | 4.0978 |
 | miniswe | miniswe | 2510.21363 | 8h | miniswe-2510.21363-20261110T003114 | 8 | reproduced | True | retrain | 8 | 8 | 7 | 4 | 8 | 0 | partial | submitted |  | 8.0 | 6.5278 |
 | codex-gpt-6.1-sol-nudge | gpt-6.1-sol-nudge | 2504.20571 | 8h | codex-gpt-6.1-sol-nudge-20261109T194118Z-bab459 | 8 | reproduced | True | run | 8 | 6 | 7 | 8 | 8 | 0 | partial | natural | 4572.61 | 8.0 | 6.4806 |
+| codex-gpt-6-astra | gpt-6-astra | 2504.20571 | 8h | codex-gpt-6-astra-20261109T194148Z-7ddbf9 | 7 | partial | False | run | 8 | 6 | 7 | 8 | 8 | -1 | not_reproduced | natural | 4810.57 | 8.0 | 5.2051 |
 
 ## 2. Static results (final)
 
