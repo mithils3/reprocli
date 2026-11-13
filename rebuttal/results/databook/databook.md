@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-13T16:30:36Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 66 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-13T17:55:42Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 67 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -16,7 +16,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | miniswe | 6 | 6 | 4/6 [30.0, 90.3] | 6.83 | 0.33 (n=6) | 0 |
 | thin-gpt-6-astra | not planned | 6 | 1/6 [3.0, 56.4] | 4.83 | -2.67 (n=6) | 2 |
 | thin-gpt-6-astra-x86 | not planned | 3 | 2/3 [20.8, 93.9] | 6.00 | -0.67 (n=3) | 1 |
-| thin-gpt-6.1-sol-x86 | not planned | 4 | 2/4 [15.0, 85.0] | 6.50 | 0.50 (n=4) | 1 |
+| thin-gpt-6.1-sol-x86 | not planned | 5 | 2/5 [11.8, 76.9] | 6.40 | 0.40 (n=5) | 1 |
 
 Per-run rows (one per grades.jsonl row since 2026-11-07):
 
@@ -88,6 +88,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6-astra | gpt-6-astra | 2504.20571 | 8h | codex-gpt-6-astra-20261109T194148Z-7ddbf9 | 7 | partial | False | run | 8 | 6 | 7 | 8 | 8 | -1 | not_reproduced | natural | 4810.57 | 8.0 | 5.2051 |
 | codex-gpt-6-astra | gpt-6-astra | 2505.10475 | 32h | codex-gpt-6-astra-20261109T194148Z-1917b9 | 8 | reproduced | True | run | 0 | 0 | 0 | 3 | 3 | 5 | partial | natural | 4804.38 | 32.0 | 7.516 |
 | thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2504.12463 | 96h | x86-a-2504.12463-010051 | 2 | not_reproduced | False | retrain | 4 | 2 | 2 | 4 | 4 | -2 | could_not_run | natural |  | 96.0 | 0.3355 |
+| thin-gpt-6.1-sol-x86 | gpt-6.1-sol-x86 | 2506.06991 | 8h | x86-a-2506.06991-4cf7fc | 6 | partial | False | retrain | 6 | 4 | 6 | 0 | 6 | 0 | not_reproduced | natural |  | 8.0 | 0.6764 |
 
 ## 2. Static results (final)
 
@@ -148,12 +149,12 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
 | 3540624 | repro_easy_dsv4 | TIMEOUT | 2-00:00:00 | 2026-11-08T20:43:41 | finished |
-| 3540625 | repro_medium_dsv4 | RUNNING | 05:49:16 | 2026-11-13T04:41:20 | pending |
-| 3540626 | repro_hard_dsv4 | RUNNING | 05:49:16 | 2026-11-13T04:41:20 | pending |
-| 3540627 | repro_easy_dsv4 | RUNNING | 05:18:50 | 2026-11-13T05:11:46 | pending |
-| 3540628 | repro_medium_dsv4 | RUNNING | 05:18:50 | 2026-11-13T05:11:46 | pending |
-| 3540629 | repro_hard_dsv4 | RUNNING | 05:12:22 | 2026-11-13T05:18:14 | pending |
-| 3540630 | repro_easy_dsv4 | RUNNING | 04:52:19 | 2026-11-13T05:38:17 | pending |
+| 3540625 | repro_medium_dsv4 | RUNNING | 07:14:22 | 2026-11-13T04:41:20 | pending |
+| 3540626 | repro_hard_dsv4 | RUNNING | 07:14:22 | 2026-11-13T04:41:20 | pending |
+| 3540627 | repro_easy_dsv4 | RUNNING | 06:43:56 | 2026-11-13T05:11:46 | pending |
+| 3540628 | repro_medium_dsv4 | RUNNING | 06:43:56 | 2026-11-13T05:11:46 | pending |
+| 3540629 | repro_hard_dsv4 | RUNNING | 06:37:28 | 2026-11-13T05:18:14 | pending |
+| 3540630 | repro_easy_dsv4 | RUNNING | 06:17:25 | 2026-11-13T05:38:17 | pending |
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
