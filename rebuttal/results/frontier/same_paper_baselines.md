@@ -1,6 +1,6 @@
 # Open agents on each frontier arm's own papers
 
-Source: rebuttal/results/databook/frontier_cells.csv (66 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
+Source: rebuttal/results/databook/frontier_cells.csv (67 graded rows). Reproduced means score 8 or more. Open-agent columns use the submitted score of that agent on the same papers, an empty cell scoring 0. Intervals are Wilson 95%.
 
 | arm | graded | reproduced | mean score | DeepSeek-V4-Flash reproduced | DeepSeek-V4-Flash mean | Muse Spark 1.2 reproduced | Muse Spark 1.2 mean | Qwen3.6-27B reproduced | Qwen3.6-27B mean | MiniMax-M2.7 reproduced | MiniMax-M2.7 mean |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -10,7 +10,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (66 graded rows). Reproduce
 | miniswe | 6 | 4/6 [30%, 90%] | 6.83 | 3/6 | 5.83 | 2/6 | 5.67 | 2/6 | 4.50 | 2/6 | 3.67 |
 | thin-gpt-6-astra | 6 | 1/6 [3%, 56%] | 4.83 | 4/6 | 7.17 | 3/6 | 7.17 | 2/6 | 4.67 | 2/6 | 4.33 |
 | thin-gpt-6-astra-x86 | 3 | 2/3 [21%, 94%] | 6.00 | 2/3 | 6.67 | 1/3 | 6.33 | 2/3 | 6.67 | 1/3 | 4.67 |
-| thin-gpt-6.1-sol-x86 | 4 | 2/4 [15%, 85%] | 6.50 | 2/4 | 6.00 | 1/4 | 5.00 | 2/4 | 5.50 | 1/4 | 4.50 |
+| thin-gpt-6.1-sol-x86 | 5 | 2/5 [12%, 77%] | 6.40 | 2/5 | 6.00 | 1/5 | 5.20 | 2/5 | 4.40 | 1/5 | 4.40 |
 | thin-muse-wonder-1.0 | 1 | 0/1 [0%, 79%] | 3.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 4.00 | 0/1 | 0.00 |
 | codex-gpt-6.1-sol-nudge | 3 | 2/3 [21%, 94%] | 7.67 | 3/3 | 8.00 | 1/3 | 7.67 | 1/3 | 5.33 | 1/3 | 6.00 |
 
@@ -24,7 +24,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (66 graded rows). Reproduce
 | miniswe | 2/2 | 1/2 | 1/2 |
 | thin-gpt-6-astra | 1/2 | 0/2 | 0/2 |
 | thin-gpt-6-astra-x86 | 1/1 | 0/0 | 1/2 |
-| thin-gpt-6.1-sol-x86 | 2/2 | 0/1 | 0/1 |
+| thin-gpt-6.1-sol-x86 | 2/2 | 0/2 | 0/1 |
 | thin-muse-wonder-1.0 | 0/0 | 0/0 | 0/1 |
 | codex-gpt-6.1-sol-nudge | 2/2 | 0/1 | 0/0 |
 | all arms on GH200 nodes | 13/20 [43%, 82%] | 2/20 [3%, 30%] | 4/19 [9%, 43%] |

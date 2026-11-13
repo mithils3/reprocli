@@ -225,7 +225,7 @@ The mix of failures shifts in the frontier runs, and Run is again the easiest ti
 
 **W2: Failures due to hardware differences.**
 
-At most 14 of the 372 graded runs failed because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts. We replayed the 12 on x86 nodes, and 9 build there (95% Wilson interval 47% to 91%). With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3). We also ran gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes. They reproduce [4 of 7] model and paper pairs there, against [3 of 7] for the same models and papers on our GH200 nodes, and the two scores of every pair are within one point.
+At most 14 of the 372 graded runs failed because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts. We replayed the 12 on x86 nodes, and 9 build there (95% Wilson interval 47% to 91%). With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3). We also ran gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes. They reproduce [4 of 8] model and paper pairs there, against [3 of 8] for the same models and papers on our GH200 nodes, and the two scores of every pair are within one point.
 
 **W3: Agents are only run once.**
 
@@ -285,7 +285,7 @@ We would be glad to discuss any of these results further. Thank you again.
 | continue-prompt variant: up to 3 prompts when a run stops with under half its grant used | rebuttal/STATUS.md:48; arm codex-gpt-6.1-sol-nudge, 3 graded on 11-13: 2502.05795 score 8 (unprompted Codex run 8), 2510.21363 score 7 (unprompted 7) and 2504.20571 score 8 (unprompted 8), in rebuttal/results/databook/frontier_cells.csv |
 | Claude Code left out: same-family auditor and the API budget of the new runs | rebuttal/mithil/decisions_monday.md decision 15; rebuttal/PLAN.md:198 |
 | at most 14 hardware failures (14 aarch64 package failures, 3 of the 12 replayed also fail on x86) | rebuttal/results/e8/summary.json; e8/x86/README.md |
-| x86 frontier runs: [4 of 7] reproduced against [3 of 7] for the same model and paper on GH200 (scores 2/1, 7/7, 8/8, 8/8, 9/8, 8/7, 2/2) | rebuttal/results/databook/frontier_cells.csv, arms ending in -x86 against the same arm without the suffix |
+| x86 frontier runs: [4 of 8] reproduced against [3 of 8] for the same model and paper on GH200 (scores 2/1, 7/7, 8/8, 8/8, 9/8, 8/7, 2/2, 6/6) | rebuttal/results/databook/frontier_cells.csv, arms ending in -x86 against the same arm without the suffix |
 
 ## Risks: where a reviewer could push back
 
