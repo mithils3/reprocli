@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-12T22:16:50Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 63 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-13T02:17:39Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 64 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -13,7 +13,7 @@ Rate: reproduced / graded [Wilson 95%]. Paired diff: arm score minus the best or
 | codex-gpt-6.1-sol-nudge | 8 | 2 | 1/2 [9.5, 90.5] | 7.50 | -1.00 (n=2) | 0 |
 | thin-gpt-6.1-sol | 12 | 12 | 5/12 [19.3, 68.0] | 5.67 | -0.33 (n=12) | 3 |
 | thin-muse-wonder-1.0 | 12 | 1 | 0/1 [0.0, 79.3] | 3.00 | -1.00 (n=1) | 0 |
-| miniswe | 6 | 5 | 3/5 [23.1, 88.2] | 6.60 | 0.40 (n=5) | 0 |
+| miniswe | 6 | 6 | 4/6 [30.0, 90.3] | 6.83 | 0.33 (n=6) | 0 |
 | thin-gpt-6-astra | not planned | 6 | 1/6 [3.0, 56.4] | 4.83 | -2.67 (n=6) | 2 |
 | thin-gpt-6-astra-x86 | not planned | 3 | 2/3 [20.8, 93.9] | 6.00 | -0.67 (n=3) | 1 |
 | thin-gpt-6.1-sol-x86 | not planned | 3 | 2/3 [20.8, 93.9] | 8.00 | 1.33 (n=3) | 0 |
@@ -85,6 +85,7 @@ Per-run rows (one per grades.jsonl row since 2026-11-07):
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2410.19933 | 32h | codex-gpt-6.1-sol-20261108T134913Z-1b86b5 | 6 | partial | False | retrain | 0 | 0 | 2 | 3 | 3 | 3 | not_reproduced | natural | 5624.59 | 32.0 | 19.8935 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2508.21046 | 96h | codex-gpt-6.1-sol-20261108T023042Z-8025fb | 7 | partial | False | retrain | 6 | 2 | 9 | 2 | 9 | -2 | not_reproduced | natural | 6706.14 | 96.0 | 4.7638 |
 | codex-gpt-6.1-sol | gpt-6.1-sol | 2510.23577 | 8h | codex-gpt-6.1-sol-20261108T121541Z-0e726f | 8 | reproduced | True | retrain | 8 | 8 | 10 | 8 | 10 | -2 | partial | natural | 6075.89 | 8.0 | 4.0978 |
+| miniswe | miniswe | 2510.21363 | 8h | miniswe-2510.21363-20261110T003114 | 8 | reproduced | True | retrain | 8 | 8 | 7 | 4 | 8 | 0 | partial | submitted |  | 8.0 | 6.5278 |
 
 ## 2. Static results (final)
 
