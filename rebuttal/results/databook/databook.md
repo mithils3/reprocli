@@ -1,6 +1,6 @@
 # Rebuttal data book
 
-Generated at 2026-11-13T21:09:50Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 68 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
+Generated at 2026-11-13T22:27:20Z UTC by scripts/rebuttal/build_databook.py. Frontier rows: 68 (grades.jsonl rows with graded_at >= 2026-11-07). Intervals: Wilson score 95%.
 
 ## 1. Frontier arms (replies: General, YGTR W1)
 
@@ -150,12 +150,12 @@ Source: sacct -X -n -P -j <12 ids> -o JobID,JobName%24,State,Elapsed,Start. Not 
 | job | name | state | elapsed | start | status |
 |---|---|---|---|---|---|
 | 3540624 | repro_easy_dsv4 | TIMEOUT | 2-00:00:00 | 2026-11-08T20:43:41 | finished |
-| 3540625 | repro_medium_dsv4 | RUNNING | 10:28:30 | 2026-11-13T04:41:20 | pending |
-| 3540626 | repro_hard_dsv4 | RUNNING | 10:28:30 | 2026-11-13T04:41:20 | pending |
-| 3540627 | repro_easy_dsv4 | RUNNING | 09:58:04 | 2026-11-13T05:11:46 | pending |
-| 3540628 | repro_medium_dsv4 | RUNNING | 09:58:04 | 2026-11-13T05:11:46 | pending |
-| 3540629 | repro_hard_dsv4 | RUNNING | 09:51:36 | 2026-11-13T05:18:14 | pending |
-| 3540630 | repro_easy_dsv4 | RUNNING | 09:31:33 | 2026-11-13T05:38:17 | pending |
+| 3540625 | repro_medium_dsv4 | RUNNING | 11:46:00 | 2026-11-13T04:41:20 | pending |
+| 3540626 | repro_hard_dsv4 | RUNNING | 11:46:00 | 2026-11-13T04:41:20 | pending |
+| 3540627 | repro_easy_dsv4 | RUNNING | 11:15:34 | 2026-11-13T05:11:46 | pending |
+| 3540628 | repro_medium_dsv4 | RUNNING | 11:15:34 | 2026-11-13T05:11:46 | pending |
+| 3540629 | repro_hard_dsv4 | RUNNING | 11:09:06 | 2026-11-13T05:18:14 | pending |
+| 3540630 | repro_easy_dsv4 | RUNNING | 10:49:03 | 2026-11-13T05:38:17 | pending |
 | 3540631 | repro_medium_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540632 | repro_hard_dsv4 | PENDING | 00:00:00 | Unknown | pending |
 | 3540633 | repro_medium_minimax | PENDING | 00:00:00 | Unknown | pending |
