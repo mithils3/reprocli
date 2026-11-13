@@ -197,7 +197,7 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (3,058 characters)
+### Reply to YGTR, part 1 of 2 (3,063 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. We ran the frontier models and production harnesses you asked for and measured each confound you named.
 
@@ -215,11 +215,11 @@ We agree that stronger models and production harnesses make the benchmark more i
 
 The papers come from every tier and were fixed before any of these runs. Half were drawn from papers that some open agent had reproduced, which favours the open-agent columns. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [11] papers that gpt-6.1-sol finished in both harnesses, the counts are comparable, [4] in our loop and [3] in Codex CLI.
 
-We also noticed that the frontier runs stop early. They used a median of [5.0]% of their GPU grant, against [14.3]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [1 of 2] papers, with the same score as the unprompted run on both. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
+We also noticed that the frontier runs stop early. They used a median of [5.1]% of their GPU grant, against [14.3]% for the open agents on the same papers. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used reproduces [2 of 3] papers, with the same score as the unprompted run on all three. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family.
 
 **Whether the failure modes and findings change.**
 
-The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [41] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [8 of 41 = 20%] against 110 of 300 = 37% for the open agents, and [16 of 41] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim (Section 5.3). The frontier runs reproduce [11 of 19] at Run, [2 of 20] at Retrain and [4 of 19] at Reimplement (Appendix B).
+The mix of failures shifts in the frontier runs, and Run is again the easiest tier. An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [41] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [8 of 41 = 20%] against 110 of 300 = 37% for the open agents, and [16 of 41] ended before producing a number. On 2506.08898 (32 H100-hour grant), all [5] frontier runs stopped within one H100-hour because no matching checkpoint is released, while Muse Spark 1.2 retrained the model with 27 H100-hours under the same prompt and reproduced the claim (Section 5.3). The frontier runs reproduce [12 of 20] at Run, [2 of 20] at Retrain and [4 of 19] at Reimplement (Appendix B).
 
 ### Reply to YGTR, part 2 of 2 (3,177 characters)
 
@@ -282,7 +282,7 @@ We would be glad to discuss any of these results further. Thank you again.
 | [0 of 22] failing frontier runs never launched outside 2505.16927 and 2503.14698 (27 coded, 5 on those two papers) | rebuttal/results/frontier/failure_modes.csv; never_launched_check.md |
 | rates after the corrections in the hardware paragraph (13/34 and MiniMax 2/34 to 2/26) | rebuttal/results/e7/rescore_summary.md applied to e8/bound.csv |
 | open agents spent 1,888 of 10,208 granted H100-hours | paper_latex/iclr2027_conference.tex:493-494 |
-| continue-prompt variant: up to 3 prompts when a run stops with under half its grant used | rebuttal/STATUS.md:48; arm codex-gpt-6.1-sol-nudge, 2 graded on 11-12: 2502.05795 score 8 (unprompted Codex run 8) and 2510.21363 score 7 (unprompted 7), in rebuttal/results/databook/frontier_cells.csv |
+| continue-prompt variant: up to 3 prompts when a run stops with under half its grant used | rebuttal/STATUS.md:48; arm codex-gpt-6.1-sol-nudge, 3 graded on 11-13: 2502.05795 score 8 (unprompted Codex run 8), 2510.21363 score 7 (unprompted 7) and 2504.20571 score 8 (unprompted 8), in rebuttal/results/databook/frontier_cells.csv |
 | Claude Code left out: same-family auditor and the API budget of the new runs | rebuttal/mithil/decisions_monday.md decision 15; rebuttal/PLAN.md:198 |
 | at most 14 hardware failures (14 aarch64 package failures, 3 of the 12 replayed also fail on x86) | rebuttal/results/e8/summary.json; e8/x86/README.md |
 | x86 frontier runs: [4 of 6] reproduced against [3 of 6] for the same model and paper on GH200 (scores 2/1, 7/7, 8/8, 8/8, 9/8, 8/7) | rebuttal/results/databook/frontier_cells.csv, arms ending in -x86 against the same arm without the suffix |

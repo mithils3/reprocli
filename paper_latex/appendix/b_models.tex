@@ -259,15 +259,15 @@ agents on the papers that arm has graded.}
 \end{table}
 % src: results/databook/frontier_cells.csv through rebuttal/scripts/frontier_tex.py; moves with: the remaining frontier runs
 \todo{Tables~\ref{tab:frontier} and~\ref{tab:frontier-runs} hold the runs
-graded by November 12.}
+graded by November 13.}
 
 The open-agent columns use the submitted grade of that agent on the same
 papers. Because half of the sampled papers are ones some open agent had
 reproduced under the submitted grades, those columns favor the open agents. In the row marked Codex CLI + prompts, the harness prompts the agent to continue, up to three times, whenever it ends its turn with under half of its grant used. The frontier runs
-spend a median of \todo{5.0}\% of their GPU grant, against \todo{14.3}\% for
+spend a median of \todo{5.1}\% of their GPU grant, against \todo{14.3}\% for
 the open agents on the same papers, and Table~\ref{tab:frontier-runs} lists
-every run with its exit reason. By tier, the frontier runs reproduce \todo{11 of 19} at Run, \todo{2 of 20} at Retrain, and \todo{4 of 19} at Reimplement.
-% src: results/frontier/same_paper_baselines.md, section Frontier runs by tier (58 GH200 rows on 11-12); moves with: the remaining frontier runs
+every run with its exit reason. By tier, the frontier runs reproduce \todo{12 of 20} at Run, \todo{2 of 20} at Retrain, and \todo{4 of 19} at Reimplement.
+% src: results/frontier/same_paper_baselines.md, section Frontier runs by tier (59 GH200 rows on 11-13); moves with: the remaining frontier runs
 We did not run Claude Code, since the auditor
 is a Claude model. Under the submitted grades some agent reproduced 34 of the 99 papers the sample was drawn from, so the sample holds a larger share of reproduced papers than the benchmark.
 % src: results/frontier/same_paper_baselines.md; repeat runs jobs 3540624 to 3540633; continue-prompt variant: results/databook/frontier_cells.csv arm codex-gpt-6.1-sol-nudge when graded
