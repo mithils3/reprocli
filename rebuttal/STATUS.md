@@ -111,5 +111,6 @@ Started 2026-11-06 while Mithil is away for the weekend. Caps: OpenAI $700 of $7
 ## 2026-11-13 22:10: four wording edits to Reviewer 3 on Mithil's notes
 Claude Code sentence reworded without "arm" (38962da); queue-wait sentence removed (541c9d2); annotator parenthetical removed and "read" changed to "analysed" (1c5b53a); reasoning effort stated in the first comment and Appendix B.3 (245bcd9: OpenAI models high in both harnesses, Muse Wonder xhigh).
 
-## 2026-11-14 06:20: E13 grows to 15 repeat runs
+## 2026-11-14 06:20: E13 grows to 15 repeat runs (16 at 07:09, see the last line)
 Two more DeepSeek-V4-Flash repeat runs ended at about 05:23 (3540627-2506.20671-ae12c0, score 4; 3540625-2510.07501-d6d3e1, score 6). Graded with the pinned auditor in `e13d_dsv4_repeats` ($1.34; E13 total $11.24 of its $15 limit; Anthropic ledger $167.70 of $230). Both keep the paper run's verdict, so W3 of the third comment and Section 5.2 change only the run count (13 to 15); 7 of 9 papers and 23 of 27 pooled pairs stand.
+At 07:09 a 16th run was graded in `e13e_dsv4_repeats` (3540625-2510.09485-a1ef7c, score 10, reproduced like the paper run at 9; $0.50; E13 total $11.75; Anthropic ledger $168.20). Run count 15 to 16 in W3 and Section 5.2; 7 of 9 papers and 23 of 27 pairs stand.
