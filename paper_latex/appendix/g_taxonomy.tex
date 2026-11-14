@@ -202,6 +202,21 @@ the eight failing modes. It agrees with the paper's label on 28 of the 50
 group at 46\% of open-agent failures (35\% to 58\%) and the second at 23\%
 (14\% to 33\%), so the coder does not explain the lower share of the first
 group in the frontier runs.
+
+To see why the frontier runs stop early, Claude Haiku 5.5 read the transcript of
+each of the \todo{39} failing frontier runs without the grade or the arm, and
+recorded whether the run executed the paper's experiment at full scale and the
+reason it gave when it did not. \todo{27} runs did not, and they decided this
+at a median of turn \todo{9}: \todo{12} stopped because code, a checkpoint, or
+data was not released (\todo{8} of them at Reimplement), \todo{6} timed a probe
+and projected a cost above the grant, \todo{5} evaluated a different released
+checkpoint, and \todo{4} failed at build or launch. The other \todo{12} ran the
+experiment and missed the number. A second pass that saw only the end of each
+transcript agrees on whether the experiment ran for \todo{37 of 39} runs. Two
+runs give GPU queue delays as a reason for stopping, and the frontier runs whose
+GPU requests waited under 30 minutes spend a median of \todo{6.5}\% of their
+grant. On \todo{11} of the 27 runs, an open agent reproduced the same paper.
+% src: results/frontier/stop_study/README.md (deep_all.json, endings_coded.jsonl); moves with: the remaining frontier runs
 % src: results/frontier/coder_calibration.md (28 of 50, kappa 0.48); results/frontier/coder_calibration_groups.md (46.2%, 34.8 to 58.3; 22.8%, 14.4 to 33.3)
 
 \begin{table}[ht]
