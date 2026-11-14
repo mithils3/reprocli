@@ -236,13 +236,13 @@ Each row follows the fixed order: gpt-6.1-sol covers the first 12 papers in our 
 
 We did not evaluate Claude Code because our auditor is Claude Sonnet 5, and an auditor grading a model from its own family could be biased. Including it would require an independent auditor from another provider, validated against human grades as in Appendix D, which we leave to future work.
 
-### Reply to YGTR, part 2 of 3 (3,806 characters)
+### Reply to YGTR, part 2 of 3 (3,682 characters)
 
 **Whether the failure modes and findings change.**
 
 Run is also the easiest tier for the frontier models ([11 of 18], against [3 of 20] at Retrain and [4 of 19] at Reimplement), but their main cause of failure is stopping early rather than reporting a number without a valid measurement. Because the sample holds equal numbers of reproduced and unreproduced papers in every tier, it narrows the gap between Retrain and Reimplement, and DeepSeek-V4-Flash is level on these papers as well ([6 of 20] and [6 of 19]).
 
-Interestingly, the frontier models stop even earlier than the open agents. Over the [57] runs, the median frontier run used [5.6]% of its GPU grant, against [14.3]% for the open agents on the same papers, and the frontier runs that did not reproduce used [2.1]%. The cluster queue does not explain this, since the runs whose GPU requests waited under 30 minutes used a median of [6.5]%. To test the effect further, we ran a variant that prompts Codex to continue, up to three times, whenever it stops before using half of its GPU grant. On the [3] papers it finished, it spent more of its grant and received the same score as the unprompted run ([8, 7 and 8]).
+Interestingly, the frontier models stop even earlier than the open agents. Over the [57] runs, the median frontier run used [5.6]% of its GPU grant, against [14.3]% for the open agents on the same papers, and the frontier runs that did not reproduce used [2.1]%. To test the effect further, we ran a variant that prompts Codex to continue, up to three times, whenever it stops before using half of its GPU grant. On the [3] papers it finished, it spent more of its grant and received the same score as the unprompted run ([8, 7 and 8]).
 
 To find the reason, we read the full transcripts of the [39] failing frontier runs (annotator Claude Haiku 5.5, shown neither the grade nor the model; Appendix G). [27 of the 39] never ran the paper's experiment at full scale, and they decided this early, at a median of turn [9]:
 
