@@ -236,7 +236,7 @@ Each row follows the fixed order: gpt-6.1-sol covers the first 12 papers in our 
 
 We did not evaluate Claude Code because our auditor is Claude Sonnet 5, and an auditor grading a model from its own family could be biased. Including it would require an independent auditor from another provider, validated against human grades as in Appendix D, which we leave to future work.
 
-### Reply to YGTR, part 2 of 3 (3,682 characters)
+### Reply to YGTR, part 2 of 3 (3,606 characters)
 
 **Whether the failure modes and findings change.**
 
@@ -244,7 +244,7 @@ Run is also the easiest tier for the frontier models ([11 of 18], against [3 of 
 
 Interestingly, the frontier models stop even earlier than the open agents. Over the [57] runs, the median frontier run used [5.6]% of its GPU grant, against [14.3]% for the open agents on the same papers, and the frontier runs that did not reproduce used [2.1]%. To test the effect further, we ran a variant that prompts Codex to continue, up to three times, whenever it stops before using half of its GPU grant. On the [3] papers it finished, it spent more of its grant and received the same score as the unprompted run ([8, 7 and 8]).
 
-To find the reason, we read the full transcripts of the [39] failing frontier runs (annotator Claude Haiku 5.5, shown neither the grade nor the model; Appendix G). [27 of the 39] never ran the paper's experiment at full scale, and they decided this early, at a median of turn [9]:
+To find the reason, we analysed the full transcripts of the [39] failing frontier runs. [27 of the 39] never ran the paper's experiment at full scale, and they decided this early, at a median of turn [9]:
 
 - [12] stopped because the code, checkpoint or data they needed is not released, [8] of them at Reimplement, where writing that code is the task. One run explains: "Without an artifact to resolve and validate these choices, I can't treat a new implementation's accuracy as a reproduction."
 - [6] timed a short probe, projected a cost above the grant and stopped. On 2506.08898 (32 H100-hour grant), three runs projected 33 to 51 hours, where Muse Spark 1.2 and Muse Wonder in our harness retrained the model within the grant and reproduced the claim (Section 5.3).
