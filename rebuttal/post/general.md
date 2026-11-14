@@ -14,6 +14,6 @@ We thank the three reviewers for their careful and constructive reviews. They fo
 | Checkpoint check (Section 5.2) | Muse Spark 1.2 on 2508.21046, MiniMax-M2.7 on 2505.12677 | -2 |
 | Two audits that had not returned | Muse Spark 1.2 on 2503.23035 (reproduced) and 2510.08177 (partial) | +1 |
 
-The best agent then reproduces 13 of 34 Run, 9 of 33 Retrain and 5 of 33 Reimplement papers, the ordering of the tiers is unchanged, and papers reproduced by at least one agent go from 34 to 32. The auditor validation (Appendix D), the tolerance tables (Appendix F), the failure-mode labels (Appendix G) and the comparison columns of the frontier table (Appendix B.3) use the grades at submission.
+The best agent then reproduces 13 of 34 Run, 9 of 33 Retrain and 5 of 33 Reimplement papers, the ordering of the tiers is unchanged, and papers reproduced by at least one agent go from 34 to 32.
 
 We would be glad to answer further questions.

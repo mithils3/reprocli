@@ -6,7 +6,7 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 
 ## General
 
-### General reply (one part, 2,701 characters)
+### General reply (one part, 2,498 characters)
 
 We thank the three reviewers for their careful and constructive reviews. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). Following the reviews, the revision adds these analyses:
 - **Frontier models in production harnesses** (Section 5.2, Appendix B.3). Pooled over 57 runs of gpt-6.1-sol, gpt-6-astra and Muse Wonder in our harness, Codex CLI and mini-SWE-agent, 18 are reproduced, where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers, half of which were sampled because one of our four agents had reproduced them.
@@ -24,7 +24,7 @@ We thank the three reviewers for their careful and constructive reviews. They fo
 | Checkpoint check (Section 5.2) | Muse Spark 1.2 on 2508.21046, MiniMax-M2.7 on 2505.12677 | -2 |
 | Two audits that had not returned | Muse Spark 1.2 on 2503.23035 (reproduced) and 2510.08177 (partial) | +1 |
 
-The best agent then reproduces 13 of 34 Run, 9 of 33 Retrain and 5 of 33 Reimplement papers, the ordering of the tiers is unchanged, and papers reproduced by at least one agent go from 34 to 32. The auditor validation (Appendix D), the tolerance tables (Appendix F), the failure-mode labels (Appendix G) and the comparison columns of the frontier table (Appendix B.3) use the grades at submission.
+The best agent then reproduces 13 of 34 Run, 9 of 33 Retrain and 5 of 33 Reimplement papers, the ordering of the tiers is unchanged, and papers reproduced by at least one agent go from 34 to 32.
 
 We would be glad to answer further questions.
 
