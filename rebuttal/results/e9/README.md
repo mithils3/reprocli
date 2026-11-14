@@ -12,7 +12,7 @@ Headline counts (scanned / in index; hits = a primary-source match):
 - Run: 127/129 scanned, 117 with a hit. Reproduced: 28 of 31 with a hit.
 - Retrain: 118/118 scanned, 62 with a hit. Reproduced: 13 of 29.
 - Reimplement: 123/125 scanned, 75 with a hit. Reproduced: 3 of 13.
-- Reproduced Retrain and Reimplement runs with class c: 2. With class d only: 10. Class b only: 4.
+- Reproduced Retrain and Reimplement runs with class c: 2. With a class b hit and no class c hit: 10 (5 with b hits only, 5 with b and d hits). With class d hits only: 4. Counted per run from `class_review.csv` (b = base model, config or tokenizer; d = not a download; c = ready checkpoint of the claimed model). Corrected on 2026-11-14: this line had the 10 and the 4 the other way round.
 
 Not scanned (scan timeout, see `mapping.csv`): dsv4-run-2505.19713, minimax-run-2505.10475, dsv4-reimplement-2511.01463, minimax-reimplement-2511.01463.
 

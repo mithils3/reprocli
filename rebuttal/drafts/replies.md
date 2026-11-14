@@ -236,7 +236,7 @@ Each row follows the fixed order: gpt-6.1-sol covers the first 12 papers in our 
 
 We did not evaluate Claude Code because our auditor is Claude Sonnet 5, and an auditor grading a model from its own family could be biased. Including it would require an independent auditor from another provider, validated against human grades as in Appendix D, which we leave to future work.
 
-### Reply to YGTR, part 2 of 3 (3,606 characters)
+### Reply to YGTR, part 2 of 3 (3,627 characters)
 
 **Whether the failure modes and findings change.**
 
@@ -246,7 +246,7 @@ Interestingly, the frontier models stop even earlier than the open agents. Over 
 
 To find the reason, we analysed the full transcripts of the [39] failing frontier runs. [27 of the 39] never ran the paper's experiment at full scale, and they decided this early, at a median of turn [9]:
 
-- [12] stopped because the code, checkpoint or data they needed is not released, [8] of them at Reimplement, where writing that code is the task. One run explains: "Without an artifact to resolve and validate these choices, I can't treat a new implementation's accuracy as a reproduction."
+- [12] stopped because the code, checkpoint or data they needed is not released, [8] of them at Reimplement, where writing that code is the task. One run explains: "Without an artifact to resolve and validate these choices, I can't treat a new implementation's accuracy as a reproduction of the locked result."
 - [6] timed a short probe, projected a cost above the grant and stopped. On 2506.08898 (32 H100-hour grant), three runs projected 33 to 51 hours, where Muse Spark 1.2 and Muse Wonder in our harness retrained the model within the grant and reproduced the claim (Section 5.3).
 - [5] evaluated a different released checkpoint, and [4] hit build or launch errors.
 
@@ -256,7 +256,7 @@ The other [12] ran the experiment and missed the number. For [11 of the 27], an 
 
 To separate failures caused by our aarch64 nodes from failures of the agent, we took every run that failed at build or dependency install and replayed its install commands on x86 nodes. There are 24 such runs, 14 of them on a package with no aarch64 build, and 12 of the 14 have an install command in their transcripts. On x86, 9 of the 12 build (95% Wilson interval 47% to 91%) and 3 fail again. Our hardware therefore explains 9 failures, and at most 11 of the 372 graded runs with the 2 we could not replay. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement, so no best-agent rate moves by more than one percentage point (Section 5.3, Appendix B.2). As a direct test we also ran gpt-6.1-sol and gpt-6-astra in our harness on x86 nodes. They reproduce [4 of 8] model and paper pairs there, against [3 of 8] for the same pairs on our GH200 nodes, and the two scores of every pair are within one point.
 
-### Reply to YGTR, part 3 of 3 (3,980 characters)
+### Reply to YGTR, part 3 of 3 (3,998 characters)
 
 **W3: Agents are only run once.**
 
@@ -270,7 +270,7 @@ Together, the verdict is stable for [23 of 27] model and paper pairs ([85%, 95% 
 
 **Q2: Fetching checkpoints over the network.**
 
-Thank you for suggesting this check, which changed two grades. We scanned the run transcripts for model downloads: hf_hub_download, snapshot_download, the Hugging Face CLI (huggingface-cli or hf download), from_pretrained with a repository id, torch.hub, git clone and git lfs of Hugging Face repositories, gdown, and wget or curl of weight files. Downloading released weights is part of the task at Run, so the runs that matter are the 42 that were graded reproduced at Retrain and Reimplement at submission (29 and 13). Of these, 16 matched a pattern, and we read them by hand: 10 were not downloads, 4 fetched a base model that the method starts from, and 2 evaluated a ready checkpoint of the claimed model (Muse Spark 1.2 on 2508.21046 and MiniMax-M2.7 on 2505.12677). At these two tiers the run has to produce the model itself, so the revision counts both as not reproduced. That leaves 40 (28 and 12), and the best rates stay at 9 of 33 at Retrain and 5 of 33 at Reimplement (Section 5.2, Appendix B.2).
+Thank you for suggesting this check, which changed two grades. We scanned the run transcripts for model downloads: hf_hub_download, snapshot_download, the Hugging Face CLI (huggingface-cli or hf download), from_pretrained with a repository id, torch.hub, git clone and git lfs of Hugging Face repositories, gdown, and wget or curl of weight files. Downloading released weights is part of the task at Run, so the runs that matter are the 42 that were graded reproduced at Retrain and Reimplement at submission (29 and 13). Of these, 16 matched a pattern, and we read them by hand: 4 were not downloads, 10 fetched only a base model or tokenizer that the method starts from, and 2 evaluated a ready checkpoint of the claimed model (Muse Spark 1.2 on 2508.21046 and MiniMax-M2.7 on 2505.12677). At these two tiers the run has to produce the model itself, so the revision counts both as not reproduced. That leaves 40 (28 and 12), and the best rates stay at 9 of 33 at Retrain and 5 of 33 at Reimplement (Section 5.2, Appendix B.2).
 
 **Q3: Failures that were not the agent's fault.**
 

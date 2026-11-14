@@ -6,7 +6,7 @@ Interestingly, the frontier models stop even earlier than the open agents. Over 
 
 To find the reason, we analysed the full transcripts of the [39] failing frontier runs. [27 of the 39] never ran the paper's experiment at full scale, and they decided this early, at a median of turn [9]:
 
-- [12] stopped because the code, checkpoint or data they needed is not released, [8] of them at Reimplement, where writing that code is the task. One run explains: "Without an artifact to resolve and validate these choices, I can't treat a new implementation's accuracy as a reproduction."
+- [12] stopped because the code, checkpoint or data they needed is not released, [8] of them at Reimplement, where writing that code is the task. One run explains: "Without an artifact to resolve and validate these choices, I can't treat a new implementation's accuracy as a reproduction of the locked result."
 - [6] timed a short probe, projected a cost above the grant and stopped. On 2506.08898 (32 H100-hour grant), three runs projected 33 to 51 hours, where Muse Spark 1.2 and Muse Wonder in our harness retrained the model within the grant and reproduced the claim (Section 5.3).
 - [5] evaluated a different released checkpoint, and [4] hit build or launch errors.
 
