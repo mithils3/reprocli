@@ -1,0 +1,14 @@
+arxiv_id,tier,paper_run_id,paper_score,paper_verdict,paper_measured,reference,repeat_run_id,repeat_score,repeat_verdict,repeat_reproduced,repeat_high_flag,repeat_measured,repeat_exit,usd
+2506.20671,run,dsv4-run-2506.20671,4,not_reproduced,0.005389296915382147,6.3,3540624-2506.20671-3b56c1,4,not_reproduced,False,False,0.0053071076981723,natural,0.7939
+2505.15201,retrain,dsv4-retrain-2505.15201,8,reproduced,67.42,10,3540625-2505.15201-8c00f9,8,reproduced,True,False,4.17,natural,0.7286
+2505.15201,retrain,dsv4-retrain-2505.15201,8,reproduced,67.42,10,3540628-2505.15201-5b6090,8,reproduced,True,False,4.16,natural,1.0983
+2505.17836,retrain,dsv4-retrain-2505.17836,6,partial,0.039451,0.05,3540625-2505.17836-2d731d,6,partial,False,False,0.0398,natural,0.5529
+2505.17836,retrain,dsv4-retrain-2505.17836,6,partial,0.039451,0.05,3540628-2505.17836-4f431f,6,partial,False,False,0.03992335902698782,natural,0.6027
+2506.07673,retrain,dsv4-retrain-2506.07673,10,reproduced,-37.2,-37.2,3540628-2506.07673-d3596f,8,reproduced,True,False,-37.2,round_limit,1.4628
+2510.07501,retrain,dsv4-retrain-2510.07501,6,partial,-0.1681,-0.2,3540628-2510.07501-b6fa41,6,partial,False,False,-0.1035,natural,0.5871
+2510.09485,retrain,dsv4-retrain-2510.09485,9,reproduced,0.668031,,3540628-2510.09485-a38056,10,reproduced,True,False,,natural,0.6294
+2503.02809,reimplement,dsv4-reimplement-2503.02809,7,partial,40.19,40.0,3540626-2503.02809-a7b2f2,8,reproduced,True,False,40.884066924548314,natural,0.6979
+2503.02809,reimplement,dsv4-reimplement-2503.02809,7,partial,40.19,40.0,3540629-2503.02809-627431,9,reproduced,True,False,40.1505,natural,0.7564
+2505.19087,reimplement,dsv4-reimplement-2505.19087,8,reproduced,0.59334,0.60302,3540626-2505.19087-8fceb9,7,partial,False,False,0.58893,natural,0.7825
+2505.19087,reimplement,dsv4-reimplement-2505.19087,8,reproduced,0.59334,0.60302,3540629-2505.19087-50b93e,8,reproduced,True,False,0.602008,natural,0.7572
+2510.25146,reimplement,dsv4-reimplement-2510.25146,2,not_reproduced,,25.8,3540626-2510.25146-dcb0c9,2,not_reproduced,False,False,,natural,0.4565

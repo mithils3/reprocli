@@ -1,6 +1,12 @@
 **W3: Agents are only run once.**
 
-We agree that one run per cell leaves the results open to noise, so we measured how much a verdict changes when a run is repeated. We graded a second, independent run of Muse Spark 1.2 on 10 Reimplement papers, made with the same budget as the run in the paper. The two runs reach the same reproduced verdict on 9 of the 10 papers (4 reproduced in both and 5 in neither). We also compared what the two runs measured: in 9 of the 10 pairs both runs measured the same quantity, and their two values differ by a median of 0.11%. The 8 x86 pairs of W2 repeat a model on a paper as well, and 7 of them keep their verdict. Together, 16 of 18 repeated pairs keep their verdict (89%, 95% interval 67% to 97%), and both pairs that change score 8 in one run and 7 in the other, on either side of the threshold. Ten pairs from one agent is a small sample, so our claims rest only on differences that the 95% Wilson intervals separate, and the revision reports every rate with its interval (Section 5.2).
+We agree that one run per cell leaves the results open to noise, so we measured how much a verdict changes when a run is repeated, with the same budget as the run in the paper.
+
+- **Muse Spark 1.2, 10 Reimplement papers.** A second run reaches the same reproduced verdict on 9 of the 10 (4 reproduced in both and 5 in neither). In 9 of the 10 pairs both runs measured the same quantity, and their two values differ by a median of 0.11%.
+- **DeepSeek-V4-Flash, [9] papers from all three tiers.** We graded [13] repeat runs, and on [7 of the 9] papers every repeat reaches the verdict of the run in the paper.
+- **The 8 x86 pairs of W2** repeat a model on a paper as well, and 7 keep their verdict.
+
+Together, the verdict is stable for [23 of 27] model and paper pairs ([85%, 95% interval 68% to 94%]). In the [four] that change, every run scores 7, 8 or 9, on either side of the threshold of 8, so a repeat moves a paper only when it already sits at the line. Misses repeat as well: on 2505.17836, three independent DeepSeek-V4-Flash runs measure 0.039, 0.040 and 0.040 against a target of 0.05. This is still a modest sample, so our claims rest only on differences that the 95% Wilson intervals separate, and the revision reports every rate with its interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 
