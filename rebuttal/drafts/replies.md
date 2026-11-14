@@ -207,7 +207,7 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 3 (2,795 characters)
+### Reply to YGTR, part 1 of 3 (2,854 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. To test each confound you named, we ran three frontier models in two production harnesses.
 
@@ -234,7 +234,7 @@ Each row follows the fixed order: gpt-6.1-sol covers the first 12 papers in our 
 
 **Runs where only the harness differs.** gpt-6.1-sol finished the same [11] papers in both harnesses, with the sandbox, task text, GPU grant and auditor of the main runs. It reproduces [4] in our harness and [3] in Codex CLI, with the same verdict on [8], so the harness moves the result by one paper.
 
-We did not run Claude Code because our auditor, Claude Sonnet 5, would then grade a model of its own family, and such an arm needs a second auditor from another lab that is validated against the human grades as ours is in Appendix D.
+We did not evaluate Claude Code because our auditor is Claude Sonnet 5, and an auditor grading a model from its own family could be biased. Including it would require an independent auditor from another provider, validated against human grades as in Appendix D, which we leave to future work.
 
 ### Reply to YGTR, part 2 of 3 (3,806 characters)
 
