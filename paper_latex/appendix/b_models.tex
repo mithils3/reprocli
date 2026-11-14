@@ -244,6 +244,10 @@ the task text of the main runs, the same sandbox and \texttt{run\_gpu} tool, and
 the pinned auditor. In Codex CLI and mini-SWE-agent the agent keeps the
 harness's own tools, system prompt, and context handling, and a run ends when
 the agent ends its own turn, which is the stopping rule of our harness.
+The two OpenAI models run at \texttt{reasoning\_effort} \texttt{high} in both
+harnesses, and Muse Wonder runs at \texttt{xhigh}, the setting of Muse Spark 1.2
+in Table~\ref{tab:models}.
+% src: scripts/rebuttal/api_sweep.sh (openai high, meta xhigh); codex_run.json work_command model_reasoning_effort=high in every Codex run; mini-SWE-agent trajectories reasoning_effort xhigh
 Table~\ref{tab:frontier} gives the results beside DeepSeek-V4-Flash and Muse
 Spark 1.2 on the same papers, and Muse Spark 1.2 against Muse Wonder compares
 two models from one family. % src: results/subset/README.md (counts per tier and band; 2510.20725 excluded)
