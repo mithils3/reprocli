@@ -616,7 +616,7 @@ To test whether a partial result recurs without the agent, we
 re-ran the final command sequence of three such runs on the same nodes with
 two new seeds and no model in the loop. On 2505.17836 both seeds miss again
 and the measured value repeats within 0.0007, so that miss recurs without the
-agent. On 2510.07501 the value moves by 0.28 across seeds against a target of
+agent. On 2510.07501 the agent's run and the two seeds span 0.28 against a target of
 $-0.20$, which puts the original near miss inside seed variation.
 On 2506.10351 the two seeds give 93.65\% and 94.15\% against a target of 93.12\%, within 0.54 points of the agent's 94.19\%, so its measurement repeats without the agent.
 % src: results/e10/results.md (2505.17836: 0.0395, 0.0400, 0.0393, spread 0.0400 - 0.0393 = 0.0007; 2510.07501: -0.2241, -0.1308, +0.0566, spread 0.0566 - (-0.2241) = 0.28, target -0.20; 2506.10351: 93.65, 94.15, original 94.19, target 93.12, 94.19 - 93.65 = 0.54, jobs 3558022 and 3558023); results/e10/README.md:3-14 (selection rule; Run 1 of 6, Retrain 2 of 4)

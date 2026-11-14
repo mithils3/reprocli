@@ -6,10 +6,10 @@ Order of posting: see rebuttal/REPLY_PLAN.md.
 
 ## General
 
-### General reply (one part, 2,569 characters)
+### General reply (one part, 2,787 characters)
 
 We thank the three reviewers for their careful and constructive reviews. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). Following the reviews, the revision adds these analyses:
-- **Frontier models in production harnesses** (Section 5.1, Appendix B). Pooled over [57] runs of gpt-6.1-sol, gpt-6-astra and Muse Wonder in our loop, Codex CLI and mini-SWE-agent, [18] are reproduced, where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce [23] and [20] on the same papers.
+- **Frontier models in production harnesses** (Section 5.2, Appendix B.3). Pooled over [57] runs of gpt-6.1-sol, gpt-6-astra and Muse Wonder in our loop, Codex CLI and mini-SWE-agent, [18] are reproduced, where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce [23] and [20] on the same papers, half of which were sampled because an open agent had reproduced them.
 - **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and a second, independent run of Muse Spark 1.2 on 10 Reimplement papers reaches the same reproduced verdict on 9 of the 10.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
 - **Log integrity** (Appendix A). During each run the harness sends every tool call to a database outside the cluster, which the sandbox cannot reach. The 30,790 commands present in both that record and the agent-writable logs have the same text, and no exit code differs. The harness now mounts both logs read-only inside the sandbox.
@@ -26,7 +26,7 @@ We thank the three reviewers for their careful and constructive reviews. They fo
 | Two audits that had not returned | Muse Spark 1.2 on 2503.23035 (Run, reproduced) and 2510.08177 (Reimplement, partial) | +1 |
 | Revision | | 70 of 400 |
 
-The best agent then reproduces 13 of 34 Run papers (38%), 9 of 33 Retrain papers (27%) and 5 of 33 Reimplement papers (15%), and the ordering of the tiers is unchanged. The failure-mode labels cover the 300 failing runs of the submission.
+The best agent then reproduces 13 of 34 Run papers (38%), 9 of 33 Retrain papers (27%) and 5 of 33 Reimplement papers (15%), and the ordering of the tiers is unchanged. Papers reproduced by at least one agent go from 34 to 32. Three analyses use the grades at submission: the auditor validation (Appendix D), the tolerance tables (Appendix F) and the failure-mode labels (Appendix G).
 
 We would be glad to answer further questions.
 
@@ -207,13 +207,13 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (4,170 characters)
+### Reply to YGTR, part 1 of 2 (4,638 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. We ran three frontier models in two production harnesses and measured each confound you named.
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We agree that stronger models and production harnesses make the benchmark more informative. [The benchmark remains challenging for them. Pooled over the 57 frontier runs, 18 are reproduced (32%, 95% interval 21% to 44%), where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers, and changing the harness moves gpt-6.1-sol by one paper.] The last two columns give our two best agents on exactly the papers of each row, under the same auditor (Section 5.1, Appendix B).
+We agree that stronger models and production harnesses make the benchmark more informative. [The benchmark remains challenging for them. Pooled over the 57 frontier runs, 18 are reproduced (32%, 95% interval 21% to 44%), where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers, and changing the harness moves gpt-6.1-sol by one paper.] The last two columns give our two best agents on exactly the papers of each row, under the same auditor and with their grades at submission (Section 5.2, Appendix B.3).
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
@@ -225,21 +225,21 @@ We agree that stronger models and production harnesses make the benchmark more i
 | Muse Wonder | our loop | [2] | [1] | [0] | [1] |
 | All frontier runs | | [57] | [18] | [23] | [20] |
 
-The 24 papers come from every tier and were fixed before any of these runs. In each tier, half are papers that some open agent had reproduced and half are papers that none had, so the open-agent columns can only score on the first half. On those 12 papers the frontier runs reproduce [14 of 33], against [23] and [20] for DeepSeek-V4-Flash and Muse Spark 1.2. On the 12 papers that no open agent reproduced they reproduce [4 of 24], which adds [2] papers that none of our four agents reproduced. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [11] papers that gpt-6.1-sol finished in both harnesses, it reproduces [4] in our loop and [3] in Codex CLI.
+The 24 papers come from every tier and were fixed, in order, before any of these runs. Each row follows that order: gpt-6.1-sol covers the first 12 papers in our loop and [23] of the 24 in Codex CLI, gpt-6-astra the first 8 in Codex CLI, and the other rows the first papers graded so far. In each tier, half are papers that some open agent had reproduced and half are papers that none had, so the open-agent columns can only score on the first half. On those 12 papers the frontier runs reproduce [14 of 33], against [23] and [20] for DeepSeek-V4-Flash and Muse Spark 1.2. On the 12 papers that no open agent reproduced they reproduce [4 of 24], which adds [2] papers that none of our four agents reproduced. Within one model only the harness changes, and the sandbox, task text, GPU grant and auditor are those of the main runs. On the [11] papers that gpt-6.1-sol finished in both harnesses, it reproduces [4] in our loop and [3] in Codex CLI, with the same verdict on [8].
 
-The frontier runs also stop early. Over all runs, the median frontier run used [5.6]% of its GPU grant, against a median of [14.3]% for the open agents on the same papers, and the frontier runs that did not reproduce used a median of [2.1]%. Prompting did not change the outcome. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used spent more of its grant and received the same score as the unprompted run on each of the [3] papers it finished. These runs are left out of the pooled counts. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family. A Claude Code arm would need a second auditor from another lab, validated against the human grades as ours is in Appendix D.
+The frontier runs also stop early. Over the [57] runs, the median frontier run used [5.6]% of its GPU grant, against a median of [14.3]% for the open agents on the same papers, and the frontier runs that did not reproduce used a median of [2.1]%. The three rows with 12, 23 and 8 papers have medians of [8.5]%, [3.2]% and [3.8]%. A variant that prompts Codex to continue, up to three times, whenever it stops with under half of its grant used spent more of its grant on each of the [3] papers it finished and received the same score as the unprompted run ([8, 7 and 8]). These runs are left out of the pooled counts. We ran Codex CLI and mini-SWE-agent and left out Claude Code, because our auditor is Claude Sonnet 5 and would grade a model of its own family. A Claude Code arm would need a second auditor from another lab, validated against the human grades as ours is in Appendix D.
 
 **Whether the failure modes and findings change.**
 
 Run is again the easiest tier, and the failures shift toward stopping early. The frontier runs reproduce [11 of 18] at Run, [3 of 20] at Retrain and [4 of 19] at Reimplement. This sample cannot order Retrain and Reimplement, because it takes equal numbers of reproduced and unreproduced papers from every tier, and DeepSeek-V4-Flash is level on it as well, at [6 of 20] and [6 of 19]. At Retrain a run has to train the model again, which is where stopping early costs most. On 2506.08898 (32 H100-hour grant), [5 of 6] frontier runs stopped within one H100-hour because no matching checkpoint is released. [The sixth, Muse Wonder in our loop, retrained the model with 27 H100-hours and reproduced the claim, as Muse Spark 1.2 did under the same prompt] (Section 5.3).
 
-An annotator that saw neither the verdict nor the harness labelled the main failure of each of the [39] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [8 of 39 = 21%] against 110 of 300 = 37% for the open agents, and [14 of 39] ended before producing a number, against 44 of 300. The 300 are the open-agent runs with a failure label at submission: the 299 that were not reproduced, and one reproduced run that the taxonomy labels as measuring the wrong artifact.
+Claude Sonnet 5, shown neither the verdict nor the harness, labelled the main failure of each of the [39] failing frontier runs with the Appendix G definitions. Failures that report a number without a valid measurement are rarer in the frontier runs, [8 of 39 = 21%] against 110 of 300 = 37% for the open agents, and [14 of 39 = 36%] ended before producing a number, against 44 of 300 = 15%. When the same annotator labels a sample of 50 open-agent runs, the two shares are 46% and 23% (Appendix G). The 300 are the open-agent runs with a failure label at submission: the 299 that were not reproduced, and one reproduced run that the taxonomy labels as measuring the wrong artifact.
 
-### Reply to YGTR, part 2 of 2 (3,966 characters)
+### Reply to YGTR, part 2 of 2 (4,064 characters)
 
 **W2: Failures due to hardware differences.**
 
-At most 11 of the 372 graded runs failed because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts, and we replayed them on x86 nodes. There, 9 build (95% Wilson interval 47% to 91%) and 3 fail again, so our hardware explains 9 failures, or 11 with the 2 we could not replay. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3). We also ran gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes. They reproduce [4 of 8] model and paper pairs there, against [3 of 8] for the same models and papers on our GH200 nodes, and the two scores of every pair are within one point.
+At most 11 of the 372 graded runs failed to build because of our hardware, and removing every build failure changes no best-agent rate by more than one percentage point. In all, 24 runs failed at build or dependency install, 14 of them on a package with no build for the aarch64 CPUs of our nodes. Of those 14, 12 have an install command in their transcripts, and we replayed them on x86 nodes. There, 9 build (95% Wilson interval 47% to 91%) and 3 fail again, so our hardware explains 9 failures, or 11 with the 2 we could not replay. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement (Section 5.3, Appendix B.2). We also ran gpt-6.1-sol and gpt-6-astra in our loop on x86 nodes. They reproduce [4 of 8] model and paper pairs there, against [3 of 8] for the same models and papers on our GH200 nodes, and the two scores of every pair are within one point.
 
 **W3: Agents are only run once.**
 
@@ -247,16 +247,16 @@ We agree that one run per cell leaves the results open to noise. To measure the 
 
 **Q2: Fetching checkpoints over the network.**
 
-Thank you for suggesting this check, which changed two grades. We scanned the run transcripts for model downloads: hf_hub_download, snapshot_download, the Hugging Face CLI (huggingface-cli or hf download), from_pretrained with a repository id, torch.hub, git clone and git lfs of Hugging Face repositories, gdown, and wget or curl of weight files. Downloading released weights is allowed at Run, so the runs that matter are the 42 that were graded reproduced at Retrain and Reimplement at submission (29 and 13). Of these, 16 matched a pattern, and we read them by hand: 10 were not downloads, 4 fetched a base model that the method starts from, and 2 evaluated a checkpoint of the claimed model (Muse Spark 1.2 on 2508.21046 and MiniMax-M2.7 on 2505.12677). The revision counts both as not reproduced, which leaves 40 (28 and 12), and the best rates stay at 9 of 33 at Retrain and 5 of 33 at Reimplement (Section 5.2).
+Thank you for suggesting this check, which changed two grades. We scanned the run transcripts for model downloads: hf_hub_download, snapshot_download, the Hugging Face CLI (huggingface-cli or hf download), from_pretrained with a repository id, torch.hub, git clone and git lfs of Hugging Face repositories, gdown, and wget or curl of weight files. Downloading released weights is allowed at Run, so the runs that matter are the 42 that were graded reproduced at Retrain and Reimplement at submission (29 and 13). Of these, 16 matched a pattern, and we read them by hand: 10 were not downloads, 4 fetched a base model that the method starts from, and 2 evaluated a checkpoint of the claimed model (Muse Spark 1.2 on 2508.21046 and MiniMax-M2.7 on 2505.12677). The revision counts both as not reproduced, which leaves 40 (28 and 12), and the best rates stay at 9 of 33 at Retrain and 5 of 33 at Reimplement (Section 5.2, Appendix B.2).
 
 **Q3: Failures that were not the agent's fault.**
 
-We traced 27 of the 400 cells to causes outside the agent (Section 5.2). They come from two groups, the 28 cells with no graded run and the 24 build and dependency failures of W2.
+We traced 27 of the 400 cells to causes outside the agent (Sections 5.2 and 5.3, Appendix B.2). They come from two groups, the 28 cells with no graded run and the 24 build and dependency failures of W2.
 
-- **Cells with no graded run (6 of 28).** Four belong to paper 2510.20725, whose runs did not start because of a harness error that is now fixed, and 2 were Muse Spark 1.2 audits that never returned a verdict. The same auditor has now graded those 2, one reproduced and one partial. [We reran the 4 cells of 2510.20725, and r of them reproduce.] The other 22 are agent failures.
+- **Cells with no graded run (6 of 28).** Four belong to paper 2510.20725, whose runs did not start because of a harness error that is now fixed, and 2 were Muse Spark 1.2 audits that never returned a verdict. The same auditor has now graded those 2, one reproduced and one partial. Three more of the 28 were finished runs without a grade, and the auditor has graded them as well, none reproduced.
 - **Build and dependency failures (21 of 24).** These are the 14 aarch64 packages of W2 and 7 other environment problems. The remaining 3 were agent errors.
 
-For runs that followed the released pipeline and missed, we re-ran the final commands of 3 with two new seeds and no agent. On 2505.17836 the miss repeats within 0.0007 on both seeds. On 2510.07501 the value moves by 0.28 across seeds against a target of -0.20, more than the agent's original miss. Both misses therefore arise without the agent, and we read them as faithful runs of the released pipeline. On the Run paper, 2506.10351, both seeds land within 0.54 points of the agent's 94.19% (93.65% and 94.15%). Only these 3 of the 22 papers we examined for this check had a single command chain that could be rerun unchanged, so we do not extrapolate from them.
+For runs that followed the released pipeline and missed, we re-ran the final commands of 3 with two new seeds and no agent. On 2505.17836 the miss repeats within 0.0007 on both seeds. On 2510.07501 the agent's run and our two seeds span 0.28 against a target of -0.20, far more than the agent's original miss of 0.02. Both misses therefore arise without the agent, and we read them as faithful runs of the released pipeline. On the Run paper, 2506.10351, both seeds land within 0.54 points of the agent's 94.19% (93.65% and 94.15%). Only these 3 of the 22 papers we examined for this check had a single command chain that could be rerun unchanged, so we do not extrapolate from them.
 
 We would be glad to discuss any of these results further. Thank you again.
 

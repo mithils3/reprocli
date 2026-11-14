@@ -207,8 +207,7 @@ auditor had not graded, and it has
 now graded the three whose files survive at 0, 2, and 0, none of them
 reproduced, while the fourth lost its files and stays ungraded. The pinned
 auditor has also graded the two missing audits, reproduced (score 8) on
-2503.23035 and partial (score 6) on 2510.08177. \todo{We reran the 4 cells of
-2510.20725 with the same settings, and r of them reproduce.} Every rate in Section~\ref{subsec:results} and Table~\ref{tab:results} includes these grades, and a cell that
+2503.23035 and partial (score 6) on 2510.08177. Every rate in Section~\ref{subsec:results} and Table~\ref{tab:results} includes these grades, and a cell that
 still has no graded run counts as a failure at score 0.
 % src: replies.md:286-290; results/e8/summary.json (empty_cells: total 28; outside_agent_cells: 6); results/e8/d_cells.md and e8/regrade_dcells.json (3 of 4 regraded at 0, 2, 0; 2510.19314 ungraded); results/e8/README.md:19-27 (22 cells outside the first six, D 4); results/e8/regrade_muse.json (2503.23035 score 8, 2510.08177 score 6)
 
@@ -266,7 +265,7 @@ papers. Because half of the sampled papers are ones some open agent had
 reproduced under the submitted grades, those columns favor the open agents. In the row marked Codex CLI + prompts, the harness prompts the agent to continue, up to three times, whenever it ends its turn with under half of its grant used. The frontier runs
 spend a median of \todo{5.6}\% of their GPU grant, against \todo{14.3}\% for
 the open agents on the same papers, and Table~\ref{tab:frontier-runs} lists
-every run with its exit reason. By tier, the frontier runs reproduce \todo{11 of 18} at Run, \todo{3 of 20} at Retrain, and \todo{4 of 19} at Reimplement. The median and the tier counts leave out the Codex CLI + prompts runs, which repeat three papers of the Codex CLI row.
+every run with its exit reason. By tier, the frontier runs reproduce \todo{11 of 18} at Run, \todo{3 of 20} at Retrain, and \todo{4 of 19} at Reimplement. The median and the tier counts leave out the Codex CLI + prompts runs, which repeat three papers of the Codex CLI row. Pooled over the \todo{57} runs, the frontier arms reproduce \todo{18} (32\%, 95\% interval 21\% to 44\%), where DeepSeek-V4-Flash reproduces \todo{23} and Muse Spark 1.2 \todo{20}. On the 12 sampled papers that some open agent had reproduced, the frontier runs reproduce \todo{14 of 33}, and on the 12 that none had they reproduce \todo{4 of 24}, on \todo{2} papers. On the same runs DeepSeek-V4-Flash reproduces \todo{6 of 20} at Retrain and \todo{6 of 19} at Reimplement. Each arm takes the papers in the order of the sample, so gpt-6.1-sol covers the 12 core papers in our harness and \todo{23} of the 24 in Codex CLI, and gpt-6-astra the first 8 in Codex CLI; these three rows have median grant shares of \todo{8.5}\%, \todo{3.2}\%, and \todo{3.8}\%, and the frontier runs that did not reproduce have a median of \todo{2.1}\%. On x86 nodes, gpt-6.1-sol and gpt-6-astra in our harness reproduce \todo{4 of 8} model and paper pairs against \todo{3 of 8} for the same pairs on the GH200 nodes, and the two scores of every pair are within one point.
 % src: results/frontier/same_paper_baselines.md, section Frontier runs by tier (57 GH200 rows without the continue-prompt arm on 11-13); moves with: the remaining frontier runs
 We did not run Claude Code, since the auditor
 is a Claude model. Under the submitted grades some agent reproduced 34 of the 99 papers the sample was drawn from, so the sample holds a larger share of reproduced papers than the benchmark.
