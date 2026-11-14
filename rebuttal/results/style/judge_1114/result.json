@@ -1,0 +1,4071 @@
+{
+ "judged": [
+  {
+   "shard": 0,
+   "threads": [
+    {
+     "id": "r1460",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 8,
+     "p_convinced": 70,
+     "weakness": "Frontier headline (18 of 57) rests on a preselected 24-paper sample; Claude Code is not tested and the tables are dense."
+    },
+    {
+     "id": "r4738",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Reviewer's post-rebuttal request to test DINO or MAE encoders goes unanswered, and the no-degradation result covers only CLIP models."
+    },
+    {
+     "id": "r9359",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Online-KD ViT ImageNet-1k gains of 0.05 to 0.4 points are within likely noise with no seeds; self-KD ImageNet result arrives in a later post."
+    },
+    {
+     "id": "r6852",
+     "n_points": 8,
+     "n_direct": 7,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 25,
+     "weakness": "Defers the User A on User B data issue to a future version with no analysis; concedes no deployed systems, leaving the threat model open."
+    },
+    {
+     "id": "r5490",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 20,
+     "weakness": "Translation quality is never audited and the embedding-probability experiment is not rerun; the fine-tuning novelty point is answered by listing claims."
+    },
+    {
+     "id": "r3137",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 8,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Says the SINDy swap gives comparable results, but its table shows PDEDER+SINDy far worse (Heat short-term MSE 0.886 vs 0.003); GG-ODE is not run."
+    },
+    {
+     "id": "r6923",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 4,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Targeted attacks are answered by asking the reviewer for references, and the reply blames the tables and captions; no single-path test against targeted attacks."
+    },
+    {
+     "id": "r6404",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 5,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "AdaGrad++ vs AdaGrad comparison is deferred and Sophia is dismissed; 'consistently stable' is contradicted by its own tables, e.g. ViT SVHN Case 2 at 35.09."
+    },
+    {
+     "id": "r5578",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Noise table shows accuracy rising with noise (94.2 to 99.1), contradicting the text; SupCon is deferred and the 74% time cost is not explained."
+    }
+   ],
+   "ranking": [
+    "r1460",
+    "r4738",
+    "r9359",
+    "r6852",
+    "r5490",
+    "r3137",
+    "r6923",
+    "r6404",
+    "r5578"
+   ]
+  },
+  {
+   "shard": 1,
+   "threads": [
+    {
+     "id": "r6745",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Scalability and baseline questions are deferred to future work or the general reply; the latency answer does not address the user-set sparsity concern."
+    },
+    {
+     "id": "r9492",
+     "n_points": 9,
+     "n_direct": 6,
+     "coverage": 5,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Silently skips small fixes (U-Net term, Figure 3 y-label, quotation marks) and declines to simplify the crowded figures; visual examples deferred."
+    },
+    {
+     "id": "r4627",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Asserts the LLM aggregation works with no new experiment against majority vote, on the dataset where voting matches it."
+    },
+    {
+     "id": "r8295",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "The MultiHMR result is partial and swaps in a ConvMixer backbone, so it does not test the method on the original architecture; AiOS is untested."
+    },
+    {
+     "id": "r6343",
+     "n_points": 7,
+     "n_direct": 4,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Ignores the structure and noise-impact questions, calls the line 52 concern a misunderstanding, and offers no new experiment."
+    },
+    {
+     "id": "r7026",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 7,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Significance of the image gains is argued from baseline strength rather than new statistics; the latent diffusion limitation is left unexplored."
+    },
+    {
+     "id": "r4366",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "The rendering-versus-geometry ablation concern is answered by pointing to figures with no numbers, and no new experiment is added."
+    },
+    {
+     "id": "r7640",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 80,
+     "weakness": "Dense and long, with unexplained shorthand (cells, tiers, Wilson intervals), so a reviewer must work hard to verify it."
+    },
+    {
+     "id": "r4080",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Does not address the supervised paired-data or per-degradation restorer dependence, and the zero-shot rebuttal gives no comparison numbers."
+    }
+   ],
+   "ranking": [
+    "r7640",
+    "r7026",
+    "r9492",
+    "r4080",
+    "r8295",
+    "r6745",
+    "r4366",
+    "r4627",
+    "r6343"
+   ]
+  },
+  {
+   "shard": 2,
+   "threads": [
+    {
+     "id": "r9024",
+     "n_points": 7,
+     "n_direct": 7,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Originality point 1 is defended by argument, not shown. The ablation text says 'no more than 7%', but the table shows a 7.3-point drop at L=0 in the 200-300 range."
+    },
+    {
+     "id": "r5823",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 60,
+     "weakness": "Very dense with numbers and jargon. Claude Code is excluded, so the 'proper coding harness' request is only partly met, and the subset comparisons cover 6 to 23 papers each."
+    },
+    {
+     "id": "r1705",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "The '2,455 times' speedup is asserted without a table, and the claimed 'non-obvious insight' is argued rather than tested with a mechanism analysis."
+    },
+    {
+     "id": "r2418",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Novelty question is answered by assertion ('unfair to dismiss'), and the HAN and BAGNN gains (0.66, 0.29 points) are small with no significance test."
+    },
+    {
+     "id": "r1242",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 8,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 30,
+     "weakness": "The major concern, the strong additive-noise assumption, is answered by argument with no worked case, and the 'first proof after 25 years' claim is unsupported."
+    },
+    {
+     "id": "r6447",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Promises experiments on time dilation and rendering 'in the appendix' without showing them, and waves off the request for deeper behaviour analysis as unnecessary."
+    },
+    {
+     "id": "r2534",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 4,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Tone is defensive ('respectfully and firmly disagree' twice), novelty is defended by assertion, and a leftover '[redacted]**' artifact sits in the reply."
+    },
+    {
+     "id": "r7748",
+     "n_points": 7,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Refuses fine-tuning and gives no Replogle results, while the general reply claims preliminary results. The out-of-distribution embedding concern is acknowledged but untested."
+    },
+    {
+     "id": "r8612",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "No comparison table against DALL-Eval or HRS-Bench and no new metric or method, and the post-2 findings have no numbers. It also cites a 'Reviewer RNsM' not on this thread."
+    }
+   ],
+   "ranking": [
+    "r9024",
+    "r5823",
+    "r1705",
+    "r2418",
+    "r1242",
+    "r6447",
+    "r2534",
+    "r7748",
+    "r8612"
+   ]
+  },
+  {
+   "shard": 3,
+   "threads": [
+    {
+     "id": "r8462",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 7,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Very dense: two long posts with dozens of intervals and counts; the headline answers need several reads to follow, and Claude Code is excluded by argument, not tested."
+    },
+    {
+     "id": "r5493",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Weakness 2 (cost) is answered by argument and cited prior numbers, with no new wall-clock or FLOP table for the added settings."
+    },
+    {
+     "id": "r9146",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 55,
+     "weakness": "The severe-distortion claim rests on a figure reference with no metrics; the SRCC/PLCC tables repeat EDQA-LoRA headers with unexplained differences."
+    },
+    {
+     "id": "r9872",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "The sharpness and grokking question is deferred to future work, and the schedule sensitivity is answered by pointing to Fig. 9 without a variance figure."
+    },
+    {
+     "id": "r9441",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "The LLMLingua gain is stated only qualitatively here, with numbers left to the global reply; LongLLMLingua is skipped on a fairness argument alone."
+    },
+    {
+     "id": "r2510",
+     "n_points": 8,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "SWA/EMA and the comparison with other adversarial training methods are deferred to future work, and minor items 2 and 3 are not answered in the reply."
+    },
+    {
+     "id": "r9872_placeholder",
+     "n_points": 0,
+     "n_direct": 0,
+     "coverage": 0,
+     "evidence": 0,
+     "clarity": 0,
+     "tone": 0,
+     "overall": 0,
+     "p_convinced": 0,
+     "weakness": "placeholder"
+    }
+   ],
+   "ranking": [
+    "r8462"
+   ]
+  },
+  {
+   "shard": 4,
+   "threads": [
+    {
+     "id": "r2227",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Very long, with several tables and many numbers; the Qwen and GPT-4V tables need a careful read. Latency is still 4x regular decoding, framed favourably."
+    },
+    {
+     "id": "r4531",
+     "n_points": 7,
+     "n_direct": 7,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 5,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 65,
+     "weakness": "Dense wall of figures and abbreviations across two posts; the Claude Code omission and the reclassified cell counts are hard for a reviewer to track."
+    },
+    {
+     "id": "r3361",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Weaknesses 1 and 2 are answered only by saying the paper was revised; no new content, table or example is shown in the reply."
+    },
+    {
+     "id": "r8742",
+     "n_points": 15,
+     "n_direct": 11,
+     "coverage": 7,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Answers are purely argumentative with no new experiment; the variance and runtime requests are dismissed as impractical, and sign(0) is typed as +1 or +1."
+    },
+    {
+     "id": "r8564",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 28,
+     "weakness": "EWA non-replication is met by blaming duration and batch size rather than a new run; weight decay is offered only conditionally, and repeated Please note lines read as lecturing."
+    },
+    {
+     "id": "r6102",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Traffic baselines are declined without any new comparison, and the training-rerun concern from the general reply is not addressed here; large-dataset question is an apology only."
+    },
+    {
+     "id": "r9126",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Promises like will include and would be added replace new results for GSGEN and the colour question; the closing post is generic thanks with no answer."
+    },
+    {
+     "id": "r2100",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 18,
+     "weakness": "The diffusion-on-MUSDB18 result is deferred to a future revision, the learning-rate confound is argued not tested, and lines like we were not trying read as defensive."
+    },
+    {
+     "id": "r3135",
+     "n_points": 5,
+     "n_direct": 2,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "No new experiment or meta-evaluation; the dataset gap is pushed to future work, the method question is answered by asking the reviewer to reread appendices, and the reply stops after point 4."
+    }
+   ],
+   "ranking": [
+    "r2227",
+    "r4531",
+    "r3361",
+    "r8742",
+    "r8564",
+    "r6102",
+    "r9126",
+    "r2100",
+    "r3135"
+   ]
+  },
+  {
+   "shard": 5,
+   "threads": [
+    {
+     "id": "r4392",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Very dense and long; the frontier-model table changes its paper set per row, and Claude Code is declined on an auditor-bias reason the reviewer may not accept."
+    },
+    {
+     "id": "r8464",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 9,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Never answers the post-norm question yes or no, and the Table 4 motivation contradiction gets other arguments rather than data; follow-up posts repeat the same nudge."
+    },
+    {
+     "id": "r8387",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "The colour question is answered by pointing to another section; the 25 vs 32 PSNR gap to baselines is explained as a trade-off without measurement."
+    },
+    {
+     "id": "r1234",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "Includes an off-topic ethics paragraph about a child's face, leaves the one-step regression question without a direct answer, and dismisses the contribution concern."
+    },
+    {
+     "id": "r6981",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Writing errors are promised without any specifics, the convergence results are mixed and not interpreted, and the segmentation question is framed as a misunderstanding."
+    },
+    {
+     "id": "r1593",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Declines to include neural-network results it already has, which conflicts with the general response that points to them, and adds no new evidence to the reply."
+    },
+    {
+     "id": "r9859",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "Ignores the Table 1 label error, answers the open versus closed gap with speculation, and reports 100% interpretability from correct answers only."
+    },
+    {
+     "id": "r5916",
+     "n_points": 9,
+     "n_direct": 4,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Almost no new experiments; most fixes are promises, the inverse-crime and baseline-strength concerns are not engaged, and standard errors are declined for baselines."
+    },
+    {
+     "id": "r7286",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 1,
+     "clarity": 4,
+     "tone": 5,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "No new evidence and no cleaner problem statement in the reply; it leans on the Call for Papers argument and does not answer whether the objective is just expected performance."
+    }
+   ],
+   "ranking": [
+    "r4392",
+    "r8464",
+    "r8387",
+    "r1234",
+    "r6981",
+    "r1593",
+    "r9859",
+    "r5916",
+    "r7286"
+   ]
+  },
+  {
+   "shard": 6,
+   "threads": [
+    {
+     "id": "r4135",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 80,
+     "weakness": "Long and dense for a rebuttal. Excluding Claude Code is argued by auditor choice, and the failure tallies take effort to parse."
+    },
+    {
+     "id": "r6654",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "The realistic-input concern (W3) is answered by pointing to an existing appendix and a case study, not by a new test on realistic samples."
+    },
+    {
+     "id": "r7643",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 9,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "W3 motivation rests on an unquantified activation observation; the frozen-status answer (W2) is one line with a promise to revise."
+    },
+    {
+     "id": "r2013",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Runtime, the main efficiency ask in both tables, is deferred to camera-ready; only an unquantized Appendix H example is given, with no measured SensZOQ time."
+    },
+    {
+     "id": "r6971",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 9,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "The mechanism question gets a generic paragraph about attention and non-linear extraction, with no experiment that tests it."
+    },
+    {
+     "id": "r1057",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Promised reanalyses (log-log plots, W2 bounds) are described, not shown; smaller comments (O(eps^2) label, typos, Theorem 4.4 sketch) go unanswered."
+    },
+    {
+     "id": "r3655",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "The SimHash and selection-criterion points are argued or referred back to the general response; no new comparison run or table is shown."
+    },
+    {
+     "id": "r2636",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "The novelty request (W1) is answered by asserting 20 datasets without the requested comparison to existing benchmarks; no new evidence on that point."
+    },
+    {
+     "id": "r6810",
+     "n_points": 13,
+     "n_direct": 5,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Skips the NLI-entailment validity point and Q-1 entirely; most fixes are promised for later with no new numbers or analysis."
+    }
+   ],
+   "ranking": [
+    "r4135",
+    "r6654",
+    "r7643",
+    "r2013",
+    "r6971",
+    "r1057",
+    "r3655",
+    "r2636",
+    "r6810"
+   ]
+  },
+  {
+   "shard": 7,
+   "threads": [
+    {
+     "id": "r5754",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 38,
+     "weakness": "Declines the baseline request on grounds that no existing method fits, and the AudioMNIST worked example is dense and hard to follow."
+    },
+    {
+     "id": "r5635",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 33,
+     "weakness": "Writing and typo points are answered by pointing to a general response and a promised fix, not by specific edits to S_i and Prop. 1."
+    },
+    {
+     "id": "r1666",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 28,
+     "weakness": "Concedes the examples are well known, adds no experiment, and the math-heavy bullets on the Radon-Nikodym link are hard to follow."
+    },
+    {
+     "id": "r5886",
+     "n_points": 11,
+     "n_direct": 7,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Rejects most requested baselines and experiments as out of scope, gives no sensitivity analysis, and curtly dismisses the throughput and Figure 1 points."
+    },
+    {
+     "id": "r5976",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Pseudocode's preference-regulation step (solve Eq. 6) stays a black box, and the full implementation tables arrive only in a future revision."
+    },
+    {
+     "id": "r2273",
+     "n_points": 16,
+     "n_direct": 3,
+     "coverage": 2,
+     "evidence": 3,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 5,
+     "weakness": "Defers the notation and Section 3 objections to a future revision, answering only the baseline and hashing points, so the main concern stays unresolved."
+    },
+    {
+     "id": "r1104",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "Declines the requested cross-domain linear-evaluation experiment on scope grounds, citing unshown preliminary SSL results instead."
+    },
+    {
+     "id": "r9075",
+     "n_points": 13,
+     "n_direct": 12,
+     "coverage": 8,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 8,
+     "p_convinced": 45,
+     "weakness": "Code is promised rather than supplied, and the finite-state limit and multi-agent gap are conceded with no new result or experiment."
+    },
+    {
+     "id": "r7910",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 62,
+     "weakness": "Long two-post reply with dense numbers and many section and appendix pointers; the frontier sample is 24 preselected papers and Claude Code is declined."
+    }
+   ],
+   "ranking": [
+    "r7910",
+    "r5976",
+    "r9075",
+    "r1104",
+    "r5754",
+    "r5635",
+    "r1666",
+    "r5886",
+    "r2273"
+   ]
+  },
+  {
+   "shard": 8,
+   "threads": [
+    {
+     "id": "r1915",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 5,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Dense numeric prose with many nested rates is hard to follow, and Claude Code is left out, so the harness question is only partly met."
+    },
+    {
+     "id": "r9259",
+     "n_points": 9,
+     "n_direct": 8,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 50,
+     "weakness": "The missing-details fix is promised, not shown; the scRMSD reply gives inconsistent helix numbers (0.4 vs 0.48) and reads long and defensive."
+    },
+    {
+     "id": "r8221",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 4,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 7,
+     "p_convinced": 55,
+     "weakness": "The monotonicity counterexample is asserted without being shown, and the 'closer to practical batching' point is restated rather than proven."
+    },
+    {
+     "id": "r3072",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 35,
+     "weakness": "Many fixes are promised for the camera-ready, Figure 4b is not updated, and Q1 asks which loss matters most but gets a single-pair weight table."
+    },
+    {
+     "id": "r9696",
+     "n_points": 9,
+     "n_direct": 8,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The MANIQA-vs-LPIPS answer rests on an external image link and argument, with no LPIPS numbers; the Table 2 gap is conceded without a re-check."
+    },
+    {
+     "id": "r3427",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "The 100-classifier result is summarized in one line and sent to an appendix; the related-work answer is a pointer, and a stray '[redacted]' is left in."
+    },
+    {
+     "id": "r3841",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "The core setting dispute is answered by rewording, not by a new experiment; the SSM baseline is promised with no number."
+    },
+    {
+     "id": "r3064",
+     "n_points": 8,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "No spectral or Chronos comparison; the unseen-class claim rests on sex and age tasks, which are not unseen activities; open-sourcing is declined."
+    },
+    {
+     "id": "r6740",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 4,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "No LLM baseline or runtime number is given; two answers ask the reviewer to name baselines, which pushes the work back onto them."
+    }
+   ],
+   "ranking": [
+    "r1915",
+    "r9259",
+    "r8221",
+    "r3072",
+    "r9696",
+    "r3427",
+    "r3841",
+    "r3064",
+    "r6740"
+   ]
+  },
+  {
+   "shard": 9,
+   "threads": [
+    {
+     "id": "r3627",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "The caption-quality concern is answered by pointing to a general response with no numbers; the scalability and real-time points get only a reasoned argument."
+    },
+    {
+     "id": "r6466",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "The ground-truth question asks for quantitative validation; the reply describes the physics and promises code, with no validation metric."
+    },
+    {
+     "id": "r1459",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "The typo point is answered only with 'we have carefully revised'; VLHI, the paper's own metric, is the headline win without independent validation."
+    },
+    {
+     "id": "r1060",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 7,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 72,
+     "weakness": "Claude Code is not tested, and the dense tables with many counts make the headline 18 of 57 hard to read at a glance."
+    },
+    {
+     "id": "r1187",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 20,
+     "weakness": "The electrode-count question is answered only by 'see W1', and the scaling and convergence claims give no values in the reply."
+    },
+    {
+     "id": "r8214",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "The core objection (effectively two training trajectories) is rebutted by assertion, and the repeated 'you may have misunderstood' framing reads as condescending."
+    },
+    {
+     "id": "r8184",
+     "n_points": 13,
+     "n_direct": 6,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Most minor items and the grammar complaint go unaddressed one by one, one sentence is garbled ('more pleasure'), and the code claim contradicts the reviewer with no detail."
+    },
+    {
+     "id": "r3075",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Key numbers for the GPT-2 baseline and low-level tasks sit only in appendices and the general reply; the reply asserts 'on par' and 'outperforms' without values."
+    },
+    {
+     "id": "r7680",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Claims the new preference data helps on Arena Hard (52.8 vs 47.7) though the intervals overlap, and misquotes a loss-table average (2.4767 vs 2.4757)."
+    }
+   ],
+   "ranking": [
+    "r1060",
+    "r7680",
+    "r1459",
+    "r3075",
+    "r6466",
+    "r3627",
+    "r8214",
+    "r1187",
+    "r8184"
+   ]
+  },
+  {
+   "shard": 10,
+   "threads": [
+    {
+     "id": "r5891",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Dense: two posts of tier labels, percentages and Wilson intervals, with Claude Code left untested on an auditor-bias argument alone."
+    },
+    {
+     "id": "r7055",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Novelty answered only by asserting DMD's advantage; translation examples given as a pointer; 'does not directly relate' reads as blaming the reviewer."
+    },
+    {
+     "id": "r7862",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Overclaims 'first to demonstrate' and 'at least as effective' from a single-run Spider result and a 100-pair win rate of 52% with no interval."
+    },
+    {
+     "id": "r6652",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "The AD in-context question is answered by speculation, the key task-count ablation sits behind an external image link, and the split question is dismissed."
+    },
+    {
+     "id": "r1049",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "Promised PPO, robustness and DQN comparisons are absent; the FQF choice rests on an unshown sweep, and a stray title line ends the post."
+    },
+    {
+     "id": "r3849",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 4,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "A1 and A2 repeat the same insurance argument; no answer to the EATA comparison or the calibration-set privacy concern, and no ablation was run."
+    },
+    {
+     "id": "r7851",
+     "n_points": 9,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 18,
+     "weakness": "No new ablation against simpler tokenizers despite the review asking; the four minor issues get no reply; the Papakostas MRI citation does not fit."
+    },
+    {
+     "id": "r3758",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 3,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "'Please revisit... convince yourself' accuses the reviewer of bias; no new experiments, and the motivation concern is deferred to a later revision."
+    },
+    {
+     "id": "r4602",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 4,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Novelty and generalization answered by assertion, no illustration was added, and four follow-up posts nudge the reviewer, one with a [redacted] artifact."
+    }
+   ],
+   "ranking": [
+    "r5891",
+    "r7055",
+    "r7862",
+    "r6652",
+    "r1049",
+    "r3849",
+    "r7851",
+    "r3758",
+    "r4602"
+   ]
+  },
+  {
+   "shard": 11,
+   "threads": [
+    {
+     "id": "r9614",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 55,
+     "weakness": "Two long posts packed with numbers and jargon (grade-change tallies, cell counts); a reader must hold many figures at once to follow the replies."
+    },
+    {
+     "id": "r9003",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "TAED is never compared despite Q3, and the 'no significant difference' framing at about 1000 ms glosses over CAAT's lower LAAL and BLEU in the reproduced numbers."
+    },
+    {
+     "id": "r1303",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 8,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Answer 4 is mismatched (the few-shot item is answered with CLIP-filter numbers), the generalization question is deferred to future work, and the fine-grained dataset point is only promised."
+    },
+    {
+     "id": "r4883",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Reports new pruning and scoring-function ablations only qualitatively, with no numbers in the reply; the finding that random pruning is near Taylor and L1 undercuts the scoring claim and is not addressed."
+    },
+    {
+     "id": "r6418",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "Parameter count is computed correctly, but the suggested controls (embedding baseline, simpler prompting) are not run, and the reply says the reviewer misunderstood the scale comparison."
+    },
+    {
+     "id": "r8181",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 18,
+     "weakness": "No experiment is added against the suggested SOTA method [1], and the 90 percent success rate is conceded to rest on a 100 percent primitive-success assumption."
+    },
+    {
+     "id": "r1059",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 4,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Three follow-up posts press the reviewer to confirm, one shows a leftover [redacted] placeholder, and the LLM choice is justified without any numbers."
+    },
+    {
+     "id": "r4452",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Gives a careful literature comparison, but never answers the request for mitigation ideas and runs no experiment; the promises to revise are not tied to any change."
+    },
+    {
+     "id": "r7922",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 4,
+     "overall": 4,
+     "p_convinced": 10,
+     "weakness": "Corrects the reviewer on offline versus off-policy RL although the review said off-policy, and never answers whether Figure 1 shows learning, the central doubt."
+    }
+   ],
+   "ranking": [
+    "r9614",
+    "r9003",
+    "r1303",
+    "r4883",
+    "r6418",
+    "r8181",
+    "r1059",
+    "r4452",
+    "r7922"
+   ]
+  },
+  {
+   "shard": 12,
+   "threads": [
+    {
+     "id": "r7449",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 55,
+     "weakness": "Very dense, number-heavy text; the headline frontier result is buried in tables and post-hoc subsets, and the reply is long."
+    },
+    {
+     "id": "r3937",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Reply names the model 7B while the review says 8B and does not clearly state which table cells changed from the submitted version."
+    },
+    {
+     "id": "r4998",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 40,
+     "weakness": "Parameter-count comparison is deferred to Section 4.3 with no numbers, and the novelty claim over CQD-A rests on argument rather than new results."
+    },
+    {
+     "id": "r7612",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Dismisses the two suggested prompt-refinement papers as irrelevant instead of comparing; the new table is promotional in tone and its CLIP-score claims are not reconciled."
+    },
+    {
+     "id": "r8931",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "The central question on averaging over- and under-estimates is answered by reasoning alone with no quantitative check; the example outputs are only promised."
+    },
+    {
+     "id": "r3648",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "The GPU efficiency question is deferred with no result, and the new Imagenette and correlation results are cited without any numbers in the reply."
+    },
+    {
+     "id": "r8362",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 2,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "No new analysis or experiment; venue and niche rebuttals rest on argument and citations, and the signalling-game figure is only offered as possible."
+    },
+    {
+     "id": "r5045",
+     "n_points": 7,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Defers the assumption and proposition fixes to a camera-ready and asks the reviewer to name the missing assumptions, with no new evidence."
+    },
+    {
+     "id": "r2849",
+     "n_points": 20,
+     "n_direct": 5,
+     "coverage": 3,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "The 16 minor questions get a single thank-you line; the lambda value, the 0.3 threshold and the GPU question go unanswered."
+    }
+   ],
+   "ranking": [
+    "r7449",
+    "r3937",
+    "r4998",
+    "r7612",
+    "r8931",
+    "r3648",
+    "r8362",
+    "r5045",
+    "r2849"
+   ]
+  },
+  {
+   "shard": 13,
+   "threads": [
+    {
+     "id": "r4560",
+     "n_points": 9,
+     "n_direct": 7,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Formalism complaint gets one line with no rewrite shown; the untranslatable-sentence question is answered by a scope argument, not a criterion or examples."
+    },
+    {
+     "id": "r9838",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Ignores the D versus D*N embedding-size question and the requested equal-dimension control; novelty is deferred to the general response."
+    },
+    {
+     "id": "r7160",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Wasserstein table has no seeds or variance and names no SOTA method; the confidence claim in Q3 is asserted rather than measured."
+    },
+    {
+     "id": "r8637",
+     "n_points": 10,
+     "n_direct": 7,
+     "coverage": 7,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Mostly points to revised text instead of stating implications; no new experiments; the literature-gap point (a) is not answered in the reply itself."
+    },
+    {
+     "id": "r2791",
+     "n_points": 7,
+     "n_direct": 7,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 5,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Dense numbers split across posts; Q2 and Q3 lean on the general response, so a reader must jump between sections to follow the answer."
+    },
+    {
+     "id": "r5392",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Question 3 on matrix dimensions gets only an apology and a pointer to the revised background; no dimension or transpose is explained."
+    },
+    {
+     "id": "r7397",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Figure fix and the 360-frame quality claim are asserted with no numbers in the reply; the physical-model point is deferred to future work."
+    },
+    {
+     "id": "r4042",
+     "n_points": 8,
+     "n_direct": 7,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 50,
+     "weakness": "Orthonormality dismissed by assertion, the 70B result is one number with no baseline, and URIAL win rates lack variance; the superiority claim is stronger than the data."
+    },
+    {
+     "id": "r1848",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 35,
+     "weakness": "Restates the post-processing guarantee instead of resolving whether co-dependence sources can be told apart; the distillation case is conceded and the IP argument sidesteps it."
+    }
+   ],
+   "ranking": [
+    "r2791",
+    "r4042",
+    "r7160",
+    "r1848",
+    "r8637",
+    "r4560",
+    "r7397",
+    "r9838",
+    "r5392"
+   ]
+  },
+  {
+   "shard": 14,
+   "threads": [
+    {
+     "id": "r1331",
+     "n_points": 7,
+     "n_direct": 7,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 50,
+     "weakness": "Significance table gives p-values only, no effect sizes or intervals, and the theory answer is intuition rather than a derivation."
+    },
+    {
+     "id": "r3068",
+     "n_points": 0,
+     "n_direct": 0,
+     "coverage": 0,
+     "evidence": 0,
+     "clarity": 0,
+     "tone": 0,
+     "overall": 0,
+     "p_convinced": 0,
+     "weakness": "placeholder"
+    },
+    {
+     "id": "r3868",
+     "n_points": 8,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 4,
+     "p_convinced": 10,
+     "weakness": "Asks for cluster counts and NMI/ARI analysis, but the reply only says it needs investigating; no new analysis and no added baseline."
+    },
+    {
+     "id": "r9976",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Theorem 2 fix is one added sentence with no stated assumption; defensive opening; algorithm-theory link answered by rhetoric rather than analysis."
+    },
+    {
+     "id": "r6412",
+     "n_points": 17,
+     "n_direct": 14,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Combining control vectors (Q7) is deferred to future work, the domain-shift test (W3) is declined, and variance and ablation results are pointed to the appendix without numbers."
+    },
+    {
+     "id": "r7240",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Ablation results and the Table 10 claim sit only in the supplement, so the reply states no numbers; it opens by blaming unfound tables."
+    },
+    {
+     "id": "r7442",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Uses 2.09% for two different gains, conflicts with the 3.48% figure, and ignores that hard-case accuracy falls from 34.49 to 34.38 when HSSE is added."
+    },
+    {
+     "id": "r9202",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Claims the convergence theorem shows MEVA is superior and that it consistently wins, but states no theorem and gives no timing numbers; the referee quote is out of place."
+    },
+    {
+     "id": "r3065",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 35,
+     "weakness": "Significance concern is answered with upward-trend claims and no baseline score numbers; the flat-environment question is not explained."
+    },
+    {
+     "id": "r6279",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 65,
+     "weakness": "Dense, number-heavy two-part reply with coined tier and model labels; declines to run Claude Code, and the grade changes it reports alter the paper's headline numbers."
+    }
+   ],
+   "ranking": [
+    "r6279",
+    "r1331",
+    "r3065",
+    "r7240",
+    "r6412",
+    "r9976",
+    "r7442",
+    "r9202",
+    "r3868"
+   ]
+  },
+  {
+   "shard": 15,
+   "threads": [
+    {
+     "id": "r3617",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 80,
+     "weakness": "Very dense: long paragraphs, many counts and abbreviations (Muse Wonder, Wilson interval), and no plain one-line answer up front for the reviewer."
+    },
+    {
+     "id": "r2101",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "Defers the meaning of Phi to ref [1] with no intuition, leaves the accessibility complaint unaddressed, and runs no new analysis for the 0.5 dB gap."
+    },
+    {
+     "id": "r5900",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "Adds no significance test for the small Table 3 gains and never isolates grayscale encoding; the opening claims all concerns are addressed, which the text does not show."
+    },
+    {
+     "id": "r8605",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Skips the P3O loss-term question (Q3) by calling it out of scope, and claims vision baselines failed to train without numbers or runs."
+    },
+    {
+     "id": "r8733",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "Never answers the per-face text leakage or text-only generation questions, and declines a quantitative ablation of the two key components with a qualitative figure only."
+    },
+    {
+     "id": "r7773",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Does not run the out-of-domain test the reviewer asked for, and does not address the ROUGE criticism or the Icelandic/German alignment case."
+    },
+    {
+     "id": "r7955",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 4,
+     "tone": 7,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Runs no new experiment or comparison; homeostasis and noise points are deferred to citations, and the neuroscience argument is terse and hard to follow."
+    },
+    {
+     "id": "r3809",
+     "n_points": 7,
+     "n_direct": 4,
+     "coverage": 4,
+     "evidence": 1,
+     "clarity": 4,
+     "tone": 5,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Repeats one future-work promise verbatim to dodge the missing 2023-2024 baselines and the baseline question; no new experiment, and the follow-up reminder reads as pushy."
+    },
+    {
+     "id": "r2757",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Several answers (hyperparameter sensitivity, ablation results) point to appendix summaries with no numbers in the reply, and the Weakness 2 answer is argument only."
+    }
+   ],
+   "ranking": [
+    "r3617",
+    "r2757",
+    "r7773",
+    "r5900",
+    "r8605",
+    "r2101",
+    "r8733",
+    "r7955",
+    "r3809"
+   ]
+  },
+  {
+   "shard": 16,
+   "threads": [
+    {
+     "id": "r1415",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Dense, number-heavy prose: many run counts, model names and intervals a reviewer must track. Claude Code is left unrun, justified by auditor bias rather than tested."
+    },
+    {
+     "id": "r2917",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 8,
+     "p_convinced": 70,
+     "weakness": "The line 50 typo is ignored, and W1 (Young's modulus, reward function) is answered by pointing to appendices without giving the values."
+    },
+    {
+     "id": "r5103",
+     "n_points": 10,
+     "n_direct": 8,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "Weakness 2 (missing comparisons) is not answered in this reply; the FSRL SAC-Lag rerun appears only in the general response."
+    },
+    {
+     "id": "r4759",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Dismisses the quality-versus-attack question by asserting text quality is not a problem; a rhetorical question adds condescension."
+    },
+    {
+     "id": "r4896",
+     "n_points": 12,
+     "n_direct": 10,
+     "coverage": 8,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Cherry-picking, novelty and video-motion concerns are answered by assertion with no new experiment; 'we are the first' overclaims."
+    },
+    {
+     "id": "r8881",
+     "n_points": 11,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "Weaknesses 2, 3 and 7 are answered by pointing to the general response and conceding, with no new derivation or experiment; TD3 question unanswered."
+    },
+    {
+     "id": "r3245",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 4,
+     "p_convinced": 30,
+     "weakness": "Speed slowdown is answered by blaming tooling, with no measured speed at any bit width; the 4-bit table has SliM-LLM behind AWQ on LLaMA-7B."
+    },
+    {
+     "id": "r2894",
+     "n_points": 2,
+     "n_direct": 1,
+     "coverage": 3,
+     "evidence": 5,
+     "clarity": 4,
+     "tone": 7,
+     "overall": 3,
+     "p_convinced": 15,
+     "weakness": "Never engages the novelty objection; the 'reduction in energy savings and loss of up to 20%' sentence is garbled and gives no baseline values."
+    },
+    {
+     "id": "r1321",
+     "n_points": 23,
+     "n_direct": 8,
+     "coverage": 3,
+     "evidence": 2,
+     "clarity": 3,
+     "tone": 6,
+     "overall": 2,
+     "p_convinced": 5,
+     "weakness": "Leaves seeds, hyperparameters, checkpoint choice, baselines and Eq. 10 unanswered; most fixes are 'we will' promises rather than changes."
+    }
+   ],
+   "ranking": [
+    "r1415",
+    "r2917",
+    "r5103",
+    "r4759",
+    "r4896",
+    "r8881",
+    "r3245",
+    "r2894",
+    "r1321"
+   ]
+  },
+  {
+   "shard": 17,
+   "threads": [
+    {
+     "id": "r1695",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 65,
+     "weakness": "Frontier runs use only the authors' harness and Codex CLI; Claude Code is excluded by choice. Long, table-dense posts make the headline numbers harder to find."
+    },
+    {
+     "id": "r4931",
+     "n_points": 13,
+     "n_direct": 11,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 50,
+     "weakness": "The request for toy ground-truth datasets is answered by pointing to existing datasets, not by a ground-truth test. The Figure 3 answer is an unfinished sentence."
+    },
+    {
+     "id": "r8669",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The uncertainty-from-proxy concern is answered by argument only. The not-cherry-picked claim rests on a few hand-picked delta and k settings."
+    },
+    {
+     "id": "r8318",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The assumption on the distribution of the diagonal of A-bar (Q2) is answered theoretically, with no empirical check of the initialization."
+    },
+    {
+     "id": "r4352",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "The text-translation question is answered by argument, with no new experiment. Several points end in a promise to revise."
+    },
+    {
+     "id": "r1456",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "LLM bias and sensitivity are deferred or dismissed. The sample-size claim that larger samples would not change conclusions has no supporting numbers."
+    },
+    {
+     "id": "r6350",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "No new experiments. The theory-to-algorithm gap gets one sentence, and the minor issues are only said to be corrected, with no specifics."
+    },
+    {
+     "id": "r5639",
+     "n_points": 12,
+     "n_direct": 8,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Declines to run experiments against papers [2] and [3] and defends excluding [3]. Most fixes are promised text, and the reply is long and defensive."
+    },
+    {
+     "id": "r9548",
+     "n_points": 4,
+     "n_direct": 1,
+     "coverage": 2,
+     "evidence": 2,
+     "clarity": 3,
+     "tone": 6,
+     "overall": 2,
+     "p_convinced": 5,
+     "weakness": "The reply stops mid-answer on parameter-selection overhead. It gives no overhead numbers and no answer on hybrid HE and DP comparison."
+    }
+   ],
+   "ranking": [
+    "r1695",
+    "r4931",
+    "r8669",
+    "r8318",
+    "r4352",
+    "r1456",
+    "r6350",
+    "r5639",
+    "r9548"
+   ]
+  },
+  {
+   "shard": 18,
+   "threads": [
+    {
+     "id": "r9206",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Dense tables and tier labels (Run, Retrain, Reimplement) are unexplained in the reply, so a reviewer must hunt the appendix to follow the numbers."
+    },
+    {
+     "id": "r8402",
+     "n_points": 12,
+     "n_direct": 10,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 40,
+     "weakness": "Impact question is deferred to another reply, and the L_p answer ('adjusted accordingly') leaves the proof-correctness doubt unanswered."
+    },
+    {
+     "id": "r3760",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Last-iterate point is defended by redefining the guarantee rather than proving it; the zero-gradient fix is asserted without re-checking the proofs."
+    },
+    {
+     "id": "r8284",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Typos not addressed; state-size confound answered by argument and pointers to general responses; length-extrapolation explanation is an untested hypothesis."
+    },
+    {
+     "id": "r9946",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "The 2-10x training-time gap is explained as VAE cost with no breakdown; the long-future limitation gets a citation and a speculative fix, not a test."
+    },
+    {
+     "id": "r8261",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Concern 3 (InternVL-2 vs Qwen2-VL claim) gets only 'we have revised the manuscript' with no stated change; the harder-task point is answered with future plans."
+    },
+    {
+     "id": "r3029",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Architecture point is dismissed as out of scope with no experiment; the non-IID extension argument is a garbled inequality with no new data."
+    },
+    {
+     "id": "r2923",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 4,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Never runs the requested inference-cost ablation; citation padding, repeated thanks and a 'Gentle Reminder' post weaken it."
+    },
+    {
+     "id": "r6718",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 10,
+     "weakness": "Ignores the state, action and observation space size objection entirely; the 100x-parameter claim is asserted with no table or numbers."
+    }
+   ],
+   "ranking": [
+    "r9206",
+    "r8402",
+    "r3760",
+    "r8284",
+    "r9946",
+    "r8261",
+    "r3029",
+    "r2923",
+    "r6718"
+   ]
+  },
+  {
+   "shard": 19,
+   "threads": [
+    {
+     "id": "r9100",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 60,
+     "weakness": "Dense, number-heavy two-post reply. Omitting Claude Code is argued from auditor bias rather than tested, and the harness effect is one paper."
+    },
+    {
+     "id": "r1891",
+     "n_points": 8,
+     "n_direct": 7,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 45,
+     "weakness": "Hyperparameter and SHD tables show small gaps with no variance. Later follow-up posts read as pressure to respond."
+    },
+    {
+     "id": "r3088",
+     "n_points": 8,
+     "n_direct": 7,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 4,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 35,
+     "weakness": "Six posts of dense proof sketch. The claim that log T to log log T is significant rests on citing two papers, not on a reasoned bound."
+    },
+    {
+     "id": "r4252",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Most of the reply argues the contemporaneity policy and chases follow-ups. The ablation is a four-row table with no variance."
+    },
+    {
+     "id": "r6392",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Points 2 and 3 are answered only by pointing to the general response. The critique of the LLM experiment gets no new run."
+    },
+    {
+     "id": "r5265",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Sets aside the GEARS and GenePT comparison as outside the contribution and asks the reviewer to name the unclear notation instead of fixing it."
+    },
+    {
+     "id": "r6253",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Waves off the fine-tuning cost point with no numbers, and leaves the outdated price tables and the missing newer-model evaluation unaddressed."
+    },
+    {
+     "id": "r4582",
+     "n_points": 8,
+     "n_direct": 4,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Ignores the ImageNet/SWIN and wall-clock questions and the no-speedup weakness. Its answers also mix the names CWBC and CCWT."
+    },
+    {
+     "id": "r5026",
+     "n_points": 6,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 2,
+     "p_convinced": 4,
+     "weakness": "Defers paper length, novelty and writing to future versions with no experiment. The runtime answer is an asymptotic FLOP count, not a measured time."
+    }
+   ],
+   "ranking": [
+    "r9100",
+    "r1891",
+    "r3088",
+    "r4252",
+    "r6392",
+    "r5265",
+    "r6253",
+    "r4582",
+    "r5026"
+   ]
+  },
+  {
+   "shard": 20,
+   "threads": [
+    {
+     "id": "r5483",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Theory and stronger baselines are dismissed as out of scope and the reply adds no new experiment; it mostly points back to other comments."
+    },
+    {
+     "id": "r2927",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The tighter-bound question is deferred with 'if time permits', and the state-explosion reply is dismissive ('This is typically not the case')."
+    },
+    {
+     "id": "r1807",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Claude Code is excluded on an auditor-bias argument and deferred; the dense, number-heavy prose makes the core answers slow to read."
+    },
+    {
+     "id": "r8180",
+     "n_points": 6,
+     "n_direct": 3,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 12,
+     "weakness": "Novelty over the discrete-action LMC work and the request for a self-contained presentation go unanswered; the parallel-tempering question is left open."
+    },
+    {
+     "id": "r4530",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 4,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Calls the consistency concern a misunderstanding, defers contamination to an appendix without a summary, and names the wrong reviewer (q9o3)."
+    },
+    {
+     "id": "r8664",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Training without ground truth is deferred to future work, and the Knox question on regret alignment gets a restatement of results rather than analysis."
+    },
+    {
+     "id": "r9391",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "Says ablations of both components are in the general response, but none is shown; the KV-cache answer to the query-injection question is vague and unsupported."
+    },
+    {
+     "id": "r1670",
+     "n_points": 10,
+     "n_direct": 7,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Proofs and code are promised but not shown, and the hard-constraint answer only promises wording changes."
+    },
+    {
+     "id": "r5810",
+     "n_points": 12,
+     "n_direct": 5,
+     "coverage": 3,
+     "evidence": 3,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 5,
+     "weakness": "Six algorithm questions (MCTS phases, Algorithm 1, C(a_i), warm-up) go unanswered, and the reply ends by promising answers and experiments later."
+    }
+   ],
+   "ranking": [
+    "r1807",
+    "r2927",
+    "r8664",
+    "r9391",
+    "r1670",
+    "r4530",
+    "r5483",
+    "r8180",
+    "r5810"
+   ]
+  },
+  {
+   "shard": 21,
+   "threads": [
+    {
+     "id": "r5894",
+     "n_points": 8,
+     "n_direct": 8,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 65,
+     "weakness": "Declines to add the five LLM-graph baselines and leaves catastrophic forgetting untested. Six long posts make the answer hard to scan."
+    },
+    {
+     "id": "r8700",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 9,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Dense statistics across several posts. Declines to run Claude Code on an auditor-bias argument rather than a validated alternative auditor."
+    },
+    {
+     "id": "r8487",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "Reviewer asked for GPT-4o; reply uses Qwen and GPT-4o-mini. Repeated chaser posts and a leftover [redacted] tag weaken it."
+    },
+    {
+     "id": "r5618",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Code is deferred to publication, and new experiment numbers sit only in the general response. Inconsistent figures: 868.07 vs 868.08 s, 20k vs 40k."
+    },
+    {
+     "id": "r1212",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Pathway-reproducibility point is dodged and cites an AW2 that is not in the reply. Step-success answer gives format validity, not step success, and no new experiment."
+    },
+    {
+     "id": "r3516",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Concedes the wave-equation claim holds only on central lines, yet offers only a cited Table 17 with no numbers. The invariance rebuttal is assertion; opens with flattery."
+    },
+    {
+     "id": "r3474",
+     "n_points": 14,
+     "n_direct": 10,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 12,
+     "weakness": "Answers the nine line-level questions but skips the core concerns: RMP token cost (31 vs 10), the 130-example test set, and Feynman training overlap. No new experiment."
+    },
+    {
+     "id": "r6527",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 4,
+     "evidence": 1,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 3,
+     "p_convinced": 12,
+     "weakness": "No new experiment for the two-dataset evaluation concern; defends it by citing other papers' scale. Assumption and bi-level claims are argued, not shown."
+    },
+    {
+     "id": "r9899",
+     "n_points": 10,
+     "n_direct": 7,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 3,
+     "overall": 2,
+     "p_convinced": 12,
+     "weakness": "No new experiments; the code is promised, not given. Defensive wording ('deliberately excluded', 'dismissed by the community') on BatchNorm, epochs and Table 4."
+    }
+   ],
+   "ranking": [
+    "r5894",
+    "r8700",
+    "r8487",
+    "r5618",
+    "r1212",
+    "r3516",
+    "r3474",
+    "r6527",
+    "r9899"
+   ]
+  },
+  {
+   "shard": 22,
+   "threads": [
+    {
+     "id": "r1962",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "Theory request gets 'we will add a detailed proof' with no proof; generality is argued from a CNN mixture-of-experts citation, not tested."
+    },
+    {
+     "id": "r1504",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Very dense: long posts stacked with percentages and appendix cross-references; Claude Code is declined on auditor grounds rather than tested."
+    },
+    {
+     "id": "r5882",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "Memory-construction and memory-size questions get a pointer or an assertion with no numbers; appendix numbers conflict (A.3.5 vs A.6.5)."
+    },
+    {
+     "id": "r7701",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 20,
+     "weakness": "Related-work point is answered by asking the reviewer to name missing papers; Vicuna choice is defended by argument only, with no added model."
+    },
+    {
+     "id": "r1511",
+     "n_points": 7,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "Noise and V_min results sit only in anonymous links; a GPT-4o ELO proxy replaces gold reward; closes by asking reviewers to recognize the work."
+    },
+    {
+     "id": "r4214",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "Claims faster convergence, yet its own table shows LISA lower at step 29 (1.1545 vs 1.2329); no end-to-end time against LoRA or full fine-tuning."
+    },
+    {
+     "id": "r2925",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 30,
+     "weakness": "Robustness question (lighting, occlusion) gets no experiment, only a dataset description and an unsupported claim that COCO and LVIS have low light."
+    },
+    {
+     "id": "r5705",
+     "n_points": 9,
+     "n_direct": 7,
+     "coverage": 6,
+     "evidence": 7,
+     "clarity": 4,
+     "tone": 4,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "Opening posts are hype ('groundbreaking', 'previously thought impossible') and never state how it differs from [1,3]; Circuit Breakers answers an unasked point."
+    },
+    {
+     "id": "r6939",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Theory question is answered by pointing to three external papers; the ViT gain of 0.04 points (67.30 vs 67.34) is called a clear demonstration."
+    }
+   ],
+   "ranking": [
+    "r1504",
+    "r6939",
+    "r1511",
+    "r4214",
+    "r5882",
+    "r5705",
+    "r2925",
+    "r1962",
+    "r7701"
+   ]
+  },
+  {
+   "shard": 23,
+   "threads": [
+    {
+     "id": "r6289",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 15,
+     "weakness": "Novelty and the Q1 low-level-feature question are answered by restating the goal, with no experiment; the organization concern is conceded only by pointing to the appendix."
+    },
+    {
+     "id": "r6546",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 5,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "The toy-experiment request is answered only by pointing to Figure 1, and the extensibility request is pushed back to the reviewer, who is asked to propose a setup."
+    },
+    {
+     "id": "r4633",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "The intermediate-feature question is deferred to post-rebuttal with only a t-SNE argument, and the figure fix is only promised; the runtime table mixes reproduced and reported numbers."
+    },
+    {
+     "id": "r4285",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "The EO argument is logically wrong: Y-hat independent of S does not imply equal true-positive rates given Y=1, and no EO experiment or theory is added."
+    },
+    {
+     "id": "r3825",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "The loss and optimisation question is answered only by an appendix pointer, and the PAC-Bayes question is asserted rather than justified; the reply asks the reviewer for references."
+    },
+    {
+     "id": "r7099",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "It calls Cyclic NN better than the DAG baseline on MNIST (1.70 and 1.64 vs 1.77) though the error bars overlap, and the stability claim has no numbers."
+    },
+    {
+     "id": "r9850",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 60,
+     "weakness": "Dense and number-heavy; the requested Claude Code harness is left to future work on an auditor-bias argument rather than run, though the reply states this openly."
+    },
+    {
+     "id": "r3164",
+     "n_points": 12,
+     "n_direct": 7,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 4,
+     "overall": 4,
+     "p_convinced": 10,
+     "weakness": "Tone is defensive and repeated (we respectfully disagree, asks reviewer for references, two-days-left reminder), and training-data and point-wise questions are answered by appendix pointers."
+    },
+    {
+     "id": "r5518",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Uniqueness and feature-order concerns are deferred to the final draft with no experiment, and the claimed 10 percent runtime for early halting has no table behind it."
+    }
+   ],
+   "ranking": [
+    "r9850",
+    "r4633",
+    "r5518",
+    "r6546",
+    "r7099",
+    "r3825",
+    "r6289",
+    "r3164",
+    "r4285"
+   ]
+  },
+  {
+   "shard": 24,
+   "threads": [
+    {
+     "id": "r6967",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "BigCodeBench request is missing from this reply; the repository-dependency answer is hypothetical with no experiment; the pass@1 concern is answered only by reframing."
+    },
+    {
+     "id": "r1261",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "The restrictive-PDE-class point is answered only by pointing to new appendix experiments with no numbers; the second post pressures the reviewer to reconsider."
+    },
+    {
+     "id": "r4269",
+     "n_points": 10,
+     "n_direct": 9,
+     "coverage": 8,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 45,
+     "weakness": "Outlier robustness and the Gaussian closed-form experiment are answered by argument or refusal, with no new experiment run."
+    },
+    {
+     "id": "r6899",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 5,
+     "evidence": 5,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "The transfer-learning question is never answered; the CodeContests evidence is a preliminary oracle-verifier result linked from an external image host."
+    },
+    {
+     "id": "r6113",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 30,
+     "weakness": "Scalability with more agents is set aside as out of scope with no new run; the sensitivity result is cited to Appendix M without any numbers."
+    },
+    {
+     "id": "r8175",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 4,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 3,
+     "overall": 4,
+     "p_convinced": 6,
+     "weakness": "Defensive tone ('you might have missed', 'irrelevant'); promised experiments are not delivered and the vanilla-LoRA comparison has no numbers."
+    },
+    {
+     "id": "r1538",
+     "n_points": 8,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 12,
+     "weakness": "The ablation against the plain approach without group-and-distill and the consistency question get generic answers; no new experiment is offered."
+    },
+    {
+     "id": "r9608",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Dense tables and stacked percentages make the headline rates hard to check in one read; the early-stop explanation rests on a 39-run subset."
+    },
+    {
+     "id": "r5596",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 45,
+     "weakness": "The '80 times' figure is wrong (37k to 2.5M is about 68 times), and most of the 2.5M samples are augmented, which the reply does not weigh."
+    }
+   ],
+   "ranking": [
+    "r9608",
+    "r4269",
+    "r5596",
+    "r6113",
+    "r6967",
+    "r1261",
+    "r6899",
+    "r1538",
+    "r8175"
+   ]
+  },
+  {
+   "shard": 25,
+   "threads": [
+    {
+     "id": "r8688",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 10,
+     "evidence": 10,
+     "clarity": 7,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Dense, table-heavy text that a reviewer must work to scan; the decision not to run Claude Code rests on an untested auditor-bias argument."
+    },
+    {
+     "id": "r7402",
+     "n_points": 8,
+     "n_direct": 8,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Permuted-choice accuracies (Llama-3 ARC 53.2) differ from the main table (65.7) with no explanation; the AOI rationale rests on a survey-design analogy."
+    },
+    {
+     "id": "r6709",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 9,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 8,
+     "p_convinced": 45,
+     "weakness": "Memorization-score agreement is asserted without a quantitative test; the VAE evidence is one MNIST run; dense bound formulas are hard for non-theorists to follow."
+    },
+    {
+     "id": "r7660",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The two-action limit is answered only with 'we are working on it'; no zero-sum or non-unique-equilibrium results are offered for the requested out-of-assumption case."
+    },
+    {
+     "id": "r7230",
+     "n_points": 6,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Q2 (why gains are larger on weaker architectures) is answered by 'refer to W3', which reports the opposite trend; the label-accuracy gains are not clearly defined."
+    },
+    {
+     "id": "r4646",
+     "n_points": 10,
+     "n_direct": 8,
+     "coverage": 8,
+     "evidence": 9,
+     "clarity": 5,
+     "tone": 4,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Leaked note '(copy xie sir.)' and a duplicated Q9 paragraph; the Algorithm 1 rebuttal says the reviewer misunderstands the method, which reads as condescending."
+    },
+    {
+     "id": "r8524",
+     "n_points": 9,
+     "n_direct": 6,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 20,
+     "weakness": "Cites CIFAR-10 results but reports no numbers; the non-asymptotic and general-loss questions each get one sentence with no analysis."
+    },
+    {
+     "id": "r3558",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 4,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "The ImageNet point is answered with experiments still running and no numbers, while the general response says iNaturalist results are already in Appendix D.4."
+    },
+    {
+     "id": "r9675",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "The objective-function question (Q4) is still unexplained with no stated loss or equation; the multi-layer question is answered by reasoning with no experiment."
+    }
+   ],
+   "ranking": [
+    "r8688",
+    "r7402",
+    "r6709",
+    "r7660",
+    "r7230",
+    "r4646",
+    "r8524",
+    "r3558",
+    "r9675"
+   ]
+  },
+  {
+   "shard": 26,
+   "threads": [
+    {
+     "id": "r2785",
+     "n_points": 5,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "Theory and clarity points are met by promises ('actively working', 'we will') with no new analysis; the upward-refinability skepticism goes unanswered."
+    },
+    {
+     "id": "r9380",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Label cost is answered by one 100-second budget change on one dataset, with no cost figures; a wrong reviewer ID (bYsh) appears."
+    },
+    {
+     "id": "r7117",
+     "n_points": 10,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 2,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "Distance claims (6 m indoors, 10 to 15 m outdoors) contradict the 4 m design and have no data; Q6 and Q7 only say 'revised'."
+    },
+    {
+     "id": "r3852",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "The 640\u03c0 question is answered by argument only, and the 1024 scalability table that resolves the MGFNN question is withheld from the paper."
+    },
+    {
+     "id": "r9759",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 70,
+     "weakness": "Dense and long for a rebuttal; the rate intervals and tier numbers need close reading, and Claude Code is declined rather than run."
+    },
+    {
+     "id": "r9543",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 3,
+     "evidence": 1,
+     "clarity": 3,
+     "tone": 3,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Opens with a lecture on what a proposition is, asks the reviewer to justify their rating, and offers no new numbers for the weak gains."
+    },
+    {
+     "id": "r9297",
+     "n_points": 9,
+     "n_direct": 6,
+     "coverage": 7,
+     "evidence": 4,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 28,
+     "weakness": "Generalization and related-work concerns are met with offers to run gridworlds and add citations, not with any new experiment or cited result."
+    },
+    {
+     "id": "r2610",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 4,
+     "clarity": 8,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 38,
+     "weakness": "Practicality answer rests on unsourced scenarios; repeated 'great question' and 'excellent suggestion' flattery and 'foundation and catalyst' self-praise."
+    },
+    {
+     "id": "r5637",
+     "n_points": 10,
+     "n_direct": 8,
+     "coverage": 8,
+     "evidence": 7,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 33,
+     "weakness": "No training time for the RLPD or JSRL baselines, which the reviewer asked for, and the 2x gain is stated without its numbers."
+    }
+   ],
+   "ranking": [
+    "r9759",
+    "r9380",
+    "r2610",
+    "r5637",
+    "r3852",
+    "r9297",
+    "r2785",
+    "r7117",
+    "r9543"
+   ]
+  },
+  {
+   "shard": 27,
+   "threads": [
+    {
+     "id": "r6355",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 9,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 65,
+     "weakness": "Dense, number-heavy two-post reply. Claude Code was left out by choice, so the harness concern is conceded rather than tested."
+    },
+    {
+     "id": "r5380",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 55,
+     "weakness": "Core numbers are deferred to the general post. Why the LOCA segmentation focus matters is not addressed, and FLSL beating the method gets only a brief note."
+    },
+    {
+     "id": "r4185",
+     "n_points": 9,
+     "n_direct": 8,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "Declines the fair-baseline swap (W5) and the RL benchmark request on argument, adding only one Reacher task. The 43% figure is asserted with no table in the reply."
+    },
+    {
+     "id": "r2793",
+     "n_points": 8,
+     "n_direct": 7,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 35,
+     "weakness": "Answers the PySR and PirateNets baseline requests with argument rather than experiments, and the reply gives few numbers for the new image and PDE results."
+    },
+    {
+     "id": "r1496",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 40,
+     "weakness": "The new replication table has no stated scale or scoring method, and the figure-labelling point is only promised. The human-panel point is answered by listing interests, not evidence."
+    },
+    {
+     "id": "r8473",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "Scope and novelty (W2, W3) are answered by assertion, and the specialist comparison (W5) gives no numbers in the reply. Several fixes are promised for the next version."
+    },
+    {
+     "id": "r8129",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Replaces the requested bound-versus-error comparison with a correlation claim that has no number or figure in the reply, and R_KAN's symbols are undefined."
+    },
+    {
+     "id": "r2938",
+     "n_points": 7,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 4,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 4,
+     "p_convinced": 15,
+     "weakness": "No new evidence. The ties question is never answered, the multi-round adjustment answer is vague, and boilerplate openers pad every point."
+    },
+    {
+     "id": "r4527",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 6,
+     "tone": 4,
+     "overall": 4,
+     "p_convinced": 10,
+     "weakness": "Dismisses the requested downstream and multivariate metrics and recent baselines with argument only, and the code-style reply is self-congratulating and condescending."
+    }
+   ],
+   "ranking": [
+    "r6355",
+    "r5380",
+    "r4185",
+    "r2793",
+    "r1496",
+    "r8473",
+    "r8129",
+    "r2938",
+    "r4527"
+   ]
+  },
+  {
+   "shard": 28,
+   "threads": [
+    {
+     "id": "r5979",
+     "n_points": 2,
+     "n_direct": 2,
+     "coverage": 7,
+     "evidence": 8,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 60,
+     "weakness": "Atomic self-consistency papers are not compared; the reason given is that no code is released. The related-work reply is a citation list with no content."
+    },
+    {
+     "id": "r2801",
+     "n_points": 11,
+     "n_direct": 9,
+     "coverage": 6,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 5,
+     "overall": 4,
+     "p_convinced": 8,
+     "weakness": "No new experiments. Generalisation to other dialects, the CoT drop and fine-tuning are answered by assertion, with a defensive tone in places."
+    },
+    {
+     "id": "r2507",
+     "n_points": 5,
+     "n_direct": 3,
+     "coverage": 4,
+     "evidence": 2,
+     "clarity": 6,
+     "tone": 3,
+     "overall": 3,
+     "p_convinced": 8,
+     "weakness": "Dismisses the linear-transformer and RegBench concerns, declines the cheap short-convolution rerun, and defers P-mem to a general response the reader cannot see."
+    },
+    {
+     "id": "r7398",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 6,
+     "tone": 6,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The GPT-4o ablation (61.8 to 61.7) does not rule out distillation, and the Table 1 fluctuation answer is a dodge."
+    },
+    {
+     "id": "r8797",
+     "n_points": 6,
+     "n_direct": 6,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 9,
+     "p_convinced": 80,
+     "weakness": "Very dense with numbers. Claude Code is omitted on auditor-bias grounds, and the 57-run frontier sample is preselected."
+    },
+    {
+     "id": "r6098",
+     "n_points": 3,
+     "n_direct": 3,
+     "coverage": 6,
+     "evidence": 3,
+     "clarity": 5,
+     "tone": 6,
+     "overall": 5,
+     "p_convinced": 12,
+     "weakness": "No new evidence. The novelty and threat-model replies are assertions and citation lists, and the text is long."
+    },
+    {
+     "id": "r1920",
+     "n_points": 10,
+     "n_direct": 8,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 4,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 30,
+     "weakness": "Table 2 was posted with errors and corrected in a second post. Prompt validity and the linear-regression concern are answered by 'we believe' arguments."
+    },
+    {
+     "id": "r4201",
+     "n_points": 3,
+     "n_direct": 2,
+     "coverage": 6,
+     "evidence": 5,
+     "clarity": 7,
+     "tone": 7,
+     "overall": 6,
+     "p_convinced": 25,
+     "weakness": "Point 3 on sparse control is answered with a use case. The interpolation table's gap at 93% sparsity is not acknowledged."
+    },
+    {
+     "id": "r4377",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 50,
+     "weakness": "The NTK margin argument is not a bound, infinite-width validity is asserted, and the Tiny-ImageNet PGD-20 loss to DSRNA goes unmentioned."
+    }
+   ],
+   "ranking": [
+    "r8797",
+    "r5979",
+    "r4377",
+    "r7398",
+    "r1920",
+    "r4201",
+    "r6098",
+    "r2801",
+    "r2507"
+   ]
+  },
+  {
+   "shard": 29,
+   "threads": [
+    {
+     "id": "r7784",
+     "n_points": 5,
+     "n_direct": 5,
+     "coverage": 9,
+     "evidence": 10,
+     "clarity": 6,
+     "tone": 9,
+     "overall": 9,
+     "p_convinced": 75,
+     "weakness": "Dense numeric prose with many inline ratios is hard to follow, and the Claude Code harness objection is only partly answered (left to future work)."
+    },
+    {
+     "id": "r5569",
+     "n_points": 4,
+     "n_direct": 4,
+     "coverage": 9,
+     "evidence": 8,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 8,
+     "p_convinced": 58,
+     "weakness": "Key new evidence (overfitting figure, demo audio) sits behind external image and Drive links, and the video-encoder question is deferred to future work."
+    },
+    {
+     "id": "r2941",
+     "n_points": 6,
+     "n_direct": 5,
+     "coverage": 8,
+     "evidence": 8,
+     "clarity": 6,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 50,
+     "weakness": "The fine-tuning objection is answered by arguing the metric is wrong rather than testing the method, and the effective-decay formula differs between posts."
+    },
+    {
+     "id": "r4108",
+     "n_points": 9,
+     "n_direct": 8,
+     "coverage": 9,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 7,
+     "overall": 7,
+     "p_convinced": 42,
+     "weakness": "The classifier-generalisation concern is met with a defence and a promise of more annotators, with no new validation delivered."
+    },
+    {
+     "id": "r9475",
+     "n_points": 4,
+     "n_direct": 3,
+     "coverage": 7,
+     "evidence": 7,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 7,
+     "p_convinced": 40,
+     "weakness": "The larger-LLM question is deferred with no result, and the 4.87% mis-formatting rate on TempCompass is not reconciled with the no-improvement claim."
+    },
+    {
+     "id": "r6397",
+     "n_points": 5,
+     "n_direct": 4,
+     "coverage": 7,
+     "evidence": 5,
+     "clarity": 8,
+     "tone": 8,
+     "overall": 6,
+     "p_convinced": 35,
+     "weakness": "The request for more generative models such as DDPM is ignored, and the W2 reply concedes the attack does not test the robust-unlearning definition."
+    },
+    {
+     "id": "r3702",
+     "n_points": 9,
+     "n_direct": 5,
+     "coverage": 6,
+     "evidence": 6,
+     "clarity": 5,
+     "tone": 5,
+     "overall": 5,
+     "p_convinced": 25,
+     "weakness": "Diffusion-TS MSE near 1.8 looks like a broken baseline, the ablation and diffusion-decoder doubts go unanswered, and the 'tirelessly' line reads as unprofessional."
+    },
+    {
+     "id": "r7537",
+     "n_points": 4,
+     "n_direct": 2,
+     "coverage": 5,
+     "evidence": 3,
+     "clarity": 7,
+     "tone": 8,
+     "overall": 5,
+     "p_convinced": 22,
+     "weakness": "It never explains why the method beats basic conformal prediction or why CIFAR-100 uses a homogeneity loss, and the reply contains no numbers."
+    },
+    {
+     "id": "r7270",
+     "n_points": 10,
+     "n_direct": 3,
+     "coverage": 3,
+     "evidence": 2,
+     "clarity": 4,
+     "tone": 6,
+     "overall": 2,
+     "p_convinced": 6,
+     "weakness": "Most points are answered with 'we will revise', with no experiments, and the optimality and notation questions and the zero-variance claim go unanswered."
+    }
+   ],
+   "ranking": [
+    "r7784",
+    "r5569",
+    "r2941",
+    "r4108",
+    "r9475",
+    "r6397",
+    "r3702",
+    "r7537",
+    "r7270"
+   ]
+  }
+ ],
+ "tops": [
+  {
+   "id": "r9024",
+   "overall": 9,
+   "shard": 2
+  },
+  {
+   "id": "r2227",
+   "overall": 9,
+   "shard": 4
+  },
+  {
+   "id": "r5894",
+   "overall": 9,
+   "shard": 21
+  },
+  {
+   "id": "r7055",
+   "overall": 9,
+   "shard": 10
+  },
+  {
+   "id": "r7402",
+   "overall": 9,
+   "shard": 25
+  },
+  {
+   "id": "r5493",
+   "overall": 8,
+   "shard": 3
+  },
+  {
+   "id": "r2917",
+   "overall": 8,
+   "shard": 16
+  },
+  {
+   "id": "r7026",
+   "overall": 8,
+   "shard": 1
+  },
+  {
+   "id": "r8464",
+   "overall": 8,
+   "shard": 5
+  },
+  {
+   "id": "r7680",
+   "overall": 8,
+   "shard": 9
+  },
+  {
+   "id": "r6939",
+   "overall": 8,
+   "shard": 22
+  },
+  {
+   "id": "r5979",
+   "overall": 8,
+   "shard": 28
+  },
+  {
+   "id": "r5569",
+   "overall": 8,
+   "shard": 29
+  },
+  {
+   "id": "r4738",
+   "overall": 8,
+   "shard": 0
+  },
+  {
+   "id": "r6654",
+   "overall": 8,
+   "shard": 6
+  }
+ ],
+ "h2h": [
+  {
+   "set": 0,
+   "ours_id": "r3790",
+   "ranking": [
+    "r3790",
+    "r9024",
+    "r7055",
+    "r2917",
+    "r7680",
+    "r5569"
+   ],
+   "replies": [
+    {
+     "id": "r3790",
+     "strongest_move": "It runs the experiment the reviewer asked for and isolates the factor in dispute on matched papers: \"gpt-6.1-sol finished the same 11 papers in both harnesses ... It reproduces 4 in our harness and 3 in Codex CLI.\" It also lets a reviewer-suggested check change its own numbers: \"Thank you for suggesting this check, which changed two grades.\"",
+     "biggest_weakness": "The frontier evidence is thin and uneven exactly where the main objection sits. Rows cover 2 to 23 papers, half the sample was picked because an open agent had reproduced it, the continue-prompt test rests on \"the 3 papers it finished\", and the first harness the reviewer named is declined: \"We did not evaluate Claude Code.\" A skeptical reviewer can read frontier runs quitting at \"a median of turn 9\" as a setup problem. The reply is also very dense, with sentences such as \"(46% and 23% when the same annotator, Claude Sonnet 5, labels a sample of 50 open-agent runs)\", and two counts look inconsistent: 24 build-failure runs in W2 against 21 in Q3, and 372 graded runs against only 6 ungraded cells of 400.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Replace \"To test each confound you named, we ran three frontier models in two production harnesses\" with one verdict line: frontier runs reproduce 18 of 57, hardware explains at most 11 of 372 runs, verdicts repeat on 23 of 27 pairs.",
+      "Open \"Whether the failure modes and findings change\" with a direct answer: the main failure mode changes to stopping early (27 of 39), and Run stays the easiest tier (11 of 18). Cut the sentence starting \"Because the sample holds equal numbers\".",
+      "Lead W1 with the split by how papers were chosen (14 of 33, and 4 of 24 with 2 new papers) before the pooled 18 against 23 and 20, and add one clause reconciling 24 build-failure runs (W2) with 21 (Q3)."
+     ]
+    },
+    {
+     "id": "r9024",
+     "strongest_move": "It answers the request to discuss an unknown optimal path with a new ablation in the reply and a plain reading of it: \"leveraging non-expert data or the heuristic L1 distance only yields a nearly 3% degradation in performance.\" It also concedes a fair point outright: \"You're correct that in our experiments, elevation data is implicitly used in training.\"",
+     "biggest_weakness": "The answer to the main objection, novelty, is abstract argument with no evidence: \"There is some depth to the question of whether ... We would argue that the answer to this is yes.\" W3 then tells the reviewer the point was already covered (\"This is discussed in the appendix\") and answers training cost where the reviewer asked about gradient propagation through thousands of layers.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "Open W1 with the concrete finding and drop the sentence beginning \"There is some depth to the question\": the original paper left the transition mapping unspecified, and a single convolutional layer is the variation that solves long-term planning.",
+      "In W3 delete \"This is discussed in the appendix\" and lead with the result: applying the loss every J=10 layers cuts training time from 37 to 12.1 hours with success rate unchanged within 0.01%.",
+      "In Q1 put the direct answer first: all maze maps in the dataset, meaning wall and goal positions, are different. Then give the sentence that the highway loss is used only in training."
+     ]
+    },
+    {
+     "id": "r7055",
+     "strongest_move": "It runs the missing optimal-transport comparison and reports a clean win in the reply: \"we outperform all the mentioned baselines in terms of all metrics (except OTCS ... which has a lower $L_2$, but does not fit the target distribution).\"",
+     "biggest_weakness": "The first listed weakness, incremental novelty, never gets a direct answer, and the two methods the reviewer named are left out on a citation: \"We exclude OTM [5] and NOT [6] since [1] and [3] indicate their inferior performance.\" The first answer also opens by brushing the question aside: \"the formula that is referred to does not directly relate to our work.\"",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Add a novelty answer at the top by moving up the closing paragraph: the DMD objective is what RDMD brings, and it yields a method \"strictly better than the baselines\" on Wild to Cat.",
+      "In (5) put the results table and the sentence \"we outperform all the mentioned baselines\" first, then the paragraphs on how each baseline was trained and the FID protocol.",
+      "In (2) state the conclusion before the table with its numbers: at lambda 0.2 the target fit is 0.032 and the pairwise cost 0.247 is close to 0.217. In (1) move the \"does not directly relate\" sentence after the assumptions."
+     ]
+    },
+    {
+     "id": "r2917",
+     "strongest_move": "It gives a concrete technical reason for a result the reviewer found odd, tied to a setting they can check: \"for APG we do *not* use $H=T$ ... Instead, we use the same rollout horizon $H=32$ across all baselines for fair comparison.\"",
+     "biggest_weakness": "It asks for a score change twice and adds social pressure in the follow-up: \"hope the reviewer will increase their scores accordingly\" and \"two out of four reviewers have engaged with us and updated their scores.\" Q1 asked for the reason and gets numbers with no reason, and W1 is answered only by pointing to new appendices without one value in the reply.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Delete \"hope the reviewer will increase their scores accordingly\" in both places and the sentence \"two out of four reviewers have engaged with us and updated their scores.\"",
+      "Open Q1 with the direct statement: the design choices also help SHAC (69.7% on HandFlip, 0.5% on DFlex locomotion), and the further gain to 172.7% comes from entropy regularization and soft values.",
+      "Open W2a with the direct answer to the question asked: yes, \"visual\" here means point clouds, because observations are particle states subsampled from simulation, which is why a PointNet-style network is used."
+     ]
+    },
+    {
+     "id": "r7680",
+     "strongest_move": "It runs the conversion the reviewer said was possible and reports the outcome: training on converted HelpSteer2 \"cannot improve upon the original model\" (92.9 against 93.0), while HelpSteer2-Preference reaches 93.7. It also adds the requested DPO and PPO baselines with the setup held constant.",
+     "biggest_weakness": "It contradicts the reviewer flatly in two places: \"We believe that we have not overstated our claim\" and \"LLM-as-a-judge based metrics ... are not subjective. Instead, they are highly objective metrics.\" The writing weakness gets one sentence of promise (\"We will clarify key results\"), and the \"not surprising\" concern is met with a table of hypothetical loss values in place of a finding.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "Open W1 with \"we agree with the reviewer that it is indeed possible to convert HelpSteer2 point-wise data into a pair-wise format\" and the experiment result, and cut \"We believe that we have not overstated our claim.\"",
+      "Replace \"are not subjective. Instead, they are highly objective\" with the facts already given: MT Bench judgments are grounded in human-verified reference answers, the prompts include code and math, and Chatbot Arena adds human votes.",
+      "Answer \"not surprising\" with the DPO and PPO tables first (Arena Hard 52.8 against 47.7, and 58.6 against 49.3), then the loss table. In W2, list those findings as the excerpts that will be bolded."
+     ]
+    },
+    {
+     "id": "r5569",
+     "strongest_move": "It takes the audio-quality concern seriously, concedes the cause and answers with new measurements in the reply: \"the waveform quality in the initial submitted supplementary files may be not ideal due to the limitations of the Griffin-Lim algorithm\", followed by FAD 2.16 against 4.37 and a listening test.",
+     "biggest_weakness": "The novelty answer rests on being first to apply a known method to this task: \"our work is the first to leverage successfully the masked diffusion transformers MDT ... on this task.\" The requested encoder study is deferred (\"an exciting avenue that we plan to pursue in future work\"), the N2 ablation is a near tie where N2=2 wins on IS, the overfitting evidence sits behind an external image link, and two follow-up posts press for a response.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "Open W1 with the finding in 1.2: a single vector for the video is enough, and a 5M model beats an 860M model on alignment. Then list the differences from [1-4], and cut the code block.",
+      "In W2 say plainly that no new encoders were run and give the reason first: Diff-Foley's Table 2 already compares CAVP with CLIP and ResNet50 on FID and alignment accuracy. Cut \"an exciting avenue.\"",
+      "Move the W4 answer (HiFi-GAN, FAD 2.16, MOS 3.66) to the top of the reply as the strongest new evidence, and fold posts 3 and 4 into one line without the request for feedback."
+     ]
+    }
+   ],
+   "transferable_moves": [
+    "Run the experiment the reviewer asked for and put its table in the reply itself (r3790 frontier runs, r9024 path-length ablation, r7055 optimal-transport baselines). r2917 and r5569 mostly point to appendices, links or future work.",
+    "Isolate the disputed factor on matched items so one sentence settles it (r3790: the same 11 papers in two harnesses; r9024: J=1, 10, 50 with all else fixed). r5569 argues novelty by listing differences with no controlled comparison.",
+    "Let a reviewer's check change your own numbers and say so plainly (r3790: \"changed two grades\"; r9024: \"You're correct that ... elevation data is implicitly used\"). r7680 opens with \"we have not overstated our claim.\"",
+    "Label each answer with the reviewer's own item (W1, Q2) and put a short bold claim at the head of each block, so each concern is findable in seconds (r3790, r9024). r7055 and r5569 number items but bury the result under setup.",
+    "Attach uncertainty to every rate or score (r3790: 95% intervals on each rate; r9024: plus or minus on each cell). r5569's N2 ablation and r7055's baseline table give single numbers with no spread.",
+    "Say what was left out in one sentence with a reason the reviewer can assess (r3790 on Claude Code and the auditor's model family; r7055 on OTM and NOT). r5569 defers encoders as \"an exciting avenue.\"",
+    "Close without asking for a score change or reminding the reviewer that others have updated (r3790, r9024, r7055). r2917 asks twice and r5569 sends two nudges, which reads as pressure.",
+    "Start from the part of the concern you accept before giving the result (r3790: \"We agree that one run per cell leaves the results open to noise\"; r9024 on Q4). r7680 tells the reviewer LLM-judge metrics \"are not subjective.\""
+   ]
+  },
+  {
+   "set": 1,
+   "ours_id": "r3640",
+   "ranking": [
+    "r2227",
+    "r3640",
+    "r6939",
+    "r4738",
+    "r7402",
+    "r7026"
+   ],
+   "replies": [
+    {
+     "id": "r2227",
+     "strongest_move": "It runs the reviewer's own suggestion and credits them for the result: \"we have implemented two strategies to accelerate our approach, including utilizing the middle step of Stable Diffusion, which has proven effective.\" Every other comment also gets a new table, including a latency table that places the method beside the baselines the reviewer named (Woodpecker, HALC).",
+     "biggest_weakness": "The cost objection is answered by comparison and the cost itself remains: \"resulting in a 4.04x increase in latency\", and the best accelerated setting is still 10.21 s against 3.44 s for regular decoding. A reviewer who wrote \"unaffordable\" can read that as confirmation. The repeated opener \"Thanks for pointing out this\" also reads as boilerplate.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Open Response (1) with the comparison that favours the method: 13.89 s is faster than HALC (22.61 s) and OPERA (24.70 s) with the lowest CHAIR_S (48.8). Then show the table.",
+      "Move the accelerated setting (10 diffusion steps, 96 initial tokens, 10.21 s) from Response (5) into Response (1) and add it as a row of the latency table, so the cost answer shows its best figure.",
+      "Delete the repeated \"Thanks for pointing out this\" openers and fold Comment (3) into the heading of Response (1), since Response (3) only points back to it."
+     ]
+    },
+    {
+     "id": "r3640",
+     "strongest_move": "It runs each check the reviewer asked for and reports the one that went against the authors, with its consequence: \"Thank you for suggesting this check, which changed two grades.\" It also isolates the harness on its own: \"gpt-6.1-sol finished the same 11 papers in both harnesses\".",
+     "biggest_weakness": "The frontier evidence can read as thin and tilted. The headline \"18 are reproduced ... where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20\" comes before the reader learns that half the papers were chosen because an open agent had reproduced them, and table rows cover 2 to 23 papers. The reviewer's first-named harness is declined (\"We did not evaluate Claude Code ... which we leave to future work\"), and several paragraphs carry six or more numbers each.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Put the paper selection before the pooled headline: describe the 24-paper design, give the two halves (14 of 33 against 23 and 20; 4 of 24, with 2 papers no open agent had reproduced), and only then the pooled 18 of 57.",
+      "Rewrite the harness sentence so both facts are visible: 4 reproduced in our harness and 3 in Codex CLI on the same 11 papers, with the verdict equal on 8. \"Moves the result by one paper\" hides the 3 changed verdicts.",
+      "Cut the failure-mode section to one chain: 27 of 39 failing runs never ran the experiment at full scale, decided at a median of turn 9, and for 11 of the 27 an open agent reproduced the paper. Drop the \"(46% and 23% ...)\" parenthetical."
+     ]
+    },
+    {
+     "id": "r6939",
+     "strongest_move": "It answers the objection about shrinking gains at scale with a larger run and downstream results: \"we conducted experiments with LLaMa-7B using the same setup as GaLore\". The alpha sweep at 1B then turns the sensitivity concern into a range: \"as long as \u03b1 is constrained below 0.5, Mix-LN consistently outperforms Pre-LN\".",
+     "biggest_weakness": "The theory question is brushed off: \"we kindly refer the reviewer to these excellent works ... rather than redundantly reinventing the wheel.\" Two claims also outrun their numbers: \"The results clearly demonstrate\" for 67.30 against 67.34 on ViT-Tiny, and \"based on our experience\" for a 7B run stopped at 13,000 steps. Saying the submitted 1B result used \"a suboptimal choice of \u03b1\" supports the reviewer's point that alpha tuning decides the outcome.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Open W1 with the 1B alpha sweep table (every ratio below 50% beats Pre-LN's 18.65) and then give 18.18 at 25%, so the corrected alpha reads as robustness and the \"suboptimal choice\" sentence can go.",
+      "In Q4, state the result in the reply (the gradient through LN is inversely proportional to its input magnitude, equation 5), cite the three papers for the bounds, and delete \"redundantly reinventing the wheel\".",
+      "Replace \"clearly demonstrate\" with the two numbers (67.30 to 67.34 on ViT-Tiny, 75.99 to 76.40 on ViT-Small), and for 7B report 27.84 against 28.90 at 13,000 steps without \"based on our experience\"."
+     ]
+    },
+    {
+     "id": "r4738",
+     "strongest_move": "It answers the worry about lost global understanding with a one-sentence mechanism and a new experiment: \"the all-ones mask m = 1 corresponds to reconstructing the original teacher output f(x), so preserving global understanding is built into our objective\", followed by IN1k accuracy that rises for all three CLIP models. It also quotes the exact sentence added to the paper.",
+     "biggest_weakness": "It argues scope where the reviewer wanted a test on models with strong locality: \"We believe our focus on these models trained with image-level supervision is warranted\". The reviewer's later note says the authors \"avoided addressing this issue\". The hyperparameter sensitivity answer also gives no number: \"It's true that some mask distributions don't work as well\".",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Start the first answer with the evidence: locality alignment improves local probing for IN1k classifiers, CLIP, SigLIP, DFN, OpenCLIP and MoCo v3 (Figure 4, Table 5). Then explain why DINO, DINOv2 and MAE differ.",
+      "Replace \"We believe our focus ... is warranted\" with a plain statement of scope: the premise covers models trained with image-level supervision only, and DINO, DINOv2 and MAE receive dense supervision.",
+      "Open the hyperparameter answer with the fact that all main experiments use one mask setting (\"uniform\", Table 4c), then admit some mask distributions do worse and point to Appendix B.1."
+     ]
+    },
+    {
+     "id": "r7402",
+     "strongest_move": "It runs the significance test the reviewer proposed and reports it with spread: \"we conducted a significance test by running the experiment eight times with randomly permuted choices ... All values were statistically significant, with t-test p-values below 0.001.\" The 70B results answer the scale question the same direct way.",
+     "biggest_weakness": "The requested black-box test undercuts the method and is left unread: \"The impact of BNP appears to be mixed in this setup\", with BNP worsening RSD for Llama-3 on all three datasets. \"The distributional effect of AOI is already presented in Section 6.3, Figure 7\" tells the reviewer they missed it. Llama-3 on ARC reads 65.7 in one table and 53.2 in another with no explanation, and the AOI rationale rests on one survey citation.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "In Q2, say which rows hold: AOI lowers RSD on 8 of 9 model and dataset pairs, and adding BNP helps Bloomz most (CommonsenseQA RSD 0.252 to 0.132, MMLU-Redux CKLD 0.523 to 0.124), while Llama-3 is mixed.",
+      "In Q4, drop \"already\" and lead with the finding: in all three datasets the choice distribution moves closer to uniform when AOI is applied (Figure 7, dark-blue against light-blue bars).",
+      "Move Q7 (eight permutations, p below 0.001) and Q8 (Llama-3-70B) directly under the opening line as the strongest new evidence, and label each table with its evaluation setting, since Llama-3 on ARC reads 65.7 in Q2 and 53.2 in Q7."
+     ]
+    },
+    {
+     "id": "r7026",
+     "strongest_move": "It adds a newer, stronger baseline and reports where it loses as well as where it wins: \"our method performs slightly inferior to DOSE for the in-domain VoiceBand+DEMAND data (Table 2), while better on out-of-domain CHiME-3 data (Table 6), notably achieved by using only 4.6x fewer training iterations\".",
+     "biggest_weakness": "The image-domain weakness is answered by assertion with no number: \"We deeply feel such improvements upon the rather strong baseline and across various restoration tasks stand for the significance of our method\". Q4 then disputes the reviewer's reading (\"we actually feel it is somewhat not so apparent\"). The reply shows no table, so every result needs the revised PDF. The packet's general response says this reviewer still raised their score, and the review was mild to begin with.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "In W2, delete \"We would also like to argue\" and \"We deeply feel\", and keep the two reasons as plain statements: the baseline [R4] is already strong, and gains extend to deblurring and super-resolution (Figure 6, Figures 13-19).",
+      "In W1, lead with the DOSE comparison and its 4.6x fewer training iterations, move the paragraph on why CDiffuSE was chosen after it, and cut \"undoubtedly\".",
+      "Open Q4 with the concrete explanation (the IR diffusion model is much larger than the roughly 100K-parameter encoders, Table 11) and remove \"we actually feel it is somewhat not so apparent\"."
+     ]
+    }
+   ],
+   "transferable_moves": [
+    "Give each reviewer point its own new experiment with the table inside the reply, so nothing depends on opening the revised PDF (r2227, r3640, r6939). r7026 shows no table and r4738 shows one.",
+    "Run the reviewer's own suggestion and credit them for what it changed: the middle-step diffusion speed-up in r2227, and the checkpoint scan that \"changed two grades\" in r3640.",
+    "Put the baselines the reviewer named in the same table as the method on the same items: Woodpecker and HALC in r2227, and the two best open agents on exactly the same papers in r3640.",
+    "Isolate the single factor the reviewer suspects with a paired comparison or sweep: the same 11 papers in two harnesses in r3640, the diffusion-step and token sweeps in r2227, the alpha sweep at 1B in r6939.",
+    "State a result that goes against you with its number and what it changes in the paper: two grades moved to not reproduced in r3640, and \"slower than regular decoding and contrastive decoding-based methods\" in r2227. r7402 leaves its adverse result at \"mixed\".",
+    "Put a one-sentence mechanism beside the number so the result explains itself: stopping decided at a median of turn 9 with a transcript quote in r3640, and why short initial responses hurt in r2227. r4738's all-ones mask sentence does this too.",
+    "Use one fixed layout per point: the reviewer's comment quoted or named, the table, one sentence reading it, then the section or table of the revision that now holds it (r2227, r3640). r3640 would gain from r2227's shorter reading sentences.",
+    "Attach uncertainty to small samples: 95% Wilson intervals and repeat-run agreement in r3640, and standard deviations on the added MME results in r2227. r6939 and r7026 claim significance from single runs or adjectives."
+   ]
+  },
+  {
+   "set": 2,
+   "ours_id": "r2163",
+   "ranking": [
+    "r2163",
+    "r5979",
+    "r5894",
+    "r5493",
+    "r8464",
+    "r6654"
+   ],
+   "replies": [
+    {
+     "id": "r2163",
+     "strongest_move": "It runs the exact experiment the reviewer said would overturn the findings and isolates the one variable the reviewer blamed: \"gpt-6.1-sol finished the same 11 papers in both harnesses ... It reproduces 4 in our harness and 3 in Codex CLI, with the same verdict on 8, so the harness moves the result by one paper.\" The checkpoint answer adds trust because it reports a cost to the authors: \"Thank you for suggesting this check, which changed two grades.\"",
+     "biggest_weakness": "The headline frontier result is surprising and arrives before its explanation, on a sample with uneven coverage (rows of 2, 6, 6 and 8 papers): \"Over the 57 frontier runs, 18 are reproduced ... where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers.\" A reviewer who expected frontier models to do better will first suspect the setup, and the test of that suspicion covers only \"the 3 papers it finished\". The first post is also very dense, and its build-failure counts read as inconsistent (\"There are 24 such runs\" in W2, \"21 build and dependency failures\" in Q3). The first harness the reviewer named, Claude Code, is declined.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Directly after the table, state the reason for the surprising result: the median frontier run used 5.6% of its GPU grant against 14.3% for the open agents. Move the paper-selection paragraph below that.",
+      "Reconcile the two build-failure counts in one clause: W2 says 24 runs failed at build or install, Q3 says 21 build and dependency failures. Say that one counts runs and the other cells, or use one count.",
+      "Split the last paragraph of post 1 into two sentences, one per comparison, and drop the parenthesis \"(46% and 23% when the same annotator ...)\". At the first score \"(8, 7 and 8)\", say that 8 is the reproduced threshold."
+     ]
+    },
+    {
+     "id": "r5979",
+     "strongest_move": "It answers the single main weakness with a full new comparison across six models and three benchmarks, and it names where its own method loses: \"It is only in very few cases (i.e. Mistral on Biographies and Qwen2 on TruthfulQA) that ID is surpassed by SE-SL or SE-RG.\" The table shows those losing cells in bold for the competitor, so the claim can be checked in the reply itself.",
+     "biggest_weakness": "The baseline the reviewer named first, and the one that gives the weakness its name (\"atomic self-consistency approaches\"), is the one left out: \"We regret that we are unable to include ASC [3] ... the implementation code has not yet been released.\" The related-work answer is also a promise, not a change: \"we would also include more related studies\". The efficiency claim (\"much more efficient and simpler to implement\") has no number in this reply.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Open post 1 with the result now in post 2: ID has the best overall factual accuracy against SE-SL, SE-RG and FSC, and loses only for Mistral on Biographies and Qwen2 on TruthfulQA. Then give the table.",
+      "State coverage before the baseline list: two of the three cited papers are compared (three methods), and ASC is not, because its repository is still empty. A disclosed gap reads better than one found mid-post.",
+      "Replace \"much more efficient\" with the concrete reason already given: SE-SL and SE-RG need extra LLM calls to split each response into facts and verify them, and ID needs none."
+     ]
+    },
+    {
+     "id": "r5894",
+     "strongest_move": "It concedes the scope objection by changing the claim and then tests the broader claim anyway: \"we are happy to change the title of this paper to 'Language Models are Node Classifiers'\", followed by a link-prediction experiment (AugGLM 93.59 and 94.25 against GAE 89.29). The PPR question gets the same treatment, a controlled swap of PPR for a graph autoencoder and for 1-hop neighbours on the same backbone.",
+     "biggest_weakness": "The request for comparisons with recent LLM-based methods gets a literature note and no new run, with wording that talks down to the reviewer: \"We were aware of the above papers ... so that the reviewer can better understand our paper's position.\" The GraphSAGE answer opens with \"We believe there has been a misunderstanding\", and the catastrophic-forgetting question is redefined away (\"when we mentioned 'versatility', we were referring to the ability to be fine-tuned\") without saying that forgetting was not measured.",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "A4: delete \"We believe there has been a misunderstanding.\" Open with the new GraphSAGE baseline numbers (86.51/89.08/73.88/76.04), then say line 420 describes GraphSAGE's role inside the framework.",
+      "A3: lead with the one comparable number, GraphGPT 75.11 against 76.80 on arxiv, then say [2] and [4] study graph reasoning. Drop \"We were aware\" and \"so that the reviewer can better understand\".",
+      "Fold the link-prediction experiment from the last post into A2, so the title change, the adaptation and the result (93.59 and 94.25 against GAE 89.29) sit in one answer."
+     ]
+    },
+    {
+     "id": "r5493",
+     "strongest_move": "It answers the generalizability question with substantial new experiments, not an argument: a new candidate dataset, two new reference sets and a 7B model, each with a full baseline row, for example \"Quad has an improvement of 0.97% on model accuracy compared with the Qurating, which is a state-of-the-art baseline.\" The sample-size weakness also gets the procedure and an ablation that shows the plateau at 5%.",
+     "biggest_weakness": "The compute-cost weakness is answered by restating the method with no number, and in an off tone: \"Good comment! We agree with the reviewer that the influence computation is not cheap ... Thus, the efficiency is much improved.\" The ablation spreads are tiny and carry no interval (42.73 to 42.94), the text cites k=500000 while the table stops at 100000, and three reminder posts follow (\"Looking forward to your reply\" three times).",
+     "would_move_reviewer": true,
+     "best_edits": [
+      "Delete the three \"Looking forward to your reply\" posts, or keep one short one. Three reminders, one a holiday greeting, read as pressure.",
+      "W2: drop \"Good comment!\" and lead with the one concrete fact in the reply: influence is computed for about 5% of each sampled cluster, while PPL, MATES and Qurating score every instance in the candidate set.",
+      "Q1: fix the mismatch between the text (k=500000) and the table (largest k is 100000), and state the spread plainly: accuracy ranges from 42.73 to 42.94 across k from 1000 to 100000."
+     ]
+    },
+    {
+     "id": "r8464",
+     "strongest_move": "It builds the exact baselines the reviewer asked for, dense models matched on active parameters and on total parameters, and prints them beside the MoE: \"Dense with Same Active Param. 0.81B ... 38.4, 26.2\" against \"MoE with Hybrid-k Routing 0.81B, 3.95B ... 40.0, 32.0\". It also corrects the reviewer's misread number with the right one (the minor-language gain at 7B is 2.6).",
+     "biggest_weakness": "The new table partly confirms the reviewer's concern and the prose talks past it: the dense model with the same total parameters scores 42.0 on major languages against 40.0 for the MoE, yet the text says \"the MoE model exhibits better generalization\". The novelty answer stays abstract (\"we view this approach as a tool for exploring model mechanisms\"). The question whether small gaps are meaningful gets no variance, the tables disagree (7B dense minor is 55.7 in one and 56.7 in another), and the same reminder is posted twice.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "Q2: say it plainly. Dense with the same total parameters is higher on major languages (42.0 against 40.0) with 3.95B active parameters against 0.81B, and the MoE is higher on minor languages (32.0 against 30.9).",
+      "Q4: open with the matched comparison from your own table: at 7B and 8.02B active parameters, the MoE scores 69.9 and 58.3 against 68.5 and 56.3 for dense. Then give the Bengali and Amharic results.",
+      "Delete the duplicate follow-up post, and fix the inconsistent 7B dense minor figure (55.7 in the Table 5 supplement, 56.7 in the fine-tuning table) and the \"(-1.0)\" beside 69.0 to 68.4."
+     ]
+    },
+    {
+     "id": "r6654",
+     "strongest_move": "It implements the baseline the reviewer proposed, following the cited paper's setup, and shows the result at three scales: \"We added a machine learning baseline using a setup similar setup to Foley et al., 2023\", with WASA at 74.84, 66.48 and 56.44 against 55.19, 39.01 and 35.71 for 10, 25 and 50 sources.",
+     "biggest_weakness": "It opens the main weakness by correcting the reviewer and then gives a number that supports the reviewer's worry: \"we would like to clarify that we have evaluated our WASA with a relatively large scale of a hundred sources\", followed by 35.66% accuracy at 500 sources, called \"demonstrating its scalability\" when the reviewer asked about thousands to millions. The realism weakness is answered by pointing back at the paper (\"As explained in Sec. 4.1 (lines 315-320) and App. D.3\") with no new evidence.",
+     "would_move_reviewer": false,
+     "best_edits": [
+      "W1: drop \"we would like to clarify\". Give the numbers first: at 500 sources WASA reaches 35.66% (top-5 54.39%) against 19.02% for BM25. Then say accuracy falls with scale and top-k is the proposed mitigation.",
+      "W3: lead with the concession that the evaluation is simplified, then the reason: LLM-generated text has no ground-truth source. Remove \"As explained in Sec. 4.1\", which tells the reviewer they missed it.",
+      "Cut the opening recap of strengths, which misstates the reviewer's fourth strength as \"our decent performance in cases where the normal performance of the LLM also degraded\". Start with the first answer."
+     ]
+    }
+   ],
+   "transferable_moves": [
+    "Run the experiment the reviewer asked for and print its result table inside the reply, so the answer does not depend on opening the revision (r2163, r5979, r5894). r6654 answers its realism weakness with a pointer to an appendix, and r5493 answers the cost weakness with no number.",
+    "Report the cells where your own method loses or where a check went against you. r5979 names the two settings where a baseline wins, and r2163 says the checkpoint scan \"changed two grades\". r8464 calls a mixed table a win and r6654 calls 35.66% at 500 sources scalable.",
+    "Isolate the single variable the reviewer blames and hold everything else fixed. r2163 runs one model on the same 11 papers in two harnesses, and r5894 swaps PPR for a graph autoencoder and 1-hop neighbours on one backbone. r8464 skips the same-total-parameter baseline for its main table.",
+    "When a requested item is not done, give one concrete, checkable reason and stop. r5979 says the ASC repository is still empty, and r2163 says the auditor shares a model family with Claude Code. r5894 answers the missing baselines with a literature summary instead.",
+    "Give every count its denominator and the main rates an interval, for example \"23 of 27 model and paper pairs (85%, 95% interval 68% to 94%)\" in r2163. r5493 and r8464 argue from gaps of 0.2 to 2 points with no variance, and that is exactly what the r8464 reviewer asked about.",
+    "Accept a scope objection by narrowing the claim in writing. r5894 offers to retitle the paper, and r2163 says of its three reruns \"we report them as cases and do not extrapolate\". r6654 defends the original scope with examples of settings where few sources are enough.",
+    "Open each answer with agreement and the action taken, never with a correction of the reviewer. r2163 and r5979 do this throughout. r6654 opens with \"we would like to clarify\", r5894 has \"We believe there has been a misunderstanding\", and r5493 has \"it is not an assumption\".",
+    "End after the last answer and post no reminder comments. r2163, r5979 and r5894 have none, while r5493 posts three and r8464 posts the same reminder twice."
+   ]
+  }
+ ],
+ "audit_reviewer": "Report: /tmp/claude-1000/-home-mithil-PyCharmProjects-reprocli/ee88b5cc-f222-456d-9de1-997a82c38396/scratchpad/judge_1114/out/audit_reviewer.md (no repo file changed).\n\n**Verdict per point (read as YGTR)**\n- W1a, findings may not generalize: partly resolved. No sentence says plainly which findings carry over.\n- W1b, harness: partly resolved. \"The harness moves the result by one paper\" overstates, since 3 of 11 verdicts differ.\n- W2 hardware: resolved.\n- W3 single runs: resolved.\n- Q1: partly resolved (as W1).\n- Q2 checkpoints: resolved.\n- Q3: partly resolved. 27 of 400 is given, and the 3 reruns leave the other 76 outside-tolerance runs open.\n\n**Raise 2 to 3?** Yes, by a small margin. The deciding risk is the early-stopping passage. The quoted run, \"where writing that code is the task\" and \"stopping early cost reproductions\" invite a check of the task prompt (Figure 48), which tells agents to \"declare early ... wind down\" and to evaluate \"the nearest released sibling\". The answer already in the paper is that open agents got the same task text and reproduced 11 of the 27.\n\n**Flags.** All numbers and pointers match the frozen PDF, with these exceptions:\n- Section 5.3 gives a different stop reason for 2506.08898.\n- Variant scores are listed as (8, 7 and 8) against Table 8's 8, 8, 7, and those three papers were not early stops.\n- \"You also asked about runs...\" attributes a question YGTR did not ask.\n\n**Top five edits** (exact old and new text in the report; comment 1 goes 4,834 to 4,817, comment 2 stays 4,876):\n1. Open \"Whether the failure modes and findings change\" with the answer: \"Two findings carry over ..., and the main failure mode changes, as you anticipated.\" (net -24)\n2. Cut the transcript quote, soften the two judging clauses, reconcile 2506.08898, and cite Appendix G.3. (net -102)\n3. Size the harness result (\"8 of the 11 ... on this small sample\") and say \"the third harness you named, Claude Code\", dropping \"leave to future work\". (net -9)\n4. Replace opening sentence two with a map of the five new analyses by W and Q label. (+118, paid by edit 2)\n5. Q3: replace \"You also asked...\" and add the 93.12% target. (net 0)",
+ "audit_ac": "Report: /tmp/claude-1000/-home-mithil-PyCharmProjects-reprocli/ee88b5cc-f222-456d-9de1-997a82c38396/scratchpad/judge_1114/out/audit_ac.md\n\nVerdict: the YGTR reply answers every point with a new measurement; three conflicts should be fixed before posting. All intervals and table sums recompute correctly.\n\nConflicts found:\n1. YGTR_2 W2 and posted T29u say 24 build failures; YGTR_2 Q3 says \"21 build and dependency failures\" with no bridge (14 + 7 + 3 agent errors).\n2. YGTR_2 W3 \"claims rest only on differences that the 95% Wilson intervals separate\" fails against T29u's posted table (DeepSeek Run [24%, 55%] and Reimplement [5%, 27%] overlap).\n3. General \"which the sandbox cannot reach\" is stronger than posted rqBN \"holds no credentials\"; the sandbox has network access.\n4. Lower risk: W2 \"at most 11\" hardware failures beside 14 aarch64 runs counted outside the agent; general lists three submission-grade analyses and omits the frontier columns; frontier Retrain (3/20) is below Reimplement (4/19) against \"Reimplement lowest\"; general cites 9 of 10 where 23 of 27 exists; \"open agents\" undefined; \"You also asked\" about a question YGTR never asked; rqBN's GPU-allocation failures absent from Q3.\n5. Outside the texts: paper Section 5.3 (iclr2027_conference.tex line 633) gives a different stop reason for 2506.08898 than YGTR_1.\n\nTop five edits:\n1. YGTR_2 Q3: \"21 build and dependency failures.\" becomes \"21 of the 24 build and dependency failures of W2.\" (+10).\n2. YGTR_2 W3: drop the Wilson-separation clause, keep \"modest sample\" and the interval sentence (-68).\n3. YGTR_1: continue-prompt variant gets a conclusion (\"so the prompt did not change them\") and loses \"it finished\" (-3).\n4. General: \"cannot reach\" becomes \"for which the sandbox holds no credentials\" (+12).\n5. YGTR_1 opening: \"We ran three frontier models in two production harnesses and tested each confound you named. Our second comment answers W2, W3, Q2 and Q3.\" (+48), paid by cutting \"Interestingly,\" and \", which we leave to future work\" (-46).\n\nWith all edits: YGTR_1 4,819, YGTR_2 4,802, general 2,925 characters. Seven smaller edits are in the report.",
+ "pointers": [
+  {
+   "checked": 10,
+   "problems": [
+    {
+     "quote": "On 2506.08898 (32 H100-hour grant), three runs projected 33 to 51 hours, where Muse Spark 1.2 and Muse Wonder in our harness retrained the model within the grant and reproduced the claim (Section 5.3).",
+     "problem": "Pointer to Section 5.3 does not support the sentence's numbers. Section 5.3 says 5 of 6 frontier runs on 2506.08898 stopped under one H100-hour of a 32-hour grant, not that three runs projected 33 to 51 hours. The 33 to 51 hour projections appear nowhere in the PDF text. The 32-hour grant and the Muse Wonder (in our harness) and Muse Spark 1.2 reproductions do match Section 5.3.",
+     "pdf_evidence": "/tmp/claude-1000/-home-mithil-PyCharmProjects-reprocli/ee88b5cc-f222-456d-9de1-997a82c38396/scratchpad/freeze_pdf.txt lines 708-709 (Section 5.3: \"5 of 6 frontier runs stopped under one H100-hour of a 32-hour grant ... Muse Wonder in our harness and Muse Spark 1.2 each retrained the model and reproduced the claim\"); line 4657 (G.3: \"6 timed a probe and projected a cost above the grant\", no hour range given)"
+    }
+   ]
+  },
+  {
+   "checked": 23,
+   "problems": []
+  }
+ ]
+}

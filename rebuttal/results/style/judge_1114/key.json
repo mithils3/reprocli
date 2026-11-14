@@ -1,0 +1,1367 @@
+{
+ "r5490": {
+  "file": "unchanged-173-BCyAlMoyx5-uRPF.txt",
+  "group": "unchanged",
+  "shard": 0
+ },
+ "r3137": {
+  "file": "raised-186-i1BTP8wFYM-B9zD.txt",
+  "group": "raised",
+  "shard": 0
+ },
+ "r4738": {
+  "file": "raised-199-qssVptHTPN-oNgu.txt",
+  "group": "raised",
+  "shard": 0
+ },
+ "r6923": {
+  "file": "unchanged-112-nKSkM5h2VN-xpXC.txt",
+  "group": "unchanged",
+  "shard": 0
+ },
+ "r5578": {
+  "file": "unchanged-060-FfHGAAoSVJ-JyxU.txt",
+  "group": "unchanged",
+  "shard": 0
+ },
+ "r1460": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 0
+ },
+ "r6852": {
+  "file": "raised-034-5xxGP9x5dZ-jZsQ.txt",
+  "group": "raised",
+  "shard": 0
+ },
+ "r9359": {
+  "file": "unchanged-150-YUaQ6qrbRL-Ac8Y.txt",
+  "group": "unchanged",
+  "shard": 0
+ },
+ "r6404": {
+  "file": "raised-240-CuupjjjT3U-c1YW.txt",
+  "group": "raised",
+  "shard": 0
+ },
+ "r6745": {
+  "file": "unchanged-153-fk5ePN7YCS-hFP2.txt",
+  "group": "unchanged",
+  "shard": 1
+ },
+ "r9492": {
+  "file": "raised-165-nExUJBF5tR-J51z.txt",
+  "group": "raised",
+  "shard": 1
+ },
+ "r4627": {
+  "file": "unchanged-072-uuCcK4cmlH-Tdbn.txt",
+  "group": "unchanged",
+  "shard": 1
+ },
+ "r8295": {
+  "file": "unchanged-020-bxqfyKl4lQ-Ywt4.txt",
+  "group": "unchanged",
+  "shard": 1
+ },
+ "r6343": {
+  "file": "raised-227-zCZnEXF3bN-pANq.txt",
+  "group": "raised",
+  "shard": 1
+ },
+ "r7026": {
+  "file": "raised-156-UbMYhX60tY-RjT2.txt",
+  "group": "raised",
+  "shard": 1
+ },
+ "r4366": {
+  "file": "unchanged-033-c4Nh4A8Xn5-6fqk.txt",
+  "group": "unchanged",
+  "shard": 1
+ },
+ "r7640": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 1
+ },
+ "r4080": {
+  "file": "raised-021-G1CN7R5qwE-LCnj.txt",
+  "group": "raised",
+  "shard": 1
+ },
+ "r6447": {
+  "file": "raised-017-uYzJvP8HGl-1Wxb.txt",
+  "group": "raised",
+  "shard": 2
+ },
+ "r1242": {
+  "file": "unchanged-011-mBJF0p9yRR-Mp5r.txt",
+  "group": "unchanged",
+  "shard": 2
+ },
+ "r2418": {
+  "file": "raised-073-atXCzVSXTJ-nAy3.txt",
+  "group": "raised",
+  "shard": 2
+ },
+ "r7748": {
+  "file": "unchanged-113-MWP9V0Ej0d-SABf.txt",
+  "group": "unchanged",
+  "shard": 2
+ },
+ "r9024": {
+  "file": "unchanged-170-USE9akheEY-FzU7.txt",
+  "group": "unchanged",
+  "shard": 2
+ },
+ "r2534": {
+  "file": "raised-036-sPuLtU32av-j9zw.txt",
+  "group": "raised",
+  "shard": 2
+ },
+ "r1705": {
+  "file": "unchanged-059-kwagvI8Anf-Luk2.txt",
+  "group": "unchanged",
+  "shard": 2
+ },
+ "r8612": {
+  "file": "raised-066-4GSOESJrk6-w3GE.txt",
+  "group": "raised",
+  "shard": 2
+ },
+ "r5823": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 2
+ },
+ "r9441": {
+  "file": "unchanged-019-9iN8p1Xwtg-bddG.txt",
+  "group": "unchanged",
+  "shard": 3
+ },
+ "r7938": {
+  "file": "unchanged-100-hPpyUv1XyQ-Xat4.txt",
+  "group": "unchanged",
+  "shard": 3
+ },
+ "r5493": {
+  "file": "raised-067-bMC1t7eLRc-1sUi.txt",
+  "group": "raised",
+  "shard": 3
+ },
+ "r8462": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 3
+ },
+ "r2510": {
+  "file": "raised-233-sq5LLWk5SN-CBH1.txt",
+  "group": "raised",
+  "shard": 3
+ },
+ "r1310": {
+  "file": "unchanged-106-pNxD5dpu1M-2rVF.txt",
+  "group": "unchanged",
+  "shard": 3
+ },
+ "r9146": {
+  "file": "raised-084-kWGHZuW5yJ-5EhH.txt",
+  "group": "raised",
+  "shard": 3
+ },
+ "r9872": {
+  "file": "unchanged-061-czVzzXPCkw-oJTR.txt",
+  "group": "unchanged",
+  "shard": 3
+ },
+ "r4773": {
+  "file": "raised-148-eVsSjNRuAp-suTt.txt",
+  "group": "raised",
+  "shard": 3
+ },
+ "r9126": {
+  "file": "unchanged-002-nhAyhTxrXu-KYwY.txt",
+  "group": "unchanged",
+  "shard": 4
+ },
+ "r8742": {
+  "file": "raised-212-9c96mGtQVR-o79c.txt",
+  "group": "raised",
+  "shard": 4
+ },
+ "r6102": {
+  "file": "unchanged-092-sz7HdeVVHo-oB29.txt",
+  "group": "unchanged",
+  "shard": 4
+ },
+ "r2227": {
+  "file": "raised-038-tTBXePRKSx-aaN5.txt",
+  "group": "raised",
+  "shard": 4
+ },
+ "r2100": {
+  "file": "unchanged-126-nR2DHRxWS2-3PvU.txt",
+  "group": "unchanged",
+  "shard": 4
+ },
+ "r8564": {
+  "file": "raised-213-JCiF03qnmi-SERg.txt",
+  "group": "raised",
+  "shard": 4
+ },
+ "r3135": {
+  "file": "unchanged-165-rAylWUIKtu-Zwfv.txt",
+  "group": "unchanged",
+  "shard": 4
+ },
+ "r4531": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 4
+ },
+ "r3361": {
+  "file": "raised-069-7EK2hqWmvz-Jjgv.txt",
+  "group": "raised",
+  "shard": 4
+ },
+ "r6981": {
+  "file": "unchanged-161-PQzZrRNynC-Pbae.txt",
+  "group": "unchanged",
+  "shard": 5
+ },
+ "r8464": {
+  "file": "raised-123-JSB171dSUU-kMZh.txt",
+  "group": "raised",
+  "shard": 5
+ },
+ "r9859": {
+  "file": "raised-217-yIN4yDCcmo-GXCo.txt",
+  "group": "raised",
+  "shard": 5
+ },
+ "r5916": {
+  "file": "unchanged-136-AkCWbxntll-AjS1.txt",
+  "group": "unchanged",
+  "shard": 5
+ },
+ "r1593": {
+  "file": "raised-192-fh7GYa7cjO-rtXi.txt",
+  "group": "raised",
+  "shard": 5
+ },
+ "r1234": {
+  "file": "unchanged-145-rWIrdAo2xC-jqqm.txt",
+  "group": "unchanged",
+  "shard": 5
+ },
+ "r8387": {
+  "file": "raised-152-LuGHbK8qTa-wAGq.txt",
+  "group": "raised",
+  "shard": 5
+ },
+ "r4392": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 5
+ },
+ "r7286": {
+  "file": "unchanged-122-lWN2aGg8qJ-YKK9.txt",
+  "group": "unchanged",
+  "shard": 5
+ },
+ "r2013": {
+  "file": "raised-019-myYzr50xBh-upxM.txt",
+  "group": "raised",
+  "shard": 6
+ },
+ "r1057": {
+  "file": "raised-232-byofn4HN8F-ptxD.txt",
+  "group": "raised",
+  "shard": 6
+ },
+ "r6810": {
+  "file": "unchanged-041-qb2QRoE4W3-6T35.txt",
+  "group": "unchanged",
+  "shard": 6
+ },
+ "r6654": {
+  "file": "raised-149-1ou5noWgHM-Pgpu.txt",
+  "group": "raised",
+  "shard": 6
+ },
+ "r3655": {
+  "file": "unchanged-006-lvDHfy169r-euqU.txt",
+  "group": "unchanged",
+  "shard": 6
+ },
+ "r4135": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 6
+ },
+ "r7643": {
+  "file": "raised-225-vl7kf0YHwj-z9xA.txt",
+  "group": "raised",
+  "shard": 6
+ },
+ "r2636": {
+  "file": "unchanged-080-5E6VOD7W0z-2b8n.txt",
+  "group": "unchanged",
+  "shard": 6
+ },
+ "r6971": {
+  "file": "unchanged-047-Nu8b9C1xcr-vebN.txt",
+  "group": "unchanged",
+  "shard": 6
+ },
+ "r5754": {
+  "file": "unchanged-026-ZhXJNUEOr9-KupT.txt",
+  "group": "unchanged",
+  "shard": 7
+ },
+ "r5635": {
+  "file": "raised-035-4xWQS2z77v-eG7f.txt",
+  "group": "raised",
+  "shard": 7
+ },
+ "r1666": {
+  "file": "unchanged-003-7BDUTI6aS7-tk6q.txt",
+  "group": "unchanged",
+  "shard": 7
+ },
+ "r5886": {
+  "file": "unchanged-149-BYWVwmbqwK-tWjN.txt",
+  "group": "unchanged",
+  "shard": 7
+ },
+ "r5976": {
+  "file": "raised-111-j46zZVzVVQ-NkSe.txt",
+  "group": "raised",
+  "shard": 7
+ },
+ "r2273": {
+  "file": "unchanged-187-WesOWkjJmg-xeuB.txt",
+  "group": "unchanged",
+  "shard": 7
+ },
+ "r1104": {
+  "file": "raised-072-dRXxFEY8ZE-5AN6.txt",
+  "group": "raised",
+  "shard": 7
+ },
+ "r9075": {
+  "file": "raised-140-Za3M6OZuCU-ej1T.txt",
+  "group": "raised",
+  "shard": 7
+ },
+ "r7910": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 7
+ },
+ "r9696": {
+  "file": "unchanged-146-5cYTAcZAgt-TbBy.txt",
+  "group": "unchanged",
+  "shard": 8
+ },
+ "r3841": {
+  "file": "raised-029-4sJJixGIZX-zdzj.txt",
+  "group": "raised",
+  "shard": 8
+ },
+ "r3072": {
+  "file": "unchanged-102-it1zuzw7KF-XACR.txt",
+  "group": "unchanged",
+  "shard": 8
+ },
+ "r8221": {
+  "file": "raised-176-txV4dNeusx-7a3D.txt",
+  "group": "raised",
+  "shard": 8
+ },
+ "r1915": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 8
+ },
+ "r3064": {
+  "file": "unchanged-089-yb4QE6b22f-ZN2N.txt",
+  "group": "unchanged",
+  "shard": 8
+ },
+ "r9259": {
+  "file": "raised-018-5z9GjHgerY-4A34.txt",
+  "group": "raised",
+  "shard": 8
+ },
+ "r3427": {
+  "file": "raised-169-CUABD2qIB4-DVtc.txt",
+  "group": "raised",
+  "shard": 8
+ },
+ "r6740": {
+  "file": "unchanged-180-r8tMECbxOl-zxtS.txt",
+  "group": "unchanged",
+  "shard": 8
+ },
+ "r3627": {
+  "file": "raised-216-HEXtydywnE-ym8p.txt",
+  "group": "raised",
+  "shard": 9
+ },
+ "r6466": {
+  "file": "raised-168-HBf6HFnpmH-XZnD.txt",
+  "group": "raised",
+  "shard": 9
+ },
+ "r1459": {
+  "file": "raised-136-wGVOxplEbf-RosU.txt",
+  "group": "raised",
+  "shard": 9
+ },
+ "r1060": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 9
+ },
+ "r1187": {
+  "file": "unchanged-027-NPNUHgHF2w-m8H6.txt",
+  "group": "unchanged",
+  "shard": 9
+ },
+ "r8214": {
+  "file": "unchanged-037-m60n31iYMw-mXtt.txt",
+  "group": "unchanged",
+  "shard": 9
+ },
+ "r3075": {
+  "file": "raised-242-KL8Sm4xRn7-BDuH.txt",
+  "group": "raised",
+  "shard": 9
+ },
+ "r8184": {
+  "file": "unchanged-065-vxvgZ0kTFv-yA1T.txt",
+  "group": "unchanged",
+  "shard": 9
+ },
+ "r7680": {
+  "file": "unchanged-099-MnfHxPP5gs-AvcT.txt",
+  "group": "unchanged",
+  "shard": 9
+ },
+ "r3849": {
+  "file": "unchanged-028-LGIhipNvCQ-k3DK.txt",
+  "group": "unchanged",
+  "shard": 10
+ },
+ "r7851": {
+  "file": "unchanged-178-D9liZ0D8z8-zVkm.txt",
+  "group": "unchanged",
+  "shard": 10
+ },
+ "r7055": {
+  "file": "unchanged-156-jK5r1HBfym-q6cb.txt",
+  "group": "unchanged",
+  "shard": 10
+ },
+ "r5891": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 10
+ },
+ "r1049": {
+  "file": "raised-058-dsHpulHpOK-9huZ.txt",
+  "group": "raised",
+  "shard": 10
+ },
+ "r7862": {
+  "file": "raised-098-sGqd1tF8P8-ntey.txt",
+  "group": "raised",
+  "shard": 10
+ },
+ "r4602": {
+  "file": "raised-188-zDJf7fvdid-b97v.txt",
+  "group": "raised",
+  "shard": 10
+ },
+ "r6652": {
+  "file": "raised-064-p9OsTj0nMP-SXgP.txt",
+  "group": "raised",
+  "shard": 10
+ },
+ "r3758": {
+  "file": "unchanged-185-IhbZytsinc-m7QG.txt",
+  "group": "unchanged",
+  "shard": 10
+ },
+ "r4883": {
+  "file": "raised-049-LTdtyzPQoZ-a9a9.txt",
+  "group": "raised",
+  "shard": 11
+ },
+ "r1303": {
+  "file": "unchanged-192-FqWtMGw8tt-6gNC.txt",
+  "group": "unchanged",
+  "shard": 11
+ },
+ "r6418": {
+  "file": "unchanged-025-OnBCQgi2LY-HEk5.txt",
+  "group": "unchanged",
+  "shard": 11
+ },
+ "r9003": {
+  "file": "unchanged-010-pbJMPo4HwR-2LWH.txt",
+  "group": "unchanged",
+  "shard": 11
+ },
+ "r9614": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 11
+ },
+ "r4452": {
+  "file": "raised-239-WYsNjw02DE-eZC5.txt",
+  "group": "raised",
+  "shard": 11
+ },
+ "r1059": {
+  "file": "raised-201-X8XQOLjLX6-pYYF.txt",
+  "group": "raised",
+  "shard": 11
+ },
+ "r7922": {
+  "file": "raised-209-G3CpBCQwNh-Xb5C.txt",
+  "group": "raised",
+  "shard": 11
+ },
+ "r8181": {
+  "file": "unchanged-191-YDuYWjbKDA-VNaC.txt",
+  "group": "unchanged",
+  "shard": 11
+ },
+ "r7449": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 12
+ },
+ "r5045": {
+  "file": "raised-197-jjfve2gIXe-K8WA.txt",
+  "group": "raised",
+  "shard": 12
+ },
+ "r7612": {
+  "file": "unchanged-034-xrWOR5wSOz-SxD3.txt",
+  "group": "unchanged",
+  "shard": 12
+ },
+ "r8931": {
+  "file": "raised-210-mQ55y4s5hj-CweT.txt",
+  "group": "raised",
+  "shard": 12
+ },
+ "r3648": {
+  "file": "unchanged-052-rkc79rOJu8-mueD.txt",
+  "group": "unchanged",
+  "shard": 12
+ },
+ "r4998": {
+  "file": "raised-040-lA6du4Q0Zc-ThD9.txt",
+  "group": "raised",
+  "shard": 12
+ },
+ "r3937": {
+  "file": "raised-211-n9PDaFNi8t-giX8.txt",
+  "group": "raised",
+  "shard": 12
+ },
+ "r8362": {
+  "file": "unchanged-030-X8Mhumi52G-HVVR.txt",
+  "group": "unchanged",
+  "shard": 12
+ },
+ "r2849": {
+  "file": "unchanged-196-iTVKOOZeYW-yhkH.txt",
+  "group": "unchanged",
+  "shard": 12
+ },
+ "r4560": {
+  "file": "raised-182-09FiNmvNMw-yp79.txt",
+  "group": "raised",
+  "shard": 13
+ },
+ "r9838": {
+  "file": "unchanged-130-aefNwingnS-NZMa.txt",
+  "group": "unchanged",
+  "shard": 13
+ },
+ "r7160": {
+  "file": "raised-147-kiQhuq45hr-s53C.txt",
+  "group": "raised",
+  "shard": 13
+ },
+ "r8637": {
+  "file": "raised-128-XtY3xYQWcW-qe2M.txt",
+  "group": "raised",
+  "shard": 13
+ },
+ "r2791": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 13
+ },
+ "r5392": {
+  "file": "unchanged-120-AY1S52vr0a-Aixt.txt",
+  "group": "unchanged",
+  "shard": 13
+ },
+ "r7397": {
+  "file": "raised-138-IcYDRzcccP-aadJ.txt",
+  "group": "raised",
+  "shard": 13
+ },
+ "r1848": {
+  "file": "unchanged-055-leJWwts8P9-nQ6u.txt",
+  "group": "unchanged",
+  "shard": 13
+ },
+ "r4042": {
+  "file": "unchanged-179-8OcM1pTfHm-sGAG.txt",
+  "group": "unchanged",
+  "shard": 13
+ },
+ "r1331": {
+  "file": "raised-097-tDANkt6X3D-gJnh.txt",
+  "group": "raised",
+  "shard": 14
+ },
+ "r3868": {
+  "file": "unchanged-088-AAZ3vwyQ4X-2upn.txt",
+  "group": "unchanged",
+  "shard": 14
+ },
+ "r9976": {
+  "file": "unchanged-045-g6v09VxgFw-zHQo.txt",
+  "group": "unchanged",
+  "shard": 14
+ },
+ "r6412": {
+  "file": "unchanged-152-J9eKm7j6KD-6xxM.txt",
+  "group": "unchanged",
+  "shard": 14
+ },
+ "r9202": {
+  "file": "raised-033-grM2Yv49cI-k7LR.txt",
+  "group": "raised",
+  "shard": 14
+ },
+ "r7240": {
+  "file": "raised-096-hWmwL9gizZ-Xkx7.txt",
+  "group": "raised",
+  "shard": 14
+ },
+ "r3065": {
+  "file": "unchanged-097-cGu5LtGcRD-GZrK.txt",
+  "group": "unchanged",
+  "shard": 14
+ },
+ "r6279": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 14
+ },
+ "r7442": {
+  "file": "raised-161-iGafR0hSln-1bvp.txt",
+  "group": "raised",
+  "shard": 14
+ },
+ "r2101": {
+  "file": "unchanged-168-HzbPIqvhGg-Eqe9.txt",
+  "group": "unchanged",
+  "shard": 15
+ },
+ "r5900": {
+  "file": "raised-157-XydIBZ2xlr-DFVs.txt",
+  "group": "raised",
+  "shard": 15
+ },
+ "r3809": {
+  "file": "unchanged-194-M4RhGr2lAy-PmdF.txt",
+  "group": "unchanged",
+  "shard": 15
+ },
+ "r8605": {
+  "file": "raised-122-5BRFddsAai-FzXY.txt",
+  "group": "raised",
+  "shard": 15
+ },
+ "r2757": {
+  "file": "raised-235-ogXkmugNZw-em3T.txt",
+  "group": "raised",
+  "shard": 15
+ },
+ "r8733": {
+  "file": "raised-055-M2SsqpxGtc-MXUG.txt",
+  "group": "raised",
+  "shard": 15
+ },
+ "r7773": {
+  "file": "unchanged-184-vPOMTkmSiu-2Keq.txt",
+  "group": "unchanged",
+  "shard": 15
+ },
+ "r3617": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 15
+ },
+ "r7955": {
+  "file": "unchanged-074-zbIS2r0t0F-9ToH.txt",
+  "group": "unchanged",
+  "shard": 15
+ },
+ "r2917": {
+  "file": "raised-173-DRiLWb8bJg-WBQk.txt",
+  "group": "raised",
+  "shard": 16
+ },
+ "r2894": {
+  "file": "raised-080-AZTdO6JJKt-t3fn.txt",
+  "group": "raised",
+  "shard": 16
+ },
+ "r1321": {
+  "file": "unchanged-114-Y4iaDU4yMi-r5ga.txt",
+  "group": "unchanged",
+  "shard": 16
+ },
+ "r4896": {
+  "file": "unchanged-043-si37wk8U5D-ashT.txt",
+  "group": "unchanged",
+  "shard": 16
+ },
+ "r5103": {
+  "file": "unchanged-073-w9bWY6LvrW-EtsL.txt",
+  "group": "unchanged",
+  "shard": 16
+ },
+ "r3245": {
+  "file": "unchanged-141-tjlTczcnPz-rUsM.txt",
+  "group": "unchanged",
+  "shard": 16
+ },
+ "r8881": {
+  "file": "raised-174-rvXdGL4pCJ-LbED.txt",
+  "group": "raised",
+  "shard": 16
+ },
+ "r1415": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 16
+ },
+ "r4759": {
+  "file": "raised-133-8Me0Y01mkY-EJ9Y.txt",
+  "group": "raised",
+  "shard": 16
+ },
+ "r4931": {
+  "file": "unchanged-104-1S7kpbfgq9-1hcq.txt",
+  "group": "unchanged",
+  "shard": 17
+ },
+ "r1695": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 17
+ },
+ "r8669": {
+  "file": "unchanged-042-GvUahyZ8UF-6RU1.txt",
+  "group": "unchanged",
+  "shard": 17
+ },
+ "r5639": {
+  "file": "raised-075-N1DKrLIKhT-kcAu.txt",
+  "group": "raised",
+  "shard": 17
+ },
+ "r8318": {
+  "file": "raised-030-RZwtbg3qYD-1q8g.txt",
+  "group": "raised",
+  "shard": 17
+ },
+ "r1456": {
+  "file": "unchanged-110-tvWD9YueN4-deQy.txt",
+  "group": "unchanged",
+  "shard": 17
+ },
+ "r6350": {
+  "file": "unchanged-001-MFwYXa796v-FYzH.txt",
+  "group": "unchanged",
+  "shard": 17
+ },
+ "r9548": {
+  "file": "raised-087-VT2R3UCcBL-1Hx6.txt",
+  "group": "raised",
+  "shard": 17
+ },
+ "r4352": {
+  "file": "raised-218-vNATZfmY6R-vGFd.txt",
+  "group": "raised",
+  "shard": 17
+ },
+ "r8261": {
+  "file": "raised-190-k5VHHgsRbi-FpJY.txt",
+  "group": "raised",
+  "shard": 18
+ },
+ "r8284": {
+  "file": "raised-198-r8H7xhYPwz-eAAH.txt",
+  "group": "raised",
+  "shard": 18
+ },
+ "r6718": {
+  "file": "unchanged-131-Oq8bDXRf4F-MjwS.txt",
+  "group": "unchanged",
+  "shard": 18
+ },
+ "r9206": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 18
+ },
+ "r9946": {
+  "file": "unchanged-124-4HNfKrGlSJ-QfZv.txt",
+  "group": "unchanged",
+  "shard": 18
+ },
+ "r8402": {
+  "file": "raised-117-7BESdFZ7YA-bLnv.txt",
+  "group": "raised",
+  "shard": 18
+ },
+ "r3029": {
+  "file": "unchanged-118-2PKLRmU7ne-3Zfk.txt",
+  "group": "unchanged",
+  "shard": 18
+ },
+ "r3760": {
+  "file": "unchanged-067-Fj6Yv5rPRe-ezs8.txt",
+  "group": "unchanged",
+  "shard": 18
+ },
+ "r2923": {
+  "file": "raised-172-SpTzsQjgxF-9u4d.txt",
+  "group": "raised",
+  "shard": 18
+ },
+ "r9100": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 19
+ },
+ "r4582": {
+  "file": "unchanged-016-bVdcAZAW2h-DErw.txt",
+  "group": "unchanged",
+  "shard": 19
+ },
+ "r3088": {
+  "file": "raised-202-6tyPSkshtF-Djdi.txt",
+  "group": "raised",
+  "shard": 19
+ },
+ "r5265": {
+  "file": "unchanged-181-5WEpbilssv-qAqz.txt",
+  "group": "unchanged",
+  "shard": 19
+ },
+ "r5026": {
+  "file": "unchanged-143-NPLty3VT1c-Zv7E.txt",
+  "group": "unchanged",
+  "shard": 19
+ },
+ "r6392": {
+  "file": "raised-022-aKJr5NnN8U-gQxH.txt",
+  "group": "raised",
+  "shard": 19
+ },
+ "r1891": {
+  "file": "raised-231-nzgvkQM3EH-MCrH.txt",
+  "group": "raised",
+  "shard": 19
+ },
+ "r4252": {
+  "file": "raised-004-2fojNANZSv-5Xhm.txt",
+  "group": "raised",
+  "shard": 19
+ },
+ "r6253": {
+  "file": "unchanged-051-b89OyrljJD-x71Y.txt",
+  "group": "unchanged",
+  "shard": 19
+ },
+ "r5483": {
+  "file": "raised-025-uhaLuZcCjH-M9RT.txt",
+  "group": "raised",
+  "shard": 20
+ },
+ "r2927": {
+  "file": "raised-170-sFGMkoBjUe-4KfC.txt",
+  "group": "raised",
+  "shard": 20
+ },
+ "r1807": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 20
+ },
+ "r8180": {
+  "file": "unchanged-160-FvQsk3la17-TJsH.txt",
+  "group": "unchanged",
+  "shard": 20
+ },
+ "r4530": {
+  "file": "raised-009-hFFAg5Dmw9-azz3.txt",
+  "group": "raised",
+  "shard": 20
+ },
+ "r8664": {
+  "file": "raised-194-mDEYl0Ucgr-jTpL.txt",
+  "group": "raised",
+  "shard": 20
+ },
+ "r1670": {
+  "file": "unchanged-005-jXrXTuvA3L-XZLb.txt",
+  "group": "unchanged",
+  "shard": 20
+ },
+ "r9391": {
+  "file": "unchanged-157-6VhDQP7WGX-jj75.txt",
+  "group": "unchanged",
+  "shard": 20
+ },
+ "r5810": {
+  "file": "unchanged-084-CvrXy1jVLh-c3Y4.txt",
+  "group": "unchanged",
+  "shard": 20
+ },
+ "r1212": {
+  "file": "raised-150-AUBvo4sxVL-SCz7.txt",
+  "group": "raised",
+  "shard": 21
+ },
+ "r8487": {
+  "file": "raised-228-yitH9xAHQs-29jz.txt",
+  "group": "raised",
+  "shard": 21
+ },
+ "r5894": {
+  "file": "raised-224-GURRWHkPtx-iZTx.txt",
+  "group": "raised",
+  "shard": 21
+ },
+ "r9899": {
+  "file": "unchanged-175-F52tAK5Gbg-2dkT.txt",
+  "group": "unchanged",
+  "shard": 21
+ },
+ "r8700": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 21
+ },
+ "r5618": {
+  "file": "raised-229-WzCEiBILHu-waSt.txt",
+  "group": "raised",
+  "shard": 21
+ },
+ "r3474": {
+  "file": "unchanged-115-NhqKHHK4Nk-XjUE.txt",
+  "group": "unchanged",
+  "shard": 21
+ },
+ "r3516": {
+  "file": "unchanged-040-epJorNF7MK-Vu1s.txt",
+  "group": "unchanged",
+  "shard": 21
+ },
+ "r6527": {
+  "file": "unchanged-071-mltelO89Ve-8rft.txt",
+  "group": "unchanged",
+  "shard": 21
+ },
+ "r1962": {
+  "file": "unchanged-069-VT4Ovqg0BW-ydTf.txt",
+  "group": "unchanged",
+  "shard": 22
+ },
+ "r1504": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 22
+ },
+ "r5882": {
+  "file": "raised-023-moXtEmCleY-1h4w.txt",
+  "group": "raised",
+  "shard": 22
+ },
+ "r7701": {
+  "file": "unchanged-140-HuNoNfiQqH-c6to.txt",
+  "group": "unchanged",
+  "shard": 22
+ },
+ "r1511": {
+  "file": "raised-193-PNMv4r7s1i-JZFB.txt",
+  "group": "raised",
+  "shard": 22
+ },
+ "r4214": {
+  "file": "unchanged-135-AEwtGiJVPi-2nYd.txt",
+  "group": "unchanged",
+  "shard": 22
+ },
+ "r2925": {
+  "file": "raised-154-caE5faFVT1-PNZS.txt",
+  "group": "raised",
+  "shard": 22
+ },
+ "r5705": {
+  "file": "unchanged-076-YGoFl5KKFc-sW5B.txt",
+  "group": "unchanged",
+  "shard": 22
+ },
+ "r6939": {
+  "file": "raised-200-BChpQU64RG-iHrq.txt",
+  "group": "raised",
+  "shard": 22
+ },
+ "r6289": {
+  "file": "raised-219-BM9qfolt6p-9WXj.txt",
+  "group": "raised",
+  "shard": 23
+ },
+ "r6546": {
+  "file": "unchanged-093-Pui7Sa6Jwi-UDWw.txt",
+  "group": "unchanged",
+  "shard": 23
+ },
+ "r4633": {
+  "file": "raised-189-UiEjzBRYeI-xYh9.txt",
+  "group": "raised",
+  "shard": 23
+ },
+ "r4285": {
+  "file": "unchanged-193-JwoQZ9NKtH-GFco.txt",
+  "group": "unchanged",
+  "shard": 23
+ },
+ "r3825": {
+  "file": "unchanged-186-Q5Sawm0nqo-G1Yq.txt",
+  "group": "unchanged",
+  "shard": 23
+ },
+ "r7099": {
+  "file": "raised-078-9uswuRBLm0-ZQMN.txt",
+  "group": "raised",
+  "shard": 23
+ },
+ "r9850": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 23
+ },
+ "r3164": {
+  "file": "unchanged-147-f3xXPDCh8Q-uAAv.txt",
+  "group": "unchanged",
+  "shard": 23
+ },
+ "r5518": {
+  "file": "raised-074-1IeCqgULIM-t2CN.txt",
+  "group": "raised",
+  "shard": 23
+ },
+ "r6967": {
+  "file": "raised-039-AqfUa08PCH-HReL.txt",
+  "group": "raised",
+  "shard": 24
+ },
+ "r1261": {
+  "file": "unchanged-133-VRlihVklCL-WwXL.txt",
+  "group": "unchanged",
+  "shard": 24
+ },
+ "r4269": {
+  "file": "raised-155-py34636XvR-iXa3.txt",
+  "group": "raised",
+  "shard": 24
+ },
+ "r6899": {
+  "file": "unchanged-125-hJ2BCYGvFg-vxtv.txt",
+  "group": "unchanged",
+  "shard": 24
+ },
+ "r6113": {
+  "file": "raised-163-gYNBQygmXG-fs2W.txt",
+  "group": "raised",
+  "shard": 24
+ },
+ "r8175": {
+  "file": "raised-050-PPjpGTPG5K-SUvZ.txt",
+  "group": "raised",
+  "shard": 24
+ },
+ "r1538": {
+  "file": "unchanged-129-qK6U4Ahfms-2bbN.txt",
+  "group": "unchanged",
+  "shard": 24
+ },
+ "r9608": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 24
+ },
+ "r5596": {
+  "file": "unchanged-079-XhdckVyXKg-p9eE.txt",
+  "group": "unchanged",
+  "shard": 24
+ },
+ "r4646": {
+  "file": "raised-204-MKvQH1ekeY-A4t2.txt",
+  "group": "raised",
+  "shard": 25
+ },
+ "r8524": {
+  "file": "unchanged-063-OEC6zOuZG1-QG5Y.txt",
+  "group": "unchanged",
+  "shard": 25
+ },
+ "r7402": {
+  "file": "unchanged-056-tNvCSw8ONp-zisy.txt",
+  "group": "unchanged",
+  "shard": 25
+ },
+ "r7660": {
+  "file": "unchanged-014-5q4U5gnU1g-pH4Y.txt",
+  "group": "unchanged",
+  "shard": 25
+ },
+ "r3558": {
+  "file": "unchanged-172-7HEMpBTb3R-uxN6.txt",
+  "group": "unchanged",
+  "shard": 25
+ },
+ "r8688": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 25
+ },
+ "r7230": {
+  "file": "raised-151-FoF5RaA3ug-izfT.txt",
+  "group": "raised",
+  "shard": 25
+ },
+ "r9675": {
+  "file": "raised-208-KXDOmD7DM7-BYfS.txt",
+  "group": "raised",
+  "shard": 25
+ },
+ "r6709": {
+  "file": "raised-102-NGB6YNnO5o-huQG.txt",
+  "group": "raised",
+  "shard": 25
+ },
+ "r2785": {
+  "file": "raised-238-eqVu9eaVAB-nZJV.txt",
+  "group": "raised",
+  "shard": 26
+ },
+ "r9380": {
+  "file": "raised-089-siHHqDDzvS-mah2.txt",
+  "group": "raised",
+  "shard": 26
+ },
+ "r7117": {
+  "file": "unchanged-085-2d734s2WDb-35Gq.txt",
+  "group": "unchanged",
+  "shard": 26
+ },
+ "r3852": {
+  "file": "raised-014-ThhQyIruEs-q7vM.txt",
+  "group": "raised",
+  "shard": 26
+ },
+ "r9759": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 26
+ },
+ "r9543": {
+  "file": "unchanged-155-BSGQHpGI1Q-a7nU.txt",
+  "group": "unchanged",
+  "shard": 26
+ },
+ "r9297": {
+  "file": "unchanged-198-ORxjH9kTp8-9qTN.txt",
+  "group": "unchanged",
+  "shard": 26
+ },
+ "r2610": {
+  "file": "raised-090-Q7uE3M5aMD-oqij.txt",
+  "group": "raised",
+  "shard": 26
+ },
+ "r5637": {
+  "file": "unchanged-009-uN2kkAvarI-U1Y2.txt",
+  "group": "unchanged",
+  "shard": 26
+ },
+ "r5380": {
+  "file": "raised-002-nf4v09zw6O-XBvS.txt",
+  "group": "raised",
+  "shard": 27
+ },
+ "r2938": {
+  "file": "unchanged-119-WVWZ6SnM4t-8kyg.txt",
+  "group": "unchanged",
+  "shard": 27
+ },
+ "r6355": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 27
+ },
+ "r8473": {
+  "file": "unchanged-176-pZz0nOroGv-e7d5.txt",
+  "group": "unchanged",
+  "shard": 27
+ },
+ "r1496": {
+  "file": "unchanged-116-GHJzxPgFa6-6L2R.txt",
+  "group": "unchanged",
+  "shard": 27
+ },
+ "r2793": {
+  "file": "raised-181-Ozo7qJ5vZi-56QY.txt",
+  "group": "raised",
+  "shard": 27
+ },
+ "r4185": {
+  "file": "raised-179-GARbxyCV13-fU9L.txt",
+  "group": "raised",
+  "shard": 27
+ },
+ "r8129": {
+  "file": "raised-171-q5zMyAUhGx-u9e2.txt",
+  "group": "raised",
+  "shard": 27
+ },
+ "r4527": {
+  "file": "unchanged-195-vW6rsXAGrz-JzTs.txt",
+  "group": "unchanged",
+  "shard": 27
+ },
+ "r5979": {
+  "file": "raised-000-gGWYecsK1U-kiKS.txt",
+  "group": "raised",
+  "shard": 28
+ },
+ "r2801": {
+  "file": "unchanged-108-hRSabwKj53-CTv9.txt",
+  "group": "unchanged",
+  "shard": 28
+ },
+ "r2507": {
+  "file": "raised-127-IiagjrJNwF-9KrW.txt",
+  "group": "raised",
+  "shard": 28
+ },
+ "r7398": {
+  "file": "unchanged-189-gpP68EP1Jn-s2FU.txt",
+  "group": "unchanged",
+  "shard": 28
+ },
+ "r8797": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 28
+ },
+ "r6098": {
+  "file": "unchanged-127-S1Bv3068Xt-VnSU.txt",
+  "group": "unchanged",
+  "shard": 28
+ },
+ "r1920": {
+  "file": "unchanged-058-dNBE4ciYJF-fPnc.txt",
+  "group": "unchanged",
+  "shard": 28
+ },
+ "r4201": {
+  "file": "raised-054-rDRCIvTppL-BUdc.txt",
+  "group": "raised",
+  "shard": 28
+ },
+ "r4377": {
+  "file": "raised-141-zHf7hOfeer-kdEp.txt",
+  "group": "raised",
+  "shard": 28
+ },
+ "r7537": {
+  "file": "raised-046-iOMnn1hSBO-rCi4.txt",
+  "group": "raised",
+  "shard": 29
+ },
+ "r9475": {
+  "file": "raised-056-sHAvMp5J4R-c8nY.txt",
+  "group": "raised",
+  "shard": 29
+ },
+ "r4108": {
+  "file": "raised-196-zZ8fgXHkXi-CWn6.txt",
+  "group": "raised",
+  "shard": 29
+ },
+ "r5569": {
+  "file": "raised-037-yFEqYwgttJ-mkFe.txt",
+  "group": "raised",
+  "shard": 29
+ },
+ "r7784": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": 29
+ },
+ "r3702": {
+  "file": "unchanged-082-yGv5GzlBwr-gMoC.txt",
+  "group": "unchanged",
+  "shard": 29
+ },
+ "r7270": {
+  "file": "unchanged-199-XcAJ0qsMgh-JJiD.txt",
+  "group": "unchanged",
+  "shard": 29
+ },
+ "r6397": {
+  "file": "unchanged-169-KvFk356RpR-5VUm.txt",
+  "group": "unchanged",
+  "shard": 29
+ },
+ "r2941": {
+  "file": "unchanged-021-cxKLRM3KhC-Kv2k.txt",
+  "group": "unchanged",
+  "shard": 29
+ },
+ "r3790": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": "h2h0"
+ },
+ "r3640": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": "h2h1"
+ },
+ "r2163": {
+  "file": "OURS",
+  "group": "ours",
+  "shard": "h2h2"
+ }
+}

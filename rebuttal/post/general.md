@@ -1,8 +1,8 @@
 We thank the three reviewers for their careful and constructive reviews. They found the task important and the evaluation design unusually careful (T29u), the design sound and reusable (YGTR), and the methodological disclosure excellent (rqBN). Following the reviews, the revision adds these analyses:
-- **Frontier models in production harnesses** (Section 5.2, Appendix B.3). Pooled over 57 runs of gpt-6.1-sol, gpt-6-astra and Muse Wonder in our harness, Codex CLI and mini-SWE-agent, 18 are reproduced, where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers, half of which were sampled because an open agent had reproduced them.
-- **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and a second, independent run of Muse Spark 1.2 on 10 Reimplement papers reaches the same reproduced verdict on 9 of the 10.
+- **Frontier models in production harnesses** (Section 5.2, Appendix B.3). Pooled over 57 runs of gpt-6.1-sol, gpt-6-astra and Muse Wonder in our harness, Codex CLI and mini-SWE-agent, 18 are reproduced, where DeepSeek-V4-Flash and Muse Spark 1.2 reproduce 23 and 20 on the same papers, half of which were sampled because one of our four agents had reproduced them.
+- **Uncertainty** (Section 5.2). Every rate has a 95% Wilson interval, and repeated runs keep the reproduced verdict on 23 of 27 model and paper pairs, including 9 of the 10 Reimplement papers that Muse Spark 1.2 ran a second time.
 - **Auditor validation** (Appendix D). Against a human grade on 372 runs, the auditor's reproduced verdict has precision 88% and recall 77%.
-- **Log integrity** (Appendix A). During each run the harness sends every tool call to a database outside the cluster, which the sandbox cannot reach. The 30,790 commands present in both that record and the agent-writable logs have the same text, and no exit code differs. The harness now mounts both logs read-only inside the sandbox.
+- **Log integrity** (Appendix A). During each run the harness sends every tool call to a database outside the cluster, for which the sandbox holds no credentials. The 30,790 commands present in both that record and the agent-writable logs have the same text, and no exit code differs. The harness now mounts both logs read-only inside the sandbox.
 - **Targets and tolerance** (Appendices E and F). A check by a model from another lab supports 92 of the 100 target values, the other 8 are corrected, and Reimplement stays the lowest tier at every tolerance from 1% to 10%.
 - **Failures outside the agent** (Sections 5.2 and 5.3). Removing every build failure moves no best-agent rate by more than one percentage point.
 
@@ -16,6 +16,6 @@ We thank the three reviewers for their careful and constructive reviews. They fo
 | Two audits that had not returned | Muse Spark 1.2 on 2503.23035 (Run, reproduced) and 2510.08177 (Reimplement, partial) | +1 |
 | Revision | | 70 of 400 |
 
-The best agent then reproduces 13 of 34 Run papers (38%), 9 of 33 Retrain papers (27%) and 5 of 33 Reimplement papers (15%), and the ordering of the tiers is unchanged. Papers reproduced by at least one agent go from 34 to 32. Three analyses use the grades at submission: the auditor validation (Appendix D), the tolerance tables (Appendix F) and the failure-mode labels (Appendix G).
+The best agent then reproduces 13 of 34 Run papers (38%), 9 of 33 Retrain papers (27%) and 5 of 33 Reimplement papers (15%), and the ordering of the tiers is unchanged. Papers reproduced by at least one agent go from 34 to 32. Four analyses use the grades at submission: the auditor validation (Appendix D), the tolerance tables (Appendix F), the failure-mode labels (Appendix G) and the DeepSeek-V4-Flash and Muse Spark 1.2 columns of the frontier table (Appendix B.3).
 
 We would be glad to answer further questions.
