@@ -1,6 +1,6 @@
 **W2: Failures due to hardware differences.**
 
-To separate failures caused by our aarch64 nodes from failures of the agent, we took every run that failed at build or dependency install and replayed its install commands on x86 nodes. There are 24 such runs, 14 of them on a package with no aarch64 build, and 12 of the 14 have an install command in their transcripts. On x86, 9 of the 12 build (95% Wilson interval 47% to 91%) and 3 fail again. Our hardware therefore explains 9 failures, or at most 11 of the 372 graded runs if the 2 we could not replay are counted. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement, so no best-agent rate moves by more than one percentage point (Section 5.3, Appendix B.2). As a direct test we also ran gpt-6.1-sol and gpt-6-astra in our harness on x86 nodes. They reproduce 4 of 8 model and paper pairs there, against 3 of 8 for the same pairs on our GH200 nodes, and the two scores of every pair are within one point (Appendix B.3).
+To separate failures caused by our aarch64 nodes from failures of the agent, we took every run that failed at build or dependency install and replayed its install commands on x86 nodes. There are 24 such runs, 14 of them on a package with no aarch64 build, and 12 of the 14 have an install command in their transcripts. On x86, 9 of the 12 build (75% [47%, 91%]) and 3 fail again. Our hardware therefore explains 9 failures, or at most 11 of the 372 graded runs if the 2 we could not replay are counted. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement, so no best-agent rate moves by more than one percentage point (Section 5.3, Appendix B.2). As a direct test we also ran gpt-6.1-sol and gpt-6-astra in our harness on x86 nodes. They reproduce 4 of 8 model and paper pairs there, against 3 of 8 for the same pairs on our GH200 nodes, and the two scores of every pair are within one point (Appendix B.3).
 
 **W3: Agents are only run once.**
 
@@ -10,7 +10,7 @@ We agree that one run per cell leaves the results open to noise, so we measured 
 - **DeepSeek-V4-Flash, 9 papers from all three tiers.** We graded 16 repeat runs, and on 7 of the 9 papers every repeat reaches the verdict of the run in the paper.
 - **The 8 pairs of W2**, run on x86 and GH200 nodes, are repeats as well, and 7 keep their verdict.
 
-Together, the verdict is stable for 23 of 27 model and paper pairs (85%, 95% interval 68% to 94%). In the four that change, every run scores 7, 8 or 9, on either side of the threshold of 8, so in these pairs a repeat moves a paper only when it already sits at the line. This is still a modest sample, and the revision reports every rate with its 95% Wilson interval (Section 5.2).
+Together, the verdict is stable for 23 of 27 model and paper pairs (85% [68%, 94%]). In the four that change, every run scores 7, 8 or 9, on either side of the threshold of 8, so in these pairs a repeat moves a paper only when it already sits at the line. This is still a modest sample, and the revision reports every rate with its 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 

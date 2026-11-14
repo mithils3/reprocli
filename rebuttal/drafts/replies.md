@@ -207,13 +207,15 @@ We are happy to answer any follow-up questions. Thank you again for the review.
 
 ## YGTR
 
-### Reply to YGTR, part 1 of 2 (4,936 characters)
+### Reply to YGTR, part 1 of 2 (4,716 characters)
 
 Thank you for the detailed review and for recognising the benchmark design as sound and reusable. To test each confound you named, we ran three frontier models in two production harnesses.
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We agree that a benchmark is most useful when it is tested on the strongest models, in the harnesses people use them with. Our new runs show that RECLAIM remains challenging for these models. Over the 57 frontier runs, 18 are reproduced (32%, 95% interval 21% to 44%), against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2 on the same papers. The last two columns give our two best agents on the papers of each row, under the same auditor and with their grades at submission (Section 5.2, Appendix B.3). The OpenAI models ran at high reasoning effort and Muse Wonder at xhigh.
+We agree that a benchmark is most useful when it is tested on the strongest models, in the harnesses people use them with. Our new runs show that RECLAIM remains challenging for frontier models. Over the 57 frontier runs, 18 are reproduced (32% [21%, 44%]), against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2 on the same papers (Section 5.2, Appendix B.3). The OpenAI models ran at high reasoning effort and Muse Wonder at xhigh.
+
+Papers reproduced:
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
@@ -225,7 +227,7 @@ We agree that a benchmark is most useful when it is tested on the strongest mode
 | Muse Wonder | our harness | 2 | 1 | 0 | 1 |
 | All frontier runs | | 57 | 18 | 23 | 20 |
 
-**How the papers were chosen.** We preselected 24 papers from all three tiers, half that at least one of our four agents (the open agents below) had reproduced and half that none had, so that the two cases can be read separately. Every row takes the papers in the same fixed order, and the rows differ in how many they cover.
+**How the papers were chosen.** We preselected 24 papers from all three tiers, half that at least one of our four agents (the open agents below) had reproduced and half that none had, so that the two cases can be read separately.
 
 - On the 12 papers that an open agent had reproduced, the frontier runs reproduce 14 of 33, against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2.
 - On the 12 papers where all four open agents had failed, 4 of the 24 frontier runs succeed, and they reproduce 2 papers that no open agent had.
@@ -248,11 +250,11 @@ To find the reason, we analysed the full transcripts of the 39 failing frontier 
 
 The other 12 ran the experiment and missed the number. For 11 of the 27, an open agent given the same task text kept working and reproduced the paper, so these papers were within reach of the grant. Failures that report a number without a valid measurement fall to 8 of 39 = 21%, against 110 of 300 = 37% for the open agents, and 14 of 39 = 36% end before producing a number, against 44 of 300 = 15% (46% and 23% for the open agents when Claude Sonnet 5, the same annotator, labels a sample of 50 of their runs).
 
-### Reply to YGTR, part 2 of 2 (4,819 characters)
+### Reply to YGTR, part 2 of 2 (4,789 characters)
 
 **W2: Failures due to hardware differences.**
 
-To separate failures caused by our aarch64 nodes from failures of the agent, we took every run that failed at build or dependency install and replayed its install commands on x86 nodes. There are 24 such runs, 14 of them on a package with no aarch64 build, and 12 of the 14 have an install command in their transcripts. On x86, 9 of the 12 build (95% Wilson interval 47% to 91%) and 3 fail again. Our hardware therefore explains 9 failures, or at most 11 of the 372 graded runs if the 2 we could not replay are counted. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement, so no best-agent rate moves by more than one percentage point (Section 5.3, Appendix B.2). As a direct test we also ran gpt-6.1-sol and gpt-6-astra in our harness on x86 nodes. They reproduce 4 of 8 model and paper pairs there, against 3 of 8 for the same pairs on our GH200 nodes, and the two scores of every pair are within one point (Appendix B.3).
+To separate failures caused by our aarch64 nodes from failures of the agent, we took every run that failed at build or dependency install and replayed its install commands on x86 nodes. There are 24 such runs, 14 of them on a package with no aarch64 build, and 12 of the 14 have an install command in their transcripts. On x86, 9 of the 12 build (75% [47%, 91%]) and 3 fail again. Our hardware therefore explains 9 failures, or at most 11 of the 372 graded runs if the 2 we could not replay are counted. With all 24 dropped from every denominator, DeepSeek-V4-Flash stays at 13/34 at Run and 9/33 at Retrain, and Muse Spark 1.2 goes from 5/33 to 5/32 at Reimplement, so no best-agent rate moves by more than one percentage point (Section 5.3, Appendix B.2). As a direct test we also ran gpt-6.1-sol and gpt-6-astra in our harness on x86 nodes. They reproduce 4 of 8 model and paper pairs there, against 3 of 8 for the same pairs on our GH200 nodes, and the two scores of every pair are within one point (Appendix B.3).
 
 **W3: Agents are only run once.**
 
@@ -262,7 +264,7 @@ We agree that one run per cell leaves the results open to noise, so we measured 
 - **DeepSeek-V4-Flash, 9 papers from all three tiers.** We graded 16 repeat runs, and on 7 of the 9 papers every repeat reaches the verdict of the run in the paper.
 - **The 8 pairs of W2**, run on x86 and GH200 nodes, are repeats as well, and 7 keep their verdict.
 
-Together, the verdict is stable for 23 of 27 model and paper pairs (85%, 95% interval 68% to 94%). In the four that change, every run scores 7, 8 or 9, on either side of the threshold of 8, so in these pairs a repeat moves a paper only when it already sits at the line. This is still a modest sample, and the revision reports every rate with its 95% Wilson interval (Section 5.2).
+Together, the verdict is stable for 23 of 27 model and paper pairs (85% [68%, 94%]). In the four that change, every run scores 7, 8 or 9, on either side of the threshold of 8, so in these pairs a repeat moves a paper only when it already sits at the line. This is still a modest sample, and the revision reports every rate with its 95% Wilson interval (Section 5.2).
 
 **Q2: Fetching checkpoints over the network.**
 

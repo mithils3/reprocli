@@ -2,7 +2,9 @@ Thank you for the detailed review and for recognising the benchmark design as so
 
 **W1 and Q1: Frontier models and production coding harnesses.**
 
-We agree that a benchmark is most useful when it is tested on the strongest models, in the harnesses people use them with. Our new runs show that RECLAIM remains challenging for these models. Over the 57 frontier runs, 18 are reproduced (32%, 95% interval 21% to 44%), against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2 on the same papers. The last two columns give our two best agents on the papers of each row, under the same auditor and with their grades at submission (Section 5.2, Appendix B.3). The OpenAI models ran at high reasoning effort and Muse Wonder at xhigh.
+We agree that a benchmark is most useful when it is tested on the strongest models, in the harnesses people use them with. Our new runs show that RECLAIM remains challenging for frontier models. Over the 57 frontier runs, 18 are reproduced (32% [21%, 44%]), against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2 on the same papers (Section 5.2, Appendix B.3). The OpenAI models ran at high reasoning effort and Muse Wonder at xhigh.
+
+Papers reproduced:
 
 | Model | Harness | Papers | Reproduced | DeepSeek-V4-Flash | Muse Spark 1.2 |
 | :- | :- | -: | -: | -: | -: |
@@ -14,7 +16,7 @@ We agree that a benchmark is most useful when it is tested on the strongest mode
 | Muse Wonder | our harness | 2 | 1 | 0 | 1 |
 | All frontier runs | | 57 | 18 | 23 | 20 |
 
-**How the papers were chosen.** We preselected 24 papers from all three tiers, half that at least one of our four agents (the open agents below) had reproduced and half that none had, so that the two cases can be read separately. Every row takes the papers in the same fixed order, and the rows differ in how many they cover.
+**How the papers were chosen.** We preselected 24 papers from all three tiers, half that at least one of our four agents (the open agents below) had reproduced and half that none had, so that the two cases can be read separately.
 
 - On the 12 papers that an open agent had reproduced, the frontier runs reproduce 14 of 33, against 23 and 20 for DeepSeek-V4-Flash and Muse Spark 1.2.
 - On the 12 papers where all four open agents had failed, 4 of the 24 frontier runs succeed, and they reproduce 2 papers that no open agent had.
