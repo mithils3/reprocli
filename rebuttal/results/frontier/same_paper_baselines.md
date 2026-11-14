@@ -27,7 +27,7 @@ Source: rebuttal/results/databook/frontier_cells.csv (68 graded rows). Reproduce
 | thin-gpt-6.1-sol-x86 | 2/2 | 0/2 | 0/1 |
 | thin-muse-wonder-1.0 | 0/0 | 1/1 | 0/1 |
 | codex-gpt-6.1-sol-nudge | 2/2 | 0/1 | 0/0 |
-| all arms on GH200 nodes | 13/20 [43%, 82%] | 3/21 [5%, 35%] | 4/19 [9%, 43%] |
+| all arms on GH200 nodes, continue-prompt runs left out | 11/18 [39%, 80%] | 3/20 [5%, 36%] | 4/19 [9%, 43%] |
 
 ## gpt-6.1-sol, our loop against Codex CLI, papers graded in both
 
@@ -49,7 +49,17 @@ Papers in both: 11. Reproduced: our loop 4, Codex CLI 3. Same verdict on 8; repr
 
 ## Share of the GPU grant used
 
-Frontier runs on GH200 nodes with a recorded spend: 60 of 60; median 6.9% of the grant, 28 of 60 under 5%. Open agents, submitted runs on the same 24 papers: 92 runs, median 14.3% of the grant.
+Frontier runs on GH200 nodes with a recorded spend: 57 of 57; median 5.6% of the grant, 28 of 57 under 5%. Open agents, submitted runs on the same 24 papers: 92 runs, median 14.3% of the grant.
+Frontier runs that reproduce: median 21.7% (18 runs); that do not: median 2.1% and mean 13.2% (39 runs). By tier, median: run 14.7%, retrain 8.6%, reimplement 1.5%.
+
+## Pooled over the frontier runs on GH200 nodes, continue-prompt runs left out
+
+Frontier: 18/57 [21%, 44%]. DeepSeek-V4-Flash: 23/57 [29%, 53%]. Muse Spark 1.2: 20/57 [24%, 48%].
+By tier, open agents on the same runs: run DeepSeek-V4-Flash 11/18, Muse Spark 1.2 4/18; retrain DeepSeek-V4-Flash 6/20, Muse Spark 1.2 8/20; reimplement DeepSeek-V4-Flash 6/19, Muse Spark 1.2 8/19.
+Papers that some open agent reproduced: 12 papers, 33 frontier runs, reproduced 14/33 [27%, 59%] (7 papers by at least one frontier run); DeepSeek-V4-Flash 23/33, Muse Spark 1.2 20/33. By arm: thin-gpt-6.1-sol 3/6 (DeepSeek-V4-Flash 4); codex-gpt-6-astra 2/5 (DeepSeek-V4-Flash 4); miniswe 3/4 (DeepSeek-V4-Flash 3); codex-gpt-6.1-sol 4/12 (DeepSeek-V4-Flash 8); thin-gpt-6-astra 1/5 (DeepSeek-V4-Flash 4); thin-muse-wonder-1.0 1/1 (DeepSeek-V4-Flash 0).
+Papers that no open agent reproduced: 12 papers, 24 frontier runs, reproduced 4/24 [7%, 36%] (2 papers by at least one frontier run); DeepSeek-V4-Flash 0/24, Muse Spark 1.2 0/24. By arm: codex-gpt-6-astra 1/3 (DeepSeek-V4-Flash 0); codex-gpt-6.1-sol 0/11 (DeepSeek-V4-Flash 0); thin-gpt-6.1-sol 2/6 (DeepSeek-V4-Flash 0); miniswe 1/2 (DeepSeek-V4-Flash 0); thin-gpt-6-astra 0/1 (DeepSeek-V4-Flash 0); thin-muse-wonder-1.0 0/1 (DeepSeek-V4-Flash 0).
+Papers reproduced by at least one frontier run: 9 of 24.
+Continue-prompt runs against the unprompted Codex CLI run: 2502.05795 score 8 with 5.70 of 8 H100-h (unprompted 8 with 3.93); 2510.21363 score 7 with 5.37 of 8 H100-h (unprompted 7 with 4.22); 2504.20571 score 8 with 6.48 of 8 H100-h (unprompted 8 with 0.85).
 
 ## Paper 2506.08898 (Retrain, 32 H100-hour grant)
 

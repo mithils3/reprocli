@@ -113,7 +113,7 @@ def rows() -> list[dict]:
     with CELLS.open() as f:
         # the x86 arms are a separate check of the host and stay out of the paper tables
         return [r for r in csv.DictReader(f) if r["verdict"] in FAIL and r["run_dir_found"] == "yes"
-                and not r["arm"].endswith("-x86")]
+                and not r["arm"].endswith("-x86") and "nudge" not in r["arm"]]  # continue-prompt runs repeat Codex CLI papers
 
 
 def oid(run_id: str) -> str:
@@ -199,6 +199,7 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def report(recs: list[dict]) -> None:
+    recs = [r for r in recs if "nudge" not in r["arm"]]  # pooled tables leave the continue-prompt runs out
     n_open = 400 - 72 - OPEN_NO_LABEL  # labeled runs that were not reproduced
     arms = sorted({x["arm"] for x in recs})
     tr = lambda v: str(v) == "True"

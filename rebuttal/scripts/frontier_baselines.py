@@ -60,11 +60,11 @@ for arm, rs in arms.items():
         sub = [r for r in rs if r["orig_tier"] == t]
         k = sum(r["reproduced"] == "True" for r in sub)
         row.append(f"{k}/{len(sub)}")
-        if "x86" not in arm:
+        if "x86" not in arm and "nudge" not in arm:
             tot[t, "k"] += k
             tot[t, "n"] += len(sub)
     print(f"| {arm} | " + " | ".join(row) + " |")
-print("| all arms on GH200 nodes | " + " | ".join(wilson(tot[t, "k"], tot[t, "n"]) for t in ("run", "retrain", "reimplement")) + " |")
+print("| all arms on GH200 nodes, continue-prompt runs left out | " + " | ".join(wilson(tot[t, "k"], tot[t, "n"]) for t in ("run", "retrain", "reimplement")) + " |")
 
 print("\n## gpt-6.1-sol, our loop against Codex CLI, papers graded in both\n")
 t = {r["paper"]: r for r in arms.get("thin-gpt-6.1-sol", [])}
@@ -85,7 +85,8 @@ if both:
           f"Codex CLI {sum(num(c[p]['score']) for p in both) / len(both):.2f}.")
 
 print("\n## Share of the GPU grant used\n")
-gh = [r for r in ROWS if "x86" not in r["arm"]]
+# The continue-prompt runs repeat three papers of the Codex CLI arm, so pooled counts leave them out.
+gh = [r for r in ROWS if "x86" not in r["arm"] and "nudge" not in r["arm"]]
 pct = [100 * num(r["spent_h100"]) / num(r["budget_h100"]) for r in gh if num(r["spent_h100"]) > 0]
 idx = json.load(open(ROOT.parent / "tools/anon_viewer/public/data/index.json"))["runs"]
 papers = {r["paper"] for r in gh}
@@ -93,6 +94,33 @@ opn = [100 * r["spent_h100"] / r["budget_h100"] for r in idx if r["arxiv_id"] in
 print(f"Frontier runs on GH200 nodes with a recorded spend: {len(pct)} of {len(gh)}; median {statistics.median(pct):.1f}% of the grant, "
       f"{sum(p < 5 for p in pct)} of {len(pct)} under 5%. Open agents, submitted runs on the same {len(papers)} papers: "
       f"{len(opn)} runs, median {statistics.median(opn):.1f}% of the grant.")
+rep = [100 * num(r["spent_h100"]) / num(r["budget_h100"]) for r in gh if r["reproduced"] == "True"]
+fail = [100 * num(r["spent_h100"]) / num(r["budget_h100"]) for r in gh if r["reproduced"] != "True"]
+print(f"Frontier runs that reproduce: median {statistics.median(rep):.1f}% ({len(rep)} runs); that do not: median {statistics.median(fail):.1f}% "
+      f"and mean {statistics.mean(fail):.1f}% ({len(fail)} runs). By tier, median: "
+      + ", ".join(f"{t} {statistics.median([100 * num(r['spent_h100']) / num(r['budget_h100']) for r in gh if r['orig_tier'] == t]):.1f}%" for t in ("run", "retrain", "reimplement")) + ".")
+
+print("\n## Pooled over the frontier runs on GH200 nodes, continue-prompt runs left out\n")
+k = sum(r["reproduced"] == "True" for r in gh)
+print(f"Frontier: {wilson(k, len(gh))}. " + " ".join(f"{n}: {wilson(sum(num(r[c]) >= 8 for r in gh), len(gh))}." for c, n in OPEN[:2]))
+print("By tier, open agents on the same runs: " + "; ".join(
+    f"{t} " + ", ".join(f"{n} {sum(num(r[c]) >= 8 for r in gh if r['orig_tier'] == t)}/{sum(r['orig_tier'] == t for r in gh)}" for c, n in OPEN[:2])
+    for t in ("run", "retrain", "reimplement")) + ".")
+for name, keep in (("Papers that some open agent reproduced", lambda r: num(r["orig_best"]) >= 8), ("Papers that no open agent reproduced", lambda r: num(r["orig_best"]) < 8)):
+    s = [r for r in gh if keep(r)]
+    ps = {r["paper"] for r in s}
+    hit = {r["paper"] for r in s if r["reproduced"] == "True"}
+    print(f"{name}: {len(ps)} papers, {len(s)} frontier runs, reproduced {wilson(sum(r['reproduced'] == 'True' for r in s), len(s))} "
+          f"({len(hit)} papers by at least one frontier run); " + ", ".join(f"{n} {sum(num(r[c]) >= 8 for r in s)}/{len(s)}" for c, n in OPEN[:2]) + ". "
+          + "By arm: " + "; ".join(f"{a} {sum(r['reproduced'] == 'True' for r in s if r['arm'] == a)}/{sum(r['arm'] == a for r in s)}"
+                                    f" (DeepSeek-V4-Flash {sum(num(r['dsv4']) >= 8 for r in s if r['arm'] == a)})" for a in dict.fromkeys(r["arm"] for r in s)) + ".")
+allp = {r["paper"] for r in gh}
+print(f"Papers reproduced by at least one frontier run: {len({r['paper'] for r in gh if r['reproduced'] == 'True'})} of {len(allp)}.")
+nd = [r for r in ROWS if "nudge" in r["arm"]]
+cx = {r["paper"]: r for r in arms.get("codex-gpt-6.1-sol", [])}
+print("Continue-prompt runs against the unprompted Codex CLI run: " + "; ".join(
+    f"{r['paper']} score {r['score']} with {num(r['spent_h100']):.2f} of {num(r['budget_h100']):.0f} H100-h (unprompted {cx[r['paper']]['score']} with {num(cx[r['paper']]['spent_h100']):.2f})" for r in nd if r["paper"] in cx) + ".")
+
 print("\n## Paper 2506.08898 (Retrain, 32 H100-hour grant)\n")
 fr = [r for r in gh if r["paper"] == "2506.08898"]
 print("Frontier runs: " + "; ".join(f"{r['arm']} score {r['score']}, {num(r['spent_h100']):.2f} H100-h" for r in fr) + ".")
