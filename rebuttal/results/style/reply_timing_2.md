@@ -19,3 +19,19 @@ Same data as `reply_timing.md`: 300 public ICLR 2026 forums, 832 review threads 
 **What the first reply says** (keyword match on 252 replies, rough): raises the score 68 (27%), keeps it 78 (31%), both phrasings 10 (4%), a further question 37 (15%), other 59 (23%). Median length 386 characters. Authors answered the reply in 183 of 252 threads (73%), and the reviewer wrote a second time in 37 (15%).
 
 **Threads placed like ours.** Authors answered 6.5 to 8 days before the stop: 88 of 243 reviewers replied (36%), lag quartiles 63, 102 and 130 hours. Of the 215 still silent after 84 hours, 60 replied later (28%), on days 3, 2, 1 and 0 before the stop in 15, 20, 18 and 6 threads. Authors answered 4 to 5.5 days before the stop: 28 of 110 replied (25%), lag quartiles 21, 48 and 64 hours.
+
+## ICLR 2025, a year that ran to its deadline
+
+300 forums, every 38th of the 11,520 reviewed ICLR 2025 submissions in the public Hugging Face mirror `Jasonpicky/openreview_raw` (converted with `convert_hf_mirror.py`; scripts `year2025.py` and `year2025_deadline.py`). 1,208 reviews, 924 threads with an author response.
+
+**Reply rate.** 617 of 924 reviewers wrote back (67%). At least one reviewer replied on 219 of 236 papers (93%), and every reviewer on 62 (26%).
+
+**Deadline.** ICLR's 2025 pages give 11-26 as the end of the discussion. In the data reviewers keep writing until 12:19 UTC on 12-03, which fits an extension that the official pages do not state. Taking 11-26 AoE (11-27 12:00 UTC) as the deadline, the 617 first replies split into 154 more than 72 hours before it (25%), 297 in the last 72 hours (48%, of which 100 in the last 24 hours) and 166 after it (27%).
+
+**First replies per 100 silent thread-days, by date:** 11-20 6.7, 11-21 7.7, 11-22 10.1, 11-23 8.0, 11-24 7.3, 11-25 22.9, 11-26 27.2, 11-27 16.6, 11-28 6.3, 11-29 5.2, 11-30 4.4, 12-01 6.2, 12-02 11.0, 12-03 15.6. The rate before the last two days matches the 2026 rate before its stop (6.4 to 10.7 on 11-24 to 11-27), so the two years differ by the deadline rush that 2026 never reached. Saturday and Sunday (6.3 and 6.6) are no lower than Thursday and Friday (7.0 and 7.7), so the weekend dip of 2026 does not repeat.
+
+**Time from author response to first reply** (share of all 924 threads): 1 day 12%, 2 days 20%, 3 days 28%, 4 days 35%, 5 days 44%, 7 days 53%, 10 days 61%. Median lag among repliers 90 hours.
+
+**By final rating** (1 to 10 scale): 3: 80/154 = 52%; 5: 174/276 = 63%; 6: 260/359 = 72%; 8: 96/126 = 76%. These are ratings after the discussion, so a reviewer who raised the score counts in the higher row.
+
+**Threads placed like ours.** Authors answered 6.5 to 8 days before the deadline: 109 of 172 reviewers replied before it (63%). Of the 126 still silent after 84 hours, 63 replied before the deadline (50%), on days 3, 2, 1 and 0 before it in 4, 16, 24 and 19 threads, and 86 replied by the end of the extra week (68%). Authors answered 4 to 5.5 days before the deadline: 98 of 169 replied before it (58%).
