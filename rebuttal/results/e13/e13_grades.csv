@@ -15,3 +15,4 @@ arxiv_id,tier,paper_run_id,paper_score,paper_verdict,paper_measured,reference,re
 2506.20671,run,dsv4-run-2506.20671,4,not_reproduced,0.005389296915382147,6.3,3540627-2506.20671-ae12c0,4,not_reproduced,False,False,0.005306975916028023,natural,0.7689
 2510.07501,retrain,dsv4-retrain-2510.07501,6,partial,-0.1681,-0.2,3540625-2510.07501-d6d3e1,6,partial,False,False,-0.1433,natural,0.5696
 2510.09485,retrain,dsv4-retrain-2510.09485,9,reproduced,0.668031,,3540625-2510.09485-a1ef7c,10,reproduced,True,False,0.66803068,natural,0.5040
+2506.17475,reimplement,dsv4-reimplement-2506.17475,5,not_reproduced,10.0,79.01,3540626-2506.17475-dcee2d,7,partial,False,False,78.03,natural,0.8105

@@ -30,3 +30,17 @@ Pooled with E12 (Muse Spark 1.2, 10 Reimplement pairs, 9 keep their verdict) and
 Measured values repeat as well. 2505.17836: 0.0395 in the paper's run, 0.0398 and 0.0399 in the repeats, target 0.05 (the same miss the seed reruns of E10 show). 2506.20671: 0.00539 in the paper's run, 0.00531 and 0.00531 in the repeats, against 6.3. 2510.07501: -0.168 in the paper's run, -0.104 and -0.143 in the repeats, against -0.2. 2503.02809: 40.19, 40.88 and 40.15 against 40.0. 2505.19087: 0.5933, 0.5889 and 0.6020 against 0.60302. On 2505.15201 the paper's run and the repeats report different quantities (67.42, 4.17, 4.16), all graded reproduced.
 
 Limits: 16 runs is the set that had ended by the morning of 2026-11-14, so the papers are the ones whose runs end soonest; two repeats of one paper share the paper's run and are not independent pairs.
+
+## Update 2026-11-14 21:34: a 17th repeat run, on a tenth paper
+
+`3540626-2506.17475-dcee2d` (2506.17475, Reimplement) ended at 20:51 and was graded with the pinned auditor in `e13f_dsv4_repeats` ($0.81; E13 total $12.56 of its $15 limit; Anthropic ledger $169.01 of $230). The auditor gives it 7, partial; the run in the paper scored 5, not reproduced, so the reproduced verdict is the same.
+
+| Paper | Tier | Run in the paper | Repeat run | Measured: paper run, repeat (target) |
+| :- | :- | :- | :- | :- |
+| 2506.17475 | Reimplement | 5, not reproduced | 7, partial | 10.0, 78.03 (79.01) |
+
+Counts with this run: 14 of 17 repeat runs keep the reproduced verdict of the run in the paper, and every repeat agrees on 8 of 10 papers (80%, Wilson 49% to 94%). Pooled with the 10 Muse Spark 1.2 pairs and the 8 x86 pairs: 24 of 28 model and paper pairs (86%, Wilson 69% to 94%). The four pairs that change are the same four, each with every run at 7, 8 or 9.
+
+The measured value does not repeat on this paper. The paper's run reported 10.0% test accuracy (chance on CIFAR-10) and the repeat reports a mean of 78.03% over 11 seeds, within 5% of the 79.01% target. The auditor still withholds the reproduced verdict, with two medium flags: the agent chose the coefficient learning rate 0.04 from a sweep because it matched the paper's number (the paper states 0.001), and its own full-rank baseline reached 85.57% against the paper's 78.98%. The two scores differ by 2 points, which is the largest difference in the set, now seen on two pairs.
+
+The replies posted on 2026-11-14 and Section 5.2 of the second revised PDF state the counts before this run (16 runs, 7 of 9 papers, 23 of 27 pairs).
