@@ -44,3 +44,9 @@ Counts with this run: 14 of 17 repeat runs keep the reproduced verdict of the ru
 The measured value does not repeat on this paper. The paper's run reported 10.0% test accuracy (chance on CIFAR-10) and the repeat reports a mean of 78.03% over 11 seeds, within 5% of the 79.01% target. The auditor still withholds the reproduced verdict, with two medium flags: the agent chose the coefficient learning rate 0.04 from a sweep because it matched the paper's number (the paper states 0.001), and its own full-rank baseline reached 85.57% against the paper's 78.98%. The two scores differ by 2 points, which is the largest difference in the set, now seen on two pairs.
 
 The replies posted on 2026-11-14 and Section 5.2 of the second revised PDF state the counts before this run (16 runs, 7 of 9 papers, 23 of 27 pairs).
+
+## Update 2026-11-15 00:31: an 18th repeat run
+
+`3540629-2510.25146-3bf237` (2510.25146, Reimplement, a second repeat of this paper) ended at 23:56 on 11-14 and was graded in `e13g_dsv4_repeats` ($0.50; E13 total $13.06 of its $15 limit; Anthropic ledger $169.51 of $230). It scores 2, not reproduced, the same as the run in the paper and the first repeat (both 2).
+
+Counts with this run: 15 of 18 repeat runs keep the reproduced verdict of the run in the paper (83%, Wilson 61% to 94%). The paper and pair counts do not move: 8 of 10 papers and 24 of 28 model and paper pairs.
