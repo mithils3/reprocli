@@ -50,3 +50,18 @@ The replies posted on 2026-11-14 and Section 5.2 of the second revised PDF state
 `3540629-2510.25146-3bf237` (2510.25146, Reimplement, a second repeat of this paper) ended at 23:56 on 11-14 and was graded in `e13g_dsv4_repeats` ($0.50; E13 total $13.06 of its $15 limit; Anthropic ledger $169.51 of $230). It scores 2, not reproduced, the same as the run in the paper and the first repeat (both 2).
 
 Counts with this run: 15 of 18 repeat runs keep the reproduced verdict of the run in the paper (83%, Wilson 61% to 94%). The paper and pair counts do not move: 8 of 10 papers and 24 of 28 model and paper pairs.
+
+## Update 2026-11-15 04:40: a 19th and a 20th repeat run, on two more papers
+
+`3540625-2506.06991-41fba8` (2506.06991, Retrain) ended at 04:08 and `3540626-2402.04579-967475` (2402.04579, Reimplement) ended at 04:29. Both were graded with the pinned auditor, in `e13h_dsv4_repeats` ($0.71) and `e13i_dsv4_repeats` ($0.82), which brings E13 to $14.60 of its $15 limit and the Anthropic ledger to $171.05 of $230. No further grade fits under the E13 limit.
+
+| Paper | Tier | Run in the paper | Repeat run | Measured: paper run, repeat (target) |
+| :- | :- | :- | :- | :- |
+| 2506.06991 | Retrain | 6, partial | 6, partial | 0.803, 0.7999 (0.91) |
+| 2402.04579 | Reimplement | 4, not reproduced | 7, partial | 0.5248, 0.4764 (direction claim, no point target) |
+
+Counts with these runs: 17 of 20 repeat runs keep the reproduced verdict of the run in the paper (85%, Wilson 64% to 95%), and every repeat agrees on 10 of 12 papers (83%, Wilson 55% to 95%). Pooled with the 10 Muse Spark 1.2 pairs and the 8 x86 pairs: 26 of 30 model and paper pairs (87%, Wilson 70% to 95%). The four pairs that change are the same four, each with every run at 7, 8 or 9.
+
+On 2506.06991 the score, the verdict and the measured value all repeat; the auditor notes one low flag (the released notebook labels gpt-4o-mini files "GPT-4", and the agent used them as the closest released data). On 2402.04579 the scores differ by 3 points (4 and 7), the largest difference in the set, with the same reproduced verdict: the repeat ran 4 of the paper's 100 seeds after wall-time kills and tuned its own solver settings, which the auditor marks with two medium flags.
+
+The replies posted on 2026-11-14 and Section 5.2 of the second revised PDF state the counts at the freeze (16 runs, 7 of 9 papers, 23 of 27 pairs).
