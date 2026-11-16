@@ -1,0 +1,2242 @@
+{
+ "t001": {
+  "tid": "HtvZCGiATs_Reviewer_PGzN",
+  "forum": "HtvZCGiATs",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": true
+ },
+ "t002": {
+  "tid": "mscnV6JZkT_Reviewer_MuCZ",
+  "forum": "mscnV6JZkT",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t003": {
+  "tid": "FoUpv84hMw_Reviewer_wG6t",
+  "forum": "FoUpv84hMw",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t004": {
+  "tid": "0GC81gpjOo_Reviewer_P68Z",
+  "forum": "0GC81gpjOo",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t005": {
+  "tid": "DPzQ5n3mNm_Reviewer_WFXg",
+  "forum": "DPzQ5n3mNm",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t006": {
+  "tid": "wE8wJXgI9T_Reviewer_UiMt",
+  "forum": "wE8wJXgI9T",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t007": {
+  "tid": "etToTig9Fp_Reviewer_6r3R",
+  "forum": "etToTig9Fp",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t008": {
+  "tid": "oeP6OL7ouB_Reviewer_rqsv",
+  "forum": "oeP6OL7ouB",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t009": {
+  "tid": "CbfsKHiWEn_Reviewer_SaBc",
+  "forum": "CbfsKHiWEn",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t010": {
+  "tid": "NbbsRnPBoS_Reviewer_REzX",
+  "forum": "NbbsRnPBoS",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t011": {
+  "tid": "5E6VOD7W0z_Reviewer_fpLb",
+  "forum": "5E6VOD7W0z",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t012": {
+  "tid": "oJLpXraSLb_Reviewer_GwbX",
+  "forum": "oJLpXraSLb",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t013": {
+  "tid": "0koPj0cJV6_Reviewer_Lnyz",
+  "forum": "0koPj0cJV6",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t014": {
+  "tid": "doBkiqESYq_Reviewer_caUt",
+  "forum": "doBkiqESYq",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t015": {
+  "tid": "daByonGVyo_Reviewer_Tvj5",
+  "forum": "daByonGVyo",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t016": {
+  "tid": "tMG6btjBfd_Reviewer_J4YF",
+  "forum": "tMG6btjBfd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t017": {
+  "tid": "xOtOfdbBqK_Reviewer_3gmR",
+  "forum": "xOtOfdbBqK",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t018": {
+  "tid": "qHVUdP1EEU_Reviewer_KMSd",
+  "forum": "qHVUdP1EEU",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t019": {
+  "tid": "S4jzvOBs9m_Reviewer_GPBg",
+  "forum": "S4jzvOBs9m",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t020": {
+  "tid": "jtY2OHKj4a_Reviewer_gvnx",
+  "forum": "jtY2OHKj4a",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t021": {
+  "tid": "tZk3LnvVtK_Reviewer_zr87",
+  "forum": "tZk3LnvVtK",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t022": {
+  "tid": "uBcx1aFpXy_Reviewer_rkDb",
+  "forum": "uBcx1aFpXy",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t023": {
+  "tid": "Svt3SGy0yd_Reviewer_4XZ4",
+  "forum": "Svt3SGy0yd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t024": {
+  "tid": "Ir6JxcuP6H_Reviewer_bXbA",
+  "forum": "Ir6JxcuP6H",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t025": {
+  "tid": "rhhQjGj09A_Reviewer_PcHB",
+  "forum": "rhhQjGj09A",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t026": {
+  "tid": "ozTREVBARB_Reviewer_YiHw",
+  "forum": "ozTREVBARB",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t027": {
+  "tid": "WPDsT4eIKH_Reviewer_4RQ8",
+  "forum": "WPDsT4eIKH",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t028": {
+  "tid": "HSLClc1a7W_Reviewer_fTYk",
+  "forum": "HSLClc1a7W",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t029": {
+  "tid": "PQzZrRNynC_Reviewer_JmMB",
+  "forum": "PQzZrRNynC",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t030": {
+  "tid": "D0hd7YA0fP_Reviewer_rQF8",
+  "forum": "D0hd7YA0fP",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t031": {
+  "tid": "OuLgaHEmzi_Reviewer_krkJ",
+  "forum": "OuLgaHEmzi",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t032": {
+  "tid": "uEqOYXtn7f_Reviewer_F6xy",
+  "forum": "uEqOYXtn7f",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t033": {
+  "tid": "7HEMpBTb3R_Reviewer_khL4",
+  "forum": "7HEMpBTb3R",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t034": {
+  "tid": "DhH3LbA6F6_Reviewer_EMxA",
+  "forum": "DhH3LbA6F6",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t035": {
+  "tid": "a5EC2R1NeS_Reviewer_u74G",
+  "forum": "a5EC2R1NeS",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t036": {
+  "tid": "LsZxlxA9da_Reviewer_t9Dm",
+  "forum": "LsZxlxA9da",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t037": {
+  "tid": "P6dwZJpJ4m_Reviewer_YTy3",
+  "forum": "P6dwZJpJ4m",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t038": {
+  "tid": "4ciEeIiIJ7_Reviewer_vUbw",
+  "forum": "4ciEeIiIJ7",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t039": {
+  "tid": "1Qpt43cqhg_Reviewer_SumM",
+  "forum": "1Qpt43cqhg",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t040": {
+  "tid": "a8R07y1jQ1_Reviewer_iCwh",
+  "forum": "a8R07y1jQ1",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t041": {
+  "tid": "DPzQ5n3mNm_Reviewer_a6GH",
+  "forum": "DPzQ5n3mNm",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t042": {
+  "tid": "egHptuv7hx_Reviewer_aCxr",
+  "forum": "egHptuv7hx",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t043": {
+  "tid": "0pbxX2jatP_Reviewer_cN3C",
+  "forum": "0pbxX2jatP",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t044": {
+  "tid": "vTRWu9zaWo_Reviewer_KvGj",
+  "forum": "vTRWu9zaWo",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t045": {
+  "tid": "ON0JjUtw9B_Reviewer_Lkn5",
+  "forum": "ON0JjUtw9B",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t046": {
+  "tid": "rjcA3km2IT_Reviewer_PV3A",
+  "forum": "rjcA3km2IT",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t047": {
+  "tid": "ZS1lCBLljq_Reviewer_MmfN",
+  "forum": "ZS1lCBLljq",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t048": {
+  "tid": "YDuYWjbKDA_Reviewer_VNaC",
+  "forum": "YDuYWjbKDA",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t049": {
+  "tid": "34xYxTTiM0_Reviewer_bjTY",
+  "forum": "34xYxTTiM0",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t050": {
+  "tid": "Daq6Pw3TjN_Reviewer_Tk42",
+  "forum": "Daq6Pw3TjN",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t051": {
+  "tid": "ln6QnzBd8o_Reviewer_HVPw",
+  "forum": "ln6QnzBd8o",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t052": {
+  "tid": "Y8KK9kjgIK_Reviewer_nEHh",
+  "forum": "Y8KK9kjgIK",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t053": {
+  "tid": "Nlm3Xf0W9S_Reviewer_4ffB",
+  "forum": "Nlm3Xf0W9S",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t054": {
+  "tid": "qBKA2844I4_Reviewer_F9MP",
+  "forum": "qBKA2844I4",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t055": {
+  "tid": "VA1tNAsDiC_Reviewer_bFNq",
+  "forum": "VA1tNAsDiC",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t056": {
+  "tid": "oOSeOEXrFA_Reviewer_XV27",
+  "forum": "oOSeOEXrFA",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t057": {
+  "tid": "1hT2fsHbK9_Reviewer_hyjK",
+  "forum": "1hT2fsHbK9",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t058": {
+  "tid": "aWkAKucZMR_Reviewer_riEy",
+  "forum": "aWkAKucZMR",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t059": {
+  "tid": "BomQa84efw_Reviewer_qtqg",
+  "forum": "BomQa84efw",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t060": {
+  "tid": "aGBA8wz9qA_Reviewer_YcJQ",
+  "forum": "aGBA8wz9qA",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t061": {
+  "tid": "u0L7djBiRw_Reviewer_86Dx",
+  "forum": "u0L7djBiRw",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t062": {
+  "tid": "n6To2wAOKL_Reviewer_oRa5",
+  "forum": "n6To2wAOKL",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t063": {
+  "tid": "N6SccBt3EF_Reviewer_ECZA",
+  "forum": "N6SccBt3EF",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t064": {
+  "tid": "96GMFXsbJE_Reviewer_xMw1",
+  "forum": "96GMFXsbJE",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t065": {
+  "tid": "RC5FPYVQaH_Reviewer_tEeX",
+  "forum": "RC5FPYVQaH",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t066": {
+  "tid": "FBkpCyujtS_Reviewer_NZFq",
+  "forum": "FBkpCyujtS",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t067": {
+  "tid": "9ca9eHNrdH_Reviewer_9gei",
+  "forum": "9ca9eHNrdH",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t068": {
+  "tid": "38BBWrXUhP_Reviewer_R5Yw",
+  "forum": "38BBWrXUhP",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t069": {
+  "tid": "M2g647Femt_Reviewer_iyF8",
+  "forum": "M2g647Femt",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t070": {
+  "tid": "8HuLgtjqOD_Reviewer_nVYQ",
+  "forum": "8HuLgtjqOD",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t071": {
+  "tid": "onIro14tHv_Reviewer_Gt4F",
+  "forum": "onIro14tHv",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t072": {
+  "tid": "MqL2e85ZTp_Reviewer_BdmK",
+  "forum": "MqL2e85ZTp",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t073": {
+  "tid": "vJkktqyU8B_Reviewer_oVw4",
+  "forum": "vJkktqyU8B",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t074": {
+  "tid": "ufhrQG5xie_Reviewer_xCF9",
+  "forum": "ufhrQG5xie",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t075": {
+  "tid": "ZCPtUkkkUU_Reviewer_TWZa",
+  "forum": "ZCPtUkkkUU",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t076": {
+  "tid": "C53FwQZigu_Reviewer_wQeR",
+  "forum": "C53FwQZigu",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t077": {
+  "tid": "aDG34Bhbs1_Reviewer_eqPA",
+  "forum": "aDG34Bhbs1",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t078": {
+  "tid": "eU39PDsZtT_Reviewer_z8Nx",
+  "forum": "eU39PDsZtT",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t079": {
+  "tid": "EZExZ5d8ES_Reviewer_Ejrw",
+  "forum": "EZExZ5d8ES",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t080": {
+  "tid": "t5kThOYtxn_Reviewer_dcVu",
+  "forum": "t5kThOYtxn",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t081": {
+  "tid": "veiSkPqIXm_Reviewer_JRV8",
+  "forum": "veiSkPqIXm",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t082": {
+  "tid": "3Oli4u6q3p_Reviewer_kqbi",
+  "forum": "3Oli4u6q3p",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t083": {
+  "tid": "UstOpZCESc_Reviewer_iYfp",
+  "forum": "UstOpZCESc",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t084": {
+  "tid": "BOQpRtI4F5_Reviewer_UQK4",
+  "forum": "BOQpRtI4F5",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t085": {
+  "tid": "uOrfve3prk_Reviewer_1BCv",
+  "forum": "uOrfve3prk",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t086": {
+  "tid": "LjvIJFCa5J_Reviewer_nnaD",
+  "forum": "LjvIJFCa5J",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t087": {
+  "tid": "pBQs8kQm63_Reviewer_isKP",
+  "forum": "pBQs8kQm63",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t088": {
+  "tid": "EKJhH5D5wA_Reviewer_tWD9",
+  "forum": "EKJhH5D5wA",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t089": {
+  "tid": "cWEfRkYj46_Reviewer_AheB",
+  "forum": "cWEfRkYj46",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t090": {
+  "tid": "ayUh0A6LIJ_Reviewer_bgMC",
+  "forum": "ayUh0A6LIJ",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t091": {
+  "tid": "5haYLrlyGj_Reviewer_v7AR",
+  "forum": "5haYLrlyGj",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t092": {
+  "tid": "pKMpmbuKnd_Reviewer_XXLw",
+  "forum": "pKMpmbuKnd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t093": {
+  "tid": "Zhdhg6n2OG_Reviewer_q17K",
+  "forum": "Zhdhg6n2OG",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t094": {
+  "tid": "kgZFaAtzYi_Reviewer_GYdT",
+  "forum": "kgZFaAtzYi",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t095": {
+  "tid": "OeKp3AdiVO_Reviewer_aP5D",
+  "forum": "OeKp3AdiVO",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t096": {
+  "tid": "dd2CABUZaw_Reviewer_FpUV",
+  "forum": "dd2CABUZaw",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t097": {
+  "tid": "xtlMtbVfWu_Reviewer_zyrD",
+  "forum": "xtlMtbVfWu",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t098": {
+  "tid": "vkj5ARRCeY_Reviewer_2Feu",
+  "forum": "vkj5ARRCeY",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t099": {
+  "tid": "lD9Kc22Wls_Reviewer_696T",
+  "forum": "lD9Kc22Wls",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t100": {
+  "tid": "At9JmGF3xy_Reviewer_DnEE",
+  "forum": "At9JmGF3xy",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t101": {
+  "tid": "cGu5LtGcRD_Reviewer_uVAy",
+  "forum": "cGu5LtGcRD",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t102": {
+  "tid": "yIbSXuLoO1_Reviewer_C6dM",
+  "forum": "yIbSXuLoO1",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t103": {
+  "tid": "N83O2FcqzN_Reviewer_35tP",
+  "forum": "N83O2FcqzN",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t104": {
+  "tid": "q5MUMlHxpd_Reviewer_qyEy",
+  "forum": "q5MUMlHxpd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t105": {
+  "tid": "dEg5SdGaiq_Reviewer_TTAd",
+  "forum": "dEg5SdGaiq",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t106": {
+  "tid": "kWRKNDU6uN_Reviewer_jpw4",
+  "forum": "kWRKNDU6uN",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t107": {
+  "tid": "7tOc6h8bea_Reviewer_Pqum",
+  "forum": "7tOc6h8bea",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t108": {
+  "tid": "PwmEvdXFAv_Reviewer_8jb4",
+  "forum": "PwmEvdXFAv",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t109": {
+  "tid": "l3oE5vBjDs_Reviewer_vgTy",
+  "forum": "l3oE5vBjDs",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t110": {
+  "tid": "J2we1sVd9m_Reviewer_zWXM",
+  "forum": "J2we1sVd9m",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t111": {
+  "tid": "6UD3vymUst_Reviewer_CLaj",
+  "forum": "6UD3vymUst",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t112": {
+  "tid": "FviefuxmeW_Reviewer_4joU",
+  "forum": "FviefuxmeW",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t113": {
+  "tid": "CkUHtnyhpY_Reviewer_MWE6",
+  "forum": "CkUHtnyhpY",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t114": {
+  "tid": "uDXFOurrHM_Reviewer_aXCT",
+  "forum": "uDXFOurrHM",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t115": {
+  "tid": "lWGXftRS5h_Reviewer_MCon",
+  "forum": "lWGXftRS5h",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t116": {
+  "tid": "9Zq8fRF4am_Reviewer_oQdP",
+  "forum": "9Zq8fRF4am",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t117": {
+  "tid": "zkGxROm7D3_Reviewer_sBeJ",
+  "forum": "zkGxROm7D3",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t118": {
+  "tid": "8kk9joQCkc_Reviewer_F3q7",
+  "forum": "8kk9joQCkc",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t119": {
+  "tid": "G6DLQ40VVR_Reviewer_HDKj",
+  "forum": "G6DLQ40VVR",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t120": {
+  "tid": "YVcVbYYy2x_Reviewer_h45z",
+  "forum": "YVcVbYYy2x",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t121": {
+  "tid": "Nx4PMtJ1ER_Reviewer_BsMU",
+  "forum": "Nx4PMtJ1ER",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t122": {
+  "tid": "TOiageVNru_Reviewer_1DdR",
+  "forum": "TOiageVNru",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t123": {
+  "tid": "NrDUhtIWsY_Reviewer_mLFV",
+  "forum": "NrDUhtIWsY",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t124": {
+  "tid": "L5fZHoaUCF_Reviewer_PesF",
+  "forum": "L5fZHoaUCF",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t125": {
+  "tid": "ljZFM2mhbR_Reviewer_yMfX",
+  "forum": "ljZFM2mhbR",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t126": {
+  "tid": "IQdlPvj4dX_Reviewer_zmzH",
+  "forum": "IQdlPvj4dX",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t127": {
+  "tid": "T2h2V7Rx7q_Reviewer_ig2E",
+  "forum": "T2h2V7Rx7q",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t128": {
+  "tid": "Sfct4aXXcw_Reviewer_sr9N",
+  "forum": "Sfct4aXXcw",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t129": {
+  "tid": "O6DKGUwv0m_Reviewer_nq3Z",
+  "forum": "O6DKGUwv0m",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t130": {
+  "tid": "BpfsxFqhGa_Reviewer_1xQ5",
+  "forum": "BpfsxFqhGa",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t131": {
+  "tid": "sUvBTEYXGt_Reviewer_cn4m",
+  "forum": "sUvBTEYXGt",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t132": {
+  "tid": "kuhIqeVg0e_Reviewer_h1D2",
+  "forum": "kuhIqeVg0e",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t133": {
+  "tid": "rwAEQWEqkX_Reviewer_MadS",
+  "forum": "rwAEQWEqkX",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t134": {
+  "tid": "eNjXcP6C0H_Reviewer_RSW6",
+  "forum": "eNjXcP6C0H",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t135": {
+  "tid": "X6y5CC44HM_Reviewer_1p1z",
+  "forum": "X6y5CC44HM",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t136": {
+  "tid": "FbZSZEIkEU_Reviewer_pQRe",
+  "forum": "FbZSZEIkEU",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t137": {
+  "tid": "SUL5L9rIyF_Reviewer_jPp9",
+  "forum": "SUL5L9rIyF",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t138": {
+  "tid": "FvBTy5Dz9C_Reviewer_aczi",
+  "forum": "FvBTy5Dz9C",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t139": {
+  "tid": "XwUrzurG94_Reviewer_TjP5",
+  "forum": "XwUrzurG94",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t140": {
+  "tid": "LGIhipNvCQ_Reviewer_qpy6",
+  "forum": "LGIhipNvCQ",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t141": {
+  "tid": "506BjJ1ziZ_Reviewer_4L2X",
+  "forum": "506BjJ1ziZ",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t142": {
+  "tid": "x3jRzVAltZ_Reviewer_HTm4",
+  "forum": "x3jRzVAltZ",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t143": {
+  "tid": "TsBDfe8Ra5_Reviewer_27vZ",
+  "forum": "TsBDfe8Ra5",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t144": {
+  "tid": "6L8OdH5PBu_Reviewer_97yW",
+  "forum": "6L8OdH5PBu",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t145": {
+  "tid": "yZ7sn9pyqb_Reviewer_N2Ye",
+  "forum": "yZ7sn9pyqb",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t146": {
+  "tid": "HNOo4UNPBF_Reviewer_MtA3",
+  "forum": "HNOo4UNPBF",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t147": {
+  "tid": "9JE3HogPCw_Reviewer_HMtR",
+  "forum": "9JE3HogPCw",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t148": {
+  "tid": "prSJlvWrgE_Reviewer_kD8a",
+  "forum": "prSJlvWrgE",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t149": {
+  "tid": "RzUvkI3p1D_Reviewer_jGRA",
+  "forum": "RzUvkI3p1D",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t150": {
+  "tid": "ZRDhBwKs7l_Reviewer_C9Fa",
+  "forum": "ZRDhBwKs7l",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t151": {
+  "tid": "7rOdRAGuBA_Reviewer_FGB6",
+  "forum": "7rOdRAGuBA",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t152": {
+  "tid": "BWU6Xl1nD3_Reviewer_t736",
+  "forum": "BWU6Xl1nD3",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t153": {
+  "tid": "OANUpvmnuf_Reviewer_5ctA",
+  "forum": "OANUpvmnuf",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t154": {
+  "tid": "FP77VtEuaT_Reviewer_eHD7",
+  "forum": "FP77VtEuaT",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t155": {
+  "tid": "1OkVexYLct_Reviewer_ezgd",
+  "forum": "1OkVexYLct",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t156": {
+  "tid": "iC4hBE9xYe_Reviewer_rt7P",
+  "forum": "iC4hBE9xYe",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t157": {
+  "tid": "tVfvKrboVY_Reviewer_JbEJ",
+  "forum": "tVfvKrboVY",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t158": {
+  "tid": "jy6iAfARAI_Reviewer_xQ99",
+  "forum": "jy6iAfARAI",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t159": {
+  "tid": "g0rnZeBguq_Reviewer_hELf",
+  "forum": "g0rnZeBguq",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t160": {
+  "tid": "2ZK8zyIt7o_Reviewer_9HBG",
+  "forum": "2ZK8zyIt7o",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t161": {
+  "tid": "of6EuHT7de_Reviewer_ktFr",
+  "forum": "of6EuHT7de",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t162": {
+  "tid": "p4cLtzk4oe_Reviewer_PxZo",
+  "forum": "p4cLtzk4oe",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t163": {
+  "tid": "SBbjwfMuik_Reviewer_S4qh",
+  "forum": "SBbjwfMuik",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t164": {
+  "tid": "Uo4EHT4ZZ8_Reviewer_W5az",
+  "forum": "Uo4EHT4ZZ8",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t165": {
+  "tid": "0whx8MhysK_Reviewer_rhZM",
+  "forum": "0whx8MhysK",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t166": {
+  "tid": "TANu5nDVvU_Reviewer_B8WD",
+  "forum": "TANu5nDVvU",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t167": {
+  "tid": "KbCh7zbw2K_Reviewer_a2Bs",
+  "forum": "KbCh7zbw2K",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t168": {
+  "tid": "7JhGdZvW4T_Reviewer_bvWq",
+  "forum": "7JhGdZvW4T",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t169": {
+  "tid": "tjNf0L8QjR_Reviewer_5fCb",
+  "forum": "tjNf0L8QjR",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t170": {
+  "tid": "s20W12XTF8_Reviewer_FZR8",
+  "forum": "s20W12XTF8",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t171": {
+  "tid": "kqSmedTcgb_Reviewer_od79",
+  "forum": "kqSmedTcgb",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t172": {
+  "tid": "aPTGvFqile_Reviewer_J1QT",
+  "forum": "aPTGvFqile",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t173": {
+  "tid": "rlgplAuN2p_Reviewer_uYKA",
+  "forum": "rlgplAuN2p",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t174": {
+  "tid": "8rbkePAapb_Reviewer_pijU",
+  "forum": "8rbkePAapb",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t175": {
+  "tid": "eq8jOD0tgl_Reviewer_uMef",
+  "forum": "eq8jOD0tgl",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t176": {
+  "tid": "6jA1R0Z1G2_Reviewer_cEeF",
+  "forum": "6jA1R0Z1G2",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t177": {
+  "tid": "T7ZVzuObcj_Reviewer_1YBp",
+  "forum": "T7ZVzuObcj",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t178": {
+  "tid": "fMUggopCYI_Reviewer_WHeD",
+  "forum": "fMUggopCYI",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t179": {
+  "tid": "88TC1AWV27_Reviewer_uYJU",
+  "forum": "88TC1AWV27",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t180": {
+  "tid": "4a9doRh3Jv_Reviewer_VTMo",
+  "forum": "4a9doRh3Jv",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": true
+ },
+ "t181": {
+  "tid": "mUMvr33FTu_Reviewer_V3E7",
+  "forum": "mUMvr33FTu",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t182": {
+  "tid": "juKVq5dWTR_Reviewer_Pxd3",
+  "forum": "juKVq5dWTR",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t183": {
+  "tid": "BfUDZGqCAu_Reviewer_mFXK",
+  "forum": "BfUDZGqCAu",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t184": {
+  "tid": "OspqtLVUN5_Reviewer_tbQd",
+  "forum": "OspqtLVUN5",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t185": {
+  "tid": "eks3dGnocX_Reviewer_qubH",
+  "forum": "eks3dGnocX",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t186": {
+  "tid": "7d2JwGbxhA_Reviewer_pa7a",
+  "forum": "7d2JwGbxhA",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t187": {
+  "tid": "lsHmT3Fr65_Reviewer_r98e",
+  "forum": "lsHmT3Fr65",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t188": {
+  "tid": "tpYeermigp_Reviewer_oHnR",
+  "forum": "tpYeermigp",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t189": {
+  "tid": "isHiGhFwVV_Reviewer_tEZB",
+  "forum": "isHiGhFwVV",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t190": {
+  "tid": "d4njmzM7jf_Reviewer_dQp1",
+  "forum": "d4njmzM7jf",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t191": {
+  "tid": "znGnmAM44K_Reviewer_UBfb",
+  "forum": "znGnmAM44K",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t192": {
+  "tid": "yOrtDi6IXs_Reviewer_2wM7",
+  "forum": "yOrtDi6IXs",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t193": {
+  "tid": "oiDvwOhvjq_Reviewer_67JH",
+  "forum": "oiDvwOhvjq",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t194": {
+  "tid": "ACEuJBhhbN_Reviewer_ZUxR",
+  "forum": "ACEuJBhhbN",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t195": {
+  "tid": "E3qIInyTgL_Reviewer_65wx",
+  "forum": "E3qIInyTgL",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t196": {
+  "tid": "6F6qwdycgJ_Reviewer_tEsT",
+  "forum": "6F6qwdycgJ",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t197": {
+  "tid": "pTqsapWIPo_Reviewer_Tptn",
+  "forum": "pTqsapWIPo",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t198": {
+  "tid": "9cQB1Hwrtw_Reviewer_fM1a",
+  "forum": "9cQB1Hwrtw",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t199": {
+  "tid": "Y2Dh8rWwlb_Reviewer_RttZ",
+  "forum": "Y2Dh8rWwlb",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t200": {
+  "tid": "Hjp1V6zlZi_Reviewer_3xrT",
+  "forum": "Hjp1V6zlZi",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t201": {
+  "tid": "c0KPBFtGIy_Reviewer_F4pL",
+  "forum": "c0KPBFtGIy",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t202": {
+  "tid": "wJGXiHQwpZ_Reviewer_9P4o",
+  "forum": "wJGXiHQwpZ",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t203": {
+  "tid": "UIFAJZ22ZF_Reviewer_aZ4R",
+  "forum": "UIFAJZ22ZF",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t204": {
+  "tid": "po67tkP0Jx_Reviewer_j1se",
+  "forum": "po67tkP0Jx",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t205": {
+  "tid": "R5FzCFR5yU_Reviewer_SsPY",
+  "forum": "R5FzCFR5yU",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t206": {
+  "tid": "rCvdAVQpAe_Reviewer_dWHg",
+  "forum": "rCvdAVQpAe",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t207": {
+  "tid": "JQkj67NArS_Reviewer_ehie",
+  "forum": "JQkj67NArS",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t208": {
+  "tid": "Uqxf2YH9LZ_Reviewer_4hWz",
+  "forum": "Uqxf2YH9LZ",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t209": {
+  "tid": "DydCqKa6AH_Reviewer_EYrc",
+  "forum": "DydCqKa6AH",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t210": {
+  "tid": "OE2T7AgQFN_Reviewer_FJ9h",
+  "forum": "OE2T7AgQFN",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t211": {
+  "tid": "UZ893n8FXr_Reviewer_bUVE",
+  "forum": "UZ893n8FXr",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t212": {
+  "tid": "LtBD5fFHB7_Reviewer_V2wC",
+  "forum": "LtBD5fFHB7",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t213": {
+  "tid": "nmc9ujrZ5R_Reviewer_VjY6",
+  "forum": "nmc9ujrZ5R",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t214": {
+  "tid": "CrmUKllBKs_Reviewer_VSib",
+  "forum": "CrmUKllBKs",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t215": {
+  "tid": "bEqI61iBue_Reviewer_MAUK",
+  "forum": "bEqI61iBue",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t216": {
+  "tid": "UhW2wA1pRV_Reviewer_kKvm",
+  "forum": "UhW2wA1pRV",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t217": {
+  "tid": "Luss2sa0vc_Reviewer_74wV",
+  "forum": "Luss2sa0vc",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t218": {
+  "tid": "i28ZjVxl81_Reviewer_cczR",
+  "forum": "i28ZjVxl81",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t219": {
+  "tid": "9bMZ29SPVx_Reviewer_HyV4",
+  "forum": "9bMZ29SPVx",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t220": {
+  "tid": "OlRjxSuSwl_Reviewer_RSj2",
+  "forum": "OlRjxSuSwl",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t221": {
+  "tid": "TSZh4610VG_Reviewer_VBFJ",
+  "forum": "TSZh4610VG",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t222": {
+  "tid": "SKW10XJlAI_Reviewer_yRki",
+  "forum": "SKW10XJlAI",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t223": {
+  "tid": "6fDjUoEQvm_Reviewer_7H7A",
+  "forum": "6fDjUoEQvm",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t224": {
+  "tid": "k7nYm2yU5i_Reviewer_hhzr",
+  "forum": "k7nYm2yU5i",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t225": {
+  "tid": "2ea5TNVR0c_Reviewer_rmjd",
+  "forum": "2ea5TNVR0c",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t226": {
+  "tid": "hFFAg5Dmw9_Reviewer_azz3",
+  "forum": "hFFAg5Dmw9",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t227": {
+  "tid": "SQnitDuow6_Reviewer_Rtts",
+  "forum": "SQnitDuow6",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t228": {
+  "tid": "Mr1wsHM9JK_Reviewer_KZ3z",
+  "forum": "Mr1wsHM9JK",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t229": {
+  "tid": "gg6dPtdC1C_Reviewer_X2dB",
+  "forum": "gg6dPtdC1C",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t230": {
+  "tid": "mORwTTZfWq_Reviewer_tRah",
+  "forum": "mORwTTZfWq",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t231": {
+  "tid": "V4K9h1qNxE_Reviewer_yrk8",
+  "forum": "V4K9h1qNxE",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t232": {
+  "tid": "vJwjWyt4Ed_Reviewer_juRH",
+  "forum": "vJwjWyt4Ed",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t233": {
+  "tid": "IXFCPqFHMQ_Reviewer_jrDz",
+  "forum": "IXFCPqFHMQ",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t234": {
+  "tid": "Lz5lOSC0zg_Reviewer_nU6a",
+  "forum": "Lz5lOSC0zg",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t235": {
+  "tid": "2edigk8yoU_Reviewer_gBs4",
+  "forum": "2edigk8yoU",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t236": {
+  "tid": "HgAS03GU4J_Reviewer_cDQV",
+  "forum": "HgAS03GU4J",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t237": {
+  "tid": "womU9cEwcO_Reviewer_Rvsi",
+  "forum": "womU9cEwcO",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t238": {
+  "tid": "lo3nlFHOft_Reviewer_LAtq",
+  "forum": "lo3nlFHOft",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t239": {
+  "tid": "QLOGfFSB50_Reviewer_dYYF",
+  "forum": "QLOGfFSB50",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t240": {
+  "tid": "pCj2sLNoJq_Reviewer_u5D6",
+  "forum": "pCj2sLNoJq",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t241": {
+  "tid": "fswihJIYbd_Reviewer_znHg",
+  "forum": "fswihJIYbd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t242": {
+  "tid": "mnna9LUg7P_Reviewer_8GLX",
+  "forum": "mnna9LUg7P",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t243": {
+  "tid": "t8KLjiFNwn_Reviewer_iLUr",
+  "forum": "t8KLjiFNwn",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t244": {
+  "tid": "9pBnp90o2D_Reviewer_ys1y",
+  "forum": "9pBnp90o2D",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t245": {
+  "tid": "rlgplAuN2p_Reviewer_hg5c",
+  "forum": "rlgplAuN2p",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t246": {
+  "tid": "OjCWG58ZyY_Reviewer_SKRR",
+  "forum": "OjCWG58ZyY",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t247": {
+  "tid": "DhHIw9Nbl1_Reviewer_BU7e",
+  "forum": "DhHIw9Nbl1",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t248": {
+  "tid": "XXzOzJRyOZ_Reviewer_37Fc",
+  "forum": "XXzOzJRyOZ",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t249": {
+  "tid": "Q9OGPWt0Rp_Reviewer_WPj4",
+  "forum": "Q9OGPWt0Rp",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t250": {
+  "tid": "oYSsbY3G4o_Reviewer_FMi4",
+  "forum": "oYSsbY3G4o",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t251": {
+  "tid": "XBtDrlK1Qc_Reviewer_UWVS",
+  "forum": "XBtDrlK1Qc",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t252": {
+  "tid": "NlEt8LYAxC_Reviewer_vSUq",
+  "forum": "NlEt8LYAxC",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t253": {
+  "tid": "0T8vCKa7yu_Reviewer_EzZu",
+  "forum": "0T8vCKa7yu",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t254": {
+  "tid": "2TiU1JTdSQ_Reviewer_kFPj",
+  "forum": "2TiU1JTdSQ",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t255": {
+  "tid": "qGL6fE1lqd_Reviewer_THXz",
+  "forum": "qGL6fE1lqd",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t256": {
+  "tid": "xxzukMsYs9_Reviewer_ee9t",
+  "forum": "xxzukMsYs9",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t257": {
+  "tid": "kat8uANDlU_Reviewer_mF3B",
+  "forum": "kat8uANDlU",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t258": {
+  "tid": "LBsr2llHz0_Reviewer_jmPG",
+  "forum": "LBsr2llHz0",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t259": {
+  "tid": "uo8PO6Ah59_Reviewer_qoDh",
+  "forum": "uo8PO6Ah59",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t260": {
+  "tid": "JVkdSi7Ekg_Reviewer_Enxm",
+  "forum": "JVkdSi7Ekg",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t261": {
+  "tid": "nXTpz8pTHK_Reviewer_aGF9",
+  "forum": "nXTpz8pTHK",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t262": {
+  "tid": "ewjN1MAnJi_Reviewer_uw9o",
+  "forum": "ewjN1MAnJi",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t263": {
+  "tid": "d4njmzM7jf_Reviewer_5MfA",
+  "forum": "d4njmzM7jf",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t264": {
+  "tid": "XYRPm8rAGM_Reviewer_wGn1",
+  "forum": "XYRPm8rAGM",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t265": {
+  "tid": "5dKiZeF3MD_Reviewer_9agk",
+  "forum": "5dKiZeF3MD",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t266": {
+  "tid": "lqHv6dxBkj_Reviewer_NKfR",
+  "forum": "lqHv6dxBkj",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t267": {
+  "tid": "uBEl8DMA8K_Reviewer_QmH4",
+  "forum": "uBEl8DMA8K",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t268": {
+  "tid": "YvKJGYL4j7_Reviewer_6aVA",
+  "forum": "YvKJGYL4j7",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t269": {
+  "tid": "6VhDQP7WGX_Reviewer_WUho",
+  "forum": "6VhDQP7WGX",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t270": {
+  "tid": "2pNLknCTvG_Reviewer_uA58",
+  "forum": "2pNLknCTvG",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t271": {
+  "tid": "h6k4809xVV_Reviewer_mn9s",
+  "forum": "h6k4809xVV",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t272": {
+  "tid": "2snKOc7TVp_Reviewer_cYwD",
+  "forum": "2snKOc7TVp",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t273": {
+  "tid": "otTfoKL5sJ_Reviewer_vQup",
+  "forum": "otTfoKL5sJ",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t274": {
+  "tid": "0K1OaL6XuK_Reviewer_FxuD",
+  "forum": "0K1OaL6XuK",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t275": {
+  "tid": "5sPgOyyjG5_Reviewer_xwQ7",
+  "forum": "5sPgOyyjG5",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t276": {
+  "tid": "Usk4KzBxLW_Reviewer_vjA9",
+  "forum": "Usk4KzBxLW",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t277": {
+  "tid": "e4em5klSEw_Reviewer_a1CZ",
+  "forum": "e4em5klSEw",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t278": {
+  "tid": "yOhNLIqTEF_Reviewer_Htfn",
+  "forum": "yOhNLIqTEF",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t279": {
+  "tid": "TOiageVNru_Reviewer_7oHd",
+  "forum": "TOiageVNru",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t280": {
+  "tid": "HaX48yksVL_Reviewer_bUbF",
+  "forum": "HaX48yksVL",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t281": {
+  "tid": "6jyEj4rGZJ_Reviewer_gFc1",
+  "forum": "6jyEj4rGZJ",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t282": {
+  "tid": "DPynq6bSHn_Reviewer_iDTk",
+  "forum": "DPynq6bSHn",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t283": {
+  "tid": "HvkXPQhQvv_Reviewer_hobm",
+  "forum": "HvkXPQhQvv",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t284": {
+  "tid": "unDQOUah0F_Reviewer_QoA2",
+  "forum": "unDQOUah0F",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t285": {
+  "tid": "wCwz1F8qY8_Reviewer_aiEL",
+  "forum": "wCwz1F8qY8",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t286": {
+  "tid": "cSAAGL0cn0_Reviewer_tjsR",
+  "forum": "cSAAGL0cn0",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t287": {
+  "tid": "vodsIF3o7N_Reviewer_57NJ",
+  "forum": "vodsIF3o7N",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t288": {
+  "tid": "hheFYjOsWO_Reviewer_vMGD",
+  "forum": "hheFYjOsWO",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t289": {
+  "tid": "iVxxgZlXh6_Reviewer_HVHL",
+  "forum": "iVxxgZlXh6",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t290": {
+  "tid": "5Ky0W6sp8W_Reviewer_JU6V",
+  "forum": "5Ky0W6sp8W",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t291": {
+  "tid": "fJ1hON2r2u_Reviewer_T896",
+  "forum": "fJ1hON2r2u",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t292": {
+  "tid": "8QkpCRio53_Reviewer_trEc",
+  "forum": "8QkpCRio53",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t293": {
+  "tid": "VzZTHukfCB_Reviewer_EXr6",
+  "forum": "VzZTHukfCB",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t294": {
+  "tid": "YNQF003Ad3_Reviewer_n5EV",
+  "forum": "YNQF003Ad3",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t295": {
+  "tid": "iOy2pITOoH_Reviewer_znbP",
+  "forum": "iOy2pITOoH",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t296": {
+  "tid": "0RUQmLFF1D_Reviewer_eKz3",
+  "forum": "0RUQmLFF1D",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t297": {
+  "tid": "aqok1UX7Z1_Reviewer_26JP",
+  "forum": "aqok1UX7Z1",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": true
+ },
+ "t298": {
+  "tid": "tYVmxoRps3_Reviewer_Yy1P",
+  "forum": "tYVmxoRps3",
+  "r2_raise": true,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t299": {
+  "tid": "s7DkcgpRxL_Reviewer_asc9",
+  "forum": "s7DkcgpRxL",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t300": {
+  "tid": "DugT77rRhW_Reviewer_UrzG",
+  "forum": "DugT77rRhW",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t301": {
+  "tid": "xbW6EGve6a_Reviewer_hgpf",
+  "forum": "xbW6EGve6a",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t302": {
+  "tid": "Qny1ufReka_Reviewer_watJ",
+  "forum": "Qny1ufReka",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t303": {
+  "tid": "gRrjx9GzRP_Reviewer_puBu",
+  "forum": "gRrjx9GzRP",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t304": {
+  "tid": "28qOQwjuma_Reviewer_rA8g",
+  "forum": "28qOQwjuma",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t305": {
+  "tid": "ISqx8giekS_Reviewer_K8An",
+  "forum": "ISqx8giekS",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t306": {
+  "tid": "e2p1BWR3vq_Reviewer_DdFz",
+  "forum": "e2p1BWR3vq",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t307": {
+  "tid": "exgLs4snap_Reviewer_GmGR",
+  "forum": "exgLs4snap",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t308": {
+  "tid": "Pd7IOswRUZ_Reviewer_GBgR",
+  "forum": "Pd7IOswRUZ",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t309": {
+  "tid": "g3VCIM94ke_Reviewer_67Pj",
+  "forum": "g3VCIM94ke",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t310": {
+  "tid": "qmodrqswtF_Reviewer_JqPf",
+  "forum": "qmodrqswtF",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t311": {
+  "tid": "ZEO9ibXr46_Reviewer_SyV9",
+  "forum": "ZEO9ibXr46",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t312": {
+  "tid": "1c73HCZpbo_Reviewer_tFxe",
+  "forum": "1c73HCZpbo",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t313": {
+  "tid": "HZgZrtIreg_Reviewer_ZP6Y",
+  "forum": "HZgZrtIreg",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t314": {
+  "tid": "aJUuere4fM_Reviewer_EVmQ",
+  "forum": "aJUuere4fM",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t315": {
+  "tid": "K4FAFNRpko_Reviewer_5GYV",
+  "forum": "K4FAFNRpko",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t316": {
+  "tid": "zpBamnxyPm_Reviewer_QwKS",
+  "forum": "zpBamnxyPm",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t317": {
+  "tid": "ZLAQ6Pjf9y_Reviewer_hUc2",
+  "forum": "ZLAQ6Pjf9y",
+  "r2_raise": false,
+  "r2_keep": true,
+  "r2_lower": false
+ },
+ "t318": {
+  "tid": "9HsfTgflT7_Reviewer_wNg9",
+  "forum": "9HsfTgflT7",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t319": {
+  "tid": "Xg6JWb1Oxt_Reviewer_Qh8y",
+  "forum": "Xg6JWb1Oxt",
+  "r2_raise": true,
+  "r2_keep": false,
+  "r2_lower": false
+ },
+ "t320": {
+  "tid": "WPDsT4eIKH_Reviewer_qXjk",
+  "forum": "WPDsT4eIKH",
+  "r2_raise": false,
+  "r2_keep": false,
+  "r2_lower": false
+ }
+}
