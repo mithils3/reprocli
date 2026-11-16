@@ -1,0 +1,68 @@
+checks: all-four 55 (expect 55); setting-or-label 16 (expect 16); table rows mapped to 100 papers 372 of 372 (tier mismatches folded in: 0)
+reproduced cells: (A) 73 (expect 73, OK); (B) 70 (expect 70, OK)
+
+## A
+All 100: cells 73 of 400 = 18.2%; at least one agent reproduces 34 of 100 = 34.0%
+  run: best dsv4 14 of 34 = 41.2%
+  retrain: best dsv4, muse 9 of 33 = 27.3%
+  reimplement: best muse 5 of 33 = 15.2%
+55 pass all four: cells 38 of 220 = 17.3%; at least one agent reproduces 18 of 55 = 32.7%
+  run: best dsv4 9 of 19 = 47.4%
+  retrain: best muse 3 of 13 = 23.1%
+  reimplement: best muse 4 of 23 = 17.4%
+45 other: cells 35 of 180 = 19.4%; at least one agent reproduces 16 of 45 = 35.6%
+  run: best dsv4 5 of 15 = 33.3%
+  retrain: best dsv4 7 of 20 = 35.0%
+  reimplement: best dsv4, muse 1 of 10 = 10.0%
+84 (100 minus 16 off): cells 57 of 336 = 17.0%; at least one agent reproduces 27 of 84 = 32.1%
+  run: best dsv4 11 of 29 = 37.9%
+  retrain: best dsv4, muse 6 of 23 = 26.1%
+  reimplement: best muse 5 of 32 = 15.6%
+  per tier, model (55):
+    run n=19: dsv4 9 of 19 = 47.4%; minimax 2 of 19 = 10.5%; muse 6 of 19 = 31.6%; qwen3 2 of 19 = 10.5%
+    retrain n=13: dsv4 2 of 13 = 15.4%; minimax 1 of 13 = 7.7%; muse 3 of 13 = 23.1%; qwen3 2 of 13 = 15.4%
+    reimplement n=23: dsv4 3 of 23 = 13.0%; minimax 2 of 23 = 8.7%; muse 4 of 23 = 17.4%; qwen3 2 of 23 = 8.7%
+  per tier, model (45):
+    run n=15: dsv4 5 of 15 = 33.3%; minimax 1 of 15 = 6.7%; muse 3 of 15 = 20.0%; qwen3 3 of 15 = 20.0%
+    retrain n=20: dsv4 7 of 20 = 35.0%; minimax 4 of 20 = 20.0%; muse 6 of 20 = 30.0%; qwen3 4 of 20 = 20.0%
+    reimplement n=10: dsv4 1 of 10 = 10.0%; minimax 0 of 10 = 0.0%; muse 1 of 10 = 10.0%; qwen3 0 of 10 = 0.0%
+  Fisher two-sided: 55 38 of 220 = 17.3% vs 45 35 of 180 = 19.4%; OR 0.865, p = 0.6042
+  Wilson 55 run best dsv4: 9/19 = 47.4% [27.3, 68.3]
+  Wilson 55 retrain best muse: 3/13 = 23.1% [8.2, 50.3]
+  Wilson 55 reimplement best muse: 4/23 = 17.4% [7.0, 37.1]
+  Wilson 45 run best dsv4: 5/15 = 33.3% [15.2, 58.3]
+  Wilson 45 retrain best dsv4: 7/20 = 35.0% [18.1, 56.7]
+  Wilson 45 reimplement best dsv4/muse: 1/10 = 10.0% [1.8, 40.4]
+
+## B
+All 100: cells 70 of 400 = 17.5%; at least one agent reproduces 32 of 100 = 32.0%
+  run: best dsv4 13 of 34 = 38.2%
+  retrain: best dsv4 9 of 33 = 27.3%
+  reimplement: best muse 5 of 33 = 15.2%
+55 pass all four: cells 36 of 220 = 16.4%; at least one agent reproduces 16 of 55 = 29.1%
+  run: best dsv4 9 of 19 = 47.4%
+  retrain: best dsv4, muse, qwen3 2 of 13 = 15.4%
+  reimplement: best muse 4 of 23 = 17.4%
+45 other: cells 34 of 180 = 18.9%; at least one agent reproduces 16 of 45 = 35.6%
+  run: best dsv4, muse 4 of 15 = 26.7%
+  retrain: best dsv4 7 of 20 = 35.0%
+  reimplement: best dsv4, muse 1 of 10 = 10.0%
+84 (100 minus 16 off): cells 53 of 336 = 15.8%; at least one agent reproduces 25 of 84 = 29.8%
+  run: best dsv4 10 of 29 = 34.5%
+  retrain: best dsv4 6 of 23 = 26.1%
+  reimplement: best muse 5 of 32 = 15.6%
+  per tier, model (55):
+    run n=19: dsv4 9 of 19 = 47.4%; minimax 2 of 19 = 10.5%; muse 6 of 19 = 31.6%; qwen3 2 of 19 = 10.5%
+    retrain n=13: dsv4 2 of 13 = 15.4%; minimax 1 of 13 = 7.7%; muse 2 of 13 = 15.4%; qwen3 2 of 13 = 15.4%
+    reimplement n=23: dsv4 3 of 23 = 13.0%; minimax 1 of 23 = 4.3%; muse 4 of 23 = 17.4%; qwen3 2 of 23 = 8.7%
+  per tier, model (45):
+    run n=15: dsv4 4 of 15 = 26.7%; minimax 0 of 15 = 0.0%; muse 4 of 15 = 26.7%; qwen3 3 of 15 = 20.0%
+    retrain n=20: dsv4 7 of 20 = 35.0%; minimax 4 of 20 = 20.0%; muse 6 of 20 = 30.0%; qwen3 4 of 20 = 20.0%
+    reimplement n=10: dsv4 1 of 10 = 10.0%; minimax 0 of 10 = 0.0%; muse 1 of 10 = 10.0%; qwen3 0 of 10 = 0.0%
+  Fisher two-sided: 55 36 of 220 = 16.4% vs 45 34 of 180 = 18.9%; OR 0.840, p = 0.5119
+  Wilson 55 run best dsv4: 9/19 = 47.4% [27.3, 68.3]
+  Wilson 55 retrain best dsv4/muse/qwen3: 2/13 = 15.4% [4.3, 42.2]
+  Wilson 55 reimplement best muse: 4/23 = 17.4% [7.0, 37.1]
+  Wilson 45 run best dsv4/muse: 4/15 = 26.7% [10.9, 52.0]
+  Wilson 45 retrain best dsv4: 7/20 = 35.0% [18.1, 56.7]
+  Wilson 45 reimplement best dsv4/muse: 1/10 = 10.0% [1.8, 40.4]
