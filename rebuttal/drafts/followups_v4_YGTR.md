@@ -51,18 +51,19 @@ Caution: the 8 pairs cover 6 papers; no count of such runs exists for the 372 op
 
 ### If asked: Stability of pairs with a reproduced run
 
-Among the pairs with a reproduced run, 10 of 14 keep their verdict (71% [45%, 88%]), and all 16 pairs with no reproduced run fail again. With the repeat runs graded since our reply, the pooled total is 26 of 30 model and paper pairs (87% [70%, 95%]).
+Among the pairs with a reproduced run, 10 of 16 keep their verdict (63% [39%, 82%]), and all 19 pairs with no reproduced run fail again. With the repeat runs graded since our reply, which add Qwen3.6-27B as a third open agent, the pooled total is 29 of 35 model and paper pairs (83% [67%, 92%]).
 
 | Repeat set | Pairs | With a reproduced run | Same verdict |
 | :- | -: | -: | -: |
 | Muse Spark 1.2, Reimplement | 10 | 5 | 4 |
-| DeepSeek-V4-Flash, three tiers | 12 | 5 | 3 |
+| DeepSeek-V4-Flash, three tiers | 13 | 5 | 2 |
+| Qwen3.6-27B, Reimplement | 4 | 2 | 1 |
 | gpt-6.1-sol and gpt-6-astra, x86 and GH200 | 8 | 4 | 3 |
 
-The four pairs that change lie on two papers, 2503.02809 and 2505.19087. Every run in them scores 7, 8 or 9, and the changes go in both directions.
+The six pairs that change lie on three papers, 2503.02809, 2505.19087 and 2505.15201. In five of them every run scores 7, 8 or 9, and in the sixth the auditor disqualified the Qwen3.6-27B repeat on 2505.19087 for searching over free settings for the one closest to the known target.
 
-Source: rebuttal/results/e13/README.md (26/30), e12/README.md, frontier_cells.csv.
-Caution: 10 of 14 is my tally from those tables.
+Source: rebuttal/results/e13/README.md, section 2026-11-17 (29/35, 10/16, 19), e12/README.md, frontier_cells.csv.
+Caution: the counts were 26 of 30 and 10 of 14 before the nine runs graded on 11-17, and three batch jobs are still running.
 
 ### Short reply if the follow-up is the predicted one
 

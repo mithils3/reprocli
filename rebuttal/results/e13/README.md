@@ -65,3 +65,31 @@ Counts with these runs: 17 of 20 repeat runs keep the reproduced verdict of the 
 On 2506.06991 the score, the verdict and the measured value all repeat; the auditor notes one low flag (the released notebook labels gpt-4o-mini files "GPT-4", and the agent used them as the closest released data). On 2402.04579 the scores differ by 3 points (4 and 7), the largest difference in the set, with the same reproduced verdict: the repeat ran 4 of the paper's 100 seeds after wall-time kills and tuned its own solver settings, which the auditor marks with two medium flags.
 
 The replies posted on 2026-11-14 and Section 5.2 of the second revised PDF state the counts at the freeze (16 runs, 7 of 9 papers, 23 of 27 pairs).
+
+## 2026-11-17: nine more repeat runs, with Qwen3.6-27B as a third open agent
+
+Batch jobs 3540631 (DeepSeek-V4-Flash, Retrain) and 3540787 (Qwen3.6-27B, Reimplement) started on 11-17 after 13 and 11 days pending, and nine runs ended on their own by 09:30. Mithil raised the limit on repeat-run grading from $15 to $25 ("yes I do"), and all nine were graded with the pinned auditor in `e13j_repeats` ($7.54; E13 total $22.13 of $25; Anthropic ledger $178.59 of $230).
+
+| Agent | Paper | Tier | Run in the paper | New repeat | Measured: paper run, repeat (target) |
+| :- | :- | :- | :- | :- | :- |
+| DeepSeek-V4-Flash | 2505.15201 | Retrain | 8, reproduced | 7, partial | 67.42, 4.07 (about 10) |
+| DeepSeek-V4-Flash | 2505.17836 | Retrain | 6, partial | 6, partial | 0.0395, 0.0403 (0.05) |
+| DeepSeek-V4-Flash | 2506.07673 | Retrain | 10, reproduced | 8, reproduced | -37.2, -37.2 (37.2) |
+| DeepSeek-V4-Flash | 2510.09485 | Retrain | 9, reproduced | 10, reproduced | 0.668031, 0.668031 |
+| DeepSeek-V4-Flash | 2506.20233 | Retrain | 6, partial | 7, partial | new pair |
+| Qwen3.6-27B | 2402.04579 | Reimplement | 4, not reproduced | 0, disqualified | 1.64, 3.46 |
+| Qwen3.6-27B | 2503.02809 | Reimplement | 8, reproduced | 8, reproduced | 40.15, 40.19 (40.0) |
+| Qwen3.6-27B | 2505.19087 | Reimplement | 8, reproduced | 0, disqualified | 0.6005, 0.5992 (0.60302) |
+| Qwen3.6-27B | 2510.25146 | Reimplement | 1, unverifiable | 1, unverifiable | no experiment run in either |
+
+Two verdicts change. On 2505.15201 the fourth DeepSeek-V4-Flash run scores 7 where the paper's run and two repeats scored 8: the auditor accepts the run and the direction of the claim, and marks the ratio (about 38 to 71 times lower variance against the paper's "about 10 times") and one comparison curve the agent rebuilt from the caption. On 2505.19087 the auditor disqualifies the Qwen3.6-27B repeat with a high-severity flag: the run under the paper's stated initialization gave 0.58879, which the agent logged as no match, and it then searched over a dozen initialization, architecture and loss variants for the one closest to the known target (0.59915 against 0.60302). The other disqualified repeat (2402.04579) tuned the method's settings on the reported metric; that pair was not reproduced in the paper's run either. Three of the four Qwen3.6-27B reports failed the harness's format check (`report_status: degraded`); the runs ended on their own and the auditor grades from the evidence folder.
+
+Counts with these runs (script check: the same code reproduces 26 of 30 and 10 of 14 on the earlier rows):
+
+- Runs: 24 of 29 repeat runs keep the reproduced verdict of the run in the paper (83%, Wilson 65% to 92%); DeepSeek-V4-Flash 21 of 25, Qwen3.6-27B 3 of 4.
+- Pairs in this experiment: 13 of 17 (DeepSeek-V4-Flash 10 of 13: Run 1 of 1, Retrain 6 of 7, Reimplement 3 of 5; Qwen3.6-27B 3 of 4).
+- Pooled with the 10 Muse Spark 1.2 pairs (9 keep) and the 8 x86 pairs (7 keep): 29 of 35 model and paper pairs (83%, Wilson 67% to 92%), against 26 of 30 before.
+- Pairs with a reproduced run: 10 of 16 keep the verdict (63%, Wilson 39% to 82%); all 19 pairs with no reproduced run fail again.
+- Six pairs change: Muse Spark 1.2 and DeepSeek-V4-Flash on 2503.02809, DeepSeek-V4-Flash, gpt-6-astra and Qwen3.6-27B on 2505.19087, and DeepSeek-V4-Flash on 2505.15201. In five of them every run scores 7, 8 or 9; the sixth is the disqualified Qwen3.6-27B repeat.
+
+The posted replies and Section 5.2 of the second revised PDF keep the counts at the 11-14 freeze (16 runs, 23 of 27 pairs). Any later answer on repeat runs uses the counts above.

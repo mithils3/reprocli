@@ -19,3 +19,12 @@ arxiv_id,tier,paper_run_id,paper_score,paper_verdict,paper_measured,reference,re
 2510.25146,reimplement,dsv4-reimplement-2510.25146,2,not_reproduced,,25.8,3540629-2510.25146-3bf237,2,not_reproduced,False,False,,natural,0.5021
 2506.06991,retrain,dsv4-retrain-2506.06991,6,partial,0.803,0.91,3540625-2506.06991-41fba8,6,partial,False,False,0.7999,natural,0.7128
 2402.04579,reimplement,dsv4-reimplement-2402.04579,4,not_reproduced,0.5248,,3540626-2402.04579-967475,7,partial,False,False,0.4764,natural,0.8247
+2505.15201,retrain,dsv4-retrain-2505.15201,8,reproduced,67.42,10,3540631-2505.15201-4a28e8,7,partial,False,False,4.07,natural,0.8436
+2510.09485,retrain,dsv4-retrain-2510.09485,9,reproduced,0.668031,,3540631-2510.09485-3a8bf1,10,reproduced,True,False,0.668030683,natural,0.685
+2505.17836,retrain,dsv4-retrain-2505.17836,6,partial,0.039451,0.05,3540631-2505.17836-ee46b2,6,partial,False,False,0.040259,natural,0.7623
+2506.20233,retrain,dsv4-retrain-2506.20233,6,partial,0.1113,,3540631-2506.20233-f85db4,7,partial,False,False,,natural,1.1595
+2402.04579,reimplement,qwen3-reimplement-2402.04579,4,not_reproduced,1.6372,,3540787-2402.04579-e41766,0,disqualified,False,True,3.4576,natural,0.8642
+2503.02809,reimplement,qwen3-reimplement-2503.02809,8,reproduced,40.1518,40.0,3540787-2503.02809-0f381f,8,reproduced,True,False,40.187,natural,0.746
+2510.25146,reimplement,qwen3-reimplement-2510.25146,1,unverifiable,,25.8,3540787-2510.25146-1049b8,1,unverifiable,False,False,,natural,0.3326
+2505.19087,reimplement,qwen3-reimplement-2505.19087,8,reproduced,0.6005,0.60302,3540787-2505.19087-f4b536,0,disqualified,False,True,0.59915,natural,0.8098
+2506.07673,retrain,dsv4-retrain-2506.07673,10,reproduced,-37.2,37.2,3540631-2506.07673-561ddd,8,reproduced,True,False,-37.2003,natural,1.3329

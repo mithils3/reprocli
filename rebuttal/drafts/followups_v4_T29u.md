@@ -7,14 +7,15 @@ The 10 Muse Spark 1.2 papers are the Reimplement papers on which a second run, s
 | Agent | Papers | Keep the reproduced verdict |
 | :- | :- | -: |
 | Muse Spark 1.2 | 10 Reimplement | 9 |
-| DeepSeek-V4-Flash | 1 Run, 6 Retrain, 5 Reimplement | 1, 6 and 3 |
+| DeepSeek-V4-Flash | 1 Run, 7 Retrain, 5 Reimplement | 1, 6 and 3 |
+| Qwen3.6-27B | 4 Reimplement | 3 |
 | gpt-6.1-sol and gpt-6-astra | 8 pairs | 7 |
-| All | 30 pairs | $\frac{26}{30}$ = 87% [70%, 95%] |
+| All | 35 pairs | $\frac{29}{35}$ = 83% [67%, 92%] |
 
-The DeepSeek-V4-Flash row holds every repeat run of that agent that finished, 20 runs of which 17 keep the verdict (Section 5.2 reports the first 16). In each of the four pairs that change, every run scores 7, 8 or 9 out of 10.
+The DeepSeek-V4-Flash and Qwen3.6-27B rows hold every repeat run of those agents graded by 11-17, 29 runs of which 24 keep the verdict (Section 5.2 reports the first 16). Six pairs change. In five of them every run scores 7, 8 or 9 out of 10, and in the sixth the auditor disqualified the Qwen3.6-27B repeat on 2505.19087 for searching over free settings for the one closest to the known target.
 
-Source: rebuttal/results/e12/README.md (9 of 10; 5 at 8 or more, 4 again); rebuttal/results/e13/README.md (20 runs, 17 keep; 10 of 12; 26 of 30); paper.txt 563. The four changed pairs: Muse Spark 1.2 and DeepSeek-V4-Flash on 2503.02809, DeepSeek-V4-Flash on 2505.19087 (e12, e13 READMEs), gpt-6-astra on 2505.19087 (7 and 8, rebuttal/results/databook/frontier_cells.csv).
-Caution: only 4 of the 12 DeepSeek-V4-Flash papers are in subset.json, so no stratified draw is claimed; 18 of 38 opened repeats stopped ungraded (STATUS.md:135); e12 says completion "favours shorter runs". Since 2026-11-17 nine more repeat runs have finished and are ungraded (5 of DeepSeek-V4-Flash at Retrain, 4 of Qwen3.6-27B at Reimplement; STATUS.md, 11-17 09:45), so "every repeat run of that agent that finished" must become "every repeat run graded by 11-15" unless they are graded first, and two of them (DeepSeek-V4-Flash on 2506.07673 and 2510.09485) self-report not reproduced where the paper run was reproduced, while three Qwen3.6-27B reports are degraded with no self-assessment.
+Source: rebuttal/results/e12/README.md (9 of 10; 5 at 8 or more, 4 again); rebuttal/results/e13/README.md, section 2026-11-17 (29 runs, 24 keep; 10 of 13 and 3 of 4; 29 of 35); paper.txt 563. The six changed pairs: Muse Spark 1.2 and DeepSeek-V4-Flash on 2503.02809, DeepSeek-V4-Flash and Qwen3.6-27B on 2505.19087, DeepSeek-V4-Flash on 2505.15201 (e12, e13 READMEs), gpt-6-astra on 2505.19087 (7 and 8, rebuttal/results/databook/frontier_cells.csv).
+Caution: only 4 of the 13 DeepSeek-V4-Flash papers are in subset.json, so no stratified draw is claimed; 18 of 38 repeats opened by 11-15 stopped ungraded (STATUS.md:135) and three batch jobs are still running, so more repeats may finish; e12 says completion "favours shorter runs". The pool was 26 of 30 before the nine runs graded on 11-17; among pairs with a reproduced run only 10 of 16 keep the verdict.
 
 ### If asked: who is right on the 28 split runs?
 
@@ -79,7 +80,7 @@ Source: paper.txt 375 to 389 (3,414; 1,000; 687), 400 to 417, 303 to 305, 811.
 
 Thank you for the follow-up, and for confirming that the confusion matrix and the tolerance table answered your two questions.
 
-**Repeat runs.** The 10 Muse Spark 1.2 papers are the Reimplement papers on which a second run with the same budget had finished, and they include all 5 Reimplement papers this agent reproduces, 4 of which are reproduced again. Across agents and tiers, repeat runs keep the reproduced verdict on $\frac{26}{30}$ = 87% [70%, 95%] of model and paper pairs: 9 of 10 for Muse Spark 1.2, 10 of 12 for DeepSeek-V4-Flash (1 Run, 6 Retrain and 5 Reimplement papers), and 7 of 8 for gpt-6.1-sol and gpt-6-astra.
+**Repeat runs.** The 10 Muse Spark 1.2 papers are the Reimplement papers on which a second run with the same budget had finished, and they include all 5 Reimplement papers this agent reproduces, 4 of which are reproduced again. Across agents and tiers, repeat runs keep the reproduced verdict on $\frac{29}{35}$ = 83% [67%, 92%] of model and paper pairs: 9 of 10 for Muse Spark 1.2, 10 of 13 for DeepSeek-V4-Flash (1 Run, 7 Retrain and 5 Reimplement papers), 3 of 4 for Qwen3.6-27B at Reimplement, and 7 of 8 for gpt-6.1-sol and gpt-6-astra.
 
 **The 28 runs.** Each run has one human grade. In 18 of the 28 the two scores are a 7 and an 8, and under the human grade Reimplement remains the lowest tier, with 16 of 132 cells reproduced (12%) against 35 of 136 at Run (26%).
 
