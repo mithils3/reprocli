@@ -27,3 +27,7 @@ A cells: dsv4 2505.24864 and 2504.12397 ended in the harness stop "context over 
 D cells: minimax 2506.18896 and qwen3 2511.19808 finished with a report and a score; qwen3 2510.25529 finished with verdict disqualified; qwen3 2510.19314 finished and was scored in sweep 2640098, but its run dir is absent from DeltaAI and from every cleanup log. The viewer index does not contain these runs, and no log gives the reason.
 
 Two qwen3 retrain cells (2503.09657, 2510.19784) also have a completed attempt in sweep 2640098 whose run dir is absent. They are classed B on the timed-out attempt the set expected.
+
+## 2026-11-17: rerun of the empty Qwen3.6-27B Retrain cell on 2510.05874
+
+Batch job 3575865 reran this B cell (the original attempt in sweep 2698678 hit the 48-hour limit with no report). Run 3575865-2510.05874-533352 ended on its own (exit_reason natural, report_status degraded) after 6.78 of 32 H100-hours. The pinned auditor (Claude Sonnet 5, $0.6889, folder `/work/nvme/bfvr/msalunkhe/rebuttal/e13k_repeats` on DeltaAI) scores it 3, not reproduced, no high flag: the agent ran the authors' training code with the right dataset and config, but each 30-minute GPU session reached about 27 to 30 of 8,000 epochs and no Full Rollout MSE was ever computed (target 1.259e-6). The cell stays a failure, so the 28 empty cells and the posted counts are unchanged.
