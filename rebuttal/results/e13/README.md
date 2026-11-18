@@ -93,3 +93,7 @@ Counts with these runs (script check: the same code reproduces 26 of 30 and 10 o
 - Six pairs change: Muse Spark 1.2 and DeepSeek-V4-Flash on 2503.02809, DeepSeek-V4-Flash, gpt-6-astra and Qwen3.6-27B on 2505.19087, and DeepSeek-V4-Flash on 2505.15201. In five of them every run scores 7, 8 or 9; the sixth is the disqualified Qwen3.6-27B repeat.
 
 The posted replies and Section 5.2 of the second revised PDF keep the counts at the 11-14 freeze (16 runs, 23 of 27 pairs). Any later answer on repeat runs uses the counts above.
+
+## 2026-11-18: one more DeepSeek-V4-Flash repeat on 2510.07501
+
+Run 3540631-2510.07501-5ed6df (Retrain, exit natural, 0.49 of 8 H100-hours) is the third repeat of this pair. The pinned auditor (`e13l_repeats`, $0.7127) scores it 7, partial: -0.186 against -0.20, a 7.0% gap with the 5% tolerance. The paper's run and the two earlier repeats are 6, partial, so the pair keeps its verdict. Runs 25 of 30 keep the verdict; the pair counts stay at 29 of 35 (83% [67%, 92%]) and 10 of 16 among pairs with a reproduced run.

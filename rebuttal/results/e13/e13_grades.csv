@@ -28,3 +28,4 @@ arxiv_id,tier,paper_run_id,paper_score,paper_verdict,paper_measured,reference,re
 2510.25146,reimplement,qwen3-reimplement-2510.25146,1,unverifiable,,25.8,3540787-2510.25146-1049b8,1,unverifiable,False,False,,natural,0.3326
 2505.19087,reimplement,qwen3-reimplement-2505.19087,8,reproduced,0.6005,0.60302,3540787-2505.19087-f4b536,0,disqualified,False,True,0.59915,natural,0.8098
 2506.07673,retrain,dsv4-retrain-2506.07673,10,reproduced,-37.2,37.2,3540631-2506.07673-561ddd,8,reproduced,True,False,-37.2003,natural,1.3329
+2510.07501,retrain,dsv4-retrain-2510.07501,6,partial,-0.1681,-0.2,3540631-2510.07501-5ed6df,7,partial,False,False,-0.186,natural,0.7127
