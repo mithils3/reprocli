@@ -24,3 +24,7 @@ ICLR 2026 accepted 5,351 of 19,814 submissions (27.0%). ICLR 2027 has 42,789 sub
 | 2024 meta-reviews for this band (146 accepted, 184 rejected) | "insufficient experiments" 4% of accepts against 16% of rejects; "concerns remain" 10% against 17%; "lukewarm" 5% against 12%; novelty complaints and benchmark mentions equal in both |
 
 Estimate stated to Mithil: about 60% (50% to 70%), down from 70%, which had rested on 2024/25 rank histories.
+
+## Our own factors (an6.py, an7.py)
+
+Our values: 3 reviews; positives' confidence 3 and 2; low reviewer (YGTR) confidence 3, review 315 words, informativeness 1, silent in the discussion; rqBN posted ("I maintain my score to support this paper"), T29u silent; area datasets and benchmarks; public author replies of about 3,950 words in 7 comments with a general response, markdown tables, dense numbers and new experiments. Two logistic models over the band (2024+25 with rebuttal and engagement features, n = 850; 2026 with review features, n = 887), each giving our log-odds offset against the average 3-review paper in the band: -0.05 [-0.86, +0.59] and -0.06 [-1.20, +1.11]. Pluses: a positive reviewer posted while the low reviewer stayed silent (+0.60), tables (+0.39). Minuses: positives' confidence at or below 3 (-0.21, -0.17); area coefficient conflicts across years (-0.34 in 2024+25, +0.37 in 2026). Net about zero, so the paper-specific estimate stays at the 3,3,2 base: about 60% (50% to 70%).
