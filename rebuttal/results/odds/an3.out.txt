@@ -1,0 +1,37 @@
+2026 main statuses {'Withdraw': 5210, 'Reject': 8345, 'Poster': 5127, 'Desk Reject': 908, 'Oral': 224}
+2026: submissions 19814, decided 13696, accepted 5351 = 27.0% of submissions, 39.1% of decided
+2027 active with ratings 34456
+
+2026 acceptance by mean on the 2027 scale (0,2->1, 4->2, 6->3, 8,10->4)  |  2027 papers now
+  3.40: 2026    14/14    100.0%   2027      5
+  3.33: 2026    93/94     98.9%   2027   1076
+  3.25: 2026   338/349    96.8%   2027     87
+  3.20: 2026    23/24     95.8%   2027      6
+  3.00: 2026   937/1006   93.1%   2027   4366
+  2.86: 2026     1/1     100.0%   2027      0
+  2.83: 2026     7/7     100.0%   2027      1
+  2.80: 2026    72/83     86.7%   2027     31
+  2.75: 2026  1079/1315   82.1%   2027    446
+  2.67: 2026   298/427    69.8%   2027   5617
+  2.60: 2026    81/119    68.1%   2027     39
+  2.57: 2026     2/2     100.0%   2027      0
+  2.50: 2026  1012/1876   53.9%   2027    577
+  2.43: 2026     0/1       0.0%   2027      0
+  2.40: 2026    62/140    44.3%   2027     48
+  2.33: 2026   213/591    36.0%   2027   7035
+  2.29: 2026     0/1       0.0%   2027      0
+  2.25: 2026   557/2072   26.9%   2027    529
+  2.20: 2026    29/140    20.7%   2027     50
+
+model A (2026 rate per mean level, applied to 2027 counts): 13794 accepts = 32.2% of submissions; rate at 2.67: 69.7%
+  if 32% of submissions accepted (13692): shift -0.02, rate at 2.67 = 69.2%, at 2.75 = 81.7%, at 2.33 = 35.5%
+  if 30% of submissions accepted (12837): shift -0.22, rate at 2.67 = 64.8%, at 2.75 = 78.5%, at 2.33 = 31.1%
+  if 27% of submissions accepted (11553): shift -0.53, rate at 2.67 = 57.5%, at 2.75 = 72.8%, at 2.33 = 24.9%
+  if 25% of submissions accepted (10697): shift -0.75, rate at 2.67 = 52.2%, at 2.75 = 68.3%, at 2.33 = 21.1%
+  if 22% of submissions accepted (9414): shift -1.09, rate at 2.67 = 43.7%, at 2.75 = 60.6%, at 2.33 = 16.0%
+  if 20% of submissions accepted (8558): shift -1.32, rate at 2.67 = 38.0%, at 2.75 = 54.8%, at 2.33 = 13.0%
+
+model B: 2027 2.67 band spans ranks 6270..11886 of 34456 active = top 18.2% to 34.5%
+  if 100% of active papers reach a decision: 2.67 band = top 18.2% to 34.5% of decided; 2026 papers at that rank: 1436/2233 = 64.3% accepted
+  if 90% of active papers reach a decision: 2.67 band = top 20.2% to 38.3% of decided; 2026 papers at that rank: 1514/2481 = 61.0% accepted
+  if 85% of active papers reach a decision: 2.67 band = top 21.4% to 40.6% of decided; 2026 papers at that rank: 1545/2627 = 58.8% accepted

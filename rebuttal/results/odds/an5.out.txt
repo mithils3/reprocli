@@ -1,0 +1,32 @@
+2024 meta-reviews for all-but-one weak accept papers: 146 accepted, 184 rejected
+  phrase in meta-review                                 accepted  rejected   accept rate when present
+  rebuttal addressed / resolved concerns                     12%        8%   17/31 [38, 71]
+  concerns remain / not fully addressed                      10%       17%   14/45 [20, 46]
+  novelty / incremental / limited contribution               32%       35%   46/110 [33, 51]
+  experiments insufficient / more experiments needed          4%       16%   6/35 [8, 33]
+  reviewer did not respond or engage                          2%        0%   3/3 [44, 100]
+  AC discounts or downweights a review                        1%        2%   1/5 [4, 62]
+  AC champions / reviewer championed                          6%        9%   9/25 [20, 55]
+  mentions benchmark or dataset                              32%       37%   46/114 [32, 50]
+  presentation / clarity / writing problems                  45%       40%   65/138 [39, 55]
+  theory / proof concerns                                    25%       26%   36/84 [33, 54]
+  borderline                                                 17%       25%   25/71 [25, 47]
+  lukewarm / no reviewer excited                              5%       12%   8/31 [14, 43]
+
+--- REJECTED [5, 6, 6] area=general machine learning (i.e., none of the above)
+metareview: **Summary**: This paper presents a new class of concept bottleneck models with a "memory component." The component can store human interventions, thus reducing the number of human interventions and identifying incorrectly predicted samples. The authors proposed. This paper develops a model-agnostic approach to build the component and evaluates its approach on four datasets. The results highlight some of the potential benefits of this solution, such as an improvement in performance and resilience to distribution shift and train-time spurious correlations. **Strengths**: - Topic: the paper considers an important class of problems that would be of interest to those in the field - Fr
+
+--- REJECTED [5, 6, 6, 6] area=generative models
+metareview: The paper proposes a method for domain generalization based on isolating content factors that are stable predictors under domain shifts. This is embedded into a VAE framework, leading to a practical method. The reviewers found the paper innovative and the experiments well-executed (although with marginal improvements) and appreciated the identifiable latent variable model approach. The main limitations of the papers were the clarity in the notation, which improved during the rebuttal, and the overall novelty. The paper is borderline, and ultimately, I decided to reject it. The main reasons are: 1) I would like a more extensive discussion on the proof technique. It seems like a di
+
+--- REJECTED [5, 6, 6] area=reinforcement learning
+metareview: The authors present mixing corrupted preferences (MCP), a new preference-based RL method that utilizes mixup to augment the trajectories and preference labels to improve robustness. Experiments show that MCP improves the performance of baseline methods such as PEBBLE and SURF in terms of both robustness and feedback efficiency. The reviewers recognized the importance of improving robustness in PbRL and the simplicity of the method (in a good way). During the rebuttal period, the authors partially resolved reviewers' concerns including additional human-in-the-loop experiments and the reviewers increased scores in response. However, there are still some remaining concerns. The auth
+
+--- ACCEPTED [5, 6, 6] area=general machine learning (i.e., none of the above)
+metareview: This paper proposes sparse binary activation neural networks (BANNs) as a way to combine the benefits of BNNs (which have good accuracy) and SNNs (which have low energy consumption) for computer vision. They show that their BANNs can get better accuracy and still have low energy consumption. This is an important research area and authors did a great job during the rebuttal to revise the paper with more experiments. There were several questions raised by the reviewers and authors provided the convincing rebuttal. All the reviewers raised their score. I recommend an acceptance. justification_for_why_not_higher_score: It is a solid work. But only a small fraction of ICLR participant
+
+--- ACCEPTED [5, 6, 6, 6] area=general machine learning (i.e., none of the above)
+metareview: This paper discusses existing diversification methods for handling OOD generalisation. It attempts to characterise when such methods are best suited to work. It thus brings together a new perspective which would greatly help in deploying such methods for spurious correlation. justification_for_why_not_higher_score: The paper should have explored potential new avenues on when such methods fail. justification_for_why_not_lower_score: The paper contributes substantial insights on when the existing Diversification methods and when are they likely to fail. This would be of interest to ICLR community.
+
+--- ACCEPTED [5, 6, 6, 6] area=generative models
+metareview: The paper proposes an approach for 3D (multi-view, to be precise) scene generation which conditions on object-centric representation and thus support object-level editing to some extent. The paper receives three positive and one negative ratings. The positive reviews are based on the effectiveness of the proposed framework. Also, the statements are well-corroborated and the visual results are good. The negative reviews concerned the technical novelty as the framework heavily rely on the quality OSRT and diffusion models. However, quoting comments from Reviewer dJMA, it is a "Straightforward success of the proposal idea to an important problem". I believe it is a valuable work to 
